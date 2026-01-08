@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Question } from "@shared/schema";
 import { useScore } from "./ScoreContext";
-import { CheckCircle2, XCircle, Eye, EyeOff, Timer, Sparkles } from "lucide-react";
+import { CheckCircle2, XCircle, Eye, EyeOff, Timer, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
@@ -49,7 +49,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
+      colors: ['#3B82F6', '#A855F7', '#FBBF24', '#10B981']
     });
 
     setTimeout(() => {
@@ -68,38 +68,36 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
   };
 
   return (
-    <motion.div 
-      initial={{ scale: 0.9, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      className="relative bg-slate-900 overflow-hidden"
-    >
+    <div className="relative overflow-hidden">
       <AnimatePresence>
         {awardedTo && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
+            initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-center justify-center bg-green-500/90 backdrop-blur"
+            className="absolute inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-green-500 to-emerald-600"
           >
             <div className="text-center">
               <Sparkles className="w-16 h-16 text-white mx-auto mb-4 animate-pulse" />
-              <h2 className="text-3xl font-bold text-white">{awardedTo} got it!</h2>
-              <p className="text-xl text-white/80 mt-2">+{question.points} points</p>
+              <h2 className="text-3xl font-black text-white">{awardedTo} wins!</h2>
+              <p className="text-2xl font-bold text-white/90 mt-2">+${question.points}</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between gap-4">
-        <span className="font-bold text-2xl text-white">{question.points} Points</span>
+      <div className="gradient-header px-6 py-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="text-3xl font-black text-white text-glow">${question.points}</span>
+        </div>
         <div className="flex items-center gap-2">
           {timer !== null && (
             <motion.div 
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               className={`
-                px-4 py-1 rounded-full font-mono text-xl font-bold
-                ${timer <= 5 ? 'bg-red-500 animate-pulse' : 'bg-white/20'}
+                px-4 py-1.5 rounded-full font-mono text-xl font-bold
+                ${timer <= 5 ? 'bg-destructive animate-pulse' : 'bg-white/20'}
                 text-white
               `}
             >
@@ -119,12 +117,11 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
         </div>
       </div>
 
-      <div className="p-6">
+      <div className="p-6 bg-card">
         <motion.h3 
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="text-xl font-medium text-white mb-6 leading-relaxed"
+          className="text-xl font-semibold text-foreground mb-6 leading-relaxed"
         >
           {question.question}
         </motion.h3>
@@ -133,14 +130,14 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
           {options.map((option, idx) => (
             <motion.div
               key={idx}
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.2 + idx * 0.1 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 + idx * 0.05 }}
               className={`
-                px-4 py-3 rounded-xl text-center font-medium transition-all duration-300
+                px-4 py-3 rounded-xl text-center font-semibold transition-all duration-300
                 ${showAnswer && option === correctAnswer
-                  ? 'bg-green-500/20 border-2 border-green-500 text-green-400 scale-105 shadow-lg shadow-green-500/20'
-                  : 'bg-slate-800 border-2 border-slate-700 text-slate-300'
+                  ? 'bg-success/20 border-2 border-success text-success ring-2 ring-success/30'
+                  : 'bg-muted/30 border-2 border-border text-foreground'
                 }
               `}
             >
@@ -155,11 +152,11 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-6 overflow-hidden"
+              className="bg-success/10 border border-success/30 rounded-xl p-4 mb-6 overflow-hidden"
             >
-              <p className="text-green-400 font-medium flex items-center gap-2">
+              <p className="text-success font-semibold flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5" />
-                Answer: {correctAnswer}
+                Correct Answer: {correctAnswer}
               </p>
             </motion.div>
           )}
@@ -171,7 +168,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
             size="sm"
             onClick={() => startTimer(30)}
             disabled={isTimerRunning}
-            className="border-slate-600 text-slate-300"
+            className="border-border"
           >
             <Timer className="w-4 h-4 mr-1" />
             30s
@@ -181,7 +178,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
             size="sm"
             onClick={() => startTimer(60)}
             disabled={isTimerRunning}
-            className="border-slate-600 text-slate-300"
+            className="border-border"
           >
             <Timer className="w-4 h-4 mr-1" />
             60s
@@ -191,7 +188,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
               variant="outline"
               size="sm"
               onClick={stopTimer}
-              className="border-red-600 text-red-400"
+              className="border-destructive text-destructive"
             >
               Stop
             </Button>
@@ -199,60 +196,61 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
         </div>
 
         {contestants.length > 0 ? (
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-slate-400 mb-3">Award or deduct points:</p>
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground mb-3">Award or deduct points:</p>
             {contestants.map((contestant, idx) => (
               <motion.div
                 key={contestant.id}
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.3 + idx * 0.05 }}
-                className="flex items-center justify-between gap-3 p-3 bg-slate-800/50 rounded-xl"
+                transition={{ delay: 0.2 + idx * 0.05 }}
+                className="flex items-center justify-between gap-3 p-3 bg-muted/20 rounded-xl border border-border/50"
               >
                 <div className="flex items-center gap-3">
-                  <span className="font-medium text-white">{contestant.name}</span>
-                  <span className="text-sm text-slate-500">({contestant.score} pts)</span>
+                  <span className="font-semibold text-foreground">{contestant.name}</span>
+                  <span className="text-sm text-muted-foreground">(${contestant.score})</span>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     size="sm"
                     onClick={() => handleAward(contestant.id, contestant.name)}
-                    className="bg-green-600 hover:bg-green-500 text-white"
+                    className="bg-success hover:bg-success/90 text-white"
                     data-testid={`button-award-${contestant.id}`}
                   >
                     <CheckCircle2 className="w-4 h-4 mr-1" />
-                    +{question.points}
+                    +${question.points}
                   </Button>
                   <Button
                     size="sm"
                     onClick={() => handleDeduct(contestant.id)}
-                    className="bg-red-600 hover:bg-red-500 text-white"
+                    className="bg-destructive hover:bg-destructive/90 text-white"
                     data-testid={`button-deduct-${contestant.id}`}
                   >
                     <XCircle className="w-4 h-4 mr-1" />
-                    -{question.points}
+                    -${question.points}
                   </Button>
                 </div>
               </motion.div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-4 text-slate-500">
+          <div className="text-center py-4 text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-border">
             Add players from the scoreboard to award points
           </div>
         )}
 
-        <div className="flex justify-end mt-6 pt-4 border-t border-slate-700">
+        <div className="flex justify-end mt-6 pt-4 border-t border-border">
           <Button 
-            variant="outline" 
-            onClick={handleNoAnswer} 
-            className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white"
+            variant="ghost" 
+            onClick={handleNoAnswer}
+            className="text-muted-foreground"
             data-testid="button-close-question"
           >
+            <X className="w-4 h-4 mr-2" />
             Close Question
           </Button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
