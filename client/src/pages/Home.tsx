@@ -17,45 +17,47 @@ export default function Home() {
 
   if (isLoadingCategories) {
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center space-y-4">
+      <div className="min-h-screen flex flex-col items-center justify-center space-y-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <Loader2 className="w-12 h-12 text-primary animate-spin" />
-        <p className="text-muted-foreground animate-pulse">Loading trivia board...</p>
+        <p className="text-slate-400 animate-pulse">Loading trivia board...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
-        <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-4 text-destructive">
+      <div className="min-h-screen flex flex-col items-center justify-center text-center p-8 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4 text-red-400">
           <span className="text-2xl font-bold">!</span>
         </div>
-        <h2 className="text-2xl font-bold text-foreground">Something went wrong</h2>
-        <p className="text-muted-foreground mt-2">Could not load categories. Please try again later.</p>
+        <h2 className="text-2xl font-bold text-white">Something went wrong</h2>
+        <p className="text-slate-400 mt-2">Could not load categories.</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="p-4">
-        <div className="flex flex-col xl:flex-row gap-4">
-          <div className="xl:w-64 shrink-0">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="p-4 lg:p-6">
+        <div className="flex flex-col xl:flex-row gap-6">
+          <div className="xl:w-72 shrink-0">
             <Scoreboard />
           </div>
           
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl md:text-2xl font-bold text-foreground mb-4 text-center">
-              Trivia Challenge
-            </h1>
+            <div className="text-center mb-6">
+              <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
+                Trivia Challenge
+              </h1>
+              <p className="text-slate-400 mt-1">Select a category and point value</p>
+            </div>
 
             {categories && categories.length > 0 ? (
-              <div className="overflow-x-auto pb-2">
+              <div className="overflow-x-auto pb-4">
                 <div 
-                  className="grid border border-border rounded-lg overflow-hidden"
+                  className="grid gap-1 min-w-max"
                   style={{ 
-                    gridTemplateColumns: `repeat(${categories.length}, minmax(90px, 1fr))`,
-                    minWidth: `${categories.length * 90}px`
+                    gridTemplateColumns: `repeat(${categories.length}, minmax(100px, 1fr))`,
                   }}
                 >
                   {categories.map((category) => (
@@ -68,9 +70,8 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-20 bg-muted/30 rounded-3xl border border-dashed border-border">
-                <h3 className="text-xl font-bold text-muted-foreground">No categories available yet</h3>
-                <p className="text-muted-foreground mt-2">Check back soon for new content!</p>
+              <div className="text-center py-20 bg-slate-800/50 rounded-2xl border border-slate-700">
+                <h3 className="text-xl font-bold text-slate-400">No categories available yet</h3>
               </div>
             )}
           </div>
@@ -78,7 +79,7 @@ export default function Home() {
       </div>
 
       <Dialog open={selectedQuestion !== null} onOpenChange={(open) => !open && setSelectedQuestion(null)}>
-        <DialogContent className="max-w-2xl p-0 overflow-hidden">
+        <DialogContent className="max-w-2xl p-0 overflow-hidden border-slate-700 bg-slate-900">
           {selectedQuestion && (
             <QuestionCard
               question={selectedQuestion}

@@ -21,32 +21,32 @@ export function CategoryColumn({ category, onSelectQuestion }: CategoryColumnPro
 
   return (
     <div className="flex flex-col">
-      <div className="bg-[#1a4f5f] text-white py-2 px-1 text-center border-r border-[#134451] last:border-r-0 min-h-[52px] flex items-center justify-center">
-        <h2 className="font-bold text-xs leading-tight line-clamp-2" data-testid={`text-category-${category.id}`}>
+      <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white py-3 px-2 text-center min-h-[56px] flex items-center justify-center rounded-t-lg">
+        <h2 className="font-semibold text-sm leading-tight line-clamp-2" data-testid={`text-category-${category.id}`}>
           {category.name}
         </h2>
       </div>
       
-      <div className="flex flex-col">
+      <div className="flex flex-col gap-1 mt-1">
         {SCORE_VALUES.map((scoreValue) => {
           const question = questionsByPoints[scoreValue];
           const hasQuestion = !!question;
           const isCompleted = question ? completedQuestions.includes(question.id) : false;
 
           if (isLoading) {
-            return <Skeleton key={scoreValue} className="h-10 w-full" />;
+            return <Skeleton key={scoreValue} className="h-12 w-full rounded-lg bg-slate-700" />;
           }
 
           return (
             <button
               key={scoreValue}
               className={`
-                w-full py-2 text-center transition-all duration-200 border-b border-r border-border/30 last:border-r-0
+                w-full py-3 text-center rounded-lg font-bold text-lg transition-all duration-200
                 ${!hasQuestion 
-                  ? 'bg-muted/20 text-muted-foreground/40 cursor-not-allowed' 
+                  ? 'bg-slate-800/50 text-slate-600 cursor-not-allowed' 
                   : isCompleted 
-                    ? 'bg-muted/40 text-muted-foreground/50 cursor-not-allowed' 
-                    : 'bg-card hover:bg-primary/20 cursor-pointer text-foreground font-semibold'
+                    ? 'bg-slate-800/30 text-slate-600 cursor-not-allowed' 
+                    : 'bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:from-blue-400 hover:to-blue-500 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25 cursor-pointer active:scale-100'
                 }
               `}
               onClick={() => hasQuestion && !isCompleted && onSelectQuestion(question)}
@@ -54,9 +54,9 @@ export function CategoryColumn({ category, onSelectQuestion }: CategoryColumnPro
               data-testid={`cell-${category.id}-${scoreValue}`}
             >
               {isCompleted ? (
-                <span className="text-base line-through opacity-50">{scoreValue}</span>
+                <span className="opacity-40">{scoreValue}</span>
               ) : (
-                <span className="text-base">{scoreValue}</span>
+                <span>{scoreValue}</span>
               )}
             </button>
           );
