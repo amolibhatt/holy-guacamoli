@@ -1,5 +1,5 @@
 import { useCategories } from "@/hooks/use-quiz";
-import { Loader2, Settings, Maximize2, Minimize2, Zap } from "lucide-react";
+import { Loader2, Settings, Maximize2, Minimize2, Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -79,11 +79,17 @@ export default function Home() {
       <header className="border-b border-border/30 bg-card/30 backdrop-blur-md sticky top-0 z-50">
         <div className="px-4 py-2 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-              <Zap className="w-4 h-4 text-primary" />
-            </div>
-            <h1 className="text-lg font-semibold tracking-tight text-foreground">
-              amoli<span className="text-primary font-bold">trivia</span>
+            <motion.div 
+              className="w-10 h-10 rounded-xl gradient-header flex items-center justify-center"
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <Sparkles className="w-5 h-5 text-white" />
+            </motion.div>
+            <h1 className="text-xl font-black tracking-tight">
+              <span className="text-primary">AMOLI'S</span>
+              <span className="text-foreground mx-1.5">BIRTHDAY</span>
+              <span className="text-primary">TRIVIA</span>
             </h1>
           </div>
           <div className="flex items-center gap-2">
