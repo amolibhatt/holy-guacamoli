@@ -19,8 +19,21 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
   const [awardedTo, setAwardedTo] = useState<string | null>(null);
   const { contestants, awardPoints, deductPoints, markQuestionCompleted } = useScore();
 
-  const options = question.options as string[];
-  const correctAnswer = (question as any).correctAnswer || options[0];
+  const correctAnswer = (question as any).correctAnswer;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'r' || e.key === 'R') {
+        setShowAnswer(!showAnswer);
+      }
+      if (e.key === 't' || e.key === 'T') {
+        if (!isTimerRunning) startTimer(30);
+        else stopTimer();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showAnswer, isTimerRunning]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -46,16 +59,16 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
     awardPoints(contestantId, question.points);
     
     confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#3B82F6', '#A855F7', '#FBBF24', '#10B981']
+      particleCount: 150,
+      spread: 100,
+      origin: { y: 0.5 },
+      colors: ['#3B82F6', '#A855F7', '#FBBF24', '#10B981', '#EC4899']
     });
 
     setTimeout(() => {
       markQuestionCompleted(question.id);
       onComplete?.();
-    }, 1500);
+    }, 1800);
   };
 
   const handleDeduct = (contestantId: string) => {
@@ -72,101 +85,117 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
       <AnimatePresence>
         {awardedTo && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-green-500 to-emerald-600"
+            className="absolute inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500"
           >
-            <div className="text-center">
-              <Sparkles className="w-16 h-16 text-white mx-auto mb-4 animate-pulse" />
-              <h2 className="text-3xl font-black text-white">{awardedTo} wins!</h2>
-              <p className="text-2xl font-bold text-white/90 mt-2">+{question.points} pts</p>
-            </div>
+            <motion.div 
+              className="text-center"
+              initial={{ y: 50 }}
+              animate={{ y: 0 }}
+            >
+              <Sparkles className="w-20 h-20 text-white mx-auto mb-4 animate-pulse" />
+              <h2 className="text-4xl font-black text-white text-glow">{awardedTo}</h2>
+              <p className="text-3xl font-bold text-white/90 mt-2">+{question.points} points!</p>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="gradient-header px-6 py-4 flex items-center justify-between gap-4">
+      <div className="gradient-header px-6 py-5 flex items-center justify-between gap-4">
+        <motion.span 
+          className="text-4xl font-black text-white text-glow"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 200 }}
+        >
+          {question.points}
+        </motion.span>
         <div className="flex items-center gap-3">
-          <span className="text-3xl font-black text-white text-glow">{question.points} pts</span>
-        </div>
-        <div className="flex items-center gap-2">
           {timer !== null && (
             <motion.div 
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               className={`
-                px-4 py-1.5 rounded-full font-mono text-xl font-bold
+                w-14 h-14 rounded-full flex items-center justify-center font-mono text-2xl font-black
                 ${timer <= 5 ? 'bg-destructive animate-pulse' : 'bg-white/20'}
                 text-white
               `}
             >
-              {timer}s
+              {timer}
             </motion.div>
           )}
           <Button
-            variant="secondary"
-            size="sm"
+            size="lg"
             onClick={() => setShowAnswer(!showAnswer)}
-            className="bg-white/20 hover:bg-white/30 text-white border-0"
+            className={showAnswer ? "bg-white/20 hover:bg-white/30" : "gradient-gold text-amber-900 font-bold"}
             data-testid="button-toggle-answer"
           >
-            {showAnswer ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+            {showAnswer ? <EyeOff className="w-5 h-5 mr-2" /> : <Eye className="w-5 h-5 mr-2" />}
             {showAnswer ? "Hide" : "Reveal"}
           </Button>
         </div>
       </div>
 
-      <div className="p-6 bg-card">
-        <motion.h3 
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="text-xl font-semibold text-foreground mb-6 leading-relaxed"
+      <div className="p-8 bg-card">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="min-h-[120px] flex items-center justify-center mb-8"
         >
-          {question.question}
-        </motion.h3>
+          <h3 className="text-2xl lg:text-3xl font-semibold text-foreground text-center leading-relaxed">
+            {question.question}
+          </h3>
+        </motion.div>
 
         <AnimatePresence>
           {showAnswer && (
             <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="bg-success/10 border border-success/30 rounded-xl p-4 mb-6 overflow-hidden"
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-success/15 border-2 border-success rounded-2xl p-6 mb-8"
             >
-              <p className="text-success font-semibold flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5" />
-                Correct Answer: {correctAnswer}
+              <p className="text-success font-bold text-xl flex items-center justify-center gap-3">
+                <CheckCircle2 className="w-7 h-7" />
+                {correctAnswer}
               </p>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div className="flex gap-2 mb-6">
+        <div className="flex justify-center gap-3 mb-8">
           <Button
             variant="outline"
-            size="sm"
+            onClick={() => startTimer(15)}
+            disabled={isTimerRunning}
+            className="border-border"
+          >
+            <Timer className="w-4 h-4 mr-2" />
+            15s
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => startTimer(30)}
             disabled={isTimerRunning}
             className="border-border"
           >
-            <Timer className="w-4 h-4 mr-1" />
+            <Timer className="w-4 h-4 mr-2" />
             30s
           </Button>
           <Button
             variant="outline"
-            size="sm"
             onClick={() => startTimer(60)}
             disabled={isTimerRunning}
             className="border-border"
           >
-            <Timer className="w-4 h-4 mr-1" />
+            <Timer className="w-4 h-4 mr-2" />
             60s
           </Button>
           {isTimerRunning && (
             <Button
               variant="outline"
-              size="sm"
               onClick={stopTimer}
               className="border-destructive text-destructive"
             >
@@ -176,25 +205,24 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
         </div>
 
         {contestants.length > 0 ? (
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground mb-3">Award or deduct points:</p>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
             {contestants.map((contestant, idx) => (
               <motion.div
                 key={contestant.id}
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.2 + idx * 0.05 }}
-                className="flex items-center justify-between gap-3 p-3 bg-muted/20 rounded-xl border border-border/50"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                className="bg-muted/20 rounded-xl p-4 border border-border/50"
               >
-                <div className="flex items-center gap-3">
-                  <span className="font-semibold text-foreground">{contestant.name}</span>
-                  <span className="text-sm text-muted-foreground">({contestant.score} pts)</span>
+                <div className="text-center mb-3">
+                  <span className="font-bold text-foreground text-lg">{contestant.name}</span>
+                  <span className="block text-sm text-muted-foreground">{contestant.score} pts</span>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     size="sm"
                     onClick={() => handleAward(contestant.id, contestant.name)}
-                    className="bg-success hover:bg-success/90 text-white"
+                    className="flex-1 bg-success hover:bg-success/90 text-white font-bold"
                     data-testid={`button-award-${contestant.id}`}
                   >
                     <CheckCircle2 className="w-4 h-4 mr-1" />
@@ -206,30 +234,38 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
                     className="bg-destructive hover:bg-destructive/90 text-white"
                     data-testid={`button-deduct-${contestant.id}`}
                   >
-                    <XCircle className="w-4 h-4 mr-1" />
-                    -{question.points}
+                    <XCircle className="w-4 h-4" />
                   </Button>
                 </div>
               </motion.div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-4 text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-border">
+          <div className="text-center py-6 text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-border">
             Add players from the scoreboard to award points
           </div>
         )}
 
-        <div className="flex justify-end mt-6 pt-4 border-t border-border">
+        <div className="flex justify-center mt-8 pt-6 border-t border-border">
           <Button 
             variant="ghost" 
+            size="lg"
             onClick={handleNoAnswer}
             className="text-muted-foreground"
             data-testid="button-close-question"
           >
-            <X className="w-4 h-4 mr-2" />
-            Close Question
+            <X className="w-5 h-5 mr-2" />
+            No Answer / Skip
           </Button>
         </div>
+      </div>
+
+      <div className="bg-muted/20 px-6 py-3 text-center text-xs text-muted-foreground border-t border-border">
+        Keyboard: <kbd className="px-1.5 py-0.5 bg-muted rounded text-foreground font-mono">R</kbd> Reveal
+        <span className="mx-3">|</span>
+        <kbd className="px-1.5 py-0.5 bg-muted rounded text-foreground font-mono">T</kbd> Timer
+        <span className="mx-3">|</span>
+        <kbd className="px-1.5 py-0.5 bg-muted rounded text-foreground font-mono">Esc</kbd> Close
       </div>
     </div>
   );
