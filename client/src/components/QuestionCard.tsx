@@ -33,22 +33,23 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
   };
 
   return (
-    <div className="relative bg-card overflow-hidden">
-      <div className="bg-primary text-primary-foreground px-6 py-4 flex items-center justify-between gap-4">
-        <span className="font-bold text-xl">{question.points} Points</span>
+    <div className="relative bg-slate-900 overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between gap-4">
+        <span className="font-bold text-2xl text-white">{question.points} Points</span>
         <Button
           variant="secondary"
           size="sm"
           onClick={() => setShowAnswer(!showAnswer)}
+          className="bg-white/20 hover:bg-white/30 text-white border-0"
           data-testid="button-toggle-answer"
         >
           {showAnswer ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-          {showAnswer ? "Hide Answer" : "Show Answer"}
+          {showAnswer ? "Hide" : "Reveal"}
         </Button>
       </div>
 
       <div className="p-6">
-        <h3 className="text-xl font-semibold text-foreground mb-6 leading-relaxed">
+        <h3 className="text-xl font-medium text-white mb-6 leading-relaxed">
           {question.question}
         </h3>
 
@@ -57,10 +58,10 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
             <div
               key={idx}
               className={`
-                px-4 py-3 rounded-lg border-2 text-center
+                px-4 py-3 rounded-xl text-center font-medium transition-all
                 ${showAnswer && option === correctAnswer
-                  ? 'bg-green-100 dark:bg-green-900/30 border-green-500 text-green-900 dark:text-green-100 font-bold'
-                  : 'bg-secondary/5 border-transparent text-foreground'
+                  ? 'bg-green-500/20 border-2 border-green-500 text-green-400'
+                  : 'bg-slate-800 border-2 border-slate-700 text-slate-300'
                 }
               `}
             >
@@ -70,40 +71,40 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
         </div>
 
         {showAnswer && (
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
-            <p className="text-green-800 dark:text-green-200 font-medium flex items-center gap-2">
+          <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-6">
+            <p className="text-green-400 font-medium flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5" />
-              Correct Answer: {correctAnswer}
+              Answer: {correctAnswer}
             </p>
           </div>
         )}
 
         {contestants.length > 0 ? (
           <div className="space-y-3">
-            <p className="text-sm font-medium text-muted-foreground mb-2">Award or deduct points:</p>
+            <p className="text-sm font-medium text-slate-400 mb-3">Award or deduct points:</p>
             {contestants.map((contestant) => (
               <div
                 key={contestant.id}
-                className="flex items-center justify-between gap-3 p-3 bg-muted/30 rounded-lg"
+                className="flex items-center justify-between gap-3 p-3 bg-slate-800/50 rounded-xl"
               >
                 <div className="flex items-center gap-3">
-                  <span className="font-medium text-foreground">{contestant.name}</span>
-                  <span className="text-sm text-muted-foreground">({contestant.score} pts)</span>
+                  <span className="font-medium text-white">{contestant.name}</span>
+                  <span className="text-sm text-slate-500">({contestant.score} pts)</span>
                 </div>
                 <div className="flex gap-2">
                   <Button
-                    variant="default"
                     size="sm"
                     onClick={() => handleAward(contestant.id)}
+                    className="bg-green-600 hover:bg-green-500 text-white"
                     data-testid={`button-award-${contestant.id}`}
                   >
                     <CheckCircle2 className="w-4 h-4 mr-1" />
                     +{question.points}
                   </Button>
                   <Button
-                    variant="destructive"
                     size="sm"
                     onClick={() => handleDeduct(contestant.id)}
+                    className="bg-red-600 hover:bg-red-500 text-white"
                     data-testid={`button-deduct-${contestant.id}`}
                   >
                     <XCircle className="w-4 h-4 mr-1" />
@@ -114,13 +115,18 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
             ))}
           </div>
         ) : (
-          <div className="text-center py-4 text-muted-foreground">
-            Add contestants from the scoreboard to award points
+          <div className="text-center py-4 text-slate-500">
+            Add players from the scoreboard to award points
           </div>
         )}
 
-        <div className="flex justify-end mt-6 pt-4 border-t">
-          <Button variant="outline" onClick={handleNoAnswer} data-testid="button-close-question">
+        <div className="flex justify-end mt-6 pt-4 border-t border-slate-700">
+          <Button 
+            variant="outline" 
+            onClick={handleNoAnswer} 
+            className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white"
+            data-testid="button-close-question"
+          >
             Close Question
           </Button>
         </div>

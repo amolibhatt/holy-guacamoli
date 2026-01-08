@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useScore } from "./ScoreContext";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trophy, Plus, X, RotateCcw } from "lucide-react";
+import { Trophy, Plus, X, RotateCcw, Crown } from "lucide-react";
 
 export function Scoreboard() {
   const { contestants, addContestant, removeContestant, resetGame } = useScore();
@@ -25,14 +24,20 @@ export function Scoreboard() {
   const sortedContestants = [...contestants].sort((a, b) => b.score - a.score);
 
   return (
-    <Card className="p-4 bg-card">
+    <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-700 p-4">
       <div className="flex items-center justify-between gap-2 mb-4">
         <div className="flex items-center gap-2">
-          <Trophy className="w-5 h-5 text-yellow-500" />
-          <h2 className="font-bold text-lg">Scoreboard</h2>
+          <Trophy className="w-5 h-5 text-yellow-400" />
+          <h2 className="font-bold text-lg text-white">Scoreboard</h2>
         </div>
         {contestants.length > 0 && (
-          <Button variant="ghost" size="sm" onClick={resetGame} data-testid="button-reset-game">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={resetGame} 
+            className="text-slate-400 hover:text-white hover:bg-slate-700"
+            data-testid="button-reset-game"
+          >
             <RotateCcw className="w-4 h-4 mr-1" />
             Reset
           </Button>
@@ -41,13 +46,19 @@ export function Scoreboard() {
 
       <div className="flex gap-2 mb-4">
         <Input
-          placeholder="Add contestant..."
+          placeholder="Add player..."
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={handleKeyDown}
+          className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-blue-500"
           data-testid="input-contestant-name"
         />
-        <Button onClick={handleAdd} size="icon" data-testid="button-add-contestant">
+        <Button 
+          onClick={handleAdd} 
+          size="icon" 
+          className="bg-blue-600 hover:bg-blue-500 shrink-0"
+          data-testid="button-add-contestant"
+        >
           <Plus className="w-4 h-4" />
         </Button>
       </div>
@@ -58,23 +69,33 @@ export function Scoreboard() {
             <div
               key={contestant.id}
               className={`
-                flex items-center justify-between gap-2 p-3 rounded-lg
-                ${idx === 0 && contestant.score > 0 ? 'bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700' : 'bg-muted/30'}
+                flex items-center justify-between gap-2 p-3 rounded-xl transition-all
+                ${idx === 0 && contestant.score > 0 
+                  ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30' 
+                  : 'bg-slate-700/50'
+                }
               `}
               data-testid={`contestant-${contestant.id}`}
             >
               <div className="flex items-center gap-3">
-                <span className="text-lg font-bold text-muted-foreground w-6">{idx + 1}</span>
-                <span className="font-medium text-foreground">{contestant.name}</span>
+                {idx === 0 && contestant.score > 0 ? (
+                  <Crown className="w-5 h-5 text-yellow-400" />
+                ) : (
+                  <span className="text-lg font-bold text-slate-500 w-5 text-center">{idx + 1}</span>
+                )}
+                <span className="font-medium text-white">{contestant.name}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className={`text-xl font-bold ${contestant.score < 0 ? 'text-red-500' : 'text-foreground'}`}>
+              <div className="flex items-center gap-3">
+                <span className={`text-2xl font-bold tabular-nums ${
+                  contestant.score < 0 ? 'text-red-400' : 
+                  idx === 0 && contestant.score > 0 ? 'text-yellow-400' : 'text-white'
+                }`}>
                   {contestant.score}
                 </span>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-8 w-8 text-slate-500 hover:text-red-400 hover:bg-red-500/10"
                   onClick={() => removeContestant(contestant.id)}
                   data-testid={`button-remove-${contestant.id}`}
                 >
@@ -85,10 +106,10 @@ export function Scoreboard() {
           ))}
         </div>
       ) : (
-        <p className="text-center text-muted-foreground text-sm py-4">
-          Add contestants to start the game
+        <p className="text-center text-slate-500 text-sm py-6">
+          Add players to start the game
         </p>
       )}
-    </Card>
+    </div>
   );
 }

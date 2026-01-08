@@ -1,62 +1,114 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Fredoka:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-body: 'Outfit', sans-serif;
-  --font-display: 'Fredoka', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-display: 'Inter', sans-serif;
 
-  /* Playful, vibrant palette */
-  --background: 250 30% 98%;
-  --foreground: 250 40% 20%;
+  --background: 220 20% 97%;
+  --foreground: 220 30% 10%;
   
-  --primary: 262 83% 58%;
+  --primary: 220 90% 56%;
   --primary-foreground: 0 0% 100%;
   
-  --secondary: 190 90% 50%;
-  --secondary-foreground: 190 90% 10%;
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 220 30% 20%;
   
-  --accent: 330 85% 60%;
+  --accent: 262 80% 55%;
   --accent-foreground: 0 0% 100%;
   
-  --muted: 250 20% 94%;
-  --muted-foreground: 250 10% 50%;
+  --muted: 220 14% 92%;
+  --muted-foreground: 220 10% 45%;
   
   --card: 0 0% 100%;
-  --card-foreground: 250 40% 20%;
+  --card-foreground: 220 30% 10%;
+  --card-border: 220 14% 90%;
   
-  --border: 250 20% 90%;
-  --input: 250 20% 90%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 30% 10%;
+  --popover-border: 220 14% 90%;
+  
+  --border: 220 14% 90%;
+  --input: 220 14% 90%;
+  --ring: 220 90% 56%;
+  
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
   
   --success: 142 76% 36%;
-  --destructive: 0 84% 60%;
   
-  --radius: 1rem;
+  --sidebar: 220 25% 12%;
+  --sidebar-foreground: 220 10% 90%;
+  --sidebar-border: 220 20% 18%;
+  --sidebar-primary: 220 90% 56%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 220 20% 20%;
+  --sidebar-accent-foreground: 220 10% 90%;
+  --sidebar-ring: 220 90% 56%;
+  
+  --chart-1: 220 90% 56%;
+  --chart-2: 262 80% 55%;
+  --chart-3: 142 76% 36%;
+  --chart-4: 38 92% 50%;
+  --chart-5: 0 84% 60%;
+  
+  --radius: 0.75rem;
+  
+  --button-outline: rgba(0,0,0, .08);
+  --badge-outline: rgba(0,0,0, .05);
+  --opaque-button-border-intensity: -6;
+  --elevate-1: rgba(0,0,0, .04);
+  --elevate-2: rgba(0,0,0, .08);
 }
 
 .dark {
-  --background: 250 40% 10%;
-  --foreground: 250 20% 90%;
+  --background: 220 25% 6%;
+  --foreground: 220 10% 95%;
   
-  --primary: 262 83% 65%;
+  --primary: 220 90% 60%;
   --primary-foreground: 0 0% 100%;
   
-  --secondary: 190 80% 60%;
-  --secondary-foreground: 190 90% 10%;
+  --secondary: 220 20% 15%;
+  --secondary-foreground: 220 10% 90%;
   
-  --accent: 330 85% 65%;
+  --accent: 262 80% 60%;
   --accent-foreground: 0 0% 100%;
   
-  --muted: 250 20% 20%;
-  --muted-foreground: 250 10% 60%;
+  --muted: 220 20% 12%;
+  --muted-foreground: 220 10% 55%;
   
-  --card: 250 35% 15%;
-  --card-foreground: 250 20% 90%;
+  --card: 220 25% 10%;
+  --card-foreground: 220 10% 95%;
+  --card-border: 220 20% 18%;
   
-  --border: 250 30% 25%;
-  --input: 250 30% 25%;
+  --popover: 220 25% 10%;
+  --popover-foreground: 220 10% 95%;
+  --popover-border: 220 20% 18%;
+  
+  --border: 220 20% 18%;
+  --input: 220 20% 18%;
+  --ring: 220 90% 60%;
+  
+  --destructive: 0 70% 50%;
+  --destructive-foreground: 0 0% 100%;
+  
+  --sidebar: 220 25% 8%;
+  --sidebar-foreground: 220 10% 90%;
+  --sidebar-border: 220 20% 14%;
+  --sidebar-primary: 220 90% 60%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 220 20% 15%;
+  --sidebar-accent-foreground: 220 10% 90%;
+  --sidebar-ring: 220 90% 60%;
+  
+  --button-outline: rgba(255,255,255, .10);
+  --badge-outline: rgba(255,255,255, .05);
+  --opaque-button-border-intensity: 8;
+  --elevate-1: rgba(255,255,255, .04);
+  --elevate-2: rgba(255,255,255, .08);
 }
 
 @layer base {
@@ -64,7 +116,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased selection:bg-primary/20;
+    @apply bg-background text-foreground antialiased;
     font-family: var(--font-body);
   }
   
@@ -75,26 +127,15 @@
 }
 
 @layer utilities {
-  .text-shadow-sm {
-    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  .glass {
+    @apply bg-white/80 dark:bg-black/40 backdrop-blur-xl;
   }
   
-  .glass-panel {
-    @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-xl;
+  .gradient-primary {
+    @apply bg-gradient-to-br from-primary to-accent;
   }
   
-  .card-hover {
-    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+  .gradient-dark {
+    @apply bg-gradient-to-br from-slate-900 to-slate-800;
   }
-}
-
-/* Custom animations */
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
 }
