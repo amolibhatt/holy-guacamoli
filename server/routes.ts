@@ -1,16 +1,137 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
+import type { Server } from "http";
 import { storage } from "./storage";
+import { api } from "@shared/routes";
+import { z } from "zod";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+  app.get(api.categories.list.path, async (req, res) => {
+    const categories = await storage.getCategories();
+    res.json(categories);
+  });
+
+  app.get(api.categories.get.path, async (req, res) => {
+    const category = await storage.getCategory(Number(req.params.id));
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+    res.json(category);
+  });
+
+  app.get(api.questions.listByCategory.path, async (req, res) => {
+    const questions = await storage.getQuestionsByCategory(Number(req.params.categoryId));
+    // Remove correct answer from response
+    const sanitizedQuestions = questions.map(({ correctAnswer, ...rest }) => rest);
+    res.json(sanitizedQuestions);
+  });
+
+  app.post(api.questions.verifyAnswer.path, async (req, res) => {
+    try {
+      const { answer } = api.questions.verifyAnswer.input.parse(req.body);
+      const question = await storage.getQuestion(Number(req.params.id));
+      
+      if (!question) {
+        return res.status(404).json({ message: 'Question not found' });
+      }
+
+      const isCorrect = question.correctAnswer === answer;
+      
+      res.json({
+        correct: isCorrect,
+        correctAnswer: question.correctAnswer,
+        points: isCorrect ? question.points : 0
+      });
+    } catch (err) {
+       if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      throw err;
+    }
+  });
+
+  // Seed data if empty
+  const existingCategories = await storage.getCategories();
+  if (existingCategories.length === 0) {
+    const sciCat = await storage.createCategory({
+      name: "Science",
+      description: "Test your knowledge of the natural world",
+      imageUrl: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80",
+    });
+
+    const histCat = await storage.createCategory({
+      name: "History",
+      description: "Dive into the past events",
+      imageUrl: "https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&w=800&q=80",
+    });
+
+    const techCat = await storage.createCategory({
+      name: "Technology",
+      description: "From bits to bytes",
+      imageUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80",
+    });
+
+    // Science Questions
+    await storage.createQuestion({
+      categoryId: sciCat.id,
+      question: "What is the chemical symbol for Gold?",
+      options: ["Au", "Ag", "Fe", "Cu"],
+      correctAnswer: "Au",
+      points: 10,
+    });
+    await storage.createQuestion({
+      categoryId: sciCat.id,
+      question: "Which planet is known as the Red Planet?",
+      options: ["Mars", "Jupiter", "Venus", "Saturn"],
+      correctAnswer: "Mars",
+      points: 20,
+    });
+    await storage.createQuestion({
+      categoryId: sciCat.id,
+      question: "What is the powerhouse of the cell?",
+      options: ["Mitochondria", "Nucleus", "Ribosome", "Golgi apparatus"],
+      correctAnswer: "Mitochondria",
+      points: 30,
+    });
+
+    // History Questions
+    await storage.createQuestion({
+      categoryId: histCat.id,
+      question: "In which year did World War II end?",
+      options: ["1945", "1939", "1918", "1955"],
+      correctAnswer: "1945",
+      points: 20,
+    });
+    await storage.createQuestion({
+      categoryId: histCat.id,
+      question: "Who was the first President of the United States?",
+      options: ["George Washington", "Thomas Jefferson", "Abraham Lincoln", "John Adams"],
+      correctAnswer: "George Washington",
+      points: 10,
+    });
+
+    // Tech Questions
+    await storage.createQuestion({
+      categoryId: techCat.id,
+      question: "What does CPU stand for?",
+      options: ["Central Processing Unit", "Central Process Unit", "Computer Personal Unit", "Central Processor Unit"],
+      correctAnswer: "Central Processing Unit",
+      points: 10,
+    });
+    await storage.createQuestion({
+      categoryId: techCat.id,
+      question: "Which company developed the JavaScript language?",
+      options: ["Netscape", "Microsoft", "Sun Microsystems", "Oracle"],
+      correctAnswer: "Netscape",
+      points: 50,
+    });
+  }
 
   return httpServer;
 }
