@@ -55,6 +55,54 @@ export async function registerRoutes(
     }
   });
 
+  app.post(api.categories.create.path, async (req, res) => {
+    try {
+      const data = api.categories.create.input.parse(req.body);
+      const category = await storage.createCategory(data);
+      res.status(201).json(category);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      throw err;
+    }
+  });
+
+  app.delete(api.categories.delete.path, async (req, res) => {
+    const deleted = await storage.deleteCategory(Number(req.params.id));
+    if (!deleted) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+    res.json({ success: true });
+  });
+
+  app.post(api.questions.create.path, async (req, res) => {
+    try {
+      const data = api.questions.create.input.parse(req.body);
+      const question = await storage.createQuestion(data);
+      res.status(201).json(question);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      throw err;
+    }
+  });
+
+  app.delete(api.questions.delete.path, async (req, res) => {
+    const deleted = await storage.deleteQuestion(Number(req.params.id));
+    if (!deleted) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+    res.json({ success: true });
+  });
+
   // Seed data if empty
   const existingCategories = await storage.getCategories();
   if (existingCategories.length === 0) {
