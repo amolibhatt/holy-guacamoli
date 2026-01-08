@@ -24,11 +24,11 @@ export function CategoryColumn({ category, onSelectQuestion }: CategoryColumnPro
   return (
     <div className="flex flex-col h-full">
       <motion.div 
-        className="gradient-header text-white py-4 px-2 text-center rounded-t-xl min-h-[72px] flex items-center justify-center relative overflow-hidden"
+        className="gradient-header text-white py-4 px-3 text-center rounded-t-xl min-h-[72px] flex items-center justify-center relative overflow-visible"
         whileHover={{ scale: 1.02 }}
         transition={{ type: "spring", stiffness: 400 }}
       >
-        <div className="absolute inset-0 shimmer" />
+        <div className="absolute inset-0 shimmer rounded-t-xl overflow-hidden" />
         <motion.div
           className="absolute top-1 right-1"
           animate={{ rotate: [0, 360], scale: [1, 1.2, 1] }}
@@ -37,7 +37,7 @@ export function CategoryColumn({ category, onSelectQuestion }: CategoryColumnPro
           <Sparkles className="w-3 h-3 text-yellow-200/60" />
         </motion.div>
         <h2 
-          className="font-black text-sm lg:text-base leading-tight line-clamp-2 uppercase tracking-wider relative z-10 drop-shadow-lg" 
+          className="font-black text-xs lg:text-sm leading-tight uppercase tracking-wide relative z-10 drop-shadow-lg break-words hyphens-auto" 
           data-testid={`text-category-${category.id}`}
         >
           {category.name}
