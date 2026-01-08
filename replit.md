@@ -35,6 +35,14 @@ Preferred communication style: Simple, everyday language.
 2. **Host Mode**: The app is designed for a host to control the game - questions reveal answers to the host, who then awards/deducts points to contestants
 3. **Contestant System**: Managed via React Context (ScoreContext) with add/remove contestants, award/deduct points, and track completed questions
 4. **Point Values**: Fixed scale of 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 points per category
+5. **Multiplayer Buzzer System**: WebSocket-based real-time buzzer where players join via QR code on their phones (/play route)
+6. **Animations**: 3D flip card animations for question cells, particle effects for milestones and category completion
+
+### WebSocket Architecture
+- **Server**: `server/gameRoom.ts` manages rooms, players, and buzz events
+- **Host Panel**: `BuzzerPanel.tsx` component in footer for creating rooms and managing buzzers
+- **Player Page**: `/play` route for mobile devices to join and buzz in
+- **Room Codes**: 4-character alphanumeric codes for easy joining
 
 ### Build Process
 - Development: Vite dev server with HMR
