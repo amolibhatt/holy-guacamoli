@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Question } from "@shared/schema";
 import { useScore } from "./ScoreContext";
-import { CheckCircle2, XCircle, Eye, EyeOff, Timer, Sparkles, X, Trophy } from "lucide-react";
+import { CheckCircle2, XCircle, Eye, EyeOff, Timer, X, Trophy, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
@@ -62,7 +62,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
       particleCount: 200,
       spread: 120,
       origin: { y: 0.5 },
-      colors: ['#ffffff', '#cccccc', '#999999']
+      colors: ['#FF6B6B', '#FF8E53', '#FFD93D', '#C44AF5', '#4ADEBC']
     });
 
     setTimeout(() => {
@@ -81,14 +81,14 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
   };
 
   return (
-    <div className="relative overflow-hidden bg-black">
+    <div className="relative overflow-hidden bg-background">
       <AnimatePresence>
         {awardedTo && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-center justify-center bg-white"
+            className="absolute inset-0 z-50 flex items-center justify-center gradient-header"
           >
             <motion.div 
               className="text-center"
@@ -100,11 +100,11 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
                 animate={{ rotate: [0, -10, 10, -10, 0], scale: [1, 1.1, 1] }}
                 transition={{ duration: 0.5, repeat: 3 }}
               >
-                <Trophy className="w-24 h-24 text-black mx-auto mb-4" />
+                <Trophy className="w-24 h-24 text-white mx-auto mb-4 drop-shadow-lg" />
               </motion.div>
-              <h2 className="text-5xl font-black text-black">{awardedTo}</h2>
+              <h2 className="text-5xl font-black text-white drop-shadow-lg">{awardedTo}</h2>
               <motion.p 
-                className="text-4xl font-bold text-black/70 mt-2"
+                className="text-4xl font-bold text-white/90 mt-2"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
@@ -116,23 +116,31 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
         )}
       </AnimatePresence>
 
-      <div className="bg-white px-6 py-5 flex items-center justify-between gap-4">
+      <div className="gradient-header px-6 py-5 flex items-center justify-between gap-4 relative overflow-hidden">
+        <div className="absolute inset-0 shimmer" />
+        <motion.div
+          className="absolute top-2 left-2"
+          animate={{ rotate: 360, scale: [1, 1.3, 1] }}
+          transition={{ duration: 3, repeat: Infinity }}
+        >
+          <Sparkles className="w-4 h-4 text-yellow-200/50" />
+        </motion.div>
         <motion.span 
-          className="text-5xl font-black text-black"
+          className="text-5xl font-black text-white drop-shadow-lg relative z-10"
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: "spring", stiffness: 200 }}
         >
           {question.points}
         </motion.span>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 relative z-10">
           {timer !== null && (
             <motion.div 
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               className={`
-                w-16 h-16 rounded-full flex items-center justify-center font-mono text-2xl font-black border-4
-                ${timer <= 5 ? 'border-black bg-black text-white animate-pulse' : 'border-black/20 text-black'}
+                w-16 h-16 rounded-full flex items-center justify-center font-mono text-2xl font-black
+                ${timer <= 5 ? 'bg-red-500 text-white animate-pulse' : 'bg-white/20 text-white'}
               `}
             >
               {timer}
@@ -142,8 +150,8 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
             size="lg"
             onClick={() => setShowAnswer(!showAnswer)}
             className={showAnswer 
-              ? "bg-black/10 text-black hover:bg-black/20" 
-              : "bg-black text-white hover:bg-black/90"
+              ? "bg-white/20 text-white hover:bg-white/30" 
+              : "gradient-gold text-purple-900 font-bold glow-gold"
             }
             data-testid="button-toggle-answer"
           >
@@ -153,14 +161,14 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
         </div>
       </div>
 
-      <div className="p-8 bg-black">
+      <div className="p-8">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="min-h-[120px] flex items-center justify-center mb-8"
         >
-          <h3 className="text-2xl lg:text-3xl font-semibold text-white text-center leading-relaxed">
+          <h3 className="text-2xl lg:text-3xl font-semibold text-foreground text-center leading-relaxed">
             {question.question}
           </h3>
         </motion.div>
@@ -171,9 +179,9 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
               initial={{ opacity: 0, scale: 0.8, rotateX: -20 }}
               animate={{ opacity: 1, scale: 1, rotateX: 0 }}
               exit={{ opacity: 0, scale: 0.8, rotateX: 20 }}
-              className="bg-white rounded-2xl p-6 mb-8"
+              className="gradient-header rounded-2xl p-6 mb-8 glow-primary"
             >
-              <p className="text-black font-bold text-xl flex items-center justify-center gap-3">
+              <p className="text-white font-bold text-xl flex items-center justify-center gap-3 drop-shadow">
                 <CheckCircle2 className="w-7 h-7" />
                 {correctAnswer}
               </p>
@@ -193,7 +201,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
                 variant="outline"
                 onClick={() => startTimer(secs)}
                 disabled={isTimerRunning}
-                className="border-white/30 text-white hover:bg-white/10"
+                className="border-primary/40 text-foreground hover:bg-primary/20"
               >
                 <Timer className="w-4 h-4 mr-2" />
                 {secs}s
@@ -208,7 +216,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
               <Button
                 variant="outline"
                 onClick={stopTimer}
-                className="border-white/50 text-white hover:bg-white/10"
+                className="border-red-500/50 text-red-400 hover:bg-red-500/20"
               >
                 Stop
               </Button>
@@ -225,17 +233,17 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 + idx * 0.05 }}
                 whileHover={{ scale: 1.02 }}
-                className="bg-white/10 rounded-xl p-4 border border-white/20"
+                className="bg-card rounded-xl p-4 border border-primary/30"
               >
                 <div className="text-center mb-3">
-                  <span className="font-bold text-white text-lg">{contestant.name}</span>
-                  <span className="block text-sm text-white/50">{contestant.score} pts</span>
+                  <span className="font-bold text-foreground text-lg">{contestant.name}</span>
+                  <span className="block text-sm text-muted-foreground">{contestant.score} pts</span>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     size="sm"
                     onClick={() => handleAward(contestant.id, contestant.name)}
-                    className="flex-1 bg-white text-black hover:bg-white/90 font-bold"
+                    className="flex-1 gradient-header text-white font-bold glow-primary"
                     data-testid={`button-award-${contestant.id}`}
                   >
                     <CheckCircle2 className="w-4 h-4 mr-1" />
@@ -244,7 +252,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
                   <Button
                     size="sm"
                     onClick={() => handleDeduct(contestant.id)}
-                    className="bg-white/20 hover:bg-white/30 text-white"
+                    className="bg-red-500/20 hover:bg-red-500/30 text-red-400"
                     data-testid={`button-deduct-${contestant.id}`}
                   >
                     <XCircle className="w-4 h-4" />
@@ -254,17 +262,17 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
             ))}
           </div>
         ) : (
-          <div className="text-center py-6 text-white/50 bg-white/5 rounded-xl border border-dashed border-white/20">
+          <div className="text-center py-6 text-muted-foreground bg-card rounded-xl border border-dashed border-primary/30">
             Add players from the scoreboard to award points
           </div>
         )}
 
-        <div className="flex justify-center mt-8 pt-6 border-t border-white/10">
+        <div className="flex justify-center mt-8 pt-6 border-t border-border">
           <Button 
             variant="ghost" 
             size="lg"
             onClick={handleNoAnswer}
-            className="text-white/50 hover:text-white hover:bg-white/10"
+            className="text-muted-foreground hover:text-foreground hover:bg-white/10"
             data-testid="button-close-question"
           >
             <X className="w-5 h-5 mr-2" />
@@ -273,12 +281,12 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
         </div>
       </div>
 
-      <div className="bg-white/5 px-6 py-3 text-center text-xs text-white/40 border-t border-white/10">
-        Keyboard: <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white font-mono">R</kbd> Reveal
+      <div className="bg-card/50 px-6 py-3 text-center text-xs text-muted-foreground border-t border-border">
+        Keyboard: <kbd className="px-1.5 py-0.5 bg-primary/20 rounded text-primary font-mono">R</kbd> Reveal
         <span className="mx-3">|</span>
-        <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white font-mono">T</kbd> Timer
+        <kbd className="px-1.5 py-0.5 bg-primary/20 rounded text-primary font-mono">T</kbd> Timer
         <span className="mx-3">|</span>
-        <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white font-mono">Esc</kbd> Close
+        <kbd className="px-1.5 py-0.5 bg-primary/20 rounded text-primary font-mono">Esc</kbd> Close
       </div>
     </div>
   );
