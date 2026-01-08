@@ -9,6 +9,7 @@ import { CategoryColumn } from "@/components/CategoryColumn";
 import { Scoreboard } from "@/components/Scoreboard";
 import { VictoryScreen } from "@/components/VictoryScreen";
 import { ThemeSelector } from "@/components/ThemeSelector";
+import { BuzzerPanel } from "@/components/BuzzerPanel";
 import { useScore } from "@/components/ScoreContext";
 import { useTheme } from "@/context/ThemeContext";
 import type { Question } from "@shared/schema";
@@ -264,7 +265,8 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-primary/20 bg-card/40 backdrop-blur-xl">
-        <div className="p-4">
+        <div className="p-4 space-y-3">
+          <BuzzerPanel />
           <Scoreboard />
         </div>
       </footer>

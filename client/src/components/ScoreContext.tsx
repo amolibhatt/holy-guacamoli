@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
+import { particles } from "@/lib/particles";
 
 const AVATAR_COLORS = [
   '#FF6B6B', '#FF8E53', '#FFD93D', '#4ADEBC', '#3B82F6', 
@@ -55,9 +56,14 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
       const oldSorted = [...prev].sort((a, b) => b.score - a.score);
       const oldRanks = new Map(oldSorted.map((c, idx) => [c.id, idx]));
       
-      const updated = prev.map((c) =>
-        c.id === contestantId ? { ...c, score: c.score + points } : c
-      );
+      const updated = prev.map((c) => {
+        if (c.id === contestantId) {
+          const newScore = c.score + points;
+          setTimeout(() => particles.milestone(newScore), 100);
+          return { ...c, score: newScore };
+        }
+        return c;
+      });
       
       return updated.map(c => ({
         ...c,
