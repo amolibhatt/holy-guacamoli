@@ -1,5 +1,5 @@
 import { useCategories } from "@/hooks/use-quiz";
-import { Loader2, Settings, Maximize2, Minimize2, Cake, Star } from "lucide-react";
+import { Loader2, Settings, Maximize2, Minimize2, Cake, Sparkles, Star } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -53,11 +53,21 @@ export default function Home() {
   if (isLoadingCategories) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gradient-game">
-        <div className="relative">
-          <div className="absolute inset-0 blur-3xl bg-primary/30 rounded-full animate-pulse" />
-          <Loader2 className="w-16 h-16 text-primary animate-spin relative z-10" />
-        </div>
-        <p className="text-muted-foreground mt-6 text-lg animate-pulse">Loading game board...</p>
+        <motion.div 
+          className="relative"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+        >
+          <div className="absolute inset-0 blur-3xl bg-white/20 rounded-full" />
+          <Loader2 className="w-16 h-16 text-white animate-spin relative z-10" />
+        </motion.div>
+        <motion.p 
+          className="text-muted-foreground mt-6 text-lg"
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          Loading game board...
+        </motion.p>
       </div>
     );
   }
@@ -65,60 +75,91 @@ export default function Home() {
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-center p-8 gradient-game">
-        <div className="w-20 h-20 bg-destructive/20 rounded-full flex items-center justify-center mb-4 text-destructive">
+        <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mb-4 text-white">
           <span className="text-3xl font-bold">!</span>
         </div>
-        <h2 className="text-2xl font-bold">Something went wrong</h2>
+        <h2 className="text-2xl font-bold text-white">Something went wrong</h2>
         <p className="text-muted-foreground mt-2">Could not load categories.</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen gradient-game grid-bg flex flex-col">
-      <header className="border-b border-border/30 bg-card/30 backdrop-blur-md sticky top-0 z-50">
-        <div className="px-4 py-2 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen gradient-game grid-bg flex flex-col overflow-hidden">
+      <header className="border-b border-white/10 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
+        <div className="px-4 py-3 flex items-center justify-between gap-4">
+          <motion.div 
+            className="flex items-center gap-4"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+          >
             <div className="relative">
               <motion.div 
-                className="w-12 h-12 rounded-xl gradient-header flex items-center justify-center"
-                animate={{ rotate: [0, -5, 5, -5, 0] }}
+                className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center glow-primary"
+                animate={{ 
+                  rotate: [0, -3, 3, -3, 0],
+                  scale: [1, 1.02, 1]
+                }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
               >
-                <Cake className="w-6 h-6 text-white" />
+                <Cake className="w-7 h-7 text-black" />
               </motion.div>
               <motion.div
-                className="absolute -top-1 -right-1"
-                animate={{ scale: [1, 1.2, 1], opacity: [1, 0.8, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
+                className="absolute -top-2 -right-2"
+                animate={{ 
+                  rotate: [0, 180, 360],
+                  scale: [1, 1.3, 1]
+                }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
               >
-                <Star className="w-4 h-4 text-primary fill-primary" />
+                <Star className="w-5 h-5 text-white fill-white" />
+              </motion.div>
+              <motion.div
+                className="absolute -bottom-1 -left-1"
+                animate={{ 
+                  y: [0, -8, 0],
+                  opacity: [0.5, 1, 0.5]
+                }}
+                transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+              >
+                <Sparkles className="w-4 h-4 text-white/80" />
               </motion.div>
             </div>
             <div className="flex flex-col">
-              <span className="text-xs font-medium text-muted-foreground tracking-widest uppercase">The</span>
-              <h1 className="text-xl font-black tracking-tight leading-tight">
-                <span className="text-primary">Amoli</span>
-                <span className="text-foreground"> Quiz Show</span>
+              <motion.span 
+                className="text-[10px] font-bold text-white/50 tracking-[0.3em] uppercase"
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              >
+                Welcome to
+              </motion.span>
+              <h1 className="text-2xl font-black tracking-tight leading-tight text-white text-glow">
+                THE AMOLI SHOW
               </h1>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
+          </motion.div>
+          <motion.div 
+            className="flex items-center gap-2"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={toggleFullscreen}
-              className="text-muted-foreground"
+              className="text-white/60 hover:text-white hover:bg-white/10"
               data-testid="button-fullscreen"
             >
               {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
             </Button>
             <Link href="/admin">
-              <Button variant="ghost" size="icon" className="text-muted-foreground" data-testid="button-admin">
+              <Button variant="ghost" size="icon" className="text-white/60 hover:text-white hover:bg-white/10" data-testid="button-admin">
                 <Settings className="w-5 h-5" />
               </Button>
             </Link>
-          </div>
+          </motion.div>
         </div>
       </header>
 
@@ -130,7 +171,7 @@ export default function Home() {
             className="flex-1 flex flex-col"
           >
             <div 
-              className="flex-1 grid gap-2 lg:gap-3"
+              className="flex-1 grid gap-3 lg:gap-4"
               style={{ 
                 gridTemplateColumns: `repeat(${categories.length}, minmax(0, 1fr))`,
               }}
@@ -138,9 +179,14 @@ export default function Home() {
               {categories.map((category, idx) => (
                 <motion.div
                   key={category.id}
-                  initial={{ opacity: 0, y: 50 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.08, type: "spring", stiffness: 100 }}
+                  initial={{ opacity: 0, y: 60, rotateX: -15 }}
+                  animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                  transition={{ 
+                    delay: idx * 0.1, 
+                    type: "spring", 
+                    stiffness: 100,
+                    damping: 15
+                  }}
                   className="flex flex-col"
                 >
                   <CategoryColumn 
@@ -153,21 +199,30 @@ export default function Home() {
           </motion.div>
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <div className="text-center py-20 px-8 bg-card/50 rounded-3xl border border-border max-w-md">
-              <Sparkles className="w-16 h-16 text-primary/50 mx-auto mb-6" />
-              <h3 className="text-2xl font-bold text-foreground">No categories yet</h3>
-              <p className="text-muted-foreground mt-2 mb-6">Create your first category to get started</p>
+            <motion.div 
+              className="text-center py-20 px-8 bg-white/5 rounded-3xl border border-white/10 max-w-md"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Cake className="w-16 h-16 text-white/30 mx-auto mb-6" />
+              </motion.div>
+              <h3 className="text-2xl font-bold text-white">No categories yet</h3>
+              <p className="text-white/50 mt-2 mb-6">Create your first category to get started</p>
               <Link href="/admin">
-                <Button className="gradient-header glow-primary" data-testid="button-go-admin">
+                <Button className="bg-white text-black hover:bg-white/90 glow-primary" data-testid="button-go-admin">
                   Go to Admin
                 </Button>
               </Link>
-            </div>
+            </motion.div>
           </div>
         )}
       </main>
 
-      <footer className="border-t border-border/30 bg-card/30 backdrop-blur-md">
+      <footer className="border-t border-white/10 bg-black/40 backdrop-blur-xl">
         <div className="p-4">
           <Scoreboard />
         </div>
@@ -176,11 +231,11 @@ export default function Home() {
       <AnimatePresence>
         {selectedQuestion && (
           <Dialog open={true} onOpenChange={(open) => !open && setSelectedQuestion(null)}>
-            <DialogContent className="max-w-3xl p-0 overflow-hidden border-border bg-card">
+            <DialogContent className="max-w-3xl p-0 overflow-hidden border-white/20 bg-black/95 backdrop-blur-xl">
               <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
+                initial={{ scale: 0.8, opacity: 0, rotateY: -10 }}
+                animate={{ scale: 1, opacity: 1, rotateY: 0 }}
+                exit={{ scale: 0.8, opacity: 0, rotateY: 10 }}
                 transition={{ type: "spring", stiffness: 300, damping: 25 }}
               >
                 <QuestionCard
