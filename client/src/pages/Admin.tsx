@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2 } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Category, Question } from "@shared/schema";
@@ -125,15 +125,20 @@ export default function Admin() {
   const selectedCategory = categories.find(c => c.id === selectedCategoryId);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+    <div className="min-h-screen gradient-game grid-bg p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Admin Panel</h1>
-            <p className="text-slate-400 mt-1">Manage categories and questions</p>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl gradient-header flex items-center justify-center glow-primary">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Admin Panel</h1>
+              <p className="text-muted-foreground">Manage categories and questions</p>
+            </div>
           </div>
           <Link href="/">
-            <Button variant="outline" className="border-slate-600 text-slate-300" data-testid="button-back-home">
+            <Button variant="outline" className="border-border" data-testid="button-back-home">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Game
             </Button>
@@ -141,33 +146,33 @@ export default function Admin() {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
-          <Card className="bg-slate-800/80 border-slate-700">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
-                <FolderPlus className="w-5 h-5 text-blue-400" />
+          <Card className="bg-card border-border">
+            <CardHeader className="border-b border-border">
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <FolderPlus className="w-5 h-5 text-primary" />
                 Categories
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-4 space-y-4">
               <div className="space-y-3">
                 <Input
                   placeholder="Category name"
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
-                  className="bg-slate-700/50 border-slate-600 text-white"
+                  className="bg-input border-border"
                   data-testid="input-category-name"
                 />
                 <Input
                   placeholder="Description (optional)"
                   value={newCategoryDesc}
                   onChange={(e) => setNewCategoryDesc(e.target.value)}
-                  className="bg-slate-700/50 border-slate-600 text-white"
+                  className="bg-input border-border"
                   data-testid="input-category-desc"
                 />
                 <Button
                   onClick={handleCreateCategory}
                   disabled={createCategoryMutation.isPending || !newCategoryName.trim()}
-                  className="w-full bg-blue-600 hover:bg-blue-500"
+                  className="w-full gradient-header glow-primary"
                   data-testid="button-create-category"
                 >
                   {createCategoryMutation.isPending ? (
@@ -179,10 +184,10 @@ export default function Admin() {
                 </Button>
               </div>
 
-              <div className="border-t border-slate-700 pt-4">
+              <div className="border-t border-border pt-4">
                 {loadingCategories ? (
                   <div className="flex justify-center py-8">
-                    <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+                    <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
                   </div>
                 ) : (
                   <AnimatePresence mode="popLayout">
@@ -194,15 +199,15 @@ export default function Admin() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, x: -50 }}
-                          className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                          className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${
                             selectedCategoryId === cat.id
-                              ? 'bg-blue-600/30 border border-blue-500'
-                              : 'bg-slate-700/50 hover:bg-slate-700'
+                              ? 'bg-primary/20 border-2 border-primary'
+                              : 'bg-muted/20 border border-border hover:bg-muted/30'
                           }`}
                           onClick={() => setSelectedCategoryId(cat.id)}
                           data-testid={`category-item-${cat.id}`}
                         >
-                          <span className="text-white font-medium">{cat.name}</span>
+                          <span className="font-medium text-foreground">{cat.name}</span>
                           <Button
                             size="icon"
                             variant="ghost"
@@ -210,7 +215,7 @@ export default function Admin() {
                               e.stopPropagation();
                               deleteCategoryMutation.mutate(cat.id);
                             }}
-                            className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-red-500/10"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             data-testid={`button-delete-category-${cat.id}`}
                           >
                             <Trash2 className="w-4 h-4" />
@@ -221,30 +226,34 @@ export default function Admin() {
                   </AnimatePresence>
                 )}
                 {categories.length === 0 && !loadingCategories && (
-                  <p className="text-center text-slate-500 py-8">No categories yet</p>
+                  <p className="text-center text-muted-foreground py-8">No categories yet</p>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/80 border-slate-700">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
-                <HelpCircle className="w-5 h-5 text-green-400" />
-                Questions {selectedCategory && <span className="text-slate-400">- {selectedCategory.name}</span>}
+          <Card className="bg-card border-border">
+            <CardHeader className="border-b border-border">
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <HelpCircle className="w-5 h-5 text-success" />
+                Questions
+                {selectedCategory && <span className="text-muted-foreground font-normal">- {selectedCategory.name}</span>}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4">
               {!selectedCategoryId ? (
-                <p className="text-center text-slate-500 py-12">Select a category to manage questions</p>
+                <div className="text-center py-12">
+                  <FolderPlus className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-muted-foreground">Select a category to manage questions</p>
+                </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="space-y-3 p-4 bg-slate-700/30 rounded-xl">
+                  <div className="space-y-3 p-4 bg-muted/10 rounded-xl border border-border">
                     <Textarea
                       placeholder="Question text"
                       value={newQuestion}
                       onChange={(e) => setNewQuestion(e.target.value)}
-                      className="bg-slate-700/50 border-slate-600 text-white resize-none"
+                      className="bg-input border-border resize-none"
                       rows={2}
                       data-testid="input-question-text"
                     />
@@ -259,26 +268,26 @@ export default function Admin() {
                             updated[idx] = e.target.value;
                             setNewOptions(updated);
                           }}
-                          className="bg-slate-700/50 border-slate-600 text-white"
+                          className="bg-input border-border"
                           data-testid={`input-option-${idx}`}
                         />
                       ))}
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <Input
-                        placeholder="Correct answer (must match an option)"
+                        placeholder="Correct answer"
                         value={newCorrectAnswer}
                         onChange={(e) => setNewCorrectAnswer(e.target.value)}
-                        className="bg-slate-700/50 border-slate-600 text-white"
+                        className="bg-input border-border"
                         data-testid="input-correct-answer"
                       />
                       <Select value={String(newPoints)} onValueChange={(v) => setNewPoints(Number(v))}>
-                        <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white" data-testid="select-points">
+                        <SelectTrigger className="bg-input border-border" data-testid="select-points">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           {POINT_VALUES.map((p) => (
-                            <SelectItem key={p} value={String(p)}>{p} points</SelectItem>
+                            <SelectItem key={p} value={String(p)}>${p}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -286,7 +295,7 @@ export default function Admin() {
                     <Button
                       onClick={handleCreateQuestion}
                       disabled={createQuestionMutation.isPending}
-                      className="w-full bg-green-600 hover:bg-green-500"
+                      className="w-full bg-success hover:bg-success/90"
                       data-testid="button-add-question"
                     >
                       {createQuestionMutation.isPending ? (
@@ -298,31 +307,31 @@ export default function Admin() {
                     </Button>
                   </div>
 
-                  <div className="border-t border-slate-700 pt-4">
+                  <div className="border-t border-border pt-4">
                     {loadingQuestions ? (
                       <div className="flex justify-center py-8">
-                        <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+                        <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
                       </div>
                     ) : (
                       <div className="space-y-2 max-h-[300px] overflow-y-auto">
                         {questions.map((q) => (
                           <div
                             key={q.id}
-                            className="flex items-start justify-between gap-3 p-3 bg-slate-700/50 rounded-lg"
+                            className="flex items-start justify-between gap-3 p-3 bg-muted/20 rounded-xl border border-border"
                             data-testid={`question-item-${q.id}`}
                           >
                             <div className="flex-1 min-w-0">
-                              <p className="text-white text-sm line-clamp-2">{q.question}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className="text-xs text-blue-400 font-medium">{q.points} pts</span>
-                                <span className="text-xs text-green-400">Answer: {q.correctAnswer}</span>
+                              <p className="text-foreground text-sm line-clamp-2">{q.question}</p>
+                              <div className="flex items-center gap-2 mt-1.5">
+                                <span className="text-xs font-medium text-primary">${q.points}</span>
+                                <span className="text-xs text-success">Answer: {q.correctAnswer}</span>
                               </div>
                             </div>
                             <Button
                               size="icon"
                               variant="ghost"
                               onClick={() => deleteQuestionMutation.mutate(q.id)}
-                              className="h-8 w-8 shrink-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10"
+                              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                               data-testid={`button-delete-question-${q.id}`}
                             >
                               <Trash2 className="w-4 h-4" />
@@ -330,7 +339,7 @@ export default function Admin() {
                           </div>
                         ))}
                         {questions.length === 0 && (
-                          <p className="text-center text-slate-500 py-4">No questions yet</p>
+                          <p className="text-center text-muted-foreground py-6">No questions yet</p>
                         )}
                       </div>
                     )}
