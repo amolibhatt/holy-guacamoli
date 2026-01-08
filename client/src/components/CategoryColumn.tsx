@@ -21,50 +21,53 @@ export function CategoryColumn({ category, onSelectQuestion }: CategoryColumnPro
   }, {} as Record<number, Question>);
 
   return (
-    <div className="flex flex-col">
-      <div className="gradient-category text-white py-4 px-3 text-center rounded-t-xl shadow-lg">
+    <div className="flex flex-col h-full">
+      <div className="gradient-category text-white py-4 px-2 text-center rounded-t-xl shadow-lg min-h-[72px] flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent" />
         <h2 
-          className="font-bold text-sm leading-tight line-clamp-2 uppercase tracking-wide" 
+          className="font-black text-sm lg:text-base leading-tight line-clamp-2 uppercase tracking-wider relative z-10" 
           data-testid={`text-category-${category.id}`}
         >
           {category.name}
         </h2>
       </div>
       
-      <div className="flex flex-col gap-2 mt-2">
+      <div className="flex flex-col gap-1.5 mt-1.5 flex-1">
         {SCORE_VALUES.map((scoreValue, idx) => {
           const question = questionsByPoints[scoreValue];
           const hasQuestion = !!question;
           const isCompleted = question ? completedQuestions.includes(question.id) : false;
-
           if (isLoading) {
-            return <Skeleton key={scoreValue} className="h-14 w-full rounded-xl bg-muted/30" />;
+            return <Skeleton key={scoreValue} className="flex-1 min-h-[48px] rounded-lg bg-muted/20" />;
           }
 
           return (
             <motion.button
               key={scoreValue}
-              whileHover={hasQuestion && !isCompleted ? { scale: 1.03 } : undefined}
+              whileHover={hasQuestion && !isCompleted ? { scale: 1.02, y: -2 } : undefined}
               whileTap={hasQuestion && !isCompleted ? { scale: 0.98 } : undefined}
               className={`
-                w-full py-3.5 text-center rounded-xl font-bold text-xl transition-all duration-200
+                flex-1 min-h-[48px] lg:min-h-[56px] flex items-center justify-center rounded-lg font-black text-xl lg:text-2xl transition-all duration-200 relative overflow-hidden
                 ${!hasQuestion 
-                  ? 'bg-muted/20 text-muted-foreground/30 cursor-not-allowed border border-border/30' 
+                  ? 'bg-muted/10 text-muted-foreground/20 cursor-not-allowed' 
                   : isCompleted 
-                    ? 'bg-muted/10 text-muted-foreground/20 cursor-not-allowed border border-border/20' 
-                    : 'bg-primary/90 text-white cursor-pointer cell-glow hover:bg-primary hover:glow-primary border border-primary/50'
+                    ? 'bg-muted/5 text-muted-foreground/10 cursor-not-allowed' 
+                    : 'bg-primary text-white cursor-pointer cell-glow hover:glow-primary border border-primary/60'
                 }
               `}
               onClick={() => hasQuestion && !isCompleted && onSelectQuestion(question)}
               disabled={!hasQuestion || isCompleted}
               data-testid={`cell-${category.id}-${scoreValue}`}
             >
-              {isCompleted ? (
-                <span className="opacity-30">{scoreValue}</span>
-              ) : (
-                <span className={hasQuestion ? 'text-glow' : ''}>{scoreValue}</span>
+              {hasQuestion && !isCompleted && (
+                <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
               )}
-            </motion.button>
+              {isCompleted ? (
+                <span className="opacity-20">{scoreValue}</span>
+              ) : (
+                <span className={hasQuestion ? 'text-glow relative z-10' : ''}>{scoreValue}</span>
+              )}
+                          </motion.button>
           );
         })}
       </div>
