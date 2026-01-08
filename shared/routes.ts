@@ -37,13 +37,47 @@ export const api = {
         404: errorSchemas.notFound,
       },
     },
+    create: {
+      method: 'POST' as const,
+      path: '/api/categories',
+      input: insertCategorySchema,
+      responses: {
+        201: z.custom<typeof categories.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/categories/:id',
+      responses: {
+        200: z.object({ success: z.boolean() }),
+        404: errorSchemas.notFound,
+      },
+    },
   },
   questions: {
     listByCategory: {
       method: 'GET' as const,
       path: '/api/categories/:categoryId/questions',
       responses: {
-        200: z.array(z.custom<Omit<typeof questions.$inferSelect, 'correctAnswer'>>()), // Don't leak answers
+        200: z.array(z.custom<Omit<typeof questions.$inferSelect, 'correctAnswer'>>()),
+        404: errorSchemas.notFound,
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/questions',
+      input: insertQuestionSchema,
+      responses: {
+        201: z.custom<typeof questions.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/questions/:id',
+      responses: {
+        200: z.object({ success: z.boolean() }),
         404: errorSchemas.notFound,
       },
     },

@@ -1,5 +1,7 @@
 import { useCategories } from "@/hooks/use-quiz";
-import { Loader2 } from "lucide-react";
+import { Loader2, Settings } from "lucide-react";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { QuestionCard } from "@/components/QuestionCard";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -45,11 +47,19 @@ export default function Home() {
           </div>
           
           <div className="flex-1 min-w-0">
-            <div className="text-center mb-6">
-              <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-                Trivia Challenge
-              </h1>
-              <p className="text-slate-400 mt-1">Select a category and point value</p>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
+                  Trivia Challenge
+                </h1>
+                <p className="text-slate-400 mt-1">Select a category and point value</p>
+              </div>
+              <Link href="/admin">
+                <Button variant="outline" className="border-slate-600 text-slate-300" data-testid="button-admin">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Admin
+                </Button>
+              </Link>
             </div>
 
             {categories && categories.length > 0 ? (
