@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,13 @@ interface ConnectedPlayer {
   name: string;
 }
 
-export function BuzzerPanel() {
+export interface BuzzerPanelHandle {
+  unlock: () => void;
+  lock: () => void;
+  reset: () => void;
+}
+
+export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_, ref) {
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
   const [players, setPlayers] = useState<ConnectedPlayer[]>([]);
@@ -103,27 +109,33 @@ export function BuzzerPanel() {
     };
   }, []);
 
-  const unlockBuzzer = () => {
+  const unlockBuzzer = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "host:unlock" }));
       setBuzzerLocked(false);
       setBuzzQueue([]);
     }
-  };
+  }, []);
 
-  const lockBuzzer = () => {
+  const lockBuzzer = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "host:lock" }));
       setBuzzerLocked(true);
     }
-  };
+  }, []);
 
-  const resetBuzzer = () => {
+  const resetBuzzer = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "host:reset" }));
       setBuzzQueue([]);
     }
-  };
+  }, []);
+
+  useImperativeHandle(ref, () => ({
+    unlock: unlockBuzzer,
+    lock: lockBuzzer,
+    reset: resetBuzzer,
+  }), [unlockBuzzer, lockBuzzer, resetBuzzer]);
 
   const sendFeedback = (playerId: string, correct: boolean, points: number) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -282,4 +294,4 @@ export function BuzzerPanel() {
       </Dialog>
     </>
   );
-}
+});
