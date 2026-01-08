@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
+import { soundManager } from "@/lib/sounds";
 
 interface QuestionCardProps {
   question: Question;
@@ -120,6 +121,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
   const handleAward = (contestantId: string, contestantName: string) => {
     setAwardedTo(contestantName);
     awardPoints(contestantId, question.points);
+    soundManager.play('correct', 0.6);
     
     confetti({
       particleCount: 200,
@@ -136,6 +138,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
 
   const handleDeduct = (contestantId: string) => {
     deductPoints(contestantId, question.points);
+    soundManager.play('wrong', 0.5);
   };
 
   const handleNoAnswer = () => {
@@ -211,7 +214,12 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
           )}
           <Button
             size="lg"
-            onClick={() => setShowAnswer(!showAnswer)}
+            onClick={() => {
+              if (!showAnswer) {
+                soundManager.play('reveal', 0.5);
+              }
+              setShowAnswer(!showAnswer);
+            }}
             className={showAnswer 
               ? "bg-white/20 text-white hover:bg-white/30" 
               : "gradient-gold text-purple-900 font-bold glow-gold"

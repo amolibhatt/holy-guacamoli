@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Category, Question } from "@shared/schema";
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
+import { soundManager } from "@/lib/sounds";
 
 const SCORE_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
@@ -74,7 +75,12 @@ export function CategoryColumn({ category, onSelectQuestion }: CategoryColumnPro
                     : 'bg-white/10 text-white cursor-pointer hover:bg-white/20 border border-white/10'
                 }
               `}
-              onClick={() => hasQuestion && !isCompleted && onSelectQuestion(question)}
+              onClick={() => {
+                if (hasQuestion && !isCompleted) {
+                  soundManager.play('click', 0.3);
+                  onSelectQuestion(question);
+                }
+              }}
               disabled={!hasQuestion || isCompleted}
               data-testid={`cell-${category.id}-${scoreValue}`}
             >

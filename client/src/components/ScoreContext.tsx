@@ -1,9 +1,16 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
+const AVATAR_COLORS = [
+  '#FF6B6B', '#FF8E53', '#FFD93D', '#4ADEBC', '#3B82F6', 
+  '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1'
+];
+
 export interface Contestant {
   id: string;
   name: string;
   score: number;
+  color: string;
+  previousRank?: number;
 }
 
 interface ScoreContextType {
@@ -15,6 +22,10 @@ interface ScoreContextType {
   completedQuestions: number[];
   markQuestionCompleted: (questionId: number) => void;
   resetGame: () => void;
+  updateContestantColor: (id: string, color: string) => void;
+  gameEnded: boolean;
+  endGame: () => void;
+  resetGameEnd: () => void;
 }
 
 const ScoreContext = createContext<ScoreContextType | undefined>(undefined);
@@ -22,10 +33,17 @@ const ScoreContext = createContext<ScoreContextType | undefined>(undefined);
 export function ScoreProvider({ children }: { children: ReactNode }) {
   const [contestants, setContestants] = useState<Contestant[]>([]);
   const [completedQuestions, setCompletedQuestions] = useState<number[]>([]);
+  const [gameEnded, setGameEnded] = useState(false);
 
   const addContestant = (name: string) => {
     const id = crypto.randomUUID();
-    setContestants((prev) => [...prev, { id, name, score: 0 }]);
+    const colorIndex = contestants.length % AVATAR_COLORS.length;
+    setContestants((prev) => [...prev, { 
+      id, 
+      name, 
+      score: 0, 
+      color: AVATAR_COLORS[colorIndex] 
+    }]);
   };
 
   const removeContestant = (id: string) => {
@@ -33,18 +51,40 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
   };
 
   const awardPoints = (contestantId: string, points: number) => {
-    setContestants((prev) =>
-      prev.map((c) =>
+    setContestants((prev) => {
+      const oldSorted = [...prev].sort((a, b) => b.score - a.score);
+      const oldRanks = new Map(oldSorted.map((c, idx) => [c.id, idx]));
+      
+      const updated = prev.map((c) =>
         c.id === contestantId ? { ...c, score: c.score + points } : c
-      )
-    );
+      );
+      
+      return updated.map(c => ({
+        ...c,
+        previousRank: oldRanks.get(c.id) ?? 0
+      }));
+    });
   };
 
   const deductPoints = (contestantId: string, points: number) => {
-    setContestants((prev) =>
-      prev.map((c) =>
+    setContestants((prev) => {
+      const oldSorted = [...prev].sort((a, b) => b.score - a.score);
+      const oldRanks = new Map(oldSorted.map((c, idx) => [c.id, idx]));
+      
+      const updated = prev.map((c) =>
         c.id === contestantId ? { ...c, score: c.score - points } : c
-      )
+      );
+      
+      return updated.map(c => ({
+        ...c,
+        previousRank: oldRanks.get(c.id) ?? 0
+      }));
+    });
+  };
+
+  const updateContestantColor = (id: string, color: string) => {
+    setContestants((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, color } : c))
     );
   };
 
@@ -53,9 +93,13 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
   };
 
   const resetGame = () => {
-    setContestants((prev) => prev.map((c) => ({ ...c, score: 0 })));
+    setContestants((prev) => prev.map((c) => ({ ...c, score: 0, previousRank: undefined })));
     setCompletedQuestions([]);
+    setGameEnded(false);
   };
+
+  const endGame = () => setGameEnded(true);
+  const resetGameEnd = () => setGameEnded(false);
 
   return (
     <ScoreContext.Provider
@@ -68,6 +112,10 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
         completedQuestions,
         markQuestionCompleted,
         resetGame,
+        updateContestantColor,
+        gameEnded,
+        endGame,
+        resetGameEnd,
       }}
     >
       {children}
@@ -82,3 +130,5 @@ export function useScore() {
   }
   return context;
 }
+
+export { AVATAR_COLORS };
