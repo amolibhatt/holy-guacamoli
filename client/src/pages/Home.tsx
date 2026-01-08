@@ -61,15 +61,9 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="max-w-[1800px] mx-auto p-4 lg:p-6">
-        <div className="grid lg:grid-cols-[280px,1fr] gap-6">
-          <aside className="order-2 lg:order-1">
-            <div className="lg:sticky lg:top-20">
-              <Scoreboard />
-            </div>
-          </aside>
-          
-          <main className="order-1 lg:order-2">
+      <div className="p-4 lg:p-6">
+        <div className="flex flex-col gap-6">
+          <main>
             {categories && categories.length > 0 ? (
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
@@ -111,6 +105,10 @@ export default function Home() {
               </div>
             )}
           </main>
+          
+          <aside>
+            <Scoreboard />
+          </aside>
         </div>
       </div>
 

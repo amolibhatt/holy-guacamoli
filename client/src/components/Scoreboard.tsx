@@ -26,57 +26,58 @@ export function Scoreboard() {
 
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden">
-      <div className="gradient-header px-4 py-3 flex items-center justify-between gap-2">
+      <div className="gradient-header px-4 py-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Users className="w-5 h-5 text-white" />
           <h2 className="font-bold text-white">Players</h2>
         </div>
-        {contestants.length > 0 && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={resetGame} 
-            className="text-white/80 hover:text-white hover:bg-white/20"
-            data-testid="button-reset-game"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Add player..."
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="w-40 h-8 bg-white/20 border-white/30 text-white placeholder:text-white/60 text-sm"
+              data-testid="input-contestant-name"
+            />
+            <Button 
+              onClick={handleAdd} 
+              size="sm"
+              className="bg-white/20 hover:bg-white/30 text-white h-8"
+              data-testid="button-add-contestant"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+          {contestants.length > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={resetGame} 
+              className="text-white/80 hover:text-white hover:bg-white/20 h-8"
+              data-testid="button-reset-game"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
-      <div className="p-4 space-y-4">
-        <div className="flex gap-2">
-          <Input
-            placeholder="Player name..."
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="bg-input border-border text-foreground placeholder:text-muted-foreground"
-            data-testid="input-contestant-name"
-          />
-          <Button 
-            onClick={handleAdd} 
-            size="icon" 
-            className="gradient-header shrink-0 glow-primary"
-            data-testid="button-add-contestant"
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
-        </div>
-
+      <div className="p-4">
         <AnimatePresence mode="popLayout">
           {sortedContestants.length > 0 ? (
-            <motion.div layout className="space-y-2">
+            <motion.div layout className="flex flex-wrap gap-3">
               {sortedContestants.map((contestant, idx) => (
                 <motion.div
                   key={contestant.id}
                   layout
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -50 }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
                   transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   className={`
-                    flex items-center justify-between gap-2 p-3 rounded-xl transition-all
+                    flex items-center gap-3 px-4 py-3 rounded-xl transition-all
                     ${idx === 0 && contestant.score > 0 
                       ? 'gradient-gold glow-gold' 
                       : 'bg-muted/30 border border-border/50'
@@ -84,15 +85,9 @@ export function Scoreboard() {
                   `}
                   data-testid={`contestant-${contestant.id}`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     {idx === 0 && contestant.score > 0 ? (
-                      <motion.div
-                        initial={{ rotate: -20, scale: 0 }}
-                        animate={{ rotate: 0, scale: 1 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                      >
-                        <Crown className="w-5 h-5 text-amber-900" />
-                      </motion.div>
+                      <Crown className="w-5 h-5 text-amber-900" />
                     ) : (
                       <span className="text-sm font-bold text-muted-foreground w-5 text-center">{idx + 1}</span>
                     )}
@@ -100,28 +95,26 @@ export function Scoreboard() {
                       {contestant.name}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <motion.span 
-                      key={contestant.score}
-                      initial={{ scale: 1.4 }}
-                      animate={{ scale: 1 }}
-                      className={`text-2xl font-black tabular-nums ${
-                        contestant.score < 0 ? 'text-destructive' : 
-                        idx === 0 && contestant.score > 0 ? 'text-amber-900' : 'text-foreground'
-                      }`}
-                    >
-                      {contestant.score}
-                    </motion.span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={`h-7 w-7 ${idx === 0 && contestant.score > 0 ? 'text-amber-900/60 hover:text-amber-900 hover:bg-amber-900/10' : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'}`}
-                      onClick={() => removeContestant(contestant.id)}
-                      data-testid={`button-remove-${contestant.id}`}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  <motion.span 
+                    key={contestant.score}
+                    initial={{ scale: 1.4 }}
+                    animate={{ scale: 1 }}
+                    className={`text-2xl font-black tabular-nums ${
+                      contestant.score < 0 ? 'text-destructive' : 
+                      idx === 0 && contestant.score > 0 ? 'text-amber-900' : 'text-foreground'
+                    }`}
+                  >
+                    {contestant.score}
+                  </motion.span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-7 w-7 ${idx === 0 && contestant.score > 0 ? 'text-amber-900/60 hover:text-amber-900 hover:bg-amber-900/10' : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'}`}
+                    onClick={() => removeContestant(contestant.id)}
+                    data-testid={`button-remove-${contestant.id}`}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
                 </motion.div>
               ))}
             </motion.div>
@@ -129,10 +122,9 @@ export function Scoreboard() {
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-8"
+              className="text-center py-4"
             >
-              <Trophy className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
-              <p className="text-muted-foreground text-sm">Add players to start</p>
+              <p className="text-muted-foreground text-sm">Add players to start the game</p>
             </motion.div>
           )}
         </AnimatePresence>
