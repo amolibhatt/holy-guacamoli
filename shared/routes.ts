@@ -60,7 +60,7 @@ export const api = {
       method: 'GET' as const,
       path: '/api/categories/:categoryId/questions',
       responses: {
-        200: z.array(z.custom<Omit<typeof questions.$inferSelect, 'correctAnswer'>>()),
+        200: z.array(z.custom<typeof questions.$inferSelect>()),
         404: errorSchemas.notFound,
       },
     },
