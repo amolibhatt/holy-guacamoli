@@ -1,15 +1,15 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Zap, Pencil, X, Check } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Zap, Pencil, X, Check, Image, Music } from "lucide-react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
+import MDEditor from '@uiw/react-md-editor';
 import type { Category, Question } from "@shared/schema";
 
 const POINT_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
@@ -30,6 +30,11 @@ export default function Admin() {
   const [editCorrectAnswer, setEditCorrectAnswer] = useState("");
   const [editPoints, setEditPoints] = useState<number>(10);
 
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
+  const editImageInputRef = useRef<HTMLInputElement>(null);
+  const editAudioInputRef = useRef<HTMLInputElement>(null);
+
   const { data: categories = [], isLoading: loadingCategories } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
   });
@@ -41,7 +46,7 @@ export default function Admin() {
 
   const createCategoryMutation = useMutation({
     mutationFn: async (data: { name: string; description: string; imageUrl: string }) => {
-      return apiRequest('/api/categories', { method: 'POST', body: JSON.stringify(data) });
+      return apiRequest('POST', '/api/categories', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
@@ -56,7 +61,7 @@ export default function Admin() {
 
   const deleteCategoryMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/categories/${id}`, { method: 'DELETE' });
+      return apiRequest('DELETE', `/api/categories/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
@@ -69,7 +74,7 @@ export default function Admin() {
 
   const createQuestionMutation = useMutation({
     mutationFn: async (data: { categoryId: number; question: string; options: string[]; correctAnswer: string; points: number }) => {
-      return apiRequest('/api/questions', { method: 'POST', body: JSON.stringify(data) });
+      return apiRequest('POST', '/api/questions', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories', selectedCategoryId, 'questions'] });
@@ -85,7 +90,7 @@ export default function Admin() {
 
   const updateQuestionMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: { question?: string; correctAnswer?: string; points?: number } }) => {
-      return apiRequest(`/api/questions/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+      return apiRequest('PUT', `/api/questions/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories', selectedCategoryId, 'questions'] });
@@ -99,13 +104,48 @@ export default function Admin() {
 
   const deleteQuestionMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/questions/${id}`, { method: 'DELETE' });
+      return apiRequest('DELETE', `/api/questions/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories', selectedCategoryId, 'questions'] });
       toast({ title: "Question deleted" });
     },
   });
+
+  const handleFileUpload = async (file: File, isEdit: boolean = false) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      
+      if (data.url) {
+        const isImage = file.type.startsWith('image/');
+        const isAudio = file.type.startsWith('audio/');
+        
+        let markdown = '';
+        if (isImage) {
+          markdown = `\n![${file.name}](${data.url})\n`;
+        } else if (isAudio) {
+          markdown = `\n[audio:${data.url}]\n`;
+        }
+        
+        if (isEdit) {
+          setEditQuestion(prev => prev + markdown);
+        } else {
+          setNewQuestion(prev => prev + markdown);
+        }
+        
+        toast({ title: `${isImage ? 'Image' : 'Audio'} uploaded!` });
+      }
+    } catch (error) {
+      toast({ title: "Upload failed", variant: "destructive" });
+    }
+  };
 
   const handleCreateCategory = () => {
     if (!newCategoryName.trim()) return;
@@ -152,7 +192,7 @@ export default function Admin() {
   const selectedCategory = categories.find(c => c.id === selectedCategoryId);
 
   return (
-    <div className="min-h-screen gradient-game grid-bg p-6">
+    <div className="min-h-screen gradient-game grid-bg p-6" data-color-mode="dark">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
           <div className="flex items-center gap-4">
@@ -278,12 +318,44 @@ export default function Admin() {
               ) : (
                 <div className="space-y-4">
                   <div className="space-y-3 p-4 bg-muted/10 rounded-xl border border-border">
-                    <Textarea
-                      placeholder="Question text"
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-sm text-muted-foreground">Question (supports markdown, images, audio)</span>
+                      <input
+                        ref={imageInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+                      />
+                      <input
+                        ref={audioInputRef}
+                        type="file"
+                        accept="audio/*"
+                        className="hidden"
+                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+                      />
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => imageInputRef.current?.click()}
+                        className="h-7 text-muted-foreground hover:text-primary"
+                      >
+                        <Image className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => audioInputRef.current?.click()}
+                        className="h-7 text-muted-foreground hover:text-primary"
+                      >
+                        <Music className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <MDEditor
                       value={newQuestion}
-                      onChange={(e) => setNewQuestion(e.target.value)}
-                      className="bg-input border-border resize-none"
-                      rows={2}
+                      onChange={(val) => setNewQuestion(val || "")}
+                      preview="edit"
+                      height={150}
                       data-testid="input-question-text"
                     />
                     <div className="grid grid-cols-2 gap-2">
@@ -335,11 +407,43 @@ export default function Admin() {
                           >
                             {editingQuestionId === q.id ? (
                               <div className="space-y-2">
-                                <Textarea
+                                <div className="flex items-center gap-2 mb-2">
+                                  <input
+                                    ref={editImageInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], true)}
+                                  />
+                                  <input
+                                    ref={editAudioInputRef}
+                                    type="file"
+                                    accept="audio/*"
+                                    className="hidden"
+                                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], true)}
+                                  />
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => editImageInputRef.current?.click()}
+                                    className="h-7 text-muted-foreground hover:text-primary"
+                                  >
+                                    <Image className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => editAudioInputRef.current?.click()}
+                                    className="h-7 text-muted-foreground hover:text-primary"
+                                  >
+                                    <Music className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                                <MDEditor
                                   value={editQuestion}
-                                  onChange={(e) => setEditQuestion(e.target.value)}
-                                  className="bg-input border-border resize-none text-sm"
-                                  rows={2}
+                                  onChange={(val) => setEditQuestion(val || "")}
+                                  preview="edit"
+                                  height={120}
                                 />
                                 <div className="grid grid-cols-2 gap-2">
                                   <Input
@@ -382,7 +486,7 @@ export default function Admin() {
                             ) : (
                               <div className="flex items-start justify-between gap-3">
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-foreground text-sm line-clamp-2">{q.question}</p>
+                                  <p className="text-foreground text-sm line-clamp-2">{q.question.replace(/!\[.*?\]\(.*?\)/g, '[image]').replace(/\[audio:.*?\]/g, '[audio]')}</p>
                                   <div className="flex items-center gap-2 mt-1.5">
                                     <span className="text-xs font-medium text-primary">{q.points} pts</span>
                                     <span className="text-xs text-muted-foreground">Answer: {q.correctAnswer}</span>

@@ -5,11 +5,74 @@ import { CheckCircle2, XCircle, Eye, EyeOff, Timer, X, Trophy, Sparkles } from "
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 
 interface QuestionCardProps {
   question: Question;
   isLocked: boolean;
   onComplete?: () => void;
+}
+
+function AudioPlayer({ src }: { src: string }) {
+  return (
+    <div className="my-4 flex justify-center">
+      <audio controls className="w-full max-w-md rounded-lg">
+        <source src={src} />
+        Your browser does not support audio.
+      </audio>
+    </div>
+  );
+}
+
+function QuestionContent({ content }: { content: string }) {
+  const audioRegex = /\[audio:(.*?)\]/g;
+  const parts: (string | { type: 'audio'; src: string })[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = audioRegex.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(content.slice(lastIndex, match.index));
+    }
+    parts.push({ type: 'audio', src: match[1] });
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < content.length) {
+    parts.push(content.slice(lastIndex));
+  }
+
+  return (
+    <div className="prose prose-invert prose-lg max-w-none text-center">
+      {parts.map((part, i) => {
+        if (typeof part === 'string') {
+          return (
+            <ReactMarkdown
+              key={i}
+              remarkPlugins={[remarkGfm, remarkBreaks]}
+              components={{
+                p: ({ children }) => <p className="text-2xl lg:text-3xl font-semibold text-foreground leading-relaxed my-4">{children}</p>,
+                strong: ({ children }) => <strong className="text-primary font-bold">{children}</strong>,
+                em: ({ children }) => <em className="italic">{children}</em>,
+                img: ({ src, alt }) => (
+                  <img 
+                    src={src} 
+                    alt={alt || ''} 
+                    className="max-w-full max-h-80 mx-auto rounded-xl my-4 shadow-lg"
+                  />
+                ),
+              }}
+            >
+              {part}
+            </ReactMarkdown>
+          );
+        } else {
+          return <AudioPlayer key={i} src={part.src} />;
+        }
+      })}
+    </div>
+  );
 }
 
 export function QuestionCard({ question, isLocked, onComplete }: QuestionCardProps) {
@@ -168,9 +231,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
           transition={{ delay: 0.2 }}
           className="min-h-[120px] flex items-center justify-center mb-8"
         >
-          <h3 className="text-2xl lg:text-3xl font-semibold text-foreground text-center leading-relaxed">
-            {question.question}
-          </h3>
+          <QuestionContent content={question.question} />
         </motion.div>
 
         <AnimatePresence>
