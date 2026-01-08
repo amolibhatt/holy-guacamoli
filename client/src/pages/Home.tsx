@@ -1,5 +1,5 @@
 import { useCategories } from "@/hooks/use-quiz";
-import { Loader2, Settings, Sparkles, Maximize2, Minimize2 } from "lucide-react";
+import { Loader2, Settings, Sparkles, Maximize2, Minimize2, Cake, PartyPopper } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -81,12 +81,20 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <motion.div 
               className="w-10 h-10 rounded-xl gradient-header flex items-center justify-center"
-              animate={{ boxShadow: ['0 0 20px hsl(218 94% 62% / 0.4)', '0 0 40px hsl(218 94% 62% / 0.6)', '0 0 20px hsl(218 94% 62% / 0.4)'] }}
-              transition={{ duration: 2, repeat: Infinity }}
+              animate={{ rotate: [0, -10, 10, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
             >
-              <Sparkles className="w-5 h-5 text-white" />
+              <Cake className="w-5 h-5 text-white" />
             </motion.div>
-            <h1 className="text-xl font-black text-foreground tracking-tight">AMOLI'S BIRTHDAY TRIVIA</h1>
+            <div className="flex items-center gap-2">
+              <PartyPopper className="w-5 h-5 text-primary" />
+              <h1 className="text-xl font-black tracking-tight">
+                <span className="text-primary">AMOLI'S</span>
+                <span className="text-foreground mx-1">BIRTHDAY</span>
+                <span className="text-primary">BASH!</span>
+              </h1>
+              <PartyPopper className="w-5 h-5 text-primary transform scale-x-[-1]" />
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Button 
