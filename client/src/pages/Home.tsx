@@ -2,14 +2,14 @@ import { useCategories } from "@/hooks/use-quiz";
 import { Loader2, Settings, Maximize2, Minimize2, Cake, Sparkles, Star } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { QuestionCard } from "@/components/QuestionCard";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { CategoryColumn } from "@/components/CategoryColumn";
 import { Scoreboard } from "@/components/Scoreboard";
 import { VictoryScreen } from "@/components/VictoryScreen";
 import { ThemeSelector } from "@/components/ThemeSelector";
-import { BuzzerPanel } from "@/components/BuzzerPanel";
+import { BuzzerPanel, BuzzerPanelHandle } from "@/components/BuzzerPanel";
 import { useScore } from "@/components/ScoreContext";
 import { useTheme } from "@/context/ThemeContext";
 import type { Question } from "@shared/schema";
@@ -22,6 +22,7 @@ export default function Home() {
   const [showVictory, setShowVictory] = useState(false);
   const { gameEnded, resetGameEnd } = useScore();
   const { colors } = useTheme();
+  const buzzerRef = useRef<BuzzerPanelHandle>(null);
 
   useEffect(() => {
     if (gameEnded) {
@@ -50,7 +51,7 @@ export default function Home() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && selectedQuestion) {
-        setSelectedQuestion(null);
+        handleCloseQuestion();
       }
       if (e.key === 'f' && !selectedQuestion) {
         toggleFullscreen();
@@ -60,8 +61,14 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedQuestion]);
 
-  const handleQuestionComplete = () => {
+  const handleSelectQuestion = (question: Question) => {
+    setSelectedQuestion(question);
+    buzzerRef.current?.unlock();
+  };
+
+  const handleCloseQuestion = () => {
     setSelectedQuestion(null);
+    buzzerRef.current?.lock();
   };
 
   if (isLoadingCategories) {
@@ -233,7 +240,7 @@ export default function Home() {
                 >
                   <CategoryColumn 
                     category={category}
-                    onSelectQuestion={setSelectedQuestion}
+                    onSelectQuestion={handleSelectQuestion}
                   />
                 </motion.div>
               ))}
@@ -266,14 +273,14 @@ export default function Home() {
 
       <footer className="border-t border-primary/20 bg-card/40 backdrop-blur-xl">
         <div className="p-4 space-y-3">
-          <BuzzerPanel />
+          <BuzzerPanel ref={buzzerRef} />
           <Scoreboard />
         </div>
       </footer>
 
       <AnimatePresence>
         {selectedQuestion && (
-          <Dialog open={true} onOpenChange={(open) => !open && setSelectedQuestion(null)}>
+          <Dialog open={true} onOpenChange={(open) => !open && handleCloseQuestion()}>
             <DialogContent className="max-w-3xl p-0 overflow-hidden border-white/20 bg-black/95 backdrop-blur-xl">
               <motion.div
                 initial={{ scale: 0.8, opacity: 0, rotateY: -10 }}
@@ -284,7 +291,7 @@ export default function Home() {
                 <QuestionCard
                   question={selectedQuestion}
                   isLocked={false}
-                  onComplete={handleQuestionComplete}
+                  onComplete={handleCloseQuestion}
                 />
               </motion.div>
             </DialogContent>
