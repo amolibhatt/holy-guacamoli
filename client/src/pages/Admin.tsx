@@ -287,7 +287,7 @@ export default function Admin() {
                         </SelectTrigger>
                         <SelectContent>
                           {POINT_VALUES.map((p) => (
-                            <SelectItem key={p} value={String(p)}>${p}</SelectItem>
+                            <SelectItem key={p} value={String(p)}>{p} pts</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -323,7 +323,7 @@ export default function Admin() {
                             <div className="flex-1 min-w-0">
                               <p className="text-foreground text-sm line-clamp-2">{q.question}</p>
                               <div className="flex items-center gap-2 mt-1.5">
-                                <span className="text-xs font-medium text-primary">${q.points}</span>
+                                <span className="text-xs font-medium text-primary">{q.points} pts</span>
                                 <span className="text-xs text-success">Answer: {q.correctAnswer}</span>
                               </div>
                             </div>

@@ -110,7 +110,7 @@ export function Scoreboard() {
                         idx === 0 && contestant.score > 0 ? 'text-amber-900' : 'text-foreground'
                       }`}
                     >
-                      ${contestant.score}
+                      {contestant.score}
                     </motion.span>
                     <Button
                       variant="ghost"
