@@ -7,6 +7,10 @@ import { QuestionCard } from "@/components/QuestionCard";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { CategoryColumn } from "@/components/CategoryColumn";
 import { Scoreboard } from "@/components/Scoreboard";
+import { VictoryScreen } from "@/components/VictoryScreen";
+import { ThemeSelector } from "@/components/ThemeSelector";
+import { useScore } from "@/components/ScoreContext";
+import { useTheme } from "@/context/ThemeContext";
 import type { Question } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -14,6 +18,15 @@ export default function Home() {
   const { data: categories, isLoading: isLoadingCategories, error } = useCategories();
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showVictory, setShowVictory] = useState(false);
+  const { gameEnded, resetGameEnd } = useScore();
+  const { colors } = useTheme();
+
+  useEffect(() => {
+    if (gameEnded) {
+      setShowVictory(true);
+    }
+  }, [gameEnded]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -97,7 +110,7 @@ export default function Home() {
             <div className="relative">
               <motion.div 
                 className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, #FF6B6B 0%, #FF8E53 50%, #FFD93D 100%)" }}
+                style={{ background: `linear-gradient(135deg, ${colors.gradient1} 0%, ${colors.gradient2} 50%, ${colors.gradient3} 100%)` }}
                 animate={{ 
                   rotate: [0, -5, 5, -5, 0],
                   scale: [1, 1.05, 1]
@@ -172,6 +185,7 @@ export default function Home() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
+            <ThemeSelector />
             <Button 
               variant="ghost" 
               size="icon" 
@@ -273,6 +287,15 @@ export default function Home() {
               </motion.div>
             </DialogContent>
           </Dialog>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showVictory && (
+          <VictoryScreen onClose={() => {
+            setShowVictory(false);
+            resetGameEnd();
+          }} />
         )}
       </AnimatePresence>
     </div>
