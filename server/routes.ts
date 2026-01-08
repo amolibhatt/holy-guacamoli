@@ -6,6 +6,7 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { setupWebSocket, getRoomInfo } from "./gameRoom";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -31,6 +32,16 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  
+  setupWebSocket(httpServer);
+
+  app.get("/api/room/:code", (req, res) => {
+    const info = getRoomInfo(req.params.code.toUpperCase());
+    if (!info) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+    res.json(info);
+  });
 
   app.get(api.categories.list.path, async (req, res) => {
     const categories = await storage.getCategories();
