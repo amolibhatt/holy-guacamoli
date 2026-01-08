@@ -96,34 +96,61 @@ export default function Home() {
           >
             <div className="relative">
               <motion.div 
-                className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center glow-primary"
+                className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                style={{ background: "linear-gradient(135deg, #FF6B6B 0%, #FF8E53 50%, #FFD93D 100%)" }}
                 animate={{ 
-                  rotate: [0, -3, 3, -3, 0],
-                  scale: [1, 1.02, 1]
+                  rotate: [0, -5, 5, -5, 0],
+                  scale: [1, 1.05, 1]
                 }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
               >
-                <Cake className="w-7 h-7 text-black" />
+                <motion.div
+                  animate={{ y: [0, -3, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  <Cake className="w-7 h-7 text-white drop-shadow-lg" />
+                </motion.div>
               </motion.div>
               <motion.div
                 className="absolute -top-2 -right-2"
                 animate={{ 
-                  rotate: [0, 180, 360],
-                  scale: [1, 1.3, 1]
+                  rotate: [0, 360],
+                  scale: [1, 1.4, 1]
                 }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               >
-                <Star className="w-5 h-5 text-white fill-white" />
+                <Star className="w-5 h-5 text-yellow-400 fill-yellow-400 drop-shadow-lg" />
+              </motion.div>
+              <motion.div
+                className="absolute -top-1 -left-2"
+                animate={{ 
+                  rotate: [0, -360],
+                  scale: [0.8, 1.2, 0.8]
+                }}
+                transition={{ duration: 2.5, repeat: Infinity, delay: 0.3 }}
+              >
+                <Star className="w-4 h-4 text-pink-400 fill-pink-400" />
               </motion.div>
               <motion.div
                 className="absolute -bottom-1 -left-1"
                 animate={{ 
-                  y: [0, -8, 0],
-                  opacity: [0.5, 1, 0.5]
+                  y: [0, -10, 0],
+                  opacity: [0.6, 1, 0.6],
+                  rotate: [0, 15, 0]
                 }}
                 transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
               >
-                <Sparkles className="w-4 h-4 text-white/80" />
+                <Sparkles className="w-5 h-5 text-cyan-400" />
+              </motion.div>
+              <motion.div
+                className="absolute -bottom-2 -right-1"
+                animate={{ 
+                  y: [0, -8, 0],
+                  opacity: [0.5, 1, 0.5]
+                }}
+                transition={{ duration: 1.8, repeat: Infinity, delay: 0.8 }}
+              >
+                <Sparkles className="w-4 h-4 text-purple-400" />
               </motion.div>
             </div>
             <div className="flex flex-col">
