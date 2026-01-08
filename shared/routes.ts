@@ -81,6 +81,16 @@ export const api = {
         404: errorSchemas.notFound,
       },
     },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/questions/:id',
+      input: insertQuestionSchema.partial().omit({ categoryId: true }),
+      responses: {
+        200: z.custom<typeof questions.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
     verifyAnswer: {
       method: 'POST' as const,
       path: '/api/questions/:id/verify',

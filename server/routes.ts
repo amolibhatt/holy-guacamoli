@@ -95,6 +95,25 @@ export async function registerRoutes(
     }
   });
 
+  app.put(api.questions.update.path, async (req, res) => {
+    try {
+      const data = api.questions.update.input.parse(req.body);
+      const question = await storage.updateQuestion(Number(req.params.id), data);
+      if (!question) {
+        return res.status(404).json({ message: 'Question not found' });
+      }
+      res.json(question);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      throw err;
+    }
+  });
+
   app.delete(api.questions.delete.path, async (req, res) => {
     const deleted = await storage.deleteQuestion(Number(req.params.id));
     if (!deleted) {

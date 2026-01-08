@@ -9,6 +9,7 @@ export interface IStorage {
   getQuestion(id: number): Promise<Question | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
   createQuestion(question: InsertQuestion): Promise<Question>;
+  updateQuestion(id: number, data: Partial<InsertQuestion>): Promise<Question | undefined>;
   deleteCategory(id: number): Promise<boolean>;
   deleteQuestion(id: number): Promise<boolean>;
 }
@@ -40,6 +41,11 @@ export class DatabaseStorage implements IStorage {
   async createQuestion(question: InsertQuestion): Promise<Question> {
     const [newQuestion] = await db.insert(questions).values(question).returning();
     return newQuestion;
+  }
+
+  async updateQuestion(id: number, data: Partial<InsertQuestion>): Promise<Question | undefined> {
+    const [updated] = await db.update(questions).set(data).where(eq(questions.id, id)).returning();
+    return updated;
   }
 
   async deleteCategory(id: number): Promise<boolean> {
