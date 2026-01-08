@@ -2,16 +2,18 @@ import { useState } from "react";
 import { Question } from "@shared/schema";
 import { useVerifyAnswer } from "@/hooks/use-quiz";
 import { useScore } from "./ScoreContext";
-import { CheckCircle2, XCircle, HelpCircle } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 interface QuestionCardProps {
   question: Question;
   isLocked: boolean;
+  onComplete?: () => void;
 }
 
-export function QuestionCard({ question, isLocked }: QuestionCardProps) {
+export function QuestionCard({ question, isLocked, onComplete }: QuestionCardProps) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
@@ -61,15 +63,13 @@ export function QuestionCard({ question, isLocked }: QuestionCardProps) {
         description: "Something went wrong validating your answer.",
         variant: "destructive",
       });
-      setIsAnswered(false); // Reset to allow retry on error
+      setIsAnswered(false);
     }
   };
 
   const options = question.options as string[];
 
-  // Different visual state if already completed in a previous session (though context resets on refresh usually)
   if (isCompleted && !isAnswered) {
-    // This handles if we persist state later, currently mostly for immediate UI feedback
     return (
       <div className="bg-muted/30 border border-muted rounded-2xl p-6 opacity-60">
         <div className="flex items-center gap-2 mb-2">
@@ -82,17 +82,13 @@ export function QuestionCard({ question, isLocked }: QuestionCardProps) {
   }
 
   return (
-    <div className={`
-      relative bg-card rounded-2xl border transition-all duration-300 overflow-hidden
-      ${isLocked ? 'opacity-50 blur-[1px] pointer-events-none border-border' : 'border-border/60 hover:border-primary/30 shadow-sm'}
-    `}>
-      {/* Points Badge */}
-      <div className="absolute top-0 right-0 bg-secondary/10 text-secondary-foreground text-xs font-bold px-3 py-1 rounded-bl-xl border-l border-b border-secondary/10">
-        {question.points} pts
+    <div className="relative bg-card overflow-hidden">
+      <div className="bg-primary/10 px-6 py-4 border-b flex items-center justify-between gap-4">
+        <span className="text-primary font-bold text-lg">{question.points} Points</span>
       </div>
 
       <div className="p-6">
-        <h3 className="text-lg font-semibold text-foreground mb-6 pr-12 leading-relaxed">
+        <h3 className="text-xl font-semibold text-foreground mb-6 leading-relaxed">
           {question.question}
         </h3>
 
@@ -102,9 +98,9 @@ export function QuestionCard({ question, isLocked }: QuestionCardProps) {
             
             if (isAnswered) {
               if (option === correctAnswer) {
-                optionStateClass = "bg-green-100 border-green-500 text-green-900 font-medium";
+                optionStateClass = "bg-green-100 dark:bg-green-900/30 border-green-500 text-green-900 dark:text-green-100 font-medium";
               } else if (option === selectedOption && !isCorrect) {
-                optionStateClass = "bg-red-100 border-red-500 text-red-900";
+                optionStateClass = "bg-red-100 dark:bg-red-900/30 border-red-500 text-red-900 dark:text-red-100";
               } else {
                 optionStateClass = "opacity-50 grayscale";
               }
@@ -117,6 +113,7 @@ export function QuestionCard({ question, isLocked }: QuestionCardProps) {
                 key={idx}
                 onClick={() => handleOptionClick(option)}
                 disabled={isAnswered || isLocked}
+                data-testid={`button-option-${idx}`}
                 className={`
                   w-full text-left px-4 py-3 rounded-xl border-2 transition-all duration-200 flex items-center justify-between
                   ${optionStateClass}
@@ -124,10 +121,10 @@ export function QuestionCard({ question, isLocked }: QuestionCardProps) {
               >
                 <span>{option}</span>
                 {isAnswered && option === correctAnswer && (
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
                 )}
                 {isAnswered && option === selectedOption && !isCorrect && (
-                  <XCircle className="w-5 h-5 text-red-600" />
+                  <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
                 )}
               </button>
             );
@@ -135,26 +132,26 @@ export function QuestionCard({ question, isLocked }: QuestionCardProps) {
         </div>
       </div>
       
-      {/* Feedback Footer */}
       <AnimatePresence>
         {isAnswered && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
-            className={`px-6 py-4 ${isCorrect ? 'bg-green-50' : 'bg-red-50'} border-t ${isCorrect ? 'border-green-100' : 'border-red-100'}`}
+            className={`px-6 py-4 ${isCorrect ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'} border-t ${isCorrect ? 'border-green-100 dark:border-green-800' : 'border-red-100 dark:border-red-800'}`}
           >
-            <p className={`text-sm font-medium ${isCorrect ? 'text-green-800' : 'text-red-800'}`}>
-              {isCorrect ? "Brilliant! You got it right." : "Oops! Better luck next time."}
-            </p>
+            <div className="flex items-center justify-between gap-4">
+              <p className={`text-sm font-medium ${isCorrect ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
+                {isCorrect ? "Brilliant! You got it right." : "Oops! Better luck next time."}
+              </p>
+              {onComplete && (
+                <Button variant="outline" size="sm" onClick={onComplete} data-testid="button-continue">
+                  Continue
+                </Button>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
-      
-      {isLocked && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/5 z-10">
-          {/* Visual indicator handled by blur/opacity above */}
-        </div>
-      )}
     </div>
   );
 }
