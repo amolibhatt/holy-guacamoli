@@ -3,6 +3,7 @@ import { useScore } from "@/components/ScoreContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Category, Question } from "@shared/schema";
 import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
 
 const SCORE_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
@@ -23,13 +24,20 @@ export function CategoryColumn({ category, onSelectQuestion }: CategoryColumnPro
   return (
     <div className="flex flex-col h-full">
       <motion.div 
-        className="bg-white text-black py-4 px-2 text-center rounded-t-xl min-h-[72px] flex items-center justify-center relative overflow-hidden"
+        className="gradient-header text-white py-4 px-2 text-center rounded-t-xl min-h-[72px] flex items-center justify-center relative overflow-hidden"
         whileHover={{ scale: 1.02 }}
         transition={{ type: "spring", stiffness: 400 }}
       >
         <div className="absolute inset-0 shimmer" />
+        <motion.div
+          className="absolute top-1 right-1"
+          animate={{ rotate: [0, 360], scale: [1, 1.2, 1] }}
+          transition={{ duration: 4, repeat: Infinity }}
+        >
+          <Sparkles className="w-3 h-3 text-yellow-200/60" />
+        </motion.div>
         <h2 
-          className="font-black text-sm lg:text-base leading-tight line-clamp-2 uppercase tracking-wider relative z-10" 
+          className="font-black text-sm lg:text-base leading-tight line-clamp-2 uppercase tracking-wider relative z-10 drop-shadow-lg" 
           data-testid={`text-category-${category.id}`}
         >
           {category.name}
@@ -55,16 +63,15 @@ export function CategoryColumn({ category, onSelectQuestion }: CategoryColumnPro
               whileHover={hasQuestion && !isCompleted ? { 
                 scale: 1.05, 
                 y: -4,
-                boxShadow: "0 10px 40px rgba(255,255,255,0.2)"
               } : undefined}
               whileTap={hasQuestion && !isCompleted ? { scale: 0.95 } : undefined}
               className={`
-                flex-1 min-h-[48px] lg:min-h-[56px] flex items-center justify-center rounded-lg font-black text-xl lg:text-2xl transition-colors relative overflow-hidden
+                flex-1 min-h-[48px] lg:min-h-[56px] flex items-center justify-center rounded-lg font-black text-xl lg:text-2xl transition-all relative overflow-hidden
                 ${!hasQuestion 
                   ? 'bg-white/5 text-white/20 cursor-not-allowed' 
                   : isCompleted 
                     ? 'bg-white/5 text-white/10 cursor-not-allowed' 
-                    : 'bg-white text-black cursor-pointer'
+                    : 'gradient-gold text-purple-900 cursor-pointer glow-gold'
                 }
               `}
               onClick={() => hasQuestion && !isCompleted && onSelectQuestion(question)}
@@ -73,12 +80,10 @@ export function CategoryColumn({ category, onSelectQuestion }: CategoryColumnPro
             >
               {hasQuestion && !isCompleted && (
                 <motion.div 
-                  className="absolute inset-0 shimmer"
-                  animate={{ opacity: [0.3, 0.6, 0.3] }}
-                  transition={{ duration: 2, repeat: Infinity }}
+                  className="absolute inset-0 shimmer-color"
                 />
               )}
-              <span className="relative z-10">{scoreValue}</span>
+              <span className="relative z-10 drop-shadow">{scoreValue}</span>
             </motion.button>
           );
         })}

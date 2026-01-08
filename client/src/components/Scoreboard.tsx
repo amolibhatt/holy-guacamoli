@@ -26,7 +26,7 @@ export function Scoreboard() {
 
   return (
     <motion.div 
-      className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-3"
+      className="bg-card/60 backdrop-blur-sm rounded-xl border border-primary/20 p-3"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
@@ -37,13 +37,13 @@ export function Scoreboard() {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-36 h-9 bg-white/10 border-white/20 text-white placeholder:text-white/40 text-sm"
+            className="w-36 h-9 bg-white/10 border-primary/30 text-white placeholder:text-white/40 text-sm"
             data-testid="input-contestant-name"
           />
           <Button 
             onClick={handleAdd} 
             size="sm"
-            className="bg-white text-black hover:bg-white/90 h-9"
+            className="gradient-header text-white hover:opacity-90 h-9 glow-primary"
             data-testid="button-add-contestant"
           >
             <Plus className="w-4 h-4" />
@@ -64,8 +64,8 @@ export function Scoreboard() {
                   className={`
                     flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap relative overflow-hidden
                     ${idx === 0 && contestant.score > 0 
-                      ? 'bg-white text-black' 
-                      : 'bg-white/10 border border-white/20 text-white'
+                      ? 'gradient-gold text-purple-900 glow-gold' 
+                      : 'bg-white/10 border border-primary/30 text-white'
                     }
                   `}
                   data-testid={`contestant-${contestant.id}`}
@@ -73,11 +73,14 @@ export function Scoreboard() {
                   {idx === 0 && contestant.score > 0 && (
                     <>
                       <motion.div
-                        className="absolute inset-0 shimmer"
-                        animate={{ opacity: [0.3, 0.5, 0.3] }}
-                        transition={{ duration: 2, repeat: Infinity }}
+                        className="absolute inset-0 shimmer-color"
                       />
-                      <Crown className="w-4 h-4 relative z-10" />
+                      <motion.div
+                        animate={{ rotate: [0, 10, -10, 0] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        <Crown className="w-4 h-4 relative z-10" />
+                      </motion.div>
                     </>
                   )}
                   <span className="font-semibold relative z-10">{contestant.name}</span>
@@ -91,7 +94,7 @@ export function Scoreboard() {
                   </motion.span>
                   <button
                     className={`opacity-50 hover:opacity-100 transition-opacity relative z-10 ${
-                      idx === 0 && contestant.score > 0 ? 'hover:text-black/70' : 'hover:text-white'
+                      idx === 0 && contestant.score > 0 ? 'hover:text-purple-700' : 'hover:text-red-400'
                     }`}
                     onClick={() => removeContestant(contestant.id)}
                     data-testid={`button-remove-${contestant.id}`}

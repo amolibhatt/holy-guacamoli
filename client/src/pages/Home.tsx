@@ -86,7 +86,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen gradient-game grid-bg flex flex-col overflow-hidden">
-      <header className="border-b border-white/10 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
+      <header className="border-b border-primary/20 bg-card/40 backdrop-blur-xl sticky top-0 z-50">
         <div className="px-4 py-3 flex items-center justify-between gap-4">
           <motion.div 
             className="flex items-center gap-4"
@@ -249,7 +249,7 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="border-t border-white/10 bg-black/40 backdrop-blur-xl">
+      <footer className="border-t border-primary/20 bg-card/40 backdrop-blur-xl">
         <div className="p-4">
           <Scoreboard />
         </div>
