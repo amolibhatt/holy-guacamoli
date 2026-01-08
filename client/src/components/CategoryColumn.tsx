@@ -66,24 +66,19 @@ export function CategoryColumn({ category, onSelectQuestion }: CategoryColumnPro
               } : undefined}
               whileTap={hasQuestion && !isCompleted ? { scale: 0.95 } : undefined}
               className={`
-                flex-1 min-h-[48px] lg:min-h-[56px] flex items-center justify-center rounded-lg font-black text-xl lg:text-2xl transition-all relative overflow-hidden
+                flex-1 min-h-[48px] lg:min-h-[56px] flex items-center justify-center rounded-lg font-black text-xl lg:text-2xl transition-all
                 ${!hasQuestion 
                   ? 'bg-white/5 text-white/20 cursor-not-allowed' 
                   : isCompleted 
                     ? 'bg-white/5 text-white/10 cursor-not-allowed' 
-                    : 'gradient-gold text-purple-900 cursor-pointer glow-gold'
+                    : 'bg-white/10 text-white cursor-pointer hover:bg-white/20 border border-white/10'
                 }
               `}
               onClick={() => hasQuestion && !isCompleted && onSelectQuestion(question)}
               disabled={!hasQuestion || isCompleted}
               data-testid={`cell-${category.id}-${scoreValue}`}
             >
-              {hasQuestion && !isCompleted && (
-                <motion.div 
-                  className="absolute inset-0 shimmer-color"
-                />
-              )}
-              <span className="relative z-10 drop-shadow">{scoreValue}</span>
+              {scoreValue}
             </motion.button>
           );
         })}
