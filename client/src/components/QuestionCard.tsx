@@ -126,26 +126,6 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
           {question.question}
         </motion.h3>
 
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          {options.map((option, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + idx * 0.05 }}
-              className={`
-                px-4 py-3 rounded-xl text-center font-semibold transition-all duration-300
-                ${showAnswer && option === correctAnswer
-                  ? 'bg-success/20 border-2 border-success text-success ring-2 ring-success/30'
-                  : 'bg-muted/30 border-2 border-border text-foreground'
-                }
-              `}
-            >
-              {option}
-            </motion.div>
-          ))}
-        </div>
-
         <AnimatePresence>
           {showAnswer && (
             <motion.div 
