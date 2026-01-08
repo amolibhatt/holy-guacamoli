@@ -1,34 +1,75 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
-interface ScoreContextType {
+export interface Contestant {
+  id: string;
+  name: string;
   score: number;
-  addScore: (points: number) => void;
-  resetScore: () => void;
+}
+
+interface ScoreContextType {
+  contestants: Contestant[];
+  addContestant: (name: string) => void;
+  removeContestant: (id: string) => void;
+  awardPoints: (contestantId: string, points: number) => void;
+  deductPoints: (contestantId: string, points: number) => void;
   completedQuestions: number[];
   markQuestionCompleted: (questionId: number) => void;
+  resetGame: () => void;
 }
 
 const ScoreContext = createContext<ScoreContextType | undefined>(undefined);
 
 export function ScoreProvider({ children }: { children: ReactNode }) {
-  const [score, setScore] = useState(0);
+  const [contestants, setContestants] = useState<Contestant[]>([]);
   const [completedQuestions, setCompletedQuestions] = useState<number[]>([]);
 
-  const addScore = (points: number) => {
-    setScore((prev) => prev + points);
+  const addContestant = (name: string) => {
+    const id = crypto.randomUUID();
+    setContestants((prev) => [...prev, { id, name, score: 0 }]);
+  };
+
+  const removeContestant = (id: string) => {
+    setContestants((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  const awardPoints = (contestantId: string, points: number) => {
+    setContestants((prev) =>
+      prev.map((c) =>
+        c.id === contestantId ? { ...c, score: c.score + points } : c
+      )
+    );
+  };
+
+  const deductPoints = (contestantId: string, points: number) => {
+    setContestants((prev) =>
+      prev.map((c) =>
+        c.id === contestantId ? { ...c, score: c.score - points } : c
+      )
+    );
   };
 
   const markQuestionCompleted = (questionId: number) => {
     setCompletedQuestions((prev) => [...prev, questionId]);
   };
 
-  const resetScore = () => {
-    setScore(0);
+  const resetGame = () => {
+    setContestants((prev) => prev.map((c) => ({ ...c, score: 0 })));
     setCompletedQuestions([]);
   };
 
   return (
-    <ScoreContext.Provider value={{ score, addScore, resetScore, completedQuestions, markQuestionCompleted }}>
+    <ScoreContext.Provider
+      value={{
+        contestants,
+        addContestant,
+        removeContestant,
+        awardPoints,
+        deductPoints,
+        completedQuestions,
+        markQuestionCompleted,
+        resetGame,
+      }}
+    >
       {children}
     </ScoreContext.Provider>
   );

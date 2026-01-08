@@ -24,9 +24,8 @@ export async function registerRoutes(
 
   app.get(api.questions.listByCategory.path, async (req, res) => {
     const questions = await storage.getQuestionsByCategory(Number(req.params.categoryId));
-    // Remove correct answer from response
-    const sanitizedQuestions = questions.map(({ correctAnswer, ...rest }) => rest);
-    res.json(sanitizedQuestions);
+    // Include correct answer for host mode
+    res.json(questions);
   });
 
   app.post(api.questions.verifyAnswer.path, async (req, res) => {
