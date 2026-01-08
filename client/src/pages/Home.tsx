@@ -1,7 +1,6 @@
 import { useCategories } from "@/hooks/use-quiz";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
-import { useScore } from "@/components/ScoreContext";
 import { QuestionCard } from "@/components/QuestionCard";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { CategoryColumn } from "@/components/CategoryColumn";
@@ -39,22 +38,25 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col lg:flex-row gap-6">
-          <div className="lg:w-72 shrink-0">
+      <div className="p-4">
+        <div className="flex flex-col xl:flex-row gap-4">
+          <div className="xl:w-64 shrink-0">
             <Scoreboard />
           </div>
           
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-6 text-center">
+            <h1 className="text-xl md:text-2xl font-bold text-foreground mb-4 text-center">
               Trivia Challenge
             </h1>
 
             {categories && categories.length > 0 ? (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto pb-2">
                 <div 
-                  className="grid border border-border rounded-lg overflow-hidden min-w-max"
-                  style={{ gridTemplateColumns: `repeat(${categories.length}, minmax(140px, 1fr))` }}
+                  className="grid border border-border rounded-lg overflow-hidden"
+                  style={{ 
+                    gridTemplateColumns: `repeat(${categories.length}, minmax(90px, 1fr))`,
+                    minWidth: `${categories.length * 90}px`
+                  }}
                 >
                   {categories.map((category) => (
                     <CategoryColumn 
