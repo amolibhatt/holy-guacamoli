@@ -1,5 +1,5 @@
 import { useCategories } from "@/hooks/use-quiz";
-import { Loader2, Settings, Maximize2, Minimize2, Sparkles } from "lucide-react";
+import { Loader2, Settings, Maximize2, Minimize2, Cake, Star } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -78,19 +78,30 @@ export default function Home() {
     <div className="min-h-screen gradient-game grid-bg flex flex-col">
       <header className="border-b border-border/30 bg-card/30 backdrop-blur-md sticky top-0 z-50">
         <div className="px-4 py-2 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <motion.div 
-              className="w-10 h-10 rounded-xl gradient-header flex items-center justify-center"
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <Sparkles className="w-5 h-5 text-white" />
-            </motion.div>
-            <h1 className="text-xl font-black tracking-tight">
-              <span className="text-primary">AMOLI'S</span>
-              <span className="text-foreground mx-1.5">BIRTHDAY</span>
-              <span className="text-primary">TRIVIA</span>
-            </h1>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <motion.div 
+                className="w-12 h-12 rounded-xl gradient-header flex items-center justify-center"
+                animate={{ rotate: [0, -5, 5, -5, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Cake className="w-6 h-6 text-white" />
+              </motion.div>
+              <motion.div
+                className="absolute -top-1 -right-1"
+                animate={{ scale: [1, 1.2, 1], opacity: [1, 0.8, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <Star className="w-4 h-4 text-primary fill-primary" />
+              </motion.div>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-medium text-muted-foreground tracking-widest uppercase">The</span>
+              <h1 className="text-xl font-black tracking-tight leading-tight">
+                <span className="text-primary">Amoli</span>
+                <span className="text-foreground"> Quiz Show</span>
+              </h1>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Button 
