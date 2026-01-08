@@ -1,5 +1,5 @@
 import { useCategories } from "@/hooks/use-quiz";
-import { Loader2, Settings, Sparkles, Maximize2, Minimize2, Cake, PartyPopper } from "lucide-react";
+import { Loader2, Settings, Maximize2, Minimize2, Zap } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -79,22 +79,12 @@ export default function Home() {
       <header className="border-b border-border/30 bg-card/30 backdrop-blur-md sticky top-0 z-50">
         <div className="px-4 py-2 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <motion.div 
-              className="w-10 h-10 rounded-xl gradient-header flex items-center justify-center"
-              animate={{ rotate: [0, -10, 10, -10, 0] }}
-              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-            >
-              <Cake className="w-5 h-5 text-white" />
-            </motion.div>
-            <div className="flex items-center gap-2">
-              <PartyPopper className="w-5 h-5 text-primary" />
-              <h1 className="text-xl font-black tracking-tight">
-                <span className="text-primary">AMOLI'S</span>
-                <span className="text-foreground mx-1">BIRTHDAY</span>
-                <span className="text-primary">BASH!</span>
-              </h1>
-              <PartyPopper className="w-5 h-5 text-primary transform scale-x-[-1]" />
+            <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <Zap className="w-4 h-4 text-primary" />
             </div>
+            <h1 className="text-lg font-semibold tracking-tight text-foreground">
+              amoli<span className="text-primary font-bold">trivia</span>
+            </h1>
           </div>
           <div className="flex items-center gap-2">
             <Button 
