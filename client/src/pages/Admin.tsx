@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Zap, Pencil, X, Check } from "lucide-react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Category, Question } from "@shared/schema";
@@ -17,14 +17,18 @@ const POINT_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 export default function Admin() {
   const { toast } = useToast();
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [editingQuestionId, setEditingQuestionId] = useState<number | null>(null);
 
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryDesc, setNewCategoryDesc] = useState("");
 
   const [newQuestion, setNewQuestion] = useState("");
-  const [newOptions, setNewOptions] = useState(["", "", "", ""]);
   const [newCorrectAnswer, setNewCorrectAnswer] = useState("");
   const [newPoints, setNewPoints] = useState<number>(10);
+
+  const [editQuestion, setEditQuestion] = useState("");
+  const [editCorrectAnswer, setEditCorrectAnswer] = useState("");
+  const [editPoints, setEditPoints] = useState<number>(10);
 
   const { data: categories = [], isLoading: loadingCategories } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
@@ -70,13 +74,26 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories', selectedCategoryId, 'questions'] });
       setNewQuestion("");
-      setNewOptions(["", "", "", ""]);
       setNewCorrectAnswer("");
       setNewPoints(10);
       toast({ title: "Question added!" });
     },
     onError: () => {
       toast({ title: "Failed to add question", variant: "destructive" });
+    },
+  });
+
+  const updateQuestionMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: { question?: string; correctAnswer?: string; points?: number } }) => {
+      return apiRequest(`/api/questions/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/categories', selectedCategoryId, 'questions'] });
+      setEditingQuestionId(null);
+      toast({ title: "Question updated!" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update question", variant: "destructive" });
     },
   });
 
@@ -101,24 +118,34 @@ export default function Admin() {
 
   const handleCreateQuestion = () => {
     if (!selectedCategoryId || !newQuestion.trim() || !newCorrectAnswer.trim()) {
-      toast({ title: "Please fill in all required fields", variant: "destructive" });
-      return;
-    }
-    const validOptions = newOptions.filter(o => o.trim());
-    if (validOptions.length < 2) {
-      toast({ title: "Please provide at least 2 options", variant: "destructive" });
-      return;
-    }
-    if (!validOptions.includes(newCorrectAnswer.trim())) {
-      toast({ title: "Correct answer must be one of the options", variant: "destructive" });
+      toast({ title: "Please fill in question and answer", variant: "destructive" });
       return;
     }
     createQuestionMutation.mutate({
       categoryId: selectedCategoryId,
       question: newQuestion.trim(),
-      options: validOptions,
+      options: [newCorrectAnswer.trim()],
       correctAnswer: newCorrectAnswer.trim(),
       points: newPoints,
+    });
+  };
+
+  const startEditing = (q: Question) => {
+    setEditingQuestionId(q.id);
+    setEditQuestion(q.question);
+    setEditCorrectAnswer(q.correctAnswer);
+    setEditPoints(q.points);
+  };
+
+  const handleUpdateQuestion = () => {
+    if (!editingQuestionId) return;
+    updateQuestionMutation.mutate({
+      id: editingQuestionId,
+      data: {
+        question: editQuestion.trim(),
+        correctAnswer: editCorrectAnswer.trim(),
+        points: editPoints,
+      },
     });
   };
 
@@ -127,10 +154,10 @@ export default function Admin() {
   return (
     <div className="min-h-screen gradient-game grid-bg p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl gradient-header flex items-center justify-center glow-primary">
-              <Sparkles className="w-6 h-6 text-white" />
+              <Zap className="w-6 h-6 text-white" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-foreground">Admin Panel</h1>
@@ -159,6 +186,7 @@ export default function Admin() {
                   placeholder="Category name"
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCreateCategory()}
                   className="bg-input border-border"
                   data-testid="input-category-name"
                 />
@@ -166,6 +194,7 @@ export default function Admin() {
                   placeholder="Description (optional)"
                   value={newCategoryDesc}
                   onChange={(e) => setNewCategoryDesc(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCreateCategory()}
                   className="bg-input border-border"
                   data-testid="input-category-desc"
                 />
@@ -199,7 +228,7 @@ export default function Admin() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, x: -50 }}
-                          className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${
+                          className={`flex items-center justify-between gap-2 p-3 rounded-xl cursor-pointer transition-all ${
                             selectedCategoryId === cat.id
                               ? 'bg-primary/20 border-2 border-primary'
                               : 'bg-muted/20 border border-border hover:bg-muted/30'
@@ -207,7 +236,7 @@ export default function Admin() {
                           onClick={() => setSelectedCategoryId(cat.id)}
                           data-testid={`category-item-${cat.id}`}
                         >
-                          <span className="font-medium text-foreground">{cat.name}</span>
+                          <span className="font-medium text-foreground truncate">{cat.name}</span>
                           <Button
                             size="icon"
                             variant="ghost"
@@ -215,7 +244,7 @@ export default function Admin() {
                               e.stopPropagation();
                               deleteCategoryMutation.mutate(cat.id);
                             }}
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             data-testid={`button-delete-category-${cat.id}`}
                           >
                             <Trash2 className="w-4 h-4" />
@@ -235,7 +264,7 @@ export default function Admin() {
           <Card className="bg-card border-border">
             <CardHeader className="border-b border-border">
               <CardTitle className="flex items-center gap-2 text-foreground">
-                <HelpCircle className="w-5 h-5 text-success" />
+                <HelpCircle className="w-5 h-5 text-primary" />
                 Questions
                 {selectedCategory && <span className="text-muted-foreground font-normal">- {selectedCategory.name}</span>}
               </CardTitle>
@@ -258,22 +287,6 @@ export default function Admin() {
                       data-testid="input-question-text"
                     />
                     <div className="grid grid-cols-2 gap-2">
-                      {newOptions.map((opt, idx) => (
-                        <Input
-                          key={idx}
-                          placeholder={`Option ${idx + 1}`}
-                          value={opt}
-                          onChange={(e) => {
-                            const updated = [...newOptions];
-                            updated[idx] = e.target.value;
-                            setNewOptions(updated);
-                          }}
-                          className="bg-input border-border"
-                          data-testid={`input-option-${idx}`}
-                        />
-                      ))}
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
                       <Input
                         placeholder="Correct answer"
                         value={newCorrectAnswer}
@@ -295,7 +308,7 @@ export default function Admin() {
                     <Button
                       onClick={handleCreateQuestion}
                       disabled={createQuestionMutation.isPending}
-                      className="w-full bg-success hover:bg-success/90"
+                      className="w-full gradient-header"
                       data-testid="button-add-question"
                     >
                       {createQuestionMutation.isPending ? (
@@ -313,29 +326,90 @@ export default function Admin() {
                         <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
                       </div>
                     ) : (
-                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                      <div className="space-y-2 max-h-[350px] overflow-y-auto">
                         {questions.map((q) => (
                           <div
                             key={q.id}
-                            className="flex items-start justify-between gap-3 p-3 bg-muted/20 rounded-xl border border-border"
+                            className="p-3 bg-muted/20 rounded-xl border border-border"
                             data-testid={`question-item-${q.id}`}
                           >
-                            <div className="flex-1 min-w-0">
-                              <p className="text-foreground text-sm line-clamp-2">{q.question}</p>
-                              <div className="flex items-center gap-2 mt-1.5">
-                                <span className="text-xs font-medium text-primary">{q.points} pts</span>
-                                <span className="text-xs text-success">Answer: {q.correctAnswer}</span>
+                            {editingQuestionId === q.id ? (
+                              <div className="space-y-2">
+                                <Textarea
+                                  value={editQuestion}
+                                  onChange={(e) => setEditQuestion(e.target.value)}
+                                  className="bg-input border-border resize-none text-sm"
+                                  rows={2}
+                                />
+                                <div className="grid grid-cols-2 gap-2">
+                                  <Input
+                                    value={editCorrectAnswer}
+                                    onChange={(e) => setEditCorrectAnswer(e.target.value)}
+                                    className="bg-input border-border text-sm"
+                                    placeholder="Answer"
+                                  />
+                                  <Select value={String(editPoints)} onValueChange={(v) => setEditPoints(Number(v))}>
+                                    <SelectTrigger className="bg-input border-border">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {POINT_VALUES.map((p) => (
+                                        <SelectItem key={p} value={String(p)}>{p} pts</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={handleUpdateQuestion}
+                                    disabled={updateQuestionMutation.isPending}
+                                    className="flex-1 bg-primary"
+                                  >
+                                    {updateQuestionMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}
+                                    Save
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setEditingQuestionId(null)}
+                                    className="border-border"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => deleteQuestionMutation.mutate(q.id)}
-                              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                              data-testid={`button-delete-question-${q.id}`}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            ) : (
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-foreground text-sm line-clamp-2">{q.question}</p>
+                                  <div className="flex items-center gap-2 mt-1.5">
+                                    <span className="text-xs font-medium text-primary">{q.points} pts</span>
+                                    <span className="text-xs text-muted-foreground">Answer: {q.correctAnswer}</span>
+                                  </div>
+                                </div>
+                                <div className="flex gap-1 shrink-0">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => startEditing(q)}
+                                    className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                                    data-testid={`button-edit-question-${q.id}`}
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => deleteQuestionMutation.mutate(q.id)}
+                                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                    data-testid={`button-delete-question-${q.id}`}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                         {questions.length === 0 && (
