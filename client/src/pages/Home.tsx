@@ -86,7 +86,7 @@ export default function Home() {
             >
               <Sparkles className="w-5 h-5 text-white" />
             </motion.div>
-            <h1 className="text-xl font-black text-foreground tracking-tight">TRIVIA CHALLENGE</h1>
+            <h1 className="text-xl font-black text-foreground tracking-tight">AMOLI'S BIRTHDAY TRIVIA</h1>
           </div>
           <div className="flex items-center gap-2">
             <Button 
