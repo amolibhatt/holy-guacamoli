@@ -62,7 +62,7 @@ export function CategoryColumn({ category, onSelectQuestion }: CategoryColumnPro
               {isCompleted ? (
                 <span className="opacity-30">{scoreValue}</span>
               ) : (
-                <span className={hasQuestion ? 'text-glow' : ''}>${scoreValue}</span>
+                <span className={hasQuestion ? 'text-glow' : ''}>{scoreValue}</span>
               )}
             </motion.button>
           );

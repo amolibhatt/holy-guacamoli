@@ -80,7 +80,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
             <div className="text-center">
               <Sparkles className="w-16 h-16 text-white mx-auto mb-4 animate-pulse" />
               <h2 className="text-3xl font-black text-white">{awardedTo} wins!</h2>
-              <p className="text-2xl font-bold text-white/90 mt-2">+${question.points}</p>
+              <p className="text-2xl font-bold text-white/90 mt-2">+{question.points} pts</p>
             </div>
           </motion.div>
         )}
@@ -88,7 +88,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
 
       <div className="gradient-header px-6 py-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span className="text-3xl font-black text-white text-glow">${question.points}</span>
+          <span className="text-3xl font-black text-white text-glow">{question.points} pts</span>
         </div>
         <div className="flex items-center gap-2">
           {timer !== null && (
@@ -208,7 +208,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
               >
                 <div className="flex items-center gap-3">
                   <span className="font-semibold text-foreground">{contestant.name}</span>
-                  <span className="text-sm text-muted-foreground">(${contestant.score})</span>
+                  <span className="text-sm text-muted-foreground">({contestant.score} pts)</span>
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -218,7 +218,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
                     data-testid={`button-award-${contestant.id}`}
                   >
                     <CheckCircle2 className="w-4 h-4 mr-1" />
-                    +${question.points}
+                    +{question.points}
                   </Button>
                   <Button
                     size="sm"
@@ -227,7 +227,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
                     data-testid={`button-deduct-${contestant.id}`}
                   >
                     <XCircle className="w-4 h-4 mr-1" />
-                    -${question.points}
+                    -{question.points}
                   </Button>
                 </div>
               </motion.div>
