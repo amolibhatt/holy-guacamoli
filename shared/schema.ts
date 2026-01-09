@@ -4,11 +4,19 @@ import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 // === TABLE DEFINITIONS ===
-export const categories = pgTable("categories", {
+export const boards = pgTable("boards", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  description: text("description"),
+  pointValues: jsonb("point_values").$type<number[]>().notNull().default([10, 20, 30, 40, 50]),
+});
+
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  boardId: integer("board_id"),
+  name: text("name").notNull(),
   description: text("description").notNull(),
-  imageUrl: text("image_url").notNull(), // For a nice UI
+  imageUrl: text("image_url").notNull(),
 });
 
 export const questions = pgTable("questions", {
@@ -21,7 +29,15 @@ export const questions = pgTable("questions", {
 });
 
 // === RELATIONS ===
-export const categoriesRelations = relations(categories, ({ many }) => ({
+export const boardsRelations = relations(boards, ({ many }) => ({
+  categories: many(categories),
+}));
+
+export const categoriesRelations = relations(categories, ({ one, many }) => ({
+  board: one(boards, {
+    fields: [categories.boardId],
+    references: [boards.id],
+  }),
   questions: many(questions),
 }));
 
@@ -33,12 +49,15 @@ export const questionsRelations = relations(questions, ({ one }) => ({
 }));
 
 // === BASE SCHEMAS ===
+export const insertBoardSchema = createInsertSchema(boards).omit({ id: true });
 export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
 export const insertQuestionSchema = createInsertSchema(questions).omit({ id: true });
 
 // === EXPLICIT API CONTRACT TYPES ===
+export type Board = typeof boards.$inferSelect;
 export type Category = typeof categories.$inferSelect;
 export type Question = typeof questions.$inferSelect;
+export type InsertBoard = z.infer<typeof insertBoardSchema>;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertQuestion = z.infer<typeof insertQuestionSchema>;
 
