@@ -8,7 +8,7 @@ import { Sparkles, Check } from "lucide-react";
 import { soundManager } from "@/lib/sounds";
 import { particles } from "@/lib/particles";
 
-const SCORE_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+const DEFAULT_SCORE_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
 interface FlipCardProps {
   scoreValue: number;
@@ -114,23 +114,26 @@ function FlipCard({ scoreValue, question, isCompleted, categoryId, onSelect, del
 interface CategoryColumnProps {
   category: Category;
   onSelectQuestion: (question: Question) => void;
+  pointValues?: number[];
 }
 
-export function CategoryColumn({ category, onSelectQuestion }: CategoryColumnProps) {
+export function CategoryColumn({ category, onSelectQuestion, pointValues }: CategoryColumnProps) {
   const { data: questions, isLoading } = useQuestions(category.id);
   const { completedQuestions } = useScore();
+  
+  const scoreValues = pointValues || DEFAULT_SCORE_VALUES;
   
   const questionsByPoints = (questions || []).reduce((acc, q) => {
     acc[q.points] = q;
     return acc;
   }, {} as Record<number, Question>);
 
-  const completedCount = SCORE_VALUES.filter(sv => {
+  const completedCount = scoreValues.filter(sv => {
     const q = questionsByPoints[sv];
     return q && completedQuestions.includes(q.id);
   }).length;
   
-  const totalQuestions = SCORE_VALUES.filter(sv => questionsByPoints[sv]).length;
+  const totalQuestions = scoreValues.filter(sv => questionsByPoints[sv]).length;
   const allCompleted = totalQuestions > 0 && completedCount === totalQuestions;
 
   return (
@@ -168,7 +171,7 @@ export function CategoryColumn({ category, onSelectQuestion }: CategoryColumnPro
       </motion.div>
       
       <div className="flex flex-col gap-2 mt-2 flex-1">
-        {SCORE_VALUES.map((scoreValue, idx) => {
+        {scoreValues.map((scoreValue, idx) => {
           const question = questionsByPoints[scoreValue];
           const isCompleted = question ? completedQuestions.includes(question.id) : false;
 

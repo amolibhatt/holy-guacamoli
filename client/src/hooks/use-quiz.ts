@@ -1,5 +1,44 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
+import type { Board, Category } from "@shared/schema";
+
+// GET /api/boards
+export function useBoards() {
+  return useQuery<Board[]>({
+    queryKey: ["/api/boards"],
+    queryFn: async () => {
+      const res = await fetch("/api/boards");
+      if (!res.ok) throw new Error("Failed to fetch boards");
+      return res.json();
+    },
+  });
+}
+
+// GET /api/boards/:id
+export function useBoard(id: number | null) {
+  return useQuery<Board>({
+    queryKey: ["/api/boards", id],
+    enabled: id !== null,
+    queryFn: async () => {
+      const res = await fetch(`/api/boards/${id}`);
+      if (!res.ok) throw new Error("Failed to fetch board");
+      return res.json();
+    },
+  });
+}
+
+// GET /api/boards/:id/categories
+export function useBoardCategories(boardId: number | null) {
+  return useQuery<Category[]>({
+    queryKey: ["/api/boards", boardId, "categories"],
+    enabled: boardId !== null,
+    queryFn: async () => {
+      const res = await fetch(`/api/boards/${boardId}/categories`);
+      if (!res.ok) throw new Error("Failed to fetch board categories");
+      return res.json();
+    },
+  });
+}
 
 // GET /api/categories
 export function useCategories() {
