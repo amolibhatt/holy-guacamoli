@@ -1,8 +1,8 @@
-# QuizMaster
+# Holy GuacAmoli!
 
 ## Overview
 
-QuizMaster is a Jeopardy-style quiz game application designed for live hosting scenarios. The app features a game board with categories and point values (10-100), contestant management with score tracking, and an admin panel for managing quiz content. It's built as a full-stack TypeScript application with a React frontend and Express backend.
+Holy GuacAmoli! is a Jeopardy-style quiz game application designed for live hosting scenarios, created for Amoli's birthday. The app features a game board with categories and point values (10-100), contestant management with score tracking, and an admin panel for managing quiz content. It's built as a full-stack TypeScript application with a React frontend and Express backend.
 
 ## User Preferences
 
