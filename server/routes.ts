@@ -43,6 +43,69 @@ export async function registerRoutes(
     res.json(info);
   });
 
+  // Board routes
+  app.get("/api/boards", async (req, res) => {
+    const boards = await storage.getBoards();
+    res.json(boards);
+  });
+
+  app.get("/api/boards/:id", async (req, res) => {
+    const board = await storage.getBoard(Number(req.params.id));
+    if (!board) {
+      return res.status(404).json({ message: "Board not found" });
+    }
+    res.json(board);
+  });
+
+  app.post("/api/boards", async (req, res) => {
+    try {
+      const { name, description, pointValues } = req.body;
+      if (!name) {
+        return res.status(400).json({ message: "Name is required" });
+      }
+      const board = await storage.createBoard({
+        name,
+        description: description || null,
+        pointValues: pointValues || [10, 20, 30, 40, 50],
+      });
+      res.status(201).json(board);
+    } catch (err) {
+      console.error("Error creating board:", err);
+      res.status(500).json({ message: "Failed to create board" });
+    }
+  });
+
+  app.put("/api/boards/:id", async (req, res) => {
+    try {
+      const { name, description, pointValues } = req.body;
+      const board = await storage.updateBoard(Number(req.params.id), {
+        name,
+        description,
+        pointValues,
+      });
+      if (!board) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      res.json(board);
+    } catch (err) {
+      console.error("Error updating board:", err);
+      res.status(500).json({ message: "Failed to update board" });
+    }
+  });
+
+  app.delete("/api/boards/:id", async (req, res) => {
+    const deleted = await storage.deleteBoard(Number(req.params.id));
+    if (!deleted) {
+      return res.status(404).json({ message: "Board not found" });
+    }
+    res.json({ success: true });
+  });
+
+  app.get("/api/boards/:id/categories", async (req, res) => {
+    const categories = await storage.getCategoriesByBoard(Number(req.params.id));
+    res.json(categories);
+  });
+
   app.get(api.categories.list.path, async (req, res) => {
     const categories = await storage.getCategories();
     res.json(categories);
@@ -102,6 +165,25 @@ export async function registerRoutes(
         });
       }
       throw err;
+    }
+  });
+
+  app.put("/api/categories/:id", async (req, res) => {
+    try {
+      const { name, description, imageUrl, boardId } = req.body;
+      const category = await storage.updateCategory(Number(req.params.id), {
+        name,
+        description,
+        imageUrl,
+        boardId,
+      });
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      res.json(category);
+    } catch (err) {
+      console.error("Error updating category:", err);
+      res.status(500).json({ message: "Failed to update category" });
     }
   });
 
