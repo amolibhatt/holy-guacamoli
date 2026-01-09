@@ -136,7 +136,7 @@ export default function Home() {
                   Select a Board
                 </motion.span>
                 <h1 className="text-2xl font-black tracking-tight leading-tight text-white text-glow">
-                  THE AMOLI SHOW
+                  Holy GuacAmoli!
                 </h1>
               </div>
             </motion.div>
@@ -338,7 +338,7 @@ export default function Home() {
                 {selectedBoard?.name || "Playing"}
               </motion.span>
               <h1 className="text-2xl font-black tracking-tight leading-tight text-white text-glow">
-                THE AMOLI SHOW
+                Holy GuacAmoli!
               </h1>
             </div>
           </motion.div>
