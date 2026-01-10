@@ -16,6 +16,7 @@ interface ThemeColors {
   gradient3: string;
   accent: string;
   glow: string;
+  primaryHsl: string;
 }
 
 interface ThemeDecor {
@@ -31,6 +32,7 @@ export const THEMES: Record<ThemeName, ThemeColors> = {
     gradient3: '#E879F9',
     accent: '#D946EF',
     glow: 'rgba(168, 85, 247, 0.4)',
+    primaryHsl: '280 70% 60%',
   },
   holiday: {
     gradient1: '#2ECC71',
@@ -38,6 +40,7 @@ export const THEMES: Record<ThemeName, ThemeColors> = {
     gradient3: '#E74C3C',
     accent: '#F1C40F',
     glow: 'rgba(46, 204, 113, 0.4)',
+    primaryHsl: '145 63% 49%',
   },
   sports: {
     gradient1: '#3498DB',
@@ -45,6 +48,7 @@ export const THEMES: Record<ThemeName, ThemeColors> = {
     gradient3: '#1ABC9C',
     accent: '#F39C12',
     glow: 'rgba(52, 152, 219, 0.4)',
+    primaryHsl: '204 70% 53%',
   },
   ocean: {
     gradient1: '#667eea',
@@ -52,6 +56,7 @@ export const THEMES: Record<ThemeName, ThemeColors> = {
     gradient3: '#6B8DD6',
     accent: '#00d2ff',
     glow: 'rgba(102, 126, 234, 0.4)',
+    primaryHsl: '229 79% 66%',
   },
   neon: {
     gradient1: '#f72585',
@@ -59,6 +64,7 @@ export const THEMES: Record<ThemeName, ThemeColors> = {
     gradient3: '#3a0ca3',
     accent: '#4cc9f0',
     glow: 'rgba(247, 37, 133, 0.4)',
+    primaryHsl: '333 93% 55%',
   },
 };
 
@@ -113,6 +119,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document.documentElement.style.setProperty('--theme-gradient-3', colors.gradient3);
     document.documentElement.style.setProperty('--theme-accent', colors.accent);
     document.documentElement.style.setProperty('--theme-glow', colors.glow);
+    document.documentElement.style.setProperty('--primary', colors.primaryHsl);
+    document.documentElement.style.setProperty('--ring', colors.primaryHsl);
+    document.documentElement.style.setProperty('--sidebar-primary', colors.primaryHsl);
+    document.documentElement.style.setProperty('--sidebar-ring', colors.primaryHsl);
   }, [theme]);
 
   return (
