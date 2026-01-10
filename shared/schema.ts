@@ -82,7 +82,7 @@ export type InsertQuestion = z.infer<typeof insertQuestionSchema>;
 
 // Extended types for UI
 export type BoardCategoryWithCategory = BoardCategory & { category: Category };
-export type BoardCategoryWithCount = BoardCategoryWithCategory & { questionCount: number };
+export type BoardCategoryWithCount = BoardCategoryWithCategory & { questionCount: number; position: number };
 export type BoardCategoryWithQuestions = BoardCategory & { category: Category; questions: Question[] };
 
 // Request types
