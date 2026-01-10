@@ -29,6 +29,9 @@ export default function Admin() {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
 
+  const [editingBoardId, setEditingBoardId] = useState<number | null>(null);
+  const [editBoardName, setEditBoardName] = useState("");
+
   const [newQuestion, setNewQuestion] = useState("");
   const [newCorrectAnswer, setNewCorrectAnswer] = useState("");
   const [newPoints, setNewPoints] = useState<number>(10);
@@ -112,6 +115,21 @@ export default function Admin() {
         setSelectedBoardCategoryId(null);
       }
       toast({ title: "Board deleted" });
+    },
+  });
+
+  const updateBoardMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: number; name: string }) => {
+      return apiRequest('PUT', `/api/boards/${id}`, { name });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
+      setEditingBoardId(null);
+      toast({ title: "Board renamed!" });
+    },
+    onError: () => {
+      toast({ title: "Failed to rename board", variant: "destructive" });
     },
   });
 
@@ -413,6 +431,7 @@ export default function Admin() {
                     const summary = boardSummaries.find(s => s.id === board.id);
                     const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
                     const maxQuestions = (summary?.categoryCount || 0) * 5;
+                    const isEditing = editingBoardId === board.id;
                     return (
                       <div
                         key={board.id}
@@ -421,31 +440,92 @@ export default function Admin() {
                             ? 'bg-primary/20 border-2 border-primary'
                             : 'bg-muted/20 border border-border hover:bg-muted/30'
                         }`}
-                        onClick={() => { setSelectedBoardId(board.id); setSelectedBoardCategoryId(null); }}
+                        onClick={() => { if (!isEditing) { setSelectedBoardId(board.id); setSelectedBoardCategoryId(null); } }}
                         data-testid={`board-item-${board.id}`}
                       >
                         <div className="min-w-0 flex-1">
-                          <span className="font-medium text-foreground text-sm truncate block">{board.name}</span>
-                          <div className="flex items-center gap-2 text-xs">
-                            <span className={`px-1.5 py-0.5 rounded ${(summary?.categoryCount || 0) >= 5 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                              {summary?.categoryCount || 0}/5 cat
-                            </span>
-                            {maxQuestions > 0 && (
-                              <span className={`px-1.5 py-0.5 rounded ${totalQuestions >= maxQuestions ? 'bg-primary/20 text-primary' : 'bg-accent/20 text-accent-foreground'}`}>
-                                {totalQuestions}/{maxQuestions} Q
-                              </span>
-                            )}
-                          </div>
+                          {isEditing ? (
+                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                              <Input
+                                value={editBoardName}
+                                onChange={(e) => setEditBoardName(e.target.value)}
+                                className="h-7 text-sm"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && editBoardName.trim()) {
+                                    updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() });
+                                  }
+                                  if (e.key === 'Escape') {
+                                    setEditingBoardId(null);
+                                  }
+                                }}
+                                data-testid={`input-edit-board-${board.id}`}
+                              />
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => {
+                                  if (editBoardName.trim()) {
+                                    updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() });
+                                  }
+                                }}
+                                className="h-7 w-7 text-primary shrink-0"
+                                data-testid={`button-save-board-${board.id}`}
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => setEditingBoardId(null)}
+                                className="h-7 w-7 text-muted-foreground shrink-0"
+                                data-testid={`button-cancel-edit-board-${board.id}`}
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="font-medium text-foreground text-sm truncate block">{board.name}</span>
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className={`px-1.5 py-0.5 rounded ${(summary?.categoryCount || 0) >= 5 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                                  {summary?.categoryCount || 0}/5 cat
+                                </span>
+                                {maxQuestions > 0 && (
+                                  <span className={`px-1.5 py-0.5 rounded ${totalQuestions >= maxQuestions ? 'bg-primary/20 text-primary' : 'bg-accent/20 text-accent-foreground'}`}>
+                                    {totalQuestions}/{maxQuestions} Q
+                                  </span>
+                                )}
+                              </div>
+                            </>
+                          )}
                         </div>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={(e) => { e.stopPropagation(); deleteBoardMutation.mutate(board.id); }}
-                          className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
-                          data-testid={`button-delete-board-${board.id}`}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        {!isEditing && (
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                setEditingBoardId(board.id); 
+                                setEditBoardName(board.name); 
+                              }}
+                              className="h-7 w-7 text-muted-foreground hover:text-primary"
+                              data-testid={`button-edit-board-${board.id}`}
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={(e) => { e.stopPropagation(); deleteBoardMutation.mutate(board.id); }}
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              data-testid={`button-delete-board-${board.id}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
