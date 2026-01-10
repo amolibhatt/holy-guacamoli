@@ -18,16 +18,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-interface BuzzEvent {
+interface ConnectedPlayer {
+  id: string;
+  name: string;
+}
+
+export interface BuzzEvent {
   playerId: string;
   playerName: string;
   position: number;
   timestamp: number;
-}
-
-interface ConnectedPlayer {
-  id: string;
-  name: string;
 }
 
 export interface BuzzerPanelHandle {
@@ -35,6 +35,7 @@ export interface BuzzerPanelHandle {
   lock: () => void;
   reset: () => void;
   getPlayers: () => BuzzerPlayer[];
+  getBuzzQueue: () => BuzzEvent[];
 }
 
 export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_, ref) {
@@ -144,7 +145,8 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
     lock: lockBuzzer,
     reset: resetBuzzer,
     getPlayers: () => players,
-  }), [unlockBuzzer, lockBuzzer, resetBuzzer, players]);
+    getBuzzQueue: () => buzzQueue,
+  }), [unlockBuzzer, lockBuzzer, resetBuzzer, players, buzzQueue]);
 
   const sendFeedback = (playerId: string, correct: boolean, points: number) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -245,35 +247,6 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
             </Button>
           </div>
         </div>
-
-        <AnimatePresence>
-          {buzzQueue.length > 0 && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="mt-3 pt-3 border-t border-border"
-            >
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm text-muted-foreground">Buzz order:</span>
-                {buzzQueue.map((buzz, idx) => (
-                  <motion.div
-                    key={buzz.playerId}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      idx === 0
-                        ? "gradient-gold text-purple-900"
-                        : "bg-white/10 text-foreground"
-                    }`}
-                  >
-                    #{buzz.position} {buzz.playerName}
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </Card>
 
       <Dialog open={showQR} onOpenChange={setShowQR}>

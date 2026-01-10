@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Question } from "@shared/schema";
 import { useScore } from "./ScoreContext";
 import { useTheme } from "@/context/ThemeContext";
-import { CheckCircle2, XCircle, Eye, EyeOff, Timer, X, Trophy, Sparkles, Star, Zap } from "lucide-react";
+import { CheckCircle2, XCircle, Eye, EyeOff, Timer, X, Trophy, Sparkles, Star, Zap, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,10 +12,18 @@ import remarkBreaks from "remark-breaks";
 import { soundManager } from "@/lib/sounds";
 
 
+interface BuzzEvent {
+  playerId: string;
+  playerName: string;
+  position: number;
+  timestamp: number;
+}
+
 interface QuestionCardProps {
   question: Question;
   isLocked: boolean;
   onComplete?: () => void;
+  buzzQueue?: BuzzEvent[];
 }
 
 function AudioPlayer({ src }: { src: string }) {
@@ -78,7 +86,7 @@ function QuestionContent({ content }: { content: string }) {
   );
 }
 
-export function QuestionCard({ question, isLocked, onComplete }: QuestionCardProps) {
+export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }: QuestionCardProps) {
   const [showAnswer, setShowAnswer] = useState(false);
   const [timer, setTimer] = useState<number | null>(null);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -307,6 +315,36 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
                   {correctAnswer}
                 </p>
               </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {buzzQueue.length > 0 && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/30"
+            >
+              <div className="flex items-center gap-3 flex-wrap justify-center">
+                <Zap className="w-5 h-5 text-primary" />
+                <span className="text-sm font-medium text-foreground">Buzz Order:</span>
+                {buzzQueue.map((buzz, idx) => (
+                  <motion.div
+                    key={buzz.playerId}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className={`px-4 py-2 rounded-full text-sm font-bold ${
+                      idx === 0
+                        ? "gradient-gold text-purple-900 shadow-lg"
+                        : "bg-white/10 text-foreground border border-white/20"
+                    }`}
+                  >
+                    #{buzz.position} {buzz.playerName}
+                  </motion.div>
+                ))}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

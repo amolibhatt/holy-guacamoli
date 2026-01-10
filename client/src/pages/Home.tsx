@@ -12,7 +12,7 @@ import { Scoreboard } from "@/components/Scoreboard";
 import { VictoryScreen } from "@/components/VictoryScreen";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { ThemeDecorations } from "@/components/ThemeDecorations";
-import { BuzzerPanel, BuzzerPanelHandle } from "@/components/BuzzerPanel";
+import { BuzzerPanel, BuzzerPanelHandle, BuzzEvent } from "@/components/BuzzerPanel";
 import { useScore } from "@/components/ScoreContext";
 import { useTheme } from "@/context/ThemeContext";
 import type { Question, Board } from "@shared/schema";
@@ -29,12 +29,25 @@ export default function Home() {
   const { gameEnded, resetGameEnd, markQuestionCompleted } = useScore();
   const { colors } = useTheme();
   const buzzerRef = useRef<BuzzerPanelHandle>(null);
+  const [buzzQueue, setBuzzQueue] = useState<BuzzEvent[]>([]);
 
   useEffect(() => {
     if (gameEnded) {
       setShowVictory(true);
     }
   }, [gameEnded]);
+
+  useEffect(() => {
+    if (!selectedQuestion) {
+      setBuzzQueue([]);
+      return;
+    }
+    const interval = setInterval(() => {
+      const queue = buzzerRef.current?.getBuzzQueue() || [];
+      setBuzzQueue(queue);
+    }, 100);
+    return () => clearInterval(interval);
+  }, [selectedQuestion]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -495,6 +508,7 @@ export default function Home() {
                   question={selectedQuestion}
                   isLocked={false}
                   onComplete={handleCloseQuestion}
+                  buzzQueue={buzzQueue}
                 />
               </motion.div>
             </DialogContent>
