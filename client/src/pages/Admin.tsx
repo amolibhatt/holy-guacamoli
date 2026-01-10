@@ -36,6 +36,9 @@ export default function Admin() {
   const [editCorrectAnswer, setEditCorrectAnswer] = useState("");
   const [editPoints, setEditPoints] = useState<number>(10);
 
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+  const [editCategoryName, setEditCategoryName] = useState("");
+
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
   const editImageInputRef = useRef<HTMLInputElement>(null);
@@ -60,13 +63,14 @@ export default function Admin() {
   });
 
   const updateCategoryMutation = useMutation({
-    mutationFn: async ({ id, boardId }: { id: number; boardId: number | null }) => {
-      return apiRequest('PUT', `/api/categories/${id}`, { boardId });
+    mutationFn: async ({ id, boardId, name }: { id: number; boardId?: number | null; name?: string }) => {
+      return apiRequest('PUT', `/api/categories/${id}`, { boardId, name });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
-      toast({ title: "Category reassigned!" });
+      setEditingCategoryId(null);
+      toast({ title: "Category updated!" });
     },
   });
 
@@ -528,19 +532,77 @@ export default function Admin() {
                           onClick={() => setSelectedCategoryId(cat.id)}
                           data-testid={`category-item-${cat.id}`}
                         >
-                          <span className="font-medium text-foreground truncate">{cat.name}</span>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteCategoryMutation.mutate(cat.id);
-                            }}
-                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            data-testid={`button-delete-category-${cat.id}`}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {editingCategoryId === cat.id ? (
+                            <div className="flex items-center gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
+                              <Input
+                                value={editCategoryName}
+                                onChange={(e) => setEditCategoryName(e.target.value)}
+                                className="flex-1 h-8"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && editCategoryName.trim()) {
+                                    updateCategoryMutation.mutate({ id: cat.id, name: editCategoryName.trim() });
+                                  } else if (e.key === 'Escape') {
+                                    setEditingCategoryId(null);
+                                  }
+                                }}
+                                data-testid={`input-edit-category-${cat.id}`}
+                              />
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => {
+                                  if (editCategoryName.trim()) {
+                                    updateCategoryMutation.mutate({ id: cat.id, name: editCategoryName.trim() });
+                                  }
+                                }}
+                                className="h-8 w-8 shrink-0 text-green-500 hover:text-green-600 hover:bg-green-500/10"
+                                data-testid={`button-save-category-${cat.id}`}
+                              >
+                                <Check className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => setEditingCategoryId(null)}
+                                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                                data-testid={`button-cancel-edit-category-${cat.id}`}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="font-medium text-foreground truncate">{cat.name}</span>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingCategoryId(cat.id);
+                                    setEditCategoryName(cat.name);
+                                  }}
+                                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                                  data-testid={`button-edit-category-${cat.id}`}
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteCategoryMutation.mutate(cat.id);
+                                  }}
+                                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                  data-testid={`button-delete-category-${cat.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </>
+                          )}
                         </motion.div>
                       ))}
                     </div>
