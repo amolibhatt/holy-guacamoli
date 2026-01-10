@@ -151,7 +151,7 @@ export default function Home() {
               <ThemeDecorations placement="header" />
               <ThemeSelector />
               <Link href="/admin">
-                <Button variant="ghost" size="icon" className="text-white/60 hover:text-white hover:bg-white/10" data-testid="button-admin">
+                <Button variant="ghost" size="icon" className="text-primary/80 hover:text-primary hover:bg-primary/10" data-testid="button-admin">
                   <Settings className="w-5 h-5" />
                 </Button>
               </Link>
@@ -346,7 +346,7 @@ export default function Home() {
               variant="ghost" 
               size="icon"
               onClick={() => setSelectedBoardId(null)}
-              className="text-white/60 hover:text-white hover:bg-white/10"
+              className="text-primary/80 hover:text-primary hover:bg-primary/10"
               data-testid="button-back-to-boards"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -394,13 +394,13 @@ export default function Home() {
               variant="ghost" 
               size="icon" 
               onClick={toggleFullscreen}
-              className="text-white/60 hover:text-white hover:bg-white/10"
+              className="text-primary/80 hover:text-primary hover:bg-primary/10"
               data-testid="button-fullscreen"
             >
               {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
             </Button>
             <Link href="/admin">
-              <Button variant="ghost" size="icon" className="text-white/60 hover:text-white hover:bg-white/10" data-testid="button-admin">
+              <Button variant="ghost" size="icon" className="text-primary/80 hover:text-primary hover:bg-primary/10" data-testid="button-admin">
                 <Settings className="w-5 h-5" />
               </Button>
             </Link>
