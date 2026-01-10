@@ -38,8 +38,19 @@ export interface BuzzerPanelHandle {
   getBuzzQueue: () => BuzzEvent[];
 }
 
+function getSavedRoomCode(): string | null {
+  if (typeof window !== "undefined") {
+    try {
+      return localStorage.getItem("buzzer-room-code");
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_, ref) {
-  const [roomCode, setRoomCode] = useState<string | null>(null);
+  const [roomCode, setRoomCode] = useState<string | null>(getSavedRoomCode);
   const [connected, setConnected] = useState(false);
   const [players, setPlayers] = useState<ConnectedPlayer[]>([]);
   const [buzzQueue, setBuzzQueue] = useState<BuzzEvent[]>([]);
@@ -103,14 +114,6 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
   }, [roomCode]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const savedCode = localStorage.getItem("buzzer-room-code");
-        if (savedCode) {
-          setRoomCode(savedCode);
-        }
-      } catch {}
-    }
     connect();
 
     return () => {
