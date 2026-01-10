@@ -11,20 +11,20 @@ import remarkBreaks from "remark-breaks";
 import { soundManager } from "@/lib/sounds";
 
 const POINT_GRADIENTS: Record<number, string> = {
-  10: 'from-blue-500 via-blue-600 to-blue-700',
-  20: 'from-cyan-500 via-teal-500 to-teal-600',
-  30: 'from-green-500 via-emerald-500 to-emerald-600',
-  40: 'from-lime-500 via-green-500 to-green-600',
-  50: 'from-yellow-500 via-amber-500 to-amber-600',
-  60: 'from-orange-500 via-orange-600 to-red-500',
-  70: 'from-red-500 via-red-600 to-pink-500',
-  80: 'from-pink-500 via-pink-600 to-purple-500',
-  90: 'from-purple-500 via-purple-600 to-violet-600',
-  100: 'from-violet-600 via-purple-700 to-fuchsia-600',
+  10: 'from-green-500 via-emerald-500 to-teal-500',
+  20: 'from-emerald-500 via-green-500 to-teal-500',
+  30: 'from-teal-500 via-emerald-500 to-green-500',
+  40: 'from-green-600 via-emerald-600 to-teal-600',
+  50: 'from-emerald-600 via-teal-600 to-green-600',
+  60: 'from-teal-600 via-green-600 to-emerald-600',
+  70: 'from-green-700 via-emerald-700 to-teal-700',
+  80: 'from-emerald-700 via-teal-700 to-green-700',
+  90: 'from-teal-700 via-green-700 to-emerald-700',
+  100: 'from-green-800 via-emerald-800 to-teal-800',
 };
 
 function getPointGradient(points: number) {
-  return POINT_GRADIENTS[points] || 'from-gray-500 via-gray-600 to-gray-700';
+  return POINT_GRADIENTS[points] || 'from-green-500 via-emerald-500 to-teal-500';
 }
 
 interface QuestionCardProps {
@@ -254,7 +254,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
             }}
             className={showAnswer 
               ? "bg-white/20 text-white hover:bg-white/30 border-2 border-white/30" 
-              : "bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-400 text-black font-bold shadow-lg shadow-yellow-500/50 hover:shadow-xl border-2 border-yellow-300"
+              : "bg-gradient-to-r from-white via-gray-100 to-white text-black font-bold shadow-lg shadow-white/50 hover:shadow-xl border-2 border-white/50"
             }
             data-testid="button-toggle-answer"
           >
