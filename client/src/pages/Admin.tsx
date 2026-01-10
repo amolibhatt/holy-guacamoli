@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -540,271 +541,267 @@ export default function Admin() {
                 </div>
               </CardContent>
             </Card>
-
-            {selectedBoardId && (
-              <Card className="bg-card border-border">
-                <CardHeader className="py-2 px-3 border-b border-border">
-                  <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="flex items-center gap-2 text-foreground text-sm">
-                      <FolderPlus className="w-4 h-4 text-primary" />
-                      Categories
-                      <span className={`text-xs ${boardCategories.length >= 5 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                        ({boardCategories.length}/5)
-                      </span>
-                    </CardTitle>
-                    <Button
-                      size="sm"
-                      variant={showNewCategoryForm ? "secondary" : "ghost"}
-                      onClick={() => setShowNewCategoryForm(!showNewCategoryForm)}
-                      disabled={boardCategories.length >= 5 && !showNewCategoryForm}
-                      className="h-7"
-                      data-testid="button-toggle-category-form"
-                    >
-                      {showNewCategoryForm ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-2">
-                  <AnimatePresence>
-                    {showNewCategoryForm && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="space-y-2 mb-2"
-                      >
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="Category name"
-                            value={newCategoryName}
-                            onChange={(e) => setNewCategoryName(e.target.value)}
-                            className="flex-1 h-8 text-sm"
-                            data-testid="input-category-name"
-                          />
-                          <Button
-                            onClick={() => createAndLinkCategoryMutation.mutate({ name: newCategoryName.trim(), description: newCategoryDescription.trim(), boardId: selectedBoardId! })}
-                            disabled={!newCategoryName.trim() || boardCategories.length >= 5}
-                            size="sm"
-                            className="h-8"
-                            data-testid="button-create-category"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <Input
-                          placeholder="Short description (shown as tooltip)"
-                          value={newCategoryDescription}
-                          onChange={(e) => setNewCategoryDescription(e.target.value)}
-                          className="h-8 text-sm"
-                          data-testid="input-category-description"
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {loadingBoardCategories ? (
-                    <div className="flex justify-center py-4"><Loader2 className="w-4 h-4 animate-spin" /></div>
-                  ) : boardCategories.length === 0 ? (
-                    <p className="text-center text-muted-foreground text-xs py-3">
-                      No categories yet. Click + to add one!
-                    </p>
-                  ) : (
-                    <div className="flex flex-wrap gap-1.5">
-                      {boardCategories.map((bc, idx) => (
-                        <div key={bc.id} className="relative group flex items-center gap-0.5">
-                          <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => moveCategory(idx, 'up')}
-                              disabled={idx === 0}
-                              className="h-4 w-4 text-muted-foreground hover:text-primary disabled:opacity-30"
-                              data-testid={`button-move-up-${bc.id}`}
-                            >
-                              <ArrowUp className="w-2.5 h-2.5" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => moveCategory(idx, 'down')}
-                              disabled={idx === boardCategories.length - 1}
-                              className="h-4 w-4 text-muted-foreground hover:text-primary disabled:opacity-30"
-                              data-testid={`button-move-down-${bc.id}`}
-                            >
-                              <ArrowDown className="w-2.5 h-2.5" />
-                            </Button>
-                          </div>
-                          {editingCategoryId === bc.category.id ? (
-                            <div className="flex flex-col gap-1 p-2 bg-muted rounded-md">
-                              <Input
-                                value={editCategoryName}
-                                onChange={(e) => setEditCategoryName(e.target.value)}
-                                placeholder="Category name"
-                                className="h-7 text-xs"
-                                autoFocus
-                              />
-                              <Input
-                                value={editCategoryDescription}
-                                onChange={(e) => setEditCategoryDescription(e.target.value)}
-                                placeholder="Short description (tooltip)"
-                                className="h-7 text-xs"
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    updateCategoryMutation.mutate({ id: bc.category.id, name: editCategoryName.trim(), description: editCategoryDescription.trim() });
-                                  } else if (e.key === 'Escape') {
-                                    setEditingCategoryId(null);
-                                  }
-                                }}
-                              />
-                              <div className="flex justify-end gap-1">
-                                <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => setEditingCategoryId(null)}>
-                                  Cancel
-                                </Button>
-                                <Button size="sm" className="h-6 px-2" onClick={() => updateCategoryMutation.mutate({ id: bc.category.id, name: editCategoryName.trim(), description: editCategoryDescription.trim() })}>
-                                  Save
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant={selectedBoardCategoryId === bc.id ? "default" : "outline"}
-                                  className="h-8 text-xs gap-1"
-                                  onClick={() => setSelectedBoardCategoryId(bc.id)}
-                                  data-testid={`category-tab-${bc.id}`}
-                                >
-                                  <span className="truncate max-w-[80px]">{bc.category.name}</span>
-                                  <span className={`text-[10px] px-1 py-0.5 rounded ${(bc.questionCount ?? 0) >= 5 ? 'bg-primary/30' : 'bg-muted'}`}>
-                                    {bc.questionCount ?? 0}
-                                  </span>
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p className="font-medium">{bc.category.name}</p>
-                                {bc.category.description && (
-                                  <p className="text-xs text-muted-foreground">{bc.category.description}</p>
-                                )}
-                                {!bc.category.description && (
-                                  <p className="text-xs text-muted-foreground italic">No description</p>
-                                )}
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-                          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={(e) => { e.stopPropagation(); setEditingCategoryId(bc.category.id); setEditCategoryName(bc.category.name); setEditCategoryDescription(bc.category.description || ''); }}
-                              className="h-5 w-5 text-muted-foreground hover:text-primary"
-                              data-testid={`button-edit-category-${bc.category.id}`}
-                            >
-                              <Pencil className="w-2.5 h-2.5" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={(e) => { e.stopPropagation(); unlinkCategoryMutation.mutate(bc.id); }}
-                              className="h-5 w-5 text-muted-foreground hover:text-accent-foreground"
-                              title="Unlink from board"
-                              data-testid={`button-unlink-${bc.id}`}
-                            >
-                              <Unlink className="w-2.5 h-2.5" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="h-5 w-5 text-muted-foreground hover:text-destructive"
-                                  data-testid={`button-delete-category-${bc.category.id}`}
-                                >
-                                  <Trash2 className="w-2.5 h-2.5" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete "{bc.category.name}"?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This will permanently delete this category and all its questions. This cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    onClick={() => {
-                                      if (selectedBoardCategoryId === bc.id) setSelectedBoardCategoryId(null);
-                                      deleteCategoryMutation.mutate(bc.category.id);
-                                    }}
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {unlinkedCategories.length > 0 && boardCategories.length < 5 && (
-                    <div className="pt-2 mt-2 border-t border-border">
-                      <p className="text-[10px] text-muted-foreground mb-1">Quick add:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {unlinkedCategories.slice(0, 4).map(cat => (
-                          <Button
-                            key={cat.id}
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 text-[10px] px-2"
-                            onClick={() => linkCategoryMutation.mutate({ boardId: selectedBoardId!, categoryId: cat.id })}
-                            data-testid={`button-quick-link-${cat.id}`}
-                          >
-                            <Plus className="w-2.5 h-2.5 mr-0.5" /> {cat.name}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
           </div>
 
           <div className="lg:col-span-8">
             <Card className="bg-card border-border h-full flex flex-col">
-              <CardHeader className="py-3 px-4 border-b border-border shrink-0">
-                <div className="flex items-center justify-between gap-2">
-                  <CardTitle className="flex items-center gap-2 text-foreground text-base">
-                    <HelpCircle className="w-4 h-4 text-primary" />
-                    Questions
-                    {selectedBoardCategory && (
-                      <span className="text-muted-foreground font-normal">
-                        for "{selectedBoardCategory.category.name}"
-                      </span>
-                    )}
-                  </CardTitle>
-                  {selectedBoardCategoryId && (
-                    <span className={`text-xs ${questions.length >= 5 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                      {questions.length}/5
-                    </span>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 flex-1 overflow-hidden flex flex-col">
-                {!selectedBoardCategoryId ? (
-                  <div className="flex-1 flex items-center justify-center">
-                    <div className="text-center">
-                      <FolderPlus className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                      <p className="text-muted-foreground">Select a category to manage questions</p>
-                      <p className="text-muted-foreground/60 text-sm mt-1">Choose a board and category from the left panel</p>
-                    </div>
+              {!selectedBoardId ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center p-8">
+                    <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-muted-foreground">Select a board to get started</p>
+                    <p className="text-muted-foreground/60 text-sm mt-1">Choose a board from the left panel</p>
                   </div>
-                ) : (
+                </div>
+              ) : (
+                <>
+                  <div className="border-b border-border px-3 py-2">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <FolderPlus className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium">Categories</span>
+                        <span className={`text-xs ${boardCategories.length >= 5 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                          ({boardCategories.length}/5)
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={showNewCategoryForm ? "secondary" : "ghost"}
+                        onClick={() => setShowNewCategoryForm(!showNewCategoryForm)}
+                        disabled={boardCategories.length >= 5 && !showNewCategoryForm}
+                        className="h-7"
+                        data-testid="button-toggle-category-form"
+                      >
+                        {showNewCategoryForm ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                      </Button>
+                    </div>
+
+                    <AnimatePresence>
+                      {showNewCategoryForm && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="space-y-2 mb-3 p-2 bg-muted/20 rounded-lg"
+                        >
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Category name"
+                              value={newCategoryName}
+                              onChange={(e) => setNewCategoryName(e.target.value)}
+                              className="flex-1 h-8 text-sm"
+                              data-testid="input-category-name"
+                            />
+                            <Button
+                              onClick={() => createAndLinkCategoryMutation.mutate({ name: newCategoryName.trim(), description: newCategoryDescription.trim(), boardId: selectedBoardId! })}
+                              disabled={!newCategoryName.trim() || boardCategories.length >= 5}
+                              size="sm"
+                              className="h-8"
+                              data-testid="button-create-category"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <Input
+                            placeholder="Short description (shown as tooltip)"
+                            value={newCategoryDescription}
+                            onChange={(e) => setNewCategoryDescription(e.target.value)}
+                            className="h-8 text-sm"
+                            data-testid="input-category-description"
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {loadingBoardCategories ? (
+                      <div className="flex justify-center py-4"><Loader2 className="w-4 h-4 animate-spin" /></div>
+                    ) : boardCategories.length === 0 ? (
+                      <p className="text-center text-muted-foreground text-xs py-3">
+                        No categories yet. Click + to add one!
+                      </p>
+                    ) : (
+                      <Tabs 
+                        value={selectedBoardCategoryId?.toString() || ''} 
+                        onValueChange={(val) => setSelectedBoardCategoryId(val ? Number(val) : null)}
+                        className="w-full"
+                      >
+                        <TabsList className="w-full h-auto flex-wrap justify-start gap-1 bg-transparent p-0">
+                          {boardCategories.map((bc, idx) => (
+                            <div key={bc.id} className="relative group flex items-center">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <TabsTrigger 
+                                    value={bc.id.toString()} 
+                                    className="h-9 px-3 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                                    data-testid={`category-tab-${bc.id}`}
+                                  >
+                                    <span className="truncate max-w-[120px]">{bc.category.name}</span>
+                                    <span className={`ml-2 text-[10px] px-1.5 py-0.5 rounded ${(bc.questionCount ?? 0) >= 5 ? 'bg-primary/30' : 'bg-muted'}`}>
+                                      {bc.questionCount ?? 0}
+                                    </span>
+                                  </TabsTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="font-medium">{bc.category.name}</p>
+                                  {bc.category.description ? (
+                                    <p className="text-xs text-muted-foreground">{bc.category.description}</p>
+                                  ) : (
+                                    <p className="text-xs text-muted-foreground italic">No description</p>
+                                  )}
+                                </TooltipContent>
+                              </Tooltip>
+                              <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={(e) => { e.stopPropagation(); moveCategory(idx, 'up'); }}
+                                  disabled={idx === 0}
+                                  className="h-5 w-5 text-muted-foreground hover:text-primary disabled:opacity-30"
+                                  data-testid={`button-move-up-${bc.id}`}
+                                >
+                                  <ArrowUp className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={(e) => { e.stopPropagation(); moveCategory(idx, 'down'); }}
+                                  disabled={idx === boardCategories.length - 1}
+                                  className="h-5 w-5 text-muted-foreground hover:text-primary disabled:opacity-30"
+                                  data-testid={`button-move-down-${bc.id}`}
+                                >
+                                  <ArrowDown className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={(e) => { e.stopPropagation(); setEditingCategoryId(bc.category.id); setEditCategoryName(bc.category.name); setEditCategoryDescription(bc.category.description || ''); }}
+                                  className="h-5 w-5 text-muted-foreground hover:text-primary"
+                                  data-testid={`button-edit-category-${bc.category.id}`}
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={(e) => { e.stopPropagation(); unlinkCategoryMutation.mutate(bc.id); }}
+                                  className="h-5 w-5 text-muted-foreground hover:text-accent-foreground"
+                                  title="Unlink from board"
+                                  data-testid={`button-unlink-${bc.id}`}
+                                >
+                                  <Unlink className="w-3 h-3" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="h-5 w-5 text-muted-foreground hover:text-destructive"
+                                      data-testid={`button-delete-category-${bc.category.id}`}
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete "{bc.category.name}"?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will permanently delete this category and all its questions. This cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        onClick={() => {
+                                          if (selectedBoardCategoryId === bc.id) setSelectedBoardCategoryId(null);
+                                          deleteCategoryMutation.mutate(bc.category.id);
+                                        }}
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </div>
+                          ))}
+                        </TabsList>
+                      </Tabs>
+                    )}
+
+                    {unlinkedCategories.length > 0 && boardCategories.length < 5 && (
+                      <div className="pt-2 mt-2 border-t border-border">
+                        <p className="text-[10px] text-muted-foreground mb-1">Quick add existing:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {unlinkedCategories.slice(0, 4).map(cat => (
+                            <Button
+                              key={cat.id}
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 text-[10px] px-2"
+                              onClick={() => linkCategoryMutation.mutate({ boardId: selectedBoardId!, categoryId: cat.id })}
+                              data-testid={`button-quick-link-${cat.id}`}
+                            >
+                              <Plus className="w-2.5 h-2.5 mr-0.5" /> {cat.name}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {editingCategoryId && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-3 p-3 bg-muted/20 rounded-lg border border-border"
+                      >
+                        <p className="text-xs text-muted-foreground mb-2">Edit Category</p>
+                        <div className="space-y-2">
+                          <Input
+                            value={editCategoryName}
+                            onChange={(e) => setEditCategoryName(e.target.value)}
+                            placeholder="Category name"
+                            className="h-8 text-sm"
+                            autoFocus
+                          />
+                          <Input
+                            value={editCategoryDescription}
+                            onChange={(e) => setEditCategoryDescription(e.target.value)}
+                            placeholder="Short description (tooltip)"
+                            className="h-8 text-sm"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                updateCategoryMutation.mutate({ id: editingCategoryId, name: editCategoryName.trim(), description: editCategoryDescription.trim() });
+                              } else if (e.key === 'Escape') {
+                                setEditingCategoryId(null);
+                              }
+                            }}
+                          />
+                          <div className="flex justify-end gap-2">
+                            <Button size="sm" variant="ghost" onClick={() => setEditingCategoryId(null)}>
+                              Cancel
+                            </Button>
+                            <Button size="sm" onClick={() => updateCategoryMutation.mutate({ id: editingCategoryId, name: editCategoryName.trim(), description: editCategoryDescription.trim() })}>
+                              Save
+                            </Button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+
+                  <CardContent className="p-4 flex-1 overflow-hidden flex flex-col">
+                    {!selectedBoardCategoryId ? (
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center">
+                          <HelpCircle className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                          <p className="text-muted-foreground">Select a category tab above</p>
+                          <p className="text-muted-foreground/60 text-sm mt-1">Click on a category to manage its questions</p>
+                        </div>
+                      </div>
+                    ) : (
                   <div className="flex-1 flex flex-col overflow-hidden">
                     <div className="space-y-3 p-4 bg-muted/10 rounded-xl border border-border shrink-0">
                       <div className="flex items-center gap-2 mb-2">
@@ -919,8 +916,10 @@ export default function Admin() {
                       )}
                     </div>
                   </div>
-                )}
-              </CardContent>
+                    )}
+                  </CardContent>
+                </>
+              )}
             </Card>
           </div>
         </div>
