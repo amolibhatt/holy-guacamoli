@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useScore, AVATAR_COLORS } from "./ScoreContext";
 import { Button } from "@/components/ui/button";
-import { X, RotateCcw, Crown, Trophy, Volume2, VolumeX } from "lucide-react";
+import { X, RotateCcw, Crown, Trophy, Volume2, VolumeX, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { soundManager } from "@/lib/sounds";
 import {
@@ -28,6 +29,10 @@ export function Scoreboard() {
       animate={{ opacity: 1, y: 0 }}
     >
       <div className="flex items-center gap-3">
+        <Badge variant="secondary" className="gap-1 shrink-0">
+          <Users className="w-3 h-3" />
+          {contestants.length}
+        </Badge>
         <div className="flex-1 overflow-x-auto">
           <LayoutGroup>
             <motion.div layout className="flex items-center gap-2">
