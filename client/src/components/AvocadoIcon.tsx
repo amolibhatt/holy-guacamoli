@@ -11,73 +11,68 @@ export function AvocadoIcon({ className = "w-7 h-7" }: AvocadoIconProps) {
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
-        <linearGradient id="avoSkin" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#65B741" />
-          <stop offset="100%" stopColor="#3A7D1E" />
+        <linearGradient id="avoSkinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#5D9E3A" />
+          <stop offset="30%" stopColor="#4A8A2C" />
+          <stop offset="70%" stopColor="#3A7521" />
+          <stop offset="100%" stopColor="#2A5A16" />
         </linearGradient>
-        <linearGradient id="avoFlesh" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#E8F5A3" />
-          <stop offset="100%" stopColor="#C5E063" />
+        <linearGradient id="avoFleshGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+          <stop offset="0%" stopColor="#F0F7C4" />
+          <stop offset="30%" stopColor="#E0ED8A" />
+          <stop offset="60%" stopColor="#C8DE5C" />
+          <stop offset="100%" stopColor="#A8C94A" />
         </linearGradient>
-        <linearGradient id="avoPit" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#A67C52" />
-          <stop offset="100%" stopColor="#6B4423" />
+        <linearGradient id="avoPitGrad" x1="30%" y1="0%" x2="70%" y2="100%">
+          <stop offset="0%" stopColor="#C4956A" />
+          <stop offset="40%" stopColor="#9B7245" />
+          <stop offset="100%" stopColor="#5C4020" />
         </linearGradient>
-        <filter id="avoShadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="3" stdDeviation="2" floodColor="#000" floodOpacity="0.25"/>
+        <radialGradient id="avoHighlight" cx="30%" cy="25%" r="50%">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.4)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+        </radialGradient>
+        <filter id="avoDropShadow" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000" floodOpacity="0.3"/>
         </filter>
       </defs>
       
-      <ellipse 
-        cx="32" 
-        cy="35" 
-        rx="22" 
-        ry="26" 
-        fill="url(#avoSkin)" 
-        filter="url(#avoShadow)"
+      <path
+        d="M32 6 C22 6 12 16 10 30 C8 44 16 58 32 58 C48 58 56 44 54 30 C52 16 42 6 32 6Z"
+        fill="url(#avoSkinGrad)"
+        filter="url(#avoDropShadow)"
       />
       
       <ellipse 
         cx="32" 
-        cy="37" 
-        rx="16" 
-        ry="19" 
-        fill="url(#avoFlesh)"
+        cy="36" 
+        rx="17" 
+        ry="18" 
+        fill="url(#avoFleshGrad)"
       />
       
-      <circle 
+      <ellipse 
         cx="32" 
-        cy="42" 
-        r="10" 
-        fill="url(#avoPit)"
+        cy="40" 
+        rx="11" 
+        ry="12" 
+        fill="url(#avoPitGrad)"
       />
       
-      <ellipse cx="28" cy="40" rx="3" ry="4" fill="#B8956B" opacity="0.4" />
-      
-      <ellipse cx="23" cy="30" rx="3" ry="4" fill="#1a1a1a" />
-      <ellipse cx="41" cy="30" rx="3" ry="4" fill="#1a1a1a" />
-      
-      <ellipse cx="24" cy="29" rx="1.2" ry="1.5" fill="white" />
-      <ellipse cx="42" cy="29" rx="1.2" ry="1.5" fill="white" />
+      <ellipse cx="28" cy="37" rx="4" ry="5" fill="rgba(196,149,106,0.35)" />
       
       <path
-        d="M26 35 Q32 40 38 35"
-        stroke="#3A7D1E"
-        strokeWidth="2.5"
+        d="M32 6 C22 6 12 16 10 30 C8 44 16 58 32 58 C48 58 56 44 54 30 C52 16 42 6 32 6Z"
+        fill="url(#avoHighlight)"
+      />
+      
+      <path
+        d="M20 22 Q24 18 28 20"
+        stroke="rgba(255,255,255,0.5)"
+        strokeWidth="2"
         strokeLinecap="round"
         fill="none"
       />
-      
-      <ellipse cx="18" cy="34" rx="3" ry="2" fill="#FF9B9B" opacity="0.5" />
-      <ellipse cx="46" cy="34" rx="3" ry="2" fill="#FF9B9B" opacity="0.5" />
-      
-      <path
-        d="M32 9 L32 14"
-        stroke="#3A7D1E"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      <ellipse cx="32" cy="8" rx="4" ry="3" fill="#65B741" />
     </svg>
   );
 }
