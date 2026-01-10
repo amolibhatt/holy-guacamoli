@@ -41,7 +41,7 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
   const [showQR, setShowQR] = useState(false);
   const [copied, setCopied] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
-  const { contestants } = useScore();
+  const { contestants, addContestantWithId } = useScore();
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -73,6 +73,7 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
           break;
         case "player:joined":
           setPlayers((prev) => [...prev, data.player]);
+          addContestantWithId(data.player.id, data.player.name);
           soundManager.play("click", 0.3);
           break;
         case "player:left":

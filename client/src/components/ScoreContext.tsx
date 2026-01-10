@@ -17,6 +17,7 @@ export interface Contestant {
 interface ScoreContextType {
   contestants: Contestant[];
   addContestant: (name: string) => void;
+  addContestantWithId: (id: string, name: string) => void;
   removeContestant: (id: string) => void;
   awardPoints: (contestantId: string, points: number) => void;
   deductPoints: (contestantId: string, points: number) => void;
@@ -45,6 +46,14 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
       score: 0, 
       color: AVATAR_COLORS[colorIndex] 
     }]);
+  };
+
+  const addContestantWithId = (id: string, name: string) => {
+    setContestants((prev) => {
+      if (prev.some((c) => c.id === id)) return prev;
+      const colorIndex = prev.length % AVATAR_COLORS.length;
+      return [...prev, { id, name, score: 0, color: AVATAR_COLORS[colorIndex] }];
+    });
   };
 
   const removeContestant = (id: string) => {
@@ -112,6 +121,7 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
       value={{
         contestants,
         addContestant,
+        addContestantWithId,
         removeContestant,
         awardPoints,
         deductPoints,
