@@ -5,6 +5,9 @@ const SOUND_URLS = {
   tick: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3',
   victory: 'https://assets.mixkit.co/active_storage/sfx/1434/1434-preview.mp3',
   click: 'https://assets.mixkit.co/active_storage/sfx/270/270-preview.mp3',
+  whoosh: 'https://assets.mixkit.co/active_storage/sfx/2574/2574-preview.mp3',
+  pop: 'https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3',
+  chime: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3',
 };
 
 type SoundName = keyof typeof SOUND_URLS;

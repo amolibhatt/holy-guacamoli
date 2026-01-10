@@ -19,17 +19,37 @@ interface FlipCardProps {
   delay: number;
 }
 
+const POINT_COLORS: Record<number, { bg: string; glow: string; text: string }> = {
+  10: { bg: 'from-blue-500 to-blue-600', glow: 'shadow-blue-500/50', text: 'text-white' },
+  20: { bg: 'from-cyan-500 to-teal-500', glow: 'shadow-cyan-500/50', text: 'text-white' },
+  30: { bg: 'from-green-500 to-emerald-500', glow: 'shadow-green-500/50', text: 'text-white' },
+  40: { bg: 'from-lime-500 to-green-500', glow: 'shadow-lime-500/50', text: 'text-white' },
+  50: { bg: 'from-yellow-500 to-amber-500', glow: 'shadow-yellow-500/50', text: 'text-black' },
+  60: { bg: 'from-orange-500 to-amber-500', glow: 'shadow-orange-500/50', text: 'text-white' },
+  70: { bg: 'from-red-500 to-orange-500', glow: 'shadow-red-500/50', text: 'text-white' },
+  80: { bg: 'from-pink-500 to-red-500', glow: 'shadow-pink-500/50', text: 'text-white' },
+  90: { bg: 'from-purple-500 to-pink-500', glow: 'shadow-purple-500/50', text: 'text-white' },
+  100: { bg: 'from-violet-600 to-purple-600', glow: 'shadow-violet-500/50', text: 'text-white' },
+};
+
+function getPointColor(points: number) {
+  return POINT_COLORS[points] || { bg: 'from-gray-500 to-gray-600', glow: 'shadow-gray-500/50', text: 'text-white' };
+}
+
 function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect, delay }: FlipCardProps) {
   const [isFlipping, setIsFlipping] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const hasQuestion = !!question;
+  const colors = getPointColor(scoreValue);
 
   const handleClick = (e: React.MouseEvent) => {
     if (hasQuestion && !isCompleted && !isFlipping) {
       setIsFlipping(true);
-      soundManager.play('click', 0.3);
-      particles.sparkle(e.clientX, e.clientY);
+      soundManager.play('whoosh', 0.4);
+      particles.burst(e.clientX, e.clientY);
       
       setTimeout(() => {
+        soundManager.play('pop', 0.3);
         onSelect(question);
         setIsFlipping(false);
       }, 400);
@@ -49,22 +69,25 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
         rotateY: { duration: 0.4, ease: "easeInOut" }
       }}
       style={{ perspective: 1000, transformStyle: "preserve-3d" }}
-      className="flex-1 min-h-[48px] lg:min-h-[56px]"
+      className="flex-1 min-h-[52px] lg:min-h-[64px]"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <motion.button
         whileHover={hasQuestion && !isCompleted ? { 
-          scale: 1.05, 
-          y: -4,
-          rotateY: 10,
+          scale: 1.08, 
+          y: -6,
+          rotateX: 5,
+          rotateY: 8,
         } : undefined}
-        whileTap={hasQuestion && !isCompleted ? { scale: 0.95 } : undefined}
+        whileTap={hasQuestion && !isCompleted ? { scale: 0.92 } : undefined}
         className={`
-          w-full h-full flex items-center justify-center rounded-lg font-black text-xl lg:text-2xl transition-all relative
+          w-full h-full flex items-center justify-center rounded-xl font-black text-2xl lg:text-3xl transition-all relative overflow-hidden
           ${!hasQuestion 
-            ? 'bg-white/5 text-white/20 cursor-not-allowed' 
+            ? 'bg-white/5 text-white/20 cursor-not-allowed border border-white/5' 
             : isCompleted 
-              ? 'bg-white/5 text-white/10 cursor-not-allowed' 
-              : 'bg-white/10 text-white cursor-pointer hover:bg-white/20 border border-white/10'
+              ? 'bg-gradient-to-br from-green-600/30 to-green-700/30 text-green-400/50 cursor-not-allowed border border-green-500/20' 
+              : `bg-gradient-to-br ${colors.bg} ${colors.text} cursor-pointer border-2 border-white/30 shadow-lg ${colors.glow} hover:shadow-xl`
           }
         `}
         onClick={handleClick}
@@ -72,21 +95,37 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
         data-testid={`cell-${boardCategoryId}-${scoreValue}`}
         style={{ backfaceVisibility: "hidden" }}
       >
+        {hasQuestion && !isCompleted && (
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"
+          />
+        )}
+        
+        {hasQuestion && !isCompleted && isHovered && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="absolute inset-0 bg-white/20 pointer-events-none"
+          />
+        )}
+
         <AnimatePresence mode="wait">
           {isCompleted ? (
             <motion.div
               key="completed"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="flex items-center gap-1"
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              className="flex items-center gap-1 text-green-400"
             >
-              <Check className="w-5 h-5" />
+              <Check className="w-6 h-6" />
             </motion.div>
           ) : (
             <motion.span
               key="value"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="drop-shadow-lg relative z-10"
             >
               {scoreValue}
             </motion.span>
@@ -94,17 +133,29 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
         </AnimatePresence>
         
         {hasQuestion && !isCompleted && (
-          <motion.div
-            className="absolute inset-0 rounded-lg pointer-events-none"
-            animate={{ 
-              boxShadow: [
-                "0 0 0 0 rgba(255,255,255,0)",
-                "0 0 20px 2px rgba(255,255,255,0.1)",
-                "0 0 0 0 rgba(255,255,255,0)"
-              ]
-            }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
+          <>
+            <motion.div
+              className="absolute inset-0 rounded-xl pointer-events-none"
+              animate={{ 
+                boxShadow: [
+                  "inset 0 0 20px rgba(255,255,255,0)",
+                  "inset 0 0 30px rgba(255,255,255,0.3)",
+                  "inset 0 0 20px rgba(255,255,255,0)"
+                ]
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+            <motion.div
+              className="absolute top-1 right-1"
+              animate={{ 
+                scale: [1, 1.3, 1],
+                opacity: [0.5, 1, 0.5]
+              }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              <Sparkles className="w-3 h-3 text-white/70" />
+            </motion.div>
+          </>
         )}
       </motion.button>
     </motion.div>
@@ -139,31 +190,41 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }:
   return (
     <div className="flex flex-col h-full">
       <motion.div 
-        className={`text-white py-4 px-3 text-center rounded-t-xl min-h-[72px] flex items-center justify-center relative overflow-visible ${
-          allCompleted ? 'bg-green-600' : 'gradient-header'
+        className={`text-white py-4 px-3 text-center rounded-t-2xl min-h-[80px] flex items-center justify-center relative overflow-visible ${
+          allCompleted 
+            ? 'bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 shadow-lg shadow-green-500/40' 
+            : 'bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-600 shadow-lg shadow-purple-500/30'
         }`}
-        whileHover={{ scale: 1.02 }}
+        whileHover={{ scale: 1.03, y: -2 }}
         transition={{ type: "spring", stiffness: 400 }}
       >
-        <div className="absolute inset-0 shimmer rounded-t-xl overflow-hidden" />
+        <div className="absolute inset-0 shimmer rounded-t-2xl overflow-hidden" />
         <motion.div
           className="absolute top-1 right-1"
-          animate={{ rotate: [0, 360], scale: [1, 1.2, 1] }}
+          animate={{ rotate: [0, 360], scale: [1, 1.3, 1] }}
           transition={{ duration: 4, repeat: Infinity }}
         >
-          <Sparkles className="w-3 h-3 text-yellow-200/60" />
+          <Sparkles className="w-4 h-4 text-yellow-300/70" />
+        </motion.div>
+        <motion.div
+          className="absolute bottom-1 left-1"
+          animate={{ rotate: [0, -360], opacity: [0.4, 0.8, 0.4] }}
+          transition={{ duration: 5, repeat: Infinity }}
+        >
+          <Sparkles className="w-3 h-3 text-white/50" />
         </motion.div>
         {allCompleted && (
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 300 }}
             className="absolute top-1 left-1"
           >
-            <Check className="w-4 h-4 text-white" />
+            <Check className="w-5 h-5 text-white drop-shadow" />
           </motion.div>
         )}
         <h2 
-          className="font-black text-xs lg:text-sm leading-tight uppercase tracking-wide relative z-10 drop-shadow-lg break-words hyphens-auto" 
+          className="font-black text-sm lg:text-base leading-tight uppercase tracking-wide relative z-10 drop-shadow-lg break-words hyphens-auto" 
           data-testid={`text-category-${boardCategory.id}`}
         >
           {boardCategory.category.name}

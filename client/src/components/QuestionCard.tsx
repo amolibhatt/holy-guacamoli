@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Question } from "@shared/schema";
 import { useScore } from "./ScoreContext";
-import { CheckCircle2, XCircle, Eye, EyeOff, Timer, X, Trophy, Sparkles } from "lucide-react";
+import { CheckCircle2, XCircle, Eye, EyeOff, Timer, X, Trophy, Sparkles, Star, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,6 +9,23 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import { soundManager } from "@/lib/sounds";
+
+const POINT_GRADIENTS: Record<number, string> = {
+  10: 'from-blue-500 via-blue-600 to-blue-700',
+  20: 'from-cyan-500 via-teal-500 to-teal-600',
+  30: 'from-green-500 via-emerald-500 to-emerald-600',
+  40: 'from-lime-500 via-green-500 to-green-600',
+  50: 'from-yellow-500 via-amber-500 to-amber-600',
+  60: 'from-orange-500 via-orange-600 to-red-500',
+  70: 'from-red-500 via-red-600 to-pink-500',
+  80: 'from-pink-500 via-pink-600 to-purple-500',
+  90: 'from-purple-500 via-purple-600 to-violet-600',
+  100: 'from-violet-600 via-purple-700 to-fuchsia-600',
+};
+
+function getPointGradient(points: number) {
+  return POINT_GRADIENTS[points] || 'from-gray-500 via-gray-600 to-gray-700';
+}
 
 interface QuestionCardProps {
   question: Question;
@@ -182,31 +199,46 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
         )}
       </AnimatePresence>
 
-      <div className="gradient-header px-6 py-5 flex items-center justify-between gap-4 relative overflow-hidden">
+      <div className={`bg-gradient-to-r ${getPointGradient(question.points)} px-6 py-6 flex items-center justify-between gap-4 relative overflow-hidden`}>
         <div className="absolute inset-0 shimmer" />
         <motion.div
           className="absolute top-2 left-2"
           animate={{ rotate: 360, scale: [1, 1.3, 1] }}
           transition={{ duration: 3, repeat: Infinity }}
         >
-          <Sparkles className="w-4 h-4 text-yellow-200/50" />
+          <Sparkles className="w-5 h-5 text-yellow-200/70" />
         </motion.div>
-        <motion.span 
-          className="text-5xl font-black text-white drop-shadow-lg relative z-10"
+        <motion.div
+          className="absolute bottom-2 right-20"
+          animate={{ rotate: -360, scale: [1, 1.2, 1] }}
+          transition={{ duration: 4, repeat: Infinity, delay: 0.5 }}
+        >
+          <Star className="w-4 h-4 text-white/40 fill-white/40" />
+        </motion.div>
+        <motion.div
+          className="absolute top-3 right-40"
+          animate={{ y: [0, -5, 0], opacity: [0.3, 0.7, 0.3] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <Zap className="w-4 h-4 text-yellow-300/60" />
+        </motion.div>
+        <motion.div 
+          className="flex items-center gap-3 relative z-10"
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: "spring", stiffness: 200 }}
         >
-          {question.points}
-        </motion.span>
+          <span className="text-6xl font-black text-white drop-shadow-lg">{question.points}</span>
+          <span className="text-2xl font-bold text-white/80">pts</span>
+        </motion.div>
         <div className="flex items-center gap-3 relative z-10">
           {timer !== null && (
             <motion.div 
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               className={`
-                w-16 h-16 rounded-full flex items-center justify-center font-mono text-2xl font-black
-                ${timer <= 5 ? 'bg-red-500 text-white animate-pulse' : 'bg-white/20 text-white'}
+                w-16 h-16 rounded-full flex items-center justify-center font-mono text-2xl font-black border-4
+                ${timer <= 5 ? 'bg-red-500 text-white border-red-300 animate-pulse shadow-lg shadow-red-500/50' : 'bg-white/20 text-white border-white/30'}
               `}
             >
               {timer}
@@ -221,8 +253,8 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
               setShowAnswer(!showAnswer);
             }}
             className={showAnswer 
-              ? "bg-white/20 text-white hover:bg-white/30" 
-              : "gradient-gold text-purple-900 font-bold glow-gold"
+              ? "bg-white/20 text-white hover:bg-white/30 border-2 border-white/30" 
+              : "bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-400 text-black font-bold shadow-lg shadow-yellow-500/50 hover:shadow-xl border-2 border-yellow-300"
             }
             data-testid="button-toggle-answer"
           >
@@ -245,15 +277,50 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
         <AnimatePresence>
           {showAnswer && (
             <motion.div 
-              initial={{ opacity: 0, scale: 0.8, rotateX: -20 }}
-              animate={{ opacity: 1, scale: 1, rotateX: 0 }}
-              exit={{ opacity: 0, scale: 0.8, rotateX: 20 }}
-              className="gradient-header rounded-2xl p-6 mb-8 glow-primary"
+              initial={{ opacity: 0, scale: 0.5, rotateX: -30, y: 30 }}
+              animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0 }}
+              exit={{ opacity: 0, scale: 0.5, rotateX: 30, y: -30 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="relative rounded-2xl p-8 mb-8 overflow-hidden bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 shadow-2xl shadow-green-500/40"
             >
-              <p className="text-white font-bold text-xl flex items-center justify-center gap-3 drop-shadow">
-                <CheckCircle2 className="w-7 h-7" />
-                {correctAnswer}
-              </p>
+              <div className="absolute inset-0 shimmer" />
+              <motion.div
+                className="absolute top-2 left-2"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+              >
+                <Star className="w-5 h-5 text-yellow-300 fill-yellow-300" />
+              </motion.div>
+              <motion.div
+                className="absolute top-2 right-2"
+                animate={{ rotate: -360 }}
+                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+              >
+                <Star className="w-5 h-5 text-yellow-300 fill-yellow-300" />
+              </motion.div>
+              <motion.div
+                className="absolute bottom-2 left-1/2 -translate-x-1/2"
+                animate={{ y: [0, -5, 0], scale: [1, 1.2, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <Sparkles className="w-6 h-6 text-yellow-200" />
+              </motion.div>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring" }}
+                className="flex items-center justify-center gap-4 relative z-10"
+              >
+                <motion.div
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 0.5, repeat: 2 }}
+                >
+                  <CheckCircle2 className="w-10 h-10 text-white drop-shadow-lg" />
+                </motion.div>
+                <p className="text-white font-black text-2xl lg:text-3xl drop-shadow-lg">
+                  {correctAnswer}
+                </p>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -294,25 +361,32 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
         </div>
 
         {contestants.length > 0 ? (
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             {contestants.map((contestant, idx) => (
               <motion.div
                 key={contestant.id}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 + idx * 0.05 }}
-                whileHover={{ scale: 1.02 }}
-                className="bg-card rounded-xl p-4 border border-primary/30"
+                initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: 0.4 + idx * 0.08, type: "spring", stiffness: 200 }}
+                whileHover={{ scale: 1.05, y: -4 }}
+                className="bg-gradient-to-br from-card to-card/80 rounded-2xl p-5 border-2 border-primary/30 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden"
               >
-                <div className="text-center mb-3">
-                  <span className="font-bold text-foreground text-lg">{contestant.name}</span>
-                  <span className="block text-sm text-muted-foreground">{contestant.score} pts</span>
+                <motion.div
+                  className="absolute top-1 right-1"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                >
+                  <Sparkles className="w-3 h-3 text-primary/30" />
+                </motion.div>
+                <div className="text-center mb-4">
+                  <span className="font-black text-foreground text-xl">{contestant.name}</span>
+                  <span className="block text-sm text-muted-foreground mt-1">{contestant.score} pts</span>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     size="sm"
                     onClick={() => handleAward(contestant.id, contestant.name)}
-                    className="flex-1 gradient-header text-white font-bold glow-primary"
+                    className={`flex-1 bg-gradient-to-r ${getPointGradient(question.points)} text-white font-bold shadow-lg hover:shadow-xl border-2 border-white/20`}
                     data-testid={`button-award-${contestant.id}`}
                   >
                     <CheckCircle2 className="w-4 h-4 mr-1" />
@@ -321,7 +395,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
                   <Button
                     size="sm"
                     onClick={() => handleDeduct(contestant.id)}
-                    className="bg-red-500/20 hover:bg-red-500/30 text-red-400"
+                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/30"
                     data-testid={`button-deduct-${contestant.id}`}
                   >
                     <XCircle className="w-4 h-4" />
@@ -331,9 +405,14 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
             ))}
           </div>
         ) : (
-          <div className="text-center py-6 text-muted-foreground bg-card rounded-xl border border-dashed border-primary/30">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-8 text-muted-foreground bg-gradient-to-br from-card to-card/50 rounded-2xl border-2 border-dashed border-primary/30"
+          >
+            <Sparkles className="w-8 h-8 mx-auto mb-2 text-primary/40" />
             Add players from the scoreboard to award points
-          </div>
+          </motion.div>
         )}
 
         <div className="flex justify-center mt-8 pt-6 border-t border-border">
