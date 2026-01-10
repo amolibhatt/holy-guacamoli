@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -75,6 +75,15 @@ export default function Admin() {
     queryKey: ['/api/board-categories', selectedBoardCategoryId, 'questions'],
     enabled: !!selectedBoardCategoryId,
   });
+
+  const usedPoints = questions.map(q => q.points);
+  const availablePoints = currentPointValues.filter(pt => !usedPoints.includes(pt));
+
+  useEffect(() => {
+    if (availablePoints.length > 0 && !availablePoints.includes(newPoints)) {
+      setNewPoints(availablePoints[0]);
+    }
+  }, [availablePoints, newPoints]);
 
   const createBoardMutation = useMutation({
     mutationFn: async (data: { name: string; description: string; pointValues: number[] }) => {
@@ -700,17 +709,17 @@ export default function Admin() {
                             }
                           }}
                         />
-                        <Select value={String(newPoints)} onValueChange={(v) => setNewPoints(Number(v))}>
+                        <Select value={String(newPoints)} onValueChange={(v) => setNewPoints(Number(v))} disabled={availablePoints.length === 0}>
                           <SelectTrigger className="w-24" data-testid="select-points">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {currentPointValues.map(pt => (
+                            {availablePoints.map(pt => (
                               <SelectItem key={pt} value={String(pt)}>{pt} pts</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <Button onClick={handleCreateQuestion} disabled={!newQuestion.trim() || !newCorrectAnswer.trim() || questions.length >= 5} data-testid="button-add-question">
+                        <Button onClick={handleCreateQuestion} disabled={!newQuestion.trim() || !newCorrectAnswer.trim() || availablePoints.length === 0} data-testid="button-add-question">
                           <Plus className="w-4 h-4 mr-2" /> Add
                         </Button>
                       </div>
@@ -741,7 +750,7 @@ export default function Admin() {
                                     <Select value={String(editPoints)} onValueChange={(v) => setEditPoints(Number(v))}>
                                       <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
                                       <SelectContent>
-                                        {currentPointValues.map(pt => (
+                                        {currentPointValues.filter(pt => pt === editPoints || !usedPoints.includes(pt)).map(pt => (
                                           <SelectItem key={pt} value={String(pt)}>{pt} pts</SelectItem>
                                         ))}
                                       </SelectContent>
