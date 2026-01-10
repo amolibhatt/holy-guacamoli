@@ -310,42 +310,7 @@ export default function Admin() {
       </div>
 
       <div className="max-w-7xl mx-auto p-4">
-        {/* Summary Section */}
-        <Card className="mb-4 bg-card border-border">
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {boardSummaries.map(board => (
-                <div key={board.id} className="p-3 rounded-lg bg-muted/20 border border-border">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-foreground text-sm">{board.name}</span>
-                    <span className="text-xs px-2 py-0.5 rounded bg-primary/20 text-primary">
-                      {board.categoryCount}/5 categories
-                    </span>
-                  </div>
-                  {board.categories.length > 0 ? (
-                    <div className="space-y-1">
-                      {board.categories.map(cat => (
-                        <div key={cat.id} className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground truncate max-w-[120px]">{cat.name}</span>
-                          <span className={`px-1.5 py-0.5 rounded ${cat.remaining === 0 ? 'bg-green-500/20 text-green-600' : 'bg-orange-500/20 text-orange-600'}`}>
-                            {cat.remaining} left
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">No categories yet</p>
-                  )}
-                </div>
-              ))}
-              {boardSummaries.length === 0 && (
-                <p className="text-muted-foreground text-sm col-span-full text-center py-2">No boards created yet</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-200px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-80px)]">
           <div className="lg:col-span-4 space-y-4 overflow-y-auto">
             <Card className="bg-card border-border">
               <CardHeader className="py-3 px-4 border-b border-border">
@@ -415,34 +380,46 @@ export default function Admin() {
                 <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
                   {loadingBoards ? (
                     <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin" /></div>
-                  ) : boards.map(board => (
-                    <div
-                      key={board.id}
-                      className={`flex items-center justify-between gap-2 p-2.5 rounded-lg cursor-pointer transition-all ${
-                        selectedBoardId === board.id
-                          ? 'bg-primary/20 border-2 border-primary'
-                          : 'bg-muted/20 border border-border hover:bg-muted/30'
-                      }`}
-                      onClick={() => { setSelectedBoardId(board.id); setSelectedBoardCategoryId(null); }}
-                      data-testid={`board-item-${board.id}`}
-                    >
-                      <div className="min-w-0">
-                        <span className="font-medium text-foreground text-sm truncate block">{board.name}</span>
-                        <div className="text-xs text-muted-foreground">
-                          {(board.pointValues || []).length} point values
-                        </div>
-                      </div>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={(e) => { e.stopPropagation(); deleteBoardMutation.mutate(board.id); }}
-                        className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
-                        data-testid={`button-delete-board-${board.id}`}
+                  ) : boards.map(board => {
+                    const summary = boardSummaries.find(s => s.id === board.id);
+                    const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
+                    const maxQuestions = (summary?.categoryCount || 0) * 5;
+                    return (
+                      <div
+                        key={board.id}
+                        className={`flex items-center justify-between gap-2 p-2.5 rounded-lg cursor-pointer transition-all ${
+                          selectedBoardId === board.id
+                            ? 'bg-primary/20 border-2 border-primary'
+                            : 'bg-muted/20 border border-border hover:bg-muted/30'
+                        }`}
+                        onClick={() => { setSelectedBoardId(board.id); setSelectedBoardCategoryId(null); }}
+                        data-testid={`board-item-${board.id}`}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  ))}
+                        <div className="min-w-0 flex-1">
+                          <span className="font-medium text-foreground text-sm truncate block">{board.name}</span>
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className={`px-1.5 py-0.5 rounded ${(summary?.categoryCount || 0) >= 5 ? 'bg-green-500/20 text-green-600' : 'bg-muted text-muted-foreground'}`}>
+                              {summary?.categoryCount || 0}/5 cat
+                            </span>
+                            {maxQuestions > 0 && (
+                              <span className={`px-1.5 py-0.5 rounded ${totalQuestions >= maxQuestions ? 'bg-green-500/20 text-green-600' : 'bg-orange-500/20 text-orange-600'}`}>
+                                {totalQuestions}/{maxQuestions} Q
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={(e) => { e.stopPropagation(); deleteBoardMutation.mutate(board.id); }}
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+                          data-testid={`button-delete-board-${board.id}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    );
+                  })}
                   {boards.length === 0 && !loadingBoards && (
                     <p className="text-center text-muted-foreground text-sm py-4">No boards yet</p>
                   )}
