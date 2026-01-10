@@ -240,6 +240,9 @@ export async function registerRoutes(
       if (existingQuestions.length >= 5) {
         return res.status(400).json({ message: "Category already has 5 questions (maximum)" });
       }
+      if (existingQuestions.some(q => q.points === data.points)) {
+        return res.status(400).json({ message: `A ${data.points}-point question already exists in this category` });
+      }
       const question = await storage.createQuestion(data);
       res.status(201).json(question);
     } catch (err) {
@@ -256,11 +259,18 @@ export async function registerRoutes(
   app.put(api.questions.update.path, async (req, res) => {
     try {
       const data = api.questions.update.input.parse(req.body);
-      const question = await storage.updateQuestion(Number(req.params.id), data);
-      if (!question) {
+      const existingQuestion = await storage.getQuestion(Number(req.params.id));
+      if (!existingQuestion) {
         return res.status(404).json({ message: 'Question not found' });
       }
-      res.json(question);
+      if (data.points !== undefined && data.points !== existingQuestion.points) {
+        const siblingQuestions = await storage.getQuestionsByBoardCategory(existingQuestion.boardCategoryId);
+        if (siblingQuestions.some(q => q.id !== existingQuestion.id && q.points === data.points)) {
+          return res.status(400).json({ message: `A ${data.points}-point question already exists in this category` });
+        }
+      }
+      const question = await storage.updateQuestion(Number(req.params.id), data);
+      res.json(question!);
     } catch (err) {
       if (err instanceof z.ZodError) {
         return res.status(400).json({
