@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuestionsByBoardCategory } from "@/hooks/use-quiz";
 import { useScore } from "@/components/ScoreContext";
+import { useTheme } from "@/context/ThemeContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { BoardCategoryWithCategory, Question } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,6 +25,7 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
   const [isFlipping, setIsFlipping] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const hasQuestion = !!question;
+  const { colors } = useTheme();
 
   const handleClick = (e: React.MouseEvent) => {
     if (hasQuestion && !isCompleted && !isFlipping) {
@@ -115,9 +117,9 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
               className="absolute inset-0 rounded-xl pointer-events-none"
               animate={{ 
                 boxShadow: [
-                  "inset 0 0 20px rgba(168,85,247,0)",
-                  "inset 0 0 30px rgba(168,85,247,0.3)",
-                  "inset 0 0 20px rgba(168,85,247,0)"
+                  `inset 0 0 20px ${colors.gradient1}00`,
+                  `inset 0 0 30px ${colors.gradient1}4D`,
+                  `inset 0 0 20px ${colors.gradient1}00`
                 ]
               }}
               transition={{ duration: 2, repeat: Infinity }}
