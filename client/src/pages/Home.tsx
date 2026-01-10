@@ -5,7 +5,8 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef } from "react";
 import { QuestionCard } from "@/components/QuestionCard";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { CategoryColumn } from "@/components/CategoryColumn";
 import { Scoreboard } from "@/components/Scoreboard";
 import { VictoryScreen } from "@/components/VictoryScreen";
@@ -480,7 +481,10 @@ export default function Home() {
       <AnimatePresence>
         {selectedQuestion && (
           <Dialog open={true} onOpenChange={(open) => !open && handleCloseQuestion()}>
-            <DialogContent className="max-w-3xl p-0 overflow-hidden border-white/20 bg-black/95 backdrop-blur-xl">
+            <DialogContent className="max-w-3xl p-0 overflow-hidden border-white/20 bg-black/95 backdrop-blur-xl" aria-describedby={undefined}>
+              <VisuallyHidden>
+                <DialogTitle>Question</DialogTitle>
+              </VisuallyHidden>
               <motion.div
                 initial={{ scale: 0.8, opacity: 0, rotateY: -10 }}
                 animate={{ scale: 1, opacity: 1, rotateY: 0 }}
