@@ -337,23 +337,26 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border px-4 py-3">
-        <div className="flex items-center gap-3 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-muted/30">
+      <div className="sticky top-0 z-50 bg-background border-b border-border px-6 py-4">
+        <div className="flex items-center gap-4 max-w-[1600px] mx-auto">
           <Link href="/">
-            <Button variant="ghost" size="icon" className="shrink-0" data-testid="button-back-home">
-              <ArrowLeft className="w-5 h-5" />
+            <Button variant="outline" size="sm" className="gap-2" data-testid="button-back-home">
+              <ArrowLeft className="w-4 h-4" />
+              Back
             </Button>
           </Link>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-foreground">Admin Panel</h1>
+            <h1 className="text-2xl font-bold text-foreground">Quiz Admin</h1>
+            <p className="text-sm text-muted-foreground">Manage your game boards, categories, and questions</p>
           </div>
           {selectedBoard && (
-            <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg">
+              <Grid3X3 className="w-4 h-4 text-primary" />
               <span className="font-medium text-foreground">{selectedBoard.name}</span>
               {selectedBoardCategory && (
                 <>
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   <span className="font-medium text-primary">{selectedBoardCategory.category.name}</span>
                 </>
               )}
@@ -362,20 +365,21 @@ export default function Admin() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-80px)]">
-          <div className="lg:col-span-4 space-y-4 overflow-y-auto">
-            <Card className="bg-card border-border">
-              <CardHeader className="py-3 px-4 border-b border-border">
+      <div className="max-w-[1600px] mx-auto p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-120px)]">
+          <div className="lg:col-span-3 overflow-y-auto">
+            <Card className="bg-card border-border shadow-sm">
+              <CardHeader className="py-4 px-4 border-b border-border bg-muted/30">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-foreground text-base">
+                  <CardTitle className="flex items-center gap-2 text-foreground text-sm font-semibold uppercase tracking-wide">
                     <Grid3X3 className="w-4 h-4 text-primary" />
-                    Boards
+                    Game Boards
                   </CardTitle>
                   <Button
-                    size="sm"
+                    size="icon"
                     variant={showNewBoardForm ? "secondary" : "default"}
                     onClick={() => setShowNewBoardForm(!showNewBoardForm)}
+                    className="h-8 w-8"
                     data-testid="button-toggle-board-form"
                   >
                     {showNewBoardForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -430,7 +434,7 @@ export default function Admin() {
                   )}
                 </AnimatePresence>
 
-                <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+                <div className="space-y-2">
                   {loadingBoards ? (
                     <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin" /></div>
                   ) : boards.map(board => {
@@ -543,36 +547,38 @@ export default function Admin() {
             </Card>
           </div>
 
-          <div className="lg:col-span-8">
-            <Card className="bg-card border-border h-full flex flex-col">
+          <div className="lg:col-span-9 overflow-hidden">
+            <Card className="bg-card border-border shadow-sm h-full flex flex-col">
               {!selectedBoardId ? (
                 <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-muted-foreground">Select a board to get started</p>
-                    <p className="text-muted-foreground/60 text-sm mt-1">Choose a board from the left panel</p>
+                  <div className="text-center p-12">
+                    <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                      <Grid3X3 className="w-10 h-10 text-muted-foreground/50" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No Board Selected</h3>
+                    <p className="text-muted-foreground max-w-sm">Select a game board from the sidebar to start managing categories and questions</p>
                   </div>
                 </div>
               ) : (
                 <>
-                  <div className="border-b border-border px-3 py-2">
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2">
-                        <FolderPlus className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-medium">Categories</span>
-                        <span className={`text-xs ${boardCategories.length >= 5 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                          ({boardCategories.length}/5)
+                  <div className="border-b border-border px-4 py-3 bg-muted/20">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-3">
+                        <FolderPlus className="w-5 h-5 text-primary" />
+                        <span className="text-sm font-semibold uppercase tracking-wide text-foreground">Categories</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${boardCategories.length >= 5 ? 'bg-destructive/20 text-destructive' : 'bg-muted text-muted-foreground'}`}>
+                          {boardCategories.length}/5
                         </span>
                       </div>
                       <Button
                         size="sm"
-                        variant={showNewCategoryForm ? "secondary" : "ghost"}
+                        variant={showNewCategoryForm ? "secondary" : "default"}
                         onClick={() => setShowNewCategoryForm(!showNewCategoryForm)}
                         disabled={boardCategories.length >= 5 && !showNewCategoryForm}
-                        className="h-7"
+                        className="h-8 gap-1"
                         data-testid="button-toggle-category-form"
                       >
-                        {showNewCategoryForm ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                        {showNewCategoryForm ? <X className="w-4 h-4" /> : <><Plus className="w-4 h-4" /> Add Category</>}
                       </Button>
                     </div>
 
@@ -792,32 +798,38 @@ export default function Admin() {
                     )}
                   </div>
 
-                  <CardContent className="p-4 flex-1 overflow-hidden flex flex-col">
+                  <CardContent className="p-5 flex-1 overflow-hidden flex flex-col">
                     {!selectedBoardCategoryId ? (
                       <div className="flex-1 flex items-center justify-center">
-                        <div className="text-center">
-                          <HelpCircle className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                          <p className="text-muted-foreground">Select a category tab above</p>
-                          <p className="text-muted-foreground/60 text-sm mt-1">Click on a category to manage its questions</p>
+                        <div className="text-center p-8">
+                          <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                            <HelpCircle className="w-8 h-8 text-muted-foreground/50" />
+                          </div>
+                          <h3 className="text-lg font-semibold text-foreground mb-2">Select a Category</h3>
+                          <p className="text-muted-foreground max-w-sm">Click on one of the category tabs above to view and manage its questions</p>
                         </div>
                       </div>
                     ) : (
-                  <div className="flex-1 flex flex-col overflow-hidden">
-                    <div className="space-y-3 p-4 bg-muted/10 rounded-xl border border-border shrink-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm font-medium text-foreground">Add Question</span>
-                        <span className="text-xs text-muted-foreground">(supports markdown)</span>
-                        <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} />
-                        <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} />
-                        <Button size="sm" variant="ghost" onClick={() => imageInputRef.current?.click()} className="h-7 text-muted-foreground hover:text-primary ml-auto">
-                          <Image className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => audioInputRef.current?.click()} className="h-7 text-muted-foreground hover:text-primary">
-                          <Music className="w-4 h-4" />
-                        </Button>
+                  <div className="flex-1 flex flex-col overflow-hidden gap-4">
+                    <div className="space-y-4 p-5 bg-gradient-to-b from-muted/20 to-transparent rounded-xl border border-border shrink-0">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-sm font-semibold text-foreground">New Question</h3>
+                          <p className="text-xs text-muted-foreground">Supports markdown formatting</p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} />
+                          <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} />
+                          <Button size="sm" variant="outline" onClick={() => imageInputRef.current?.click()} className="h-8 gap-1">
+                            <Image className="w-4 h-4" /> Image
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => audioInputRef.current?.click()} className="h-8 gap-1">
+                            <Music className="w-4 h-4" /> Audio
+                          </Button>
+                        </div>
                       </div>
-                      <MDEditor value={newQuestion} onChange={(val) => setNewQuestion(val || "")} preview="edit" height={100} data-testid="input-new-question" />
-                      <div className="flex gap-2">
+                      <MDEditor value={newQuestion} onChange={(val) => setNewQuestion(val || "")} preview="edit" height={120} data-testid="input-new-question" />
+                      <div className="flex gap-3">
                         <Input
                           placeholder="Correct answer"
                           value={newCorrectAnswer}
@@ -831,7 +843,7 @@ export default function Admin() {
                           }}
                         />
                         <Select value={String(newPoints)} onValueChange={(v) => setNewPoints(Number(v))} disabled={availablePoints.length === 0}>
-                          <SelectTrigger className="w-24" data-testid="select-points">
+                          <SelectTrigger className="w-28" data-testid="select-points">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -840,13 +852,16 @@ export default function Admin() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <Button onClick={handleCreateQuestion} disabled={!newQuestion.trim() || !newCorrectAnswer.trim() || availablePoints.length === 0} data-testid="button-add-question">
-                          <Plus className="w-4 h-4 mr-2" /> Add
+                        <Button onClick={handleCreateQuestion} disabled={!newQuestion.trim() || !newCorrectAnswer.trim() || availablePoints.length === 0} className="px-6" data-testid="button-add-question">
+                          <Plus className="w-4 h-4 mr-2" /> Add Question
                         </Button>
                       </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto mt-4 space-y-2">
+                    <div className="flex-1 overflow-y-auto space-y-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-medium text-muted-foreground">Questions ({questions.length}/5)</h4>
+                      </div>
                       {loadingQuestions ? (
                         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
                       ) : (
@@ -858,7 +873,7 @@ export default function Admin() {
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, x: -50 }}
-                              className="p-4 bg-muted/10 rounded-xl border border-border"
+                              className="p-4 bg-card rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow"
                               data-testid={`question-${q.id}`}
                             >
                               {editingQuestionId === q.id ? (
