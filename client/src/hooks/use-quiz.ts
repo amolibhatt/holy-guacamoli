@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
-import type { Board, Category } from "@shared/schema";
+import type { Board, Category, BoardCategoryWithCategory, Question } from "@shared/schema";
 
 // GET /api/boards
 export function useBoards() {
@@ -27,9 +27,9 @@ export function useBoard(id: number | null) {
   });
 }
 
-// GET /api/boards/:id/categories
+// GET /api/boards/:id/categories - returns BoardCategoryWithCategory[]
 export function useBoardCategories(boardId: number | null) {
-  return useQuery<Category[]>({
+  return useQuery<BoardCategoryWithCategory[]>({
     queryKey: ["/api/boards", boardId, "categories"],
     enabled: boardId !== null,
     queryFn: async () => {
@@ -40,21 +40,21 @@ export function useBoardCategories(boardId: number | null) {
   });
 }
 
-// GET /api/categories
+// GET /api/categories (global templates)
 export function useCategories() {
-  return useQuery({
+  return useQuery<Category[]>({
     queryKey: [api.categories.list.path],
     queryFn: async () => {
       const res = await fetch(api.categories.list.path);
       if (!res.ok) throw new Error("Failed to fetch categories");
-      return api.categories.list.responses[200].parse(await res.json());
+      return res.json();
     },
   });
 }
 
 // GET /api/categories/:id
 export function useCategory(id: number) {
-  return useQuery({
+  return useQuery<Category>({
     queryKey: [api.categories.get.path, id],
     enabled: !!id,
     queryFn: async () => {
@@ -62,22 +62,20 @@ export function useCategory(id: number) {
       const res = await fetch(url);
       if (res.status === 404) throw new Error("Category not found");
       if (!res.ok) throw new Error("Failed to fetch category");
-      return api.categories.get.responses[200].parse(await res.json());
+      return res.json();
     },
   });
 }
 
-// GET /api/categories/:categoryId/questions
-export function useQuestions(categoryId: number) {
-  return useQuery({
-    queryKey: [api.questions.listByCategory.path, categoryId],
-    enabled: !!categoryId,
+// GET /api/board-categories/:boardCategoryId/questions
+export function useQuestionsByBoardCategory(boardCategoryId: number) {
+  return useQuery<Question[]>({
+    queryKey: ["/api/board-categories", boardCategoryId, "questions"],
+    enabled: !!boardCategoryId,
     queryFn: async () => {
-      const url = buildUrl(api.questions.listByCategory.path, { categoryId });
-      const res = await fetch(url);
-      if (res.status === 404) throw new Error("Category not found");
+      const res = await fetch(`/api/board-categories/${boardCategoryId}/questions`);
       if (!res.ok) throw new Error("Failed to fetch questions");
-      return api.questions.listByCategory.responses[200].parse(await res.json());
+      return res.json();
     },
   });
 }

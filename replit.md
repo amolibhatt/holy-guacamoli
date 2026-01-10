@@ -27,17 +27,19 @@ Preferred communication style: Simple, everyday language.
 
 ### Data Model
 - **Boards**: id, name, description, pointValues (JSONB array of numbers)
-- **Categories**: id, name, description, imageUrl, boardId (FK to boards)
-- **Questions**: id, categoryId, question, options (JSONB array), correctAnswer, points (10-100)
+- **Categories**: id, name, description, imageUrl (global templates that can be reused across boards)
+- **BoardCategories**: id, boardId, categoryId (junction table linking categories to boards - same category can be on multiple boards)
+- **Questions**: id, boardCategoryId, question, options (JSONB array), correctAnswer, points (questions belong to a specific board-category pair, auto-sorted by points)
 - Relations defined with Drizzle ORM relations
 
 ### Key Design Decisions
 1. **Shared Types**: Schema and route definitions in `/shared` folder are used by both frontend and backend, ensuring type safety across the stack
 2. **Host Mode**: The app is designed for a host to control the game - questions reveal answers to the host, who then awards/deducts points to contestants
 3. **Contestant System**: Managed via React Context (ScoreContext) with add/remove contestants, award/deduct points, and track completed questions
-4. **Multiple Boards**: Supports multiple game boards, each with its own set of categories and custom point values (e.g., Board 1: 10-50 pts, Board 2: 60-100 pts). Categories are assigned to boards, and only the board's point values are shown when playing.
-5. **Multiplayer Buzzer System**: WebSocket-based real-time buzzer where players join via QR code on their phones (/play route). Buzzers auto-unlock when questions open and auto-lock when closed.
-6. **Animations**: 3D flip card animations for question cells, particle effects for milestones and category completion
+4. **Reusable Categories**: Categories are global templates. The same category (e.g., "Anagrammed Countries") can be linked to multiple boards, with each board having its own unique set of questions for that category.
+5. **Multiple Boards**: Supports multiple game boards, each with its own set of linked categories and custom point values (e.g., Board 1: 10-50 pts, Board 2: 60-100 pts). Questions are automatically ordered by point value.
+6. **Multiplayer Buzzer System**: WebSocket-based real-time buzzer where players join via QR code on their phones (/play route). Buzzers auto-unlock when questions open and auto-lock when closed.
+7. **Animations**: 3D flip card animations for question cells, particle effects for milestones and category completion
 
 ### WebSocket Architecture
 - **Server**: `server/gameRoom.ts` manages rooms, players, and buzz events

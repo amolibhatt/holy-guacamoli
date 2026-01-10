@@ -379,9 +379,9 @@ export default function Home() {
                 gridTemplateColumns: `repeat(${categories.length}, minmax(0, 1fr))`,
               }}
             >
-              {categories.map((category, idx) => (
+              {categories.map((boardCategory, idx) => (
                 <motion.div
-                  key={category.id}
+                  key={boardCategory.id}
                   initial={{ opacity: 0, y: 60, rotateX: -15 }}
                   animate={{ opacity: 1, y: 0, rotateX: 0 }}
                   transition={{ 
@@ -393,7 +393,7 @@ export default function Home() {
                   className="flex flex-col"
                 >
                   <CategoryColumn 
-                    category={category}
+                    boardCategory={boardCategory}
                     onSelectQuestion={handleSelectQuestion}
                     pointValues={pointValues}
                   />

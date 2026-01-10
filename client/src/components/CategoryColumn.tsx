@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useQuestions } from "@/hooks/use-quiz";
+import { useQuestionsByBoardCategory } from "@/hooks/use-quiz";
 import { useScore } from "@/components/ScoreContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Category, Question } from "@shared/schema";
+import type { BoardCategoryWithCategory, Question } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Check } from "lucide-react";
 import { soundManager } from "@/lib/sounds";
@@ -14,12 +14,12 @@ interface FlipCardProps {
   scoreValue: number;
   question: Question | undefined;
   isCompleted: boolean;
-  categoryId: number;
+  boardCategoryId: number;
   onSelect: (question: Question) => void;
   delay: number;
 }
 
-function FlipCard({ scoreValue, question, isCompleted, categoryId, onSelect, delay }: FlipCardProps) {
+function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect, delay }: FlipCardProps) {
   const [isFlipping, setIsFlipping] = useState(false);
   const hasQuestion = !!question;
 
@@ -69,7 +69,7 @@ function FlipCard({ scoreValue, question, isCompleted, categoryId, onSelect, del
         `}
         onClick={handleClick}
         disabled={!hasQuestion || isCompleted}
-        data-testid={`cell-${categoryId}-${scoreValue}`}
+        data-testid={`cell-${boardCategoryId}-${scoreValue}`}
         style={{ backfaceVisibility: "hidden" }}
       >
         <AnimatePresence mode="wait">
@@ -112,13 +112,13 @@ function FlipCard({ scoreValue, question, isCompleted, categoryId, onSelect, del
 }
 
 interface CategoryColumnProps {
-  category: Category;
+  boardCategory: BoardCategoryWithCategory;
   onSelectQuestion: (question: Question) => void;
   pointValues?: number[];
 }
 
-export function CategoryColumn({ category, onSelectQuestion, pointValues }: CategoryColumnProps) {
-  const { data: questions, isLoading } = useQuestions(category.id);
+export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }: CategoryColumnProps) {
+  const { data: questions, isLoading } = useQuestionsByBoardCategory(boardCategory.id);
   const { completedQuestions } = useScore();
   
   const scoreValues = pointValues || DEFAULT_SCORE_VALUES;
@@ -164,9 +164,9 @@ export function CategoryColumn({ category, onSelectQuestion, pointValues }: Cate
         )}
         <h2 
           className="font-black text-xs lg:text-sm leading-tight uppercase tracking-wide relative z-10 drop-shadow-lg break-words hyphens-auto" 
-          data-testid={`text-category-${category.id}`}
+          data-testid={`text-category-${boardCategory.id}`}
         >
-          {category.name}
+          {boardCategory.category.name}
         </h2>
       </motion.div>
       
@@ -185,7 +185,7 @@ export function CategoryColumn({ category, onSelectQuestion, pointValues }: Cate
               scoreValue={scoreValue}
               question={question}
               isCompleted={isCompleted}
-              categoryId={category.id}
+              boardCategoryId={boardCategory.id}
               onSelect={onSelectQuestion}
               delay={idx * 0.03}
             />

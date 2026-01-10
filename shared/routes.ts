@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { categories, questions, insertCategorySchema, insertQuestionSchema } from './schema';
+import { categories, questions, boardCategories, insertCategorySchema, insertQuestionSchema, insertBoardCategorySchema } from './schema';
 
 // ============================================
 // SHARED ERROR SCHEMAS
@@ -55,10 +55,36 @@ export const api = {
       },
     },
   },
-  questions: {
-    listByCategory: {
+  boardCategories: {
+    list: {
       method: 'GET' as const,
-      path: '/api/categories/:categoryId/questions',
+      path: '/api/boards/:boardId/categories',
+      responses: {
+        200: z.array(z.any()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/boards/:boardId/categories',
+      input: z.object({ categoryId: z.number() }),
+      responses: {
+        201: z.custom<typeof boardCategories.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/board-categories/:id',
+      responses: {
+        200: z.object({ success: z.boolean() }),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  questions: {
+    listByBoardCategory: {
+      method: 'GET' as const,
+      path: '/api/board-categories/:boardCategoryId/questions',
       responses: {
         200: z.array(z.custom<typeof questions.$inferSelect>()),
         404: errorSchemas.notFound,
@@ -84,7 +110,7 @@ export const api = {
     update: {
       method: 'PUT' as const,
       path: '/api/questions/:id',
-      input: insertQuestionSchema.partial().omit({ categoryId: true }),
+      input: insertQuestionSchema.partial().omit({ boardCategoryId: true }),
       responses: {
         200: z.custom<typeof questions.$inferSelect>(),
         400: errorSchemas.validation,
@@ -128,5 +154,5 @@ export function buildUrl(path: string, params?: Record<string, string | number>)
 // TYPE HELPERS
 // ============================================
 export type CategoryListResponse = z.infer<typeof api.categories.list.responses[200]>;
-export type QuestionListResponse = z.infer<typeof api.questions.listByCategory.responses[200]>;
+export type QuestionListResponse = z.infer<typeof api.questions.listByBoardCategory.responses[200]>;
 export type VerifyAnswerResponse = z.infer<typeof api.questions.verifyAnswer.responses[200]>;
