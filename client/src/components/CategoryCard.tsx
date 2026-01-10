@@ -14,16 +14,9 @@ function getCategoryIcon(name: string) {
   return <Sparkles className="w-8 h-8" />;
 }
 
-// Helper for dynamic gradients based on ID
-function getGradient(id: number) {
-  const gradients = [
-    "from-pink-500 to-rose-500",
-    "from-blue-500 to-cyan-500",
-    "from-emerald-500 to-green-500",
-    "from-violet-500 to-purple-500",
-    "from-amber-500 to-orange-500",
-  ];
-  return gradients[id % gradients.length];
+// Use theme gradient class
+function getGradientClass() {
+  return "gradient-header";
 }
 
 interface CategoryCardProps {
@@ -41,7 +34,7 @@ export function CategoryCard({ category, index }: CategoryCardProps) {
       <Link href={`/category/${category.id}`} className="block h-full group">
         <div className="h-full bg-card rounded-3xl overflow-hidden border border-border shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col">
           {/* Header/Image Area */}
-          <div className={`h-32 bg-gradient-to-br ${getGradient(category.id)} relative overflow-hidden flex items-center justify-center p-6`}>
+          <div className={`h-32 ${getGradientClass()} relative overflow-hidden flex items-center justify-center p-6`}>
             {/* Decorative circles */}
             <div className="absolute top-[-20px] right-[-20px] w-24 h-24 bg-white/20 rounded-full blur-xl" />
             <div className="absolute bottom-[-10px] left-[-10px] w-16 h-16 bg-white/10 rounded-full blur-lg" />
