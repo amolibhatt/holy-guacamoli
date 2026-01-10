@@ -34,6 +34,13 @@ export function AvocadoIcon({ className = "w-7 h-7" }: AvocadoIconProps) {
         <filter id="funShadow" x="-20%" y="-20%" width="140%" height="140%">
           <feDropShadow dx="0" dy="3" stdDeviation="2" floodColor="#000" floodOpacity="0.2"/>
         </filter>
+        <filter id="sparkleGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="1" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
       </defs>
       
       <circle cx="8" cy="20" r="2" fill="#FF6B6B" />
@@ -42,6 +49,8 @@ export function AvocadoIcon({ className = "w-7 h-7" }: AvocadoIconProps) {
       <circle cx="52" cy="40" r="2" fill="#A855F7" />
       <circle cx="6" cy="50" r="1.5" fill="#FF6B9D" />
       <circle cx="58" cy="55" r="2" fill="#22C55E" />
+      <circle cx="3" cy="38" r="1" fill="#FFE66D" />
+      <circle cx="61" cy="32" r="1.5" fill="#FF6B6B" />
       
       <rect x="4" y="28" width="3" height="6" rx="1" fill="#FFE66D" transform="rotate(-20 4 28)" />
       <rect x="55" y="30" width="3" height="5" rx="1" fill="#FF6B6B" transform="rotate(15 55 30)" />
@@ -52,6 +61,17 @@ export function AvocadoIcon({ className = "w-7 h-7" }: AvocadoIconProps) {
       <polygon points="55,25 57,22 59,25" fill="#22C55E" />
       <polygon points="8,12 10,9 12,12" fill="#4ECDC4" />
       <polygon points="52,48 54,45 56,48" fill="#FFE66D" />
+      
+      <g filter="url(#sparkleGlow)">
+        <path d="M5 15 L6 12 L7 15 L10 16 L7 17 L6 20 L5 17 L2 16 Z" fill="#FFE66D" />
+        <path d="M58 45 L59 42 L60 45 L63 46 L60 47 L59 50 L58 47 L55 46 Z" fill="#FFE66D" />
+        <path d="M10 60 L11 58 L12 60 L14 61 L12 62 L11 64 L10 62 L8 61 Z" fill="#FFF" />
+        <path d="M54 12 L55 10 L56 12 L58 13 L56 14 L55 16 L54 14 L52 13 Z" fill="#FFF" />
+        <path d="M2 28 L3 26 L4 28 L6 29 L4 30 L3 32 L2 30 L0 29 Z" fill="#A855F7" />
+        <path d="M60 62 L61 60 L62 62 L64 63 L62 64 L61 66 L60 64 L58 63 Z" fill="#FF6B9D" />
+        <path d="M15 8 L16 6 L17 8 L19 9 L17 10 L16 12 L15 10 L13 9 Z" fill="#4ECDC4" />
+        <path d="M48 68 L49 66 L50 68 L52 69 L50 70 L49 72 L48 70 L46 69 Z" fill="#22C55E" />
+      </g>
       
       <path
         d="M32 20 C20 20 10 33 10 49 C10 67 20 72 32 72 C44 72 54 67 54 49 C54 33 44 20 32 20Z"
