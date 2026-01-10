@@ -12,11 +12,11 @@ interface ThemeColors {
 
 export const THEMES: Record<ThemeName, ThemeColors> = {
   birthday: {
-    gradient1: '#FF6B6B',
-    gradient2: '#FF8E53',
-    gradient3: '#FFD93D',
-    accent: '#C44AF5',
-    glow: 'rgba(255, 142, 83, 0.4)',
+    gradient1: '#A855F7',
+    gradient2: '#C084FC',
+    gradient3: '#E879F9',
+    accent: '#D946EF',
+    glow: 'rgba(168, 85, 247, 0.4)',
   },
   holiday: {
     gradient1: '#2ECC71',
