@@ -69,7 +69,7 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
           ${!hasQuestion 
             ? 'bg-white/5 text-white/20 cursor-not-allowed border border-white/5' 
             : isCompleted 
-              ? 'bg-gradient-to-br from-green-600/30 to-green-700/30 text-green-400/50 cursor-not-allowed border border-green-500/20' 
+              ? 'completed-cell text-primary/50 cursor-not-allowed border border-primary/20' 
               : 'bg-gradient-to-br from-gray-900 to-black text-primary cursor-pointer border-2 border-primary/40 shadow-lg shadow-primary/30 hover:shadow-xl hover:border-primary/60'
           }
         `}
@@ -93,7 +93,7 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: "spring", stiffness: 300 }}
-              className="flex items-center gap-1 text-green-400"
+              className="flex items-center gap-1 text-primary"
             >
               <Check className="w-6 h-6" />
             </motion.div>
@@ -169,8 +169,8 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }:
       <motion.div 
         className={`text-white py-4 px-3 text-center rounded-t-2xl min-h-[80px] flex items-center justify-center relative overflow-visible ${
           allCompleted 
-            ? 'bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 shadow-lg shadow-green-500/40' 
-            : 'bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-600 shadow-lg shadow-purple-500/30'
+            ? 'gradient-gold glow-gold' 
+            : 'gradient-header glow-primary'
         }`}
         whileHover={{ scale: 1.03, y: -2 }}
         transition={{ type: "spring", stiffness: 400 }}

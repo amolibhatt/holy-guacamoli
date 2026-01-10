@@ -290,7 +290,7 @@ export default function Home() {
                 <h3 className="text-3xl font-black text-white mb-2">No boards yet</h3>
                 <p className="text-white/50 mt-2 mb-8 text-lg">Create your first game board to get started!</p>
                 <Link href="/admin">
-                  <Button size="lg" className="bg-gradient-to-r from-green-600 to-emerald-500 text-white font-bold shadow-lg shadow-green-500/30 hover:shadow-xl border-2 border-green-400/30" data-testid="button-go-admin">
+                  <Button size="lg" className="gradient-header text-white font-bold shadow-lg glow-primary hover:shadow-xl border-2 border-primary/30" data-testid="button-go-admin">
                     <Settings className="w-5 h-5 mr-2" />
                     Go to Admin Panel
                   </Button>

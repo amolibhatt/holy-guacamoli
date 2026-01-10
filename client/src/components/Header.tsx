@@ -7,11 +7,11 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group cursor-pointer hover:opacity-80 transition-opacity">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-600 to-green-400 flex items-center justify-center shadow-lg shadow-green-500/20 group-hover:scale-105 transition-transform duration-300">
+          <div className="w-10 h-10 rounded-xl gradient-header flex items-center justify-center shadow-lg glow-primary group-hover:scale-105 transition-transform duration-300">
             <AvocadoIcon className="w-6 h-6" />
           </div>
           <span className="font-display font-bold text-2xl text-foreground hidden sm:block">
-            Holy <span className="text-green-500">GuacAmoli!</span>
+            Holy <span className="text-primary">GuacAmoli!</span>
           </span>
         </Link>
 

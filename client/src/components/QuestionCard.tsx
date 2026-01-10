@@ -10,22 +10,6 @@ import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import { soundManager } from "@/lib/sounds";
 
-const POINT_GRADIENTS: Record<number, string> = {
-  10: 'from-green-500 via-emerald-500 to-teal-500',
-  20: 'from-emerald-500 via-green-500 to-teal-500',
-  30: 'from-teal-500 via-emerald-500 to-green-500',
-  40: 'from-green-600 via-emerald-600 to-teal-600',
-  50: 'from-emerald-600 via-teal-600 to-green-600',
-  60: 'from-teal-600 via-green-600 to-emerald-600',
-  70: 'from-green-700 via-emerald-700 to-teal-700',
-  80: 'from-emerald-700 via-teal-700 to-green-700',
-  90: 'from-teal-700 via-green-700 to-emerald-700',
-  100: 'from-green-800 via-emerald-800 to-teal-800',
-};
-
-function getPointGradient(points: number) {
-  return POINT_GRADIENTS[points] || 'from-green-500 via-emerald-500 to-teal-500';
-}
 
 interface QuestionCardProps {
   question: Question;
@@ -199,7 +183,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
         )}
       </AnimatePresence>
 
-      <div className={`bg-gradient-to-r ${getPointGradient(question.points)} px-6 py-6 flex items-center justify-between gap-4 relative overflow-hidden`}>
+      <div className="gradient-header px-6 py-6 flex items-center justify-between gap-4 relative overflow-hidden">
         <div className="absolute inset-0 shimmer" />
         <motion.div
           className="absolute top-2 left-2"
@@ -281,7 +265,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
               animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0 }}
               exit={{ opacity: 0, scale: 0.5, rotateX: 30, y: -30 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              className="relative rounded-2xl p-8 mb-8 overflow-hidden bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 shadow-2xl shadow-green-500/40"
+              className="relative rounded-2xl p-8 mb-8 overflow-hidden gradient-header glow-primary"
             >
               <div className="absolute inset-0 shimmer" />
               <motion.div
@@ -383,7 +367,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
                   <Button
                     size="sm"
                     onClick={() => handleAward(contestant.id, contestant.name)}
-                    className={`flex-1 bg-gradient-to-r ${getPointGradient(question.points)} text-white font-bold shadow-lg hover:shadow-xl border-2 border-white/20`}
+                    className="flex-1 gradient-header text-white font-bold shadow-lg hover:shadow-xl border-2 border-white/20"
                     data-testid={`button-award-${contestant.id}`}
                   >
                     <CheckCircle2 className="w-4 h-4 mr-1" />
