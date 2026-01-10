@@ -479,21 +479,61 @@ export default function Admin() {
                               data-testid={`board-category-${bc.id}`}
                             >
                               <div className="min-w-0 flex-1">
-                                <span className="font-medium text-foreground text-sm truncate block">{bc.category.name}</span>
-                                <div className="text-xs text-muted-foreground">
-                                  {bc.questionCount ?? 0} questions
-                                </div>
+                                {editingCategoryId === bc.category.id ? (
+                                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                    <Input
+                                      value={editCategoryName}
+                                      onChange={(e) => setEditCategoryName(e.target.value)}
+                                      className="h-7 text-sm"
+                                      autoFocus
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          updateCategoryMutation.mutate({ id: bc.category.id, name: editCategoryName.trim() });
+                                        } else if (e.key === 'Escape') {
+                                          setEditingCategoryId(null);
+                                        }
+                                      }}
+                                    />
+                                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => updateCategoryMutation.mutate({ id: bc.category.id, name: editCategoryName.trim() })}>
+                                      <Check className="w-3 h-3 text-green-500" />
+                                    </Button>
+                                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditingCategoryId(null)}>
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <span className="font-medium text-foreground text-sm truncate block">{bc.category.name}</span>
+                                    <div className="text-xs text-muted-foreground">
+                                      {bc.questionCount ?? 0} questions
+                                    </div>
+                                  </>
+                                )}
                               </div>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={(e) => { e.stopPropagation(); unlinkCategoryMutation.mutate(bc.id); }}
-                                className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
-                                title="Remove from board"
-                                data-testid={`button-unlink-${bc.id}`}
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
+                              {editingCategoryId !== bc.category.id && (
+                                <div className="flex items-center gap-0.5 shrink-0">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={(e) => { e.stopPropagation(); setEditingCategoryId(bc.category.id); setEditCategoryName(bc.category.name); }}
+                                    className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                    title="Edit category name"
+                                    data-testid={`button-edit-category-${bc.category.id}`}
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={(e) => { e.stopPropagation(); unlinkCategoryMutation.mutate(bc.id); }}
+                                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                    title="Remove from board"
+                                    data-testid={`button-unlink-${bc.id}`}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
+                              )}
                             </motion.div>
                           ))}
                         </AnimatePresence>
