@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useScore, AVATAR_COLORS } from "./ScoreContext";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Plus, X, RotateCcw, Crown, Sparkles, Trophy, Volume2, VolumeX, Palette } from "lucide-react";
+import { X, RotateCcw, Crown, Trophy, Volume2, VolumeX } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { soundManager } from "@/lib/sounds";
 import {
@@ -12,23 +11,8 @@ import {
 } from "@/components/ui/popover";
 
 export function Scoreboard() {
-  const { contestants, addContestant, removeContestant, resetGame, updateContestantColor, endGame } = useScore();
-  const [newName, setNewName] = useState("");
+  const { contestants, removeContestant, resetGame, updateContestantColor, endGame } = useScore();
   const [soundEnabled, setSoundEnabled] = useState(true);
-
-  const handleAdd = () => {
-    if (newName.trim()) {
-      soundManager.play('click', 0.3);
-      addContestant(newName.trim());
-      setNewName("");
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleAdd();
-    }
-  };
 
   const toggleSound = () => {
     const enabled = soundManager.toggle();
@@ -44,25 +28,6 @@ export function Scoreboard() {
       animate={{ opacity: 1, y: 0 }}
     >
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder="Add player..."
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="w-36 h-9 bg-primary/10 border-primary/30 text-white placeholder:text-primary/40 text-sm"
-            data-testid="input-contestant-name"
-          />
-          <Button 
-            onClick={handleAdd} 
-            size="sm"
-            className="gradient-header text-white hover:opacity-90 h-9 glow-primary"
-            data-testid="button-add-contestant"
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
-        </div>
-
         <div className="flex-1 overflow-x-auto">
           <LayoutGroup>
             <motion.div layout className="flex items-center gap-2">
