@@ -112,7 +112,7 @@ export default function Home() {
             >
               <div className="relative">
                 <motion.div 
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-green-600 via-green-500 to-lime-400"
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-gray-800 via-gray-900 to-black border border-white/20"
                   animate={{ 
                     rotate: [0, -5, 5, -5, 0],
                     scale: [1, 1.05, 1]
@@ -215,7 +215,7 @@ export default function Home() {
                     <div className="relative z-10">
                       <div className="flex items-center gap-4 mb-4">
                         <motion.div 
-                          className="w-16 h-16 rounded-xl bg-gradient-to-br from-green-600 via-green-500 to-lime-400 flex items-center justify-center shadow-lg shadow-green-500/30"
+                          className="w-16 h-16 rounded-xl bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center shadow-lg shadow-purple-500/30 border border-white/20"
                           whileHover={{ rotate: [0, -10, 10, 0] }}
                           transition={{ duration: 0.5 }}
                         >
@@ -358,7 +358,7 @@ export default function Home() {
             </Button>
             <div className="relative">
               <motion.div 
-                className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-green-600 via-green-500 to-lime-400"
+                className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-gray-800 via-gray-900 to-black border border-white/20"
                 animate={{ 
                   rotate: [0, -5, 5, -5, 0],
                   scale: [1, 1.05, 1]
