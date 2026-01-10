@@ -174,9 +174,9 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             {connected ? (
-              <Wifi className="w-4 h-4 text-green-500" />
+              <Wifi className="w-4 h-4 text-primary" />
             ) : (
-              <WifiOff className="w-4 h-4 text-red-500" />
+              <WifiOff className="w-4 h-4 text-destructive" />
             )}
             <span className="font-mono font-bold text-lg text-foreground">{roomCode}</span>
           </div>

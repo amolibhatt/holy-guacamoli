@@ -98,7 +98,7 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
               animate={{ rotate: -360, scale: [1, 1.3, 1] }}
               transition={{ duration: 2.5, repeat: Infinity }}
             >
-              <Star className="w-8 h-8 text-orange-400" />
+              <Star className="w-8 h-8 text-primary" />
             </motion.div>
           </div>
         </motion.div>
