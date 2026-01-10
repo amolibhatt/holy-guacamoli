@@ -109,16 +109,21 @@ export async function registerRoutes(
 
   app.post("/api/boards/:boardId/categories", async (req, res) => {
     try {
+      const boardId = Number(req.params.boardId);
       const { categoryId } = req.body;
       if (!categoryId) {
         return res.status(400).json({ message: "categoryId is required" });
       }
-      const existing = await storage.getBoardCategoryByIds(Number(req.params.boardId), categoryId);
+      const existing = await storage.getBoardCategoryByIds(boardId, categoryId);
       if (existing) {
         return res.status(400).json({ message: "Category already linked to this board" });
       }
+      const currentCategories = await storage.getBoardCategories(boardId);
+      if (currentCategories.length >= 5) {
+        return res.status(400).json({ message: "Board already has 5 categories (maximum)" });
+      }
       const bc = await storage.createBoardCategory({
-        boardId: Number(req.params.boardId),
+        boardId,
         categoryId,
       });
       res.status(201).json(bc);
@@ -134,6 +139,36 @@ export async function registerRoutes(
       return res.status(404).json({ message: "Board category link not found" });
     }
     res.json({ success: true });
+  });
+
+  app.post("/api/boards/:boardId/categories/create-and-link", async (req, res) => {
+    try {
+      const boardId = Number(req.params.boardId);
+      const { name } = req.body;
+      if (!name || !name.trim()) {
+        return res.status(400).json({ message: "Category name is required" });
+      }
+      const currentCategories = await storage.getBoardCategories(boardId);
+      if (currentCategories.length >= 5) {
+        return res.status(400).json({ message: "Board already has 5 categories (maximum)" });
+      }
+      const category = await storage.createCategory({ name: name.trim(), description: '', imageUrl: '' });
+      let bc;
+      try {
+        bc = await storage.createBoardCategory({ boardId, categoryId: category.id });
+      } catch (linkErr) {
+        try {
+          await storage.deleteCategory(category.id);
+        } catch (cleanupErr) {
+          console.error("Failed to cleanup orphan category:", cleanupErr);
+        }
+        throw linkErr;
+      }
+      res.status(201).json({ category, boardCategory: bc });
+    } catch (err) {
+      console.error("Error creating and linking category:", err);
+      res.status(500).json({ message: "Failed to create category" });
+    }
   });
 
   // Global categories (templates)
@@ -201,6 +236,10 @@ export async function registerRoutes(
   app.post(api.questions.create.path, async (req, res) => {
     try {
       const data = api.questions.create.input.parse(req.body);
+      const existingQuestions = await storage.getQuestionsByBoardCategory(data.boardCategoryId);
+      if (existingQuestions.length >= 5) {
+        return res.status(400).json({ message: "Category already has 5 questions (maximum)" });
+      }
       const question = await storage.createQuestion(data);
       res.status(201).json(question);
     } catch (err) {

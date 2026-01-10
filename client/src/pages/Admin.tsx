@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight } from "lucide-react";
 import { Link } from "wouter";
@@ -117,10 +118,12 @@ export default function Admin() {
 
   const createAndLinkCategoryMutation = useMutation({
     mutationFn: async (data: { name: string; boardId: number }) => {
-      const catRes = await apiRequest('POST', '/api/categories', { name: data.name, description: '', imageUrl: '' });
-      const cat = await catRes.json();
-      await apiRequest('POST', `/api/boards/${data.boardId}/categories`, { categoryId: cat.id });
-      return cat;
+      const res = await apiRequest('POST', `/api/boards/${data.boardId}/categories/create-and-link`, { name: data.name });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to create category");
+      }
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
@@ -129,8 +132,8 @@ export default function Admin() {
       setShowNewCategoryForm(false);
       toast({ title: "Category created and linked!" });
     },
-    onError: () => {
-      toast({ title: "Failed to create category", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: error.message || "Failed to create category", variant: "destructive" });
     },
   });
 
@@ -153,6 +156,7 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
       toast({ title: "Category deleted" });
     },
   });
@@ -249,7 +253,7 @@ export default function Admin() {
   };
 
   const handleCreateQuestion = () => {
-    if (!selectedBoardCategoryId || !newQuestion.trim() || !newCorrectAnswer.trim()) return;
+    if (!selectedBoardCategoryId || !newQuestion.trim() || !newCorrectAnswer.trim() || questions.length >= 5) return;
     createQuestionMutation.mutate({
       boardCategoryId: selectedBoardCategoryId,
       question: newQuestion.trim(),
@@ -407,14 +411,20 @@ export default function Admin() {
                     {selectedBoard && <span className="text-muted-foreground font-normal text-sm">for {selectedBoard.name}</span>}
                   </CardTitle>
                   {selectedBoardId && (
-                    <Button
-                      size="sm"
-                      variant={showNewCategoryForm ? "secondary" : "default"}
-                      onClick={() => setShowNewCategoryForm(!showNewCategoryForm)}
-                      data-testid="button-toggle-category-form"
-                    >
-                      {showNewCategoryForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs ${boardCategories.length >= 5 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                        {boardCategories.length}/5
+                      </span>
+                      <Button
+                        size="sm"
+                        variant={showNewCategoryForm ? "secondary" : "default"}
+                        onClick={() => setShowNewCategoryForm(!showNewCategoryForm)}
+                        disabled={boardCategories.length >= 5 && !showNewCategoryForm}
+                        data-testid="button-toggle-category-form"
+                      >
+                        {showNewCategoryForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardHeader>
@@ -441,14 +451,14 @@ export default function Admin() {
                             className="flex-1"
                             data-testid="input-category-name"
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter' && newCategoryName.trim() && selectedBoardId) {
+                              if (e.key === 'Enter' && newCategoryName.trim() && selectedBoardId && boardCategories.length < 5) {
                                 createAndLinkCategoryMutation.mutate({ name: newCategoryName.trim(), boardId: selectedBoardId });
                               }
                             }}
                           />
                           <Button
                             onClick={() => createAndLinkCategoryMutation.mutate({ name: newCategoryName.trim(), boardId: selectedBoardId! })}
-                            disabled={!newCategoryName.trim()}
+                            disabled={!newCategoryName.trim() || boardCategories.length >= 5}
                             size="sm"
                             data-testid="button-create-category"
                           >
@@ -526,12 +536,46 @@ export default function Admin() {
                                     size="icon"
                                     variant="ghost"
                                     onClick={(e) => { e.stopPropagation(); unlinkCategoryMutation.mutate(bc.id); }}
-                                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                    title="Remove from board"
+                                    className="h-7 w-7 text-muted-foreground hover:text-orange-500"
+                                    title="Unlink from this board"
                                     data-testid={`button-unlink-${bc.id}`}
                                   >
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <Unlink className="w-3.5 h-3.5" />
                                   </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                        title="Delete category permanently"
+                                        data-testid={`button-delete-category-${bc.category.id}`}
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete "{bc.category.name}"?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          This will permanently delete this category and all its questions from ALL boards. This cannot be undone.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                          onClick={() => {
+                                            if (selectedBoardCategoryId === bc.id) setSelectedBoardCategoryId(null);
+                                            deleteCategoryMutation.mutate(bc.category.id);
+                                          }}
+                                        >
+                                          Delete
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
                                 </div>
                               )}
                             </motion.div>
@@ -545,7 +589,7 @@ export default function Admin() {
                       </div>
                     )}
 
-                    {unlinkedCategories.length > 0 && (
+                    {unlinkedCategories.length > 0 && boardCategories.length < 5 && (
                       <div className="pt-3 border-t border-border">
                         <p className="text-xs text-muted-foreground mb-2">Quick add existing:</p>
                         <div className="flex flex-wrap gap-1">
@@ -576,15 +620,22 @@ export default function Admin() {
           <div className="lg:col-span-8">
             <Card className="bg-card border-border h-full flex flex-col">
               <CardHeader className="py-3 px-4 border-b border-border shrink-0">
-                <CardTitle className="flex items-center gap-2 text-foreground text-base">
-                  <HelpCircle className="w-4 h-4 text-primary" />
-                  Questions
-                  {selectedBoardCategory && (
-                    <span className="text-muted-foreground font-normal">
-                      for "{selectedBoardCategory.category.name}"
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="flex items-center gap-2 text-foreground text-base">
+                    <HelpCircle className="w-4 h-4 text-primary" />
+                    Questions
+                    {selectedBoardCategory && (
+                      <span className="text-muted-foreground font-normal">
+                        for "{selectedBoardCategory.category.name}"
+                      </span>
+                    )}
+                  </CardTitle>
+                  {selectedBoardCategoryId && (
+                    <span className={`text-xs ${questions.length >= 5 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                      {questions.length}/5
                     </span>
                   )}
-                </CardTitle>
+                </div>
               </CardHeader>
               <CardContent className="p-4 flex-1 overflow-hidden flex flex-col">
                 {!selectedBoardCategoryId ? (
@@ -634,7 +685,7 @@ export default function Admin() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <Button onClick={handleCreateQuestion} disabled={!newQuestion.trim() || !newCorrectAnswer.trim()} data-testid="button-add-question">
+                        <Button onClick={handleCreateQuestion} disabled={!newQuestion.trim() || !newCorrectAnswer.trim() || questions.length >= 5} data-testid="button-add-question">
                           <Plus className="w-4 h-4 mr-2" /> Add
                         </Button>
                       </div>
