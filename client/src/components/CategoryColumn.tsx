@@ -67,10 +67,10 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
         className={`
           w-full h-full flex items-center justify-center rounded-xl font-black text-2xl lg:text-3xl transition-all relative overflow-hidden
           ${!hasQuestion 
-            ? 'bg-white/5 text-white/20 cursor-not-allowed border border-white/5' 
+            ? 'bg-primary/5 text-primary/20 cursor-not-allowed border border-primary/10' 
             : isCompleted 
               ? 'completed-cell text-primary/50 cursor-not-allowed border border-primary/20' 
-              : 'bg-gradient-to-br from-gray-900 to-black text-primary cursor-pointer border-2 border-primary/40 shadow-lg shadow-primary/30 hover:shadow-xl hover:border-primary/60'
+              : 'bg-gradient-to-br from-gray-900 to-black text-primary cursor-pointer border-2 border-primary/50 shadow-lg shadow-primary/30 hover:shadow-xl hover:border-primary/70'
           }
         `}
         onClick={handleClick}
