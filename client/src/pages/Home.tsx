@@ -1,5 +1,6 @@
 import { useBoards, useBoardCategories, useBoard } from "@/hooks/use-quiz";
-import { Loader2, Settings, Maximize2, Minimize2, Cake, Sparkles, Star, ArrowLeft, Grid3X3 } from "lucide-react";
+import { Loader2, Settings, Maximize2, Minimize2, Sparkles, Star, ArrowLeft, Grid3X3 } from "lucide-react";
+import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef } from "react";
@@ -111,8 +112,7 @@ export default function Home() {
             >
               <div className="relative">
                 <motion.div 
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                  style={{ background: `linear-gradient(135deg, ${colors.gradient1} 0%, ${colors.gradient2} 50%, ${colors.gradient3} 100%)` }}
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-green-600 via-green-500 to-lime-400"
                   animate={{ 
                     rotate: [0, -5, 5, -5, 0],
                     scale: [1, 1.05, 1]
@@ -123,7 +123,7 @@ export default function Home() {
                     animate={{ y: [0, -3, 0] }}
                     transition={{ duration: 1.5, repeat: Infinity }}
                   >
-                    <Cake className="w-7 h-7 text-white drop-shadow-lg" />
+                    <AvocadoIcon className="w-8 h-8 drop-shadow-lg" />
                   </motion.div>
                 </motion.div>
               </div>
@@ -272,8 +272,7 @@ export default function Home() {
             </Button>
             <div className="relative">
               <motion.div 
-                className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                style={{ background: `linear-gradient(135deg, ${colors.gradient1} 0%, ${colors.gradient2} 50%, ${colors.gradient3} 100%)` }}
+                className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-green-600 via-green-500 to-lime-400"
                 animate={{ 
                   rotate: [0, -5, 5, -5, 0],
                   scale: [1, 1.05, 1]
@@ -284,7 +283,7 @@ export default function Home() {
                   animate={{ y: [0, -3, 0] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                  <Cake className="w-7 h-7 text-white drop-shadow-lg" />
+                  <AvocadoIcon className="w-8 h-8 drop-shadow-lg" />
                 </motion.div>
               </motion.div>
               <motion.div
@@ -295,7 +294,7 @@ export default function Home() {
                 }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               >
-                <Star className="w-5 h-5 text-yellow-400 fill-yellow-400 drop-shadow-lg" />
+                <Star className="w-5 h-5 text-lime-300 fill-lime-300 drop-shadow-lg" />
               </motion.div>
               <motion.div
                 className="absolute -top-1 -left-2"
@@ -305,7 +304,7 @@ export default function Home() {
                 }}
                 transition={{ duration: 2.5, repeat: Infinity, delay: 0.3 }}
               >
-                <Star className="w-4 h-4 text-pink-400 fill-pink-400" />
+                <Star className="w-4 h-4 text-green-300 fill-green-300" />
               </motion.div>
               <motion.div
                 className="absolute -bottom-1 -left-1"
@@ -316,7 +315,7 @@ export default function Home() {
                 }}
                 transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
               >
-                <Sparkles className="w-5 h-5 text-cyan-400" />
+                <Sparkles className="w-5 h-5 text-lime-400" />
               </motion.div>
               <motion.div
                 className="absolute -bottom-2 -right-1"
@@ -326,7 +325,7 @@ export default function Home() {
                 }}
                 transition={{ duration: 1.8, repeat: Infinity, delay: 0.8 }}
               >
-                <Sparkles className="w-4 h-4 text-purple-400" />
+                <Sparkles className="w-4 h-4 text-green-400" />
               </motion.div>
             </div>
             <div className="flex flex-col">
@@ -413,7 +412,7 @@ export default function Home() {
                 animate={{ rotate: [0, 10, -10, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                <Cake className="w-16 h-16 text-white/30 mx-auto mb-6" />
+                <AvocadoIcon className="w-16 h-16 opacity-30 mx-auto mb-6" />
               </motion.div>
               <h3 className="text-2xl font-bold text-white">No categories yet</h3>
               <p className="text-white/50 mt-2 mb-6">Create your first category to get started</p>
