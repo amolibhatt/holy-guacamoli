@@ -326,24 +326,21 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
         </AnimatePresence>
 
         <div className="flex justify-center gap-3 mb-8">
-          {[15, 30, 60].map((secs, idx) => (
-            <motion.div
-              key={secs}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 + idx * 0.1 }}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Button
+              variant="outline"
+              onClick={() => startTimer(5)}
+              disabled={isTimerRunning}
+              className="border-primary/40 text-foreground hover:bg-primary/20"
             >
-              <Button
-                variant="outline"
-                onClick={() => startTimer(secs)}
-                disabled={isTimerRunning}
-                className="border-primary/40 text-foreground hover:bg-primary/20"
-              >
-                <Timer className="w-4 h-4 mr-2" />
-                {secs}s
-              </Button>
-            </motion.div>
-          ))}
+              <Timer className="w-4 h-4 mr-2" />
+              5s
+            </Button>
+          </motion.div>
           {isTimerRunning && (
             <motion.div
               initial={{ opacity: 0, scale: 0 }}
