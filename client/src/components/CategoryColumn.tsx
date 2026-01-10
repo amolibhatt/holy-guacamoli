@@ -115,9 +115,9 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
               className="absolute inset-0 rounded-xl pointer-events-none"
               animate={{ 
                 boxShadow: [
-                  "inset 0 0 20px rgba(34,197,94,0)",
-                  "inset 0 0 30px rgba(34,197,94,0.3)",
-                  "inset 0 0 20px rgba(34,197,94,0)"
+                  "inset 0 0 20px rgba(168,85,247,0)",
+                  "inset 0 0 30px rgba(168,85,247,0.3)",
+                  "inset 0 0 20px rgba(168,85,247,0)"
                 ]
               }}
               transition={{ duration: 2, repeat: Infinity }}

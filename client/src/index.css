@@ -8,16 +8,16 @@
   --font-body: 'Inter', system-ui, sans-serif;
   --font-display: 'Inter', system-ui, sans-serif;
 
-  --theme-gradient-1: #22C55E;
-  --theme-gradient-2: #10B981;
-  --theme-gradient-3: #A3E635;
-  --theme-accent: #34D399;
-  --theme-glow: rgba(34, 197, 94, 0.4);
+  --theme-gradient-1: #A855F7;
+  --theme-gradient-2: #C084FC;
+  --theme-gradient-3: #E879F9;
+  --theme-accent: #D946EF;
+  --theme-glow: rgba(168, 85, 247, 0.4);
 
   --background: 270 30% 8%;
   --foreground: 0 0% 96%;
   
-  --primary: 142 71% 45%;
+  --primary: 280 70% 60%;
   --primary-foreground: 0 0% 100%;
   
   --secondary: 330 70% 55%;
@@ -39,7 +39,7 @@
   
   --border: 270 15% 20%;
   --input: 270 20% 15%;
-  --ring: 142 71% 45%;
+  --ring: 280 70% 60%;
   
   --destructive: 0 70% 50%;
   --destructive-foreground: 0 0% 100%;
@@ -49,13 +49,13 @@
   --sidebar: 270 30% 6%;
   --sidebar-foreground: 0 0% 90%;
   --sidebar-border: 270 15% 16%;
-  --sidebar-primary: 142 71% 45%;
+  --sidebar-primary: 280 70% 60%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 270 20% 16%;
   --sidebar-accent-foreground: 0 0% 96%;
-  --sidebar-ring: 142 71% 45%;
+  --sidebar-ring: 280 70% 60%;
   
-  --chart-1: 142 71% 45%;
+  --chart-1: 280 70% 60%;
   --chart-2: 330 70% 55%;
   --chart-3: 50 95% 55%;
   --chart-4: 180 60% 50%;
@@ -74,7 +74,7 @@
   --background: 270 30% 5%;
   --foreground: 0 0% 98%;
   
-  --primary: 142 71% 48%;
+  --primary: 280 70% 62%;
   --primary-foreground: 0 0% 100%;
   
   --card: 270 25% 8%;
@@ -139,13 +139,13 @@
   }
   
   .text-glow {
-    text-shadow: 0 0 20px rgba(34, 197, 94, 0.8), 0 0 40px rgba(34, 197, 94, 0.4);
+    text-shadow: 0 0 20px rgba(168, 85, 247, 0.8), 0 0 40px rgba(168, 85, 247, 0.4);
   }
   
   .grid-bg {
     background-image: 
-      radial-gradient(circle at 20% 20%, rgba(34, 197, 94, 0.05) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(163, 230, 53, 0.05) 0%, transparent 50%);
+      radial-gradient(circle at 20% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(232, 121, 249, 0.05) 0%, transparent 50%);
   }
   
   .shimmer {
@@ -163,7 +163,7 @@
     background: linear-gradient(
       90deg,
       transparent 0%,
-      rgba(163, 230, 53, 0.3) 50%,
+      rgba(232, 121, 249, 0.3) 50%,
       transparent 100%
     );
     background-size: 200% 100%;
