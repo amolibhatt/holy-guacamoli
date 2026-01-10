@@ -1,4 +1,12 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { 
+  Cake, PartyPopper, Gift, Sparkles,
+  TreePine, Bell, Snowflake, Star,
+  Trophy, Medal, Target, Zap,
+  Waves, Shell, Anchor, Sun,
+  Bolt, Orbit, CircleDot, Flame,
+  LucideIcon
+} from "lucide-react";
 
 export type ThemeName = 'birthday' | 'holiday' | 'sports' | 'ocean' | 'neon';
 
@@ -8,6 +16,12 @@ interface ThemeColors {
   gradient3: string;
   accent: string;
   glow: string;
+}
+
+interface ThemeDecor {
+  icons: LucideIcon[];
+  label: string;
+  emoji: string;
 }
 
 export const THEMES: Record<ThemeName, ThemeColors> = {
@@ -48,10 +62,39 @@ export const THEMES: Record<ThemeName, ThemeColors> = {
   },
 };
 
+export const THEME_DECOR: Record<ThemeName, ThemeDecor> = {
+  birthday: {
+    icons: [Cake, PartyPopper, Gift, Sparkles],
+    label: 'Birthday',
+    emoji: '🎂',
+  },
+  holiday: {
+    icons: [TreePine, Bell, Snowflake, Star],
+    label: 'Holiday',
+    emoji: '🎄',
+  },
+  sports: {
+    icons: [Trophy, Medal, Target, Zap],
+    label: 'Sports',
+    emoji: '🏆',
+  },
+  ocean: {
+    icons: [Waves, Shell, Anchor, Sun],
+    label: 'Ocean',
+    emoji: '🌊',
+  },
+  neon: {
+    icons: [Bolt, Orbit, CircleDot, Flame],
+    label: 'Neon',
+    emoji: '⚡',
+  },
+};
+
 interface ThemeContextType {
   theme: ThemeName;
   setTheme: (theme: ThemeName) => void;
   colors: ThemeColors;
+  decor: ThemeDecor;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -73,7 +116,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, colors: THEMES[theme] }}>
+    <ThemeContext.Provider value={{ 
+      theme, 
+      setTheme, 
+      colors: THEMES[theme],
+      decor: THEME_DECOR[theme]
+    }}>
       {children}
     </ThemeContext.Provider>
   );
