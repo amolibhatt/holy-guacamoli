@@ -6,11 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight } from "lucide-react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import MDEditor from '@uiw/react-md-editor';
-import type { Category, Question, Board, BoardCategoryWithCategory } from "@shared/schema";
+import type { Category, Question, Board, BoardCategoryWithCount } from "@shared/schema";
 
 const ALL_POINT_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
@@ -22,11 +22,11 @@ export default function Admin() {
   const [editingQuestionId, setEditingQuestionId] = useState<number | null>(null);
 
   const [newBoardName, setNewBoardName] = useState("");
-  const [newBoardDesc, setNewBoardDesc] = useState("");
   const [newBoardPoints, setNewBoardPoints] = useState<number[]>([10, 20, 30, 40, 50]);
+  const [showNewBoardForm, setShowNewBoardForm] = useState(false);
 
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryDesc, setNewCategoryDesc] = useState("");
+  const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
 
   const [newQuestion, setNewQuestion] = useState("");
   const [newCorrectAnswer, setNewCorrectAnswer] = useState("");
@@ -55,7 +55,7 @@ export default function Admin() {
   const selectedBoard = boards.find(b => b.id === selectedBoardId);
   const currentPointValues = selectedBoard?.pointValues || ALL_POINT_VALUES;
 
-  const { data: boardCategories = [], isLoading: loadingBoardCategories } = useQuery<BoardCategoryWithCategory[]>({
+  const { data: boardCategories = [], isLoading: loadingBoardCategories } = useQuery<BoardCategoryWithCount[]>({
     queryKey: ['/api/boards', selectedBoardId, 'categories'],
     enabled: !!selectedBoardId,
   });
@@ -77,8 +77,8 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
       setNewBoardName("");
-      setNewBoardDesc("");
       setNewBoardPoints([10, 20, 30, 40, 50]);
+      setShowNewBoardForm(false);
       toast({ title: "Board created!" });
     },
     onError: () => {
@@ -104,11 +104,30 @@ export default function Admin() {
     mutationFn: async (data: { name: string; description: string; imageUrl: string }) => {
       return apiRequest('POST', '/api/categories', data);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
       setNewCategoryName("");
-      setNewCategoryDesc("");
+      setShowNewCategoryForm(false);
       toast({ title: "Category created!" });
+    },
+    onError: () => {
+      toast({ title: "Failed to create category", variant: "destructive" });
+    },
+  });
+
+  const createAndLinkCategoryMutation = useMutation({
+    mutationFn: async (data: { name: string; boardId: number }) => {
+      const catRes = await apiRequest('POST', '/api/categories', { name: data.name, description: '', imageUrl: '' });
+      const cat = await catRes.json();
+      await apiRequest('POST', `/api/boards/${data.boardId}/categories`, { categoryId: cat.id });
+      return cat;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
+      setNewCategoryName("");
+      setShowNewCategoryForm(false);
+      toast({ title: "Category created and linked!" });
     },
     onError: () => {
       toast({ title: "Failed to create category", variant: "destructive" });
@@ -144,7 +163,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
-      toast({ title: "Category linked to board!" });
+      toast({ title: "Category linked!" });
     },
     onError: () => {
       toast({ title: "Failed to link category", variant: "destructive" });
@@ -160,7 +179,7 @@ export default function Admin() {
       if (selectedBoardCategoryId) {
         setSelectedBoardCategoryId(null);
       }
-      toast({ title: "Category unlinked from board" });
+      toast({ title: "Category unlinked" });
     },
   });
 
@@ -170,6 +189,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/board-categories', selectedBoardCategoryId, 'questions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
       setNewQuestion("");
       setNewCorrectAnswer("");
       setNewPoints(currentPointValues[0] || 10);
@@ -197,6 +217,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/board-categories', selectedBoardCategoryId, 'questions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
       toast({ title: "Question deleted" });
     },
   });
@@ -247,395 +268,413 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border px-6 py-4">
-        <div className="flex items-center gap-4 max-w-7xl mx-auto">
+      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border px-4 py-3">
+        <div className="flex items-center gap-3 max-w-7xl mx-auto">
           <Link href="/">
             <Button variant="ghost" size="icon" className="shrink-0" data-testid="button-back-home">
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Admin Panel</h1>
-            <p className="text-sm text-muted-foreground">Manage boards, categories, and questions</p>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-foreground">Admin Panel</h1>
           </div>
+          {selectedBoard && (
+            <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">{selectedBoard.name}</span>
+              {selectedBoardCategory && (
+                <>
+                  <ChevronRight className="w-4 h-4" />
+                  <span className="font-medium text-primary">{selectedBoardCategory.category.name}</span>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="bg-card border-border">
-            <CardHeader className="border-b border-border">
-              <CardTitle className="flex items-center gap-2 text-foreground">
-                <Grid3X3 className="w-5 h-5 text-primary" />
-                Boards
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-4">
-              <div className="space-y-2">
-                <Input
-                  placeholder="New board name"
-                  value={newBoardName}
-                  onChange={(e) => setNewBoardName(e.target.value)}
-                  data-testid="input-board-name"
-                />
-                <div className="flex flex-wrap gap-1">
-                  {ALL_POINT_VALUES.map(pt => (
-                    <Button
-                      key={pt}
-                      size="sm"
-                      variant={newBoardPoints.includes(pt) ? "default" : "outline"}
-                      onClick={() => {
-                        if (newBoardPoints.includes(pt)) {
-                          setNewBoardPoints(prev => prev.filter(p => p !== pt));
-                        } else {
-                          setNewBoardPoints(prev => [...prev, pt].sort((a, b) => a - b));
-                        }
-                      }}
-                      data-testid={`button-point-${pt}`}
-                    >
-                      {pt}
-                    </Button>
-                  ))}
+      <div className="max-w-7xl mx-auto p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-80px)]">
+          <div className="lg:col-span-4 space-y-4 overflow-y-auto">
+            <Card className="bg-card border-border">
+              <CardHeader className="py-3 px-4 border-b border-border">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-foreground text-base">
+                    <Grid3X3 className="w-4 h-4 text-primary" />
+                    Boards
+                  </CardTitle>
+                  <Button
+                    size="sm"
+                    variant={showNewBoardForm ? "secondary" : "default"}
+                    onClick={() => setShowNewBoardForm(!showNewBoardForm)}
+                    data-testid="button-toggle-board-form"
+                  >
+                    {showNewBoardForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                  </Button>
                 </div>
-                <Button
-                  onClick={() => createBoardMutation.mutate({ name: newBoardName, description: newBoardDesc, pointValues: newBoardPoints })}
-                  disabled={!newBoardName.trim() || newBoardPoints.length === 0}
-                  className="w-full"
-                  data-testid="button-create-board"
-                >
-                  <Plus className="w-4 h-4 mr-2" /> Create Board
-                </Button>
-              </div>
-
-              <div className="border-t border-border pt-4 space-y-2 max-h-[300px] overflow-y-auto">
-                {loadingBoards ? (
-                  <div className="flex justify-center py-4"><Loader2 className="w-6 h-6 animate-spin" /></div>
-                ) : boards.map(board => (
-                  <div
-                    key={board.id}
-                    className={`flex items-center justify-between gap-2 p-3 rounded-xl cursor-pointer transition-all ${
-                      selectedBoardId === board.id
-                        ? 'bg-primary/20 border-2 border-primary'
-                        : 'bg-muted/20 border border-border hover:bg-muted/30'
-                    }`}
-                    onClick={() => { setSelectedBoardId(board.id); setSelectedBoardCategoryId(null); }}
-                    data-testid={`board-item-${board.id}`}
-                  >
-                    <div>
-                      <span className="font-medium text-foreground">{board.name}</span>
-                      <div className="text-xs text-muted-foreground">
-                        Points: {(board.pointValues || []).join(', ')}
-                      </div>
-                    </div>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={(e) => { e.stopPropagation(); deleteBoardMutation.mutate(board.id); }}
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      data-testid={`button-delete-board-${board.id}`}
+              </CardHeader>
+              <CardContent className="p-3 space-y-3">
+                <AnimatePresence>
+                  {showNewBoardForm && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-2 p-3 bg-muted/20 rounded-lg border border-border"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Input
+                        placeholder="Board name"
+                        value={newBoardName}
+                        onChange={(e) => setNewBoardName(e.target.value)}
+                        data-testid="input-board-name"
+                      />
+                      <div className="flex flex-wrap gap-1">
+                        {ALL_POINT_VALUES.map(pt => (
+                          <Button
+                            key={pt}
+                            size="sm"
+                            variant={newBoardPoints.includes(pt) ? "default" : "outline"}
+                            className="h-7 px-2 text-xs"
+                            onClick={() => {
+                              if (newBoardPoints.includes(pt)) {
+                                setNewBoardPoints(prev => prev.filter(p => p !== pt));
+                              } else {
+                                setNewBoardPoints(prev => [...prev, pt].sort((a, b) => a - b));
+                              }
+                            }}
+                            data-testid={`button-point-${pt}`}
+                          >
+                            {pt}
+                          </Button>
+                        ))}
+                      </div>
+                      <Button
+                        onClick={() => createBoardMutation.mutate({ name: newBoardName, description: '', pointValues: newBoardPoints })}
+                        disabled={!newBoardName.trim() || newBoardPoints.length === 0}
+                        className="w-full"
+                        size="sm"
+                        data-testid="button-create-board"
+                      >
+                        Create Board
+                      </Button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+                  {loadingBoards ? (
+                    <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin" /></div>
+                  ) : boards.map(board => (
+                    <div
+                      key={board.id}
+                      className={`flex items-center justify-between gap-2 p-2.5 rounded-lg cursor-pointer transition-all ${
+                        selectedBoardId === board.id
+                          ? 'bg-primary/20 border-2 border-primary'
+                          : 'bg-muted/20 border border-border hover:bg-muted/30'
+                      }`}
+                      onClick={() => { setSelectedBoardId(board.id); setSelectedBoardCategoryId(null); }}
+                      data-testid={`board-item-${board.id}`}
+                    >
+                      <div className="min-w-0">
+                        <span className="font-medium text-foreground text-sm truncate block">{board.name}</span>
+                        <div className="text-xs text-muted-foreground">
+                          {(board.pointValues || []).length} point values
+                        </div>
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={(e) => { e.stopPropagation(); deleteBoardMutation.mutate(board.id); }}
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+                        data-testid={`button-delete-board-${board.id}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                  {boards.length === 0 && !loadingBoards && (
+                    <p className="text-center text-muted-foreground text-sm py-4">No boards yet</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card border-border">
+              <CardHeader className="py-3 px-4 border-b border-border">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-foreground text-base">
+                    <FolderPlus className="w-4 h-4 text-primary" />
+                    Categories
+                    {selectedBoard && <span className="text-muted-foreground font-normal text-sm">for {selectedBoard.name}</span>}
+                  </CardTitle>
+                  {selectedBoardId && (
+                    <Button
+                      size="sm"
+                      variant={showNewCategoryForm ? "secondary" : "default"}
+                      onClick={() => setShowNewCategoryForm(!showNewCategoryForm)}
+                      data-testid="button-toggle-category-form"
+                    >
+                      {showNewCategoryForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                     </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="p-3">
+                {!selectedBoardId ? (
+                  <div className="text-center py-6">
+                    <Grid3X3 className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">Select a board first</p>
                   </div>
-                ))}
-                {boards.length === 0 && !loadingBoards && (
-                  <p className="text-center text-muted-foreground py-4">No boards yet</p>
+                ) : (
+                  <div className="space-y-3">
+                    <AnimatePresence>
+                      {showNewCategoryForm && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="flex gap-2"
+                        >
+                          <Input
+                            placeholder="New category name"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            className="flex-1"
+                            data-testid="input-category-name"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && newCategoryName.trim() && selectedBoardId) {
+                                createAndLinkCategoryMutation.mutate({ name: newCategoryName.trim(), boardId: selectedBoardId });
+                              }
+                            }}
+                          />
+                          <Button
+                            onClick={() => createAndLinkCategoryMutation.mutate({ name: newCategoryName.trim(), boardId: selectedBoardId! })}
+                            disabled={!newCategoryName.trim()}
+                            size="sm"
+                            data-testid="button-create-category"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {loadingBoardCategories ? (
+                      <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin" /></div>
+                    ) : (
+                      <div className="space-y-1.5 max-h-[250px] overflow-y-auto">
+                        <AnimatePresence mode="popLayout">
+                          {boardCategories.map(bc => (
+                            <motion.div
+                              key={bc.id}
+                              layout
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, x: -50 }}
+                              className={`flex items-center justify-between gap-2 p-2.5 rounded-lg cursor-pointer transition-all ${
+                                selectedBoardCategoryId === bc.id
+                                  ? 'bg-primary/20 border-2 border-primary'
+                                  : 'bg-muted/20 border border-border hover:bg-muted/30'
+                              }`}
+                              onClick={() => setSelectedBoardCategoryId(bc.id)}
+                              data-testid={`board-category-${bc.id}`}
+                            >
+                              <div className="min-w-0 flex-1">
+                                <span className="font-medium text-foreground text-sm truncate block">{bc.category.name}</span>
+                                <div className="text-xs text-muted-foreground">
+                                  {bc.questionCount ?? 0} questions
+                                </div>
+                              </div>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={(e) => { e.stopPropagation(); unlinkCategoryMutation.mutate(bc.id); }}
+                                className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+                                title="Remove from board"
+                                data-testid={`button-unlink-${bc.id}`}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
+                        {boardCategories.length === 0 && (
+                          <p className="text-center text-muted-foreground text-sm py-4">
+                            No categories yet. Add one above!
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {unlinkedCategories.length > 0 && (
+                      <div className="pt-3 border-t border-border">
+                        <p className="text-xs text-muted-foreground mb-2">Quick add existing:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {unlinkedCategories.slice(0, 5).map(cat => (
+                            <Button
+                              key={cat.id}
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs"
+                              onClick={() => linkCategoryMutation.mutate({ boardId: selectedBoardId!, categoryId: cat.id })}
+                              data-testid={`button-quick-link-${cat.id}`}
+                            >
+                              <Plus className="w-3 h-3 mr-1" /> {cat.name}
+                            </Button>
+                          ))}
+                          {unlinkedCategories.length > 5 && (
+                            <span className="text-xs text-muted-foreground self-center">+{unlinkedCategories.length - 5} more</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
 
-          <Card className="bg-card border-border">
-            <CardHeader className="border-b border-border">
-              <CardTitle className="flex items-center gap-2 text-foreground">
-                <FolderPlus className="w-5 h-5 text-primary" />
-                Category Templates
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="New category name"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  data-testid="input-category-name"
-                />
-                <Button
-                  onClick={() => createCategoryMutation.mutate({ name: newCategoryName, description: '', imageUrl: '' })}
-                  disabled={!newCategoryName.trim()}
-                  data-testid="button-create-category"
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-
-              <div className="border-t border-border pt-4 space-y-2 max-h-[300px] overflow-y-auto">
-                {loadingCategories ? (
-                  <div className="flex justify-center py-4"><Loader2 className="w-6 h-6 animate-spin" /></div>
-                ) : allCategories.map(cat => (
-                  <div
-                    key={cat.id}
-                    className="flex items-center justify-between gap-2 p-3 rounded-xl bg-muted/20 border border-border"
-                    data-testid={`category-template-${cat.id}`}
-                  >
-                    {editingCategoryId === cat.id ? (
-                      <div className="flex items-center gap-2 flex-1">
+          <div className="lg:col-span-8">
+            <Card className="bg-card border-border h-full flex flex-col">
+              <CardHeader className="py-3 px-4 border-b border-border shrink-0">
+                <CardTitle className="flex items-center gap-2 text-foreground text-base">
+                  <HelpCircle className="w-4 h-4 text-primary" />
+                  Questions
+                  {selectedBoardCategory && (
+                    <span className="text-muted-foreground font-normal">
+                      for "{selectedBoardCategory.category.name}"
+                    </span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 flex-1 overflow-hidden flex flex-col">
+                {!selectedBoardCategoryId ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center">
+                      <FolderPlus className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                      <p className="text-muted-foreground">Select a category to manage questions</p>
+                      <p className="text-muted-foreground/60 text-sm mt-1">Choose a board and category from the left panel</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <div className="space-y-3 p-4 bg-muted/10 rounded-xl border border-border shrink-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-sm font-medium text-foreground">Add Question</span>
+                        <span className="text-xs text-muted-foreground">(supports markdown)</span>
+                        <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} />
+                        <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} />
+                        <Button size="sm" variant="ghost" onClick={() => imageInputRef.current?.click()} className="h-7 text-muted-foreground hover:text-primary ml-auto">
+                          <Image className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => audioInputRef.current?.click()} className="h-7 text-muted-foreground hover:text-primary">
+                          <Music className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <MDEditor value={newQuestion} onChange={(val) => setNewQuestion(val || "")} preview="edit" height={100} data-testid="input-new-question" />
+                      <div className="flex gap-2">
                         <Input
-                          value={editCategoryName}
-                          onChange={(e) => setEditCategoryName(e.target.value)}
-                          className="flex-1 h-8"
-                          autoFocus
+                          placeholder="Correct answer"
+                          value={newCorrectAnswer}
+                          onChange={(e) => setNewCorrectAnswer(e.target.value)}
+                          className="flex-1"
+                          data-testid="input-correct-answer"
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' && editCategoryName.trim()) {
-                              updateCategoryMutation.mutate({ id: cat.id, name: editCategoryName.trim() });
-                            } else if (e.key === 'Escape') {
-                              setEditingCategoryId(null);
+                            if (e.key === 'Enter' && newQuestion.trim() && newCorrectAnswer.trim()) {
+                              handleCreateQuestion();
                             }
                           }}
                         />
-                        <Button size="icon" variant="ghost" onClick={() => updateCategoryMutation.mutate({ id: cat.id, name: editCategoryName.trim() })} className="h-8 w-8 text-green-500">
-                          <Check className="w-4 h-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" onClick={() => setEditingCategoryId(null)} className="h-8 w-8">
-                          <X className="w-4 h-4" />
+                        <Select value={String(newPoints)} onValueChange={(v) => setNewPoints(Number(v))}>
+                          <SelectTrigger className="w-24" data-testid="select-points">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {currentPointValues.map(pt => (
+                              <SelectItem key={pt} value={String(pt)}>{pt} pts</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button onClick={handleCreateQuestion} disabled={!newQuestion.trim() || !newCorrectAnswer.trim()} data-testid="button-add-question">
+                          <Plus className="w-4 h-4 mr-2" /> Add
                         </Button>
                       </div>
-                    ) : (
-                      <>
-                        <span className="font-medium text-foreground truncate">{cat.name}</span>
-                        <div className="flex items-center gap-1">
-                          {selectedBoardId && !linkedCategoryIds.includes(cat.id) && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => linkCategoryMutation.mutate({ boardId: selectedBoardId, categoryId: cat.id })}
-                              className="h-8 w-8 text-green-500 hover:text-green-600"
-                              title="Link to selected board"
-                              data-testid={`button-link-category-${cat.id}`}
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto mt-4 space-y-2">
+                      {loadingQuestions ? (
+                        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+                      ) : (
+                        <AnimatePresence mode="popLayout">
+                          {questions.map((q, idx) => (
+                            <motion.div
+                              key={q.id}
+                              layout
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, x: -50 }}
+                              className="p-4 bg-muted/10 rounded-xl border border-border"
+                              data-testid={`question-${q.id}`}
                             >
-                              <Link2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => { setEditingCategoryId(cat.id); setEditCategoryName(cat.name); }}
-                            className="h-8 w-8 text-muted-foreground hover:text-primary"
-                            data-testid={`button-edit-category-${cat.id}`}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => deleteCategoryMutation.mutate(cat.id)}
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            data-testid={`button-delete-category-${cat.id}`}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
-                {allCategories.length === 0 && !loadingCategories && (
-                  <p className="text-center text-muted-foreground py-4">No categories yet</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border">
-            <CardHeader className="border-b border-border">
-              <CardTitle className="flex items-center gap-2 text-foreground">
-                <Link2 className="w-5 h-5 text-primary" />
-                Board Categories
-                {selectedBoard && <span className="text-muted-foreground font-normal">- {selectedBoard.name}</span>}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              {!selectedBoardId ? (
-                <div className="text-center py-8">
-                  <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-muted-foreground">Select a board to manage its categories</p>
-                </div>
-              ) : loadingBoardCategories ? (
-                <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
-              ) : (
-                <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                  <AnimatePresence mode="popLayout">
-                    {boardCategories.map(bc => (
-                      <motion.div
-                        key={bc.id}
-                        layout
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, x: -50 }}
-                        className={`flex items-center justify-between gap-2 p-3 rounded-xl cursor-pointer transition-all ${
-                          selectedBoardCategoryId === bc.id
-                            ? 'bg-primary/20 border-2 border-primary'
-                            : 'bg-muted/20 border border-border hover:bg-muted/30'
-                        }`}
-                        onClick={() => setSelectedBoardCategoryId(bc.id)}
-                        data-testid={`board-category-${bc.id}`}
-                      >
-                        <div>
-                          <span className="font-medium text-foreground">{bc.category.name}</span>
-                          <div className="text-xs text-muted-foreground">
-                            {questions.filter(q => q.boardCategoryId === bc.id).length || '0'} questions
-                          </div>
-                        </div>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={(e) => { e.stopPropagation(); unlinkCategoryMutation.mutate(bc.id); }}
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          title="Unlink from board"
-                          data-testid={`button-unlink-${bc.id}`}
-                        >
-                          <Unlink className="w-4 h-4" />
-                        </Button>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                  {boardCategories.length === 0 && (
-                    <p className="text-center text-muted-foreground py-4">
-                      No categories linked. Click the link icon on a category template to add it.
-                    </p>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="bg-card border-border">
-          <CardHeader className="border-b border-border">
-            <CardTitle className="flex items-center gap-2 text-foreground">
-              <HelpCircle className="w-5 h-5 text-primary" />
-              Questions
-              {selectedBoardCategory && (
-                <span className="text-muted-foreground font-normal">
-                  - {selectedBoardCategory.category.name} ({selectedBoard?.name})
-                </span>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4">
-            {!selectedBoardCategoryId ? (
-              <div className="text-center py-12">
-                <FolderPlus className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-muted-foreground">Select a board category to manage questions</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-3 p-4 bg-muted/10 rounded-xl border border-border">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-sm text-muted-foreground">Add Question (supports markdown, images, audio)</span>
-                    <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} />
-                    <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} />
-                    <Button size="sm" variant="ghost" onClick={() => imageInputRef.current?.click()} className="h-7 text-muted-foreground hover:text-primary">
-                      <Image className="w-4 h-4" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => audioInputRef.current?.click()} className="h-7 text-muted-foreground hover:text-primary">
-                      <Music className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <MDEditor value={newQuestion} onChange={(val) => setNewQuestion(val || "")} preview="edit" height={120} data-testid="input-new-question" />
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Correct answer"
-                      value={newCorrectAnswer}
-                      onChange={(e) => setNewCorrectAnswer(e.target.value)}
-                      className="flex-1"
-                      data-testid="input-correct-answer"
-                    />
-                    <Select value={String(newPoints)} onValueChange={(v) => setNewPoints(Number(v))}>
-                      <SelectTrigger className="w-24" data-testid="select-points">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {currentPointValues.map(pt => (
-                          <SelectItem key={pt} value={String(pt)}>{pt} pts</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button onClick={handleCreateQuestion} disabled={!newQuestion.trim() || !newCorrectAnswer.trim()} data-testid="button-add-question">
-                      <Plus className="w-4 h-4 mr-2" /> Add
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                  {loadingQuestions ? (
-                    <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
-                  ) : (
-                    <AnimatePresence mode="popLayout">
-                      {questions.map(q => (
-                        <motion.div
-                          key={q.id}
-                          layout
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, x: -50 }}
-                          className="p-4 bg-muted/10 rounded-xl border border-border"
-                          data-testid={`question-${q.id}`}
-                        >
-                          {editingQuestionId === q.id ? (
-                            <div className="space-y-3">
-                              <input ref={editImageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], true)} />
-                              <input ref={editAudioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], true)} />
-                              <MDEditor value={editQuestion} onChange={(val) => setEditQuestion(val || "")} preview="edit" height={100} />
-                              <div className="flex gap-2">
-                                <Input value={editCorrectAnswer} onChange={(e) => setEditCorrectAnswer(e.target.value)} placeholder="Answer" className="flex-1" />
-                                <Select value={String(editPoints)} onValueChange={(v) => setEditPoints(Number(v))}>
-                                  <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
-                                  <SelectContent>
-                                    {currentPointValues.map(pt => (
-                                      <SelectItem key={pt} value={String(pt)}>{pt} pts</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button size="sm" variant="ghost" onClick={() => setEditingQuestionId(null)}>Cancel</Button>
-                                <Button size="sm" onClick={() => updateQuestionMutation.mutate({ id: q.id, question: editQuestion, correctAnswer: editCorrectAnswer, points: editPoints })}>
-                                  Save
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="px-2 py-0.5 text-xs font-bold bg-primary/20 text-primary rounded">{q.points} pts</span>
+                              {editingQuestionId === q.id ? (
+                                <div className="space-y-3">
+                                  <input ref={editImageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], true)} />
+                                  <input ref={editAudioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], true)} />
+                                  <MDEditor value={editQuestion} onChange={(val) => setEditQuestion(val || "")} preview="edit" height={100} />
+                                  <div className="flex gap-2">
+                                    <Input value={editCorrectAnswer} onChange={(e) => setEditCorrectAnswer(e.target.value)} placeholder="Answer" className="flex-1" />
+                                    <Select value={String(editPoints)} onValueChange={(v) => setEditPoints(Number(v))}>
+                                      <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                                      <SelectContent>
+                                        {currentPointValues.map(pt => (
+                                          <SelectItem key={pt} value={String(pt)}>{pt} pts</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button size="sm" variant="ghost" onClick={() => setEditingQuestionId(null)}>Cancel</Button>
+                                    <Button size="sm" onClick={() => updateQuestionMutation.mutate({ id: q.id, question: editQuestion, correctAnswer: editCorrectAnswer, points: editPoints })}>
+                                      Save
+                                    </Button>
+                                  </div>
                                 </div>
-                                <p className="text-sm text-foreground line-clamp-2">{q.question.replace(/!\[.*?\]\(.*?\)/g, '[image]').replace(/<audio.*?<\/audio>/g, '[audio]')}</p>
-                                <p className="text-xs text-green-500 mt-1">Answer: {q.correctAnswer}</p>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Button size="icon" variant="ghost" onClick={() => startEditingQuestion(q)} className="h-8 w-8 text-muted-foreground hover:text-primary">
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button size="icon" variant="ghost" onClick={() => deleteQuestionMutation.mutate(q.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  )}
-                  {questions.length === 0 && !loadingQuestions && (
-                    <p className="text-center text-muted-foreground py-8">No questions yet. Add your first question above.</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                              ) : (
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-xs text-muted-foreground">#{idx + 1}</span>
+                                      <span className="px-2 py-0.5 text-xs font-bold bg-primary/20 text-primary rounded">{q.points} pts</span>
+                                    </div>
+                                    <p className="text-sm text-foreground">{q.question.replace(/!\[.*?\]\(.*?\)/g, '[image]').replace(/<audio.*?<\/audio>/g, '[audio]')}</p>
+                                    <p className="text-xs text-green-500 mt-1">Answer: {q.correctAnswer}</p>
+                                  </div>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <Button size="icon" variant="ghost" onClick={() => startEditingQuestion(q)} className="h-8 w-8 text-muted-foreground hover:text-primary">
+                                      <Pencil className="w-4 h-4" />
+                                    </Button>
+                                    <Button size="icon" variant="ghost" onClick={() => deleteQuestionMutation.mutate(q.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
+                      )}
+                      {questions.length === 0 && !loadingQuestions && (
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">No questions yet</p>
+                          <p className="text-muted-foreground/60 text-sm mt-1">Add your first question above</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
