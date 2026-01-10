@@ -4,6 +4,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -42,6 +43,8 @@ export default function Admin() {
 
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [editCategoryName, setEditCategoryName] = useState("");
+  const [editCategoryDescription, setEditCategoryDescription] = useState("");
+  const [newCategoryDescription, setNewCategoryDescription] = useState("");
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -149,8 +152,8 @@ export default function Admin() {
   });
 
   const createAndLinkCategoryMutation = useMutation({
-    mutationFn: async (data: { name: string; boardId: number }) => {
-      const res = await apiRequest('POST', `/api/boards/${data.boardId}/categories/create-and-link`, { name: data.name });
+    mutationFn: async (data: { name: string; description: string; boardId: number }) => {
+      const res = await apiRequest('POST', `/api/boards/${data.boardId}/categories/create-and-link`, { name: data.name, description: data.description });
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to create category");
@@ -162,6 +165,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       setNewCategoryName("");
+      setNewCategoryDescription("");
       setShowNewCategoryForm(false);
       toast({ title: "Category created and linked!" });
     },
@@ -171,14 +175,15 @@ export default function Admin() {
   });
 
   const updateCategoryMutation = useMutation({
-    mutationFn: async ({ id, name }: { id: number; name: string }) => {
-      return apiRequest('PUT', `/api/categories/${id}`, { name });
+    mutationFn: async ({ id, name, description }: { id: number; name: string; description: string }) => {
+      return apiRequest('PUT', `/api/categories/${id}`, { name, description });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       setEditingCategoryId(null);
+      setEditCategoryDescription("");
       toast({ title: "Category updated!" });
     },
   });
@@ -566,29 +571,33 @@ export default function Admin() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="flex gap-2 mb-2"
+                        className="space-y-2 mb-2"
                       >
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Category name"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            className="flex-1 h-8 text-sm"
+                            data-testid="input-category-name"
+                          />
+                          <Button
+                            onClick={() => createAndLinkCategoryMutation.mutate({ name: newCategoryName.trim(), description: newCategoryDescription.trim(), boardId: selectedBoardId! })}
+                            disabled={!newCategoryName.trim() || boardCategories.length >= 5}
+                            size="sm"
+                            className="h-8"
+                            data-testid="button-create-category"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
                         <Input
-                          placeholder="New category name"
-                          value={newCategoryName}
-                          onChange={(e) => setNewCategoryName(e.target.value)}
-                          className="flex-1 h-8 text-sm"
-                          data-testid="input-category-name"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && newCategoryName.trim() && selectedBoardId && boardCategories.length < 5) {
-                              createAndLinkCategoryMutation.mutate({ name: newCategoryName.trim(), boardId: selectedBoardId });
-                            }
-                          }}
+                          placeholder="Short description (shown as tooltip)"
+                          value={newCategoryDescription}
+                          onChange={(e) => setNewCategoryDescription(e.target.value)}
+                          className="h-8 text-sm"
+                          data-testid="input-category-description"
                         />
-                        <Button
-                          onClick={() => createAndLinkCategoryMutation.mutate({ name: newCategoryName.trim(), boardId: selectedBoardId! })}
-                          disabled={!newCategoryName.trim() || boardCategories.length >= 5}
-                          size="sm"
-                          className="h-8"
-                          data-testid="button-create-category"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -626,46 +635,68 @@ export default function Admin() {
                             </Button>
                           </div>
                           {editingCategoryId === bc.category.id ? (
-                            <div className="flex items-center gap-1">
+                            <div className="flex flex-col gap-1 p-2 bg-muted rounded-md">
                               <Input
                                 value={editCategoryName}
                                 onChange={(e) => setEditCategoryName(e.target.value)}
-                                className="h-7 text-xs w-32"
+                                placeholder="Category name"
+                                className="h-7 text-xs"
                                 autoFocus
+                              />
+                              <Input
+                                value={editCategoryDescription}
+                                onChange={(e) => setEditCategoryDescription(e.target.value)}
+                                placeholder="Short description (tooltip)"
+                                className="h-7 text-xs"
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
-                                    updateCategoryMutation.mutate({ id: bc.category.id, name: editCategoryName.trim() });
+                                    updateCategoryMutation.mutate({ id: bc.category.id, name: editCategoryName.trim(), description: editCategoryDescription.trim() });
                                   } else if (e.key === 'Escape') {
                                     setEditingCategoryId(null);
                                   }
                                 }}
                               />
-                              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => updateCategoryMutation.mutate({ id: bc.category.id, name: editCategoryName.trim() })}>
-                                <Check className="w-3 h-3 text-primary" />
-                              </Button>
-                              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditingCategoryId(null)}>
-                                <X className="w-3 h-3" />
-                              </Button>
+                              <div className="flex justify-end gap-1">
+                                <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => setEditingCategoryId(null)}>
+                                  Cancel
+                                </Button>
+                                <Button size="sm" className="h-6 px-2" onClick={() => updateCategoryMutation.mutate({ id: bc.category.id, name: editCategoryName.trim(), description: editCategoryDescription.trim() })}>
+                                  Save
+                                </Button>
+                              </div>
                             </div>
                           ) : (
-                            <Button
-                              size="sm"
-                              variant={selectedBoardCategoryId === bc.id ? "default" : "outline"}
-                              className="h-8 text-xs gap-1"
-                              onClick={() => setSelectedBoardCategoryId(bc.id)}
-                              data-testid={`category-tab-${bc.id}`}
-                            >
-                              <span className="truncate max-w-[80px]">{bc.category.name}</span>
-                              <span className={`text-[10px] px-1 py-0.5 rounded ${(bc.questionCount ?? 0) >= 5 ? 'bg-primary/30' : 'bg-muted'}`}>
-                                {bc.questionCount ?? 0}
-                              </span>
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant={selectedBoardCategoryId === bc.id ? "default" : "outline"}
+                                  className="h-8 text-xs gap-1"
+                                  onClick={() => setSelectedBoardCategoryId(bc.id)}
+                                  data-testid={`category-tab-${bc.id}`}
+                                >
+                                  <span className="truncate max-w-[80px]">{bc.category.name}</span>
+                                  <span className={`text-[10px] px-1 py-0.5 rounded ${(bc.questionCount ?? 0) >= 5 ? 'bg-primary/30' : 'bg-muted'}`}>
+                                    {bc.questionCount ?? 0}
+                                  </span>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="font-medium">{bc.category.name}</p>
+                                {bc.category.description && (
+                                  <p className="text-xs text-muted-foreground">{bc.category.description}</p>
+                                )}
+                                {!bc.category.description && (
+                                  <p className="text-xs text-muted-foreground italic">No description</p>
+                                )}
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                           <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button
                               size="icon"
                               variant="ghost"
-                              onClick={(e) => { e.stopPropagation(); setEditingCategoryId(bc.category.id); setEditCategoryName(bc.category.name); }}
+                              onClick={(e) => { e.stopPropagation(); setEditingCategoryId(bc.category.id); setEditCategoryName(bc.category.name); setEditCategoryDescription(bc.category.description || ''); }}
                               className="h-5 w-5 text-muted-foreground hover:text-primary"
                               data-testid={`button-edit-category-${bc.category.id}`}
                             >

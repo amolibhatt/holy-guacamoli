@@ -172,7 +172,7 @@ export async function registerRoutes(
   app.post("/api/boards/:boardId/categories/create-and-link", async (req, res) => {
     try {
       const boardId = Number(req.params.boardId);
-      const { name } = req.body;
+      const { name, description } = req.body;
       if (!name || !name.trim()) {
         return res.status(400).json({ message: "Category name is required" });
       }
@@ -180,7 +180,7 @@ export async function registerRoutes(
       if (currentCategories.length >= 5) {
         return res.status(400).json({ message: "Board already has 5 categories (maximum)" });
       }
-      const category = await storage.createCategory({ name: name.trim(), description: '', imageUrl: '' });
+      const category = await storage.createCategory({ name: name.trim(), description: description?.trim() || '', imageUrl: '' });
       let bc;
       try {
         bc = await storage.createBoardCategory({ boardId, categoryId: category.id });
