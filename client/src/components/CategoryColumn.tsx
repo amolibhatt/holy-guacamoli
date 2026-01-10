@@ -19,28 +19,11 @@ interface FlipCardProps {
   delay: number;
 }
 
-const POINT_COLORS: Record<number, { bg: string; glow: string; text: string }> = {
-  10: { bg: 'from-blue-500 to-blue-600', glow: 'shadow-blue-500/50', text: 'text-white' },
-  20: { bg: 'from-cyan-500 to-teal-500', glow: 'shadow-cyan-500/50', text: 'text-white' },
-  30: { bg: 'from-green-500 to-emerald-500', glow: 'shadow-green-500/50', text: 'text-white' },
-  40: { bg: 'from-lime-500 to-green-500', glow: 'shadow-lime-500/50', text: 'text-white' },
-  50: { bg: 'from-yellow-500 to-amber-500', glow: 'shadow-yellow-500/50', text: 'text-black' },
-  60: { bg: 'from-orange-500 to-amber-500', glow: 'shadow-orange-500/50', text: 'text-white' },
-  70: { bg: 'from-red-500 to-orange-500', glow: 'shadow-red-500/50', text: 'text-white' },
-  80: { bg: 'from-pink-500 to-red-500', glow: 'shadow-pink-500/50', text: 'text-white' },
-  90: { bg: 'from-purple-500 to-pink-500', glow: 'shadow-purple-500/50', text: 'text-white' },
-  100: { bg: 'from-violet-600 to-purple-600', glow: 'shadow-violet-500/50', text: 'text-white' },
-};
-
-function getPointColor(points: number) {
-  return POINT_COLORS[points] || { bg: 'from-gray-500 to-gray-600', glow: 'shadow-gray-500/50', text: 'text-white' };
-}
 
 function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect, delay }: FlipCardProps) {
   const [isFlipping, setIsFlipping] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const hasQuestion = !!question;
-  const colors = getPointColor(scoreValue);
 
   const handleClick = (e: React.MouseEvent) => {
     if (hasQuestion && !isCompleted && !isFlipping) {
@@ -87,7 +70,7 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
             ? 'bg-white/5 text-white/20 cursor-not-allowed border border-white/5' 
             : isCompleted 
               ? 'bg-gradient-to-br from-green-600/30 to-green-700/30 text-green-400/50 cursor-not-allowed border border-green-500/20' 
-              : `bg-gradient-to-br ${colors.bg} ${colors.text} cursor-pointer border-2 border-white/30 shadow-lg ${colors.glow} hover:shadow-xl`
+              : 'bg-gradient-to-br from-gray-900 to-black text-primary cursor-pointer border-2 border-primary/40 shadow-lg shadow-primary/30 hover:shadow-xl hover:border-primary/60'
           }
         `}
         onClick={handleClick}
@@ -95,17 +78,11 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
         data-testid={`cell-${boardCategoryId}-${scoreValue}`}
         style={{ backfaceVisibility: "hidden" }}
       >
-        {hasQuestion && !isCompleted && (
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"
-          />
-        )}
-        
         {hasQuestion && !isCompleted && isHovered && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="absolute inset-0 bg-white/20 pointer-events-none"
+            className="absolute inset-0 bg-primary/10 pointer-events-none"
           />
         )}
 
@@ -138,9 +115,9 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
               className="absolute inset-0 rounded-xl pointer-events-none"
               animate={{ 
                 boxShadow: [
-                  "inset 0 0 20px rgba(255,255,255,0)",
-                  "inset 0 0 30px rgba(255,255,255,0.3)",
-                  "inset 0 0 20px rgba(255,255,255,0)"
+                  "inset 0 0 20px rgba(34,197,94,0)",
+                  "inset 0 0 30px rgba(34,197,94,0.3)",
+                  "inset 0 0 20px rgba(34,197,94,0)"
                 ]
               }}
               transition={{ duration: 2, repeat: Infinity }}
@@ -153,7 +130,7 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
               }}
               transition={{ duration: 1.5, repeat: Infinity }}
             >
-              <Sparkles className="w-3 h-3 text-white/70" />
+              <Sparkles className="w-3 h-3 text-primary/70" />
             </motion.div>
           </>
         )}
