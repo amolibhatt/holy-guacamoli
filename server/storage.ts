@@ -19,6 +19,7 @@ export interface IStorage {
   getBoardCategory(id: number): Promise<BoardCategory | undefined>;
   getBoardCategoryByIds(boardId: number, categoryId: number): Promise<BoardCategory | undefined>;
   createBoardCategory(data: InsertBoardCategory): Promise<BoardCategory>;
+  updateBoardCategoryPosition(id: number, position: number): Promise<BoardCategory | undefined>;
   deleteBoardCategory(id: number): Promise<boolean>;
   
   getQuestionsByBoardCategory(boardCategoryId: number): Promise<Question[]>;
@@ -96,11 +97,13 @@ export class DatabaseStorage implements IStorage {
         id: boardCategories.id,
         boardId: boardCategories.boardId,
         categoryId: boardCategories.categoryId,
+        position: boardCategories.position,
         category: categories,
       })
       .from(boardCategories)
       .innerJoin(categories, eq(boardCategories.categoryId, categories.id))
-      .where(eq(boardCategories.boardId, boardId));
+      .where(eq(boardCategories.boardId, boardId))
+      .orderBy(asc(boardCategories.position));
     
     if (result.length === 0) return [];
     
@@ -120,9 +123,18 @@ export class DatabaseStorage implements IStorage {
       id: r.id,
       boardId: r.boardId,
       categoryId: r.categoryId,
+      position: r.position,
       category: r.category,
       questionCount: countMap.get(r.id) || 0,
     }));
+  }
+
+  async updateBoardCategoryPosition(id: number, position: number): Promise<BoardCategory | undefined> {
+    const [updated] = await db.update(boardCategories)
+      .set({ position })
+      .where(eq(boardCategories.id, id))
+      .returning();
+    return updated;
   }
 
   async getBoardCategory(id: number): Promise<BoardCategory | undefined> {
@@ -137,7 +149,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBoardCategory(data: InsertBoardCategory): Promise<BoardCategory> {
-    const [newBc] = await db.insert(boardCategories).values(data).returning();
+    const currentCount = await db.select({ count: count() })
+      .from(boardCategories)
+      .where(eq(boardCategories.boardId, data.boardId));
+    const position = currentCount[0]?.count ?? 0;
+    const [newBc] = await db.insert(boardCategories).values({ ...data, position }).returning();
     return newBc;
   }
 

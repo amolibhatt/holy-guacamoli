@@ -146,6 +146,29 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
+  app.put("/api/boards/:boardId/categories/reorder", async (req, res) => {
+    try {
+      const boardId = Number(req.params.boardId);
+      const { orderedIds } = req.body;
+      if (!Array.isArray(orderedIds) || !orderedIds.every(id => typeof id === 'number')) {
+        return res.status(400).json({ message: "orderedIds must be an array of numbers" });
+      }
+      const currentCategories = await storage.getBoardCategories(boardId);
+      const validIds = new Set(currentCategories.map(bc => bc.id));
+      if (!orderedIds.every(id => validIds.has(id)) || orderedIds.length !== validIds.size) {
+        return res.status(400).json({ message: "Invalid category IDs for this board" });
+      }
+      for (let i = 0; i < orderedIds.length; i++) {
+        await storage.updateBoardCategoryPosition(orderedIds[i], i);
+      }
+      const updated = await storage.getBoardCategories(boardId);
+      res.json(updated);
+    } catch (err) {
+      console.error("Error reordering categories:", err);
+      res.status(500).json({ message: "Failed to reorder categories" });
+    }
+  });
+
   app.post("/api/boards/:boardId/categories/create-and-link", async (req, res) => {
     try {
       const boardId = Number(req.params.boardId);

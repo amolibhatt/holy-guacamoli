@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown } from "lucide-react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import MDEditor from '@uiw/react-md-editor';
@@ -205,6 +205,26 @@ export default function Admin() {
       toast({ title: "Category unlinked" });
     },
   });
+
+  const reorderCategoriesMutation = useMutation({
+    mutationFn: async ({ boardId, orderedIds }: { boardId: number; orderedIds: number[] }) => {
+      return apiRequest('PUT', `/api/boards/${boardId}/categories/reorder`, { orderedIds });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
+    },
+  });
+
+  const moveCategory = (index: number, direction: 'up' | 'down') => {
+    if (!selectedBoardId) return;
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= boardCategories.length) return;
+    
+    const newOrder = [...boardCategories];
+    [newOrder[index], newOrder[newIndex]] = [newOrder[newIndex], newOrder[index]];
+    const orderedIds = newOrder.map(bc => bc.id);
+    reorderCategoriesMutation.mutate({ boardId: selectedBoardId, orderedIds });
+  };
 
   const createQuestionMutation = useMutation({
     mutationFn: async (data: { boardCategoryId: number; question: string; options: string[]; correctAnswer: string; points: number }) => {
@@ -507,7 +527,7 @@ export default function Admin() {
                     ) : (
                       <div className="space-y-1.5 max-h-[250px] overflow-y-auto">
                         <AnimatePresence mode="popLayout">
-                          {boardCategories.map(bc => (
+                          {boardCategories.map((bc, idx) => (
                             <motion.div
                               key={bc.id}
                               layout
@@ -522,6 +542,30 @@ export default function Admin() {
                               onClick={() => setSelectedBoardCategoryId(bc.id)}
                               data-testid={`board-category-${bc.id}`}
                             >
+                              <div className="flex flex-col gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => moveCategory(idx, 'up')}
+                                  disabled={idx === 0}
+                                  className="h-5 w-5 text-muted-foreground hover:text-primary disabled:opacity-30"
+                                  title="Move up"
+                                  data-testid={`button-move-up-${bc.id}`}
+                                >
+                                  <ArrowUp className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => moveCategory(idx, 'down')}
+                                  disabled={idx === boardCategories.length - 1}
+                                  className="h-5 w-5 text-muted-foreground hover:text-primary disabled:opacity-30"
+                                  title="Move down"
+                                  data-testid={`button-move-down-${bc.id}`}
+                                >
+                                  <ArrowDown className="w-3 h-3" />
+                                </Button>
+                              </div>
                               <div className="min-w-0 flex-1">
                                 {editingCategoryId === bc.category.id ? (
                                   <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
