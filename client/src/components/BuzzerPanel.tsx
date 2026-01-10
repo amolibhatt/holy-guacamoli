@@ -4,8 +4,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { QRCodeSVG } from "qrcode.react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Users, Copy, Check, Lock, Unlock, RotateCcw, Wifi, WifiOff, QrCode, X } from "lucide-react";
+import { Zap, Users, Copy, Check, Lock, Unlock, RotateCcw, Wifi, WifiOff, QrCode, X, Trophy } from "lucide-react";
 import { soundManager } from "@/lib/sounds";
+import { useScore } from "@/components/ScoreContext";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,7 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
   const [showQR, setShowQR] = useState(false);
   const [copied, setCopied] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
+  const { contestants } = useScore();
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -207,6 +209,25 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
             <Users className="w-3 h-3" />
             {players.length}
           </Badge>
+
+          {contestants.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              {contestants.sort((a, b) => b.score - a.score).slice(0, 5).map((contestant, idx) => (
+                <div 
+                  key={contestant.id}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                    idx === 0 && contestant.score > 0 
+                      ? 'gradient-gold text-black' 
+                      : 'bg-primary/20 text-primary'
+                  }`}
+                >
+                  {idx === 0 && contestant.score > 0 && <Trophy className="w-3 h-3" />}
+                  <span>{contestant.name}</span>
+                  <span className="font-bold">{contestant.score}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="flex items-center gap-1 ml-auto">
             {buzzerLocked ? (
