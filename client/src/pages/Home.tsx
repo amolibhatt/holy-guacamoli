@@ -367,7 +367,6 @@ export default function Home() {
                   <AvocadoIcon className="w-8 h-8 drop-shadow-lg" />
                 </motion.div>
               </motion.div>
-              <ThemeDecorations placement="corner" />
             </div>
             <div className="flex flex-col">
               <motion.span 
@@ -388,7 +387,6 @@ export default function Home() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <ThemeDecorations placement="header" />
             <ThemeSelector />
             <Button 
               variant="ghost" 
