@@ -22,6 +22,7 @@ export const boardCategories = pgTable("board_categories", {
   id: serial("id").primaryKey(),
   boardId: integer("board_id").notNull(),
   categoryId: integer("category_id").notNull(),
+  position: integer("position").notNull().default(0),
 }, (table) => [
   unique().on(table.boardId, table.categoryId),
 ]);
