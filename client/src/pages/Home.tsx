@@ -25,7 +25,7 @@ export default function Home() {
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
-  const { gameEnded, resetGameEnd } = useScore();
+  const { gameEnded, resetGameEnd, markQuestionCompleted } = useScore();
   const { colors } = useTheme();
   const buzzerRef = useRef<BuzzerPanelHandle>(null);
 
@@ -72,6 +72,9 @@ export default function Home() {
   };
 
   const handleCloseQuestion = () => {
+    if (selectedQuestion) {
+      markQuestionCompleted(selectedQuestion.id);
+    }
     setSelectedQuestion(null);
     buzzerRef.current?.lock();
   };
