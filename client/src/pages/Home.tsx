@@ -163,15 +163,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
           >
             <motion.h2 
-              className="text-4xl md:text-5xl font-black text-white mb-3"
-              animate={{ 
-                textShadow: [
-                  "0 0 20px rgba(34,197,94,0.3)",
-                  "0 0 40px rgba(34,197,94,0.5)",
-                  "0 0 20px rgba(34,197,94,0.3)"
-                ]
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
+              className="text-4xl md:text-5xl font-black text-white mb-3 text-glow"
             >
               Choose Your Game
             </motion.h2>
@@ -380,7 +372,7 @@ export default function Home() {
                 }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               >
-                <Star className="w-5 h-5 text-lime-300 fill-lime-300 drop-shadow-lg" />
+                <Star className="w-5 h-5 text-primary fill-primary drop-shadow-lg" />
               </motion.div>
               <motion.div
                 className="absolute -top-1 -left-2"
@@ -390,7 +382,7 @@ export default function Home() {
                 }}
                 transition={{ duration: 2.5, repeat: Infinity, delay: 0.3 }}
               >
-                <Star className="w-4 h-4 text-green-300 fill-green-300" />
+                <Star className="w-4 h-4 text-primary/80 fill-primary/80" />
               </motion.div>
               <motion.div
                 className="absolute -bottom-1 -left-1"
@@ -401,7 +393,7 @@ export default function Home() {
                 }}
                 transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
               >
-                <Sparkles className="w-5 h-5 text-lime-400" />
+                <Sparkles className="w-5 h-5 text-primary" />
               </motion.div>
               <motion.div
                 className="absolute -bottom-2 -right-1"
@@ -411,7 +403,7 @@ export default function Home() {
                 }}
                 transition={{ duration: 1.8, repeat: Infinity, delay: 0.8 }}
               >
-                <Sparkles className="w-4 h-4 text-green-400" />
+                <Sparkles className="w-4 h-4 text-primary/70" />
               </motion.div>
             </div>
             <div className="flex flex-col">

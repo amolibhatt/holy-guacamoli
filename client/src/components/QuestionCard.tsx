@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Question } from "@shared/schema";
 import { useScore } from "./ScoreContext";
+import { useTheme } from "@/context/ThemeContext";
 import { CheckCircle2, XCircle, Eye, EyeOff, Timer, X, Trophy, Sparkles, Star, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
@@ -83,6 +84,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [awardedTo, setAwardedTo] = useState<string | null>(null);
   const { contestants, awardPoints, deductPoints, markQuestionCompleted } = useScore();
+  const { colors } = useTheme();
 
   const correctAnswer = (question as any).correctAnswer;
 
@@ -128,7 +130,7 @@ export function QuestionCard({ question, isLocked, onComplete }: QuestionCardPro
       particleCount: 200,
       spread: 120,
       origin: { y: 0.5 },
-      colors: ['#FF6B6B', '#FF8E53', '#FFD93D', '#C44AF5', '#4ADEBC']
+      colors: [colors.gradient1, colors.gradient2, colors.gradient3, colors.accent, '#FFE66D']
     });
 
     setTimeout(() => {

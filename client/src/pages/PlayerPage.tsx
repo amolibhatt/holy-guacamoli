@@ -166,7 +166,7 @@ export default function PlayerPage() {
             </div>
 
             <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              {status === "connected" && <><Wifi className="w-4 h-4 text-green-500" /> Connected</>}
+              {status === "connected" && <><Wifi className="w-4 h-4 text-primary" /> Connected</>}
               {status === "disconnected" && <><WifiOff className="w-4 h-4" /> Not connected</>}
               {status === "error" && <><WifiOff className="w-4 h-4 text-red-500" /> Connection error</>}
             </div>
@@ -185,7 +185,7 @@ export default function PlayerPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="font-semibold text-foreground">{playerName}</span>
-          <Wifi className="w-4 h-4 text-green-500" />
+          <Wifi className="w-4 h-4 text-primary" />
         </div>
       </header>
 
@@ -207,7 +207,7 @@ export default function PlayerPage() {
                   >
                     <Trophy className="w-32 h-32 text-yellow-400 mx-auto" />
                   </motion.div>
-                  <h2 className="text-4xl font-black text-green-400 mt-4">Correct!</h2>
+                  <h2 className="text-4xl font-black text-primary mt-4">Correct!</h2>
                   <p className="text-2xl text-foreground mt-2">+{feedback.points} points</p>
                 </>
               ) : (

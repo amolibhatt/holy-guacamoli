@@ -94,7 +94,7 @@ export function Scoreboard() {
                       className={`
                         flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap relative overflow-hidden
                         ${idx === 0 && contestant.score > 0 
-                          ? 'gradient-gold text-purple-900 glow-gold' 
+                          ? 'gradient-gold text-black glow-gold' 
                           : 'bg-white/10 border border-primary/30 text-white'
                         }
                       `}
@@ -155,7 +155,7 @@ export function Scoreboard() {
                           animate={{ opacity: 0, y: 0 }}
                           transition={{ duration: 1 }}
                           className={`absolute -top-3 right-2 text-xs font-bold ${
-                            rankChange > 0 ? 'text-green-400' : 'text-red-400'
+                            rankChange > 0 ? 'text-primary' : 'text-destructive'
                           }`}
                         >
                           {rankChange > 0 ? `+${rankChange}` : rankChange}
@@ -163,9 +163,7 @@ export function Scoreboard() {
                       )}
 
                       <button
-                        className={`opacity-50 hover:opacity-100 transition-opacity relative z-10 ${
-                          idx === 0 && contestant.score > 0 ? 'hover:text-purple-700' : 'hover:text-red-400'
-                        }`}
+                        className="opacity-50 hover:opacity-100 transition-opacity relative z-10 hover:text-red-400"
                         onClick={() => removeContestant(contestant.id)}
                         data-testid={`button-remove-${contestant.id}`}
                       >

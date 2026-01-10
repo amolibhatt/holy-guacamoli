@@ -427,11 +427,11 @@ export default function Admin() {
                         <div className="min-w-0 flex-1">
                           <span className="font-medium text-foreground text-sm truncate block">{board.name}</span>
                           <div className="flex items-center gap-2 text-xs">
-                            <span className={`px-1.5 py-0.5 rounded ${(summary?.categoryCount || 0) >= 5 ? 'bg-green-500/20 text-green-600' : 'bg-muted text-muted-foreground'}`}>
+                            <span className={`px-1.5 py-0.5 rounded ${(summary?.categoryCount || 0) >= 5 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
                               {summary?.categoryCount || 0}/5 cat
                             </span>
                             {maxQuestions > 0 && (
-                              <span className={`px-1.5 py-0.5 rounded ${totalQuestions >= maxQuestions ? 'bg-green-500/20 text-green-600' : 'bg-orange-500/20 text-orange-600'}`}>
+                              <span className={`px-1.5 py-0.5 rounded ${totalQuestions >= maxQuestions ? 'bg-primary/20 text-primary' : 'bg-accent/20 text-accent-foreground'}`}>
                                 {totalQuestions}/{maxQuestions} Q
                               </span>
                             )}
@@ -583,7 +583,7 @@ export default function Admin() {
                                       }}
                                     />
                                     <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => updateCategoryMutation.mutate({ id: bc.category.id, name: editCategoryName.trim() })}>
-                                      <Check className="w-3 h-3 text-green-500" />
+                                      <Check className="w-3 h-3 text-primary" />
                                     </Button>
                                     <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditingCategoryId(null)}>
                                       <X className="w-3 h-3" />
@@ -614,7 +614,7 @@ export default function Admin() {
                                     size="icon"
                                     variant="ghost"
                                     onClick={(e) => { e.stopPropagation(); unlinkCategoryMutation.mutate(bc.id); }}
-                                    className="h-7 w-7 text-muted-foreground hover:text-orange-500"
+                                    className="h-7 w-7 text-muted-foreground hover:text-accent-foreground"
                                     title="Unlink from this board"
                                     data-testid={`button-unlink-${bc.id}`}
                                   >
@@ -815,7 +815,7 @@ export default function Admin() {
                                       <span className="px-2 py-0.5 text-xs font-bold bg-primary/20 text-primary rounded">{q.points} pts</span>
                                     </div>
                                     <p className="text-sm text-foreground">{q.question.replace(/!\[.*?\]\(.*?\)/g, '[image]').replace(/<audio.*?<\/audio>/g, '[audio]')}</p>
-                                    <p className="text-xs text-green-500 mt-1">Answer: {q.correctAnswer}</p>
+                                    <p className="text-xs text-primary mt-1">Answer: {q.correctAnswer}</p>
                                   </div>
                                   <div className="flex items-center gap-1 shrink-0">
                                     <Button size="icon" variant="ghost" onClick={() => startEditingQuestion(q)} className="h-8 w-8 text-muted-foreground hover:text-primary">
