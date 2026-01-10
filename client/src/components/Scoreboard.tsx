@@ -50,7 +50,7 @@ export function Scoreboard() {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-36 h-9 bg-white/10 border-primary/30 text-white placeholder:text-white/40 text-sm"
+            className="w-36 h-9 bg-primary/10 border-primary/30 text-white placeholder:text-primary/40 text-sm"
             data-testid="input-contestant-name"
           />
           <Button 
@@ -95,7 +95,7 @@ export function Scoreboard() {
                         flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap relative overflow-hidden
                         ${idx === 0 && contestant.score > 0 
                           ? 'gradient-gold text-black glow-gold' 
-                          : 'bg-white/10 border border-primary/30 text-white'
+                          : 'bg-primary/10 border border-primary/40 text-white'
                         }
                       `}
                       data-testid={`contestant-${contestant.id}`}

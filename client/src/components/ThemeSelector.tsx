@@ -25,7 +25,7 @@ export function ThemeSelector() {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="text-white/60 hover:text-white hover:bg-white/10"
+          className="text-primary/80 hover:text-primary hover:bg-primary/10"
           data-testid="button-theme-selector"
         >
           <Palette className="w-5 h-5" />
