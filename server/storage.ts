@@ -28,6 +28,7 @@ export interface IStorage {
   deleteQuestion(id: number): Promise<boolean>;
   
   getBoardWithCategoriesAndQuestions(boardId: number): Promise<BoardCategoryWithQuestions[]>;
+  getBoardSummaries(): Promise<{ id: number; name: string; categoryCount: number; categories: { id: number; name: string; questionCount: number; remaining: number }[] }[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -185,6 +186,28 @@ export class DatabaseStorage implements IStorage {
     }
     
     return result;
+  }
+
+  async getBoardSummaries(): Promise<{ id: number; name: string; categoryCount: number; categories: { id: number; name: string; questionCount: number; remaining: number }[] }[]> {
+    const allBoards = await this.getBoards();
+    const summaries = [];
+    
+    for (const board of allBoards) {
+      const bcs = await this.getBoardCategories(board.id);
+      summaries.push({
+        id: board.id,
+        name: board.name,
+        categoryCount: bcs.length,
+        categories: bcs.map(bc => ({
+          id: bc.category.id,
+          name: bc.category.name,
+          questionCount: bc.questionCount,
+          remaining: 5 - bc.questionCount,
+        })),
+      });
+    }
+    
+    return summaries;
   }
 }
 

@@ -49,6 +49,11 @@ export default function Admin() {
     queryKey: ['/api/boards'],
   });
 
+  type BoardSummary = { id: number; name: string; categoryCount: number; categories: { id: number; name: string; questionCount: number; remaining: number }[] };
+  const { data: boardSummaries = [] } = useQuery<BoardSummary[]>({
+    queryKey: ['/api/boards/summary'],
+  });
+
   const { data: allCategories = [], isLoading: loadingCategories } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
   });
@@ -128,6 +133,7 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       setNewCategoryName("");
       setShowNewCategoryForm(false);
       toast({ title: "Category created and linked!" });
@@ -144,6 +150,7 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       setEditingCategoryId(null);
       toast({ title: "Category updated!" });
     },
@@ -157,6 +164,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       toast({ title: "Category deleted" });
     },
   });
@@ -167,6 +175,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       toast({ title: "Category linked!" });
     },
     onError: () => {
@@ -180,6 +189,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       if (selectedBoardCategoryId) {
         setSelectedBoardCategoryId(null);
       }
@@ -194,6 +204,7 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/board-categories', selectedBoardCategoryId, 'questions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       setNewQuestion("");
       setNewCorrectAnswer("");
       setNewPoints(currentPointValues[0] || 10);
@@ -210,6 +221,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/board-categories', selectedBoardCategoryId, 'questions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       setEditingQuestionId(null);
       toast({ title: "Question updated!" });
     },
@@ -222,6 +234,7 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/board-categories', selectedBoardCategoryId, 'questions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       toast({ title: "Question deleted" });
     },
   });
@@ -297,7 +310,42 @@ export default function Admin() {
       </div>
 
       <div className="max-w-7xl mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-80px)]">
+        {/* Summary Section */}
+        <Card className="mb-4 bg-card border-border">
+          <CardContent className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {boardSummaries.map(board => (
+                <div key={board.id} className="p-3 rounded-lg bg-muted/20 border border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-foreground text-sm">{board.name}</span>
+                    <span className="text-xs px-2 py-0.5 rounded bg-primary/20 text-primary">
+                      {board.categoryCount}/5 categories
+                    </span>
+                  </div>
+                  {board.categories.length > 0 ? (
+                    <div className="space-y-1">
+                      {board.categories.map(cat => (
+                        <div key={cat.id} className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground truncate max-w-[120px]">{cat.name}</span>
+                          <span className={`px-1.5 py-0.5 rounded ${cat.remaining === 0 ? 'bg-green-500/20 text-green-600' : 'bg-orange-500/20 text-orange-600'}`}>
+                            {cat.remaining} left
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">No categories yet</p>
+                  )}
+                </div>
+              ))}
+              {boardSummaries.length === 0 && (
+                <p className="text-muted-foreground text-sm col-span-full text-center py-2">No boards created yet</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-200px)]">
           <div className="lg:col-span-4 space-y-4 overflow-y-auto">
             <Card className="bg-card border-border">
               <CardHeader className="py-3 px-4 border-b border-border">

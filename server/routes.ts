@@ -49,6 +49,11 @@ export async function registerRoutes(
     res.json(boards);
   });
 
+  app.get("/api/boards/summary", async (req, res) => {
+    const summaries = await storage.getBoardSummaries();
+    res.json(summaries);
+  });
+
   app.get("/api/boards/:id", async (req, res) => {
     const board = await storage.getBoard(Number(req.params.id));
     if (!board) {
