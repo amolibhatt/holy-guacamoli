@@ -631,14 +631,14 @@ export default function Admin() {
                         onValueChange={(val) => setSelectedBoardCategoryId(val ? Number(val) : null)}
                         className="w-full"
                       >
-                        <TabsList className="w-full h-auto flex-wrap justify-start gap-1 bg-transparent p-0">
+                        <TabsList className="w-full h-auto flex flex-row flex-wrap justify-start gap-2 bg-muted/50 p-2 rounded-lg">
                           {boardCategories.map((bc, idx) => (
                             <div key={bc.id} className="relative group flex items-center">
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <TabsTrigger 
                                     value={bc.id.toString()} 
-                                    className="h-9 px-3 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                                    className="h-10 px-4 text-sm rounded-md bg-background border border-border data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary"
                                     data-testid={`category-tab-${bc.id}`}
                                   >
                                     <span className="truncate max-w-[120px]">{bc.category.name}</span>
