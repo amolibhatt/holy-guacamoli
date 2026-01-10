@@ -10,6 +10,7 @@ import { CategoryColumn } from "@/components/CategoryColumn";
 import { Scoreboard } from "@/components/Scoreboard";
 import { VictoryScreen } from "@/components/VictoryScreen";
 import { ThemeSelector } from "@/components/ThemeSelector";
+import { ThemeDecorations } from "@/components/ThemeDecorations";
 import { BuzzerPanel, BuzzerPanelHandle } from "@/components/BuzzerPanel";
 import { useScore } from "@/components/ScoreContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -126,6 +127,7 @@ export default function Home() {
                     <AvocadoIcon className="w-8 h-8 drop-shadow-lg" />
                   </motion.div>
                 </motion.div>
+                <ThemeDecorations placement="corner" />
               </div>
               <div className="flex flex-col">
                 <motion.span 
@@ -146,6 +148,7 @@ export default function Home() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
+              <ThemeDecorations placement="header" />
               <ThemeSelector />
               <Link href="/admin">
                 <Button variant="ghost" size="icon" className="text-white/60 hover:text-white hover:bg-white/10" data-testid="button-admin">
@@ -364,47 +367,7 @@ export default function Home() {
                   <AvocadoIcon className="w-8 h-8 drop-shadow-lg" />
                 </motion.div>
               </motion.div>
-              <motion.div
-                className="absolute -top-2 -right-2"
-                animate={{ 
-                  rotate: [0, 360],
-                  scale: [1, 1.4, 1]
-                }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <Star className="w-5 h-5 text-primary fill-primary drop-shadow-lg" />
-              </motion.div>
-              <motion.div
-                className="absolute -top-1 -left-2"
-                animate={{ 
-                  rotate: [0, -360],
-                  scale: [0.8, 1.2, 0.8]
-                }}
-                transition={{ duration: 2.5, repeat: Infinity, delay: 0.3 }}
-              >
-                <Star className="w-4 h-4 text-primary/80 fill-primary/80" />
-              </motion.div>
-              <motion.div
-                className="absolute -bottom-1 -left-1"
-                animate={{ 
-                  y: [0, -10, 0],
-                  opacity: [0.6, 1, 0.6],
-                  rotate: [0, 15, 0]
-                }}
-                transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-              >
-                <Sparkles className="w-5 h-5 text-primary" />
-              </motion.div>
-              <motion.div
-                className="absolute -bottom-2 -right-1"
-                animate={{ 
-                  y: [0, -8, 0],
-                  opacity: [0.5, 1, 0.5]
-                }}
-                transition={{ duration: 1.8, repeat: Infinity, delay: 0.8 }}
-              >
-                <Sparkles className="w-4 h-4 text-primary/70" />
-              </motion.div>
+              <ThemeDecorations placement="corner" />
             </div>
             <div className="flex flex-col">
               <motion.span 
@@ -425,6 +388,7 @@ export default function Home() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
+            <ThemeDecorations placement="header" />
             <ThemeSelector />
             <Button 
               variant="ghost" 
@@ -444,12 +408,13 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex-1 p-4 lg:p-6 flex flex-col">
+      <main className="flex-1 p-4 lg:p-6 flex flex-col relative">
+        <ThemeDecorations placement="board" />
         {categories && categories.length > 0 ? (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex-1 flex flex-col"
+            className="flex-1 flex flex-col relative z-10"
           >
             <div 
               className="flex-1 grid gap-3 lg:gap-4"
