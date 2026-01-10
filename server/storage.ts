@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { boards, categories, boardCategories, questions, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithQuestions } from "@shared/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { boards, categories, boardCategories, questions, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions } from "@shared/schema";
+import { eq, and, asc, count, inArray } from "drizzle-orm";
 
 export interface IStorage {
   getBoards(): Promise<Board[]>;
@@ -15,7 +15,7 @@ export interface IStorage {
   updateCategory(id: number, data: Partial<InsertCategory>): Promise<Category | undefined>;
   deleteCategory(id: number): Promise<boolean>;
   
-  getBoardCategories(boardId: number): Promise<BoardCategoryWithCategory[]>;
+  getBoardCategories(boardId: number): Promise<BoardCategoryWithCount[]>;
   getBoardCategory(id: number): Promise<BoardCategory | undefined>;
   getBoardCategoryByIds(boardId: number, categoryId: number): Promise<BoardCategory | undefined>;
   createBoardCategory(data: InsertBoardCategory): Promise<BoardCategory>;
@@ -89,7 +89,7 @@ export class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
 
-  async getBoardCategories(boardId: number): Promise<BoardCategoryWithCategory[]> {
+  async getBoardCategories(boardId: number): Promise<BoardCategoryWithCount[]> {
     const result = await db
       .select({
         id: boardCategories.id,
@@ -101,11 +101,26 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(categories, eq(boardCategories.categoryId, categories.id))
       .where(eq(boardCategories.boardId, boardId));
     
+    if (result.length === 0) return [];
+    
+    const bcIds = result.map(r => r.id);
+    const counts = await db
+      .select({ 
+        boardCategoryId: questions.boardCategoryId, 
+        count: count() 
+      })
+      .from(questions)
+      .where(inArray(questions.boardCategoryId, bcIds))
+      .groupBy(questions.boardCategoryId);
+    
+    const countMap = new Map(counts.map(c => [c.boardCategoryId, c.count]));
+    
     return result.map(r => ({
       id: r.id,
       boardId: r.boardId,
       categoryId: r.categoryId,
       category: r.category,
+      questionCount: countMap.get(r.id) || 0,
     }));
   }
 
