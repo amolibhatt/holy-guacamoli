@@ -636,19 +636,19 @@ export default function Admin() {
                         onValueChange={(val) => setSelectedBoardCategoryId(val ? Number(val) : null)}
                         className="w-full"
                       >
-                        <TabsList className="w-full h-auto flex flex-row flex-wrap justify-start gap-2 bg-muted/30 p-2 rounded-lg">
+                        <TabsList className="w-full h-auto flex flex-row flex-wrap justify-start gap-6 bg-transparent p-0 border-b border-border">
                           {boardCategories.map((bc) => (
                             <Tooltip key={bc.id}>
                               <TooltipTrigger asChild>
                                 <TabsTrigger 
                                   value={bc.id.toString()} 
-                                  className="h-9 px-4 text-sm rounded-md bg-background border border-border data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary gap-2"
+                                  className="h-10 px-1 pb-3 text-sm bg-transparent border-0 rounded-none text-muted-foreground data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary gap-2 relative -mb-px"
                                   data-testid={`category-tab-${bc.id}`}
                                 >
+                                  <span className="truncate max-w-[120px]">{bc.category.name}</span>
                                   {(bc.questionCount ?? 0) >= 5 && (
-                                    <CheckCircle className="w-4 h-4 text-primary data-[state=active]:text-primary-foreground" />
+                                    <CheckCircle className="w-3.5 h-3.5" />
                                   )}
-                                  <span className="truncate max-w-[100px]">{bc.category.name}</span>
                                 </TabsTrigger>
                               </TooltipTrigger>
                               <TooltipContent>
