@@ -60,7 +60,7 @@ export default function CouplesGame() {
       queryClient.invalidateQueries({ queryKey: ['/api/double-dip/pair'] });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to create pair", variant: "destructive" });
+      toast({ title: "Oops!", description: "We couldn't start your couple profile. Please try again.", variant: "destructive" });
     },
   });
 
@@ -75,7 +75,7 @@ export default function CouplesGame() {
       toast({ title: "Anniversary Saved!", description: "Your special date has been added to your storyboard" });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to save anniversary", variant: "destructive" });
+      toast({ title: "Couldn't save", description: "Your anniversary date wasn't saved. Please try again.", variant: "destructive" });
     },
   });
 
@@ -89,7 +89,7 @@ export default function CouplesGame() {
       toast({ title: "Paired!", description: "You're now connected with your partner" });
     },
     onError: (error: any) => {
-      toast({ title: "Error", description: error.message || "Invalid invite code", variant: "destructive" });
+      toast({ title: "Code not found", description: error.message || "Check the code and try again. It should be 6 characters.", variant: "destructive" });
     },
   });
 
@@ -103,7 +103,7 @@ export default function CouplesGame() {
       toast({ title: "Submitted!", description: "Your answers have been locked in" });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to submit answers", variant: "destructive" });
+      toast({ title: "Couldn't save", description: "Your answers weren't submitted. Check your connection and try again.", variant: "destructive" });
     },
   });
 

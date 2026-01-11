@@ -80,6 +80,7 @@ export default function Admin() {
   const [draggedQuestionId, setDraggedQuestionId] = useState<number | null>(null);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [bulkImportText, setBulkImportText] = useState("");
+  const [bulkPreviewMode, setBulkPreviewMode] = useState(false);
   const [showBoardPreview, setShowBoardPreview] = useState(false);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -159,7 +160,7 @@ export default function Admin() {
       toast({ title: "Board created!" });
     },
     onError: () => {
-      toast({ title: "Failed to create board", variant: "destructive" });
+      toast({ title: "Couldn't create board", description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -188,7 +189,7 @@ export default function Admin() {
       toast({ title: "Board updated!" });
     },
     onError: () => {
-      toast({ title: "Failed to update board", variant: "destructive" });
+      toast({ title: "Couldn't update board", description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -203,7 +204,7 @@ export default function Admin() {
       toast({ title: "Category created!" });
     },
     onError: () => {
-      toast({ title: "Failed to create category", variant: "destructive" });
+      toast({ title: "Couldn't create category", description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -268,7 +269,7 @@ export default function Admin() {
       toast({ title: "Category linked!" });
     },
     onError: () => {
-      toast({ title: "Failed to link category", variant: "destructive" });
+      toast({ title: "Couldn't link category", description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -320,7 +321,7 @@ export default function Admin() {
       toast({ title: "Question added!" });
     },
     onError: () => {
-      toast({ title: "Failed to add question", variant: "destructive" });
+      toast({ title: "Couldn't add question", description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -359,6 +360,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       setBulkImportText("");
       setBulkImportOpen(false);
+      setBulkPreviewMode(false);
       if (data.errors.length > 0) {
         toast({ 
           title: `Imported ${data.success} question(s)`, 
@@ -370,7 +372,7 @@ export default function Admin() {
       }
     },
     onError: () => {
-      toast({ title: "Import failed", variant: "destructive" });
+      toast({ title: "Import failed", description: "Check your data format and try again.", variant: "destructive" });
     },
   });
 
@@ -411,7 +413,7 @@ export default function Admin() {
       }
       toast({ title: "File uploaded!" });
     } catch {
-      toast({ title: "Upload failed", variant: "destructive" });
+      toast({ title: "Upload failed", description: "Check your file and try again.", variant: "destructive" });
     }
   };
 
@@ -1171,40 +1173,101 @@ export default function Admin() {
                           animate={{ opacity: 1 }}
                           className="mt-3 space-y-4 p-5 bg-gradient-to-b from-accent/10 to-transparent rounded-xl border border-border"
                         >
-                          <div className="space-y-2">
-                            <p className="text-xs text-muted-foreground">
-                              Paste questions in format: <code className="bg-muted px-1 rounded">points | question | answer</code>
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Example: <code className="bg-muted px-1 rounded">10 | What is 2+2? | 4</code>
-                            </p>
-                          </div>
-                          <textarea
-                            value={bulkImportText}
-                            onChange={(e) => setBulkImportText(e.target.value)}
-                            placeholder={`10 | What is the capital of France? | Paris\n20 | What year did WW2 end? | 1945\n30 | Who painted the Mona Lisa? | Leonardo da Vinci`}
-                            className="w-full h-32 p-3 text-sm rounded-md border border-border bg-background resize-none font-mono"
-                            data-testid="textarea-bulk-import"
-                          />
-                          <div className="flex justify-between items-center">
-                            <p className="text-xs text-muted-foreground">
-                              {parseBulkImport(bulkImportText).length} valid question(s) detected
-                            </p>
-                            <Button
-                              onClick={() => {
-                                const questions = parseBulkImport(bulkImportText);
-                                if (questions.length > 0 && selectedBoardCategoryId) {
-                                  bulkImportMutation.mutate({ boardCategoryId: selectedBoardCategoryId, questions });
-                                }
-                              }}
-                              disabled={parseBulkImport(bulkImportText).length === 0 || bulkImportMutation.isPending}
-                              className="px-6"
-                              data-testid="button-bulk-import"
-                            >
-                              {bulkImportMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                              Import {parseBulkImport(bulkImportText).length} Question(s)
-                            </Button>
-                          </div>
+                          {!bulkPreviewMode ? (
+                            <>
+                              <div className="space-y-2">
+                                <p className="text-xs text-muted-foreground">
+                                  Paste questions in format: <code className="bg-muted px-1 rounded">points | question | answer</code>
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Example: <code className="bg-muted px-1 rounded">10 | What is 2+2? | 4</code>
+                                </p>
+                              </div>
+                              <textarea
+                                value={bulkImportText}
+                                onChange={(e) => setBulkImportText(e.target.value)}
+                                placeholder={`10 | What is the capital of France? | Paris\n20 | What year did WW2 end? | 1945\n30 | Who painted the Mona Lisa? | Leonardo da Vinci`}
+                                className="w-full h-32 p-3 text-sm rounded-md border border-border bg-background resize-none font-mono"
+                                data-testid="textarea-bulk-import"
+                              />
+                              <div className="flex justify-between items-center">
+                                <p className="text-xs text-muted-foreground">
+                                  {parseBulkImport(bulkImportText).length} valid question(s) detected
+                                </p>
+                                <Button
+                                  onClick={() => setBulkPreviewMode(true)}
+                                  disabled={parseBulkImport(bulkImportText).length === 0}
+                                  className="px-6"
+                                  data-testid="button-preview-import"
+                                >
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  Preview {parseBulkImport(bulkImportText).length} Question(s)
+                                </Button>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-semibold">Review before importing</h4>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => setBulkPreviewMode(false)}
+                                  data-testid="button-back-to-edit"
+                                >
+                                  <ArrowLeft className="w-4 h-4 mr-1" /> Edit
+                                </Button>
+                              </div>
+                              <div className="max-h-64 overflow-y-auto rounded-lg border border-border">
+                                <table className="w-full text-sm">
+                                  <thead className="bg-muted/50 sticky top-0">
+                                    <tr>
+                                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-16">Pts</th>
+                                      <th className="text-left px-3 py-2 font-medium text-muted-foreground">Question</th>
+                                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-32">Answer</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {parseBulkImport(bulkImportText).map((q, idx) => (
+                                      <tr key={idx} className="border-t border-border hover:bg-muted/30" data-testid={`preview-row-${idx}`}>
+                                        <td className="px-3 py-2 font-mono text-primary font-bold">{q.points}</td>
+                                        <td className="px-3 py-2 truncate max-w-[200px]" title={q.question}>{q.question}</td>
+                                        <td className="px-3 py-2 truncate max-w-[100px] text-muted-foreground" title={q.correctAnswer}>{q.correctAnswer}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                              <div className="flex justify-between items-center pt-2">
+                                <p className="text-xs text-muted-foreground">
+                                  {parseBulkImport(bulkImportText).length} question(s) will be added
+                                </p>
+                                <div className="flex gap-2">
+                                  <Button 
+                                    variant="outline"
+                                    onClick={() => { setBulkPreviewMode(false); setBulkImportText(""); }}
+                                    data-testid="button-cancel-import"
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    onClick={() => {
+                                      const questions = parseBulkImport(bulkImportText);
+                                      if (questions.length > 0 && selectedBoardCategoryId) {
+                                        bulkImportMutation.mutate({ boardCategoryId: selectedBoardCategoryId, questions });
+                                      }
+                                    }}
+                                    disabled={bulkImportMutation.isPending}
+                                    className="px-6"
+                                    data-testid="button-confirm-import"
+                                  >
+                                    {bulkImportMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                                    Confirm Import
+                                  </Button>
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </motion.div>
                       </CollapsibleContent>
                     </Collapsible>

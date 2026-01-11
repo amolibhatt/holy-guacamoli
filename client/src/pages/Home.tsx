@@ -363,10 +363,10 @@ export default function Home() {
             ))}
           </div>
           <div className="flex gap-2 mt-4">
-            <Button variant="outline" onClick={handleCloseGuide} className="flex-1">
+            <Button variant="outline" onClick={handleCloseGuide} className="flex-1" data-testid="button-close-guide">
               Got it!
             </Button>
-            <Button className="flex-1 gap-2" onClick={handleCloseGuide}>
+            <Button className="flex-1 gap-2" onClick={handleCloseGuide} data-testid="button-start-hosting">
               Start Hosting <ChevronRight className="w-4 h-4" />
             </Button>
           </div>

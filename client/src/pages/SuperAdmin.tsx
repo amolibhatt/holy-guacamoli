@@ -88,7 +88,7 @@ export default function SuperAdmin() {
       toast({ title: "Game visibility updated" });
     },
     onError: () => {
-      toast({ title: "Failed to update game", variant: "destructive" });
+      toast({ title: "Couldn't update game", description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -102,7 +102,7 @@ export default function SuperAdmin() {
       toast({ title: "User deleted successfully" });
     },
     onError: () => {
-      toast({ title: "Failed to delete user", variant: "destructive" });
+      toast({ title: "Couldn't delete user", description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -116,7 +116,7 @@ export default function SuperAdmin() {
       toast({ title: "Board deleted successfully" });
     },
     onError: () => {
-      toast({ title: "Failed to delete board", variant: "destructive" });
+      toast({ title: "Couldn't delete board", description: "Please try again.", variant: "destructive" });
     },
   });
 
