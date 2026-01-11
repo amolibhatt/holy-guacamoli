@@ -631,106 +631,28 @@ export default function Admin() {
                         onValueChange={(val) => setSelectedBoardCategoryId(val ? Number(val) : null)}
                         className="w-full"
                       >
-                        <TabsList className="w-full h-auto flex flex-row flex-wrap justify-start gap-2 bg-muted/50 p-2 rounded-lg">
-                          {boardCategories.map((bc, idx) => (
-                            <div key={bc.id} className="relative group flex items-center">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <TabsTrigger 
-                                    value={bc.id.toString()} 
-                                    className="h-10 px-4 text-sm rounded-md bg-background border border-border data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary"
-                                    data-testid={`category-tab-${bc.id}`}
-                                  >
-                                    <span className="truncate max-w-[120px]">{bc.category.name}</span>
-                                    <span className={`ml-2 text-[10px] px-1.5 py-0.5 rounded ${(bc.questionCount ?? 0) >= 5 ? 'bg-primary/30' : 'bg-muted'}`}>
-                                      {bc.questionCount ?? 0}
-                                    </span>
-                                  </TabsTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p className="font-medium">{bc.category.name}</p>
-                                  {bc.category.description ? (
-                                    <p className="text-xs text-muted-foreground">{bc.category.description}</p>
-                                  ) : (
-                                    <p className="text-xs text-muted-foreground italic">No description</p>
-                                  )}
-                                </TooltipContent>
-                              </Tooltip>
-                              <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity ml-1">
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) => { e.stopPropagation(); moveCategory(idx, 'up'); }}
-                                  disabled={idx === 0}
-                                  className="h-5 w-5 text-muted-foreground hover:text-primary disabled:opacity-30"
-                                  data-testid={`button-move-up-${bc.id}`}
+                        <TabsList className="w-full h-auto flex flex-row flex-wrap justify-start gap-2 bg-muted/30 p-2 rounded-lg">
+                          {boardCategories.map((bc) => (
+                            <Tooltip key={bc.id}>
+                              <TooltipTrigger asChild>
+                                <TabsTrigger 
+                                  value={bc.id.toString()} 
+                                  className="h-9 px-4 text-sm rounded-md bg-background border border-border data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary"
+                                  data-testid={`category-tab-${bc.id}`}
                                 >
-                                  <ArrowUp className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) => { e.stopPropagation(); moveCategory(idx, 'down'); }}
-                                  disabled={idx === boardCategories.length - 1}
-                                  className="h-5 w-5 text-muted-foreground hover:text-primary disabled:opacity-30"
-                                  data-testid={`button-move-down-${bc.id}`}
-                                >
-                                  <ArrowDown className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) => { e.stopPropagation(); setEditingCategoryId(bc.category.id); setEditCategoryName(bc.category.name); setEditCategoryDescription(bc.category.description || ''); }}
-                                  className="h-5 w-5 text-muted-foreground hover:text-primary"
-                                  data-testid={`button-edit-category-${bc.category.id}`}
-                                >
-                                  <Pencil className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) => { e.stopPropagation(); unlinkCategoryMutation.mutate(bc.id); }}
-                                  className="h-5 w-5 text-muted-foreground hover:text-accent-foreground"
-                                  title="Unlink from board"
-                                  data-testid={`button-unlink-${bc.id}`}
-                                >
-                                  <Unlink className="w-3 h-3" />
-                                </Button>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="h-5 w-5 text-muted-foreground hover:text-destructive"
-                                      data-testid={`button-delete-category-${bc.category.id}`}
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Delete "{bc.category.name}"?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        This will permanently delete this category and all its questions. This cannot be undone.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                        onClick={() => {
-                                          if (selectedBoardCategoryId === bc.id) setSelectedBoardCategoryId(null);
-                                          deleteCategoryMutation.mutate(bc.category.id);
-                                        }}
-                                      >
-                                        Delete
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </div>
-                            </div>
+                                  <span className="truncate max-w-[100px]">{bc.category.name}</span>
+                                  <span className={`ml-2 text-[10px] px-1.5 py-0.5 rounded ${(bc.questionCount ?? 0) >= 5 ? 'bg-primary/20' : 'bg-muted'}`}>
+                                    {bc.questionCount ?? 0}/5
+                                  </span>
+                                </TabsTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="font-medium">{bc.category.name}</p>
+                                {bc.category.description && (
+                                  <p className="text-xs text-muted-foreground">{bc.category.description}</p>
+                                )}
+                              </TooltipContent>
+                            </Tooltip>
                           ))}
                         </TabsList>
                       </Tabs>
@@ -756,46 +678,6 @@ export default function Admin() {
                       </div>
                     )}
 
-                    {editingCategoryId && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="mt-3 p-3 bg-muted/20 rounded-lg border border-border"
-                      >
-                        <p className="text-xs text-muted-foreground mb-2">Edit Category</p>
-                        <div className="space-y-2">
-                          <Input
-                            value={editCategoryName}
-                            onChange={(e) => setEditCategoryName(e.target.value)}
-                            placeholder="Category name"
-                            className="h-8 text-sm"
-                            autoFocus
-                          />
-                          <Input
-                            value={editCategoryDescription}
-                            onChange={(e) => setEditCategoryDescription(e.target.value)}
-                            placeholder="Short description (tooltip)"
-                            className="h-8 text-sm"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                updateCategoryMutation.mutate({ id: editingCategoryId, name: editCategoryName.trim(), description: editCategoryDescription.trim() });
-                              } else if (e.key === 'Escape') {
-                                setEditingCategoryId(null);
-                              }
-                            }}
-                          />
-                          <div className="flex justify-end gap-2">
-                            <Button size="sm" variant="ghost" onClick={() => setEditingCategoryId(null)}>
-                              Cancel
-                            </Button>
-                            <Button size="sm" onClick={() => updateCategoryMutation.mutate({ id: editingCategoryId, name: editCategoryName.trim(), description: editCategoryDescription.trim() })}>
-                              Save
-                            </Button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
                   </div>
 
                   <CardContent className="p-5 flex-1 overflow-hidden flex flex-col">
@@ -811,6 +693,137 @@ export default function Admin() {
                       </div>
                     ) : (
                   <div className="flex-1 flex flex-col overflow-hidden gap-4">
+                    {/* Category toolbar */}
+                    {(() => {
+                      const selectedBc = boardCategories.find(bc => bc.id === selectedBoardCategoryId);
+                      const selectedIdx = boardCategories.findIndex(bc => bc.id === selectedBoardCategoryId);
+                      if (!selectedBc) return null;
+                      return (
+                        <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border shrink-0">
+                          <div className="flex items-center gap-3">
+                            <h3 className="font-semibold text-foreground">{selectedBc.category.name}</h3>
+                            {selectedBc.category.description && (
+                              <span className="text-xs text-muted-foreground">— {selectedBc.category.description}</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => moveCategory(selectedIdx, 'up')}
+                              disabled={selectedIdx === 0}
+                              className="h-8 px-2"
+                              title="Move left"
+                              data-testid={`button-move-up-${selectedBc.id}`}
+                            >
+                              <ArrowUp className="w-4 h-4 rotate-[-90deg]" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => moveCategory(selectedIdx, 'down')}
+                              disabled={selectedIdx === boardCategories.length - 1}
+                              className="h-8 px-2"
+                              title="Move right"
+                              data-testid={`button-move-down-${selectedBc.id}`}
+                            >
+                              <ArrowDown className="w-4 h-4 rotate-[-90deg]" />
+                            </Button>
+                            <div className="w-px h-5 bg-border mx-1" />
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => { setEditingCategoryId(selectedBc.category.id); setEditCategoryName(selectedBc.category.name); setEditCategoryDescription(selectedBc.category.description || ''); }}
+                              className="h-8 gap-1"
+                              data-testid={`button-edit-category-${selectedBc.category.id}`}
+                            >
+                              <Pencil className="w-4 h-4" /> Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => unlinkCategoryMutation.mutate(selectedBc.id)}
+                              className="h-8 gap-1"
+                              title="Unlink from board (keeps category)"
+                              data-testid={`button-unlink-${selectedBc.id}`}
+                            >
+                              <Unlink className="w-4 h-4" /> Unlink
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 gap-1 text-destructive hover:text-destructive"
+                                  data-testid={`button-delete-category-${selectedBc.category.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4" /> Delete
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete "{selectedBc.category.name}"?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete this category and all its questions. This cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    onClick={() => {
+                                      setSelectedBoardCategoryId(null);
+                                      deleteCategoryMutation.mutate(selectedBc.category.id);
+                                    }}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Edit category form */}
+                    <AnimatePresence>
+                      {editingCategoryId && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="p-4 bg-muted/20 rounded-lg border border-border"
+                        >
+                          <div className="space-y-3">
+                            <Input
+                              value={editCategoryName}
+                              onChange={(e) => setEditCategoryName(e.target.value)}
+                              placeholder="Category name"
+                              autoFocus
+                            />
+                            <Input
+                              value={editCategoryDescription}
+                              onChange={(e) => setEditCategoryDescription(e.target.value)}
+                              placeholder="Short description (tooltip)"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  updateCategoryMutation.mutate({ id: editingCategoryId, name: editCategoryName.trim(), description: editCategoryDescription.trim() });
+                                } else if (e.key === 'Escape') {
+                                  setEditingCategoryId(null);
+                                }
+                              }}
+                            />
+                            <div className="flex justify-end gap-2">
+                              <Button size="sm" variant="ghost" onClick={() => setEditingCategoryId(null)}>Cancel</Button>
+                              <Button size="sm" onClick={() => updateCategoryMutation.mutate({ id: editingCategoryId, name: editCategoryName.trim(), description: editCategoryDescription.trim() })}>Save</Button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* New question form */}
                     <div className="space-y-4 p-5 bg-gradient-to-b from-muted/20 to-transparent rounded-xl border border-border shrink-0">
                       <div className="flex items-center justify-between">
                         <div>
