@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, jsonb, boolean, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, jsonb, boolean, unique, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -41,6 +41,15 @@ export const questions = pgTable("questions", {
   points: integer("points").notNull(),
 });
 
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  tokenHash: text("token_hash").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // === RELATIONS ===
 export const boardsRelations = relations(boards, ({ many }) => ({
   boardCategories: many(boardCategories),
@@ -80,6 +89,7 @@ export type Board = typeof boards.$inferSelect;
 export type Category = typeof categories.$inferSelect;
 export type BoardCategory = typeof boardCategories.$inferSelect;
 export type Question = typeof questions.$inferSelect;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type InsertBoard = z.infer<typeof insertBoardSchema>;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertBoardCategory = z.infer<typeof insertBoardCategorySchema>;
