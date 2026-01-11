@@ -18,6 +18,7 @@ import GridOfGrudges from "@/pages/GridOfGrudges";
 import PlayBoard from "@/pages/PlayBoard";
 import SuperAdmin from "@/pages/SuperAdmin";
 import CouplesGame from "@/pages/CouplesGame";
+import Storyboard from "@/pages/Storyboard";
 import HostGridOfGrudges from "@/pages/HostGridOfGrudges";
 
 function Router() {
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/heads-up/:gameId" component={HeadsUpGame} />
       <Route path="/grudges/:gameId" component={GridOfGrudges} />
       <Route path="/couples" component={CouplesGame} />
+      <Route path="/couples/storyboard" component={Storyboard} />
       <Route component={NotFound} />
     </Switch>
   );
