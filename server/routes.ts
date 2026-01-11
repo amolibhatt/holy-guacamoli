@@ -1886,18 +1886,40 @@ export async function registerRoutes(
     }
   });
 
-  // Analytics endpoint - simple event collection
+  // Analytics endpoint - event collection with validation
+  const VALID_EVENT_NAMES = new Set([
+    'page_view', 'login', 'logout', 'game_started', 'game_completed',
+    'question_answered', 'buzzer_pressed', 'pair_created', 'pair_joined',
+    'daily_questions_submitted', 'weekly_stake_set', 'board_created',
+    'category_created', 'question_created'
+  ]);
+  
   app.post("/api/analytics/events", async (req, res) => {
     try {
       const { events } = req.body;
-      if (!Array.isArray(events)) {
+      if (!Array.isArray(events) || events.length === 0) {
         return res.status(400).json({ message: "Invalid events format" });
       }
       
-      // Log events for now - can be extended to store in DB later
-      console.log(`[Analytics] Received ${events.length} events`);
+      // Validate and filter events
+      const validEvents = events.filter(e => 
+        e && typeof e.name === 'string' && 
+        VALID_EVENT_NAMES.has(e.name) &&
+        typeof e.timestamp === 'number'
+      );
       
-      res.json({ received: events.length });
+      const dropped = events.length - validEvents.length;
+      if (dropped > 0) {
+        console.warn(`[Analytics] Dropped ${dropped} invalid events`);
+      }
+      
+      // Log valid events - sample 10% for reduced log volume
+      if (Math.random() < 0.1 || validEvents.length <= 2) {
+        console.log(`[Analytics] Received ${validEvents.length} events:`, 
+          validEvents.map(e => e.name).join(', '));
+      }
+      
+      res.json({ received: validEvents.length, dropped });
     } catch (err) {
       console.error("Error processing analytics:", err);
       res.status(500).json({ message: "Failed to process analytics" });

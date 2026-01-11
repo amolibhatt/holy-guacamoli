@@ -15,6 +15,13 @@ export interface Contestant {
   previousRank?: number;
 }
 
+interface ScoreChange {
+  contestantId: string;
+  points: number;
+  type: 'award' | 'deduct';
+  timestamp: number;
+}
+
 interface ScoreContextType {
   contestants: Contestant[];
   addContestant: (name: string) => void;
@@ -32,6 +39,8 @@ interface ScoreContextType {
   syncContestantScore: (id: string, score: number) => void;
   setCompletedQuestionsFromServer: (questionIds: number[]) => void;
   initializeFromSession: (players: { id: string; name: string; score: number }[], completedQuestionIds: number[]) => void;
+  undoLastScoreChange: () => ScoreChange | null;
+  lastScoreChange: ScoreChange | null;
 }
 
 const ScoreContext = createContext<ScoreContextType | undefined>(undefined);
@@ -40,6 +49,7 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
   const [contestants, setContestants] = useState<Contestant[]>([]);
   const [completedQuestions, setCompletedQuestions] = useState<number[]>([]);
   const [gameEnded, setGameEnded] = useState(false);
+  const [scoreHistory, setScoreHistory] = useState<ScoreChange[]>([]);
 
   const addContestant = (name: string) => {
     const id = crypto.randomUUID();
@@ -71,6 +81,7 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
   };
 
   const awardPoints = (contestantId: string, points: number) => {
+    setScoreHistory(prev => [...prev.slice(-19), { contestantId, points, type: 'award', timestamp: Date.now() }]);
     setContestants((prev) => {
       const oldSorted = [...prev].sort((a, b) => b.score - a.score);
       const oldRanks = new Map(oldSorted.map((c, idx) => [c.id, idx]));
@@ -92,6 +103,7 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
   };
 
   const deductPoints = (contestantId: string, points: number) => {
+    setScoreHistory(prev => [...prev.slice(-19), { contestantId, points, type: 'deduct', timestamp: Date.now() }]);
     setContestants((prev) => {
       const oldSorted = [...prev].sort((a, b) => b.score - a.score);
       const oldRanks = new Map(oldSorted.map((c, idx) => [c.id, idx]));
@@ -106,6 +118,28 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
       }));
     });
   };
+
+  const undoLastScoreChange = (): ScoreChange | null => {
+    if (scoreHistory.length === 0) return null;
+    
+    const lastChange = scoreHistory[scoreHistory.length - 1];
+    setScoreHistory(prev => prev.slice(0, -1));
+    
+    // Reverse the change
+    if (lastChange.type === 'award') {
+      setContestants(prev => prev.map(c => 
+        c.id === lastChange.contestantId ? { ...c, score: c.score - lastChange.points } : c
+      ));
+    } else {
+      setContestants(prev => prev.map(c => 
+        c.id === lastChange.contestantId ? { ...c, score: c.score + lastChange.points } : c
+      ));
+    }
+    
+    return lastChange;
+  };
+
+  const lastScoreChange = scoreHistory.length > 0 ? scoreHistory[scoreHistory.length - 1] : null;
 
   const updateContestantColor = (id: string, color: string) => {
     setContestants((prev) =>
@@ -172,6 +206,8 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
         syncContestantScore,
         setCompletedQuestionsFromServer,
         initializeFromSession,
+        undoLastScoreChange,
+        lastScoreChange,
       }}
     >
       {children}
