@@ -450,6 +450,7 @@ export async function registerRoutes(
           await storage.createQuestion({
             boardCategoryId,
             question: q.question.trim(),
+            options: [],
             correctAnswer: q.correctAnswer.trim(),
             points: q.points,
           });
