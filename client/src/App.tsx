@@ -18,6 +18,7 @@ import GridOfGrudges from "@/pages/GridOfGrudges";
 import BrainRotBlitz from "@/pages/BrainRotBlitz";
 import LiarsLobby from "@/pages/LiarsLobby";
 import LiarsLobbyPlayer from "@/pages/LiarsLobbyPlayer";
+import PlayBoard from "@/pages/PlayBoard";
 
 function Router() {
   return (
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/category/:id" component={CategoryPage} />
       <Route path="/admin" component={Admin} />
       <Route path="/admin/games" component={GamesAdmin} />
+      <Route path="/board/:boardId" component={PlayBoard} />
       <Route path="/play/:code?" component={PlayerPage} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
