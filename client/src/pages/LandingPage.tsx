@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { motion } from "framer-motion";
-import { Sparkles, Users, QrCode, Trophy, Loader2, Zap, Grid3X3, Smartphone, Volume2 } from "lucide-react";
+import { Sparkles, Trophy, Loader2, Zap, Smartphone, Volume2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -74,29 +74,6 @@ export default function LandingPage() {
           <p className="text-muted-foreground mb-6" data-testid="text-description">
             The ultimate party game platform. Host trivia nights, quiz games, and competitions with friends buzzing in from their phones!
           </p>
-
-          {/* Game Modes Preview */}
-          <div className="mb-6 space-y-2" data-testid="section-game-modes">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Game Modes</p>
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20">
-              <div className="w-9 h-9 rounded-lg gradient-header flex items-center justify-center shrink-0">
-                <Grid3X3 className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-foreground text-sm">Grid of Grudges</h3>
-                <p className="text-xs text-muted-foreground">Classic Jeopardy-style trivia boards</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/50 opacity-60">
-              <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                <Users className="w-4 h-4 text-muted-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-foreground/60 text-sm">More modes coming soon</h3>
-                <p className="text-xs text-muted-foreground/60">Head-to-head, tournaments, and more!</p>
-              </div>
-            </div>
-          </div>
 
           {/* Features Grid */}
           <div className="grid grid-cols-2 gap-3 text-left" data-testid="section-features">
