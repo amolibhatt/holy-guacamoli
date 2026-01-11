@@ -121,8 +121,9 @@ export default function GridOfGrudges() {
           </Link>
           <h1 className="text-lg font-bold text-foreground">{game.name}</h1>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-sm text-muted-foreground" aria-label={`${contestants.length} contestants`}>
-              <Users className="w-4 h-4" />
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <Users className="w-4 h-4" aria-hidden="true" />
+              <span className="sr-only">Contestants:</span>
               {contestants.length}
             </div>
             <Button 
