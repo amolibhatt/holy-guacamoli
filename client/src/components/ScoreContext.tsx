@@ -113,7 +113,9 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
   };
 
   const markQuestionCompleted = (questionId: number) => {
-    setCompletedQuestions((prev) => [...prev, questionId]);
+    setCompletedQuestions((prev) => 
+      prev.includes(questionId) ? prev : [...prev, questionId]
+    );
   };
 
   const resetGame = () => {
