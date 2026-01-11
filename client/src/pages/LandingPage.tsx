@@ -72,23 +72,30 @@ export default function LandingPage() {
           </p>
           
           <p className="text-muted-foreground mb-6" data-testid="text-description">
-            The ultimate Jeopardy-style party game. Create custom trivia boards, let players buzz in from their phones, and crown a champion!
+            The ultimate party game platform. Host trivia nights, quiz games, and competitions with friends buzzing in from their phones!
           </p>
 
-          {/* Game Mode Highlight */}
-          <div className="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20" data-testid="section-game-mode">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-lg gradient-header flex items-center justify-center">
-                <Grid3X3 className="w-5 h-5 text-white" />
+          {/* Game Modes Preview */}
+          <div className="mb-6 space-y-2" data-testid="section-game-modes">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Game Modes</p>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20">
+              <div className="w-9 h-9 rounded-lg gradient-header flex items-center justify-center shrink-0">
+                <Grid3X3 className="w-4 h-4 text-white" />
               </div>
-              <div>
-                <h3 className="font-bold text-foreground">Grid of Grudges</h3>
-                <p className="text-xs text-muted-foreground">Classic Jeopardy-style gameplay</p>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground text-sm">Grid of Grudges</h3>
+                <p className="text-xs text-muted-foreground">Classic Jeopardy-style trivia boards</p>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Pick categories, choose point values, and compete head-to-head with friends and family!
-            </p>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/50 opacity-60">
+              <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                <Users className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground/60 text-sm">More modes coming soon</h3>
+                <p className="text-xs text-muted-foreground/60">Head-to-head, tournaments, and more!</p>
+              </div>
+            </div>
           </div>
 
           {/* Features Grid */}
