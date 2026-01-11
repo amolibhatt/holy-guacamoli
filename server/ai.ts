@@ -55,8 +55,9 @@ Respond in JSON format:
     const content = response.choices[0].message.content || "{}";
     const parsed = JSON.parse(content);
     return parsed.insights || [];
-  } catch (error) {
-    console.error("Error generating category insights:", error);
+  } catch (error: any) {
+    const isRateLimit = error?.status === 429 || error?.message?.includes('rate limit');
+    console.error("Error generating category insights:", isRateLimit ? "Rate limited" : error);
     // Generate deterministic fallback insights based on answer similarity
     return questionsAndAnswers.map(qa => {
       const answerA = qa.userAAnswer.toLowerCase().trim();

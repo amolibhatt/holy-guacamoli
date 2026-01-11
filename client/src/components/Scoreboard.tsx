@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useScore, AVATAR_COLORS } from "./ScoreContext";
 import { Button } from "@/components/ui/button";
-import { X, RotateCcw, Crown, Trophy, Volume2, VolumeX, Users, ChevronDown, ChevronUp } from "lucide-react";
+import { X, RotateCcw, Crown, Trophy, Volume2, VolumeX, Users, ChevronDown, ChevronUp, Undo2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { soundManager } from "@/lib/sounds";
@@ -12,9 +13,22 @@ import {
 } from "@/components/ui/popover";
 
 export function Scoreboard() {
-  const { contestants, removeContestant, resetGame, updateContestantColor, endGame } = useScore();
+  const { contestants, removeContestant, resetGame, updateContestantColor, endGame, undoLastScoreChange, lastScoreChange } = useScore();
+  const { toast } = useToast();
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
+
+  const handleUndo = () => {
+    const undone = undoLastScoreChange();
+    if (undone) {
+      const contestant = contestants.find(c => c.id === undone.contestantId);
+      toast({
+        title: "Score undone",
+        description: `Reversed ${undone.type === 'award' ? '+' : '-'}${undone.points} for ${contestant?.name || 'player'}`,
+        duration: 2000,
+      });
+    }
+  };
 
   const toggleSound = () => {
     const enabled = soundManager.toggle();
@@ -181,6 +195,18 @@ export function Scoreboard() {
 
           {contestants.length > 0 && (
             <>
+              {lastScoreChange && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleUndo}
+                  className="text-blue-400/70 hover:text-blue-400 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary"
+                  data-testid="button-undo-score"
+                  aria-label="Undo last score change"
+                >
+                  <Undo2 className="w-4 h-4" aria-hidden="true" />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
