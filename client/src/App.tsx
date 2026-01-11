@@ -18,11 +18,14 @@ import GridOfGrudges from "@/pages/GridOfGrudges";
 import PlayBoard from "@/pages/PlayBoard";
 import SuperAdmin from "@/pages/SuperAdmin";
 import CouplesGame from "@/pages/CouplesGame";
+import HostGridOfGrudges from "@/pages/HostGridOfGrudges";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/host/grid-of-grudges" component={HostGridOfGrudges} />
+      <Route path="/host/couples-quiz" component={CouplesGame} />
       <Route path="/category/:id" component={CategoryPage} />
       <Route path="/admin" component={Admin} />
       <Route path="/admin/games" component={GamesAdmin} />
