@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount } from "@shared/schema";
-import { eq, and, asc, count, inArray } from "drizzle-orm";
+import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameMode, type SessionState } from "@shared/schema";
+import { eq, and, asc, count, inArray, desc } from "drizzle-orm";
 
 export interface IStorage {
   getBoards(userId: string, role?: string): Promise<Board[]>;
@@ -62,6 +62,29 @@ export interface IStorage {
   getGameDecks(gameId: number): Promise<(GameDeck & { deck: HeadsUpDeck })[]>;
   addDeckToGame(data: InsertGameDeck): Promise<GameDeck>;
   removeDeckFromGame(gameId: number, deckId: number): Promise<boolean>;
+  
+  // Game Sessions
+  createSession(data: InsertGameSession): Promise<GameSession>;
+  getSession(id: number): Promise<GameSession | undefined>;
+  getSessionByCode(code: string): Promise<GameSession | undefined>;
+  getSessionWithPlayers(code: string): Promise<GameSessionWithPlayers | undefined>;
+  getActiveSessionForHost(hostId: string): Promise<GameSession | undefined>;
+  updateSession(id: number, data: Partial<InsertGameSession>): Promise<GameSession | undefined>;
+  deleteSession(id: number): Promise<boolean>;
+  
+  // Session Players
+  addPlayerToSession(data: InsertSessionPlayer): Promise<SessionPlayer>;
+  getSessionPlayers(sessionId: number): Promise<SessionPlayer[]>;
+  getSessionPlayer(sessionId: number, playerId: string): Promise<SessionPlayer | undefined>;
+  updatePlayerScore(sessionId: number, playerId: string, scoreChange: number): Promise<SessionPlayer | undefined>;
+  setPlayerScore(sessionId: number, playerId: string, score: number): Promise<SessionPlayer | undefined>;
+  updatePlayerConnection(sessionId: number, playerId: string, isConnected: boolean): Promise<SessionPlayer | undefined>;
+  removePlayerFromSession(sessionId: number, playerId: string): Promise<boolean>;
+  
+  // Session Completed Questions
+  markQuestionCompleted(data: InsertSessionCompletedQuestion): Promise<SessionCompletedQuestion>;
+  getCompletedQuestions(sessionId: number): Promise<number[]>;
+  resetCompletedQuestions(sessionId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -523,6 +546,141 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(gameDecks.gameId, gameId), eq(gameDecks.deckId, deckId)))
       .returning();
     return result.length > 0;
+  }
+
+  // === GAME SESSIONS ===
+  async createSession(data: InsertGameSession): Promise<GameSession> {
+    const [newSession] = await db.insert(gameSessions).values(data as any).returning();
+    return newSession;
+  }
+
+  async getSession(id: number): Promise<GameSession | undefined> {
+    const [session] = await db.select().from(gameSessions).where(eq(gameSessions.id, id));
+    return session;
+  }
+
+  async getSessionByCode(code: string): Promise<GameSession | undefined> {
+    const [session] = await db.select().from(gameSessions).where(eq(gameSessions.code, code.toUpperCase()));
+    return session;
+  }
+
+  async getSessionWithPlayers(code: string): Promise<GameSessionWithPlayers | undefined> {
+    const session = await this.getSessionByCode(code);
+    if (!session) return undefined;
+    const players = await this.getSessionPlayers(session.id);
+    return { ...session, players };
+  }
+
+  async getActiveSessionForHost(hostId: string): Promise<GameSession | undefined> {
+    const [session] = await db.select()
+      .from(gameSessions)
+      .where(and(
+        eq(gameSessions.hostId, hostId),
+        inArray(gameSessions.state, ['waiting', 'active', 'paused'])
+      ))
+      .orderBy(desc(gameSessions.createdAt))
+      .limit(1);
+    return session;
+  }
+
+  async updateSession(id: number, data: Partial<InsertGameSession>): Promise<GameSession | undefined> {
+    const updateData: Record<string, any> = { updatedAt: new Date() };
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        updateData[key] = value;
+      }
+    }
+    const [updated] = await db.update(gameSessions).set(updateData).where(eq(gameSessions.id, id)).returning();
+    return updated;
+  }
+
+  async deleteSession(id: number): Promise<boolean> {
+    await db.delete(sessionCompletedQuestions).where(eq(sessionCompletedQuestions.sessionId, id));
+    await db.delete(sessionPlayers).where(eq(sessionPlayers.sessionId, id));
+    const result = await db.delete(gameSessions).where(eq(gameSessions.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // === SESSION PLAYERS ===
+  async addPlayerToSession(data: InsertSessionPlayer): Promise<SessionPlayer> {
+    const existing = await this.getSessionPlayer(data.sessionId, data.playerId);
+    if (existing) {
+      const updated = await this.updatePlayerConnection(data.sessionId, data.playerId, true);
+      return updated!;
+    }
+    const [newPlayer] = await db.insert(sessionPlayers).values(data as any).returning();
+    return newPlayer;
+  }
+
+  async getSessionPlayers(sessionId: number): Promise<SessionPlayer[]> {
+    return await db.select().from(sessionPlayers)
+      .where(eq(sessionPlayers.sessionId, sessionId))
+      .orderBy(desc(sessionPlayers.score), asc(sessionPlayers.joinedAt));
+  }
+
+  async getSessionPlayer(sessionId: number, playerId: string): Promise<SessionPlayer | undefined> {
+    const [player] = await db.select().from(sessionPlayers)
+      .where(and(eq(sessionPlayers.sessionId, sessionId), eq(sessionPlayers.playerId, playerId)));
+    return player;
+  }
+
+  async updatePlayerScore(sessionId: number, playerId: string, scoreChange: number): Promise<SessionPlayer | undefined> {
+    const player = await this.getSessionPlayer(sessionId, playerId);
+    if (!player) return undefined;
+    const newScore = player.score + scoreChange;
+    return this.setPlayerScore(sessionId, playerId, newScore);
+  }
+
+  async setPlayerScore(sessionId: number, playerId: string, score: number): Promise<SessionPlayer | undefined> {
+    const [updated] = await db.update(sessionPlayers)
+      .set({ score, lastSeenAt: new Date() })
+      .where(and(eq(sessionPlayers.sessionId, sessionId), eq(sessionPlayers.playerId, playerId)))
+      .returning();
+    return updated;
+  }
+
+  async updatePlayerConnection(sessionId: number, playerId: string, isConnected: boolean): Promise<SessionPlayer | undefined> {
+    const [updated] = await db.update(sessionPlayers)
+      .set({ isConnected, lastSeenAt: new Date() })
+      .where(and(eq(sessionPlayers.sessionId, sessionId), eq(sessionPlayers.playerId, playerId)))
+      .returning();
+    return updated;
+  }
+
+  async removePlayerFromSession(sessionId: number, playerId: string): Promise<boolean> {
+    const result = await db.delete(sessionPlayers)
+      .where(and(eq(sessionPlayers.sessionId, sessionId), eq(sessionPlayers.playerId, playerId)))
+      .returning();
+    return result.length > 0;
+  }
+
+  // === SESSION COMPLETED QUESTIONS ===
+  async markQuestionCompleted(data: InsertSessionCompletedQuestion): Promise<SessionCompletedQuestion> {
+    const [newCompleted] = await db.insert(sessionCompletedQuestions)
+      .values(data as any)
+      .onConflictDoNothing()
+      .returning();
+    if (!newCompleted) {
+      const [existing] = await db.select().from(sessionCompletedQuestions)
+        .where(and(
+          eq(sessionCompletedQuestions.sessionId, data.sessionId),
+          eq(sessionCompletedQuestions.questionId, data.questionId)
+        ));
+      return existing;
+    }
+    return newCompleted;
+  }
+
+  async getCompletedQuestions(sessionId: number): Promise<number[]> {
+    const results = await db.select({ questionId: sessionCompletedQuestions.questionId })
+      .from(sessionCompletedQuestions)
+      .where(eq(sessionCompletedQuestions.sessionId, sessionId));
+    return results.map(r => r.questionId);
+  }
+
+  async resetCompletedQuestions(sessionId: number): Promise<boolean> {
+    await db.delete(sessionCompletedQuestions).where(eq(sessionCompletedQuestions.sessionId, sessionId));
+    return true;
   }
 }
 
