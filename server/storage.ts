@@ -112,6 +112,7 @@ export interface IStorage {
   
   // Double Dip - Answers
   getDoubleDipAnswers(dailySetId: number): Promise<DoubleDipAnswer[]>;
+  getDoubleDipAnswerById(id: number): Promise<DoubleDipAnswer | undefined>;
   createDoubleDipAnswer(data: InsertDoubleDipAnswer): Promise<DoubleDipAnswer>;
   
   // Double Dip - Reactions
@@ -994,6 +995,11 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(doubleDipAnswers).where(eq(doubleDipAnswers.dailySetId, dailySetId));
   }
 
+  async getDoubleDipAnswerById(id: number): Promise<DoubleDipAnswer | undefined> {
+    const [answer] = await db.select().from(doubleDipAnswers).where(eq(doubleDipAnswers.id, id));
+    return answer;
+  }
+
   async createDoubleDipAnswer(data: InsertDoubleDipAnswer): Promise<DoubleDipAnswer> {
     const [answer] = await db.insert(doubleDipAnswers).values(data).returning();
     return answer;
@@ -1025,7 +1031,7 @@ export class DatabaseStorage implements IStorage {
     const existing = await db.select().from(doubleDipMilestones)
       .where(and(
         eq(doubleDipMilestones.pairId, pairId),
-        eq(doubleDipMilestones.type, type),
+        eq(doubleDipMilestones.type, type as any),
         eq(doubleDipMilestones.value, value)
       ))
       .limit(1);
