@@ -323,63 +323,69 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
 
   return (
     <>
-      <Card className="p-3 bg-card/60 border-primary/20">
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            {connected ? (
-              <Wifi className="w-4 h-4 text-primary" />
-            ) : reconnecting ? (
-              <RefreshCw className="w-4 h-4 text-yellow-500 animate-spin" />
-            ) : (
-              <WifiOff className="w-4 h-4 text-destructive" />
-            )}
-            <span className="font-mono font-bold text-lg text-foreground">{roomCode}</span>
-            <span className="text-xs text-muted-foreground">({players.length} players)</span>
+      <Card className="p-2 sm:p-3 bg-card/60 border-primary/20">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+          {/* Room info row */}
+          <div className="flex items-center justify-between sm:justify-start gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              {connected ? (
+                <Wifi className="w-4 h-4 text-primary" aria-label="Connected" />
+              ) : reconnecting ? (
+                <RefreshCw className="w-4 h-4 text-yellow-500 animate-spin" aria-label="Reconnecting" />
+              ) : (
+                <WifiOff className="w-4 h-4 text-destructive" aria-label="Disconnected" />
+              )}
+              <span className="font-mono font-bold text-base sm:text-lg text-foreground">{roomCode}</span>
+              <span className="text-xs text-muted-foreground">({players.length})</span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowQR(true)}
+                className="gap-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                data-testid="button-show-qr"
+                aria-label="Show QR code"
+              >
+                <QrCode className="w-4 h-4" />
+                <span className="hidden sm:inline">QR</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={copyLink}
+                className="gap-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                data-testid="button-copy-link"
+                aria-label={copied ? "Link copied" : "Copy join link"}
+              >
+                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              </Button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-1">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowQR(true)}
-              className="gap-1"
-              data-testid="button-show-qr"
-            >
-              <QrCode className="w-4 h-4" />
-              QR
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={copyLink}
-              className="gap-1"
-              data-testid="button-copy-link"
-            >
-              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            </Button>
-          </div>
-
-          <div className="flex items-center gap-1 ml-auto">
+          {/* Controls row */}
+          <div className="flex items-center gap-1 sm:ml-auto justify-center sm:justify-end flex-wrap">
             {buzzerLocked ? (
               <Button
                 size="sm"
                 onClick={unlockBuzzer}
-                className="gradient-header text-white gap-1"
+                className="gradient-header text-white gap-1 flex-1 sm:flex-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 data-testid="button-unlock-buzzer"
               >
                 <Unlock className="w-4 h-4" />
-                Unlock
+                <span>Unlock</span>
               </Button>
             ) : (
               <Button
                 size="sm"
                 variant="destructive"
                 onClick={lockBuzzer}
-                className="gap-1"
+                className="gap-1 flex-1 sm:flex-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 data-testid="button-lock-buzzer"
               >
                 <Lock className="w-4 h-4" />
-                Lock
+                <span>Lock</span>
               </Button>
             )}
             <Button
@@ -387,7 +393,9 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
               variant="outline"
               onClick={resetBuzzer}
               title="Reset buzzer queue"
+              className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               data-testid="button-reset-buzzer"
+              aria-label="Reset buzzer queue"
             >
               <RotateCcw className="w-4 h-4" />
             </Button>
@@ -395,8 +403,10 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
               size="sm"
               variant="outline"
               onClick={syncPlayers}
-              title="Re-sync all players (fixes frozen buzzers)"
+              title="Re-sync all players"
+              className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               data-testid="button-sync-players"
+              aria-label="Re-sync all players"
             >
               <RefreshCw className="w-4 h-4" />
             </Button>
@@ -405,8 +415,9 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
               variant="ghost"
               onClick={createNewRoom}
               title="Create new room"
-              className="text-muted-foreground"
+              className="text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               data-testid="button-new-room"
+              aria-label="Create new room"
             >
               <Trash2 className="w-4 h-4" />
             </Button>

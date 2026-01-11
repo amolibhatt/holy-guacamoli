@@ -52,20 +52,19 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
         rotateY: { duration: 0.4, ease: "easeInOut" }
       }}
       style={{ perspective: 1000, transformStyle: "preserve-3d" }}
-      className="flex-1 min-h-[52px] lg:min-h-[64px]"
+      className="flex-1 min-h-[44px] sm:min-h-[52px] lg:min-h-[64px]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <motion.button
         whileHover={hasQuestion && !isCompleted ? { 
-          scale: 1.08, 
-          y: -6,
-          rotateX: 5,
-          rotateY: 8,
+          scale: 1.05, 
+          y: -4,
         } : undefined}
-        whileTap={hasQuestion && !isCompleted ? { scale: 0.92 } : undefined}
+        whileTap={hasQuestion && !isCompleted ? { scale: 0.95 } : undefined}
         className={`
-          w-full h-full flex items-center justify-center rounded-xl font-black text-2xl lg:text-3xl transition-all relative overflow-hidden
+          w-full h-full flex items-center justify-center rounded-xl font-black text-xl sm:text-2xl lg:text-3xl transition-all relative overflow-hidden
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background
           ${!hasQuestion 
             ? 'bg-primary/5 text-primary/20 cursor-not-allowed border border-primary/10' 
             : isCompleted 
@@ -77,6 +76,7 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
         disabled={!hasQuestion || isCompleted}
         data-testid={`cell-${boardCategoryId}-${scoreValue}`}
         style={{ backfaceVisibility: "hidden" }}
+        aria-label={isCompleted ? `${scoreValue} points - completed` : hasQuestion ? `${scoreValue} points - click to reveal question` : `${scoreValue} points - no question`}
       >
         {hasQuestion && !isCompleted && isHovered && (
           <motion.div
@@ -142,23 +142,25 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }:
   return (
     <div className="flex flex-col h-full">
       <div 
-        className={`text-white py-4 px-3 text-center rounded-t-2xl min-h-[80px] flex items-center justify-center relative overflow-visible transition-all ${
+        className={`text-white py-3 sm:py-4 px-2 sm:px-3 text-center rounded-t-xl sm:rounded-t-2xl min-h-[60px] sm:min-h-[80px] flex items-center justify-center relative overflow-visible transition-all ${
           allCompleted 
             ? 'gradient-gold' 
             : 'gradient-header'
         }`}
+        role="heading"
+        aria-level={2}
       >
         {allCompleted && (
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute top-2 left-2"
+            className="absolute top-1 left-1 sm:top-2 sm:left-2"
           >
-            <Check className="w-5 h-5 text-white drop-shadow" aria-label="Category completed" />
+            <Check className="w-4 h-4 sm:w-5 sm:h-5 text-white drop-shadow" aria-label="Category completed" />
           </motion.div>
         )}
         <h2 
-          className="font-black text-sm lg:text-base leading-tight uppercase tracking-wide relative z-10 drop-shadow-lg break-words hyphens-auto" 
+          className="font-black text-xs sm:text-sm lg:text-base leading-tight uppercase tracking-wide relative z-10 drop-shadow-lg break-words hyphens-auto" 
           data-testid={`text-category-${boardCategory.id}`}
         >
           {boardCategory.category.name}
