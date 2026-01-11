@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, useLocation, useSearch } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -28,12 +28,15 @@ function clearSession() {
   try { localStorage.removeItem("buzzer-session"); } catch {}
 }
 
+function getCodeFromUrl(): string {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('code') || '';
+}
+
 export default function PlayerPage() {
   const params = useParams<{ code?: string }>();
   const [, setLocation] = useLocation();
-  const searchString = useSearch();
-  const urlParams = new URLSearchParams(searchString);
-  const codeFromUrl = params.code || urlParams.get('code') || '';
+  const codeFromUrl = params.code || getCodeFromUrl();
   const { toast } = useToast();
   const savedSession = getSession();
   const [roomCode, setRoomCode] = useState(codeFromUrl || savedSession?.roomCode || "");
