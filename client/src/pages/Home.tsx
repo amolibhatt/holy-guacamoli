@@ -147,16 +147,16 @@ export default function Home() {
                 <ThemeDecorations placement="corner" />
               </div>
               <div className="flex flex-col">
-                <motion.span 
-                  className="text-[10px] font-bold text-white/50 tracking-[0.3em] uppercase"
-                  animate={{ opacity: [0.5, 1, 0.5] }}
-                  transition={{ duration: 3, repeat: Infinity }}
-                >
-                  Select a Board
-                </motion.span>
                 <h1 className="text-2xl font-black tracking-tight leading-tight text-white text-glow">
                   Holy GuacAmoli!
                 </h1>
+                <motion.span 
+                  className="text-[10px] font-bold text-white/50 tracking-[0.2em] uppercase"
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                >
+                  Amoli's Birthday Trivia
+                </motion.span>
               </div>
             </motion.div>
             <motion.div 
