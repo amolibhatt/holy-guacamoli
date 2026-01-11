@@ -10,11 +10,10 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { CategoryColumn } from "@/components/CategoryColumn";
 import { Scoreboard } from "@/components/Scoreboard";
 import { VictoryScreen } from "@/components/VictoryScreen";
-import { ThemeSelector } from "@/components/ThemeSelector";
 import { ThemeDecorations } from "@/components/ThemeDecorations";
 import { BuzzerPanel, BuzzerPanelHandle, BuzzEvent } from "@/components/BuzzerPanel";
 import { useScore } from "@/components/ScoreContext";
-import { useTheme } from "@/context/ThemeContext";
+import { useTheme, ThemeName } from "@/context/ThemeContext";
 import { useAuth } from "@/hooks/use-auth";
 import LandingPage from "./LandingPage";
 import type { Question, Board } from "@shared/schema";
@@ -31,9 +30,15 @@ export default function Home() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
   const { gameEnded, resetGameEnd, markQuestionCompleted } = useScore();
-  const { colors } = useTheme();
+  const { colors, setTheme } = useTheme();
   const buzzerRef = useRef<BuzzerPanelHandle>(null);
   const [buzzQueue, setBuzzQueue] = useState<BuzzEvent[]>([]);
+
+  useEffect(() => {
+    if (selectedBoard?.theme) {
+      setTheme(selectedBoard.theme as ThemeName);
+    }
+  }, [selectedBoard?.theme, setTheme]);
 
   useEffect(() => {
     if (gameEnded) {
@@ -185,7 +190,6 @@ export default function Home() {
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               <ThemeDecorations placement="header" />
-              <ThemeSelector />
               <Link href="/admin">
                 <Button variant="ghost" size="icon" className="text-primary/80 hover:text-primary hover:bg-primary/10" data-testid="button-admin">
                   <Settings className="w-5 h-5" />
@@ -380,7 +384,6 @@ export default function Home() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <ThemeSelector />
             <Button 
               variant="ghost" 
               size="icon" 
