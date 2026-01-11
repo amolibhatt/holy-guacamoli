@@ -48,7 +48,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateBoard(id: number, data: Partial<InsertBoard>, userId: string): Promise<Board | undefined> {
-    const [updated] = await db.update(boards).set(data as any).where(and(eq(boards.id, id), eq(boards.userId, userId))).returning();
+    const updateData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        updateData[key] = value;
+      }
+    }
+    if (Object.keys(updateData).length === 0) {
+      return this.getBoard(id, userId);
+    }
+    const [updated] = await db.update(boards).set(updateData).where(and(eq(boards.id, id), eq(boards.userId, userId))).returning();
     return updated;
   }
 

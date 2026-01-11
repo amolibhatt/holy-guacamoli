@@ -93,11 +93,12 @@ export async function registerRoutes(
   app.put("/api/boards/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const { name, description, pointValues } = req.body;
+      const { name, description, pointValues, theme } = req.body;
       const board = await storage.updateBoard(Number(req.params.id), {
         name,
         description,
         pointValues,
+        theme,
       }, userId);
       if (!board) {
         return res.status(404).json({ message: "Board not found" });
