@@ -369,7 +369,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
 
 
         {contestants.length > 0 ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
             {contestants.map((contestant, idx) => (
               <motion.div
                 key={contestant.id}
