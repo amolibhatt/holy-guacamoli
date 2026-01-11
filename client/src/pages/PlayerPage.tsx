@@ -4,12 +4,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, CheckCircle2, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw } from "lucide-react";
+import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { soundManager } from "@/lib/sounds";
 
 type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error" | "reconnecting";
+
+function FullScreenFlash({ show, color }: { show: boolean; color: string }) {
+  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!show || prefersReducedMotion) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0.8 }}
+      animate={{ opacity: 0 }}
+      transition={{ duration: 0.4 }}
+      className={`fixed inset-0 z-50 pointer-events-none ${color}`}
+    />
+  );
+}
 
 function getSession() {
   try {
@@ -50,6 +63,9 @@ export default function PlayerPage() {
   const [hasBuzzed, setHasBuzzed] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [score, setScore] = useState(0);
+  const [showBuzzFlash, setShowBuzzFlash] = useState(false);
+  const [showCorrectFlash, setShowCorrectFlash] = useState(false);
+  const [showWrongFlash, setShowWrongFlash] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -161,14 +177,24 @@ export default function PlayerPage() {
         case "feedback":
           setFeedback({ correct: data.correct, points: data.points });
           if (data.correct) {
+            setShowCorrectFlash(true);
+            setTimeout(() => setShowCorrectFlash(false), 500);
+            soundManager.play('correct', 0.5);
+            try { navigator.vibrate?.([100, 50, 100, 50, 200]); } catch {}
             const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             if (!prefersReducedMotion) {
               confetti({
-                particleCount: 60,
-                spread: 70,
-                origin: { y: 0.6 },
+                particleCount: 100,
+                spread: 90,
+                origin: { y: 0.5 },
+                colors: ['#FFD700', '#FFA500', '#FF6B6B', '#9B59B6', '#3498DB'],
               });
             }
+          } else {
+            setShowWrongFlash(true);
+            setTimeout(() => setShowWrongFlash(false), 500);
+            soundManager.play('wrong', 0.4);
+            try { navigator.vibrate?.([200, 100, 200]); } catch {}
           }
           break;
         case "pong":
@@ -235,8 +261,11 @@ export default function PlayerPage() {
   const handleBuzz = () => {
     if (wsRef.current?.readyState === WebSocket.OPEN && !buzzerLocked && !hasBuzzed) {
       wsRef.current.send(JSON.stringify({ type: "player:buzz" }));
+      setShowBuzzFlash(true);
+      setTimeout(() => setShowBuzzFlash(false), 400);
+      soundManager.play('buzz', 0.6);
       try {
-        navigator.vibrate?.(100);
+        navigator.vibrate?.([50, 30, 100]);
       } catch {}
     }
   };
@@ -303,27 +332,38 @@ export default function PlayerPage() {
 
   return (
     <div className="min-h-screen gradient-game flex flex-col" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-      <header className="p-4 flex items-center justify-between bg-card/40 backdrop-blur border-b border-primary/20" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
-        <div className="flex items-center gap-4">
-          <div>
-            <span className="text-xs text-muted-foreground">Room</span>
-            <span className="ml-2 font-mono font-bold text-foreground">{roomCode}</span>
-          </div>
-          <div className="px-3 py-1 bg-primary/20 rounded-full">
-            <span className="text-xs text-muted-foreground mr-1">Score:</span>
-            <span className="font-bold text-primary" data-testid="text-player-score">{score}</span>
+      <FullScreenFlash show={showBuzzFlash} color="bg-amber-400/60" />
+      <FullScreenFlash show={showCorrectFlash} color="bg-green-400/60" />
+      <FullScreenFlash show={showWrongFlash} color="bg-red-400/60" />
+      
+      <header className="px-4 py-3 flex items-center justify-between bg-card/80 backdrop-blur-xl border-b border-primary/20 shadow-lg" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {status === "connected" && <Wifi className="w-4 h-4 text-green-500" />}
+            {status === "reconnecting" && <RefreshCw className="w-4 h-4 animate-spin text-yellow-500" />}
+            {status === "disconnected" && <WifiOff className="w-4 h-4 text-red-500" />}
+            <span className="font-mono font-bold text-lg text-foreground">{roomCode}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-foreground">{playerName}</span>
-          {status === "connected" && <Wifi className="w-4 h-4 text-primary" />}
-          {status === "reconnecting" && <RefreshCw className="w-4 h-4 animate-spin text-yellow-500" />}
-          {status === "disconnected" && <WifiOff className="w-4 h-4 text-red-500" />}
-          <Button size="sm" variant="ghost" onClick={handleLeaveGame} className="text-xs text-muted-foreground" data-testid="button-leave-game">
+        <div className="flex items-center gap-3">
+          <motion.div 
+            key={score}
+            initial={{ scale: 1.2 }}
+            animate={{ scale: 1 }}
+            className="px-4 py-1.5 bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30 rounded-full"
+          >
+            <span className="text-2xl font-black text-primary" data-testid="text-player-score">{score}</span>
+            <span className="text-xs text-muted-foreground ml-1">pts</span>
+          </motion.div>
+          <Button size="sm" variant="ghost" onClick={handleLeaveGame} className="text-xs text-muted-foreground hover:text-destructive" data-testid="button-leave-game">
             Leave
           </Button>
         </div>
       </header>
+      
+      <div className="px-4 py-2 bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-primary/10 flex items-center justify-center gap-2">
+        <span className="text-lg font-bold text-foreground">{playerName}</span>
+      </div>
 
       {status === "reconnecting" && (
         <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-4 py-2 text-center text-sm text-foreground">
@@ -378,23 +418,58 @@ export default function PlayerPage() {
           ) : buzzPosition !== null ? (
             <motion.div
               key="buzzed"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
+              initial={{ scale: 0, rotate: -10 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
               className="text-center"
             >
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 1, repeat: Infinity }}
-                className={`w-40 h-40 rounded-full flex items-center justify-center mx-auto ${
-                  buzzPosition === 1 ? "gradient-gold" : "bg-white/20"
-                }`}
-              >
-                <span className="text-6xl font-black">#{buzzPosition}</span>
-              </motion.div>
-              <p className="text-xl text-foreground mt-4">
-                {buzzPosition === 1 ? "You buzzed first!" : `You're #${buzzPosition} in line`}
-              </p>
-              <p className="text-muted-foreground mt-2">Waiting for host...</p>
+              {buzzPosition === 1 ? (
+                <>
+                  <motion.div
+                    animate={{ 
+                      scale: [1, 1.1, 1],
+                      rotate: [0, 5, -5, 0]
+                    }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="w-48 h-48 rounded-full gradient-gold flex items-center justify-center mx-auto shadow-2xl relative"
+                  >
+                    <Star className="absolute -top-2 -right-2 w-10 h-10 text-yellow-300 fill-yellow-300" />
+                    <Star className="absolute -top-4 left-4 w-6 h-6 text-yellow-200 fill-yellow-200" />
+                    <span className="text-7xl font-black text-white drop-shadow-lg">#1</span>
+                  </motion.div>
+                  <motion.h2 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="text-3xl font-black text-primary mt-6"
+                  >
+                    You Buzzed First!
+                  </motion.h2>
+                  <motion.p 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="text-lg text-muted-foreground mt-2 flex items-center justify-center gap-2"
+                  >
+                    <Sparkles className="w-5 h-5 text-primary" />
+                    Get ready to answer!
+                  </motion.p>
+                </>
+              ) : (
+                <>
+                  <motion.div
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="w-40 h-40 rounded-full bg-white/20 border-4 border-white/30 flex items-center justify-center mx-auto"
+                  >
+                    <span className="text-6xl font-black text-white">#{buzzPosition}</span>
+                  </motion.div>
+                  <h2 className="text-2xl font-bold text-foreground mt-4">
+                    You're #{buzzPosition} in line
+                  </h2>
+                  <p className="text-muted-foreground mt-2">Waiting for your turn...</p>
+                </>
+              )}
             </motion.div>
           ) : buzzerLocked ? (
             <motion.div
