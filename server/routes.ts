@@ -1046,7 +1046,7 @@ export async function registerRoutes(
   // Get or create pair for current user
   app.get("/api/double-dip/pair", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = req.session.userId!;
       let pair = await storage.getDoubleDipPairForUser(userId);
       
       if (!pair) {
@@ -1067,7 +1067,7 @@ export async function registerRoutes(
   // Create a new pair (generate invite link)
   app.post("/api/double-dip/pair", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = req.session.userId!;
       
       // Check if user already has a pair
       const existingPair = await storage.getDoubleDipPairForUser(userId);
@@ -1092,7 +1092,7 @@ export async function registerRoutes(
   // Join a pair using invite code
   app.post("/api/double-dip/join/:code", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = req.session.userId!;
       const code = req.params.code.toUpperCase();
       
       // Check if user already has a pair
@@ -1131,7 +1131,7 @@ export async function registerRoutes(
   // Get today's daily set for the pair
   app.get("/api/double-dip/daily", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = req.session.userId!;
       const pair = await storage.getDoubleDipPairForUser(userId);
       
       if (!pair) {
@@ -1200,7 +1200,7 @@ export async function registerRoutes(
   // Submit answers
   app.post("/api/double-dip/answers", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = req.session.userId!;
       const { dailySetId, answers } = req.body;
       
       const pair = await storage.getDoubleDipPairForUser(userId);
@@ -1265,7 +1265,7 @@ export async function registerRoutes(
   // Add reaction to answer
   app.post("/api/double-dip/reactions", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = req.session.userId!;
       const { answerId, reaction } = req.body;
       
       const newReaction = await storage.createDoubleDipReaction({
@@ -1284,7 +1284,7 @@ export async function registerRoutes(
   // Get vault (history)
   app.get("/api/double-dip/vault", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = req.session.userId!;
       const pair = await storage.getDoubleDipPairForUser(userId);
       
       if (!pair) {
