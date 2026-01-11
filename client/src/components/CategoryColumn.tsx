@@ -142,7 +142,7 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }:
   return (
     <div className="flex flex-col h-full">
       <div 
-        className={`text-white py-3 sm:py-4 px-2 sm:px-3 text-center rounded-t-xl sm:rounded-t-2xl min-h-[60px] sm:min-h-[80px] flex items-center justify-center relative overflow-visible transition-all ${
+        className={`text-white px-2 sm:px-3 text-center rounded-t-xl sm:rounded-t-2xl h-[70px] sm:h-[90px] lg:h-[100px] flex items-center justify-center relative overflow-hidden transition-all ${
           allCompleted 
             ? 'gradient-gold' 
             : 'gradient-header'
@@ -160,8 +160,9 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }:
           </motion.div>
         )}
         <h2 
-          className="font-black text-sm sm:text-base lg:text-lg leading-tight uppercase tracking-wide relative z-10 drop-shadow-lg break-words hyphens-auto" 
+          className="font-black text-xs sm:text-sm lg:text-base leading-tight uppercase tracking-wide relative z-10 drop-shadow-lg line-clamp-3" 
           data-testid={`text-category-${boardCategory.id}`}
+          title={boardCategory.category.name}
         >
           {boardCategory.category.name}
         </h2>
