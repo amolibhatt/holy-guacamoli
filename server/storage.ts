@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, couplesPromptPacks, couplesPrompts, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameMode, type SessionState, type GameType, type InsertGameType, type CouplesPromptPack, type InsertCouplesPromptPack, type CouplesPrompt, type InsertCouplesPrompt, type CouplesPromptPackWithCount } from "@shared/schema";
+import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction } from "@shared/schema";
 import { users } from "@shared/models/auth";
 import { eq, and, asc, count, inArray, desc, sql, gte } from "drizzle-orm";
 
@@ -94,18 +94,29 @@ export interface IStorage {
   getGameTypeBySlug(slug: string): Promise<GameType | undefined>;
   updateGameType(id: number, data: Partial<InsertGameType>): Promise<GameType | undefined>;
   
-  // Couples Prompt Packs
-  getCouplesPromptPacks(userId: string, role?: string): Promise<CouplesPromptPackWithCount[]>;
-  getCouplesPromptPack(id: number): Promise<CouplesPromptPack | undefined>;
-  createCouplesPromptPack(data: InsertCouplesPromptPack): Promise<CouplesPromptPack>;
-  updateCouplesPromptPack(id: number, data: Partial<InsertCouplesPromptPack>): Promise<CouplesPromptPack | undefined>;
-  deleteCouplesPromptPack(id: number): Promise<boolean>;
+  // Double Dip - Pairs
+  getDoubleDipPair(id: number): Promise<DoubleDipPair | undefined>;
+  getDoubleDipPairByInviteCode(code: string): Promise<DoubleDipPair | undefined>;
+  getDoubleDipPairForUser(userId: string): Promise<DoubleDipPair | undefined>;
+  createDoubleDipPair(data: InsertDoubleDipPair): Promise<DoubleDipPair>;
+  updateDoubleDipPair(id: number, data: Partial<InsertDoubleDipPair>): Promise<DoubleDipPair | undefined>;
   
-  // Couples Prompts
-  getCouplesPrompts(packId: number): Promise<CouplesPrompt[]>;
-  createCouplesPrompt(data: InsertCouplesPrompt): Promise<CouplesPrompt>;
-  updateCouplesPrompt(id: number, data: Partial<InsertCouplesPrompt>): Promise<CouplesPrompt | undefined>;
-  deleteCouplesPrompt(id: number): Promise<boolean>;
+  // Double Dip - Questions
+  getDoubleDipQuestions(category?: string): Promise<DoubleDipQuestion[]>;
+  createDoubleDipQuestion(data: InsertDoubleDipQuestion): Promise<DoubleDipQuestion>;
+  
+  // Double Dip - Daily Sets
+  getDoubleDipDailySet(pairId: number, dateKey: string): Promise<DoubleDipDailySet | undefined>;
+  createDoubleDipDailySet(data: InsertDoubleDipDailySet): Promise<DoubleDipDailySet>;
+  updateDoubleDipDailySet(id: number, data: Partial<InsertDoubleDipDailySet>): Promise<DoubleDipDailySet | undefined>;
+  
+  // Double Dip - Answers
+  getDoubleDipAnswers(dailySetId: number): Promise<DoubleDipAnswer[]>;
+  createDoubleDipAnswer(data: InsertDoubleDipAnswer): Promise<DoubleDipAnswer>;
+  
+  // Double Dip - Reactions
+  createDoubleDipReaction(data: InsertDoubleDipReaction): Promise<DoubleDipReaction>;
+  getDoubleDipReactions(answerId: number): Promise<DoubleDipReaction[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -899,71 +910,85 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  // Couples Prompt Packs
-  async getCouplesPromptPacks(userId: string, role?: string): Promise<CouplesPromptPackWithCount[]> {
-    let packs;
-    if (role === 'super_admin') {
-      packs = await db.select().from(couplesPromptPacks).orderBy(desc(couplesPromptPacks.id));
-    } else {
-      packs = await db.select().from(couplesPromptPacks)
-        .where(eq(couplesPromptPacks.userId, userId))
-        .orderBy(desc(couplesPromptPacks.id));
+  // Double Dip - Pairs
+  async getDoubleDipPair(id: number): Promise<DoubleDipPair | undefined> {
+    const [pair] = await db.select().from(doubleDipPairs).where(eq(doubleDipPairs.id, id));
+    return pair;
+  }
+
+  async getDoubleDipPairByInviteCode(code: string): Promise<DoubleDipPair | undefined> {
+    const [pair] = await db.select().from(doubleDipPairs).where(eq(doubleDipPairs.inviteCode, code));
+    return pair;
+  }
+
+  async getDoubleDipPairForUser(userId: string): Promise<DoubleDipPair | undefined> {
+    const [pair] = await db.select().from(doubleDipPairs)
+      .where(and(
+        eq(doubleDipPairs.status, 'active'),
+        sql`(${doubleDipPairs.userAId} = ${userId} OR ${doubleDipPairs.userBId} = ${userId})`
+      ));
+    return pair;
+  }
+
+  async createDoubleDipPair(data: InsertDoubleDipPair): Promise<DoubleDipPair> {
+    const [pair] = await db.insert(doubleDipPairs).values(data as any).returning();
+    return pair;
+  }
+
+  async updateDoubleDipPair(id: number, data: Partial<InsertDoubleDipPair>): Promise<DoubleDipPair | undefined> {
+    const [updated] = await db.update(doubleDipPairs).set(data as any).where(eq(doubleDipPairs.id, id)).returning();
+    return updated;
+  }
+
+  // Double Dip - Questions
+  async getDoubleDipQuestions(category?: string): Promise<DoubleDipQuestion[]> {
+    if (category) {
+      return await db.select().from(doubleDipQuestions)
+        .where(and(eq(doubleDipQuestions.category, category as any), eq(doubleDipQuestions.isActive, true)));
     }
-    
-    const packsWithCounts = await Promise.all(packs.map(async (pack) => {
-      const [promptCount] = await db.select({ count: count() })
-        .from(couplesPrompts)
-        .where(eq(couplesPrompts.packId, pack.id));
-      return {
-        ...pack,
-        promptCount: promptCount?.count ?? 0,
-      };
-    }));
-    
-    return packsWithCounts;
+    return await db.select().from(doubleDipQuestions).where(eq(doubleDipQuestions.isActive, true));
   }
 
-  async getCouplesPromptPack(id: number): Promise<CouplesPromptPack | undefined> {
-    const [pack] = await db.select().from(couplesPromptPacks).where(eq(couplesPromptPacks.id, id));
-    return pack;
+  async createDoubleDipQuestion(data: InsertDoubleDipQuestion): Promise<DoubleDipQuestion> {
+    const [question] = await db.insert(doubleDipQuestions).values(data as any).returning();
+    return question;
   }
 
-  async createCouplesPromptPack(data: InsertCouplesPromptPack): Promise<CouplesPromptPack> {
-    const [pack] = await db.insert(couplesPromptPacks).values(data).returning();
-    return pack;
+  // Double Dip - Daily Sets
+  async getDoubleDipDailySet(pairId: number, dateKey: string): Promise<DoubleDipDailySet | undefined> {
+    const [set] = await db.select().from(doubleDipDailySets)
+      .where(and(eq(doubleDipDailySets.pairId, pairId), eq(doubleDipDailySets.dateKey, dateKey)));
+    return set;
   }
 
-  async updateCouplesPromptPack(id: number, data: Partial<InsertCouplesPromptPack>): Promise<CouplesPromptPack | undefined> {
-    const [updated] = await db.update(couplesPromptPacks).set(data).where(eq(couplesPromptPacks.id, id)).returning();
+  async createDoubleDipDailySet(data: InsertDoubleDipDailySet): Promise<DoubleDipDailySet> {
+    const [set] = await db.insert(doubleDipDailySets).values(data as any).returning();
+    return set;
+  }
+
+  async updateDoubleDipDailySet(id: number, data: Partial<InsertDoubleDipDailySet>): Promise<DoubleDipDailySet | undefined> {
+    const [updated] = await db.update(doubleDipDailySets).set(data as any).where(eq(doubleDipDailySets.id, id)).returning();
     return updated;
   }
 
-  async deleteCouplesPromptPack(id: number): Promise<boolean> {
-    await db.delete(couplesPrompts).where(eq(couplesPrompts.packId, id));
-    const result = await db.delete(couplesPromptPacks).where(eq(couplesPromptPacks.id, id));
-    return result.rowCount > 0;
+  // Double Dip - Answers
+  async getDoubleDipAnswers(dailySetId: number): Promise<DoubleDipAnswer[]> {
+    return await db.select().from(doubleDipAnswers).where(eq(doubleDipAnswers.dailySetId, dailySetId));
   }
 
-  // Couples Prompts
-  async getCouplesPrompts(packId: number): Promise<CouplesPrompt[]> {
-    return await db.select().from(couplesPrompts)
-      .where(eq(couplesPrompts.packId, packId))
-      .orderBy(asc(couplesPrompts.intensity));
+  async createDoubleDipAnswer(data: InsertDoubleDipAnswer): Promise<DoubleDipAnswer> {
+    const [answer] = await db.insert(doubleDipAnswers).values(data).returning();
+    return answer;
   }
 
-  async createCouplesPrompt(data: InsertCouplesPrompt): Promise<CouplesPrompt> {
-    const [prompt] = await db.insert(couplesPrompts).values(data).returning();
-    return prompt;
+  // Double Dip - Reactions
+  async createDoubleDipReaction(data: InsertDoubleDipReaction): Promise<DoubleDipReaction> {
+    const [reaction] = await db.insert(doubleDipReactions).values(data).returning();
+    return reaction;
   }
 
-  async updateCouplesPrompt(id: number, data: Partial<InsertCouplesPrompt>): Promise<CouplesPrompt | undefined> {
-    const [updated] = await db.update(couplesPrompts).set(data).where(eq(couplesPrompts.id, id)).returning();
-    return updated;
-  }
-
-  async deleteCouplesPrompt(id: number): Promise<boolean> {
-    const result = await db.delete(couplesPrompts).where(eq(couplesPrompts.id, id));
-    return result.rowCount > 0;
+  async getDoubleDipReactions(answerId: number): Promise<DoubleDipReaction[]> {
+    return await db.select().from(doubleDipReactions).where(eq(doubleDipReactions.answerId, answerId));
   }
 }
 

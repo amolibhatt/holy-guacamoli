@@ -18,23 +18,62 @@ export const gameTypes = pgTable("game_types", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// Couples Game specific tables
-export const couplesPromptPacks = pgTable("couples_prompt_packs", {
+// Double Dip Game Tables
+export const DOUBLE_DIP_CATEGORIES = ["deep_end", "danger_zone", "daily_loop", "rewind", "glitch"] as const;
+export type DoubleDipCategory = typeof DOUBLE_DIP_CATEGORIES[number];
+
+export const doubleDipPairs = pgTable("double_dip_pairs", {
   id: serial("id").primaryKey(),
-  userId: text("user_id").notNull(),
-  name: text("name").notNull(),
-  description: text("description"),
-  isDefault: boolean("is_default").notNull().default(false),
+  userAId: text("user_a_id").notNull(),
+  userBId: text("user_b_id"),
+  inviteCode: text("invite_code").notNull().unique(),
+  status: text("status").notNull().$type<"pending" | "active" | "ended">().default("pending"),
+  streakCount: integer("streak_count").notNull().default(0),
+  lastCompletedDate: text("last_completed_date"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const couplesPrompts = pgTable("couples_prompts", {
+export const doubleDipQuestions = pgTable("double_dip_questions", {
   id: serial("id").primaryKey(),
-  packId: integer("pack_id").notNull(),
-  promptType: text("prompt_type").notNull().$type<"would_rather" | "most_likely" | "truth" | "dare" | "hot_seat">(),
-  promptText: text("prompt_text").notNull(),
-  intensity: integer("intensity").notNull().default(1),
+  category: text("category").notNull().$type<DoubleDipCategory>(),
+  questionText: text("question_text").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export const doubleDipDailySets = pgTable("double_dip_daily_sets", {
+  id: serial("id").primaryKey(),
+  pairId: integer("pair_id").notNull(),
+  dateKey: text("date_key").notNull(),
+  questionIds: jsonb("question_ids").$type<number[]>().notNull(),
+  userACompleted: boolean("user_a_completed").notNull().default(false),
+  userBCompleted: boolean("user_b_completed").notNull().default(false),
+  revealed: boolean("revealed").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  unique().on(table.pairId, table.dateKey),
+]);
+
+export const doubleDipAnswers = pgTable("double_dip_answers", {
+  id: serial("id").primaryKey(),
+  dailySetId: integer("daily_set_id").notNull(),
+  questionId: integer("question_id").notNull(),
+  userId: text("user_id").notNull(),
+  answerText: text("answer_text").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  unique().on(table.dailySetId, table.questionId, table.userId),
+]);
+
+export const doubleDipReactions = pgTable("double_dip_reactions", {
+  id: serial("id").primaryKey(),
+  answerId: integer("answer_id").notNull(),
+  userId: text("user_id").notNull(),
+  reaction: text("reaction").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  unique().on(table.answerId, table.userId),
+]);
 
 export const boards = pgTable("boards", {
   id: serial("id").primaryKey(),
@@ -261,14 +300,34 @@ export const headsUpCardsRelations = relations(headsUpCards, ({ one }) => ({
   }),
 }));
 
-export const couplesPromptPacksRelations = relations(couplesPromptPacks, ({ many }) => ({
-  prompts: many(couplesPrompts),
+export const doubleDipPairsRelations = relations(doubleDipPairs, ({ many }) => ({
+  dailySets: many(doubleDipDailySets),
 }));
 
-export const couplesPromptsRelations = relations(couplesPrompts, ({ one }) => ({
-  pack: one(couplesPromptPacks, {
-    fields: [couplesPrompts.packId],
-    references: [couplesPromptPacks.id],
+export const doubleDipDailySetsRelations = relations(doubleDipDailySets, ({ one, many }) => ({
+  pair: one(doubleDipPairs, {
+    fields: [doubleDipDailySets.pairId],
+    references: [doubleDipPairs.id],
+  }),
+  answers: many(doubleDipAnswers),
+}));
+
+export const doubleDipAnswersRelations = relations(doubleDipAnswers, ({ one, many }) => ({
+  dailySet: one(doubleDipDailySets, {
+    fields: [doubleDipAnswers.dailySetId],
+    references: [doubleDipDailySets.id],
+  }),
+  question: one(doubleDipQuestions, {
+    fields: [doubleDipAnswers.questionId],
+    references: [doubleDipQuestions.id],
+  }),
+  reactions: many(doubleDipReactions),
+}));
+
+export const doubleDipReactionsRelations = relations(doubleDipReactions, ({ one }) => ({
+  answer: one(doubleDipAnswers, {
+    fields: [doubleDipReactions.answerId],
+    references: [doubleDipAnswers.id],
   }),
 }));
 
@@ -313,8 +372,11 @@ export const insertGameSessionSchema = createInsertSchema(gameSessions).omit({ i
 export const insertSessionPlayerSchema = createInsertSchema(sessionPlayers).omit({ id: true, joinedAt: true, lastSeenAt: true });
 export const insertSessionCompletedQuestionSchema = createInsertSchema(sessionCompletedQuestions).omit({ id: true, completedAt: true });
 export const insertGameTypeSchema = createInsertSchema(gameTypes).omit({ id: true, createdAt: true });
-export const insertCouplesPromptPackSchema = createInsertSchema(couplesPromptPacks).omit({ id: true, createdAt: true });
-export const insertCouplesPromptSchema = createInsertSchema(couplesPrompts).omit({ id: true });
+export const insertDoubleDipPairSchema = createInsertSchema(doubleDipPairs).omit({ id: true, createdAt: true });
+export const insertDoubleDipQuestionSchema = createInsertSchema(doubleDipQuestions).omit({ id: true, createdAt: true });
+export const insertDoubleDipDailySetSchema = createInsertSchema(doubleDipDailySets).omit({ id: true, createdAt: true });
+export const insertDoubleDipAnswerSchema = createInsertSchema(doubleDipAnswers).omit({ id: true, createdAt: true });
+export const insertDoubleDipReactionSchema = createInsertSchema(doubleDipReactions).omit({ id: true, createdAt: true });
 
 export type Board = typeof boards.$inferSelect;
 export type Category = typeof categories.$inferSelect;
@@ -330,10 +392,11 @@ export type GameSession = typeof gameSessions.$inferSelect;
 export type SessionPlayer = typeof sessionPlayers.$inferSelect;
 export type SessionCompletedQuestion = typeof sessionCompletedQuestions.$inferSelect;
 export type GameType = typeof gameTypes.$inferSelect;
-export type CouplesPromptPack = typeof couplesPromptPacks.$inferSelect;
-export type CouplesPrompt = typeof couplesPrompts.$inferSelect;
-
-export type CouplesPromptPackWithCount = CouplesPromptPack & { promptCount: number };
+export type DoubleDipPair = typeof doubleDipPairs.$inferSelect;
+export type DoubleDipQuestion = typeof doubleDipQuestions.$inferSelect;
+export type DoubleDipDailySet = typeof doubleDipDailySets.$inferSelect;
+export type DoubleDipAnswer = typeof doubleDipAnswers.$inferSelect;
+export type DoubleDipReaction = typeof doubleDipReactions.$inferSelect;
 export type InsertBoard = z.infer<typeof insertBoardSchema>;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertBoardCategory = z.infer<typeof insertBoardCategorySchema>;
@@ -347,8 +410,11 @@ export type InsertGameSession = z.infer<typeof insertGameSessionSchema>;
 export type InsertSessionPlayer = z.infer<typeof insertSessionPlayerSchema>;
 export type InsertSessionCompletedQuestion = z.infer<typeof insertSessionCompletedQuestionSchema>;
 export type InsertGameType = z.infer<typeof insertGameTypeSchema>;
-export type InsertCouplesPromptPack = z.infer<typeof insertCouplesPromptPackSchema>;
-export type InsertCouplesPrompt = z.infer<typeof insertCouplesPromptSchema>;
+export type InsertDoubleDipPair = z.infer<typeof insertDoubleDipPairSchema>;
+export type InsertDoubleDipQuestion = z.infer<typeof insertDoubleDipQuestionSchema>;
+export type InsertDoubleDipDailySet = z.infer<typeof insertDoubleDipDailySetSchema>;
+export type InsertDoubleDipAnswer = z.infer<typeof insertDoubleDipAnswerSchema>;
+export type InsertDoubleDipReaction = z.infer<typeof insertDoubleDipReactionSchema>;
 
 export type BoardCategoryWithCategory = BoardCategory & { category: Category };
 export type BoardCategoryWithCount = BoardCategoryWithCategory & { questionCount: number; position: number };

@@ -14,7 +14,7 @@ import { motion } from "framer-motion";
 const GUIDE_STEPS = [
   {
     title: "Pick a Game",
-    description: "Choose from available game modes like Grid of Grudges or Couples Quiz",
+    description: "Choose from available game modes like Grid of Grudges or Double Dip",
     icon: Grid3X3,
   },
   {
@@ -50,12 +50,12 @@ const GAME_CONFIG: Record<string, {
     route: "/host/grid-of-grudges",
     playerCount: "Multiplayer",
   },
-  couples_quiz: {
+  double_dip: {
     icon: Heart,
     gradient: "from-pink-500 to-rose-500",
     shadowColor: "shadow-pink-500/20",
     hoverBorder: "hover:border-pink-500/50 hover:shadow-pink-500/10",
-    route: "/host/couples-quiz",
+    route: "/host/double-dip",
     playerCount: "2 Players",
   },
 };

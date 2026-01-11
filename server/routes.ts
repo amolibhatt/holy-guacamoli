@@ -1029,5 +1029,281 @@ export async function registerRoutes(
     }
   });
 
+  // ===============================
+  // Double Dip Routes
+  // ===============================
+
+  // Generate a random invite code
+  function generateInviteCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  }
+
+  // Get or create pair for current user
+  app.get("/api/double-dip/pair", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      let pair = await storage.getDoubleDipPairForUser(userId);
+      
+      if (!pair) {
+        // Check if user has a pending pair they created
+        const pendingPair = await storage.getDoubleDipPairForUser(userId);
+        if (pendingPair) {
+          pair = pendingPair;
+        }
+      }
+      
+      res.json(pair || null);
+    } catch (err) {
+      console.error("Error getting pair:", err);
+      res.status(500).json({ message: "Failed to get pair" });
+    }
+  });
+
+  // Create a new pair (generate invite link)
+  app.post("/api/double-dip/pair", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      
+      // Check if user already has a pair
+      const existingPair = await storage.getDoubleDipPairForUser(userId);
+      if (existingPair) {
+        return res.status(400).json({ message: "You already have a pair" });
+      }
+      
+      const inviteCode = generateInviteCode();
+      const pair = await storage.createDoubleDipPair({
+        userAId: userId,
+        inviteCode,
+        status: 'pending',
+      });
+      
+      res.json(pair);
+    } catch (err) {
+      console.error("Error creating pair:", err);
+      res.status(500).json({ message: "Failed to create pair" });
+    }
+  });
+
+  // Join a pair using invite code
+  app.post("/api/double-dip/join/:code", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const code = req.params.code.toUpperCase();
+      
+      // Check if user already has a pair
+      const existingPair = await storage.getDoubleDipPairForUser(userId);
+      if (existingPair) {
+        return res.status(400).json({ message: "You already have a pair" });
+      }
+      
+      // Find the pair by invite code
+      const pair = await storage.getDoubleDipPairByInviteCode(code);
+      if (!pair) {
+        return res.status(404).json({ message: "Invalid invite code" });
+      }
+      
+      if (pair.status !== 'pending') {
+        return res.status(400).json({ message: "This invite is no longer valid" });
+      }
+      
+      if (pair.userAId === userId) {
+        return res.status(400).json({ message: "You cannot join your own pair" });
+      }
+      
+      // Update the pair with the second user
+      const updatedPair = await storage.updateDoubleDipPair(pair.id, {
+        userBId: userId,
+        status: 'active',
+      });
+      
+      res.json(updatedPair);
+    } catch (err) {
+      console.error("Error joining pair:", err);
+      res.status(500).json({ message: "Failed to join pair" });
+    }
+  });
+
+  // Get today's daily set for the pair
+  app.get("/api/double-dip/daily", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const pair = await storage.getDoubleDipPairForUser(userId);
+      
+      if (!pair) {
+        return res.status(404).json({ message: "No pair found" });
+      }
+      
+      const today = new Date().toISOString().split('T')[0];
+      let dailySet = await storage.getDoubleDipDailySet(pair.id, today);
+      
+      if (!dailySet) {
+        // Generate new daily questions - one from each category
+        const categories = ['deep_end', 'danger_zone', 'daily_loop', 'rewind', 'glitch'];
+        const questionIds: number[] = [];
+        
+        for (const category of categories) {
+          const questions = await storage.getDoubleDipQuestions(category);
+          if (questions.length > 0) {
+            const randomQ = questions[Math.floor(Math.random() * questions.length)];
+            questionIds.push(randomQ.id);
+          }
+        }
+        
+        dailySet = await storage.createDoubleDipDailySet({
+          pairId: pair.id,
+          dateKey: today,
+          questionIds,
+        });
+      }
+      
+      // Get the actual questions
+      const allQuestions = await storage.getDoubleDipQuestions();
+      const todayQuestions = allQuestions.filter(q => (dailySet!.questionIds as number[]).includes(q.id));
+      
+      // Get answers if any
+      const answers = await storage.getDoubleDipAnswers(dailySet.id);
+      
+      // Determine user's role (A or B)
+      const isUserA = pair.userAId === userId;
+      const userCompleted = isUserA ? dailySet.userACompleted : dailySet.userBCompleted;
+      const partnerCompleted = isUserA ? dailySet.userBCompleted : dailySet.userACompleted;
+      
+      // Filter answers based on reveal status
+      let visibleAnswers = answers;
+      if (!dailySet.revealed) {
+        // Only show user's own answers
+        visibleAnswers = answers.filter(a => a.userId === userId);
+      }
+      
+      res.json({
+        pair,
+        dailySet,
+        questions: todayQuestions,
+        answers: visibleAnswers,
+        userCompleted,
+        partnerCompleted,
+        isUserA,
+        revealed: dailySet.revealed,
+        streakCount: pair.streakCount,
+      });
+    } catch (err) {
+      console.error("Error getting daily set:", err);
+      res.status(500).json({ message: "Failed to get daily questions" });
+    }
+  });
+
+  // Submit answers
+  app.post("/api/double-dip/answers", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { dailySetId, answers } = req.body;
+      
+      const pair = await storage.getDoubleDipPairForUser(userId);
+      if (!pair) {
+        return res.status(404).json({ message: "No pair found" });
+      }
+      
+      // Create answers
+      for (const answer of answers) {
+        await storage.createDoubleDipAnswer({
+          dailySetId,
+          questionId: answer.questionId,
+          userId,
+          answerText: answer.answerText,
+        });
+      }
+      
+      // Mark user as completed
+      const isUserA = pair.userAId === userId;
+      const today = new Date().toISOString().split('T')[0];
+      const dailySet = await storage.getDoubleDipDailySet(pair.id, today);
+      
+      if (dailySet) {
+        const updateData: any = isUserA 
+          ? { userACompleted: true }
+          : { userBCompleted: true };
+        
+        // Check if both are now completed
+        const bothCompleted = isUserA 
+          ? (true && dailySet.userBCompleted)
+          : (dailySet.userACompleted && true);
+        
+        if (bothCompleted) {
+          updateData.revealed = true;
+          
+          // Update streak
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayKey = yesterday.toISOString().split('T')[0];
+          
+          let newStreak = 1;
+          if (pair.lastCompletedDate === yesterdayKey) {
+            newStreak = pair.streakCount + 1;
+          }
+          
+          await storage.updateDoubleDipPair(pair.id, {
+            streakCount: newStreak,
+            lastCompletedDate: today,
+          });
+        }
+        
+        await storage.updateDoubleDipDailySet(dailySet.id, updateData);
+      }
+      
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error submitting answers:", err);
+      res.status(500).json({ message: "Failed to submit answers" });
+    }
+  });
+
+  // Add reaction to answer
+  app.post("/api/double-dip/reactions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { answerId, reaction } = req.body;
+      
+      const newReaction = await storage.createDoubleDipReaction({
+        answerId,
+        userId,
+        reaction,
+      });
+      
+      res.json(newReaction);
+    } catch (err) {
+      console.error("Error adding reaction:", err);
+      res.status(500).json({ message: "Failed to add reaction" });
+    }
+  });
+
+  // Get vault (history)
+  app.get("/api/double-dip/vault", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const pair = await storage.getDoubleDipPairForUser(userId);
+      
+      if (!pair) {
+        return res.status(404).json({ message: "No pair found" });
+      }
+      
+      // Get all revealed daily sets for this pair
+      const allQuestions = await storage.getDoubleDipQuestions();
+      
+      // For now, return a simple structure - can be enhanced later
+      res.json({
+        pair,
+        questions: allQuestions,
+      });
+    } catch (err) {
+      console.error("Error getting vault:", err);
+      res.status(500).json({ message: "Failed to get vault" });
+    }
+  });
+
   return httpServer;
 }
