@@ -16,6 +16,8 @@ import GamesAdmin from "@/pages/GamesAdmin";
 import HeadsUpGame from "@/pages/HeadsUpGame";
 import GridOfGrudges from "@/pages/GridOfGrudges";
 import BrainRotBlitz from "@/pages/BrainRotBlitz";
+import LiarsLobby from "@/pages/LiarsLobby";
+import LiarsLobbyPlayer from "@/pages/LiarsLobbyPlayer";
 
 function Router() {
   return (
@@ -30,6 +32,8 @@ function Router() {
       <Route path="/heads-up/:gameId" component={HeadsUpGame} />
       <Route path="/grudges/:gameId" component={GridOfGrudges} />
       <Route path="/blitz/:gameId" component={BrainRotBlitz} />
+      <Route path="/liars/:gameId" component={LiarsLobby} />
+      <Route path="/liars-play" component={LiarsLobbyPlayer} />
       <Route component={NotFound} />
     </Switch>
   );
