@@ -140,11 +140,14 @@ export default function PlayerPage() {
         case "feedback":
           setFeedback({ correct: data.correct, points: data.points });
           if (data.correct) {
-            confetti({
-              particleCount: 100,
-              spread: 70,
-              origin: { y: 0.6 },
-            });
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (!prefersReducedMotion) {
+              confetti({
+                particleCount: 60,
+                spread: 70,
+                origin: { y: 0.6 },
+              });
+            }
           }
           break;
         case "pong":

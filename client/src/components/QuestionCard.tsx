@@ -134,12 +134,15 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
     awardPoints(contestantId, question.points);
     soundManager.play('correct', 0.6);
     
-    confetti({
-      particleCount: 200,
-      spread: 120,
-      origin: { y: 0.5 },
-      colors: [colors.gradient1, colors.gradient2, colors.gradient3, colors.accent, '#FFE66D']
-    });
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!prefersReducedMotion) {
+      confetti({
+        particleCount: 80,
+        spread: 90,
+        origin: { y: 0.5 },
+        colors: [colors.gradient1, colors.gradient2, colors.accent, '#FFE66D']
+      });
+    }
 
     setTimeout(() => {
       markQuestionCompleted(question.id);

@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { useQuestionsByBoardCategory } from "@/hooks/use-quiz";
 import { useScore } from "@/components/ScoreContext";
-import { useTheme } from "@/context/ThemeContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { BoardCategoryWithCategory, Question } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { soundManager } from "@/lib/sounds";
 import { particles } from "@/lib/particles";
 
@@ -25,7 +24,6 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
   const [isFlipping, setIsFlipping] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const hasQuestion = !!question;
-  const { colors } = useTheme();
 
   const handleClick = (e: React.MouseEvent) => {
     if (hasQuestion && !isCompleted && !isFlipping) {
@@ -111,31 +109,6 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
           )}
         </AnimatePresence>
         
-        {hasQuestion && !isCompleted && (
-          <>
-            <motion.div
-              className="absolute inset-0 rounded-xl pointer-events-none"
-              animate={{ 
-                boxShadow: [
-                  `inset 0 0 20px ${colors.gradient1}00`,
-                  `inset 0 0 30px ${colors.gradient1}4D`,
-                  `inset 0 0 20px ${colors.gradient1}00`
-                ]
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-            <motion.div
-              className="absolute top-1 right-1"
-              animate={{ 
-                scale: [1, 1.3, 1],
-                opacity: [0.5, 1, 0.5]
-              }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            >
-              <Sparkles className="w-3 h-3 text-primary/70" />
-            </motion.div>
-          </>
-        )}
       </motion.button>
     </motion.div>
   );
@@ -168,38 +141,20 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }:
 
   return (
     <div className="flex flex-col h-full">
-      <motion.div 
-        className={`text-white py-4 px-3 text-center rounded-t-2xl min-h-[80px] flex items-center justify-center relative overflow-visible ${
+      <div 
+        className={`text-white py-4 px-3 text-center rounded-t-2xl min-h-[80px] flex items-center justify-center relative overflow-visible transition-all ${
           allCompleted 
-            ? 'gradient-gold glow-gold' 
-            : 'gradient-header glow-primary'
+            ? 'gradient-gold' 
+            : 'gradient-header'
         }`}
-        whileHover={{ scale: 1.03, y: -2 }}
-        transition={{ type: "spring", stiffness: 400 }}
       >
-        <div className="absolute inset-0 shimmer rounded-t-2xl overflow-hidden" />
-        <motion.div
-          className="absolute top-1 right-1"
-          animate={{ rotate: [0, 360], scale: [1, 1.3, 1] }}
-          transition={{ duration: 4, repeat: Infinity }}
-        >
-          <Sparkles className="w-4 h-4 text-yellow-300/70" />
-        </motion.div>
-        <motion.div
-          className="absolute bottom-1 left-1"
-          animate={{ rotate: [0, -360], opacity: [0.4, 0.8, 0.4] }}
-          transition={{ duration: 5, repeat: Infinity }}
-        >
-          <Sparkles className="w-3 h-3 text-white/50" />
-        </motion.div>
         {allCompleted && (
           <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className="absolute top-1 left-1"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="absolute top-2 left-2"
           >
-            <Check className="w-5 h-5 text-white drop-shadow" />
+            <Check className="w-5 h-5 text-white drop-shadow" aria-label="Category completed" />
           </motion.div>
         )}
         <h2 
@@ -208,7 +163,10 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }:
         >
           {boardCategory.category.name}
         </h2>
-      </motion.div>
+        {allCompleted && (
+          <span className="sr-only">Completed</span>
+        )}
+      </div>
       
       <div className="flex flex-col gap-2 mt-2 flex-1">
         {scoreValues.map((scoreValue, idx) => {
