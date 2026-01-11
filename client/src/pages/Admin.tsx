@@ -752,6 +752,7 @@ export default function Admin() {
                                   size="sm"
                                   className="h-8 w-8 p-0"
                                   onClick={() => setNewCategoryImageUrl("")}
+                                  data-testid="button-clear-category-image"
                                 >
                                   <X className="w-4 h-4" />
                                 </Button>
