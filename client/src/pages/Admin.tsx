@@ -870,17 +870,17 @@ export default function Admin() {
                         onValueChange={(val) => setSelectedBoardCategoryId(val ? Number(val) : null)}
                         className="w-full"
                       >
-                        <TabsList className="h-9 p-1 gap-1">
+                        <TabsList className="h-auto bg-transparent p-0 gap-6 border-b border-border rounded-none w-full justify-start">
                           {boardCategories.map((bc) => (
                             <TabsTrigger 
                               key={bc.id}
                               value={bc.id.toString()} 
-                              className="gap-1.5 px-3"
+                              className="bg-transparent rounded-none border-b-2 border-transparent px-0 pb-2 pt-1 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5"
                               data-testid={`category-tab-${bc.id}`}
                             >
                               <span className="truncate max-w-[100px]">{bc.category.name}</span>
                               {(bc.questionCount ?? 0) >= 5 && (
-                                <CheckCircle className="w-3 h-3 text-primary" />
+                                <CheckCircle className="w-3 h-3" />
                               )}
                             </TabsTrigger>
                           ))}
