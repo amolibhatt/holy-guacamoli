@@ -2,8 +2,8 @@ import { createContext, useContext, useState, ReactNode, useEffect, useRef } fro
 import { particles } from "@/lib/particles";
 
 const AVATAR_COLORS = [
-  '#FF6B6B', '#FF8E53', '#FFD93D', '#4ADEBC', '#3B82F6', 
-  '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1'
+  '#FF6B6B', '#FF8E53', '#FFD93D', '#60A5FA', '#3B82F6', 
+  '#8B5CF6', '#EC4899', '#F472B6', '#F97316', '#6366F1'
 ];
 
 export interface Contestant {
