@@ -29,6 +29,7 @@ interface GameRoom {
 const rooms = new Map<string, GameRoom>();
 const PING_INTERVAL = 10000; // 10 seconds
 const PING_TIMEOUT = 30000; // 30 seconds without pong = dead
+const ROOM_INACTIVE_TIMEOUT = 3600000; // 1 hour without host = cleanup
 
 function generateRoomCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -39,8 +40,39 @@ function generateRoomCode(): string {
   return code;
 }
 
+function cleanupInactiveRooms() {
+  const now = Date.now();
+  const roomsToCleanup: string[] = [];
+  
+  rooms.forEach((room, code) => {
+    const hostDisconnected = !room.hostWs || room.hostWs.readyState !== WebSocket.OPEN;
+    const timeSinceHostPing = now - room.hostLastPing;
+    
+    if (hostDisconnected && timeSinceHostPing > ROOM_INACTIVE_TIMEOUT) {
+      roomsToCleanup.push(code);
+    }
+  });
+  
+  roomsToCleanup.forEach(code => {
+    const room = rooms.get(code);
+    if (room) {
+      room.players.forEach(player => {
+        if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+          player.ws.send(JSON.stringify({ type: "room:closed", reason: "Host disconnected" }));
+          player.ws.close();
+        }
+      });
+      rooms.delete(code);
+      console.log(`[WebSocket] Cleaned up inactive room: ${code}`);
+    }
+  });
+}
+
 export function setupWebSocket(server: Server) {
   const wss = new WebSocketServer({ server, path: "/ws" });
+  
+  // Cleanup inactive rooms every 5 minutes
+  setInterval(cleanupInactiveRooms, 300000);
 
   wss.on("connection", (ws) => {
     let currentRoom: string | null = null;
