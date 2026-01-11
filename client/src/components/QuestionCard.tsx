@@ -25,6 +25,9 @@ interface QuestionCardProps {
   isLocked: boolean;
   onComplete?: () => void;
   buzzQueue?: BuzzEvent[];
+  onAwardPoints?: (contestantId: string, points: number) => void;
+  onDeductPoints?: (contestantId: string, points: number) => void;
+  onCompleteQuestion?: (questionId: number, playerId?: string, points?: number) => void;
 }
 
 function AudioPlayer({ src }: { src: string }) {
@@ -87,7 +90,7 @@ function QuestionContent({ content }: { content: string }) {
   );
 }
 
-export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }: QuestionCardProps) {
+export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], onAwardPoints, onDeductPoints, onCompleteQuestion }: QuestionCardProps) {
   const [showAnswer, setShowAnswer] = useState(false);
   const [timer, setTimer] = useState<number | null>(null);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -134,6 +137,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
   const handleAward = (contestantId: string, contestantName: string) => {
     setAwardedTo(contestantName);
     awardPoints(contestantId, question.points);
+    onAwardPoints?.(contestantId, question.points);
     soundManager.play('correct', 0.6);
     
     if (!prefersReducedMotion) {
@@ -147,17 +151,20 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
 
     setTimeout(() => {
       markQuestionCompleted(question.id);
+      onCompleteQuestion?.(question.id, contestantId, question.points);
       onComplete?.();
     }, 2000);
   };
 
   const handleDeduct = (contestantId: string) => {
     deductPoints(contestantId, question.points);
+    onDeductPoints?.(contestantId, -question.points);
     soundManager.play('wrong', 0.5);
   };
 
   const handleNoAnswer = () => {
     markQuestionCompleted(question.id);
+    onCompleteQuestion?.(question.id);
     onComplete?.();
   };
 

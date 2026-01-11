@@ -49,6 +49,7 @@ export default function PlayerPage() {
   const [feedback, setFeedback] = useState<{ correct: boolean; points: number } | null>(null);
   const [hasBuzzed, setHasBuzzed] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [score, setScore] = useState(0);
   const wsRef = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -91,7 +92,15 @@ export default function PlayerPage() {
           joinedRef.current = true;
           setPlayerId(data.playerId);
           setBuzzerLocked(data.buzzerLocked);
+          if (data.score !== undefined) setScore(data.score);
           saveSession(roomCode.toUpperCase(), playerName, data.playerId);
+          break;
+        case "score:updated":
+          if (data.score !== undefined) setScore(data.score);
+          break;
+        case "scores:sync":
+          const myScore = data.players?.find((p: any) => p.id === playerId)?.score;
+          if (myScore !== undefined) setScore(myScore);
           break;
         case "error":
           setStatus("error");
@@ -275,9 +284,15 @@ export default function PlayerPage() {
   return (
     <div className="min-h-screen gradient-game flex flex-col">
       <header className="p-4 flex items-center justify-between bg-card/40 backdrop-blur border-b border-primary/20">
-        <div>
-          <span className="text-xs text-muted-foreground">Room</span>
-          <span className="ml-2 font-mono font-bold text-foreground">{roomCode}</span>
+        <div className="flex items-center gap-4">
+          <div>
+            <span className="text-xs text-muted-foreground">Room</span>
+            <span className="ml-2 font-mono font-bold text-foreground">{roomCode}</span>
+          </div>
+          <div className="px-3 py-1 bg-primary/20 rounded-full">
+            <span className="text-xs text-muted-foreground mr-1">Score:</span>
+            <span className="font-bold text-primary" data-testid="text-player-score">{score}</span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <span className="font-semibold text-foreground">{playerName}</span>
