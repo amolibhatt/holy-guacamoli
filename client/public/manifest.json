@@ -1,0 +1,19 @@
+{
+  "name": "Holy GuacAmoli!",
+  "short_name": "GuacAmoli",
+  "description": "Dip into the facts! A fun Jeopardy-style trivia game for parties.",
+  "start_url": "/play",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#9333ea",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["games", "entertainment"]
+}
