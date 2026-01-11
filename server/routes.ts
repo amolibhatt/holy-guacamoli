@@ -1432,22 +1432,30 @@ export async function registerRoutes(
         })
       );
       
-      // Get favorites with question data
+      // Get favorites with question data - fetch directly from storage
       const allFavorites = await storage.getDoubleDipFavorites(pair.id);
-      const favorites = allFavorites.map(fav => {
-        const answer = entries
-          .flatMap(e => e.answers)
-          .find(a => a.id === fav.answerId);
-        const question = answer 
-          ? entries.flatMap(e => e.questions).find(q => q.id === answer.questionId)
-          : null;
-        return { favorite: fav, answer, question };
-      }).filter(f => f.answer && f.question);
+      const allQuestionsDb = await storage.getDoubleDipQuestions();
+      
+      // Build favorites by fetching answer data directly from database
+      const favorites = await Promise.all(
+        allFavorites.map(async (fav) => {
+          // Fetch answer directly from database
+          const answer = await storage.getDoubleDipAnswerById(fav.answerId);
+          if (!answer) return null;
+          
+          const question = allQuestionsDb.find(q => q.id === answer.questionId);
+          if (!question) return null;
+          
+          return { favorite: fav, answer, question };
+        })
+      );
+      
+      const validFavorites = favorites.filter((f): f is NonNullable<typeof f> => f !== null);
       
       res.json({
         entries,
         pair: { userAId: pair.userAId, userBId: pair.userBId },
-        favorites,
+        favorites: validFavorites,
       });
     } catch (err) {
       console.error("Error getting vault:", err);

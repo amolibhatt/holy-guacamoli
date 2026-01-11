@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -123,7 +123,6 @@ export default function RelationshipHub() {
   const [activeTab, setActiveTab] = useState("today");
   const [joinCode, setJoinCode] = useState("");
   const [copied, setCopied] = useState(false);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
   const [anniversaryDate, setAnniversaryDate] = useState("");
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -147,6 +146,56 @@ export default function RelationshipHub() {
     queryKey: ['/api/double-dip/storyboard'],
     enabled: isAuthenticated && !!pair && pair.status === 'active',
   });
+
+  // Persist answers in localStorage to survive navigation/reloads
+  const storageKey = dailyData?.dailySet?.id ? `dd-answers-${dailyData.dailySet.id}` : null;
+  
+  const [answers, setAnswersState] = useState<Record<number, string>>(() => {
+    if (typeof window !== 'undefined' && storageKey) {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) return JSON.parse(saved);
+    }
+    return {};
+  });
+
+  const setAnswers = (updater: React.SetStateAction<Record<number, string>>) => {
+    setAnswersState(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      if (storageKey) {
+        localStorage.setItem(storageKey, JSON.stringify(next));
+      }
+      return next;
+    });
+  };
+
+  // Hydrate answers from localStorage or dailyData when dailySet changes
+  useEffect(() => {
+    if (!dailyData?.dailySet?.id) return;
+    
+    const key = `dd-answers-${dailyData.dailySet.id}`;
+    const saved = localStorage.getItem(key);
+    
+    if (saved) {
+      // Restore from localStorage
+      setAnswersState(JSON.parse(saved));
+    } else if (dailyData.answers && dailyData.answers.length > 0 && user) {
+      // Fall back to server data (already submitted)
+      const userAnswers = dailyData.answers.filter(a => a.userId === user.id);
+      if (userAnswers.length > 0) {
+        const hydratedAnswers: Record<number, string> = {};
+        userAnswers.forEach(a => {
+          hydratedAnswers[a.questionId] = a.answerText;
+        });
+        setAnswersState(hydratedAnswers);
+      } else {
+        // No saved data and no server data - reset to empty
+        setAnswersState({});
+      }
+    } else {
+      // New day with no localStorage and no server answers - reset to empty
+      setAnswersState({});
+    }
+  }, [dailyData?.dailySet?.id, dailyData?.answers, user]);
 
   const createPairMutation = useMutation({
     mutationFn: async () => {
@@ -181,6 +230,10 @@ export default function RelationshipHub() {
       return res.json();
     },
     onSuccess: () => {
+      // Clear localStorage after successful submission
+      if (storageKey) {
+        localStorage.removeItem(storageKey);
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/double-dip/daily'] });
       toast({ title: "Submitted!", description: "Your answers have been locked in" });
     },
@@ -555,20 +608,75 @@ export default function RelationshipHub() {
                       </CardContent>
                     </Card>
                   )}
+
+                  {/* Show both partners' answers */}
+                  <h4 className="text-sm font-medium text-muted-foreground mt-4">Today's Answers</h4>
+                  {dailyData.questions.map((question) => {
+                    const config = CATEGORY_CONFIG[question.category] || CATEGORY_CONFIG.deep_end;
+                    const userAnswer = dailyData.answers.find(a => a.questionId === question.id && a.userId === user?.id);
+                    const partnerAnswer = dailyData.answers.find(a => a.questionId === question.id && a.userId !== user?.id);
+                    
+                    return (
+                      <Card key={question.id} className="overflow-hidden">
+                        <div className={`${config.bg} px-4 py-2`}>
+                          <span className={`text-xs font-medium uppercase tracking-wider ${config.color}`}>
+                            {config.name}
+                          </span>
+                        </div>
+                        <CardContent className="p-4 space-y-3">
+                          <p className="text-sm font-medium text-foreground">{question.questionText}</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="bg-pink-500/5 rounded-lg p-3">
+                              <p className="text-xs text-pink-500 font-medium mb-1">You</p>
+                              <p className="text-sm text-foreground">{userAnswer?.answerText || "—"}</p>
+                            </div>
+                            <div className="bg-purple-500/5 rounded-lg p-3">
+                              <p className="text-xs text-purple-500 font-medium mb-1">Partner</p>
+                              <p className="text-sm text-foreground">{partnerAnswer?.answerText || "—"}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               ) : dailyData?.userCompleted ? (
-                <Card className="text-center py-12">
-                  <motion.div
-                    animate={{ y: [0, -5, 0] }}
-                    transition={{ repeat: Infinity, duration: 2 }}
-                  >
-                    <Lock className="w-16 h-16 text-pink-500/50 mx-auto mb-4" />
-                  </motion.div>
-                  <h3 className="text-xl font-bold text-foreground mb-2">Your answers are locked!</h3>
-                  <p className="text-muted-foreground max-w-xs mx-auto">
-                    Waiting for your partner to finish. The answers will be revealed once you're both done.
-                  </p>
-                </Card>
+                <div className="space-y-4">
+                  <Card className="text-center py-8 bg-gradient-to-br from-pink-500/5 to-purple-500/5">
+                    <motion.div
+                      animate={{ y: [0, -5, 0] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                    >
+                      <Lock className="w-12 h-12 text-pink-500/50 mx-auto mb-3" />
+                    </motion.div>
+                    <h3 className="text-lg font-bold text-foreground mb-1">Your answers are locked!</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Waiting for your partner to finish
+                    </p>
+                  </Card>
+                  
+                  <h4 className="text-sm font-medium text-muted-foreground">Your Answers</h4>
+                  {dailyData.questions.map((question) => {
+                    const config = CATEGORY_CONFIG[question.category] || CATEGORY_CONFIG.deep_end;
+                    const userAnswer = dailyData.answers.find(a => a.questionId === question.id && a.userId === user?.id);
+                    
+                    return (
+                      <Card key={question.id} className="overflow-hidden">
+                        <div className={`${config.bg} px-4 py-2`}>
+                          <span className={`text-xs font-medium uppercase tracking-wider ${config.color}`}>
+                            {config.name}
+                          </span>
+                        </div>
+                        <CardContent className="p-4">
+                          <p className="text-sm font-medium text-foreground mb-2">{question.questionText}</p>
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-sm text-foreground">{userAnswer?.answerText || "—"}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
               ) : dailyData ? (
                 <div className="space-y-4">
                   {dailyData.questions.map((question, index) => {
@@ -633,40 +741,47 @@ export default function RelationshipHub() {
               className="space-y-4"
             >
               {/* Favorites Section */}
-              {vaultData?.favorites && vaultData.favorites.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-pink-500" />
-                    Favorite Moments
-                  </h3>
-                  <div className="grid gap-3">
-                    {vaultData.favorites.slice(0, 3).map((fav, i) => {
-                      const config = CATEGORY_CONFIG[fav.question?.category] || CATEGORY_CONFIG.deep_end;
-                      return (
-                        <motion.div
-                          key={fav.answer.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.1 }}
-                        >
-                          <Card className="border-pink-500/30 bg-gradient-to-br from-pink-500/5 to-rose-500/5">
-                            <CardContent className="p-4">
-                              <div className="flex items-start gap-3">
-                                <Heart className="w-5 h-5 text-pink-500 fill-pink-500 shrink-0 mt-1" />
-                                <div className="flex-1 min-w-0">
-                                  <span className={`text-xs font-medium ${config.color}`}>{config.name}</span>
-                                  <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{fav.question?.questionText}</p>
-                                  <p className="mt-2 text-foreground font-medium">"{fav.answer.answerText}"</p>
+              {(() => {
+                const validFavorites = (vaultData?.favorites || []).filter(
+                  fav => fav.answer && fav.question && fav.answer.answerText
+                );
+                if (validFavorites.length === 0) return null;
+                
+                return (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                      <Heart className="w-4 h-4 text-pink-500" />
+                      Favorite Moments
+                    </h3>
+                    <div className="grid gap-3">
+                      {validFavorites.slice(0, 3).map((fav, i) => {
+                        const config = CATEGORY_CONFIG[fav.question?.category] || CATEGORY_CONFIG.deep_end;
+                        return (
+                          <motion.div
+                            key={fav.answer.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.1 }}
+                          >
+                            <Card className="border-pink-500/30 bg-gradient-to-br from-pink-500/5 to-rose-500/5">
+                              <CardContent className="p-4">
+                                <div className="flex items-start gap-3">
+                                  <Heart className="w-5 h-5 text-pink-500 fill-pink-500 shrink-0 mt-1" />
+                                  <div className="flex-1 min-w-0">
+                                    <span className={`text-xs font-medium ${config.color}`}>{config.name}</span>
+                                    <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{fav.question.questionText}</p>
+                                    <p className="mt-2 text-foreground font-medium">"{fav.answer.answerText}"</p>
+                                  </div>
                                 </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      );
-                    })}
+                              </CardContent>
+                            </Card>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Past Days */}
               <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
