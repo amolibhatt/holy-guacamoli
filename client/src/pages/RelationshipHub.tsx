@@ -137,12 +137,12 @@ export default function RelationshipHub() {
     enabled: isAuthenticated && !!pair && pair.status === 'active',
   });
 
-  const { data: vaultData } = useQuery<VaultResponse>({
+  const { data: vaultData, isLoading: isLoadingVault } = useQuery<VaultResponse>({
     queryKey: ['/api/double-dip/vault'],
     enabled: isAuthenticated && !!pair && pair.status === 'active',
   });
 
-  const { data: storyboard } = useQuery<StoryboardResponse>({
+  const { data: storyboard, isLoading: isLoadingStoryboard } = useQuery<StoryboardResponse>({
     queryKey: ['/api/double-dip/storyboard'],
     enabled: isAuthenticated && !!pair && pair.status === 'active',
   });
@@ -740,6 +740,12 @@ export default function RelationshipHub() {
               exit={{ opacity: 0, x: -20 }}
               className="space-y-4"
             >
+              {isLoadingVault ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+                </div>
+              ) : (
+              <>
               {/* Favorites Section */}
               {(() => {
                 const validFavorites = (vaultData?.favorites || []).filter(
@@ -893,6 +899,8 @@ export default function RelationshipHub() {
                   );
                 })
               )}
+              </>
+              )}
             </motion.div>
           )}
 
@@ -904,6 +912,12 @@ export default function RelationshipHub() {
               exit={{ opacity: 0, x: -20 }}
               className="space-y-6"
             >
+              {isLoadingStoryboard ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+                </div>
+              ) : (
+              <>
               {/* Stats Overview */}
               <div className="grid grid-cols-4 gap-2">
                 <Card className="text-center p-3">
@@ -1045,6 +1059,8 @@ export default function RelationshipHub() {
                     })}
                   </div>
                 </div>
+              )}
+              </>
               )}
             </motion.div>
           )}

@@ -42,6 +42,17 @@ Preferred communication style: Simple, everyday language.
 7. **Animations**: 3D flip card animations for question cells, particle effects for milestones and category completion
 8. **Portable Email/Password Auth**: Host authentication uses bcrypt for password hashing and express-session with PostgreSQL store. No external OAuth dependencies - works on any platform.
 9. **Relationship Hub**: Double Dip couples game uses a unified tabbed interface (Today/Vault/Journey) with streak tracking, anniversary countdown, progress bars, favorites section, and celebratory confetti.
+10. **Sync-Stakes (Weekly Stakes)**: Couples can set weekly stakes with curated rewards/penalties. First completer each day earns 1 point; bonus point for 85%+ compatibility. Atomic SQL prevents race conditions. Weekly winner revealed on Sundays.
+
+### Recent Changes (January 2026)
+- **Login Rate Limiting**: 5 failed attempts triggers 15-minute lockout
+- **Vault/Journey Loading States**: Added skeleton loaders for smoother UX
+- **Sync-Stakes Backend**: Complete API for weekly stakes with atomic scoring
+
+### Planned Features (Schema Ready, UI Pending)
+- **Mirror Mechanic**: Prediction phase for multiple choice questions (questionType, options, prediction fields)
+- **Time Capsule**: Future-locked questions that unlock after specified days (isFutureLocked, unlockAfterDays fields)
+- **AI Debrief**: Gap analysis when partners have significantly different answers
 
 ### WebSocket Architecture
 - **Server**: `server/gameRoom.ts` manages rooms, players, and buzz events

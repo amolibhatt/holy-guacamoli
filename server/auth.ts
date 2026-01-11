@@ -10,6 +10,44 @@ import { eq, and, isNull, gt } from "drizzle-orm";
 import type { SafeUser } from "@shared/models/auth";
 import { z } from "zod";
 
+const loginAttempts = new Map<string, { count: number; lastAttempt: number }>();
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION = 15 * 60 * 1000;
+
+function checkRateLimit(ip: string): { blocked: boolean; remainingTime?: number } {
+  const now = Date.now();
+  const attempt = loginAttempts.get(ip);
+  
+  if (!attempt) return { blocked: false };
+  
+  if (now - attempt.lastAttempt > LOCKOUT_DURATION) {
+    loginAttempts.delete(ip);
+    return { blocked: false };
+  }
+  
+  if (attempt.count >= MAX_LOGIN_ATTEMPTS) {
+    return { blocked: true, remainingTime: Math.ceil((LOCKOUT_DURATION - (now - attempt.lastAttempt)) / 1000) };
+  }
+  
+  return { blocked: false };
+}
+
+function recordLoginAttempt(ip: string, success: boolean) {
+  if (success) {
+    loginAttempts.delete(ip);
+    return;
+  }
+  
+  const now = Date.now();
+  const attempt = loginAttempts.get(ip);
+  
+  if (!attempt || now - attempt.lastAttempt > LOCKOUT_DURATION) {
+    loginAttempts.set(ip, { count: 1, lastAttempt: now });
+  } else {
+    loginAttempts.set(ip, { count: attempt.count + 1, lastAttempt: now });
+  }
+}
+
 declare module "express-session" {
   interface SessionData {
     userId?: string;
@@ -99,6 +137,15 @@ export function registerAuthRoutes(app: Express): void {
 
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      const rateCheck = checkRateLimit(ip);
+      
+      if (rateCheck.blocked) {
+        return res.status(429).json({ 
+          message: `Too many login attempts. Try again in ${Math.ceil(rateCheck.remainingTime! / 60)} minutes.`
+        });
+      }
+      
       const parsed = loginSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ 
@@ -111,14 +158,17 @@ export function registerAuthRoutes(app: Express): void {
 
       const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
       if (!user) {
+        recordLoginAttempt(ip, false);
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
+        recordLoginAttempt(ip, false);
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
+      recordLoginAttempt(ip, true);
       req.session.userId = user.id;
       req.session.userRole = user.role;
 

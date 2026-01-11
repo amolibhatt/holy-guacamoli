@@ -1224,16 +1224,26 @@ export async function registerRoutes(
       const dailySet = await storage.getDoubleDipDailySet(pair.id, today);
       
       if (dailySet) {
-        const updateData: any = isUserA 
+        // Atomically set firstCompleterId (uses COALESCE - only sets if null)
+        await storage.setDoubleDipFirstCompleterAtomic(dailySet.id, userId);
+        
+        // Update completion flag for current user
+        const completionUpdate = isUserA 
           ? { userACompleted: true }
           : { userBCompleted: true };
+        await storage.updateDoubleDipDailySet(dailySet.id, completionUpdate);
         
-        // Check if both are now completed
-        const bothCompleted = isUserA 
-          ? (true && dailySet.userBCompleted)
-          : (dailySet.userACompleted && true);
+        // Re-fetch to get authoritative state after update
+        const freshDailySet = await storage.getDoubleDipDailySet(pair.id, today);
+        if (!freshDailySet) {
+          return res.json({ success: true });
+        }
         
-        if (bothCompleted) {
+        // Check if both are now completed using fresh data
+        const bothCompleted = freshDailySet.userACompleted && freshDailySet.userBCompleted;
+        const updateData: any = {};
+        
+        if (bothCompleted && !freshDailySet.revealed) {
           updateData.revealed = true;
           
           // Update streak
@@ -1303,10 +1313,92 @@ export async function registerRoutes(
             } catch (milestoneError) {
               console.error("Error creating compatibility milestones:", milestoneError);
             }
+            
           } catch (aiError) {
             console.error("Error generating AI content:", aiError);
             updateData.followupTask = "Take 5 minutes to share one thing you appreciated about each other today.";
           }
+          
+          // Update weekly stake scores OUTSIDE AI block (runs even if AI fails)
+          let weeklyStakeStatus: { status: string; message?: string; points?: { userA: number; userB: number } } = { status: 'not_configured' };
+          try {
+            if (freshDailySet.firstCompleterId && !freshDailySet.weeklyStakeScored) {
+              const weekStart = getWeekStartDate();
+              const weeklyStake = await storage.getDoubleDipWeeklyStake(pair.id, weekStart);
+              if (weeklyStake && !weeklyStake.isRevealed) {
+                // Calculate points: first completer gets 1 point
+                const firstCompleter = freshDailySet.firstCompleterId;
+                let userAPoints = firstCompleter === pair.userAId ? 1 : 0;
+                let userBPoints = firstCompleter === pair.userBId ? 1 : 0;
+                
+                // Bonus point to both if high compatibility (85%+)
+                // Try AI insights first, fall back to deterministic calculation
+                let avgScore = 0;
+                if (updateData.categoryInsights && updateData.categoryInsights.length > 0) {
+                  avgScore = updateData.categoryInsights.reduce((sum: number, c: any) => sum + c.compatibilityScore, 0) / updateData.categoryInsights.length;
+                } else {
+                  // Fallback: compute deterministic compatibility from answers
+                  try {
+                    const allAnswers = await storage.getDoubleDipAnswers(freshDailySet.id);
+                    const questionIds = (freshDailySet.questionIds as number[]) || [];
+                    let matches = 0;
+                    let total = 0;
+                    for (const qId of questionIds) {
+                      const userAAnswer = allAnswers.find(a => a.questionId === qId && a.userId === pair.userAId);
+                      const userBAnswer = allAnswers.find(a => a.questionId === qId && a.userId === pair.userBId);
+                      if (userAAnswer && userBAnswer) {
+                        total++;
+                        // Simple similarity: answers match if they share significant words
+                        const wordsA = (userAAnswer.answerText || '').toLowerCase().split(/\s+/).filter(w => w.length > 3);
+                        const wordsB = (userBAnswer.answerText || '').toLowerCase().split(/\s+/).filter(w => w.length > 3);
+                        const overlap = wordsA.filter(w => wordsB.includes(w)).length;
+                        if (overlap > 0 || (wordsA.length === 0 && wordsB.length === 0)) {
+                          matches++;
+                        }
+                      }
+                    }
+                    avgScore = total > 0 ? (matches / total) * 100 : 0;
+                  } catch (err) {
+                    console.error("Error computing deterministic compatibility:", err);
+                    avgScore = 0;
+                  }
+                }
+                
+                if (avgScore >= 85) {
+                  userAPoints += 1;
+                  userBPoints += 1;
+                }
+                
+                // Atomic scoring - prevents double-counting, throws if stake missing
+                try {
+                  const scored = await storage.scoreDoubleDipDailyForWeeklyStake(
+                    freshDailySet.id,
+                    weeklyStake.id,
+                    userAPoints,
+                    userBPoints
+                  );
+                  
+                  if (scored) {
+                    (freshDailySet as any).weeklyStakeScored = true;
+                    weeklyStakeStatus = { status: 'scored', points: { userA: userAPoints, userB: userBPoints } };
+                    console.log(`Weekly stake scored for daily set ${freshDailySet.id}: A+${userAPoints}, B+${userBPoints}`);
+                  } else {
+                    weeklyStakeStatus = { status: 'already_scored' };
+                    console.log(`Daily set ${freshDailySet.id} already scored for weekly stake`);
+                  }
+                } catch (scoringError: any) {
+                  weeklyStakeStatus = { status: 'error', message: 'Failed to update weekly stake' };
+                  console.error(`Weekly stake scoring failed: ${scoringError.message}`);
+                }
+              }
+            } else if (freshDailySet.weeklyStakeScored) {
+              weeklyStakeStatus = { status: 'already_scored' };
+            }
+          } catch (stakeError) {
+            weeklyStakeStatus = { status: 'error', message: 'Failed to process weekly stake' };
+            console.error("Error updating weekly stake:", stakeError);
+          }
+          updateData.weeklyStakeStatus = weeklyStakeStatus;
           
           // Create streak milestones (with deduplication and error handling)
           try {
@@ -1336,10 +1428,20 @@ export async function registerRoutes(
           }
         }
         
-        await storage.updateDoubleDipDailySet(dailySet.id, updateData);
+        // Extract weeklyStakeStatus before persisting (not part of DB schema)
+        const responseWeeklyStakeStatus = updateData.weeklyStakeStatus;
+        delete updateData.weeklyStakeStatus;
+        
+        // Apply reveal-related updates if any
+        if (Object.keys(updateData).length > 0) {
+          await storage.updateDoubleDipDailySet(freshDailySet.id, updateData);
+        }
+        
+        // Return success with weekly stake status for client visibility
+        return res.json({ success: true, weeklyStake: responseWeeklyStakeStatus });
       }
       
-      res.json({ success: true });
+      res.json({ success: true, weeklyStake: { status: 'not_revealed' } });
     } catch (err) {
       console.error("Error submitting answers:", err);
       res.status(500).json({ message: "Failed to submit answers" });
@@ -1626,5 +1728,105 @@ export async function registerRoutes(
     }
   });
 
+  // Get current week's stake
+  app.get("/api/double-dip/weekly-stake", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const pair = await storage.getDoubleDipPairForUser(userId);
+      
+      if (!pair) {
+        return res.status(404).json({ message: "No pair found" });
+      }
+      
+      const weekStart = getWeekStartDate();
+      const stake = await storage.getDoubleDipWeeklyStake(pair.id, weekStart);
+      
+      res.json({ stake, weekStart, isUserA: pair.userAId === userId });
+    } catch (err) {
+      console.error("Error getting weekly stake:", err);
+      res.status(500).json({ message: "Failed to get weekly stake" });
+    }
+  });
+
+  // Set weekly stake
+  app.post("/api/double-dip/weekly-stake", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { stakeId } = req.body;
+      
+      // Validate stakeId
+      const { SYNC_STAKES } = await import("@shared/schema");
+      const validStakeIds = SYNC_STAKES.map(s => s.id);
+      if (!stakeId || !validStakeIds.includes(stakeId)) {
+        return res.status(400).json({ message: "Invalid stake selection" });
+      }
+      
+      const pair = await storage.getDoubleDipPairForUser(userId);
+      if (!pair) {
+        return res.status(404).json({ message: "No pair found" });
+      }
+      
+      const weekStart = getWeekStartDate();
+      let stake = await storage.getDoubleDipWeeklyStake(pair.id, weekStart);
+      
+      if (!stake) {
+        stake = await storage.createDoubleDipWeeklyStake({
+          pairId: pair.id,
+          weekStartDate: weekStart,
+          stakeId,
+        });
+      }
+      
+      res.json({ stake, weekStart });
+    } catch (err) {
+      console.error("Error setting weekly stake:", err);
+      res.status(500).json({ message: "Failed to set weekly stake" });
+    }
+  });
+
+  // Reveal weekly winner (called on Sunday)
+  app.post("/api/double-dip/weekly-stake/reveal", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const pair = await storage.getDoubleDipPairForUser(userId);
+      
+      if (!pair) {
+        return res.status(404).json({ message: "No pair found" });
+      }
+      
+      const weekStart = getWeekStartDate();
+      const stake = await storage.getDoubleDipWeeklyStake(pair.id, weekStart);
+      
+      if (!stake) {
+        return res.status(404).json({ message: "No stake for this week" });
+      }
+      
+      if (stake.isRevealed) {
+        return res.json({ stake });
+      }
+      
+      const winnerId = stake.userAScore > stake.userBScore ? pair.userAId : 
+                       stake.userBScore > stake.userAScore ? pair.userBId : null;
+      
+      const updatedStake = await storage.updateDoubleDipWeeklyStake(stake.id, {
+        isRevealed: true,
+        winnerId,
+      });
+      
+      res.json({ stake: updatedStake });
+    } catch (err) {
+      console.error("Error revealing weekly stake:", err);
+      res.status(500).json({ message: "Failed to reveal weekly stake" });
+    }
+  });
+
   return httpServer;
+}
+
+function getWeekStartDate(): string {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const diff = now.getDate() - dayOfWeek;
+  const weekStart = new Date(now.setDate(diff));
+  return weekStart.toISOString().split('T')[0];
 }
