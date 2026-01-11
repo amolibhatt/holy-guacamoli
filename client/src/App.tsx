@@ -16,6 +16,7 @@ import GamesAdmin from "@/pages/GamesAdmin";
 import HeadsUpGame from "@/pages/HeadsUpGame";
 import GridOfGrudges from "@/pages/GridOfGrudges";
 import PlayBoard from "@/pages/PlayBoard";
+import SuperAdmin from "@/pages/SuperAdmin";
 
 function Router() {
   return (
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/category/:id" component={CategoryPage} />
       <Route path="/admin" component={Admin} />
       <Route path="/admin/games" component={GamesAdmin} />
+      <Route path="/admin/super" component={SuperAdmin} />
       <Route path="/games" component={GamesAdmin} />
       <Route path="/board/:boardId" component={PlayBoard} />
       <Route path="/play/:code?" component={PlayerPage} />

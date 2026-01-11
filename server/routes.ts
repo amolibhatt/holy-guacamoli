@@ -922,5 +922,68 @@ export async function registerRoutes(
 
   app.use('/uploads', (await import('express')).default.static(uploadDir));
 
+  // Super Admin routes
+  const isSuperAdmin: import('express').RequestHandler = (req, res, next) => {
+    if (!req.session.userId || req.session.userRole !== 'super_admin') {
+      return res.status(403).json({ message: "Forbidden - Super admin access required" });
+    }
+    next();
+  };
+
+  app.get("/api/super-admin/stats", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getPlatformStats();
+      res.json(stats);
+    } catch (err) {
+      console.error("Error getting platform stats:", err);
+      res.status(500).json({ message: "Failed to get stats" });
+    }
+  });
+
+  app.get("/api/super-admin/users", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsersWithStats();
+      res.json(users);
+    } catch (err) {
+      console.error("Error getting users:", err);
+      res.status(500).json({ message: "Failed to get users" });
+    }
+  });
+
+  app.delete("/api/super-admin/users/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const userId = req.params.id;
+      if (userId === req.session.userId) {
+        return res.status(400).json({ message: "Cannot delete yourself" });
+      }
+      await storage.deleteUserAndContent(userId);
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  app.get("/api/super-admin/boards", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const boards = await storage.getAllBoardsWithOwners();
+      res.json(boards);
+    } catch (err) {
+      console.error("Error getting boards:", err);
+      res.status(500).json({ message: "Failed to get boards" });
+    }
+  });
+
+  app.delete("/api/super-admin/boards/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const boardId = Number(req.params.id);
+      await storage.deleteBoardFully(boardId);
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting board:", err);
+      res.status(500).json({ message: "Failed to delete board" });
+    }
+  });
+
   return httpServer;
 }

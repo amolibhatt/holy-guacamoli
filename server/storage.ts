@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameMode, type SessionState } from "@shared/schema";
-import { eq, and, asc, count, inArray, desc } from "drizzle-orm";
+import { users } from "@shared/models/auth";
+import { eq, and, asc, count, inArray, desc, sql, gte } from "drizzle-orm";
 
 export interface IStorage {
   getBoards(userId: string, role?: string): Promise<Board[]>;
@@ -681,6 +682,163 @@ export class DatabaseStorage implements IStorage {
   async resetCompletedQuestions(sessionId: number): Promise<boolean> {
     await db.delete(sessionCompletedQuestions).where(eq(sessionCompletedQuestions.sessionId, sessionId));
     return true;
+  }
+
+  // === SUPER ADMIN METHODS ===
+  async getPlatformStats() {
+    const [userCount] = await db.select({ count: count() }).from(users);
+    const [boardCount] = await db.select({ count: count() }).from(boards);
+    const [questionCount] = await db.select({ count: count() }).from(questions);
+    const [sessionCount] = await db.select({ count: count() }).from(gameSessions);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [todaySessionCount] = await db.select({ count: count() })
+      .from(gameSessions)
+      .where(gte(gameSessions.createdAt, today));
+    
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const [newUserCount] = await db.select({ count: count() })
+      .from(users)
+      .where(gte(users.createdAt, oneWeekAgo));
+
+    return {
+      totalUsers: userCount?.count ?? 0,
+      totalBoards: boardCount?.count ?? 0,
+      totalQuestions: questionCount?.count ?? 0,
+      totalGamesPlayed: sessionCount?.count ?? 0,
+      activeSessionsToday: todaySessionCount?.count ?? 0,
+      newUsersThisWeek: newUserCount?.count ?? 0,
+    };
+  }
+
+  async getAllUsersWithStats() {
+    const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
+    
+    const usersWithStats = await Promise.all(allUsers.map(async (user) => {
+      const [boardCount] = await db.select({ count: count() })
+        .from(boards)
+        .where(eq(boards.userId, user.id));
+      
+      const userBoards = await db.select({ id: boards.id }).from(boards).where(eq(boards.userId, user.id));
+      const boardIds = userBoards.map(b => b.id);
+      
+      let questionCount = 0;
+      if (boardIds.length > 0) {
+        const boardCats = await db.select({ id: boardCategories.id })
+          .from(boardCategories)
+          .where(inArray(boardCategories.boardId, boardIds));
+        const bcIds = boardCats.map(bc => bc.id);
+        if (bcIds.length > 0) {
+          const [qCount] = await db.select({ count: count() })
+            .from(questions)
+            .where(inArray(questions.boardCategoryId, bcIds));
+          questionCount = qCount?.count ?? 0;
+        }
+      }
+
+      const { password, ...safeUser } = user;
+      return {
+        ...safeUser,
+        boardCount: boardCount?.count ?? 0,
+        questionCount,
+      };
+    }));
+
+    return usersWithStats;
+  }
+
+  async deleteUserAndContent(userId: string) {
+    // Delete all sessions hosted by this user (and their related data)
+    const userSessions = await db.select({ id: gameSessions.id }).from(gameSessions).where(eq(gameSessions.hostId, userId));
+    for (const session of userSessions) {
+      await db.delete(sessionCompletedQuestions).where(eq(sessionCompletedQuestions.sessionId, session.id));
+      await db.delete(sessionPlayers).where(eq(sessionPlayers.sessionId, session.id));
+    }
+    await db.delete(gameSessions).where(eq(gameSessions.hostId, userId));
+    
+    // Delete all boards owned by this user
+    const userBoards = await db.select({ id: boards.id }).from(boards).where(eq(boards.userId, userId));
+    for (const board of userBoards) {
+      await this.deleteBoardFully(board.id);
+    }
+    
+    // Delete heads up decks and their cards
+    const userDecks = await db.select({ id: headsUpDecks.id }).from(headsUpDecks).where(eq(headsUpDecks.userId, userId));
+    for (const deck of userDecks) {
+      await db.delete(headsUpCards).where(eq(headsUpCards.deckId, deck.id));
+      await db.delete(gameDecks).where(eq(gameDecks.deckId, deck.id));
+    }
+    await db.delete(headsUpDecks).where(eq(headsUpDecks.userId, userId));
+    
+    await db.delete(games).where(eq(games.userId, userId));
+    await db.delete(users).where(eq(users.id, userId));
+  }
+
+  async getAllBoardsWithOwners() {
+    const allBoards = await db.select().from(boards).orderBy(desc(boards.id));
+    
+    const boardsWithOwners = await Promise.all(allBoards.map(async (board) => {
+      const [owner] = board.userId 
+        ? await db.select({ email: users.email, firstName: users.firstName, lastName: users.lastName })
+            .from(users)
+            .where(eq(users.id, board.userId))
+        : [{ email: 'Unknown', firstName: null, lastName: null }];
+      
+      const [catCount] = await db.select({ count: count() })
+        .from(boardCategories)
+        .where(eq(boardCategories.boardId, board.id));
+      
+      const boardCats = await db.select({ id: boardCategories.id })
+        .from(boardCategories)
+        .where(eq(boardCategories.boardId, board.id));
+      const bcIds = boardCats.map(bc => bc.id);
+      
+      let questionCount = 0;
+      if (bcIds.length > 0) {
+        const [qCount] = await db.select({ count: count() })
+          .from(questions)
+          .where(inArray(questions.boardCategoryId, bcIds));
+        questionCount = qCount?.count ?? 0;
+      }
+
+      return {
+        ...board,
+        ownerEmail: owner?.email ?? 'Unknown',
+        ownerName: [owner?.firstName, owner?.lastName].filter(Boolean).join(' ') || null,
+        categoryCount: catCount?.count ?? 0,
+        questionCount,
+      };
+    }));
+
+    return boardsWithOwners;
+  }
+
+  async deleteBoardFully(boardId: number) {
+    // Clear board references from active sessions (set to null rather than deleting session)
+    await db.update(gameSessions)
+      .set({ currentBoardId: null })
+      .where(eq(gameSessions.currentBoardId, boardId));
+    
+    const boardCats = await db.select({ id: boardCategories.id })
+      .from(boardCategories)
+      .where(eq(boardCategories.boardId, boardId));
+    
+    // Delete completed question records that reference questions from this board
+    for (const bc of boardCats) {
+      const bcQuestions = await db.select({ id: questions.id })
+        .from(questions)
+        .where(eq(questions.boardCategoryId, bc.id));
+      for (const q of bcQuestions) {
+        await db.delete(sessionCompletedQuestions).where(eq(sessionCompletedQuestions.questionId, q.id));
+      }
+      await db.delete(questions).where(eq(questions.boardCategoryId, bc.id));
+    }
+    
+    await db.delete(boardCategories).where(eq(boardCategories.boardId, boardId));
+    await db.delete(gameBoards).where(eq(gameBoards.boardId, boardId));
+    await db.delete(boards).where(eq(boards.id, boardId));
   }
 }
 
