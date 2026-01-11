@@ -121,6 +121,7 @@ export interface IStorage {
   // Double Dip - Milestones
   getDoubleDipMilestones(pairId: number): Promise<DoubleDipMilestone[]>;
   createDoubleDipMilestone(data: InsertDoubleDipMilestone): Promise<DoubleDipMilestone>;
+  checkDoubleDipMilestoneExists(pairId: number, type: string, value: number): Promise<boolean>;
   
   // Double Dip - Favorites
   getDoubleDipFavorites(pairId: number): Promise<DoubleDipFavorite[]>;
@@ -1018,6 +1019,17 @@ export class DatabaseStorage implements IStorage {
   async createDoubleDipMilestone(data: InsertDoubleDipMilestone): Promise<DoubleDipMilestone> {
     const [milestone] = await db.insert(doubleDipMilestones).values(data as any).returning();
     return milestone;
+  }
+  
+  async checkDoubleDipMilestoneExists(pairId: number, type: string, value: number): Promise<boolean> {
+    const existing = await db.select().from(doubleDipMilestones)
+      .where(and(
+        eq(doubleDipMilestones.pairId, pairId),
+        eq(doubleDipMilestones.type, type),
+        eq(doubleDipMilestones.value, value)
+      ))
+      .limit(1);
+    return existing.length > 0;
   }
   
   // Double Dip - Favorites

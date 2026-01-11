@@ -1277,9 +1277,62 @@ export async function registerRoutes(
             
             updateData.followupTask = followupTask;
             updateData.categoryInsights = categoryInsights;
+            
+            // Create milestone for high compatibility scores (with deduplication)
+            try {
+              for (const insight of categoryInsights) {
+                const score = insight.compatibilityScore;
+                const categoryName = insight.category.replace(/_/g, ' ');
+                
+                // Only create 90%+ milestones (most meaningful)
+                if (score >= 90) {
+                  // Check for existing milestone (use score as value for dedup)
+                  const exists = await storage.checkDoubleDipMilestoneExists(pair.id, 'compatibility', 90);
+                  if (!exists) {
+                    await storage.createDoubleDipMilestone({
+                      pairId: pair.id,
+                      type: 'compatibility',
+                      title: `Perfect Sync: ${categoryName}`,
+                      description: `You both scored 90%+ compatibility in ${categoryName}!`,
+                      value: score,
+                      metadata: { category: insight.category },
+                    });
+                  }
+                }
+              }
+            } catch (milestoneError) {
+              console.error("Error creating compatibility milestones:", milestoneError);
+            }
           } catch (aiError) {
             console.error("Error generating AI content:", aiError);
             updateData.followupTask = "Take 5 minutes to share one thing you appreciated about each other today.";
+          }
+          
+          // Create streak milestones (with deduplication and error handling)
+          try {
+            const streakMilestones: Record<number, string> = {
+              3: "3-Day Streak! You're building a habit together.",
+              7: "One Week Strong! A full week of connecting daily.",
+              14: "Two Week Warriors! Your commitment is inspiring.",
+              30: "Monthly Champions! 30 days of deepening your bond.",
+              100: "Century Club! 100 days of love and connection.",
+            };
+            
+            if (streakMilestones[newStreak]) {
+              // Check if this streak milestone already exists
+              const exists = await storage.checkDoubleDipMilestoneExists(pair.id, 'streak', newStreak);
+              if (!exists) {
+                await storage.createDoubleDipMilestone({
+                  pairId: pair.id,
+                  type: 'streak',
+                  title: `Streak: ${newStreak} Days`,
+                  description: streakMilestones[newStreak],
+                  value: newStreak,
+                });
+              }
+            }
+          } catch (milestoneError) {
+            console.error("Error creating streak milestone:", milestoneError);
           }
         }
         
