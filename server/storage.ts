@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { boards, categories, boardCategories, questions, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions } from "@shared/schema";
+import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount } from "@shared/schema";
 import { eq, and, asc, count, inArray } from "drizzle-orm";
 
 export interface IStorage {
@@ -30,6 +30,38 @@ export interface IStorage {
   
   getBoardWithCategoriesAndQuestions(boardId: number, userId: string, role?: string): Promise<BoardCategoryWithQuestions[]>;
   getBoardSummaries(userId: string, role?: string): Promise<{ id: number; name: string; categoryCount: number; categories: { id: number; name: string; questionCount: number; remaining: number }[] }[]>;
+  
+  // Games
+  getGames(userId: string, role?: string): Promise<Game[]>;
+  getGame(id: number, userId: string, role?: string): Promise<Game | undefined>;
+  createGame(game: InsertGame): Promise<Game>;
+  updateGame(id: number, data: Partial<InsertGame>, userId: string, role?: string): Promise<Game | undefined>;
+  deleteGame(id: number, userId: string, role?: string): Promise<boolean>;
+  
+  // Game Boards (junction)
+  getGameBoards(gameId: number): Promise<(GameBoard & { board: Board })[]>;
+  addBoardToGame(data: InsertGameBoard): Promise<GameBoard>;
+  removeBoardFromGame(gameId: number, boardId: number): Promise<boolean>;
+  updateGameBoardPosition(id: number, position: number): Promise<GameBoard | undefined>;
+  
+  // Heads Up Decks
+  getHeadsUpDecks(userId: string, role?: string): Promise<HeadsUpDeckWithCardCount[]>;
+  getHeadsUpDeck(id: number, userId: string, role?: string): Promise<HeadsUpDeck | undefined>;
+  createHeadsUpDeck(deck: InsertHeadsUpDeck): Promise<HeadsUpDeck>;
+  updateHeadsUpDeck(id: number, data: Partial<InsertHeadsUpDeck>, userId: string, role?: string): Promise<HeadsUpDeck | undefined>;
+  deleteHeadsUpDeck(id: number, userId: string, role?: string): Promise<boolean>;
+  
+  // Heads Up Cards
+  getHeadsUpCards(deckId: number): Promise<HeadsUpCard[]>;
+  getHeadsUpCard(id: number): Promise<HeadsUpCard | undefined>;
+  createHeadsUpCard(card: InsertHeadsUpCard): Promise<HeadsUpCard>;
+  updateHeadsUpCard(id: number, data: Partial<InsertHeadsUpCard>): Promise<HeadsUpCard | undefined>;
+  deleteHeadsUpCard(id: number): Promise<boolean>;
+  
+  // Game Decks (junction for heads up)
+  getGameDecks(gameId: number): Promise<(GameDeck & { deck: HeadsUpDeck })[]>;
+  addDeckToGame(data: InsertGameDeck): Promise<GameDeck>;
+  removeDeckFromGame(gameId: number, deckId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -253,6 +285,244 @@ export class DatabaseStorage implements IStorage {
     }
     
     return summaries;
+  }
+
+  // === GAMES ===
+  async getGames(userId: string, role?: string): Promise<Game[]> {
+    if (role === 'super_admin') {
+      return await db.select().from(games).orderBy(asc(games.createdAt));
+    }
+    return await db.select().from(games).where(eq(games.userId, userId)).orderBy(asc(games.createdAt));
+  }
+
+  async getGame(id: number, userId: string, role?: string): Promise<Game | undefined> {
+    if (role === 'super_admin') {
+      const [game] = await db.select().from(games).where(eq(games.id, id));
+      return game;
+    }
+    const [game] = await db.select().from(games).where(and(eq(games.id, id), eq(games.userId, userId)));
+    return game;
+  }
+
+  async createGame(game: InsertGame): Promise<Game> {
+    const [newGame] = await db.insert(games).values(game as any).returning();
+    return newGame;
+  }
+
+  async updateGame(id: number, data: Partial<InsertGame>, userId: string, role?: string): Promise<Game | undefined> {
+    const updateData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        updateData[key] = value;
+      }
+    }
+    if (Object.keys(updateData).length === 0) {
+      return this.getGame(id, userId, role);
+    }
+    if (role === 'super_admin') {
+      const [updated] = await db.update(games).set(updateData).where(eq(games.id, id)).returning();
+      return updated;
+    }
+    const [updated] = await db.update(games).set(updateData).where(and(eq(games.id, id), eq(games.userId, userId))).returning();
+    return updated;
+  }
+
+  async deleteGame(id: number, userId: string, role?: string): Promise<boolean> {
+    const game = await this.getGame(id, userId, role);
+    if (!game) return false;
+    await db.delete(gameBoards).where(eq(gameBoards.gameId, id));
+    await db.delete(gameDecks).where(eq(gameDecks.gameId, id));
+    if (role === 'super_admin') {
+      const result = await db.delete(games).where(eq(games.id, id)).returning();
+      return result.length > 0;
+    }
+    const result = await db.delete(games).where(and(eq(games.id, id), eq(games.userId, userId))).returning();
+    return result.length > 0;
+  }
+
+  // === GAME BOARDS ===
+  async getGameBoards(gameId: number): Promise<(GameBoard & { board: Board })[]> {
+    const result = await db
+      .select({
+        id: gameBoards.id,
+        gameId: gameBoards.gameId,
+        boardId: gameBoards.boardId,
+        position: gameBoards.position,
+        board: boards,
+      })
+      .from(gameBoards)
+      .innerJoin(boards, eq(gameBoards.boardId, boards.id))
+      .where(eq(gameBoards.gameId, gameId))
+      .orderBy(asc(gameBoards.position));
+    return result.map(r => ({
+      id: r.id,
+      gameId: r.gameId,
+      boardId: r.boardId,
+      position: r.position,
+      board: r.board,
+    }));
+  }
+
+  async addBoardToGame(data: InsertGameBoard): Promise<GameBoard> {
+    const currentCount = await db.select({ count: count() })
+      .from(gameBoards)
+      .where(eq(gameBoards.gameId, data.gameId));
+    const position = data.position ?? (currentCount[0]?.count ?? 0);
+    const [newGb] = await db.insert(gameBoards).values({ ...data, position }).returning();
+    return newGb;
+  }
+
+  async removeBoardFromGame(gameId: number, boardId: number): Promise<boolean> {
+    const result = await db.delete(gameBoards)
+      .where(and(eq(gameBoards.gameId, gameId), eq(gameBoards.boardId, boardId)))
+      .returning();
+    return result.length > 0;
+  }
+
+  async updateGameBoardPosition(id: number, position: number): Promise<GameBoard | undefined> {
+    const [updated] = await db.update(gameBoards)
+      .set({ position })
+      .where(eq(gameBoards.id, id))
+      .returning();
+    return updated;
+  }
+
+  // === HEADS UP DECKS ===
+  async getHeadsUpDecks(userId: string, role?: string): Promise<HeadsUpDeckWithCardCount[]> {
+    let decksQuery;
+    if (role === 'super_admin') {
+      decksQuery = await db.select().from(headsUpDecks);
+    } else {
+      decksQuery = await db.select().from(headsUpDecks).where(eq(headsUpDecks.userId, userId));
+    }
+    
+    if (decksQuery.length === 0) return [];
+    
+    const deckIds = decksQuery.map(d => d.id);
+    const counts = await db
+      .select({
+        deckId: headsUpCards.deckId,
+        count: count(),
+      })
+      .from(headsUpCards)
+      .where(inArray(headsUpCards.deckId, deckIds))
+      .groupBy(headsUpCards.deckId);
+    
+    const countMap = new Map(counts.map(c => [c.deckId, c.count]));
+    
+    return decksQuery.map(d => ({
+      ...d,
+      cardCount: countMap.get(d.id) || 0,
+    }));
+  }
+
+  async getHeadsUpDeck(id: number, userId: string, role?: string): Promise<HeadsUpDeck | undefined> {
+    if (role === 'super_admin') {
+      const [deck] = await db.select().from(headsUpDecks).where(eq(headsUpDecks.id, id));
+      return deck;
+    }
+    const [deck] = await db.select().from(headsUpDecks).where(and(eq(headsUpDecks.id, id), eq(headsUpDecks.userId, userId)));
+    return deck;
+  }
+
+  async createHeadsUpDeck(deck: InsertHeadsUpDeck): Promise<HeadsUpDeck> {
+    const [newDeck] = await db.insert(headsUpDecks).values(deck as any).returning();
+    return newDeck;
+  }
+
+  async updateHeadsUpDeck(id: number, data: Partial<InsertHeadsUpDeck>, userId: string, role?: string): Promise<HeadsUpDeck | undefined> {
+    const updateData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        updateData[key] = value;
+      }
+    }
+    if (Object.keys(updateData).length === 0) {
+      return this.getHeadsUpDeck(id, userId, role);
+    }
+    if (role === 'super_admin') {
+      const [updated] = await db.update(headsUpDecks).set(updateData).where(eq(headsUpDecks.id, id)).returning();
+      return updated;
+    }
+    const [updated] = await db.update(headsUpDecks).set(updateData).where(and(eq(headsUpDecks.id, id), eq(headsUpDecks.userId, userId))).returning();
+    return updated;
+  }
+
+  async deleteHeadsUpDeck(id: number, userId: string, role?: string): Promise<boolean> {
+    const deck = await this.getHeadsUpDeck(id, userId, role);
+    if (!deck) return false;
+    await db.delete(headsUpCards).where(eq(headsUpCards.deckId, id));
+    await db.delete(gameDecks).where(eq(gameDecks.deckId, id));
+    if (role === 'super_admin') {
+      const result = await db.delete(headsUpDecks).where(eq(headsUpDecks.id, id)).returning();
+      return result.length > 0;
+    }
+    const result = await db.delete(headsUpDecks).where(and(eq(headsUpDecks.id, id), eq(headsUpDecks.userId, userId))).returning();
+    return result.length > 0;
+  }
+
+  // === HEADS UP CARDS ===
+  async getHeadsUpCards(deckId: number): Promise<HeadsUpCard[]> {
+    return await db.select().from(headsUpCards).where(eq(headsUpCards.deckId, deckId));
+  }
+
+  async getHeadsUpCard(id: number): Promise<HeadsUpCard | undefined> {
+    const [card] = await db.select().from(headsUpCards).where(eq(headsUpCards.id, id));
+    return card;
+  }
+
+  async createHeadsUpCard(card: InsertHeadsUpCard): Promise<HeadsUpCard> {
+    const [newCard] = await db.insert(headsUpCards).values(card as any).returning();
+    return newCard;
+  }
+
+  async updateHeadsUpCard(id: number, data: Partial<InsertHeadsUpCard>): Promise<HeadsUpCard | undefined> {
+    const [updated] = await db.update(headsUpCards).set(data as any).where(eq(headsUpCards.id, id)).returning();
+    return updated;
+  }
+
+  async deleteHeadsUpCard(id: number): Promise<boolean> {
+    const result = await db.delete(headsUpCards).where(eq(headsUpCards.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // === GAME DECKS ===
+  async getGameDecks(gameId: number): Promise<(GameDeck & { deck: HeadsUpDeck })[]> {
+    const result = await db
+      .select({
+        id: gameDecks.id,
+        gameId: gameDecks.gameId,
+        deckId: gameDecks.deckId,
+        position: gameDecks.position,
+        deck: headsUpDecks,
+      })
+      .from(gameDecks)
+      .innerJoin(headsUpDecks, eq(gameDecks.deckId, headsUpDecks.id))
+      .where(eq(gameDecks.gameId, gameId))
+      .orderBy(asc(gameDecks.position));
+    return result.map(r => ({
+      id: r.id,
+      gameId: r.gameId,
+      deckId: r.deckId,
+      position: r.position,
+      deck: r.deck,
+    }));
+  }
+
+  async addDeckToGame(data: InsertGameDeck): Promise<GameDeck> {
+    const currentCount = await db.select({ count: count() })
+      .from(gameDecks)
+      .where(eq(gameDecks.gameId, data.gameId));
+    const position = data.position ?? (currentCount[0]?.count ?? 0);
+    const [newGd] = await db.insert(gameDecks).values({ ...data, position }).returning();
+    return newGd;
+  }
+
+  async removeDeckFromGame(gameId: number, deckId: number): Promise<boolean> {
+    const result = await db.delete(gameDecks)
+      .where(and(eq(gameDecks.gameId, gameId), eq(gameDecks.deckId, deckId)))
+      .returning();
+    return result.length > 0;
   }
 }
 
