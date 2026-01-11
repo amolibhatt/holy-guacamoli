@@ -1,23 +1,74 @@
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Settings, Grid3X3, LogOut, Sun, Moon, ArrowRight, Zap, Trophy, Clock, Lock, Sparkles, PartyPopper, Users } from "lucide-react";
+import { Loader2, Settings, Grid3X3, LogOut, Sun, Moon, ArrowRight, Zap, Trophy, Clock, Lock, Sparkles, PartyPopper, Users, HelpCircle, ChevronRight } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/hooks/use-auth";
 import LandingPage from "./LandingPage";
 import type { Board } from "@shared/schema";
 import { motion } from "framer-motion";
 
+const GUIDE_STEPS = [
+  {
+    title: "Create a Board",
+    description: "Go to Admin Panel and create a new game board with your chosen point values (10-100)",
+    icon: Grid3X3,
+  },
+  {
+    title: "Add Categories",
+    description: "Add 3-6 trivia categories to your board (e.g., Movies, History, Sports)",
+    icon: Sparkles,
+  },
+  {
+    title: "Write Questions",
+    description: "Add 5 questions per category, one for each point value. Include the correct answer.",
+    icon: HelpCircle,
+  },
+  {
+    title: "Start the Game",
+    description: "Click your board to launch it. Share the QR code for players to join on their phones.",
+    icon: Users,
+  },
+  {
+    title: "Host the Show!",
+    description: "Click cells to reveal questions. When players buzz in, award or deduct points for answers.",
+    icon: Trophy,
+  },
+];
+
 export default function Home() {
   const { user, isLoading: isAuthLoading, isAuthenticated, logout, isLoggingOut } = useAuth();
   const { colorMode, toggleColorMode } = useTheme();
   const [, setLocation] = useLocation();
+  const [showGuide, setShowGuide] = useState(false);
 
   const { data: boards = [], isLoading: isLoadingBoards } = useQuery<Board[]>({
     queryKey: ['/api/boards'],
     enabled: isAuthenticated,
   });
+
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const hasSeenGuide = localStorage.getItem('hasSeenHostGuide');
+        if (!hasSeenGuide && isAuthenticated) {
+          setShowGuide(true);
+        }
+      }
+    } catch {}
+  }, [isAuthenticated]);
+
+  const handleCloseGuide = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('hasSeenHostGuide', 'true');
+      }
+    } catch {}
+    setShowGuide(false);
+  };
 
   if (isAuthLoading) {
     return (
@@ -56,6 +107,16 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-muted-foreground hover:text-primary" 
+              onClick={() => setShowGuide(true)}
+              data-testid="button-help"
+              title="How to host"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </Button>
             <Button 
               variant="ghost" 
               size="icon" 
@@ -259,6 +320,46 @@ export default function Home() {
           Made with love for Amoli's Birthday
         </p>
       </footer>
+
+      <Dialog open={showGuide} onOpenChange={(open) => !open && handleCloseGuide()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <AvocadoIcon className="w-6 h-6" />
+              How to Host a Game
+            </DialogTitle>
+            <DialogDescription>
+              Follow these simple steps to run your trivia night
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            {GUIDE_STEPS.map((step, index) => (
+              <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+                  <step.icon className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-primary">Step {index + 1}</span>
+                  </div>
+                  <h4 className="font-semibold text-foreground text-sm">{step.title}</h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2 mt-4">
+            <Button variant="outline" onClick={handleCloseGuide} className="flex-1">
+              Got it!
+            </Button>
+            <Link href="/admin" className="flex-1">
+              <Button className="w-full gap-2" onClick={handleCloseGuide}>
+                Go to Admin <ChevronRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

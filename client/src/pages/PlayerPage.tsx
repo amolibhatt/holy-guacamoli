@@ -322,6 +322,15 @@ export default function PlayerPage() {
     }
   };
 
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const hasCodeFromUrl = !!codeFromUrl;
+
+  useEffect(() => {
+    if (hasCodeFromUrl && nameInputRef.current) {
+      nameInputRef.current.focus();
+    }
+  }, [hasCodeFromUrl]);
+
   if (!joined) {
     return (
       <div className="min-h-screen gradient-game flex items-center justify-center p-4">
@@ -334,29 +343,46 @@ export default function PlayerPage() {
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center mx-auto">
                 <Zap className="w-10 h-10 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-foreground mt-4">Join Game</h1>
-              <p className="text-muted-foreground text-sm mt-1">Enter the room code to play</p>
+              <h1 className="text-2xl font-bold text-foreground mt-4">
+                {hasCodeFromUrl ? "You're Invited!" : "Join Game"}
+              </h1>
+              <p className="text-muted-foreground text-sm mt-1">
+                {hasCodeFromUrl ? "Just enter your name to join" : "Enter the room code to play"}
+              </p>
             </div>
 
             <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-foreground">Room Code</label>
-                <Input
-                  value={roomCode}
-                  onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                  placeholder="ABCD"
-                  className="text-center text-2xl font-mono tracking-widest uppercase"
-                  maxLength={4}
-                  data-testid="input-room-code"
-                />
-              </div>
+              {hasCodeFromUrl ? (
+                <div className="text-center py-3 px-4 bg-primary/10 rounded-lg border border-primary/20">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Room Code</p>
+                  <p className="text-3xl font-mono font-bold text-primary tracking-widest">{roomCode}</p>
+                </div>
+              ) : (
+                <div>
+                  <label className="text-sm font-medium text-foreground">Room Code</label>
+                  <Input
+                    value={roomCode}
+                    onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                    placeholder="ABCD"
+                    className="text-center text-2xl font-mono tracking-widest uppercase"
+                    maxLength={4}
+                    data-testid="input-room-code"
+                  />
+                </div>
+              )}
               <div>
                 <label className="text-sm font-medium text-foreground">Your Name</label>
                 <Input
+                  ref={nameInputRef}
                   value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
                   placeholder="Enter your name"
                   data-testid="input-player-name"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && roomCode.trim() && playerName.trim()) {
+                      handleJoin();
+                    }
+                  }}
                 />
               </div>
               <Button
