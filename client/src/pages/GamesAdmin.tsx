@@ -108,7 +108,7 @@ export default function GamesAdmin() {
       toast({ title: "Game created!" });
     },
     onError: () => {
-      toast({ title: "Failed to create game", variant: "destructive" });
+      toast({ title: "Couldn't create game", description: "Please try again.", variant: "destructive" });
     },
   });
 
