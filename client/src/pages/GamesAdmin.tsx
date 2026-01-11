@@ -8,7 +8,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, ArrowLeft, Loader2, Pencil, X, Check, Grid3X3, Layers, Play, Sun, Moon, Smartphone } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Loader2, Pencil, X, Check, Grid3X3, Layers, Play, Sun, Moon, Smartphone, Zap, Skull } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
@@ -286,14 +287,24 @@ export default function GamesAdmin() {
 
       <div className="max-w-[1600px] mx-auto p-6">
         <Tabs defaultValue="games" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-2xl grid-cols-4">
             <TabsTrigger value="games" className="gap-2" data-testid="tab-games">
-              <Layers className="w-4 h-4" />
-              Games
+              <Grid3X3 className="w-4 h-4" />
+              Grid of Grudges
             </TabsTrigger>
             <TabsTrigger value="decks" className="gap-2" data-testid="tab-decks">
               <Smartphone className="w-4 h-4" />
-              Heads Up Decks
+              Heads Up
+            </TabsTrigger>
+            <TabsTrigger value="blitz" className="gap-2 opacity-60" disabled data-testid="tab-blitz">
+              <Zap className="w-4 h-4" />
+              <span className="hidden sm:inline">Brain Rot Blitz</span>
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Soon</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="liar" className="gap-2 opacity-60" disabled data-testid="tab-liar">
+              <Skull className="w-4 h-4" />
+              <span className="hidden sm:inline">Liar's Lobby</span>
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Soon</Badge>
             </TabsTrigger>
           </TabsList>
 
@@ -826,6 +837,32 @@ export default function GamesAdmin() {
                 </Card>
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="blitz">
+            <Card className="max-w-lg mx-auto">
+              <CardContent className="p-12 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center mx-auto mb-4">
+                  <Zap className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-foreground mb-2">Brain Rot Blitz</h3>
+                <p className="text-muted-foreground mb-4">Rapid-fire trivia with score multipliers</p>
+                <Badge variant="secondary" className="text-sm">Coming Soon</Badge>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="liar">
+            <Card className="max-w-lg mx-auto">
+              <CardContent className="p-12 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center mx-auto mb-4">
+                  <Skull className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-foreground mb-2">Liar's Lobby</h3>
+                <p className="text-muted-foreground mb-4">Bluff your way to victory</p>
+                <Badge variant="secondary" className="text-sm">Coming Soon</Badge>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
