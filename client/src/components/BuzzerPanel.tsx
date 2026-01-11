@@ -71,7 +71,7 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
-  const { addContestantWithId, removeContestant, syncContestantScore, setCompletedQuestionsFromServer } = useScore();
+  const { addContestantWithId, removeContestant, syncContestantScore, setCompletedQuestionsFromServer, markQuestionCompleted } = useScore();
   const { user } = useAuth();
 
   const connect = useCallback(() => {
@@ -169,6 +169,9 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
           setBuzzQueue([]);
           break;
         case "question:completed":
+          if (data.questionId) {
+            markQuestionCompleted(data.questionId);
+          }
           break;
         case "board:set":
           break;
