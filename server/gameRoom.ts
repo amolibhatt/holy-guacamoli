@@ -1,22 +1,29 @@
 import { WebSocket, WebSocketServer } from "ws";
 import type { Server } from "http";
 import { randomUUID } from "crypto";
+import { storage } from "./storage";
+import type { GameMode, SessionPlayer } from "@shared/schema";
 
 interface Player {
   id: string;
   name: string;
   ws: WebSocket;
   lastPing: number;
+  score: number;
 }
 
 interface GameRoom {
   code: string;
+  sessionId: number;
+  hostId: string;
   hostWs: WebSocket | null;
   hostLastPing: number;
   players: Map<string, Player>;
   buzzerQueue: string[];
   buzzerLocked: boolean;
   currentQuestion: number | null;
+  currentBoardId: number | null;
+  currentMode: GameMode;
 }
 
 const rooms = new Map<string, GameRoom>();
@@ -47,77 +54,218 @@ export function setupWebSocket(server: Server) {
         switch (message.type) {
           case "host:create": {
             const code = generateRoomCode();
-            const room: GameRoom = {
-              code,
-              hostWs: ws,
-              hostLastPing: Date.now(),
-              players: new Map(),
-              buzzerQueue: [],
-              buzzerLocked: true,
-              currentQuestion: null,
-            };
-            rooms.set(code, room);
-            currentRoom = code;
-            isHost = true;
-            ws.send(JSON.stringify({ type: "room:created", code }));
+            const hostId = message.hostId || randomUUID();
+            
+            (async () => {
+              try {
+                const session = await storage.createSession({
+                  code,
+                  hostId,
+                  currentMode: "board",
+                  state: "waiting",
+                  buzzerLocked: true,
+                });
+                
+                const room: GameRoom = {
+                  code,
+                  sessionId: session.id,
+                  hostId,
+                  hostWs: ws,
+                  hostLastPing: Date.now(),
+                  players: new Map(),
+                  buzzerQueue: [],
+                  buzzerLocked: true,
+                  currentQuestion: null,
+                  currentBoardId: null,
+                  currentMode: "board",
+                };
+                rooms.set(code, room);
+                currentRoom = code;
+                isHost = true;
+                ws.send(JSON.stringify({ type: "room:created", code, sessionId: session.id }));
+              } catch (err) {
+                console.error("Failed to create session:", err);
+                ws.send(JSON.stringify({ type: "error", message: "Failed to create room" }));
+              }
+            })();
             break;
           }
 
           case "host:join": {
-            const room = rooms.get(message.code);
-            if (room) {
+            const roomCode = message.code?.toUpperCase();
+            let room = rooms.get(roomCode);
+            
+            if (!room) {
+              (async () => {
+                try {
+                  const session = await storage.getSessionByCode(roomCode);
+                  if (session && session.state !== 'ended') {
+                    const players = await storage.getSessionPlayers(session.id);
+                    const completedQuestions = await storage.getCompletedQuestions(session.id);
+                    
+                    room = {
+                      code: session.code,
+                      sessionId: session.id,
+                      hostId: session.hostId,
+                      hostWs: ws,
+                      hostLastPing: Date.now(),
+                      players: new Map(),
+                      buzzerQueue: [],
+                      buzzerLocked: session.buzzerLocked,
+                      currentQuestion: null,
+                      currentBoardId: session.currentBoardId,
+                      currentMode: session.currentMode || "board",
+                    };
+                    
+                    players.forEach(p => {
+                      room!.players.set(p.playerId, {
+                        id: p.playerId,
+                        name: p.name,
+                        ws: null as any,
+                        lastPing: 0,
+                        score: p.score,
+                      });
+                    });
+                    
+                    rooms.set(roomCode, room);
+                    currentRoom = roomCode;
+                    isHost = true;
+                    
+                    ws.send(JSON.stringify({ 
+                      type: "room:joined", 
+                      code: roomCode,
+                      sessionId: session.id,
+                      players: players.map(p => ({ id: p.playerId, name: p.name, score: p.score })),
+                      buzzerLocked: room.buzzerLocked,
+                      currentBoardId: session.currentBoardId,
+                      currentMode: session.currentMode,
+                      completedQuestions,
+                    }));
+                  } else {
+                    ws.send(JSON.stringify({ type: "error", message: "Room not found" }));
+                  }
+                } catch (err) {
+                  console.error("Failed to restore session:", err);
+                  ws.send(JSON.stringify({ type: "error", message: "Failed to join room" }));
+                }
+              })();
+            } else {
               room.hostWs = ws;
               room.hostLastPing = Date.now();
-              currentRoom = message.code;
+              currentRoom = roomCode;
               isHost = true;
-              ws.send(JSON.stringify({ 
-                type: "room:joined", 
-                code: message.code,
-                players: Array.from(room.players.values()).map(p => ({ id: p.id, name: p.name })),
-                buzzerLocked: room.buzzerLocked,
-              }));
-            } else {
-              ws.send(JSON.stringify({ type: "error", message: "Room not found" }));
+              
+              (async () => {
+                const completedQuestions = await storage.getCompletedQuestions(room!.sessionId);
+                ws.send(JSON.stringify({ 
+                  type: "room:joined", 
+                  code: roomCode,
+                  sessionId: room!.sessionId,
+                  players: Array.from(room!.players.values()).map(p => ({ id: p.id, name: p.name, score: p.score })),
+                  buzzerLocked: room!.buzzerLocked,
+                  currentBoardId: room!.currentBoardId,
+                  currentMode: room!.currentMode,
+                  completedQuestions,
+                }));
+              })();
             }
             break;
           }
 
           case "player:join": {
-            const room = rooms.get(message.code?.toUpperCase());
-            if (room) {
-              const name = String(message.name || "").trim().slice(0, 50);
-              if (!name) {
-                ws.send(JSON.stringify({ type: "error", message: "Name is required" }));
-                break;
-              }
-              const newPlayerId: string = message.playerId || randomUUID();
-              playerId = newPlayerId;
-              const existingPlayer = room.players.get(newPlayerId);
-              const isReconnect = !!existingPlayer;
-              const player: Player = {
-                id: newPlayerId,
-                name: existingPlayer?.name || name,
-                ws,
-                lastPing: Date.now(),
-              };
-              room.players.set(newPlayerId, player);
-              currentRoom = message.code?.toUpperCase();
+            const roomCode = message.code?.toUpperCase();
+            let room = rooms.get(roomCode);
+            
+            (async () => {
+              try {
+                if (!room) {
+                  const session = await storage.getSessionByCode(roomCode);
+                  if (session && session.state !== 'ended') {
+                    room = {
+                      code: session.code,
+                      sessionId: session.id,
+                      hostId: session.hostId,
+                      hostWs: null,
+                      hostLastPing: 0,
+                      players: new Map(),
+                      buzzerQueue: [],
+                      buzzerLocked: session.buzzerLocked,
+                      currentQuestion: null,
+                      currentBoardId: session.currentBoardId,
+                      currentMode: session.currentMode || "board",
+                    };
+                    
+                    const existingPlayers = await storage.getSessionPlayers(session.id);
+                    existingPlayers.forEach(p => {
+                      room!.players.set(p.playerId, {
+                        id: p.playerId,
+                        name: p.name,
+                        ws: null as any,
+                        lastPing: 0,
+                        score: p.score,
+                      });
+                    });
+                    
+                    rooms.set(roomCode, room);
+                  }
+                }
+                
+                if (room) {
+                  const name = String(message.name || "").trim().slice(0, 50);
+                  if (!name) {
+                    ws.send(JSON.stringify({ type: "error", message: "Name is required" }));
+                    return;
+                  }
+                  
+                  const newPlayerId: string = message.playerId || randomUUID();
+                  playerId = newPlayerId;
+                  const existingPlayer = room.players.get(newPlayerId);
+                  
+                  let playerScore = 0;
+                  if (existingPlayer) {
+                    playerScore = existingPlayer.score;
+                  }
+                  
+                  const dbPlayer = await storage.addPlayerToSession({
+                    sessionId: room.sessionId,
+                    playerId: newPlayerId,
+                    name: existingPlayer?.name || name,
+                    score: playerScore,
+                    isConnected: true,
+                  });
+                  
+                  const player: Player = {
+                    id: newPlayerId,
+                    name: dbPlayer.name,
+                    ws,
+                    lastPing: Date.now(),
+                    score: dbPlayer.score,
+                  };
+                  room.players.set(newPlayerId, player);
+                  currentRoom = roomCode;
 
-              ws.send(JSON.stringify({ 
-                type: "joined", 
-                playerId,
-                buzzerLocked: room.buzzerLocked 
-              }));
+                  ws.send(JSON.stringify({ 
+                    type: "joined", 
+                    playerId,
+                    playerName: player.name,
+                    score: player.score,
+                    buzzerLocked: room.buzzerLocked,
+                  }));
 
-              if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
-                room.hostWs.send(JSON.stringify({
-                  type: "player:joined",
-                  player: { id: playerId, name: message.name },
-                }));
+                  if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
+                    room.hostWs.send(JSON.stringify({
+                      type: "player:joined",
+                      player: { id: playerId, name: player.name, score: player.score },
+                    }));
+                  }
+                } else {
+                  ws.send(JSON.stringify({ type: "error", message: "Room not found" }));
+                }
+              } catch (err) {
+                console.error("Failed to join player:", err);
+                ws.send(JSON.stringify({ type: "error", message: "Failed to join room" }));
               }
-            } else {
-              ws.send(JSON.stringify({ type: "error", message: "Room not found" }));
-            }
+            })();
             break;
           }
 
@@ -248,12 +396,181 @@ export function setupWebSocket(server: Server) {
                     player.ws.close();
                   }
                   room.players.delete(message.playerId);
+                  storage.removePlayerFromSession(room.sessionId, message.playerId);
                   ws.send(JSON.stringify({ 
                     type: "player:left", 
                     playerId: message.playerId,
                     playerName: player.name,
                   }));
                 }
+              }
+            }
+            break;
+          }
+
+          case "host:updateScore": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room && message.playerId && typeof message.points === 'number') {
+                const player = room.players.get(message.playerId);
+                if (player) {
+                  (async () => {
+                    try {
+                      const updated = await storage.updatePlayerScore(room.sessionId, message.playerId, message.points);
+                      if (updated) {
+                        player.score = updated.score;
+                        
+                        ws.send(JSON.stringify({
+                          type: "score:updated",
+                          playerId: message.playerId,
+                          score: updated.score,
+                          change: message.points,
+                        }));
+                        
+                        if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+                          player.ws.send(JSON.stringify({
+                            type: "score:updated",
+                            score: updated.score,
+                            change: message.points,
+                          }));
+                        }
+                        
+                        room.players.forEach((p) => {
+                          if (p.id !== message.playerId && p.ws && p.ws.readyState === WebSocket.OPEN) {
+                            p.ws.send(JSON.stringify({
+                              type: "scores:sync",
+                              players: Array.from(room.players.values()).map(pl => ({ 
+                                id: pl.id, 
+                                name: pl.name, 
+                                score: pl.score 
+                              })),
+                            }));
+                          }
+                        });
+                      }
+                    } catch (err) {
+                      console.error("Failed to update score:", err);
+                    }
+                  })();
+                }
+              }
+            }
+            break;
+          }
+
+          case "host:setBoard": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room) {
+                room.currentBoardId = message.boardId || null;
+                storage.updateSession(room.sessionId, { currentBoardId: message.boardId });
+                
+                room.players.forEach((player) => {
+                  if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+                    player.ws.send(JSON.stringify({ 
+                      type: "board:changed", 
+                      boardId: message.boardId 
+                    }));
+                  }
+                });
+                
+                ws.send(JSON.stringify({ 
+                  type: "board:set", 
+                  boardId: message.boardId 
+                }));
+              }
+            }
+            break;
+          }
+
+          case "host:setMode": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room && message.mode) {
+                room.currentMode = message.mode;
+                storage.updateSession(room.sessionId, { currentMode: message.mode });
+                
+                room.players.forEach((player) => {
+                  if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+                    player.ws.send(JSON.stringify({ 
+                      type: "mode:changed", 
+                      mode: message.mode 
+                    }));
+                  }
+                });
+                
+                ws.send(JSON.stringify({ 
+                  type: "mode:set", 
+                  mode: message.mode 
+                }));
+              }
+            }
+            break;
+          }
+
+          case "host:completeQuestion": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room && message.questionId) {
+                (async () => {
+                  try {
+                    await storage.markQuestionCompleted({
+                      sessionId: room.sessionId,
+                      questionId: message.questionId,
+                      answeredByPlayerId: message.playerId || null,
+                      pointsAwarded: message.points || 0,
+                    });
+                    
+                    ws.send(JSON.stringify({
+                      type: "question:completed",
+                      questionId: message.questionId,
+                    }));
+                  } catch (err) {
+                    console.error("Failed to complete question:", err);
+                  }
+                })();
+              }
+            }
+            break;
+          }
+
+          case "host:resetBoard": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room) {
+                (async () => {
+                  try {
+                    await storage.resetCompletedQuestions(room.sessionId);
+                    ws.send(JSON.stringify({ type: "board:reset" }));
+                  } catch (err) {
+                    console.error("Failed to reset board:", err);
+                  }
+                })();
+              }
+            }
+            break;
+          }
+
+          case "host:getScores": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room) {
+                (async () => {
+                  try {
+                    const players = await storage.getSessionPlayers(room.sessionId);
+                    ws.send(JSON.stringify({
+                      type: "scores:list",
+                      players: players.map(p => ({ 
+                        id: p.playerId, 
+                        name: p.name, 
+                        score: p.score,
+                        isConnected: room.players.has(p.playerId),
+                      })),
+                    }));
+                  } catch (err) {
+                    console.error("Failed to get scores:", err);
+                  }
+                })();
               }
             }
             break;
@@ -285,11 +602,14 @@ export function setupWebSocket(server: Server) {
             room.hostWs = null;
           } else if (playerId) {
             const player = room.players.get(playerId);
-            room.players.delete(playerId);
+            if (player) {
+              player.ws = null as any;
+              storage.updatePlayerConnection(room.sessionId, playerId, false);
+            }
             
             if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
               room.hostWs.send(JSON.stringify({
-                type: "player:left",
+                type: "player:disconnected",
                 playerId,
                 playerName: player?.name,
               }));
@@ -347,7 +667,56 @@ export function getRoomInfo(code: string) {
   if (!room) return null;
   return {
     code: room.code,
+    sessionId: room.sessionId,
     playerCount: room.players.size,
-    players: Array.from(room.players.values()).map(p => ({ id: p.id, name: p.name })),
+    players: Array.from(room.players.values()).map(p => ({ 
+      id: p.id, 
+      name: p.name, 
+      score: p.score,
+      isConnected: p.ws && p.ws.readyState === WebSocket.OPEN,
+    })),
+    currentBoardId: room.currentBoardId,
+    currentMode: room.currentMode,
+    buzzerLocked: room.buzzerLocked,
   };
+}
+
+export async function getOrRestoreSession(code: string) {
+  const room = rooms.get(code.toUpperCase());
+  if (room) {
+    return {
+      sessionId: room.sessionId,
+      code: room.code,
+      players: Array.from(room.players.values()).map(p => ({
+        id: p.id,
+        name: p.name,
+        score: p.score,
+        isConnected: p.ws && p.ws.readyState === WebSocket.OPEN,
+      })),
+      currentBoardId: room.currentBoardId,
+      currentMode: room.currentMode,
+      buzzerLocked: room.buzzerLocked,
+    };
+  }
+  
+  const session = await storage.getSessionWithPlayers(code.toUpperCase());
+  if (session && session.state !== 'ended') {
+    const completedQuestions = await storage.getCompletedQuestions(session.id);
+    return {
+      sessionId: session.id,
+      code: session.code,
+      players: session.players.map(p => ({
+        id: p.playerId,
+        name: p.name,
+        score: p.score,
+        isConnected: false,
+      })),
+      currentBoardId: session.currentBoardId,
+      currentMode: session.currentMode,
+      buzzerLocked: session.buzzerLocked,
+      completedQuestions,
+    };
+  }
+  
+  return null;
 }

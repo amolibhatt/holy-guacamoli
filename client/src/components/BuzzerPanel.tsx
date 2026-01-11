@@ -6,10 +6,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Zap, Copy, Check, Lock, Unlock, RotateCcw, Wifi, WifiOff, QrCode, X, RefreshCw, Trash2 } from "lucide-react";
 import { soundManager } from "@/lib/sounds";
 import { useScore } from "@/components/ScoreContext";
+import { useAuth } from "@/hooks/use-auth";
 
 export interface BuzzerPlayer {
   id: string;
   name: string;
+  score?: number;
 }
 import {
   Dialog,
@@ -21,6 +23,8 @@ import {
 interface ConnectedPlayer {
   id: string;
   name: string;
+  score: number;
+  isConnected?: boolean;
 }
 
 export interface BuzzEvent {
@@ -36,6 +40,10 @@ export interface BuzzerPanelHandle {
   reset: () => void;
   getPlayers: () => BuzzerPlayer[];
   getBuzzQueue: () => BuzzEvent[];
+  updateScore: (playerId: string, points: number) => void;
+  completeQuestion: (questionId: number, playerId?: string, points?: number) => void;
+  setBoard: (boardId: number | null) => void;
+  getSessionCode: () => string | null;
 }
 
 function getSavedRoomCode(): string | null {
@@ -51,6 +59,7 @@ function getSavedRoomCode(): string | null {
 
 export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_, ref) {
   const [roomCode, setRoomCode] = useState<string | null>(getSavedRoomCode);
+  const [sessionId, setSessionId] = useState<number | null>(null);
   const [connected, setConnected] = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
   const [players, setPlayers] = useState<ConnectedPlayer[]>([]);
@@ -62,7 +71,8 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
-  const { addContestantWithId, removeContestant } = useScore();
+  const { addContestantWithId, removeContestant, syncContestantScore, setCompletedQuestionsFromServer } = useScore();
+  const { user } = useAuth();
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -79,7 +89,7 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
       if (roomCode) {
         ws.send(JSON.stringify({ type: "host:join", code: roomCode }));
       } else {
-        ws.send(JSON.stringify({ type: "host:create" }));
+        ws.send(JSON.stringify({ type: "host:create", hostId: user?.id || crypto.randomUUID() }));
       }
       
       if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
@@ -96,24 +106,58 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
       switch (data.type) {
         case "room:created":
           setRoomCode(data.code);
+          setSessionId(data.sessionId);
           localStorage.setItem("buzzer-room-code", data.code);
           break;
         case "room:joined":
           setRoomCode(data.code);
-          setPlayers(data.players || []);
+          setSessionId(data.sessionId);
+          setPlayers((data.players || []).map((p: any) => ({ 
+            id: p.id, 
+            name: p.name, 
+            score: p.score || 0,
+            isConnected: p.isConnected !== false,
+          })));
           if (data.buzzerLocked !== undefined) setBuzzerLocked(data.buzzerLocked);
+          if (data.completedQuestions) {
+            setCompletedQuestionsFromServer(data.completedQuestions);
+          }
+          (data.players || []).forEach((p: any) => {
+            addContestantWithId(p.id, p.name, p.score || 0);
+          });
           break;
         case "player:joined":
           setPlayers((prev) => {
-            if (prev.some(p => p.id === data.player.id)) return prev;
-            return [...prev, data.player];
+            const existingIndex = prev.findIndex(p => p.id === data.player.id);
+            if (existingIndex >= 0) {
+              const updated = [...prev];
+              updated[existingIndex] = {
+                ...updated[existingIndex],
+                name: data.player.name,
+                score: data.player.score || updated[existingIndex].score,
+                isConnected: true,
+              };
+              return updated;
+            }
+            return [...prev, { ...data.player, score: data.player.score || 0, isConnected: true }];
           });
-          addContestantWithId(data.player.id, data.player.name);
+          addContestantWithId(data.player.id, data.player.name, data.player.score || 0);
           soundManager.play("click", 0.3);
           break;
         case "player:left":
           setPlayers((prev) => prev.filter((p) => p.id !== data.playerId));
           removeContestant(data.playerId);
+          break;
+        case "player:disconnected":
+          setPlayers((prev) => prev.map((p) => 
+            p.id === data.playerId ? { ...p, isConnected: false } : p
+          ));
+          break;
+        case "score:updated":
+          setPlayers((prev) => prev.map((p) => 
+            p.id === data.playerId ? { ...p, score: data.score } : p
+          ));
+          syncContestantScore(data.playerId, data.score);
           break;
         case "player:buzzed":
           setBuzzQueue((prev) => [...prev, data]);
@@ -123,6 +167,10 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
           break;
         case "buzzer:reset":
           setBuzzQueue([]);
+          break;
+        case "question:completed":
+          break;
+        case "board:set":
           break;
         case "sync:complete":
           soundManager.play("click", 0.3);
@@ -200,13 +248,47 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
     setTimeout(() => connect(), 100);
   }, [connect]);
 
+  const updateScore = useCallback((playerId: string, points: number) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: "host:updateScore",
+        playerId,
+        points,
+      }));
+    }
+  }, []);
+
+  const completeQuestion = useCallback((questionId: number, playerId?: string, points?: number) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: "host:completeQuestion",
+        questionId,
+        playerId,
+        points,
+      }));
+    }
+  }, []);
+
+  const setBoard = useCallback((boardId: number | null) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: "host:setBoard",
+        boardId,
+      }));
+    }
+  }, []);
+
   useImperativeHandle(ref, () => ({
     unlock: unlockBuzzer,
     lock: lockBuzzer,
     reset: resetBuzzer,
     getPlayers: () => players,
     getBuzzQueue: () => buzzQueue,
-  }), [unlockBuzzer, lockBuzzer, resetBuzzer, players, buzzQueue]);
+    updateScore,
+    completeQuestion,
+    setBoard,
+    getSessionCode: () => roomCode,
+  }), [unlockBuzzer, lockBuzzer, resetBuzzer, players, buzzQueue, updateScore, completeQuestion, setBoard, roomCode]);
 
   const sendFeedback = (playerId: string, correct: boolean, points: number) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
