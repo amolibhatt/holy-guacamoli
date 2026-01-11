@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Settings, Grid3X3, LogOut, Sun, Moon, ArrowRight } from "lucide-react";
+import { Loader2, Settings, Grid3X3, LogOut, Sun, Moon, ArrowRight, Zap, Trophy, Clock, Lock } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -158,6 +158,56 @@ export default function Home() {
                   ))}
                 </div>
               )}
+
+              {/* Coming Soon Game Modes */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mt-12"
+              >
+                <h3 className="text-lg font-semibold text-muted-foreground text-center mb-6">Coming Soon</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="relative flex flex-col items-center gap-3 p-6 bg-card/50 border border-border/50 rounded-xl text-center opacity-60">
+                    <div className="absolute top-3 right-3">
+                      <Lock className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+                      <Zap className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-semibold text-foreground/70 mb-1">Speed Round</h4>
+                      <p className="text-muted-foreground text-xs">Race against the clock</p>
+                    </div>
+                  </div>
+
+                  <div className="relative flex flex-col items-center gap-3 p-6 bg-card/50 border border-border/50 rounded-xl text-center opacity-60">
+                    <div className="absolute top-3 right-3">
+                      <Lock className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+                      <Trophy className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-semibold text-foreground/70 mb-1">Tournament</h4>
+                      <p className="text-muted-foreground text-xs">Bracket-style competition</p>
+                    </div>
+                  </div>
+
+                  <div className="relative flex flex-col items-center gap-3 p-6 bg-card/50 border border-border/50 rounded-xl text-center opacity-60">
+                    <div className="absolute top-3 right-3">
+                      <Lock className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+                      <Clock className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-semibold text-foreground/70 mb-1">Daily Challenge</h4>
+                      <p className="text-muted-foreground text-xs">New questions every day</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
           </motion.div>
         </div>
       </main>
