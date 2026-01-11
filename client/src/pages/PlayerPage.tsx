@@ -4,25 +4,50 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, CheckCircle2, XCircle, Wifi, WifiOff, Trophy, Clock } from "lucide-react";
+import { Zap, CheckCircle2, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw } from "lucide-react";
 import confetti from "canvas-confetti";
 
-type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
+type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error" | "reconnecting";
+
+function getSession() {
+  try {
+    const data = localStorage.getItem("buzzer-session");
+    return data ? JSON.parse(data) : null;
+  } catch { return null; }
+}
+
+function saveSession(roomCode: string, playerName: string, playerId: string) {
+  try {
+    localStorage.setItem("buzzer-session", JSON.stringify({ roomCode, playerName, playerId }));
+  } catch {}
+}
+
+function clearSession() {
+  try { localStorage.removeItem("buzzer-session"); } catch {}
+}
 
 export default function PlayerPage() {
   const params = useParams<{ code?: string }>();
   const [, setLocation] = useLocation();
-  const [roomCode, setRoomCode] = useState(params.code || "");
-  const [playerName, setPlayerName] = useState("");
+  const savedSession = getSession();
+  const [roomCode, setRoomCode] = useState(params.code || savedSession?.roomCode || "");
+  const [playerName, setPlayerName] = useState(savedSession?.playerName || "");
+  const [playerId, setPlayerId] = useState<string | null>(savedSession?.playerId || null);
   const [joined, setJoined] = useState(false);
   const [status, setStatus] = useState<ConnectionStatus>("disconnected");
   const [buzzerLocked, setBuzzerLocked] = useState(true);
   const [buzzPosition, setBuzzPosition] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<{ correct: boolean; points: number } | null>(null);
   const [hasBuzzed, setHasBuzzed] = useState(false);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const wsRef = useRef<WebSocket | null>(null);
+  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const joinedRef = useRef(false);
+  const shouldReconnectRef = useRef(true);
+  const reconnectAttemptsRef = useRef(0);
 
-  const connect = useCallback(() => {
+  const connect = useCallback((isReconnect = false) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -31,11 +56,21 @@ export default function PlayerPage() {
 
     ws.onopen = () => {
       setStatus("connected");
+      setReconnectAttempts(0);
+      reconnectAttemptsRef.current = 0;
       ws.send(JSON.stringify({
         type: "player:join",
         code: roomCode.toUpperCase(),
         name: playerName,
+        playerId: isReconnect ? playerId : undefined,
       }));
+      
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+      pingIntervalRef.current = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "ping" }));
+        }
+      }, 10000);
     };
 
     ws.onmessage = (event) => {
@@ -44,11 +79,25 @@ export default function PlayerPage() {
       switch (data.type) {
         case "joined":
           setJoined(true);
+          joinedRef.current = true;
+          setPlayerId(data.playerId);
           setBuzzerLocked(data.buzzerLocked);
+          saveSession(roomCode.toUpperCase(), playerName, data.playerId);
           break;
         case "error":
           setStatus("error");
+          if (data.message === "Room not found") {
+            clearSession();
+          }
           alert(data.message);
+          break;
+        case "kicked":
+          clearSession();
+          setJoined(false);
+          joinedRef.current = false;
+          shouldReconnectRef.current = false;
+          setStatus("disconnected");
+          alert("You were removed from the game by the host.");
           break;
         case "buzzer:unlocked":
           setBuzzerLocked(false);
@@ -78,24 +127,51 @@ export default function PlayerPage() {
             });
           }
           break;
+        case "pong":
+          break;
       }
     };
 
     ws.onclose = () => {
-      setStatus("disconnected");
-      setJoined(false);
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+      
+      if (joinedRef.current && shouldReconnectRef.current && reconnectAttemptsRef.current < 5) {
+        setStatus("reconnecting");
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
+        reconnectTimeoutRef.current = setTimeout(() => {
+          reconnectAttemptsRef.current++;
+          setReconnectAttempts(reconnectAttemptsRef.current);
+          connect(true);
+        }, delay);
+      } else {
+        setStatus("disconnected");
+        setJoined(false);
+        joinedRef.current = false;
+      }
     };
 
     ws.onerror = () => {
       setStatus("error");
     };
-  }, [roomCode, playerName]);
+  }, [roomCode, playerName, playerId]);
 
   useEffect(() => {
     return () => {
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       wsRef.current?.close();
     };
   }, []);
+
+  const handleLeaveGame = () => {
+    clearSession();
+    shouldReconnectRef.current = false;
+    joinedRef.current = false;
+    wsRef.current?.close();
+    setJoined(false);
+    setPlayerId(null);
+    setStatus("disconnected");
+  };
 
   const handleJoin = () => {
     if (roomCode.trim() && playerName.trim()) {
@@ -168,6 +244,7 @@ export default function PlayerPage() {
             <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
               {status === "connected" && <><Wifi className="w-4 h-4 text-primary" /> Connected</>}
               {status === "disconnected" && <><WifiOff className="w-4 h-4" /> Not connected</>}
+              {status === "reconnecting" && <><RefreshCw className="w-4 h-4 animate-spin text-yellow-500" /> Reconnecting...</>}
               {status === "error" && <><WifiOff className="w-4 h-4 text-red-500" /> Connection error</>}
             </div>
           </Card>
@@ -185,9 +262,21 @@ export default function PlayerPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="font-semibold text-foreground">{playerName}</span>
-          <Wifi className="w-4 h-4 text-primary" />
+          {status === "connected" && <Wifi className="w-4 h-4 text-primary" />}
+          {status === "reconnecting" && <RefreshCw className="w-4 h-4 animate-spin text-yellow-500" />}
+          {status === "disconnected" && <WifiOff className="w-4 h-4 text-red-500" />}
+          <Button size="sm" variant="ghost" onClick={handleLeaveGame} className="text-xs text-muted-foreground" data-testid="button-leave-game">
+            Leave
+          </Button>
         </div>
       </header>
+
+      {status === "reconnecting" && (
+        <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-4 py-2 text-center text-sm text-yellow-200">
+          <RefreshCw className="w-4 h-4 inline-block mr-2 animate-spin" />
+          Connection lost. Reconnecting... (Attempt {reconnectAttempts + 1}/5)
+        </div>
+      )}
 
       <main className="flex-1 flex items-center justify-center p-4">
         <AnimatePresence mode="wait">
