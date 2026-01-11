@@ -34,10 +34,17 @@ export const doubleDipPairs = pgTable("double_dip_pairs", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const QUESTION_TYPES = ["open_ended", "multiple_choice"] as const;
+export type QuestionType = typeof QUESTION_TYPES[number];
+
 export const doubleDipQuestions = pgTable("double_dip_questions", {
   id: serial("id").primaryKey(),
   category: text("category").notNull().$type<DoubleDipCategory>(),
   questionText: text("question_text").notNull(),
+  questionType: text("question_type").notNull().$type<QuestionType>().default("open_ended"),
+  options: jsonb("options").$type<string[]>(),
+  isFutureLocked: boolean("is_future_locked").notNull().default(false),
+  unlockAfterDays: integer("unlock_after_days"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -58,6 +65,8 @@ export const doubleDipDailySets = pgTable("double_dip_daily_sets", {
   revealed: boolean("revealed").notNull().default(false),
   followupTask: text("followup_task"),
   categoryInsights: jsonb("category_insights").$type<CategoryInsight[]>(),
+  weeklyStakeScored: boolean("weekly_stake_scored").notNull().default(false),
+  firstCompleterId: text("first_completer_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   unique().on(table.pairId, table.dateKey),
@@ -69,6 +78,9 @@ export const doubleDipAnswers = pgTable("double_dip_answers", {
   questionId: integer("question_id").notNull(),
   userId: text("user_id").notNull(),
   answerText: text("answer_text").notNull(),
+  prediction: text("prediction"),
+  isTimeCapsule: boolean("is_time_capsule").notNull().default(false),
+  unlockDate: text("unlock_date"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   unique().on(table.dailySetId, table.questionId, table.userId),
@@ -108,6 +120,30 @@ export const doubleDipFavorites = pgTable("double_dip_favorites", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   unique().on(table.answerId, table.userId),
+]);
+
+export const SYNC_STAKES = [
+  { id: "massage", winner: "Winner gets a 30-min massage", loser: "Loser gives a 30-min massage" },
+  { id: "dishes", winner: "Winner is free from dishes", loser: "Loser does all dishes for 3 days" },
+  { id: "breakfast", winner: "Winner gets breakfast in bed", loser: "Loser makes breakfast in bed" },
+  { id: "movie", winner: "Winner picks the next movie", loser: "Loser watches winner's pick with no complaints" },
+  { id: "chores", winner: "Winner gets a chore-free day", loser: "Loser handles all chores for a day" },
+  { id: "dessert", winner: "Winner gets their favorite dessert", loser: "Loser makes or buys the dessert" },
+  { id: "date", winner: "Winner picks the next date activity", loser: "Loser plans and executes the date" },
+] as const;
+
+export const doubleDipWeeklyStakes = pgTable("double_dip_weekly_stakes", {
+  id: serial("id").primaryKey(),
+  pairId: integer("pair_id").notNull(),
+  weekStartDate: text("week_start_date").notNull(),
+  stakeId: text("stake_id").notNull(),
+  userAScore: integer("user_a_score").notNull().default(0),
+  userBScore: integer("user_b_score").notNull().default(0),
+  winnerId: text("winner_id"),
+  isRevealed: boolean("is_revealed").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  unique().on(table.pairId, table.weekStartDate),
 ]);
 
 export const boards = pgTable("boards", {
@@ -436,6 +472,7 @@ export const insertDoubleDipAnswerSchema = createInsertSchema(doubleDipAnswers).
 export const insertDoubleDipReactionSchema = createInsertSchema(doubleDipReactions).omit({ id: true, createdAt: true });
 export const insertDoubleDipMilestoneSchema = createInsertSchema(doubleDipMilestones).omit({ id: true, createdAt: true });
 export const insertDoubleDipFavoriteSchema = createInsertSchema(doubleDipFavorites).omit({ id: true, createdAt: true });
+export const insertDoubleDipWeeklyStakeSchema = createInsertSchema(doubleDipWeeklyStakes).omit({ id: true, createdAt: true });
 
 export type Board = typeof boards.$inferSelect;
 export type Category = typeof categories.$inferSelect;
@@ -458,6 +495,8 @@ export type DoubleDipAnswer = typeof doubleDipAnswers.$inferSelect;
 export type DoubleDipReaction = typeof doubleDipReactions.$inferSelect;
 export type DoubleDipMilestone = typeof doubleDipMilestones.$inferSelect;
 export type DoubleDipFavorite = typeof doubleDipFavorites.$inferSelect;
+export type DoubleDipWeeklyStake = typeof doubleDipWeeklyStakes.$inferSelect;
+export type InsertDoubleDipWeeklyStake = z.infer<typeof insertDoubleDipWeeklyStakeSchema>;
 export type InsertBoard = z.infer<typeof insertBoardSchema>;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertBoardCategory = z.infer<typeof insertBoardCategorySchema>;

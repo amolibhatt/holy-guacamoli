@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite } from "@shared/schema";
+import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake } from "@shared/schema";
 import { users } from "@shared/models/auth";
 import { eq, and, asc, count, inArray, desc, sql, gte } from "drizzle-orm";
 
@@ -132,6 +132,13 @@ export interface IStorage {
   
   // Double Dip - Get all daily sets for storyboard
   getDoubleDipDailySets(pairId: number): Promise<DoubleDipDailySet[]>;
+  setDoubleDipFirstCompleterAtomic(dailySetId: number, userId: string): Promise<DoubleDipDailySet | undefined>;
+  
+  // Double Dip - Weekly Stakes
+  getDoubleDipWeeklyStake(pairId: number, weekStartDate: string): Promise<DoubleDipWeeklyStake | undefined>;
+  createDoubleDipWeeklyStake(data: InsertDoubleDipWeeklyStake): Promise<DoubleDipWeeklyStake>;
+  updateDoubleDipWeeklyStake(id: number, data: Partial<InsertDoubleDipWeeklyStake>): Promise<DoubleDipWeeklyStake | undefined>;
+  scoreDoubleDipDailyForWeeklyStake(dailySetId: number, weeklyStakeId: number, userAPoints: number, userBPoints: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -989,6 +996,17 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db.update(doubleDipDailySets).set(data as any).where(eq(doubleDipDailySets.id, id)).returning();
     return updated;
   }
+  
+  async setDoubleDipFirstCompleterAtomic(dailySetId: number, userId: string): Promise<DoubleDipDailySet | undefined> {
+    // Atomic update - only sets firstCompleterId if it's currently null
+    const result = await db.execute(
+      sql`UPDATE double_dip_daily_sets 
+          SET first_completer_id = COALESCE(first_completer_id, ${userId})
+          WHERE id = ${dailySetId}
+          RETURNING *`
+    );
+    return result.rows?.[0] as DoubleDipDailySet | undefined;
+  }
 
   // Double Dip - Answers
   async getDoubleDipAnswers(dailySetId: number): Promise<DoubleDipAnswer[]> {
@@ -1067,6 +1085,65 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(doubleDipDailySets)
       .where(and(eq(doubleDipDailySets.pairId, pairId), eq(doubleDipDailySets.revealed, true)))
       .orderBy(desc(doubleDipDailySets.createdAt));
+  }
+  
+  // Double Dip - Weekly Stakes
+  async getDoubleDipWeeklyStake(pairId: number, weekStartDate: string): Promise<DoubleDipWeeklyStake | undefined> {
+    const [stake] = await db.select().from(doubleDipWeeklyStakes)
+      .where(and(eq(doubleDipWeeklyStakes.pairId, pairId), eq(doubleDipWeeklyStakes.weekStartDate, weekStartDate)));
+    return stake;
+  }
+  
+  async createDoubleDipWeeklyStake(data: InsertDoubleDipWeeklyStake): Promise<DoubleDipWeeklyStake> {
+    const [stake] = await db.insert(doubleDipWeeklyStakes).values(data).returning();
+    return stake;
+  }
+  
+  async updateDoubleDipWeeklyStake(id: number, data: Partial<InsertDoubleDipWeeklyStake>): Promise<DoubleDipWeeklyStake | undefined> {
+    const [updated] = await db.update(doubleDipWeeklyStakes).set(data).where(eq(doubleDipWeeklyStakes.id, id)).returning();
+    return updated;
+  }
+  
+  async scoreDoubleDipDailyForWeeklyStake(
+    dailySetId: number,
+    weeklyStakeId: number,
+    userAPoints: number,
+    userBPoints: number
+  ): Promise<boolean> {
+    // Atomic: only score if weeklyStakeScored is false, then set it true
+    // Uses SQL UPDATE...WHERE to prevent double-scoring on concurrent requests
+    const dailyResult = await db.execute(
+      sql`UPDATE double_dip_daily_sets 
+          SET weekly_stake_scored = true 
+          WHERE id = ${dailySetId} AND weekly_stake_scored = false
+          RETURNING id`
+    );
+    
+    // If no rows updated, scoring was already done
+    if (!dailyResult.rows?.length) {
+      return false;
+    }
+    
+    // Now update the weekly stake scores - verify stake exists and was updated
+    const stakeResult = await db.execute(
+      sql`UPDATE double_dip_weekly_stakes 
+          SET user_a_score = user_a_score + ${userAPoints},
+              user_b_score = user_b_score + ${userBPoints}
+          WHERE id = ${weeklyStakeId}
+          RETURNING id`
+    );
+    
+    // If stake wasn't updated, rollback the daily set flag and throw error
+    if (!stakeResult.rows?.length) {
+      await db.execute(
+        sql`UPDATE double_dip_daily_sets 
+            SET weekly_stake_scored = false 
+            WHERE id = ${dailySetId}`
+      );
+      throw new Error(`Weekly stake ${weeklyStakeId} not found or could not be updated`);
+    }
+    
+    return true;
   }
 }
 
