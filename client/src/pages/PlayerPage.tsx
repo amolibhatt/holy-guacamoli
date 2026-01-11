@@ -112,7 +112,19 @@ export default function PlayerPage() {
           saveSession(roomCode.toUpperCase(), playerName, data.playerId);
           break;
         case "score:updated":
-          if (data.score !== undefined) setScore(data.score);
+          if (data.score !== undefined) {
+            setScore((prevScore) => {
+              const diff = data.score - prevScore;
+              if (diff !== 0) {
+                toast({
+                  title: diff > 0 ? `+${diff} points!` : `${diff} points`,
+                  description: diff > 0 ? "Great job!" : "Keep trying!",
+                  duration: 2000,
+                });
+              }
+              return data.score;
+            });
+          }
           break;
         case "scores:sync":
           const myScore = data.players?.find((p: any) => p.id === playerId)?.score;
@@ -213,6 +225,8 @@ export default function PlayerPage() {
           setReconnectAttempts(reconnectAttemptsRef.current);
           connect(true);
         }, delay);
+      } else if (joinedRef.current) {
+        setStatus("disconnected");
       } else {
         setStatus("disconnected");
         setJoined(false);
@@ -372,9 +386,13 @@ export default function PlayerPage() {
         </div>
       )}
 
-      {status === "disconnected" && joined === false && playerId && (
+      {status === "disconnected" && (
         <div className="bg-red-500/20 border-b border-red-500/30 px-4 py-3 text-center">
-          <p className="text-sm text-foreground mb-2">Connection lost after multiple attempts</p>
+          <p className="text-sm text-foreground mb-2">
+            {reconnectAttempts >= 5 
+              ? "Connection lost after multiple attempts" 
+              : "Connection lost"}
+          </p>
           <Button 
             size="sm" 
             onClick={handleManualReconnect}
@@ -382,7 +400,7 @@ export default function PlayerPage() {
             data-testid="button-reconnect"
           >
             <RefreshCw className="w-4 h-4" />
-            Try Again
+            Reconnect
           </Button>
         </div>
       )}
@@ -474,40 +492,66 @@ export default function PlayerPage() {
           ) : buzzerLocked ? (
             <motion.div
               key="locked"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
               className="text-center"
               role="status"
               aria-live="polite"
             >
-              <div className="w-48 h-48 rounded-full bg-muted/30 border-4 border-dashed border-muted-foreground/30 flex items-center justify-center mx-auto">
-                <Clock className="w-16 h-16 text-muted-foreground opacity-50" />
-              </div>
-              <h2 className="text-xl font-bold text-muted-foreground mt-4">Buzzer Locked</h2>
-              <p className="text-sm text-muted-foreground mt-1">Wait for host to open a question</p>
+              <motion.div 
+                animate={{ opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-56 h-56 rounded-full bg-gradient-to-br from-muted/30 to-muted/10 border-4 border-dashed border-muted-foreground/20 flex items-center justify-center mx-auto"
+              >
+                <Clock className="w-20 h-20 text-muted-foreground/40" />
+              </motion.div>
+              <h2 className="text-2xl font-bold text-muted-foreground mt-6">Get Ready...</h2>
+              <p className="text-muted-foreground mt-2 max-w-xs mx-auto">The host is setting up the next question. Be ready to buzz!</p>
             </motion.div>
           ) : (
-            <motion.button
+            <motion.div
               key="buzzer"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleBuzz}
-              className="w-72 h-72 rounded-full gradient-header flex items-center justify-center shadow-2xl active:shadow-lg transition-all focus:outline-none focus:ring-4 focus:ring-primary/50"
-              data-testid="button-buzz"
-              aria-label="Buzz in - tap to answer"
-              role="button"
+              className="text-center"
             >
-              <Zap className="w-28 h-28 text-white" aria-hidden="true" />
-            </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.02 }}
+                onClick={handleBuzz}
+                className="w-72 h-72 rounded-full gradient-header flex flex-col items-center justify-center shadow-2xl active:shadow-lg transition-all focus:outline-none focus:ring-4 focus:ring-primary/50 relative overflow-visible"
+                data-testid="button-buzz"
+                aria-label="Buzz in - tap to answer"
+                role="button"
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                  className="absolute inset-0 rounded-full bg-primary/20 -z-10"
+                />
+                <Zap className="w-24 h-24 text-white mb-2" aria-hidden="true" />
+                <span className="text-white text-xl font-black tracking-wide">BUZZ!</span>
+              </motion.button>
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="text-primary font-medium mt-6 text-lg"
+              >
+                Tap fast to answer first!
+              </motion.p>
+            </motion.div>
           )}
         </AnimatePresence>
       </main>
 
-      <footer className="p-4 text-center" role="status" aria-live="polite" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
-        <span className={`text-sm font-medium ${buzzerLocked ? "text-muted-foreground" : "text-primary"}`}>
-          {buzzerLocked ? "Buzzer locked - waiting for host" : "Buzzer ready - tap to answer!"}
-        </span>
+      <footer className="p-4 text-center border-t border-border/30 bg-card/40 backdrop-blur" role="status" aria-live="polite" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+        <div className="flex items-center justify-center gap-3">
+          <div className={`w-3 h-3 rounded-full ${buzzerLocked ? "bg-muted-foreground/50" : "bg-green-500 animate-pulse"}`} />
+          <span className={`text-sm font-medium ${buzzerLocked ? "text-muted-foreground" : "text-primary font-bold"}`}>
+            {buzzerLocked ? "Waiting for next question..." : "TAP THE BUZZER!"}
+          </span>
+        </div>
       </footer>
     </div>
   );
