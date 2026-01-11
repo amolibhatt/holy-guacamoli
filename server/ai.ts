@@ -62,11 +62,21 @@ Respond in JSON format:
       const answerA = qa.userAAnswer.toLowerCase().trim();
       const answerB = qa.userBAnswer.toLowerCase().trim();
       
+      // Handle empty answers - low score if either is missing
+      if (!answerA || !answerB) {
+        return {
+          category: qa.category,
+          compatibilityScore: 30,
+          insight: "One or both answers are missing - keep communicating!"
+        };
+      }
+      
       // Simple similarity check
       let score = 50; // base score
       if (answerA === answerB) {
         score = 95;
-      } else if (answerA.includes(answerB) || answerB.includes(answerA)) {
+      } else if (answerA.length >= 3 && answerB.length >= 3 && 
+                 (answerA.includes(answerB) || answerB.includes(answerA))) {
         score = 80;
       } else {
         // Check for common words

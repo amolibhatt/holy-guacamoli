@@ -1886,6 +1886,24 @@ export async function registerRoutes(
     }
   });
 
+  // Analytics endpoint - simple event collection
+  app.post("/api/analytics/events", async (req, res) => {
+    try {
+      const { events } = req.body;
+      if (!Array.isArray(events)) {
+        return res.status(400).json({ message: "Invalid events format" });
+      }
+      
+      // Log events for now - can be extended to store in DB later
+      console.log(`[Analytics] Received ${events.length} events`);
+      
+      res.json({ received: events.length });
+    } catch (err) {
+      console.error("Error processing analytics:", err);
+      res.status(500).json({ message: "Failed to process analytics" });
+    }
+  });
+
   return httpServer;
 }
 
