@@ -214,7 +214,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
             variant="outline"
             onClick={() => startTimer(7)}
             disabled={isTimerRunning}
-            className="border-white/40 text-white hover:bg-white/20"
+            className="border-background/40 text-background bg-background/20 hover:bg-background/30 dark:border-white/40 dark:text-white dark:bg-transparent dark:hover:bg-white/20"
           >
             <Timer className="w-4 h-4 mr-2" />
             7s
@@ -225,7 +225,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
               animate={{ scale: 1 }}
               className={`
                 w-14 h-14 rounded-full flex items-center justify-center font-mono text-2xl font-black border-4
-                ${timer <= 3 ? 'bg-red-500 text-white border-red-300 animate-pulse shadow-lg shadow-red-500/50' : 'bg-white/20 text-white border-white/30'}
+                ${timer <= 3 ? 'bg-red-500 text-white border-red-300 animate-pulse shadow-lg shadow-red-500/50' : 'bg-background/20 text-background border-background/30 dark:bg-white/20 dark:text-white dark:border-white/30'}
               `}
             >
               {timer}
@@ -235,7 +235,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
             <Button
               variant="outline"
               onClick={stopTimer}
-              className="border-red-400/50 text-red-300 hover:bg-red-500/20"
+              className="border-red-500 text-red-600 bg-red-100 hover:bg-red-200 dark:border-red-400/50 dark:text-red-300 dark:bg-transparent dark:hover:bg-red-500/20"
             >
               Stop
             </Button>
@@ -249,8 +249,8 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
               setShowAnswer(!showAnswer);
             }}
             className={showAnswer 
-              ? "bg-white/20 text-white hover:bg-white/30 border-2 border-white/30" 
-              : "bg-gradient-to-r from-white via-gray-100 to-white text-black font-bold shadow-lg shadow-white/50 hover:shadow-xl border-2 border-white/50"
+              ? "bg-background/90 text-foreground hover:bg-background border-2 border-border font-bold" 
+              : "bg-primary text-primary-foreground font-bold shadow-lg hover:bg-primary/90 border-2 border-primary"
             }
             data-testid="button-toggle-answer"
           >
