@@ -8,6 +8,7 @@ import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles }
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { soundManager } from "@/lib/sounds";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error" | "reconnecting";
 
@@ -346,6 +347,7 @@ export default function PlayerPage() {
 
   return (
     <div className="min-h-screen gradient-game flex flex-col" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <InstallPrompt />
       <FullScreenFlash show={showBuzzFlash} color="bg-amber-400/60" />
       <FullScreenFlash show={showCorrectFlash} color="bg-green-400/60" />
       <FullScreenFlash show={showWrongFlash} color="bg-red-400/60" />
