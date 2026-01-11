@@ -8,11 +8,19 @@ type EventName =
   | 'buzzer_pressed'
   | 'pair_created'
   | 'pair_joined'
+  | 'pair_invite_sent'
+  | 'pair_invite_accepted'
   | 'daily_questions_submitted'
   | 'weekly_stake_set'
+  | 'weekly_stake_revealed'
+  | 'ai_insight_viewed'
+  | 'answer_favorited'
   | 'board_created'
   | 'category_created'
-  | 'question_created';
+  | 'question_created'
+  | 'onboarding_started'
+  | 'onboarding_completed'
+  | 'onboarding_skipped';
 
 interface AnalyticsEvent {
   name: EventName;

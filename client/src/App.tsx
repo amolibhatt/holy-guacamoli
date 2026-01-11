@@ -1,45 +1,64 @@
 import { Switch, Route } from "wouter";
+import { lazy, Suspense } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ScoreProvider } from "@/components/ScoreContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { Skeleton } from "@/components/ui/skeleton";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
-import CategoryPage from "@/pages/CategoryPage";
-import Admin from "@/pages/Admin";
 import PlayerPage from "@/pages/PlayerPage";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
-import GamesAdmin from "@/pages/GamesAdmin";
-import HeadsUpGame from "@/pages/HeadsUpGame";
-import GridOfGrudges from "@/pages/GridOfGrudges";
-import PlayBoard from "@/pages/PlayBoard";
-import SuperAdmin from "@/pages/SuperAdmin";
-import RelationshipHub from "@/pages/RelationshipHub";
-import HostGridOfGrudges from "@/pages/HostGridOfGrudges";
+
+// Lazy load heavier components to reduce initial bundle size
+const Admin = lazy(() => import("@/pages/Admin"));
+const CategoryPage = lazy(() => import("@/pages/CategoryPage"));
+const GamesAdmin = lazy(() => import("@/pages/GamesAdmin"));
+const HeadsUpGame = lazy(() => import("@/pages/HeadsUpGame"));
+const GridOfGrudges = lazy(() => import("@/pages/GridOfGrudges"));
+const PlayBoard = lazy(() => import("@/pages/PlayBoard"));
+const SuperAdmin = lazy(() => import("@/pages/SuperAdmin"));
+const RelationshipHub = lazy(() => import("@/pages/RelationshipHub"));
+const HostGridOfGrudges = lazy(() => import("@/pages/HostGridOfGrudges"));
+
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center p-8">
+      <div className="w-full max-w-md space-y-4">
+        <Skeleton className="h-8 w-48 mx-auto" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    </div>
+  );
+}
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/host/grid-of-grudges" component={HostGridOfGrudges} />
-      <Route path="/host/double-dip" component={RelationshipHub} />
-      <Route path="/category/:id" component={CategoryPage} />
-      <Route path="/admin" component={Admin} />
-      <Route path="/admin/games" component={GamesAdmin} />
-      <Route path="/admin/super" component={SuperAdmin} />
-      <Route path="/games" component={GamesAdmin} />
-      <Route path="/board/:boardId" component={PlayBoard} />
-      <Route path="/play/:code?" component={PlayerPage} />
-      <Route path="/forgot-password" component={ForgotPassword} />
-      <Route path="/reset-password" component={ResetPassword} />
-      <Route path="/heads-up/:gameId" component={HeadsUpGame} />
-      <Route path="/grudges/:gameId" component={GridOfGrudges} />
-      <Route path="/couples" component={RelationshipHub} />
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={<PageLoader />}>
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/host/grid-of-grudges" component={HostGridOfGrudges} />
+        <Route path="/host/double-dip" component={RelationshipHub} />
+        <Route path="/category/:id" component={CategoryPage} />
+        <Route path="/admin" component={Admin} />
+        <Route path="/admin/games" component={GamesAdmin} />
+        <Route path="/admin/super" component={SuperAdmin} />
+        <Route path="/games" component={GamesAdmin} />
+        <Route path="/board/:boardId" component={PlayBoard} />
+        <Route path="/play/:code?" component={PlayerPage} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/reset-password" component={ResetPassword} />
+        <Route path="/heads-up/:gameId" component={HeadsUpGame} />
+        <Route path="/grudges/:gameId" component={GridOfGrudges} />
+        <Route path="/couples" component={RelationshipHub} />
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 
