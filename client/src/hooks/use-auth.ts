@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { SafeUser, LoginCredentials, InsertUser } from "@shared/models/auth";
+import { trackEvent } from "@/lib/analytics";
 
 async function fetchUser(): Promise<SafeUser | null> {
   const response = await fetch("/api/auth/user", {
@@ -69,6 +70,7 @@ export function useAuth() {
     mutationFn: login,
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/auth/user"], user);
+      trackEvent('login', { userId: user.id });
     },
   });
 
@@ -82,6 +84,7 @@ export function useAuth() {
   const logoutMutation = useMutation({
     mutationFn: logout,
     onSuccess: () => {
+      trackEvent('logout');
       queryClient.setQueryData(["/api/auth/user"], null);
     },
   });
