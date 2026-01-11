@@ -922,11 +922,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDoubleDipPairForUser(userId: string): Promise<DoubleDipPair | undefined> {
+    // Get active pair where user is either A or B, OR pending pair where user is A (creator)
     const [pair] = await db.select().from(doubleDipPairs)
-      .where(and(
-        eq(doubleDipPairs.status, 'active'),
-        sql`(${doubleDipPairs.userAId} = ${userId} OR ${doubleDipPairs.userBId} = ${userId})`
-      ));
+      .where(
+        sql`(
+          (${doubleDipPairs.status} = 'active' AND (${doubleDipPairs.userAId} = ${userId} OR ${doubleDipPairs.userBId} = ${userId}))
+          OR
+          (${doubleDipPairs.status} = 'pending' AND ${doubleDipPairs.userAId} = ${userId})
+        )`
+      );
     return pair;
   }
 
