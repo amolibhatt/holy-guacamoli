@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Question } from "@shared/schema";
 import { useScore } from "./ScoreContext";
 import { useTheme } from "@/context/ThemeContext";
-import { CheckCircle2, XCircle, Eye, EyeOff, Timer, X, Trophy, Sparkles, Star, Zap, Bell, Plus, Minus, Users } from "lucide-react";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { CheckCircle2, XCircle, Eye, EyeOff, Timer, X, Trophy, Zap, Plus, Minus, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
@@ -93,6 +94,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
   const [awardedTo, setAwardedTo] = useState<string | null>(null);
   const { contestants, awardPoints, deductPoints, markQuestionCompleted } = useScore();
   const { colors } = useTheme();
+  const prefersReducedMotion = useReducedMotion();
 
   const correctAnswer = (question as any).correctAnswer;
 
@@ -134,7 +136,6 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
     awardPoints(contestantId, question.points);
     soundManager.play('correct', 0.6);
     
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!prefersReducedMotion) {
       confetti({
         particleCount: 80,
@@ -172,22 +173,17 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
           >
             <motion.div 
               className="text-center"
-              initial={{ scale: 0, rotate: -10 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", stiffness: 200 }}
+              initial={prefersReducedMotion ? { opacity: 0 } : { scale: 0, rotate: -10 }}
+              animate={prefersReducedMotion ? { opacity: 1 } : { scale: 1, rotate: 0 }}
+              transition={prefersReducedMotion ? { duration: 0.1 } : { type: "spring", stiffness: 200 }}
             >
-              <motion.div
-                animate={{ rotate: [0, -10, 10, -10, 0], scale: [1, 1.1, 1] }}
-                transition={{ duration: 0.5, repeat: 3 }}
-              >
-                <Trophy className="w-24 h-24 text-white mx-auto mb-4 drop-shadow-lg" />
-              </motion.div>
+              <Trophy className="w-24 h-24 text-white mx-auto mb-4 drop-shadow-lg" />
               <h2 className="text-5xl font-black text-white drop-shadow-lg">{awardedTo}</h2>
               <motion.p 
                 className="text-4xl font-bold text-white/90 mt-2"
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: prefersReducedMotion ? 0 : 0.3 }}
               >
                 +{question.points} points!
               </motion.p>

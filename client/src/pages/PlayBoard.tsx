@@ -112,7 +112,7 @@ export default function PlayBoard() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gradient-game">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
         <p className="text-muted-foreground">Please log in to play</p>
         <Link href="/">
           <Button className="mt-4">Go Home</Button>
@@ -134,7 +134,7 @@ export default function PlayBoard() {
 
   if (!board) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gradient-game p-8">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-8">
         <AvocadoIcon className="w-20 h-20 opacity-30 mb-6" />
         <h2 className="text-2xl font-bold text-foreground mb-2">Board not found</h2>
         <p className="text-muted-foreground mb-6">This board doesn't exist or was deleted</p>
@@ -149,7 +149,7 @@ export default function PlayBoard() {
   }
 
   return (
-    <div className="min-h-screen gradient-game grid-bg flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col overflow-hidden">
       <header className="border-b border-primary/20 bg-card/40 backdrop-blur-xl sticky top-0 z-50">
         <div className="px-4 py-3 flex items-center justify-between gap-4">
           <motion.div 
@@ -292,7 +292,7 @@ export default function PlayBoard() {
       <AnimatePresence>
         {selectedQuestion && (
           <Dialog open={true} onOpenChange={(open) => !open && handleCloseQuestion()}>
-            <DialogContent className="max-w-3xl p-0 overflow-hidden border-white/20 bg-black/95 backdrop-blur-xl" aria-describedby={undefined}>
+            <DialogContent className="max-w-3xl p-0 overflow-hidden border-border bg-card backdrop-blur-xl" aria-describedby={undefined}>
               <VisuallyHidden>
                 <DialogTitle>Question</DialogTitle>
               </VisuallyHidden>

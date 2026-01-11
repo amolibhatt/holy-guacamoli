@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuestionsByBoardCategory } from "@/hooks/use-quiz";
 import { useScore } from "@/components/ScoreContext";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { BoardCategoryWithCategory, Question } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,6 +25,7 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
   const [isFlipping, setIsFlipping] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const hasQuestion = !!question;
+  const prefersReducedMotion = useReducedMotion();
 
   const handleClick = (e: React.MouseEvent) => {
     if (hasQuestion && !isCompleted && !isFlipping) {
@@ -41,26 +43,25 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.8, rotateY: -90 }}
-      animate={{ 
-        opacity: 1, 
-        scale: 1, 
-        rotateY: isFlipping ? 180 : 0 
-      }}
-      transition={{ 
-        delay,
-        rotateY: { duration: 0.4, ease: "easeInOut" }
-      }}
-      style={{ perspective: 1000, transformStyle: "preserve-3d" }}
+      initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.8, rotateY: -90 }}
+      animate={prefersReducedMotion 
+        ? { opacity: 1 }
+        : { opacity: 1, scale: 1, rotateY: isFlipping ? 180 : 0 }
+      }
+      transition={prefersReducedMotion 
+        ? { duration: 0.1 }
+        : { delay, rotateY: { duration: 0.4, ease: "easeInOut" } }
+      }
+      style={prefersReducedMotion ? undefined : { perspective: 1000, transformStyle: "preserve-3d" }}
       className="flex-1 min-h-[44px] sm:min-h-[52px] lg:min-h-[64px]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <motion.button
-        whileHover={hasQuestion && !isCompleted ? { 
+        whileHover={hasQuestion && !isCompleted && !prefersReducedMotion ? { 
           scale: 1.03
         } : undefined}
-        whileTap={hasQuestion && !isCompleted ? { scale: 0.97 } : undefined}
+        whileTap={hasQuestion && !isCompleted && !prefersReducedMotion ? { scale: 0.97 } : undefined}
         className={`
           w-full h-full flex items-center justify-center rounded-xl font-black text-xl sm:text-2xl lg:text-3xl transition-all relative overflow-hidden
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background
@@ -175,7 +176,7 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }:
           const isCompleted = question ? completedQuestions.includes(question.id) : false;
 
           if (isLoading) {
-            return <Skeleton key={scoreValue} className="flex-1 min-h-[48px] rounded-lg bg-white/5" />;
+            return <Skeleton key={scoreValue} className="flex-1 min-h-[48px] rounded-lg bg-muted" />;
           }
 
           return (
