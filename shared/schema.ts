@@ -41,6 +41,12 @@ export const doubleDipQuestions = pgTable("double_dip_questions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export interface CategoryInsight {
+  category: string;
+  compatibilityScore: number;
+  insight: string;
+}
+
 export const doubleDipDailySets = pgTable("double_dip_daily_sets", {
   id: serial("id").primaryKey(),
   pairId: integer("pair_id").notNull(),
@@ -50,6 +56,7 @@ export const doubleDipDailySets = pgTable("double_dip_daily_sets", {
   userBCompleted: boolean("user_b_completed").notNull().default(false),
   revealed: boolean("revealed").notNull().default(false),
   followupTask: text("followup_task"),
+  categoryInsights: jsonb("category_insights").$type<CategoryInsight[]>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   unique().on(table.pairId, table.dateKey),

@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { DoubleDipPair, DoubleDipQuestion, DoubleDipDailySet, DoubleDipAnswer } from "@shared/schema";
+import type { DoubleDipPair, DoubleDipQuestion, DoubleDipDailySet, DoubleDipAnswer, CategoryInsight } from "@shared/schema";
 
 const CATEGORY_CONFIG: Record<string, { name: string; emoji: string; color: string; bg: string }> = {
   deep_end: { name: "The Deep End", emoji: "ocean", color: "text-blue-500", bg: "bg-blue-500/10" },
@@ -22,7 +22,7 @@ const CATEGORY_CONFIG: Record<string, { name: string; emoji: string; color: stri
 
 interface DailyResponse {
   pair: DoubleDipPair;
-  dailySet: DoubleDipDailySet & { followupTask?: string };
+  dailySet: DoubleDipDailySet & { followupTask?: string; categoryInsights?: CategoryInsight[] };
   questions: DoubleDipQuestion[];
   answers: DoubleDipAnswer[];
   userCompleted: boolean;
@@ -377,11 +377,53 @@ export default function CouplesGame() {
                       );
                     })}
                     
+                    {dailyData.dailySet.categoryInsights && dailyData.dailySet.categoryInsights.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        <Card>
+                          <CardContent className="p-5">
+                            <h4 className="font-bold text-foreground mb-4 flex items-center gap-2">
+                              <Heart className="w-5 h-5 text-pink-500" />
+                              Compatibility Insights
+                            </h4>
+                            <div className="space-y-3">
+                              {dailyData.dailySet.categoryInsights.map((insight) => {
+                                const config = CATEGORY_CONFIG[insight.category] || CATEGORY_CONFIG.deep_end;
+                                const score = insight.compatibilityScore;
+                                const scoreColor = score >= 80 ? "text-green-500" : score >= 60 ? "text-yellow-500" : "text-orange-500";
+                                
+                                return (
+                                  <div key={insight.category} className="space-y-1">
+                                    <div className="flex items-center justify-between">
+                                      <span className={`text-sm font-medium ${config.color}`}>{config.name}</span>
+                                      <span className={`text-sm font-bold ${scoreColor}`}>{score}%</span>
+                                    </div>
+                                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                      <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${score}%` }}
+                                        transition={{ duration: 0.8, delay: 0.3 }}
+                                        className={`h-full rounded-full ${config.bg.replace('/10', '')}`}
+                                      />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">{insight.insight}</p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    )}
+                    
                     {dailyData.dailySet.followupTask && (
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
+                        transition={{ delay: 0.4 }}
                       >
                         <Card className="border-2 border-pink-500/30 bg-gradient-to-br from-pink-500/5 to-purple-500/5">
                           <CardContent className="p-5">
