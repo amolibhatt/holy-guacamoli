@@ -9,7 +9,45 @@ import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "@/context/ThemeContext";
 import { useScore } from "@/components/ScoreContext";
 import { QRCodeSVG } from "qrcode.react";
+import confetti from "canvas-confetti";
 import type { Game, LiarPromptPack, LiarPrompt } from "@shared/schema";
+
+const sarcasticTitles = [
+  "CEO of Gaslighting",
+  "Professional Fibber",
+  "Master of Deception",
+  "Chief Lies Officer",
+  "Scam Artist Supreme",
+  "Lord of the Lies",
+  "Fraud of the Year",
+  "Truth Assassin",
+];
+
+function triggerLiarConfetti() {
+  const duration = 3000;
+  const end = Date.now() + duration;
+  const colors = ['#8b5cf6', '#ec4899', '#f43f5e'];
+  
+  (function frame() {
+    confetti({
+      particleCount: 3,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0 },
+      colors,
+    });
+    confetti({
+      particleCount: 3,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1 },
+      colors,
+    });
+    if (Date.now() < end) {
+      requestAnimationFrame(frame);
+    }
+  })();
+}
 
 interface RoomPlayer {
   id: string;
@@ -45,6 +83,7 @@ export default function LiarsLobby() {
   const [votingOptions, setVotingOptions] = useState<{ index: number; answer: string }[]>([]);
   const [results, setResults] = useState<SubmissionResult[]>([]);
   const [fooledEveryone, setFooledEveryone] = useState<{ playerId: string; playerName: string }[]>([]);
+  const [sarcasticTitle, setSarcasticTitle] = useState('');
   const [timerEnd, setTimerEnd] = useState<number | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
@@ -127,6 +166,10 @@ export default function LiarsLobby() {
           setPhase('results');
           setResults(data.results);
           setFooledEveryone(data.fooledEveryone || []);
+          if (data.fooledEveryone && data.fooledEveryone.length > 0) {
+            setSarcasticTitle(sarcasticTitles[Math.floor(Math.random() * sarcasticTitles.length)]);
+            triggerLiarConfetti();
+          }
           break;
         case 'liar:reset':
           setPhase('lobby');
@@ -423,9 +466,9 @@ export default function LiarsLobby() {
                   <Card className="p-6 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500">
                     <CardContent className="text-center py-4">
                       <Skull className="w-12 h-12 mx-auto mb-2 text-purple-500" />
-                      <h2 className="text-2xl font-bold text-purple-500">CEO of Gaslighting</h2>
+                      <h2 className="text-2xl font-bold text-purple-500">{sarcasticTitle}</h2>
                       {fooledEveryone.map(liar => (
-                        <p key={liar.playerId} className="text-lg font-bold mt-2">{liar.playerName}</p>
+                        <p key={liar.playerId} className="text-lg font-bold mt-2" data-testid={`liar-${liar.playerId}`}>{liar.playerName}</p>
                       ))}
                       <p className="text-muted-foreground mt-1">Fooled EVERYONE!</p>
                     </CardContent>
