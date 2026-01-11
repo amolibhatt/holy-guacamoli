@@ -427,7 +427,11 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
-  // Bulk import questions
+  // Bulk import questions with validation
+  const MAX_BULK_IMPORT = 50;
+  const MAX_QUESTION_LENGTH = 1000;
+  const MAX_ANSWER_LENGTH = 500;
+  
   app.post("/api/board-categories/:boardCategoryId/questions/bulk", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;
@@ -438,9 +442,17 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Board category not found" });
       }
 
+      // Get board-specific point values
+      const board = await storage.getBoard(bc.boardId);
+      const validPointValues = board?.pointValues || [10, 20, 30, 40, 50];
+
       const { questions } = req.body as { questions: Array<{ question: string; correctAnswer: string; points: number }> };
       if (!Array.isArray(questions) || questions.length === 0) {
         return res.status(400).json({ message: "No questions provided" });
+      }
+      
+      if (questions.length > MAX_BULK_IMPORT) {
+        return res.status(400).json({ message: `Maximum ${MAX_BULK_IMPORT} questions per import` });
       }
 
       const existingQuestions = await storage.getQuestionsByBoardCategory(boardCategoryId);
@@ -449,27 +461,43 @@ export async function registerRoutes(
 
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
-        if (!q.question?.trim() || !q.correctAnswer?.trim() || !q.points) {
+        const questionText = typeof q.question === 'string' ? q.question.trim() : '';
+        const answerText = typeof q.correctAnswer === 'string' ? q.correctAnswer.trim() : '';
+        const points = typeof q.points === 'number' ? q.points : 0;
+        
+        if (!questionText || !answerText || !points) {
           results.errors.push(`Line ${i + 1}: Missing required fields`);
           continue;
         }
-        if (existingPoints.has(q.points)) {
-          results.errors.push(`Line ${i + 1}: ${q.points}-point question already exists`);
+        if (questionText.length > MAX_QUESTION_LENGTH) {
+          results.errors.push(`Line ${i + 1}: Question too long (max ${MAX_QUESTION_LENGTH} chars)`);
           continue;
         }
-        if (existingQuestions.length + results.success >= 5) {
-          results.errors.push(`Line ${i + 1}: Category already has 5 questions (maximum)`);
+        if (answerText.length > MAX_ANSWER_LENGTH) {
+          results.errors.push(`Line ${i + 1}: Answer too long (max ${MAX_ANSWER_LENGTH} chars)`);
+          continue;
+        }
+        if (!validPointValues.includes(points)) {
+          results.errors.push(`Line ${i + 1}: Invalid point value (board uses: ${validPointValues.join(', ')})`);
+          continue;
+        }
+        if (existingPoints.has(points)) {
+          results.errors.push(`Line ${i + 1}: ${points}-point question already exists`);
+          continue;
+        }
+        if (existingQuestions.length + results.success >= validPointValues.length) {
+          results.errors.push(`Line ${i + 1}: Category already has ${validPointValues.length} questions (maximum for this board)`);
           continue;
         }
         try {
           await storage.createQuestion({
             boardCategoryId,
-            question: q.question.trim(),
+            question: questionText,
             options: [],
-            correctAnswer: q.correctAnswer.trim(),
-            points: q.points,
+            correctAnswer: answerText,
+            points,
           });
-          existingPoints.add(q.points);
+          existingPoints.add(points);
           results.success++;
         } catch (err) {
           results.errors.push(`Line ${i + 1}: Failed to create question`);
