@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { 
   Users, Grid3X3, BarChart3, ArrowLeft, Shield, 
   UserCheck, UserX, Trash2, Eye, MoreHorizontal,
-  TrendingUp, Gamepad2, Clock, Activity
+  TrendingUp, Gamepad2, Clock, Activity, Heart, Grid2X2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,10 +28,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import type { Board } from "@shared/schema";
+import type { Board, GameType } from "@shared/schema";
 import type { SafeUser } from "@shared/models/auth";
 
 interface PlatformStats {
@@ -72,6 +73,23 @@ export default function SuperAdmin() {
 
   const { data: allBoards = [], isLoading: isLoadingBoards } = useQuery<BoardWithOwner[]>({
     queryKey: ['/api/super-admin/boards'],
+  });
+
+  const { data: gameTypes = [], isLoading: isLoadingGameTypes } = useQuery<GameType[]>({
+    queryKey: ['/api/super-admin/game-types'],
+  });
+
+  const updateGameTypeMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: { hostEnabled?: boolean; playerEnabled?: boolean } }) => {
+      await apiRequest('PATCH', `/api/super-admin/game-types/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/game-types'] });
+      toast({ title: "Game visibility updated" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update game", variant: "destructive" });
+    },
   });
 
   const deleteUserMutation = useMutation({
@@ -164,10 +182,14 @@ export default function SuperAdmin() {
 
       <main className="p-6 max-w-7xl mx-auto">
         <Tabs defaultValue="analytics" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-md">
+          <TabsList className="grid w-full grid-cols-4 max-w-xl">
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="w-4 h-4" />
               Analytics
+            </TabsTrigger>
+            <TabsTrigger value="games" className="gap-2">
+              <Gamepad2 className="w-4 h-4" />
+              Games
             </TabsTrigger>
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4" />
@@ -230,6 +252,98 @@ export default function SuperAdmin() {
                   isLoading={isLoadingStats}
                 />
               </div>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="games" className="space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-foreground">Game Visibility</h2>
+                <Badge variant="secondary">{gameTypes.length} games</Badge>
+              </div>
+
+              <p className="text-muted-foreground mb-6">
+                Control which games are visible to hosts and players. Disabled games won't appear in the game selection menu.
+              </p>
+
+              {isLoadingGameTypes ? (
+                <div className="space-y-3">
+                  {[1, 2].map((i) => (
+                    <Skeleton key={i} className="h-24 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {gameTypes.map((gameType) => (
+                    <Card key={gameType.id} className="hover-elevate">
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-4">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                              gameType.slug === 'grid_of_grudges' 
+                                ? 'bg-gradient-to-br from-green-500 to-emerald-500' 
+                                : 'bg-gradient-to-br from-pink-500 to-rose-500'
+                            }`}>
+                              {gameType.slug === 'grid_of_grudges' ? (
+                                <Grid2X2 className="w-6 h-6 text-white" />
+                              ) : (
+                                <Heart className="w-6 h-6 text-white" />
+                              )}
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-lg text-foreground">
+                                {gameType.displayName}
+                              </h3>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {gameType.description || 'No description'}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col gap-4">
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-sm text-muted-foreground">Show to Hosts</span>
+                              <Switch
+                                checked={gameType.hostEnabled}
+                                onCheckedChange={(checked) => {
+                                  updateGameTypeMutation.mutate({
+                                    id: gameType.id,
+                                    data: { hostEnabled: checked }
+                                  });
+                                }}
+                                data-testid={`switch-host-${gameType.slug}`}
+                              />
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-sm text-muted-foreground">Show to Players</span>
+                              <Switch
+                                checked={gameType.playerEnabled}
+                                onCheckedChange={(checked) => {
+                                  updateGameTypeMutation.mutate({
+                                    id: gameType.id,
+                                    data: { playerEnabled: checked }
+                                  });
+                                }}
+                                data-testid={`switch-player-${gameType.slug}`}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {gameTypes.length === 0 && (
+                    <Card>
+                      <CardContent className="p-8 text-center text-muted-foreground">
+                        No games configured yet.
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
             </motion.div>
           </TabsContent>
 
