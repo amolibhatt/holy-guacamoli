@@ -6,10 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import MDEditor from '@uiw/react-md-editor';
@@ -46,6 +49,8 @@ export default function Admin() {
   const [editCategoryName, setEditCategoryName] = useState("");
   const [editCategoryDescription, setEditCategoryDescription] = useState("");
   const [newCategoryDescription, setNewCategoryDescription] = useState("");
+  const [questionFormOpen, setQuestionFormOpen] = useState(false);
+  const [draggedQuestionId, setDraggedQuestionId] = useState<number | null>(null);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -637,10 +642,13 @@ export default function Admin() {
                               <TooltipTrigger asChild>
                                 <TabsTrigger 
                                   value={bc.id.toString()} 
-                                  className="h-9 px-4 text-sm rounded-md bg-background border border-border data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary"
+                                  className="h-9 px-4 text-sm rounded-md bg-background border border-border data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary gap-2"
                                   data-testid={`category-tab-${bc.id}`}
                                 >
-                                  <span className="truncate max-w-[120px]">{bc.category.name}</span>
+                                  {(bc.questionCount ?? 0) >= 5 && (
+                                    <CheckCircle className="w-4 h-4 text-primary data-[state=active]:text-primary-foreground" />
+                                  )}
+                                  <span className="truncate max-w-[100px]">{bc.category.name}</span>
                                 </TabsTrigger>
                               </TooltipTrigger>
                               <TooltipContent>
@@ -823,53 +831,96 @@ export default function Admin() {
                       )}
                     </AnimatePresence>
 
-                    {/* New question form */}
-                    <div className="space-y-4 p-5 bg-gradient-to-b from-muted/20 to-transparent rounded-xl border border-border shrink-0">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-sm font-semibold text-foreground">New Question</h3>
-                          <p className="text-xs text-muted-foreground">Supports markdown formatting</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} />
-                          <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} />
-                          <Button size="sm" variant="outline" onClick={() => imageInputRef.current?.click()} className="h-8 gap-1">
-                            <Image className="w-4 h-4" /> Image
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => audioInputRef.current?.click()} className="h-8 gap-1">
-                            <Music className="w-4 h-4" /> Audio
-                          </Button>
-                        </div>
-                      </div>
-                      <MDEditor value={newQuestion} onChange={(val) => setNewQuestion(val || "")} preview="edit" height={120} data-testid="input-new-question" />
-                      <div className="flex gap-3">
-                        <Input
-                          placeholder="Correct answer"
-                          value={newCorrectAnswer}
-                          onChange={(e) => setNewCorrectAnswer(e.target.value)}
-                          className="flex-1"
-                          data-testid="input-correct-answer"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && newQuestion.trim() && newCorrectAnswer.trim()) {
-                              handleCreateQuestion();
-                            }
-                          }}
-                        />
-                        <Select value={String(newPoints)} onValueChange={(v) => setNewPoints(Number(v))} disabled={availablePoints.length === 0}>
-                          <SelectTrigger className="w-28" data-testid="select-points">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availablePoints.map(pt => (
-                              <SelectItem key={pt} value={String(pt)}>{pt} pts</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button onClick={handleCreateQuestion} disabled={!newQuestion.trim() || !newCorrectAnswer.trim() || availablePoints.length === 0} className="px-6" data-testid="button-add-question">
-                          <Plus className="w-4 h-4 mr-2" /> Add Question
+                    {/* Collapsible new question form */}
+                    <Collapsible open={questionFormOpen} onOpenChange={setQuestionFormOpen}>
+                      <CollapsibleTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          className="w-full justify-between h-12 px-4 bg-gradient-to-r from-muted/30 to-muted/10 border-dashed"
+                          data-testid="button-toggle-question-form"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Plus className="w-4 h-4" />
+                            <span className="font-medium">Add New Question</span>
+                          </span>
+                          <ChevronDown className={`w-4 h-4 transition-transform ${questionFormOpen ? 'rotate-180' : ''}`} />
                         </Button>
-                      </div>
-                    </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="mt-3 space-y-4 p-5 bg-gradient-to-b from-muted/20 to-transparent rounded-xl border border-border"
+                        >
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-muted-foreground">Supports markdown formatting</p>
+                            <div className="flex items-center gap-1">
+                              <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} />
+                              <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} />
+                              <Button size="sm" variant="ghost" onClick={() => imageInputRef.current?.click()} className="h-8 gap-1">
+                                <Image className="w-4 h-4" /> Image
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => audioInputRef.current?.click()} className="h-8 gap-1">
+                                <Music className="w-4 h-4" /> Audio
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* Side-by-side editor and preview */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-2">Write</p>
+                              <MDEditor 
+                                value={newQuestion} 
+                                onChange={(val) => setNewQuestion(val || "")} 
+                                preview="edit" 
+                                height={150} 
+                                data-testid="input-new-question"
+                                hideToolbar
+                              />
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-2">Preview</p>
+                              <div className="h-[150px] p-3 rounded-md border border-border bg-background overflow-auto prose prose-sm dark:prose-invert max-w-none">
+                                {newQuestion.trim() ? (
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{newQuestion}</ReactMarkdown>
+                                ) : (
+                                  <p className="text-muted-foreground italic">Start typing to see preview...</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-3">
+                            <Input
+                              placeholder="Correct answer"
+                              value={newCorrectAnswer}
+                              onChange={(e) => setNewCorrectAnswer(e.target.value)}
+                              className="flex-1"
+                              data-testid="input-correct-answer"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && newQuestion.trim() && newCorrectAnswer.trim()) {
+                                  handleCreateQuestion();
+                                }
+                              }}
+                            />
+                            <Select value={String(newPoints)} onValueChange={(v) => setNewPoints(Number(v))} disabled={availablePoints.length === 0}>
+                              <SelectTrigger className="w-28" data-testid="select-points">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availablePoints.map(pt => (
+                                  <SelectItem key={pt} value={String(pt)}>{pt} pts</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button onClick={handleCreateQuestion} disabled={!newQuestion.trim() || !newCorrectAnswer.trim() || availablePoints.length === 0} className="px-6" data-testid="button-add-question">
+                              <Plus className="w-4 h-4 mr-2" /> Add
+                            </Button>
+                          </div>
+                        </motion.div>
+                      </CollapsibleContent>
+                    </Collapsible>
 
                     <div className="flex-1 overflow-y-auto space-y-3">
                       <div className="flex items-center justify-between mb-2">
@@ -913,10 +964,28 @@ export default function Admin() {
                                   </div>
                                 </div>
                               ) : (
-                                <div className="flex items-start justify-between gap-4">
+                                <div 
+                                  className="flex items-start gap-3"
+                                  draggable
+                                  onDragStart={() => setDraggedQuestionId(q.id)}
+                                  onDragEnd={() => setDraggedQuestionId(null)}
+                                  onDragOver={(e) => e.preventDefault()}
+                                  onDrop={() => {
+                                    if (draggedQuestionId && draggedQuestionId !== q.id) {
+                                      // Swap points between dragged question and drop target
+                                      const draggedQ = questions.find(x => x.id === draggedQuestionId);
+                                      if (draggedQ) {
+                                        updateQuestionMutation.mutate({ id: draggedQuestionId, points: q.points });
+                                        updateQuestionMutation.mutate({ id: q.id, points: draggedQ.points });
+                                      }
+                                    }
+                                  }}
+                                >
+                                  <div className="flex items-center self-stretch cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground">
+                                    <GripVertical className="w-4 h-4" />
+                                  </div>
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <span className="text-xs text-muted-foreground">#{idx + 1}</span>
                                       <span className="px-2 py-0.5 text-xs font-bold bg-primary/20 text-primary rounded">{q.points} pts</span>
                                     </div>
                                     <p className="text-sm text-foreground">{q.question.replace(/!\[.*?\]\(.*?\)/g, '[image]').replace(/<audio.*?<\/audio>/g, '[audio]')}</p>
@@ -937,10 +1006,26 @@ export default function Admin() {
                         </AnimatePresence>
                       )}
                       {questions.length === 0 && !loadingQuestions && (
-                        <div className="text-center py-8">
-                          <p className="text-muted-foreground">No questions yet</p>
-                          <p className="text-muted-foreground/60 text-sm mt-1">Add your first question above</p>
-                        </div>
+                        <motion.div 
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="text-center py-12 px-6 bg-gradient-to-b from-muted/30 to-transparent rounded-xl border border-dashed border-border"
+                        >
+                          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                            <Sparkles className="w-8 h-8 text-primary" />
+                          </div>
+                          <h3 className="text-lg font-semibold text-foreground mb-2">Create Your First Question</h3>
+                          <p className="text-muted-foreground max-w-sm mx-auto mb-4">
+                            This category needs 5 questions. Click the button above to add your first one!
+                          </p>
+                          <Button 
+                            variant="default" 
+                            onClick={() => setQuestionFormOpen(true)}
+                            className="gap-2"
+                          >
+                            <Plus className="w-4 h-4" /> Add Question
+                          </Button>
+                        </motion.div>
                       )}
                     </div>
                   </div>
