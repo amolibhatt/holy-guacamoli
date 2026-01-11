@@ -17,6 +17,7 @@ import HeadsUpGame from "@/pages/HeadsUpGame";
 import GridOfGrudges from "@/pages/GridOfGrudges";
 import PlayBoard from "@/pages/PlayBoard";
 import SuperAdmin from "@/pages/SuperAdmin";
+import CouplesGame from "@/pages/CouplesGame";
 
 function Router() {
   return (
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/heads-up/:gameId" component={HeadsUpGame} />
       <Route path="/grudges/:gameId" component={GridOfGrudges} />
+      <Route path="/couples" component={CouplesGame} />
       <Route component={NotFound} />
     </Switch>
   );
