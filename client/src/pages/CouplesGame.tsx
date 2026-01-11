@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, Heart, Copy, Check, Loader2, Send, Lock, Unlock, Flame, Users, Sparkles, MessageCircle, BookOpen, Archive, TrendingUp } from "lucide-react";
+import { ArrowLeft, Heart, Copy, Check, Loader2, Send, Lock, Unlock, Flame, Users, Sparkles, MessageCircle, BookOpen, Archive, TrendingUp, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,7 @@ export default function CouplesGame() {
   const [copied, setCopied] = useState(false);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [anniversaryDate, setAnniversaryDate] = useState("");
 
   const { data: pair, isLoading: isLoadingPair } = useQuery<DoubleDipPair | null>({
     queryKey: ['/api/double-dip/pair'],
@@ -60,6 +61,21 @@ export default function CouplesGame() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to create pair", variant: "destructive" });
+    },
+  });
+
+  const anniversaryMutation = useMutation({
+    mutationFn: async (date: string) => {
+      const res = await apiRequest('POST', '/api/double-dip/anniversary', { anniversaryDate: date });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/double-dip/pair'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/double-dip/storyboard'] });
+      toast({ title: "Anniversary Saved!", description: "Your special date has been added to your storyboard" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to save anniversary", variant: "destructive" });
     },
   });
 
@@ -409,6 +425,72 @@ export default function CouplesGame() {
                                   {dailyData.dailySet.followupTask}
                                 </p>
                               </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    )}
+
+                    {!pair?.anniversaryDate && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6 }}
+                      >
+                        <Card>
+                          <CardContent className="p-5">
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                                <Heart className="w-5 h-5 text-red-500" />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-foreground">Add Your Anniversary</h4>
+                                <p className="text-xs text-muted-foreground">Remember your special day together</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Input
+                                type="date"
+                                value={anniversaryDate}
+                                onChange={(e) => setAnniversaryDate(e.target.value)}
+                                className="flex-1"
+                                data-testid="input-anniversary"
+                              />
+                              <Button
+                                onClick={() => anniversaryMutation.mutate(anniversaryDate)}
+                                disabled={!anniversaryDate || anniversaryMutation.isPending}
+                                data-testid="button-save-anniversary"
+                              >
+                                {anniversaryMutation.isPending ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  "Save"
+                                )}
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    )}
+
+                    {pair?.anniversaryDate && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6 }}
+                      >
+                        <Card className="bg-gradient-to-r from-red-500/5 to-pink-500/5">
+                          <CardContent className="p-4 flex items-center gap-3">
+                            <Calendar className="w-5 h-5 text-red-500" />
+                            <div>
+                              <p className="text-xs text-muted-foreground">Your Anniversary</p>
+                              <p className="font-medium text-foreground">
+                                {new Date(pair.anniversaryDate + 'T00:00:00').toLocaleDateString('en-US', { 
+                                  month: 'long', 
+                                  day: 'numeric', 
+                                  year: 'numeric' 
+                                })}
+                              </p>
                             </div>
                           </CardContent>
                         </Card>
