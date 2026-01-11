@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Loader2, Settings, Maximize2, Minimize2, ArrowLeft, Sun, Moon, Home } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -123,11 +124,36 @@ export default function PlayBoard() {
 
   if (isLoadingBoard || isLoadingCategories) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-        <Loader2 className="w-16 h-16 text-primary animate-spin" />
-        <p className="text-muted-foreground mt-6 text-lg">
-          Loading game board...
-        </p>
+      <div className="min-h-screen bg-background flex flex-col">
+        <header className="border-b border-primary/20 bg-card/40 backdrop-blur-xl p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-10 w-10 rounded-lg" />
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-6 w-32" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-9 w-9 rounded-md" />
+              <Skeleton className="h-9 w-9 rounded-md" />
+            </div>
+          </div>
+        </header>
+        <main className="flex-1 p-4 flex flex-col" role="main" aria-label="Loading game board">
+          <div className="flex gap-4 justify-center flex-wrap">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex flex-col gap-2 w-40">
+                <Skeleton className="h-16 w-full rounded-lg" />
+                <Skeleton className="h-12 w-full rounded-lg" />
+                <Skeleton className="h-12 w-full rounded-lg" />
+                <Skeleton className="h-12 w-full rounded-lg" />
+                <Skeleton className="h-12 w-full rounded-lg" />
+                <Skeleton className="h-12 w-full rounded-lg" />
+              </div>
+            ))}
+          </div>
+        </main>
       </div>
     );
   }
@@ -222,7 +248,7 @@ export default function PlayBoard() {
         </div>
       </header>
 
-      <main className="flex-1 p-2 sm:p-4 lg:p-6 flex flex-col relative overflow-auto">
+      <main className="flex-1 p-2 sm:p-4 lg:p-6 flex flex-col relative overflow-auto" role="main" aria-label="Game board">
         <ThemeDecorations placement="board" />
         {categories && categories.length > 0 ? (
           <motion.div 

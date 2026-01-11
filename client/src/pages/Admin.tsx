@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, LogOut, Sun, Moon, Layers, Upload, FileText, Eye } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import MDEditor from '@uiw/react-md-editor';
@@ -476,7 +477,7 @@ export default function Admin() {
         </div>
       </div>
 
-      <div className="max-w-[1600px] mx-auto p-6">
+      <main className="max-w-[1600px] mx-auto p-6" role="main" aria-label="Admin panel content">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-120px)]">
           <div className="lg:col-span-3 overflow-y-auto">
             <Card className="bg-card border-border shadow-sm">
@@ -545,9 +546,19 @@ export default function Admin() {
                   )}
                 </AnimatePresence>
 
-                <div className="space-y-2">
+                <div className="space-y-2" role="list" aria-label="Game boards">
                   {loadingBoards ? (
-                    <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin" /></div>
+                    <div className="space-y-2">
+                      {[1, 2, 3].map(i => (
+                        <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                          <Skeleton className="h-8 w-8 rounded" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-3 w-16" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   ) : boards.map(board => {
                     const summary = boardSummaries.find(s => s.id === board.id);
                     const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
@@ -821,7 +832,11 @@ export default function Admin() {
                     </AnimatePresence>
 
                     {loadingBoardCategories ? (
-                      <div className="flex justify-center py-4"><Loader2 className="w-4 h-4 animate-spin" /></div>
+                      <div className="flex gap-4 border-b border-border pb-2 overflow-x-auto">
+                        {[1, 2, 3, 4, 5].map(i => (
+                          <Skeleton key={i} className="h-8 w-24 rounded shrink-0" />
+                        ))}
+                      </div>
                     ) : boardCategories.length === 0 ? (
                       <p className="text-center text-muted-foreground text-xs py-3">
                         No categories yet. Click + to add one!
@@ -1290,7 +1305,7 @@ export default function Admin() {
             </Card>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
