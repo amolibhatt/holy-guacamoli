@@ -134,7 +134,7 @@ export default function Home() {
               className="text-muted-foreground hover:text-primary" 
               onClick={() => setShowGuide(true)}
               data-testid="button-help"
-              title="How to host"
+              aria-label="How to host"
             >
               <HelpCircle className="w-5 h-5" />
             </Button>
@@ -144,17 +144,18 @@ export default function Home() {
               className="text-muted-foreground hover:text-foreground" 
               onClick={toggleColorMode}
               data-testid="button-color-mode"
+              aria-label={colorMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {colorMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </Button>
             <Link href="/admin">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" data-testid="button-admin">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" data-testid="button-admin" aria-label="Admin settings">
                 <Settings className="w-5 h-5" />
               </Button>
             </Link>
             {user?.role === 'super_admin' && (
               <Link href="/admin/super">
-                <Button variant="ghost" size="icon" className="text-purple-500 hover:text-purple-400" data-testid="button-super-admin" title="Super Admin">
+                <Button variant="ghost" size="icon" className="text-purple-500 hover:text-purple-400" data-testid="button-super-admin" aria-label="Super admin panel">
                   <Shield className="w-5 h-5" />
                 </Button>
               </Link>
@@ -166,6 +167,7 @@ export default function Home() {
               data-testid="button-logout"
               onClick={() => logout()}
               disabled={isLoggingOut}
+              aria-label="Log out"
             >
               <LogOut className="w-5 h-5" />
             </Button>

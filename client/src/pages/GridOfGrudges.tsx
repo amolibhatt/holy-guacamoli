@@ -115,13 +115,13 @@ export default function GridOfGrudges() {
       <div className="sticky top-0 z-50 bg-background border-b border-border px-4 py-3">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <Link href="/admin/games">
-            <Button variant="ghost" size="icon" data-testid="button-back">
+            <Button variant="ghost" size="icon" data-testid="button-back" aria-label="Back to games">
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
           <h1 className="text-lg font-bold text-foreground">{game.name}</h1>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1 text-sm text-muted-foreground" aria-label={`${contestants.length} contestants`}>
               <Users className="w-4 h-4" />
               {contestants.length}
             </div>
@@ -130,6 +130,7 @@ export default function GridOfGrudges() {
               size="icon" 
               onClick={toggleColorMode}
               data-testid="button-color-mode"
+              aria-label={colorMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {colorMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </Button>

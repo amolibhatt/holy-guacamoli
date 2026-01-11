@@ -64,7 +64,7 @@ export default function Vault() {
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
           <Link href="/couples">
-            <Button variant="ghost" size="icon" data-testid="button-back">
+            <Button variant="ghost" size="icon" data-testid="button-back" aria-label="Back to Relationship Hub">
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>

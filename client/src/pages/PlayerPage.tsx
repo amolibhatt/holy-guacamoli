@@ -465,7 +465,7 @@ export default function PlayerPage() {
             onClick={handleToggleSound}
             className="h-8 w-8"
             data-testid="button-toggle-sound"
-            title={soundEnabled ? "Mute sounds" : "Unmute sounds"}
+            aria-label={soundEnabled ? "Mute sounds" : "Unmute sounds"}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-muted-foreground" />}
           </Button>
