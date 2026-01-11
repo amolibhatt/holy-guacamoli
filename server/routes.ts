@@ -757,5 +757,187 @@ export async function registerRoutes(
 
   app.use('/uploads', (await import('express')).default.static(uploadDir));
 
+  // === LIAR PROMPT PACKS ===
+  app.get("/api/liar-packs", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const packs = await storage.getLiarPromptPacks(userId, role);
+    res.json(packs);
+  });
+
+  app.get("/api/liar-packs/:id", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const pack = await storage.getLiarPromptPack(Number(req.params.id), userId, role);
+    if (!pack) {
+      return res.status(404).json({ message: "Prompt pack not found" });
+    }
+    res.json(pack);
+  });
+
+  app.post("/api/liar-packs", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { name, description } = req.body;
+      if (!name) {
+        return res.status(400).json({ message: "Name is required" });
+      }
+      const pack = await storage.createLiarPromptPack({
+        name,
+        description: description || null,
+        userId,
+      });
+      res.status(201).json(pack);
+    } catch (err) {
+      console.error("Error creating prompt pack:", err);
+      res.status(500).json({ message: "Failed to create prompt pack" });
+    }
+  });
+
+  app.put("/api/liar-packs/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const { name, description } = req.body;
+      const pack = await storage.updateLiarPromptPack(Number(req.params.id), {
+        name,
+        description,
+      }, userId, role);
+      if (!pack) {
+        return res.status(404).json({ message: "Prompt pack not found" });
+      }
+      res.json(pack);
+    } catch (err) {
+      console.error("Error updating prompt pack:", err);
+      res.status(500).json({ message: "Failed to update prompt pack" });
+    }
+  });
+
+  app.delete("/api/liar-packs/:id", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const deleted = await storage.deleteLiarPromptPack(Number(req.params.id), userId, role);
+    if (!deleted) {
+      return res.status(404).json({ message: "Prompt pack not found" });
+    }
+    res.json({ success: true });
+  });
+
+  // === LIAR PROMPTS ===
+  app.get("/api/liar-packs/:packId/prompts", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const pack = await storage.getLiarPromptPack(Number(req.params.packId), userId, role);
+    if (!pack) {
+      return res.status(404).json({ message: "Prompt pack not found" });
+    }
+    const prompts = await storage.getLiarPrompts(Number(req.params.packId));
+    res.json(prompts);
+  });
+
+  app.post("/api/liar-packs/:packId/prompts", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const packId = Number(req.params.packId);
+      const pack = await storage.getLiarPromptPack(packId, userId, role);
+      if (!pack) {
+        return res.status(404).json({ message: "Prompt pack not found" });
+      }
+      const { clue, truth, category } = req.body;
+      if (!clue || !truth) {
+        return res.status(400).json({ message: "Clue and truth are required" });
+      }
+      const prompt = await storage.createLiarPrompt({
+        packId,
+        clue,
+        truth,
+        category: category || null,
+      });
+      res.status(201).json(prompt);
+    } catch (err) {
+      console.error("Error creating prompt:", err);
+      res.status(500).json({ message: "Failed to create prompt" });
+    }
+  });
+
+  app.put("/api/liar-prompts/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { clue, truth, category } = req.body;
+      const prompt = await storage.updateLiarPrompt(Number(req.params.id), {
+        clue,
+        truth,
+        category,
+      });
+      if (!prompt) {
+        return res.status(404).json({ message: "Prompt not found" });
+      }
+      res.json(prompt);
+    } catch (err) {
+      console.error("Error updating prompt:", err);
+      res.status(500).json({ message: "Failed to update prompt" });
+    }
+  });
+
+  app.delete("/api/liar-prompts/:id", isAuthenticated, async (req, res) => {
+    const deleted = await storage.deleteLiarPrompt(Number(req.params.id));
+    if (!deleted) {
+      return res.status(404).json({ message: "Prompt not found" });
+    }
+    res.json({ success: true });
+  });
+
+  // === GAME LIAR PACKS (junction for liar's lobby) ===
+  app.get("/api/games/:gameId/liar-packs", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const game = await storage.getGame(Number(req.params.gameId), userId, role);
+    if (!game) {
+      return res.status(404).json({ message: "Game not found" });
+    }
+    const glps = await storage.getGameLiarPacks(Number(req.params.gameId));
+    res.json(glps);
+  });
+
+  app.post("/api/games/:gameId/liar-packs", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const gameId = Number(req.params.gameId);
+      const game = await storage.getGame(gameId, userId, role);
+      if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+      const { packId } = req.body;
+      if (!packId) {
+        return res.status(400).json({ message: "packId is required" });
+      }
+      const pack = await storage.getLiarPromptPack(packId, userId, role);
+      if (!pack) {
+        return res.status(404).json({ message: "Prompt pack not found" });
+      }
+      const glp = await storage.addLiarPackToGame({ gameId, packId });
+      res.status(201).json(glp);
+    } catch (err) {
+      console.error("Error adding pack to game:", err);
+      res.status(500).json({ message: "Failed to add pack to game" });
+    }
+  });
+
+  app.delete("/api/games/:gameId/liar-packs/:packId", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const gameId = Number(req.params.gameId);
+    const game = await storage.getGame(gameId, userId, role);
+    if (!game) {
+      return res.status(404).json({ message: "Game not found" });
+    }
+    const deleted = await storage.removeLiarPackFromGame(gameId, Number(req.params.packId));
+    if (!deleted) {
+      return res.status(404).json({ message: "Pack not linked to this game" });
+    }
+    res.json({ success: true });
+  });
+
   return httpServer;
 }
