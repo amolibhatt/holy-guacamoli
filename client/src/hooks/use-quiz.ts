@@ -1,11 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
+import { useAuth } from "@/hooks/use-auth";
 import type { Board, Category, BoardCategoryWithCategory, Question } from "@shared/schema";
+
+// All these hooks are protected - they require authentication
+// They automatically read auth state and won't fire until authenticated
 
 // GET /api/boards
 export function useBoards() {
+  const { isAuthenticated } = useAuth();
   return useQuery<Board[]>({
     queryKey: ["/api/boards"],
+    enabled: isAuthenticated,
     queryFn: async () => {
       const res = await fetch("/api/boards");
       if (!res.ok) throw new Error("Failed to fetch boards");
@@ -16,9 +22,10 @@ export function useBoards() {
 
 // GET /api/boards/:id
 export function useBoard(id: number | null) {
+  const { isAuthenticated } = useAuth();
   return useQuery<Board>({
     queryKey: ["/api/boards", id],
-    enabled: id !== null,
+    enabled: id !== null && isAuthenticated,
     queryFn: async () => {
       const res = await fetch(`/api/boards/${id}`);
       if (!res.ok) throw new Error("Failed to fetch board");
@@ -29,9 +36,10 @@ export function useBoard(id: number | null) {
 
 // GET /api/boards/:id/categories - returns BoardCategoryWithCategory[]
 export function useBoardCategories(boardId: number | null) {
+  const { isAuthenticated } = useAuth();
   return useQuery<BoardCategoryWithCategory[]>({
     queryKey: ["/api/boards", boardId, "categories"],
-    enabled: boardId !== null,
+    enabled: boardId !== null && isAuthenticated,
     queryFn: async () => {
       const res = await fetch(`/api/boards/${boardId}/categories`);
       if (!res.ok) throw new Error("Failed to fetch board categories");
@@ -42,8 +50,10 @@ export function useBoardCategories(boardId: number | null) {
 
 // GET /api/categories (global templates)
 export function useCategories() {
+  const { isAuthenticated } = useAuth();
   return useQuery<Category[]>({
     queryKey: [api.categories.list.path],
+    enabled: isAuthenticated,
     queryFn: async () => {
       const res = await fetch(api.categories.list.path);
       if (!res.ok) throw new Error("Failed to fetch categories");
@@ -54,9 +64,10 @@ export function useCategories() {
 
 // GET /api/categories/:id
 export function useCategory(id: number) {
+  const { isAuthenticated } = useAuth();
   return useQuery<Category>({
     queryKey: [api.categories.get.path, id],
-    enabled: !!id,
+    enabled: !!id && isAuthenticated,
     queryFn: async () => {
       const url = buildUrl(api.categories.get.path, { id });
       const res = await fetch(url);
@@ -69,9 +80,10 @@ export function useCategory(id: number) {
 
 // GET /api/board-categories/:boardCategoryId/questions
 export function useQuestionsByBoardCategory(boardCategoryId: number) {
+  const { isAuthenticated } = useAuth();
   return useQuery<Question[]>({
     queryKey: ["/api/board-categories", boardCategoryId, "questions"],
-    enabled: !!boardCategoryId,
+    enabled: !!boardCategoryId && isAuthenticated,
     queryFn: async () => {
       const res = await fetch(`/api/board-categories/${boardCategoryId}/questions`);
       if (!res.ok) throw new Error("Failed to fetch questions");

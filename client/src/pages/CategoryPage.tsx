@@ -1,13 +1,27 @@
 import { useParams, Redirect } from "wouter";
 import { useCategory } from "@/hooks/use-quiz";
+import { useAuth } from "@/hooks/use-auth";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 
 export default function CategoryPage() {
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const params = useParams();
   const id = Number(params.id);
   
   const { data: category, isLoading } = useCategory(id);
+
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center">
+        <Loader2 className="w-12 h-12 text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Redirect to="/" />;
+  }
 
   if (isLoading) {
     return (

@@ -12,16 +12,19 @@ import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles } from "lucide-react";
-import { Link } from "wouter";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, LogOut } from "lucide-react";
+import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import MDEditor from '@uiw/react-md-editor';
+import { useAuth } from "@/hooks/use-auth";
 import type { Category, Question, Board, BoardCategoryWithCount } from "@shared/schema";
 
 const ALL_POINT_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
 export default function Admin() {
   const { toast } = useToast();
+  const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
   
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
   const [selectedBoardCategoryId, setSelectedBoardCategoryId] = useState<number | null>(null);
@@ -59,15 +62,18 @@ export default function Admin() {
 
   const { data: boards = [], isLoading: loadingBoards } = useQuery<Board[]>({
     queryKey: ['/api/boards'],
+    enabled: isAuthenticated,
   });
 
   type BoardSummary = { id: number; name: string; categoryCount: number; categories: { id: number; name: string; questionCount: number; remaining: number }[] };
   const { data: boardSummaries = [] } = useQuery<BoardSummary[]>({
     queryKey: ['/api/boards/summary'],
+    enabled: isAuthenticated,
   });
 
   const { data: allCategories = [], isLoading: loadingCategories } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
+    enabled: isAuthenticated,
   });
 
   const selectedBoard = boards.find(b => b.id === selectedBoardId);
@@ -75,7 +81,7 @@ export default function Admin() {
 
   const { data: boardCategories = [], isLoading: loadingBoardCategories } = useQuery<BoardCategoryWithCount[]>({
     queryKey: ['/api/boards', selectedBoardId, 'categories'],
-    enabled: !!selectedBoardId,
+    enabled: !!selectedBoardId && isAuthenticated,
   });
 
   const linkedCategoryIds = boardCategories.map(bc => bc.categoryId);
@@ -85,17 +91,34 @@ export default function Admin() {
 
   const { data: questions = [], isLoading: loadingQuestions } = useQuery<Question[]>({
     queryKey: ['/api/board-categories', selectedBoardCategoryId, 'questions'],
-    enabled: !!selectedBoardCategoryId,
+    enabled: !!selectedBoardCategoryId && isAuthenticated,
   });
 
   const usedPoints = questions.map(q => q.points);
   const availablePoints = currentPointValues.filter(pt => !usedPoints.includes(pt));
+
+  // Redirect to home (landing page) if not authenticated
+  useEffect(() => {
+    if (!isAuthLoading && !isAuthenticated) {
+      setLocation("/");
+    }
+  }, [isAuthLoading, isAuthenticated, setLocation]);
 
   useEffect(() => {
     if (availablePoints.length > 0 && !availablePoints.includes(newPoints)) {
       setNewPoints(availablePoints[0]);
     }
   }, [availablePoints, newPoints]);
+  
+  // Show loading while checking auth
+  if (isAuthLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <Loader2 className="w-12 h-12 text-primary animate-spin" />
+        <p className="text-muted-foreground mt-4">Loading...</p>
+      </div>
+    );
+  }
 
   const createBoardMutation = useMutation({
     mutationFn: async (data: { name: string; description: string; pointValues: number[] }) => {
