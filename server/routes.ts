@@ -54,27 +54,42 @@ export async function registerRoutes(
 
   // Board routes - protected (hosts only, super_admin sees all)
   app.get("/api/boards", isAuthenticated, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const boards = await storage.getBoards(userId, role);
-    res.json(boards);
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const boards = await storage.getBoards(userId, role);
+      res.json(boards);
+    } catch (err) {
+      console.error("Error fetching boards:", err);
+      res.status(500).json({ message: "Failed to fetch boards" });
+    }
   });
 
   app.get("/api/boards/summary", isAuthenticated, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const summaries = await storage.getBoardSummaries(userId, role);
-    res.json(summaries);
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const summaries = await storage.getBoardSummaries(userId, role);
+      res.json(summaries);
+    } catch (err) {
+      console.error("Error fetching board summaries:", err);
+      res.status(500).json({ message: "Failed to fetch board summaries" });
+    }
   });
 
   app.get("/api/boards/:id", isAuthenticated, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const board = await storage.getBoard(Number(req.params.id), userId, role);
-    if (!board) {
-      return res.status(404).json({ message: "Board not found" });
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const board = await storage.getBoard(Number(req.params.id), userId, role);
+      if (!board) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      res.json(board);
+    } catch (err) {
+      console.error("Error fetching board:", err);
+      res.status(500).json({ message: "Failed to fetch board" });
     }
-    res.json(board);
   });
 
   app.post("/api/boards", isAuthenticated, async (req, res) => {
@@ -1341,23 +1356,58 @@ export async function registerRoutes(
                   try {
                     const allAnswers = await storage.getDoubleDipAnswers(freshDailySet.id);
                     const questionIds = (freshDailySet.questionIds as number[]) || [];
-                    let matches = 0;
+                    let totalScore = 0;
                     let total = 0;
                     for (const qId of questionIds) {
                       const userAAnswer = allAnswers.find(a => a.questionId === qId && a.userId === pair.userAId);
                       const userBAnswer = allAnswers.find(a => a.questionId === qId && a.userId === pair.userBId);
                       if (userAAnswer && userBAnswer) {
                         total++;
-                        // Simple similarity: answers match if they share significant words
-                        const wordsA = (userAAnswer.answerText || '').toLowerCase().split(/\s+/).filter(w => w.length > 3);
-                        const wordsB = (userBAnswer.answerText || '').toLowerCase().split(/\s+/).filter(w => w.length > 3);
-                        const overlap = wordsA.filter(w => wordsB.includes(w)).length;
-                        if (overlap > 0 || (wordsA.length === 0 && wordsB.length === 0)) {
-                          matches++;
+                        const textA = (userAAnswer.answerText || '').toLowerCase().trim();
+                        const textB = (userBAnswer.answerText || '').toLowerCase().trim();
+                        
+                        // Exact match = 100% compatibility
+                        if (textA === textB) {
+                          totalScore += 100;
+                          continue;
                         }
+                        
+                        // Normalize common synonyms and variants
+                        const normalize = (s: string) => s
+                          .replace(/[^\w\s]/g, '')
+                          .replace(/\b(yes|yeah|yep|yup|absolutely)\b/gi, 'yes')
+                          .replace(/\b(no|nope|nah)\b/gi, 'no')
+                          .replace(/\b(don\'?t|do not)\b/gi, 'dont');
+                        
+                        const normA = normalize(textA);
+                        const normB = normalize(textB);
+                        
+                        // Check normalized exact match
+                        if (normA === normB) {
+                          totalScore += 95;
+                          continue;
+                        }
+                        
+                        // Token-based similarity for longer answers
+                        const tokensA = normA.split(/\s+/).filter(w => w.length > 0);
+                        const tokensB = normB.split(/\s+/).filter(w => w.length > 0);
+                        
+                        if (tokensA.length === 0 && tokensB.length === 0) {
+                          totalScore += 50; // Both empty = neutral
+                          continue;
+                        }
+                        
+                        // Jaccard similarity: intersection / union
+                        const setA = new Set(tokensA);
+                        const setB = new Set(tokensB);
+                        const intersection = [...setA].filter(x => setB.has(x)).length;
+                        const union = new Set([...tokensA, ...tokensB]).size;
+                        const jaccard = union > 0 ? (intersection / union) * 100 : 0;
+                        
+                        totalScore += jaccard;
                       }
                     }
-                    avgScore = total > 0 ? (matches / total) * 100 : 0;
+                    avgScore = total > 0 ? totalScore / total : 0;
                   } catch (err) {
                     console.error("Error computing deterministic compatibility:", err);
                     avgScore = 0;
@@ -1437,11 +1487,17 @@ export async function registerRoutes(
           await storage.updateDoubleDipDailySet(freshDailySet.id, updateData);
         }
         
-        // Return success with weekly stake status for client visibility
-        return res.json({ success: true, weeklyStake: responseWeeklyStakeStatus });
+        // Return appropriate status based on scoring result
+        // 200 = full success, 207 = partial success (answers saved, scoring issue)
+        const httpStatus = responseWeeklyStakeStatus?.status === 'error' ? 207 : 200;
+        return res.status(httpStatus).json({ 
+          success: true, 
+          answersSubmitted: true,
+          weeklyStake: responseWeeklyStakeStatus 
+        });
       }
       
-      res.json({ success: true, weeklyStake: { status: 'not_revealed' } });
+      res.json({ success: true, answersSubmitted: true, weeklyStake: { status: 'pending_partner' } });
     } catch (err) {
       console.error("Error submitting answers:", err);
       res.status(500).json({ message: "Failed to submit answers" });
@@ -1741,7 +1797,17 @@ export async function registerRoutes(
       const weekStart = getWeekStartDate();
       const stake = await storage.getDoubleDipWeeklyStake(pair.id, weekStart);
       
-      res.json({ stake, weekStart, isUserA: pair.userAId === userId });
+      // Calculate days remaining until Sunday
+      const today = new Date();
+      const dayOfWeek = today.getDay();
+      const daysRemaining = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
+      
+      res.json({ 
+        stake, 
+        weekStartDate: weekStart, 
+        daysRemaining,
+        isUserA: pair.userAId === userId 
+      });
     } catch (err) {
       console.error("Error getting weekly stake:", err);
       res.status(500).json({ message: "Failed to get weekly stake" });
@@ -1813,7 +1879,7 @@ export async function registerRoutes(
         winnerId,
       });
       
-      res.json({ stake: updatedStake });
+      res.json({ stake: updatedStake, winnerId });
     } catch (err) {
       console.error("Error revealing weekly stake:", err);
       res.status(500).json({ message: "Failed to reveal weekly stake" });

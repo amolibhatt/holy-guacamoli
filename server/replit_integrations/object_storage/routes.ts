@@ -1,23 +1,29 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+
+// Authentication middleware for uploads (only authenticated users can upload)
+const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+  if (req.session?.userId) {
+    return next();
+  }
+  return res.status(401).json({ error: "Authentication required" });
+};
 
 /**
  * Register object storage routes for file uploads.
  *
  * This provides example routes for the presigned URL upload flow:
- * 1. POST /api/uploads/request-url - Get a presigned URL for uploading
+ * 1. POST /api/uploads/request-url - Get a presigned URL for uploading (requires auth)
  * 2. The client then uploads directly to the presigned URL
  *
- * IMPORTANT: These are example routes. Customize based on your use case:
- * - Add authentication middleware for protected uploads
- * - Add file metadata storage (save to database after upload)
- * - Add ACL policies for access control
+ * Security: Upload route is protected by authentication middleware.
  */
 export function registerObjectStorageRoutes(app: Express): void {
   const objectStorageService = new ObjectStorageService();
 
   /**
    * Request a presigned URL for file upload.
+   * Requires authentication.
    *
    * Request body (JSON):
    * {
@@ -35,7 +41,7 @@ export function registerObjectStorageRoutes(app: Express): void {
    * IMPORTANT: The client should NOT send the file to this endpoint.
    * Send JSON metadata only, then upload the file directly to uploadURL.
    */
-  app.post("/api/uploads/request-url", async (req, res) => {
+  app.post("/api/uploads/request-url", isAuthenticated, async (req, res) => {
     try {
       const { name, size, contentType } = req.body;
 
