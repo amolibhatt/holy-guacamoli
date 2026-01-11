@@ -1251,9 +1251,9 @@ export async function registerRoutes(
             lastCompletedDate: today,
           });
           
-          // Generate AI follow-up task
+          // Generate AI follow-up task and category insights
           try {
-            const { generateFollowupTask } = await import("./ai");
+            const { generateFollowupTask, generateCategoryInsights } = await import("./ai");
             const allQuestions = await storage.getDoubleDipQuestions();
             const allAnswers = await storage.getDoubleDipAnswers(dailySet.id);
             const todayQuestions = allQuestions.filter(q => (dailySet.questionIds as number[]).includes(q.id));
@@ -1262,16 +1262,23 @@ export async function registerRoutes(
               const userAAnswer = allAnswers.find(a => a.questionId === q.id && a.userId === pair.userAId);
               const userBAnswer = allAnswers.find(a => a.questionId === q.id && a.userId === pair.userBId);
               return {
+                category: q.category,
                 question: q.questionText,
                 userAAnswer: userAAnswer?.answerText || "",
                 userBAnswer: userBAnswer?.answerText || "",
               };
             });
             
-            const followupTask = await generateFollowupTask(questionsAndAnswers);
+            // Generate both in parallel
+            const [followupTask, categoryInsights] = await Promise.all([
+              generateFollowupTask(questionsAndAnswers),
+              generateCategoryInsights(questionsAndAnswers)
+            ]);
+            
             updateData.followupTask = followupTask;
+            updateData.categoryInsights = categoryInsights;
           } catch (aiError) {
-            console.error("Error generating follow-up task:", aiError);
+            console.error("Error generating AI content:", aiError);
             updateData.followupTask = "Take 5 minutes to share one thing you appreciated about each other today.";
           }
         }

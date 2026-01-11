@@ -12,6 +12,55 @@ interface QuestionAnswer {
   userBAnswer: string;
 }
 
+interface CategoryQuestionAnswer extends QuestionAnswer {
+  category: string;
+}
+
+interface CategoryInsight {
+  category: string;
+  compatibilityScore: number;
+  insight: string;
+}
+
+export async function generateCategoryInsights(questionsAndAnswers: CategoryQuestionAnswer[]): Promise<CategoryInsight[]> {
+  const prompt = `You are a relationship analyst. Analyze these couples' answers and rate their compatibility for each category on a scale of 1-100.
+
+Questions and Answers by Category:
+${questionsAndAnswers.map((qa) => `
+Category: ${qa.category}
+Question: ${qa.question}
+Partner A: ${qa.userAAnswer}
+Partner B: ${qa.userBAnswer}
+`).join('\n')}
+
+For each category, provide:
+1. A compatibility score (1-100) based on how aligned/complementary their answers are
+2. A brief insight (1 sentence) about their dynamic in this area
+
+Respond in JSON format:
+{
+  "insights": [
+    {"category": "deep_end", "compatibilityScore": 85, "insight": "You both value emotional depth and aren't afraid to be vulnerable."},
+    {"category": "danger_zone", "compatibilityScore": 70, "insight": "Your playful debates show healthy disagreement."}
+  ]
+}`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 500,
+    });
+
+    const content = response.choices[0].message.content || "{}";
+    const parsed = JSON.parse(content);
+    return parsed.insights || [];
+  } catch (error) {
+    console.error("Error generating category insights:", error);
+    return [];
+  }
+}
+
 export async function generateFollowupTask(questionsAndAnswers: QuestionAnswer[]): Promise<string> {
   const prompt = `You are a warm, thoughtful relationship coach. Based on these couples' answers to daily questions, create ONE specific, actionable follow-up activity they can do together today to deepen their connection.
 
