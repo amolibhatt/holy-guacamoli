@@ -83,6 +83,32 @@ export const doubleDipReactions = pgTable("double_dip_reactions", {
   unique().on(table.answerId, table.userId),
 ]);
 
+export const MILESTONE_TYPES = ["streak", "compatibility", "favorite", "first_reveal", "category_master"] as const;
+export type MilestoneType = typeof MILESTONE_TYPES[number];
+
+export const doubleDipMilestones = pgTable("double_dip_milestones", {
+  id: serial("id").primaryKey(),
+  pairId: integer("pair_id").notNull(),
+  type: text("type").notNull().$type<MilestoneType>(),
+  title: text("title").notNull(),
+  description: text("description"),
+  value: integer("value"),
+  dailySetId: integer("daily_set_id"),
+  answerId: integer("answer_id"),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const doubleDipFavorites = pgTable("double_dip_favorites", {
+  id: serial("id").primaryKey(),
+  pairId: integer("pair_id").notNull(),
+  answerId: integer("answer_id").notNull(),
+  userId: text("user_id").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  unique().on(table.answerId, table.userId),
+]);
+
 export const boards = pgTable("boards", {
   id: serial("id").primaryKey(),
   userId: text("user_id"),
@@ -339,6 +365,28 @@ export const doubleDipReactionsRelations = relations(doubleDipReactions, ({ one 
   }),
 }));
 
+export const doubleDipMilestonesRelations = relations(doubleDipMilestones, ({ one }) => ({
+  pair: one(doubleDipPairs, {
+    fields: [doubleDipMilestones.pairId],
+    references: [doubleDipPairs.id],
+  }),
+  dailySet: one(doubleDipDailySets, {
+    fields: [doubleDipMilestones.dailySetId],
+    references: [doubleDipDailySets.id],
+  }),
+}));
+
+export const doubleDipFavoritesRelations = relations(doubleDipFavorites, ({ one }) => ({
+  pair: one(doubleDipPairs, {
+    fields: [doubleDipFavorites.pairId],
+    references: [doubleDipPairs.id],
+  }),
+  answer: one(doubleDipAnswers, {
+    fields: [doubleDipFavorites.answerId],
+    references: [doubleDipAnswers.id],
+  }),
+}));
+
 export const boardsRelations = relations(boards, ({ many }) => ({
   boardCategories: many(boardCategories),
   gameBoards: many(gameBoards),
@@ -385,6 +433,8 @@ export const insertDoubleDipQuestionSchema = createInsertSchema(doubleDipQuestio
 export const insertDoubleDipDailySetSchema = createInsertSchema(doubleDipDailySets).omit({ id: true, createdAt: true });
 export const insertDoubleDipAnswerSchema = createInsertSchema(doubleDipAnswers).omit({ id: true, createdAt: true });
 export const insertDoubleDipReactionSchema = createInsertSchema(doubleDipReactions).omit({ id: true, createdAt: true });
+export const insertDoubleDipMilestoneSchema = createInsertSchema(doubleDipMilestones).omit({ id: true, createdAt: true });
+export const insertDoubleDipFavoriteSchema = createInsertSchema(doubleDipFavorites).omit({ id: true, createdAt: true });
 
 export type Board = typeof boards.$inferSelect;
 export type Category = typeof categories.$inferSelect;
@@ -405,6 +455,8 @@ export type DoubleDipQuestion = typeof doubleDipQuestions.$inferSelect;
 export type DoubleDipDailySet = typeof doubleDipDailySets.$inferSelect;
 export type DoubleDipAnswer = typeof doubleDipAnswers.$inferSelect;
 export type DoubleDipReaction = typeof doubleDipReactions.$inferSelect;
+export type DoubleDipMilestone = typeof doubleDipMilestones.$inferSelect;
+export type DoubleDipFavorite = typeof doubleDipFavorites.$inferSelect;
 export type InsertBoard = z.infer<typeof insertBoardSchema>;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertBoardCategory = z.infer<typeof insertBoardCategorySchema>;
@@ -423,6 +475,8 @@ export type InsertDoubleDipQuestion = z.infer<typeof insertDoubleDipQuestionSche
 export type InsertDoubleDipDailySet = z.infer<typeof insertDoubleDipDailySetSchema>;
 export type InsertDoubleDipAnswer = z.infer<typeof insertDoubleDipAnswerSchema>;
 export type InsertDoubleDipReaction = z.infer<typeof insertDoubleDipReactionSchema>;
+export type InsertDoubleDipMilestone = z.infer<typeof insertDoubleDipMilestoneSchema>;
+export type InsertDoubleDipFavorite = z.infer<typeof insertDoubleDipFavoriteSchema>;
 
 export type BoardCategoryWithCategory = BoardCategory & { category: Category };
 export type BoardCategoryWithCount = BoardCategoryWithCategory & { questionCount: number; position: number };
