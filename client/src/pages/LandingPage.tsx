@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { motion } from "framer-motion";
-import { Sparkles, Users, QrCode, Trophy, Loader2 } from "lucide-react";
+import { Sparkles, Users, QrCode, Trophy, Loader2, Zap, Grid3X3, Smartphone, Volume2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,15 +45,15 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen gradient-game grid-bg flex flex-col lg:flex-row" data-testid="container-landing">
       {/* Left side - Branding */}
-      <div className="lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-16" data-testid="section-branding">
+      <div className="lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-16 overflow-y-auto" data-testid="section-branding">
         <motion.div
-          className="text-center lg:text-left max-w-md"
+          className="text-center lg:text-left max-w-lg"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
           <motion.div 
-            className="w-24 h-24 mx-auto lg:mx-0 mb-6 rounded-2xl bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center border border-white/20 shadow-xl"
+            className="w-20 h-20 mx-auto lg:mx-0 mb-4 rounded-2xl bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center border border-white/20 shadow-xl"
             animate={{ 
               rotate: [0, -5, 5, -5, 0],
               scale: [1, 1.05, 1]
@@ -61,38 +61,73 @@ export default function LandingPage() {
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
             data-testid="icon-logo"
           >
-            <AvocadoIcon className="w-14 h-14 drop-shadow-lg" />
+            <AvocadoIcon className="w-12 h-12 drop-shadow-lg" />
           </motion.div>
           
-          <h1 className="text-4xl lg:text-5xl font-black text-foreground mb-2 text-glow" data-testid="text-title">
+          <h1 className="text-3xl lg:text-4xl font-black text-foreground mb-1 text-glow" data-testid="text-title">
             Holy GuacAmoli!
           </h1>
-          <p className="text-muted-foreground text-sm uppercase tracking-widest mb-6" data-testid="text-tagline">
+          <p className="text-primary text-sm uppercase tracking-widest mb-4 font-semibold" data-testid="text-tagline">
             Dip into the facts!
           </p>
           
-          <p className="text-muted-foreground text-lg mb-8" data-testid="text-description">
-            Host an exciting Jeopardy-style trivia game for your party. Create custom categories, manage questions, and let players buzz in from their phones!
+          <p className="text-muted-foreground mb-6" data-testid="text-description">
+            The ultimate Jeopardy-style party game. Create custom trivia boards, let players buzz in from their phones, and crown a champion!
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center lg:text-left" data-testid="section-features">
-            <div className="flex flex-col items-center lg:items-start gap-2" data-testid="feature-categories">
-              <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-primary" />
+          {/* Game Mode Highlight */}
+          <div className="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20" data-testid="section-game-mode">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-lg gradient-header flex items-center justify-center">
+                <Grid3X3 className="w-5 h-5 text-white" />
               </div>
-              <span className="text-muted-foreground text-sm">Custom Categories</span>
+              <div>
+                <h3 className="font-bold text-foreground">Grid of Grudges</h3>
+                <p className="text-xs text-muted-foreground">Classic Jeopardy-style gameplay</p>
+              </div>
             </div>
-            <div className="flex flex-col items-center lg:items-start gap-2" data-testid="feature-buzzer">
-              <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                <QrCode className="w-5 h-5 text-primary" />
+            <p className="text-sm text-muted-foreground">
+              Pick categories, choose point values, and compete head-to-head with friends and family!
+            </p>
+          </div>
+
+          {/* Features Grid */}
+          <div className="grid grid-cols-2 gap-3 text-left" data-testid="section-features">
+            <div className="flex items-start gap-2 p-2 rounded-lg bg-card/50" data-testid="feature-buzzer">
+              <div className="w-8 h-8 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
+                <Smartphone className="w-4 h-4 text-primary" />
               </div>
-              <span className="text-muted-foreground text-sm">QR Code Buzzer</span>
+              <div>
+                <span className="text-foreground text-sm font-medium block">Phone Buzzers</span>
+                <span className="text-muted-foreground text-xs">Join via QR code</span>
+              </div>
             </div>
-            <div className="flex flex-col items-center lg:items-start gap-2" data-testid="feature-scoreboard">
-              <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                <Trophy className="w-5 h-5 text-primary" />
+            <div className="flex items-start gap-2 p-2 rounded-lg bg-card/50" data-testid="feature-realtime">
+              <div className="w-8 h-8 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
+                <Zap className="w-4 h-4 text-primary" />
               </div>
-              <span className="text-muted-foreground text-sm">Live Scoreboard</span>
+              <div>
+                <span className="text-foreground text-sm font-medium block">Real-time Buzzing</span>
+                <span className="text-muted-foreground text-xs">Instant responses</span>
+              </div>
+            </div>
+            <div className="flex items-start gap-2 p-2 rounded-lg bg-card/50" data-testid="feature-scoreboard">
+              <div className="w-8 h-8 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
+                <Trophy className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <span className="text-foreground text-sm font-medium block">Live Scores</span>
+                <span className="text-muted-foreground text-xs">Track progress</span>
+              </div>
+            </div>
+            <div className="flex items-start gap-2 p-2 rounded-lg bg-card/50" data-testid="feature-sounds">
+              <div className="w-8 h-8 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
+                <Volume2 className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <span className="text-foreground text-sm font-medium block">Sound Effects</span>
+                <span className="text-muted-foreground text-xs">Immersive gameplay</span>
+              </div>
             </div>
           </div>
         </motion.div>
