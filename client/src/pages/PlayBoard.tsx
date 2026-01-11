@@ -164,7 +164,7 @@ export default function PlayBoard() {
       <header className="border-b border-primary/20 bg-card/40 backdrop-blur-xl sticky top-0 z-50">
         <div className="px-4 py-3 flex items-center justify-between gap-4">
           <motion.div 
-            className="flex items-center gap-4"
+            className="flex items-center gap-2 sm:gap-4"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
@@ -173,15 +173,16 @@ export default function PlayBoard() {
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="text-primary/80 hover:text-primary hover:bg-primary/10"
+                className="text-primary/80 hover:text-primary hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary"
                 data-testid="button-back-home"
+                aria-label="Go back home"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <div className="relative">
+            <div className="relative hidden sm:block">
               <motion.div 
-                className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-gray-800 via-gray-900 to-black border border-white/20"
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-gray-800 via-gray-900 to-black border border-white/20"
                 animate={{ 
                   rotate: [0, -5, 5, -5, 0],
                   scale: [1, 1.05, 1]
@@ -192,25 +193,25 @@ export default function PlayBoard() {
                   animate={{ y: [0, -3, 0] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                  <AvocadoIcon className="w-8 h-8 drop-shadow-lg" />
+                  <AvocadoIcon className="w-6 h-6 sm:w-8 sm:h-8 drop-shadow-lg" />
                 </motion.div>
               </motion.div>
             </div>
             <div className="flex flex-col">
               <motion.span 
-                className="text-[10px] font-bold text-white/50 tracking-[0.3em] uppercase"
+                className="text-[8px] sm:text-[10px] font-bold text-white/50 tracking-[0.2em] sm:tracking-[0.3em] uppercase"
                 animate={{ opacity: [0.5, 1, 0.5] }}
                 transition={{ duration: 3, repeat: Infinity }}
               >
                 {board.name}
               </motion.span>
-              <h1 className="text-2xl font-black tracking-tight leading-tight text-white text-glow">
+              <h1 className="text-lg sm:text-2xl font-black tracking-tight leading-tight text-white text-glow">
                 Grid of Grudges
               </h1>
             </div>
           </motion.div>
           <motion.div 
-            className="flex items-center gap-2"
+            className="flex items-center gap-1 sm:gap-2"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -218,9 +219,10 @@ export default function PlayBoard() {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-primary/80 hover:text-primary hover:bg-primary/10" 
+              className="text-primary/80 hover:text-primary hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary" 
               onClick={toggleColorMode}
               data-testid="button-color-mode-game"
+              aria-label={colorMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {colorMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </Button>
@@ -228,13 +230,14 @@ export default function PlayBoard() {
               variant="ghost" 
               size="icon" 
               onClick={toggleFullscreen}
-              className="text-primary/80 hover:text-primary hover:bg-primary/10"
+              className="hidden sm:flex text-primary/80 hover:text-primary hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary"
               data-testid="button-fullscreen"
+              aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
             >
               {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
             </Button>
             <Link href="/admin">
-              <Button variant="ghost" size="icon" className="text-primary/80 hover:text-primary hover:bg-primary/10" data-testid="button-admin">
+              <Button variant="ghost" size="icon" className="text-primary/80 hover:text-primary hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary" data-testid="button-admin" aria-label="Go to admin panel">
                 <Settings className="w-5 h-5" />
               </Button>
             </Link>
@@ -242,7 +245,7 @@ export default function PlayBoard() {
         </div>
       </header>
 
-      <main className="flex-1 p-4 lg:p-6 flex flex-col relative">
+      <main className="flex-1 p-2 sm:p-4 lg:p-6 flex flex-col relative overflow-auto">
         <ThemeDecorations placement="board" />
         {categories && categories.length > 0 ? (
           <motion.div 
@@ -251,10 +254,14 @@ export default function PlayBoard() {
             className="flex-1 flex flex-col relative z-10"
           >
             <div 
-              className="flex-1 grid gap-3 lg:gap-4"
-              style={{ 
-                gridTemplateColumns: `repeat(${categories.length}, minmax(0, 1fr))`,
-              }}
+              className="flex-1 grid gap-2 sm:gap-3 lg:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
+              style={
+                categories.length <= 3 
+                  ? { gridTemplateColumns: `repeat(${categories.length}, minmax(0, 1fr))` }
+                  : categories.length === 4
+                    ? { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }
+                    : undefined
+              }
             >
               {categories.map((boardCategory, idx) => (
                 <motion.div

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useScore, AVATAR_COLORS } from "./ScoreContext";
 import { Button } from "@/components/ui/button";
-import { X, RotateCcw, Crown, Trophy, Volume2, VolumeX, Users } from "lucide-react";
+import { X, RotateCcw, Crown, Trophy, Volume2, VolumeX, Users, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { soundManager } from "@/lib/sounds";
@@ -14,6 +14,7 @@ import {
 export function Scoreboard() {
   const { contestants, removeContestant, resetGame, updateContestantColor, endGame } = useScore();
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const toggleSound = () => {
     const enabled = soundManager.toggle();
@@ -24,16 +25,27 @@ export function Scoreboard() {
 
   return (
     <motion.div 
-      className="bg-card/60 backdrop-blur-sm rounded-xl border border-primary/20 p-3"
+      className="bg-card/60 backdrop-blur-sm rounded-xl border border-primary/20 p-2 sm:p-3"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className="flex items-center gap-3">
-        <Badge variant="secondary" className="gap-1 shrink-0">
-          <Users className="w-3 h-3" />
+      <div className="flex items-center gap-2 sm:gap-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="sm:hidden p-1 h-7 focus-visible:ring-2 focus-visible:ring-primary"
+          aria-expanded={isExpanded}
+          aria-label={isExpanded ? "Collapse scoreboard" : "Expand scoreboard"}
+          data-testid="button-toggle-scoreboard"
+        >
+          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </Button>
+        <Badge variant="secondary" className="gap-1 shrink-0" aria-label={`${contestants.length} players`}>
+          <Users className="w-3 h-3" aria-hidden="true" />
           {contestants.length}
         </Badge>
-        <div className="flex-1 overflow-x-auto">
+        <div className={`flex-1 overflow-x-auto ${!isExpanded ? 'hidden sm:block' : ''}`}>
           <LayoutGroup>
             <motion.div layout className="flex items-center gap-2">
               <AnimatePresence mode="popLayout">
@@ -87,8 +99,9 @@ export function Scoreboard() {
                       <Popover>
                         <PopoverTrigger asChild>
                           <button
-                            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white relative z-10 hover:ring-2 hover:ring-white/50 transition-all"
+                            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white relative z-10 hover:ring-2 hover:ring-white/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all"
                             style={{ backgroundColor: contestant.color }}
+                            aria-label={`${contestant.name}'s color: click to change`}
                           >
                             {contestant.name.charAt(0).toUpperCase()}
                           </button>
@@ -98,11 +111,13 @@ export function Scoreboard() {
                             {AVATAR_COLORS.map((color) => (
                               <button
                                 key={color}
-                                className={`w-6 h-6 rounded-full hover:scale-110 transition-transform ${
+                                className={`w-6 h-6 rounded-full hover:scale-110 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 transition-transform ${
                                   contestant.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-background' : ''
                                 }`}
                                 style={{ backgroundColor: color }}
                                 onClick={() => updateContestantColor(contestant.id, color)}
+                                aria-label={`Select ${color} color`}
+                                aria-pressed={contestant.color === color}
                               />
                             ))}
                           </div>
@@ -133,11 +148,12 @@ export function Scoreboard() {
                       )}
 
                       <button
-                        className="opacity-50 hover:opacity-100 transition-opacity relative z-10 hover:text-red-400"
+                        className="opacity-50 hover:opacity-100 transition-opacity relative z-10 hover:text-red-400 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary rounded"
                         onClick={() => removeContestant(contestant.id)}
                         data-testid={`button-remove-${contestant.id}`}
+                        aria-label={`Remove ${contestant.name}`}
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-4 h-4" aria-hidden="true" />
                       </button>
                     </motion.div>
                   );
@@ -147,15 +163,17 @@ export function Scoreboard() {
           </LayoutGroup>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className={`flex items-center gap-1 ${!isExpanded ? 'hidden sm:flex' : ''}`}>
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleSound}
-            className="text-white/50 hover:text-white hover:bg-white/10"
+            className="text-white/50 hover:text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary"
             data-testid="button-toggle-sound"
+            aria-label={soundEnabled ? "Mute sounds" : "Unmute sounds"}
+            aria-pressed={soundEnabled}
           >
-            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            {soundEnabled ? <Volume2 className="w-4 h-4" aria-hidden="true" /> : <VolumeX className="w-4 h-4" aria-hidden="true" />}
           </Button>
 
           {contestants.length > 0 && (
@@ -164,10 +182,11 @@ export function Scoreboard() {
                 variant="ghost"
                 size="icon"
                 onClick={endGame}
-                className="text-yellow-400/70 hover:text-yellow-400 hover:bg-white/10"
+                className="text-yellow-400/70 hover:text-yellow-400 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary"
                 data-testid="button-end-game"
+                aria-label="End game and show results"
               >
-                <Trophy className="w-4 h-4" />
+                <Trophy className="w-4 h-4" aria-hidden="true" />
               </Button>
               <motion.div
                 whileHover={{ rotate: -180 }}
@@ -177,10 +196,11 @@ export function Scoreboard() {
                   variant="ghost" 
                   size="icon"
                   onClick={resetGame} 
-                  className="text-white/50 hover:text-white hover:bg-white/10"
+                  className="text-white/50 hover:text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary"
                   data-testid="button-reset-game"
+                  aria-label="Reset game scores"
                 >
-                  <RotateCcw className="w-4 h-4" />
+                  <RotateCcw className="w-4 h-4" aria-hidden="true" />
                 </Button>
               </motion.div>
             </>
