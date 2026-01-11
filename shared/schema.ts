@@ -122,6 +122,7 @@ export const sessionPlayers = pgTable("session_players", {
   sessionId: integer("session_id").notNull(),
   playerId: text("player_id").notNull(),
   name: text("name").notNull(),
+  avatar: text("avatar").notNull().default("cat"),
   score: integer("score").notNull().default(0),
   isConnected: boolean("is_connected").notNull().default(true),
   joinedAt: timestamp("joined_at").notNull().defaultNow(),
@@ -129,6 +130,23 @@ export const sessionPlayers = pgTable("session_players", {
 }, (table) => [
   unique().on(table.sessionId, table.playerId),
 ]);
+
+export const PLAYER_AVATARS = [
+  { id: "cat", emoji: "🐱", label: "Cat" },
+  { id: "dog", emoji: "🐶", label: "Dog" },
+  { id: "fox", emoji: "🦊", label: "Fox" },
+  { id: "bear", emoji: "🐻", label: "Bear" },
+  { id: "panda", emoji: "🐼", label: "Panda" },
+  { id: "koala", emoji: "🐨", label: "Koala" },
+  { id: "lion", emoji: "🦁", label: "Lion" },
+  { id: "unicorn", emoji: "🦄", label: "Unicorn" },
+  { id: "dragon", emoji: "🐲", label: "Dragon" },
+  { id: "alien", emoji: "👽", label: "Alien" },
+  { id: "robot", emoji: "🤖", label: "Robot" },
+  { id: "ghost", emoji: "👻", label: "Ghost" },
+] as const;
+
+export type AvatarId = typeof PLAYER_AVATARS[number]["id"];
 
 export const sessionCompletedQuestions = pgTable("session_completed_questions", {
   id: serial("id").primaryKey(),

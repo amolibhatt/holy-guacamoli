@@ -7,6 +7,7 @@ import type { GameMode, SessionPlayer } from "@shared/schema";
 interface Player {
   id: string;
   name: string;
+  avatar: string;
   ws: WebSocket;
   lastPing: number;
   score: number;
@@ -153,6 +154,7 @@ export function setupWebSocket(server: Server) {
                       room!.players.set(p.playerId, {
                         id: p.playerId,
                         name: p.name,
+                        avatar: p.avatar || "cat",
                         ws: null as any,
                         lastPing: 0,
                         score: p.score,
@@ -167,7 +169,7 @@ export function setupWebSocket(server: Server) {
                       type: "room:joined", 
                       code: roomCode,
                       sessionId: session.id,
-                      players: players.map(p => ({ id: p.playerId, name: p.name, score: p.score })),
+                      players: players.map(p => ({ id: p.playerId, name: p.name, avatar: p.avatar || "cat", score: p.score })),
                       buzzerLocked: room.buzzerLocked,
                       currentBoardId: session.currentBoardId,
                       currentMode: session.currentMode,
@@ -193,7 +195,7 @@ export function setupWebSocket(server: Server) {
                   type: "room:joined", 
                   code: roomCode,
                   sessionId: room!.sessionId,
-                  players: Array.from(room!.players.values()).map(p => ({ id: p.id, name: p.name, score: p.score })),
+                  players: Array.from(room!.players.values()).map(p => ({ id: p.id, name: p.name, avatar: p.avatar, score: p.score })),
                   buzzerLocked: room!.buzzerLocked,
                   currentBoardId: room!.currentBoardId,
                   currentMode: room!.currentMode,
@@ -232,6 +234,7 @@ export function setupWebSocket(server: Server) {
                       room!.players.set(p.playerId, {
                         id: p.playerId,
                         name: p.name,
+                        avatar: p.avatar || "cat",
                         ws: null as any,
                         lastPing: 0,
                         score: p.score,
@@ -258,10 +261,13 @@ export function setupWebSocket(server: Server) {
                     playerScore = existingPlayer.score;
                   }
                   
+                  const avatar = message.avatar || existingPlayer?.avatar || "cat";
+                  
                   const dbPlayer = await storage.addPlayerToSession({
                     sessionId: room.sessionId,
                     playerId: newPlayerId,
                     name: existingPlayer?.name || name,
+                    avatar,
                     score: playerScore,
                     isConnected: true,
                   });
@@ -269,6 +275,7 @@ export function setupWebSocket(server: Server) {
                   const player: Player = {
                     id: newPlayerId,
                     name: dbPlayer.name,
+                    avatar: dbPlayer.avatar,
                     ws,
                     lastPing: Date.now(),
                     score: dbPlayer.score,
@@ -287,6 +294,7 @@ export function setupWebSocket(server: Server) {
                   const allPlayers = Array.from(room.players.values()).map(p => ({
                     id: p.id,
                     name: p.name,
+                    avatar: p.avatar,
                     score: p.score,
                   }));
                   
@@ -307,7 +315,7 @@ export function setupWebSocket(server: Server) {
                   if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
                     room.hostWs.send(JSON.stringify({
                       type: "player:joined",
-                      player: { id: playerId, name: player.name, score: player.score },
+                      player: { id: playerId, name: player.name, avatar: player.avatar, score: player.score },
                     }));
                   }
                 } else {

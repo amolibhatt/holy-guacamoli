@@ -606,8 +606,15 @@ export class DatabaseStorage implements IStorage {
   async addPlayerToSession(data: InsertSessionPlayer): Promise<SessionPlayer> {
     const existing = await this.getSessionPlayer(data.sessionId, data.playerId);
     if (existing) {
-      const updated = await this.updatePlayerConnection(data.sessionId, data.playerId, true);
-      return updated!;
+      const [updated] = await db.update(sessionPlayers)
+        .set({ 
+          isConnected: true, 
+          lastSeenAt: new Date(),
+          avatar: data.avatar || existing.avatar,
+        })
+        .where(and(eq(sessionPlayers.sessionId, data.sessionId), eq(sessionPlayers.playerId, data.playerId)))
+        .returning();
+      return updated;
     }
     const [newPlayer] = await db.insert(sessionPlayers).values(data as any).returning();
     return newPlayer;
