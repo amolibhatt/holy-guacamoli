@@ -870,28 +870,19 @@ export default function Admin() {
                         onValueChange={(val) => setSelectedBoardCategoryId(val ? Number(val) : null)}
                         className="w-full"
                       >
-                        <TabsList className="w-full h-auto flex flex-row flex-wrap justify-start gap-6 bg-transparent p-0 border-b border-border">
+                        <TabsList className="h-9 p-1 gap-1">
                           {boardCategories.map((bc) => (
-                            <Tooltip key={bc.id}>
-                              <TooltipTrigger asChild>
-                                <TabsTrigger 
-                                  value={bc.id.toString()} 
-                                  className="h-10 px-1 pb-3 text-sm bg-transparent border-0 rounded-none text-muted-foreground data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary gap-2 relative -mb-px"
-                                  data-testid={`category-tab-${bc.id}`}
-                                >
-                                  <span className="truncate max-w-[120px]">{bc.category.name}</span>
-                                  {(bc.questionCount ?? 0) >= 5 && (
-                                    <CheckCircle className="w-3.5 h-3.5" />
-                                  )}
-                                </TabsTrigger>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p className="font-medium">{bc.category.name}</p>
-                                {bc.category.description && (
-                                  <p className="text-xs text-muted-foreground">{bc.category.description}</p>
-                                )}
-                              </TooltipContent>
-                            </Tooltip>
+                            <TabsTrigger 
+                              key={bc.id}
+                              value={bc.id.toString()} 
+                              className="gap-1.5 px-3"
+                              data-testid={`category-tab-${bc.id}`}
+                            >
+                              <span className="truncate max-w-[100px]">{bc.category.name}</span>
+                              {(bc.questionCount ?? 0) >= 5 && (
+                                <CheckCircle className="w-3 h-3 text-primary" />
+                              )}
+                            </TabsTrigger>
                           ))}
                         </TabsList>
                       </Tabs>
