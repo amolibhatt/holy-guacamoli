@@ -212,7 +212,7 @@ export default function Storyboard() {
           className="flex items-center gap-4 mb-6"
         >
           <Link href="/couples">
-            <Button variant="ghost" size="icon" data-testid="button-back">
+            <Button variant="ghost" size="icon" data-testid="button-back" aria-label="Back to Relationship Hub">
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
