@@ -9,6 +9,7 @@ export * from "./models/auth";
 // === TABLE DEFINITIONS ===
 export const boards = pgTable("boards", {
   id: serial("id").primaryKey(),
+  userId: text("user_id"),
   name: text("name").notNull(),
   description: text("description"),
   pointValues: jsonb("point_values").$type<number[]>().notNull().default([10, 20, 30, 40, 50]),
