@@ -190,96 +190,38 @@ export default function Home() {
             <p className="text-white/60 text-lg">Select a board to start playing</p>
           </motion.div>
 
-          <div className="max-w-5xl w-full">
+          <div className="max-w-md w-full">
             {boards && boards.length > 0 ? (
               <motion.div 
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                className="flex flex-col gap-3"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
                 {boards.map((board, idx) => (
                   <motion.button
                     key={board.id}
-                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ delay: idx * 0.15, type: "spring", stiffness: 100 }}
-                    whileHover={{ 
-                      scale: 1.05, 
-                      y: -8,
-                      transition: { duration: 0.2 }
-                    }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    whileHover={{ x: 8 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setSelectedBoardId(board.id)}
-                    className="relative bg-gradient-to-br from-gray-900/90 to-black/90 border-2 border-primary/40 rounded-2xl p-6 text-left transition-all group overflow-hidden shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/40 hover:border-primary/70"
+                    className="flex items-center gap-4 px-6 py-4 bg-card/60 backdrop-blur-sm border border-primary/20 rounded-xl text-left transition-all hover:bg-card/80 hover:border-primary/50 group"
                     data-testid={`button-board-${board.id}`}
                   >
-                    <motion.div 
-                      className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
-                    />
-                    <motion.div
-                      className="absolute top-3 right-3"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                    >
-                      <Sparkles className="w-5 h-5 text-primary/40 group-hover:text-primary/70 transition-colors" />
-                    </motion.div>
-                    
-                    <div className="relative z-10">
-                      <div className="flex items-center gap-4 mb-4">
-                        <motion.div 
-                          className="w-16 h-16 rounded-xl bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center shadow-lg shadow-purple-500/30 border border-white/20"
-                          whileHover={{ rotate: [0, -10, 10, 0] }}
-                          transition={{ duration: 0.5 }}
-                        >
-                          <AvocadoIcon className="w-9 h-9 drop-shadow-lg" />
-                        </motion.div>
-                        <div className="flex-1">
-                          <h3 className="text-2xl font-black text-white group-hover:text-primary transition-colors">
-                            {board.name}
-                          </h3>
-                          <span className="text-xs text-white/40 font-medium">
-                            {board.pointValues.length} point values
-                          </span>
-                        </div>
-                      </div>
-                      
+                    <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                      <Grid3X3 className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-white group-hover:text-primary transition-colors">
+                        {board.name}
+                      </h3>
                       {board.description && (
-                        <p className="text-white/60 text-sm mb-4 line-clamp-2">{board.description}</p>
+                        <p className="text-white/50 text-sm truncate">{board.description}</p>
                       )}
-                      
-                      <div className="flex flex-wrap gap-2">
-                        {board.pointValues.slice(0, 5).map((pv, i) => (
-                          <motion.span 
-                            key={pv} 
-                            className="px-3 py-1.5 bg-primary/20 border border-primary/30 rounded-lg text-sm font-bold text-primary"
-                            initial={{ opacity: 0, scale: 0 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: idx * 0.15 + i * 0.05 }}
-                          >
-                            {pv}
-                          </motion.span>
-                        ))}
-                        {board.pointValues.length > 5 && (
-                          <span className="px-3 py-1.5 bg-white/10 rounded-lg text-sm text-white/50">
-                            +{board.pointValues.length - 5} more
-                          </span>
-                        )}
-                      </div>
-                      
-                      <motion.div 
-                        className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: idx * 0.15 + 0.3 }}
-                      >
-                        <span className="text-white/40 text-sm">Click to play</span>
-                        <motion.div
-                          className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center"
-                          whileHover={{ scale: 1.2, backgroundColor: "rgba(34,197,94,0.4)" }}
-                        >
-                          <Star className="w-4 h-4 text-primary fill-primary" />
-                        </motion.div>
-                      </motion.div>
+                    </div>
+                    <div className="text-white/30 group-hover:text-primary transition-colors">
+                      <ArrowLeft className="w-5 h-5 rotate-180" />
                     </div>
                   </motion.button>
                 ))}
