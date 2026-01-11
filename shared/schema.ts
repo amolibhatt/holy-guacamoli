@@ -13,6 +13,7 @@ export const boards = pgTable("boards", {
   name: text("name").notNull(),
   description: text("description"),
   pointValues: jsonb("point_values").$type<number[]>().notNull().default([10, 20, 30, 40, 50]),
+  theme: text("theme").notNull().default("birthday"),
 });
 
 export const categories = pgTable("categories", {
