@@ -63,7 +63,7 @@ function QuestionContent({ content }: { content: string }) {
               key={i}
               remarkPlugins={[remarkGfm, remarkBreaks]}
               components={{
-                p: ({ children }) => <p className="text-2xl lg:text-3xl font-semibold text-foreground leading-relaxed my-4">{children}</p>,
+                p: ({ children }) => <p className="text-xl lg:text-2xl font-semibold text-foreground leading-relaxed my-2">{children}</p>,
                 strong: ({ children }) => <strong className="text-primary font-bold">{children}</strong>,
                 em: ({ children }) => <em className="italic">{children}</em>,
                 img: ({ src, alt }) => (
@@ -193,7 +193,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
         )}
       </AnimatePresence>
 
-      <div className="gradient-header px-6 py-6 flex items-center justify-between gap-4 relative overflow-hidden">
+      <div className="gradient-header px-4 py-3 flex items-center justify-between gap-3 relative overflow-hidden">
         <div className="absolute inset-0 shimmer" />
         <motion.div
           className="absolute top-2 left-2"
@@ -222,8 +222,8 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: "spring", stiffness: 200 }}
         >
-          <span className="text-6xl font-black text-white drop-shadow-lg">{question.points}</span>
-          <span className="text-2xl font-bold text-white/80">pts</span>
+          <span className="text-4xl font-black text-white drop-shadow-lg">{question.points}</span>
+          <span className="text-lg font-bold text-white/80">pts</span>
         </motion.div>
         <div className="flex items-center gap-3 relative z-10">
           <Button
@@ -276,12 +276,12 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
         </div>
       </div>
 
-      <div className="p-8">
+      <div className="p-4">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="min-h-[120px] flex items-center justify-center mb-8"
+          className="flex items-center justify-center mb-4"
         >
           <QuestionContent content={question.question} />
         </motion.div>
@@ -293,7 +293,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
               animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0 }}
               exit={{ opacity: 0, scale: 0.5, rotateX: 30, y: -30 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              className="relative rounded-2xl p-8 mb-8 overflow-hidden gradient-header glow-primary"
+              className="relative rounded-xl p-4 mb-4 overflow-hidden gradient-header glow-primary"
             >
               <div className="absolute inset-0 shimmer" />
               <motion.div
@@ -343,7 +343,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/30"
+              className="mb-4 p-3 rounded-lg bg-primary/10 border border-primary/30"
             >
               <div className="flex items-center gap-3 flex-wrap justify-center">
                 <Zap className="w-5 h-5 text-primary" />
@@ -369,15 +369,15 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
 
 
         {contestants.length > 0 ? (
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {contestants.map((contestant, idx) => (
               <motion.div
                 key={contestant.id}
-                initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ delay: 0.4 + idx * 0.08, type: "spring", stiffness: 200 }}
-                whileHover={{ scale: 1.05, y: -4 }}
-                className="bg-gradient-to-br from-card to-card/80 rounded-2xl p-5 border-2 border-primary/30 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden"
+                transition={{ delay: 0.2 + idx * 0.05, type: "spring", stiffness: 200 }}
+                whileHover={{ scale: 1.03 }}
+                className="bg-gradient-to-br from-card to-card/80 rounded-xl p-3 border border-primary/30 shadow-md hover:shadow-lg transition-shadow relative overflow-hidden"
               >
                 <motion.div
                   className="absolute top-1 right-1"
@@ -386,9 +386,9 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
                 >
                   <Sparkles className="w-3 h-3 text-primary/30" />
                 </motion.div>
-                <div className="text-center mb-3">
-                  <span className="font-black text-foreground text-xl">{contestant.name}</span>
-                  <div className="flex items-center justify-center gap-2 mt-1">
+                <div className="text-center mb-2">
+                  <span className="font-bold text-foreground text-base">{contestant.name}</span>
+                  <div className="flex items-center justify-center gap-1 mt-0.5">
                     <Button
                       size="icon"
                       variant="ghost"
@@ -436,28 +436,28 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-center py-8 text-muted-foreground bg-gradient-to-br from-card to-card/50 rounded-2xl border-2 border-dashed border-primary/30"
+            className="text-center py-4 text-muted-foreground bg-gradient-to-br from-card to-card/50 rounded-xl border border-dashed border-primary/30"
           >
-            <Sparkles className="w-8 h-8 mx-auto mb-2 text-primary/40" />
-            Add players from the scoreboard to award points
+            <Sparkles className="w-6 h-6 mx-auto mb-1 text-primary/40" />
+            <span className="text-sm">Add players from the scoreboard to award points</span>
           </motion.div>
         )}
 
-        <div className="flex justify-center mt-8 pt-6 border-t border-border">
+        <div className="flex justify-center mt-4 pt-3 border-t border-border">
           <Button 
             variant="ghost" 
-            size="lg"
+            size="sm"
             onClick={handleNoAnswer}
             className="text-muted-foreground hover:text-foreground hover:bg-white/10"
             data-testid="button-close-question"
           >
-            <X className="w-5 h-5 mr-2" />
-            No Answer / Skip
+            <X className="w-4 h-4 mr-1" />
+            Skip
           </Button>
         </div>
       </div>
 
-      <div className="bg-card/50 px-6 py-3 text-center text-xs text-muted-foreground border-t border-border">
+      <div className="bg-card/50 px-4 py-2 text-center text-xs text-muted-foreground border-t border-border">
         Keyboard: <kbd className="px-1.5 py-0.5 bg-primary/20 rounded text-primary font-mono">R</kbd> Reveal
         <span className="mx-3">|</span>
         <kbd className="px-1.5 py-0.5 bg-primary/20 rounded text-primary font-mono">T</kbd> Timer
