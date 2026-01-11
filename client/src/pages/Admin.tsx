@@ -12,13 +12,14 @@ import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, LogOut, Sun, Moon, Layers } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, LogOut, Sun, Moon, Layers, Upload } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import MDEditor from '@uiw/react-md-editor';
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeName, THEMES, useTheme } from "@/context/ThemeContext";
 import type { Category, Question, Board, BoardCategoryWithCount } from "@shared/schema";
+import { useUpload } from "@/hooks/use-upload";
 
 const THEME_LABELS: Record<ThemeName, string> = {
   birthday: 'Birthday',
@@ -45,7 +46,19 @@ export default function Admin() {
   const [showNewBoardForm, setShowNewBoardForm] = useState(false);
 
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryImageUrl, setNewCategoryImageUrl] = useState("");
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
+  const categoryImageInputRef = useRef<HTMLInputElement>(null);
+  
+  const { uploadFile: uploadCategoryImage, isUploading: isUploadingCategoryImage } = useUpload({
+    onSuccess: (response) => {
+      setNewCategoryImageUrl(response.objectPath);
+      toast({ title: "Image uploaded", description: "Category image ready to use" });
+    },
+    onError: (error) => {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+    },
+  });
 
   const [editingBoardId, setEditingBoardId] = useState<number | null>(null);
   const [editBoardName, setEditBoardName] = useState("");
@@ -191,8 +204,8 @@ export default function Admin() {
   });
 
   const createAndLinkCategoryMutation = useMutation({
-    mutationFn: async (data: { name: string; description: string; boardId: number }) => {
-      const res = await apiRequest('POST', `/api/boards/${data.boardId}/categories/create-and-link`, { name: data.name, description: data.description });
+    mutationFn: async (data: { name: string; description: string; imageUrl?: string; boardId: number }) => {
+      const res = await apiRequest('POST', `/api/boards/${data.boardId}/categories/create-and-link`, { name: data.name, description: data.description, imageUrl: data.imageUrl });
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to create category");
@@ -201,6 +214,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      setNewCategoryImageUrl("");
       queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       setNewCategoryName("");
@@ -675,8 +689,13 @@ export default function Admin() {
                               data-testid="input-category-name"
                             />
                             <Button
-                              onClick={() => createAndLinkCategoryMutation.mutate({ name: newCategoryName.trim(), description: newCategoryDescription.trim(), boardId: selectedBoardId! })}
-                              disabled={!newCategoryName.trim() || boardCategories.length >= 5}
+                              onClick={() => createAndLinkCategoryMutation.mutate({ 
+                                name: newCategoryName.trim(), 
+                                description: newCategoryDescription.trim(), 
+                                imageUrl: newCategoryImageUrl || undefined,
+                                boardId: selectedBoardId! 
+                              })}
+                              disabled={!newCategoryName.trim() || boardCategories.length >= 5 || isUploadingCategoryImage}
                               size="sm"
                               className="h-8"
                               data-testid="button-create-category"
@@ -691,6 +710,54 @@ export default function Admin() {
                             className="h-8 text-sm"
                             data-testid="input-category-description"
                           />
+                          <div className="flex gap-2 items-center">
+                            <input
+                              type="file"
+                              ref={categoryImageInputRef}
+                              className="hidden"
+                              accept="image/*"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  await uploadCategoryImage(file);
+                                }
+                              }}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 gap-1"
+                              onClick={() => categoryImageInputRef.current?.click()}
+                              disabled={isUploadingCategoryImage}
+                              data-testid="button-upload-category-image"
+                            >
+                              {isUploadingCategoryImage ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Upload className="w-4 h-4" />
+                              )}
+                              {newCategoryImageUrl ? "Change Image" : "Add Image"}
+                            </Button>
+                            {newCategoryImageUrl && (
+                              <div className="flex items-center gap-2">
+                                <img 
+                                  src={newCategoryImageUrl} 
+                                  alt="Category preview" 
+                                  className="h-8 w-8 rounded object-cover border"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => setNewCategoryImageUrl("")}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>

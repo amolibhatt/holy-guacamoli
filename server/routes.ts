@@ -8,6 +8,7 @@ import path from "path";
 import fs from "fs";
 import { setupWebSocket, getRoomInfo, getOrRestoreSession } from "./gameRoom";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./auth";
+import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -37,6 +38,9 @@ export async function registerRoutes(
   // Setup auth BEFORE other routes
   setupAuth(app);
   registerAuthRoutes(app);
+  
+  // Register object storage routes for image uploads
+  registerObjectStorageRoutes(app);
   
   setupWebSocket(httpServer);
 
