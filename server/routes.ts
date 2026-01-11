@@ -459,6 +459,294 @@ export async function registerRoutes(
     }
   });
 
+  // === GAMES ===
+  app.get("/api/games", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const allGames = await storage.getGames(userId, role);
+    res.json(allGames);
+  });
+
+  app.get("/api/games/:id", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const game = await storage.getGame(Number(req.params.id), userId, role);
+    if (!game) {
+      return res.status(404).json({ message: "Game not found" });
+    }
+    res.json(game);
+  });
+
+  app.post("/api/games", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { name, mode, settings } = req.body;
+      if (!name) {
+        return res.status(400).json({ message: "Name is required" });
+      }
+      const game = await storage.createGame({
+        name,
+        mode: mode || "jeopardy",
+        settings: settings || {},
+        userId,
+      });
+      res.status(201).json(game);
+    } catch (err) {
+      console.error("Error creating game:", err);
+      res.status(500).json({ message: "Failed to create game" });
+    }
+  });
+
+  app.put("/api/games/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const { name, mode, settings } = req.body;
+      const game = await storage.updateGame(Number(req.params.id), { name, mode, settings }, userId, role);
+      if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+      res.json(game);
+    } catch (err) {
+      console.error("Error updating game:", err);
+      res.status(500).json({ message: "Failed to update game" });
+    }
+  });
+
+  app.delete("/api/games/:id", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const deleted = await storage.deleteGame(Number(req.params.id), userId, role);
+    if (!deleted) {
+      return res.status(404).json({ message: "Game not found" });
+    }
+    res.json({ success: true });
+  });
+
+  // === GAME BOARDS (junction) ===
+  app.get("/api/games/:gameId/boards", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const game = await storage.getGame(Number(req.params.gameId), userId, role);
+    if (!game) {
+      return res.status(404).json({ message: "Game not found" });
+    }
+    const gbs = await storage.getGameBoards(Number(req.params.gameId));
+    res.json(gbs);
+  });
+
+  app.post("/api/games/:gameId/boards", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const gameId = Number(req.params.gameId);
+      const game = await storage.getGame(gameId, userId, role);
+      if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+      const { boardId } = req.body;
+      if (!boardId) {
+        return res.status(400).json({ message: "boardId is required" });
+      }
+      const board = await storage.getBoard(boardId, userId, role);
+      if (!board) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      const gb = await storage.addBoardToGame({ gameId, boardId });
+      res.status(201).json(gb);
+    } catch (err) {
+      console.error("Error adding board to game:", err);
+      res.status(500).json({ message: "Failed to add board to game" });
+    }
+  });
+
+  app.delete("/api/games/:gameId/boards/:boardId", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const gameId = Number(req.params.gameId);
+    const game = await storage.getGame(gameId, userId, role);
+    if (!game) {
+      return res.status(404).json({ message: "Game not found" });
+    }
+    const deleted = await storage.removeBoardFromGame(gameId, Number(req.params.boardId));
+    if (!deleted) {
+      return res.status(404).json({ message: "Board not linked to this game" });
+    }
+    res.json({ success: true });
+  });
+
+  // === HEADS UP DECKS ===
+  app.get("/api/heads-up-decks", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const decks = await storage.getHeadsUpDecks(userId, role);
+    res.json(decks);
+  });
+
+  app.get("/api/heads-up-decks/:id", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const deck = await storage.getHeadsUpDeck(Number(req.params.id), userId, role);
+    if (!deck) {
+      return res.status(404).json({ message: "Deck not found" });
+    }
+    res.json(deck);
+  });
+
+  app.post("/api/heads-up-decks", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { name, description, imageUrl, timerSeconds } = req.body;
+      if (!name) {
+        return res.status(400).json({ message: "Name is required" });
+      }
+      const deck = await storage.createHeadsUpDeck({
+        name,
+        description: description || null,
+        imageUrl: imageUrl || null,
+        timerSeconds: timerSeconds || 60,
+        userId,
+      });
+      res.status(201).json(deck);
+    } catch (err) {
+      console.error("Error creating deck:", err);
+      res.status(500).json({ message: "Failed to create deck" });
+    }
+  });
+
+  app.put("/api/heads-up-decks/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const { name, description, imageUrl, timerSeconds } = req.body;
+      const deck = await storage.updateHeadsUpDeck(Number(req.params.id), { name, description, imageUrl, timerSeconds }, userId, role);
+      if (!deck) {
+        return res.status(404).json({ message: "Deck not found" });
+      }
+      res.json(deck);
+    } catch (err) {
+      console.error("Error updating deck:", err);
+      res.status(500).json({ message: "Failed to update deck" });
+    }
+  });
+
+  app.delete("/api/heads-up-decks/:id", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const deleted = await storage.deleteHeadsUpDeck(Number(req.params.id), userId, role);
+    if (!deleted) {
+      return res.status(404).json({ message: "Deck not found" });
+    }
+    res.json({ success: true });
+  });
+
+  // === HEADS UP CARDS ===
+  app.get("/api/heads-up-decks/:deckId/cards", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const deck = await storage.getHeadsUpDeck(Number(req.params.deckId), userId, role);
+    if (!deck) {
+      return res.status(404).json({ message: "Deck not found" });
+    }
+    const cards = await storage.getHeadsUpCards(Number(req.params.deckId));
+    res.json(cards);
+  });
+
+  app.post("/api/heads-up-decks/:deckId/cards", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const deckId = Number(req.params.deckId);
+      const deck = await storage.getHeadsUpDeck(deckId, userId, role);
+      if (!deck) {
+        return res.status(404).json({ message: "Deck not found" });
+      }
+      const { prompt, hints } = req.body;
+      if (!prompt) {
+        return res.status(400).json({ message: "Prompt is required" });
+      }
+      const card = await storage.createHeadsUpCard({ deckId, prompt, hints: hints || [] });
+      res.status(201).json(card);
+    } catch (err) {
+      console.error("Error creating card:", err);
+      res.status(500).json({ message: "Failed to create card" });
+    }
+  });
+
+  app.put("/api/heads-up-cards/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { prompt, hints } = req.body;
+      const card = await storage.updateHeadsUpCard(Number(req.params.id), { prompt, hints });
+      if (!card) {
+        return res.status(404).json({ message: "Card not found" });
+      }
+      res.json(card);
+    } catch (err) {
+      console.error("Error updating card:", err);
+      res.status(500).json({ message: "Failed to update card" });
+    }
+  });
+
+  app.delete("/api/heads-up-cards/:id", isAuthenticated, async (req, res) => {
+    const deleted = await storage.deleteHeadsUpCard(Number(req.params.id));
+    if (!deleted) {
+      return res.status(404).json({ message: "Card not found" });
+    }
+    res.json({ success: true });
+  });
+
+  // === GAME DECKS (junction for heads up) ===
+  app.get("/api/games/:gameId/decks", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const game = await storage.getGame(Number(req.params.gameId), userId, role);
+    if (!game) {
+      return res.status(404).json({ message: "Game not found" });
+    }
+    const gds = await storage.getGameDecks(Number(req.params.gameId));
+    res.json(gds);
+  });
+
+  app.post("/api/games/:gameId/decks", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const gameId = Number(req.params.gameId);
+      const game = await storage.getGame(gameId, userId, role);
+      if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+      const { deckId } = req.body;
+      if (!deckId) {
+        return res.status(400).json({ message: "deckId is required" });
+      }
+      const deck = await storage.getHeadsUpDeck(deckId, userId, role);
+      if (!deck) {
+        return res.status(404).json({ message: "Deck not found" });
+      }
+      const gd = await storage.addDeckToGame({ gameId, deckId });
+      res.status(201).json(gd);
+    } catch (err) {
+      console.error("Error adding deck to game:", err);
+      res.status(500).json({ message: "Failed to add deck to game" });
+    }
+  });
+
+  app.delete("/api/games/:gameId/decks/:deckId", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const gameId = Number(req.params.gameId);
+    const game = await storage.getGame(gameId, userId, role);
+    if (!game) {
+      return res.status(404).json({ message: "Game not found" });
+    }
+    const deleted = await storage.removeDeckFromGame(gameId, Number(req.params.deckId));
+    if (!deleted) {
+      return res.status(404).json({ message: "Deck not linked to this game" });
+    }
+    res.json({ success: true });
+  });
+
   app.post('/api/upload', isAuthenticated, upload.single('file'), (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
