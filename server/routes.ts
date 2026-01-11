@@ -1365,6 +1365,46 @@ export async function registerRoutes(
     }
   });
 
+  // Update anniversary date
+  app.post("/api/double-dip/anniversary", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { anniversaryDate } = req.body;
+      
+      const pair = await storage.getDoubleDipPairForUser(userId);
+      if (!pair) {
+        return res.status(404).json({ message: "No pair found" });
+      }
+      
+      // Update the pair with anniversary date
+      await storage.updateDoubleDipPair(pair.id, { anniversaryDate });
+      
+      // Create anniversary milestone if not exists
+      try {
+        const exists = await storage.checkDoubleDipMilestoneExists(pair.id, 'anniversary', 0);
+        if (!exists) {
+          const date = new Date(anniversaryDate);
+          const formattedDate = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          await storage.createDoubleDipMilestone({
+            pairId: pair.id,
+            type: 'anniversary',
+            title: 'Anniversary Set',
+            description: `Your anniversary is ${formattedDate}`,
+            value: 0,
+            metadata: { date: anniversaryDate },
+          });
+        }
+      } catch (milestoneError) {
+        console.error("Error creating anniversary milestone:", milestoneError);
+      }
+      
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error updating anniversary:", err);
+      res.status(500).json({ message: "Failed to update anniversary" });
+    }
+  });
+
   // Get vault (history)
   app.get("/api/double-dip/vault", isAuthenticated, async (req, res) => {
     try {

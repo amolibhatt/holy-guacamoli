@@ -30,6 +30,7 @@ export const doubleDipPairs = pgTable("double_dip_pairs", {
   status: text("status").notNull().$type<"pending" | "active" | "ended">().default("pending"),
   streakCount: integer("streak_count").notNull().default(0),
   lastCompletedDate: text("last_completed_date"),
+  anniversaryDate: text("anniversary_date"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -83,7 +84,7 @@ export const doubleDipReactions = pgTable("double_dip_reactions", {
   unique().on(table.answerId, table.userId),
 ]);
 
-export const MILESTONE_TYPES = ["streak", "compatibility", "favorite", "first_reveal", "category_master"] as const;
+export const MILESTONE_TYPES = ["streak", "compatibility", "favorite", "first_reveal", "category_master", "anniversary"] as const;
 export type MilestoneType = typeof MILESTONE_TYPES[number];
 
 export const doubleDipMilestones = pgTable("double_dip_milestones", {
