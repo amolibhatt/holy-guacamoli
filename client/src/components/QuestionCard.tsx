@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Question } from "@shared/schema";
 import { useScore } from "./ScoreContext";
 import { useTheme } from "@/context/ThemeContext";
-import { CheckCircle2, XCircle, Eye, EyeOff, Timer, X, Trophy, Sparkles, Star, Zap, Bell } from "lucide-react";
+import { CheckCircle2, XCircle, Eye, EyeOff, Timer, X, Trophy, Sparkles, Star, Zap, Bell, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
@@ -386,9 +386,29 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
                 >
                   <Sparkles className="w-3 h-3 text-primary/30" />
                 </motion.div>
-                <div className="text-center mb-4">
+                <div className="text-center mb-3">
                   <span className="font-black text-foreground text-xl">{contestant.name}</span>
-                  <span className="block text-sm text-muted-foreground mt-1">{contestant.score} pts</span>
+                  <div className="flex items-center justify-center gap-2 mt-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => deductPoints(contestant.id, question.points)}
+                      className="h-6 w-6 text-muted-foreground hover:text-red-400 hover:bg-red-500/20"
+                      data-testid={`button-adjust-minus-${contestant.id}`}
+                    >
+                      <Minus className="w-3 h-3" />
+                    </Button>
+                    <span className="text-sm text-muted-foreground min-w-[50px]">{contestant.score} pts</span>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => awardPoints(contestant.id, question.points)}
+                      className="h-6 w-6 text-muted-foreground hover:text-primary hover:bg-primary/20"
+                      data-testid={`button-adjust-plus-${contestant.id}`}
+                    >
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button
