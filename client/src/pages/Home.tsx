@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Settings, ArrowLeft, Grid3X3, LogOut, Sun, Moon, ArrowRight } from "lucide-react";
+import { Loader2, Settings, Grid3X3, LogOut, Sun, Moon, ArrowRight, Zap, Skull } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -183,6 +184,46 @@ export default function Home() {
               ))}
             </div>
           )}
+
+          <div className="mt-12 space-y-4">
+            <h3 className="text-center text-white/40 text-sm font-medium uppercase tracking-wider">More Game Modes</h3>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex items-center gap-4 px-6 py-4 bg-card/30 backdrop-blur-sm border border-white/10 rounded-xl opacity-60 cursor-not-allowed"
+            >
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-white/60">Brain Rot Blitz</h3>
+                  <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+                </div>
+                <p className="text-white/40 text-sm">Rapid-fire trivia with multipliers</p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex items-center gap-4 px-6 py-4 bg-card/30 backdrop-blur-sm border border-white/10 rounded-xl opacity-60 cursor-not-allowed"
+            >
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center">
+                <Skull className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-white/60">Liar's Lobby</h3>
+                  <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+                </div>
+                <p className="text-white/40 text-sm">Bluff your way to victory</p>
+              </div>
+            </motion.div>
+          </div>
         </motion.div>
       </main>
     </div>
