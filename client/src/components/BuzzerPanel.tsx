@@ -62,7 +62,7 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
-  const { addContestantWithId } = useScore();
+  const { addContestantWithId, removeContestant } = useScore();
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -113,6 +113,7 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
           break;
         case "player:left":
           setPlayers((prev) => prev.filter((p) => p.id !== data.playerId));
+          removeContestant(data.playerId);
           break;
         case "player:buzzed":
           setBuzzQueue((prev) => [...prev, data]);

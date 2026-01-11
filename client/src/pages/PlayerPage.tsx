@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, useLocation } from "wouter";
+import { useParams, useLocation, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, CheckCircle2, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw } from "lucide-react";
 import confetti from "canvas-confetti";
+import { useToast } from "@/hooks/use-toast";
+import { soundManager } from "@/lib/sounds";
 
 type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error" | "reconnecting";
 
@@ -29,8 +31,12 @@ function clearSession() {
 export default function PlayerPage() {
   const params = useParams<{ code?: string }>();
   const [, setLocation] = useLocation();
+  const searchString = useSearch();
+  const urlParams = new URLSearchParams(searchString);
+  const codeFromUrl = params.code || urlParams.get('code') || '';
+  const { toast } = useToast();
   const savedSession = getSession();
-  const [roomCode, setRoomCode] = useState(params.code || savedSession?.roomCode || "");
+  const [roomCode, setRoomCode] = useState(codeFromUrl || savedSession?.roomCode || "");
   const [playerName, setPlayerName] = useState(savedSession?.playerName || "");
   const [playerId, setPlayerId] = useState<string | null>(savedSession?.playerId || null);
   const [joined, setJoined] = useState(false);
@@ -89,7 +95,11 @@ export default function PlayerPage() {
           if (data.message === "Room not found") {
             clearSession();
           }
-          alert(data.message);
+          toast({
+            title: "Error",
+            description: data.message,
+            variant: "destructive",
+          });
           break;
         case "kicked":
           clearSession();
@@ -97,16 +107,23 @@ export default function PlayerPage() {
           joinedRef.current = false;
           shouldReconnectRef.current = false;
           setStatus("disconnected");
-          alert("You were removed from the game by the host.");
+          toast({
+            title: "Removed from game",
+            description: "The host removed you from the game.",
+            variant: "destructive",
+          });
           break;
         case "buzzer:unlocked":
           setBuzzerLocked(false);
           setHasBuzzed(false);
           setBuzzPosition(null);
           setFeedback(null);
+          soundManager.play('whoosh', 0.4);
+          try { navigator.vibrate?.(50); } catch {}
           break;
         case "buzzer:locked":
           setBuzzerLocked(true);
+          soundManager.play('click', 0.3);
           break;
         case "buzzer:reset":
           setHasBuzzed(false);
