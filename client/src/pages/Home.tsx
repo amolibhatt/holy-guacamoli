@@ -73,46 +73,18 @@ export default function Home() {
     <div className="min-h-screen gradient-game grid-bg flex flex-col">
       <header className="border-b border-primary/20 bg-card/40 backdrop-blur-xl sticky top-0 z-50">
         <div className="px-4 py-3 flex items-center justify-between gap-4">
-          <motion.div 
-            className="flex items-center gap-4"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="relative">
-              <motion.div 
-                className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-gray-800 via-gray-900 to-black border border-white/20"
-                animate={{ 
-                  rotate: [0, -5, 5, -5, 0],
-                  scale: [1, 1.05, 1]
-                }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <motion.div
-                  animate={{ y: [0, -3, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  <AvocadoIcon className="w-8 h-8 drop-shadow-lg" />
-                </motion.div>
-              </motion.div>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-primary/80 to-secondary/80 border border-white/10">
+              <AvocadoIcon className="w-7 h-7" />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-2xl font-black tracking-tight leading-tight text-white text-glow">
+              <h1 className="text-xl font-bold tracking-tight text-white">
                 Holy GuacAmoli!
               </h1>
-              <motion.span 
-                className="text-[10px] font-bold text-white/50 tracking-[0.2em] uppercase"
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 3, repeat: Infinity }}
-              >Dip into the facts!</motion.span>
+              <span className="text-xs text-white/50">Dip into the facts!</span>
             </div>
-          </motion.div>
-          <motion.div 
-            className="flex items-center gap-2"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
+          </div>
+          <div className="flex items-center gap-2">
             <Button 
               variant="ghost" 
               size="icon" 
@@ -137,7 +109,7 @@ export default function Home() {
             >
               <LogOut className="w-5 h-5" />
             </Button>
-          </motion.div>
+          </div>
         </div>
       </header>
       <main className="flex-1 p-6 overflow-y-auto">
@@ -154,14 +126,10 @@ export default function Home() {
 
           {selectedMode === null ? (
             <>
-              <motion.div 
-                className="text-center mb-8"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <h2 className="text-3xl md:text-4xl font-black text-white mb-2 text-glow">Choose Your Game</h2>
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-white mb-2">Choose Your Game</h2>
                 <p className="text-white/50">Select a game mode to play</p>
-              </motion.div>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {gameModes.map((mode, idx) => {
@@ -234,24 +202,13 @@ export default function Home() {
                 </Link>
               </div>
 
-              <motion.div 
-                className="text-center mb-10"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <motion.div 
-                  className="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 flex items-center justify-center mx-auto mb-5 shadow-2xl shadow-purple-500/30"
-                  animate={{ 
-                    boxShadow: ['0 25px 50px -12px rgba(168, 85, 247, 0.3)', '0 25px 50px -12px rgba(168, 85, 247, 0.5)', '0 25px 50px -12px rgba(168, 85, 247, 0.3)']
-                  }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <Grid3X3 className="w-10 h-10 text-white" />
-                </motion.div>
-                <h2 className="text-4xl md:text-5xl font-black text-white mb-3 text-glow">Grid of Grudges</h2>
-                <p className="text-white/50 text-lg">Choose your battlefield</p>
-              </motion.div>
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4">
+                  <Grid3X3 className="w-8 h-8 text-white" />
+                </div>
+                <h2 className="text-3xl font-bold text-white mb-2">Grid of Grudges</h2>
+                <p className="text-white/50">Choose your battlefield</p>
+              </div>
 
               {isLoadingBoards ? (
                 <div className="flex justify-center py-12">
@@ -278,40 +235,31 @@ export default function Home() {
                 </motion.div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {boards.map((board, idx) => (
-                    <motion.button
+                  {boards.map((board) => (
+                    <button
                       key={board.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 + idx * 0.05 }}
-                      whileHover={{ scale: 1.02, y: -4 }}
-                      whileTap={{ scale: 0.98 }}
                       onClick={() => handleSelectBoard(board)}
-                      className="relative overflow-hidden flex flex-col items-center gap-4 p-8 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-primary/20 rounded-2xl text-center transition-all hover:border-primary/50 hover:shadow-xl hover:shadow-primary/10 group"
+                      className="flex flex-col items-center gap-3 p-6 bg-card border border-border rounded-xl text-center transition-all hover:border-primary/50 hover:bg-card/80 group"
                       data-testid={`button-board-${board.id}`}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-transparent to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <motion.div 
-                        className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30"
-                        whileHover={{ rotate: 5 }}
-                      >
-                        <Grid3X3 className="w-8 h-8 text-white" />
-                      </motion.div>
-                      <div className="relative z-10">
-                        <h3 className="text-2xl font-bold text-white group-hover:text-primary transition-colors mb-1">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                        <Grid3X3 className="w-7 h-7 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors mb-1">
                           {board.name}
                         </h3>
                         {board.description ? (
-                          <p className="text-white/50 text-sm">{board.description}</p>
+                          <p className="text-muted-foreground text-sm">{board.description}</p>
                         ) : (
-                          <p className="text-white/30 text-sm">{(board.pointValues as number[])?.length || 5} point levels</p>
+                          <p className="text-muted-foreground/60 text-sm">{(board.pointValues as number[])?.length || 5} point levels</p>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-primary/80 group-hover:text-primary transition-colors mt-2">
-                        <span className="text-sm font-medium">Play Now</span>
+                      <div className="flex items-center gap-2 text-primary mt-1">
+                        <span className="text-sm font-medium">Play</span>
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </div>
-                    </motion.button>
+                    </button>
                   ))}
                 </div>
               )}
