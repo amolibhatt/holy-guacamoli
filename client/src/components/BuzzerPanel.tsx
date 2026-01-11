@@ -7,10 +7,12 @@ import { Zap, Copy, Check, Lock, Unlock, RotateCcw, Wifi, WifiOff, QrCode, X, Re
 import { soundManager } from "@/lib/sounds";
 import { useScore } from "@/components/ScoreContext";
 import { useAuth } from "@/hooks/use-auth";
+import { PLAYER_AVATARS } from "@shared/schema";
 
 export interface BuzzerPlayer {
   id: string;
   name: string;
+  avatar?: string;
   score?: number;
 }
 import {
@@ -23,6 +25,7 @@ import {
 interface ConnectedPlayer {
   id: string;
   name: string;
+  avatar?: string;
   score: number;
   isConnected?: boolean;
 }
@@ -115,6 +118,7 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
           setPlayers((data.players || []).map((p: any) => ({ 
             id: p.id, 
             name: p.name, 
+            avatar: p.avatar || "cat",
             score: p.score || 0,
             isConnected: p.isConnected !== false,
           })));
@@ -123,7 +127,7 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
             setCompletedQuestionsFromServer(data.completedQuestions);
           }
           (data.players || []).forEach((p: any) => {
-            addContestantWithId(p.id, p.name, p.score || 0);
+            addContestantWithId(p.id, p.name, p.score || 0, p.avatar);
           });
           break;
         case "player:joined":
@@ -134,6 +138,7 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
               updated[existingIndex] = {
                 ...updated[existingIndex],
                 name: data.player.name,
+                avatar: data.player.avatar || updated[existingIndex].avatar,
                 score: data.player.score || updated[existingIndex].score,
                 isConnected: true,
               };
@@ -141,7 +146,7 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
             }
             return [...prev, { ...data.player, score: data.player.score || 0, isConnected: true }];
           });
-          addContestantWithId(data.player.id, data.player.name, data.player.score || 0);
+          addContestantWithId(data.player.id, data.player.name, data.player.score || 0, data.player.avatar);
           soundManager.play("click", 0.3);
           break;
         case "player:left":
