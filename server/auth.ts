@@ -10,6 +10,7 @@ import type { SafeUser } from "@shared/models/auth";
 declare module "express-session" {
   interface SessionData {
     userId?: string;
+    userRole?: string;
   }
 }
 
@@ -84,6 +85,7 @@ export function registerAuthRoutes(app: Express): void {
       }).returning();
 
       req.session.userId = newUser.id;
+      req.session.userRole = newUser.role;
 
       res.status(201).json(sanitizeUser(newUser));
     } catch (error) {
@@ -115,6 +117,7 @@ export function registerAuthRoutes(app: Express): void {
       }
 
       req.session.userId = user.id;
+      req.session.userRole = user.role;
 
       res.json(sanitizeUser(user));
     } catch (error) {
