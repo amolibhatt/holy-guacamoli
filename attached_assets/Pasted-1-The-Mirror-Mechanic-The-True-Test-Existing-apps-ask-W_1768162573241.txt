@@ -1,0 +1,28 @@
+1. The "Mirror" Mechanic (The True Test)
+Existing apps ask: "What is your favorite food?"
+Double Dip asks: "What does [Partner] THINK is your favorite food?"
+The Innovation: For Multiple Choice questions, we add a Prediction Phase.
+The Workflow:
+You answer for yourself.
+You then guess your partner's answer.
+The Coach's Insight: Compatibility isn't about being the same; it’s about feeling seen. This mechanic proves whether you actually know your partner or just think you do.
+The Design: A "Mirror Card" that flips 180 degrees when you switch from "My Answer" to "My Prediction."
+2. The "Sync-Stakes" (The PM’s Retention Tool)
+Existing apps have boring streaks.
+Double Dip has weekly Rewards and Penalties.
+The Innovation: At the start of the week, the couple sets a "Weekly Stake" from a curated list.
+Examples: Winner gets a 30-min massage vs. Loser does all the dishes for 3 days.
+The Vibe: Amoli AI tracks the scores. On Sunday, it doesn't just show a chart; it Declares a Winner in a flashy, high-drama reveal.
+Why it works: It adds "Skin in the game." It turns a daily habit into a playful competition.
+3. The "AI Debrief" (The Coach's Secret Weapon)
+Existing apps just show the text and stop.
+Double Dip acts as a Referee.
+The Innovation: After the reveal, the AI analyzes the "Gap."
+The Feature: If your answers are 0% synced, the AI triggers "The Debrief." It provides one follow-up prompt designed to fix the "Glitch."
+Example: "Amoli AI noticed a 100% Glitch on 'The Rewind.' You both remember your first kiss at different locations. Go to your chat and find a photo of that night to settle the score."
+4. The "Long-Term Memory" (The Design of Time)
+Existing apps have a list of history.
+Double Dip has a "Time Capsule" Vault.
+The Innovation: Some questions (e.g., in "The Deep End") are flagged as "Future-Locked."
+The Feature: You answer a question today about where you'll be in a year. That answer is digitally sealed. You cannot see it in the Vault.
+The Payoff: On your anniversary, the app triggers a "The Great Unseal," showing you what you thought a year ago. It creates a "Legacy Loop" that keeps users subscribed for years.

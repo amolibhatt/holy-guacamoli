@@ -1432,9 +1432,22 @@ export async function registerRoutes(
         })
       );
       
+      // Get favorites with question data
+      const allFavorites = await storage.getDoubleDipFavorites(pair.id);
+      const favorites = allFavorites.map(fav => {
+        const answer = entries
+          .flatMap(e => e.answers)
+          .find(a => a.id === fav.answerId);
+        const question = answer 
+          ? entries.flatMap(e => e.questions).find(q => q.id === answer.questionId)
+          : null;
+        return { favorite: fav, answer, question };
+      }).filter(f => f.answer && f.question);
+      
       res.json({
         entries,
         pair: { userAId: pair.userAId, userBId: pair.userBId },
+        favorites,
       });
     } catch (err) {
       console.error("Error getting vault:", err);

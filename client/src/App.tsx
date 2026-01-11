@@ -17,9 +17,7 @@ import HeadsUpGame from "@/pages/HeadsUpGame";
 import GridOfGrudges from "@/pages/GridOfGrudges";
 import PlayBoard from "@/pages/PlayBoard";
 import SuperAdmin from "@/pages/SuperAdmin";
-import CouplesGame from "@/pages/CouplesGame";
-import Storyboard from "@/pages/Storyboard";
-import Vault from "@/pages/Vault";
+import RelationshipHub from "@/pages/RelationshipHub";
 import HostGridOfGrudges from "@/pages/HostGridOfGrudges";
 
 function Router() {
@@ -27,7 +25,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/host/grid-of-grudges" component={HostGridOfGrudges} />
-      <Route path="/host/double-dip" component={CouplesGame} />
+      <Route path="/host/double-dip" component={RelationshipHub} />
       <Route path="/category/:id" component={CategoryPage} />
       <Route path="/admin" component={Admin} />
       <Route path="/admin/games" component={GamesAdmin} />
@@ -39,9 +37,7 @@ function Router() {
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/heads-up/:gameId" component={HeadsUpGame} />
       <Route path="/grudges/:gameId" component={GridOfGrudges} />
-      <Route path="/couples" component={CouplesGame} />
-      <Route path="/couples/storyboard" component={Storyboard} />
-      <Route path="/couples/vault" component={Vault} />
+      <Route path="/couples" component={RelationshipHub} />
       <Route component={NotFound} />
     </Switch>
   );
