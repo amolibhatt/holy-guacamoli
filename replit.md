@@ -40,6 +40,7 @@ Preferred communication style: Simple, everyday language.
 5. **Multiple Boards**: Supports multiple game boards, each with its own set of linked categories and custom point values (e.g., Board 1: 10-50 pts, Board 2: 60-100 pts). Questions are automatically ordered by point value.
 6. **Multiplayer Buzzer System**: WebSocket-based real-time buzzer where players join via QR code on their phones (/play route). Buzzers auto-unlock when questions open and auto-lock when closed.
 7. **Animations**: 3D flip card animations for question cells, particle effects for milestones and category completion
+8. **Portable Email/Password Auth**: Host authentication uses bcrypt for password hashing and express-session with PostgreSQL store. No external OAuth dependencies - works on any platform.
 
 ### WebSocket Architecture
 - **Server**: `server/gameRoom.ts` manages rooms, players, and buzz events
@@ -57,7 +58,13 @@ Preferred communication style: Simple, everyday language.
 ### Database
 - **PostgreSQL**: Primary database, connected via DATABASE_URL environment variable
 - **Drizzle ORM**: Schema management and queries
-- **connect-pg-simple**: Session storage (available but sessions not currently implemented)
+- **connect-pg-simple**: Session storage for host authentication
+
+### Authentication
+- **Email/Password Auth**: Portable authentication in server/auth.ts
+- **bcryptjs**: Password hashing (10 rounds)
+- **express-session**: Session management with PostgreSQL store
+- **Host-only**: Only hosts need accounts; players join via QR code without authentication
 
 ### Frontend Libraries
 - **@tanstack/react-query**: Data fetching and caching

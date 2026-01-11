@@ -22,7 +22,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Home() {
-  const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
+  const { user, isLoading: isAuthLoading, isAuthenticated, logout, isLoggingOut } = useAuth();
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
   const { data: boards, isLoading: isLoadingBoards } = useBoards();
   const { data: selectedBoard } = useBoard(selectedBoardId);
@@ -191,11 +191,16 @@ export default function Home() {
                   <Settings className="w-5 h-5" />
                 </Button>
               </Link>
-              <a href="/api/logout">
-                <Button variant="ghost" size="icon" className="text-white/60 hover:text-white hover:bg-white/10" data-testid="button-logout">
-                  <LogOut className="w-5 h-5" />
-                </Button>
-              </a>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-white/60 hover:text-white hover:bg-white/10" 
+                data-testid="button-logout"
+                onClick={() => logout()}
+                disabled={isLoggingOut}
+              >
+                <LogOut className="w-5 h-5" />
+              </Button>
             </motion.div>
           </div>
         </header>
