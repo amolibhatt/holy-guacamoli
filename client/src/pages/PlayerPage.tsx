@@ -218,13 +218,9 @@ export default function PlayerPage() {
         >
           <Card className="w-full max-w-sm p-6 bg-card/90 backdrop-blur border-primary/30">
             <div className="text-center mb-6">
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="inline-block"
-              >
-                <Zap className="w-16 h-16 text-yellow-400 mx-auto" />
-              </motion.div>
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center mx-auto">
+                <Zap className="w-10 h-10 text-white" />
+              </div>
               <h1 className="text-2xl font-bold text-foreground mt-4">Join Game</h1>
               <p className="text-muted-foreground text-sm mt-1">Enter the room code to play</p>
             </div>
@@ -367,19 +363,14 @@ export default function PlayerPage() {
               key="buzzer"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              whileTap={{ scale: 0.9 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleBuzz}
-              className="w-64 h-64 rounded-full gradient-header flex items-center justify-center shadow-2xl active:shadow-lg transition-shadow focus:outline-none focus:ring-4 focus:ring-primary/50"
+              className="w-72 h-72 rounded-full gradient-header flex items-center justify-center shadow-2xl active:shadow-lg transition-all focus:outline-none focus:ring-4 focus:ring-primary/50"
               data-testid="button-buzz"
               aria-label="Buzz in - tap to answer"
               role="button"
             >
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 0.5, repeat: Infinity }}
-              >
-                <Zap className="w-24 h-24 text-white" aria-hidden="true" />
-              </motion.div>
+              <Zap className="w-28 h-28 text-white" aria-hidden="true" />
             </motion.button>
           )}
         </AnimatePresence>
