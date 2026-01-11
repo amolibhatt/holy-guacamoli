@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { QRCodeSVG } from "qrcode.react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Copy, Check, Lock, Unlock, RotateCcw, Wifi, WifiOff, QrCode, X } from "lucide-react";
+import { Zap, Copy, Check, Lock, Unlock, RotateCcw, Wifi, WifiOff, QrCode, X, RefreshCw, Trash2 } from "lucide-react";
 import { soundManager } from "@/lib/sounds";
 import { useScore } from "@/components/ScoreContext";
 
@@ -52,12 +52,16 @@ function getSavedRoomCode(): string | null {
 export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_, ref) {
   const [roomCode, setRoomCode] = useState<string | null>(getSavedRoomCode);
   const [connected, setConnected] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
   const [players, setPlayers] = useState<ConnectedPlayer[]>([]);
   const [buzzQueue, setBuzzQueue] = useState<BuzzEvent[]>([]);
   const [buzzerLocked, setBuzzerLocked] = useState(true);
   const [showQR, setShowQR] = useState(false);
   const [copied, setCopied] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
+  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef(0);
   const { addContestantWithId } = useScore();
 
   const connect = useCallback(() => {
@@ -69,11 +73,21 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
 
     ws.onopen = () => {
       setConnected(true);
+      setReconnecting(false);
+      reconnectAttemptsRef.current = 0;
+      
       if (roomCode) {
         ws.send(JSON.stringify({ type: "host:join", code: roomCode }));
       } else {
         ws.send(JSON.stringify({ type: "host:create" }));
       }
+      
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+      pingIntervalRef.current = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "ping" }));
+        }
+      }, 10000);
     };
 
     ws.onmessage = (event) => {
@@ -87,9 +101,13 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
         case "room:joined":
           setRoomCode(data.code);
           setPlayers(data.players || []);
+          if (data.buzzerLocked !== undefined) setBuzzerLocked(data.buzzerLocked);
           break;
         case "player:joined":
-          setPlayers((prev) => [...prev, data.player]);
+          setPlayers((prev) => {
+            if (prev.some(p => p.id === data.player.id)) return prev;
+            return [...prev, data.player];
+          });
           addContestantWithId(data.player.id, data.player.name);
           soundManager.play("click", 0.3);
           break;
@@ -105,11 +123,32 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
         case "buzzer:reset":
           setBuzzQueue([]);
           break;
+        case "sync:complete":
+          soundManager.play("click", 0.3);
+          break;
+        case "pong":
+          break;
+        case "error":
+          if (data.message === "Room not found") {
+            localStorage.removeItem("buzzer-room-code");
+            setRoomCode(null);
+          }
+          break;
       }
     };
 
     ws.onclose = () => {
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
       setConnected(false);
+      
+      if (roomCode && reconnectAttemptsRef.current < 5) {
+        setReconnecting(true);
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
+        reconnectTimeoutRef.current = setTimeout(() => {
+          reconnectAttemptsRef.current++;
+          connect();
+        }, delay);
+      }
     };
   }, [roomCode]);
 
@@ -117,6 +156,8 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
     connect();
 
     return () => {
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       wsRef.current?.close();
     };
   }, []);
@@ -142,6 +183,21 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
       setBuzzQueue([]);
     }
   }, []);
+
+  const syncPlayers = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "host:sync" }));
+    }
+  }, []);
+
+  const createNewRoom = useCallback(() => {
+    localStorage.removeItem("buzzer-room-code");
+    setRoomCode(null);
+    setPlayers([]);
+    setBuzzQueue([]);
+    wsRef.current?.close();
+    setTimeout(() => connect(), 100);
+  }, [connect]);
 
   useImperativeHandle(ref, () => ({
     unlock: unlockBuzzer,
@@ -189,10 +245,13 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
           <div className="flex items-center gap-2">
             {connected ? (
               <Wifi className="w-4 h-4 text-primary" />
+            ) : reconnecting ? (
+              <RefreshCw className="w-4 h-4 text-yellow-500 animate-spin" />
             ) : (
               <WifiOff className="w-4 h-4 text-destructive" />
             )}
             <span className="font-mono font-bold text-lg text-foreground">{roomCode}</span>
+            <span className="text-xs text-muted-foreground">({players.length} players)</span>
           </div>
 
           <div className="flex items-center gap-1">
@@ -244,9 +303,29 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
               size="sm"
               variant="outline"
               onClick={resetBuzzer}
+              title="Reset buzzer queue"
               data-testid="button-reset-buzzer"
             >
               <RotateCcw className="w-4 h-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={syncPlayers}
+              title="Re-sync all players (fixes frozen buzzers)"
+              data-testid="button-sync-players"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={createNewRoom}
+              title="Create new room"
+              className="text-muted-foreground"
+              data-testid="button-new-room"
+            >
+              <Trash2 className="w-4 h-4" />
             </Button>
           </div>
         </div>
