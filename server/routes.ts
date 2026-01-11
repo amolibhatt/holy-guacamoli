@@ -50,17 +50,20 @@ export async function registerRoutes(
 
   // Board routes - protected (hosts only)
   app.get("/api/boards", isAuthenticated, async (req, res) => {
-    const boards = await storage.getBoards();
+    const userId = req.session.userId!;
+    const boards = await storage.getBoards(userId);
     res.json(boards);
   });
 
   app.get("/api/boards/summary", isAuthenticated, async (req, res) => {
-    const summaries = await storage.getBoardSummaries();
+    const userId = req.session.userId!;
+    const summaries = await storage.getBoardSummaries(userId);
     res.json(summaries);
   });
 
   app.get("/api/boards/:id", isAuthenticated, async (req, res) => {
-    const board = await storage.getBoard(Number(req.params.id));
+    const userId = req.session.userId!;
+    const board = await storage.getBoard(Number(req.params.id), userId);
     if (!board) {
       return res.status(404).json({ message: "Board not found" });
     }
@@ -69,6 +72,7 @@ export async function registerRoutes(
 
   app.post("/api/boards", isAuthenticated, async (req, res) => {
     try {
+      const userId = req.session.userId!;
       const { name, description, pointValues } = req.body;
       if (!name) {
         return res.status(400).json({ message: "Name is required" });
@@ -77,6 +81,7 @@ export async function registerRoutes(
         name,
         description: description || null,
         pointValues: pointValues || [10, 20, 30, 40, 50],
+        userId,
       });
       res.status(201).json(board);
     } catch (err) {
@@ -87,12 +92,13 @@ export async function registerRoutes(
 
   app.put("/api/boards/:id", isAuthenticated, async (req, res) => {
     try {
+      const userId = req.session.userId!;
       const { name, description, pointValues } = req.body;
       const board = await storage.updateBoard(Number(req.params.id), {
         name,
         description,
         pointValues,
-      });
+      }, userId);
       if (!board) {
         return res.status(404).json({ message: "Board not found" });
       }
@@ -104,7 +110,8 @@ export async function registerRoutes(
   });
 
   app.delete("/api/boards/:id", isAuthenticated, async (req, res) => {
-    const deleted = await storage.deleteBoard(Number(req.params.id));
+    const userId = req.session.userId!;
+    const deleted = await storage.deleteBoard(Number(req.params.id), userId);
     if (!deleted) {
       return res.status(404).json({ message: "Board not found" });
     }
@@ -113,13 +120,24 @@ export async function registerRoutes(
 
   // Board categories (junction table) - protected
   app.get("/api/boards/:boardId/categories", isAuthenticated, async (req, res) => {
-    const boardCategories = await storage.getBoardCategories(Number(req.params.boardId));
+    const userId = req.session.userId!;
+    const boardId = Number(req.params.boardId);
+    const board = await storage.getBoard(boardId, userId);
+    if (!board) {
+      return res.status(404).json({ message: "Board not found" });
+    }
+    const boardCategories = await storage.getBoardCategories(boardId);
     res.json(boardCategories);
   });
 
   app.post("/api/boards/:boardId/categories", isAuthenticated, async (req, res) => {
     try {
+      const userId = req.session.userId!;
       const boardId = Number(req.params.boardId);
+      const board = await storage.getBoard(boardId, userId);
+      if (!board) {
+        return res.status(404).json({ message: "Board not found" });
+      }
       const { categoryId } = req.body;
       if (!categoryId) {
         return res.status(400).json({ message: "categoryId is required" });
@@ -144,6 +162,15 @@ export async function registerRoutes(
   });
 
   app.delete("/api/board-categories/:id", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const bc = await storage.getBoardCategory(Number(req.params.id));
+    if (!bc) {
+      return res.status(404).json({ message: "Board category link not found" });
+    }
+    const board = await storage.getBoard(bc.boardId, userId);
+    if (!board) {
+      return res.status(404).json({ message: "Board not found" });
+    }
     const deleted = await storage.deleteBoardCategory(Number(req.params.id));
     if (!deleted) {
       return res.status(404).json({ message: "Board category link not found" });
@@ -153,7 +180,12 @@ export async function registerRoutes(
 
   app.put("/api/boards/:boardId/categories/reorder", isAuthenticated, async (req, res) => {
     try {
+      const userId = req.session.userId!;
       const boardId = Number(req.params.boardId);
+      const board = await storage.getBoard(boardId, userId);
+      if (!board) {
+        return res.status(404).json({ message: "Board not found" });
+      }
       const { orderedIds } = req.body;
       if (!Array.isArray(orderedIds) || !orderedIds.every(id => typeof id === 'number')) {
         return res.status(400).json({ message: "orderedIds must be an array of numbers" });
@@ -176,7 +208,12 @@ export async function registerRoutes(
 
   app.post("/api/boards/:boardId/categories/create-and-link", isAuthenticated, async (req, res) => {
     try {
+      const userId = req.session.userId!;
       const boardId = Number(req.params.boardId);
+      const board = await storage.getBoard(boardId, userId);
+      if (!board) {
+        return res.status(404).json({ message: "Board not found" });
+      }
       const { name, description } = req.body;
       if (!name || !name.trim()) {
         return res.status(400).json({ message: "Category name is required" });
@@ -260,15 +297,34 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
+  // Helper to verify board-category ownership
+  async function verifyBoardCategoryOwnership(boardCategoryId: number, userId: string) {
+    const bc = await storage.getBoardCategory(boardCategoryId);
+    if (!bc) return null;
+    const board = await storage.getBoard(bc.boardId, userId);
+    if (!board) return null;
+    return bc;
+  }
+
   // Questions (by board-category) - protected
   app.get("/api/board-categories/:boardCategoryId/questions", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const bc = await verifyBoardCategoryOwnership(Number(req.params.boardCategoryId), userId);
+    if (!bc) {
+      return res.status(404).json({ message: "Board category not found" });
+    }
     const questions = await storage.getQuestionsByBoardCategory(Number(req.params.boardCategoryId));
     res.json(questions);
   });
 
   app.post(api.questions.create.path, isAuthenticated, async (req, res) => {
     try {
+      const userId = req.session.userId!;
       const data = api.questions.create.input.parse(req.body);
+      const bc = await verifyBoardCategoryOwnership(data.boardCategoryId, userId);
+      if (!bc) {
+        return res.status(404).json({ message: "Board category not found" });
+      }
       const existingQuestions = await storage.getQuestionsByBoardCategory(data.boardCategoryId);
       if (existingQuestions.length >= 5) {
         return res.status(400).json({ message: "Category already has 5 questions (maximum)" });
@@ -291,10 +347,15 @@ export async function registerRoutes(
 
   app.put(api.questions.update.path, isAuthenticated, async (req, res) => {
     try {
+      const userId = req.session.userId!;
       const data = api.questions.update.input.parse(req.body);
       const existingQuestion = await storage.getQuestion(Number(req.params.id));
       if (!existingQuestion) {
         return res.status(404).json({ message: 'Question not found' });
+      }
+      const bc = await verifyBoardCategoryOwnership(existingQuestion.boardCategoryId, userId);
+      if (!bc) {
+        return res.status(404).json({ message: "Board category not found" });
       }
       if (data.points !== undefined && data.points !== existingQuestion.points) {
         const siblingQuestions = await storage.getQuestionsByBoardCategory(existingQuestion.boardCategoryId);
@@ -316,6 +377,15 @@ export async function registerRoutes(
   });
 
   app.delete(api.questions.delete.path, isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const existingQuestion = await storage.getQuestion(Number(req.params.id));
+    if (!existingQuestion) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+    const bc = await verifyBoardCategoryOwnership(existingQuestion.boardCategoryId, userId);
+    if (!bc) {
+      return res.status(404).json({ message: "Board category not found" });
+    }
     const deleted = await storage.deleteQuestion(Number(req.params.id));
     if (!deleted) {
       return res.status(404).json({ message: 'Question not found' });
@@ -325,11 +395,17 @@ export async function registerRoutes(
 
   app.post(api.questions.verifyAnswer.path, isAuthenticated, async (req, res) => {
     try {
+      const userId = req.session.userId!;
       const { answer } = api.questions.verifyAnswer.input.parse(req.body);
       const question = await storage.getQuestion(Number(req.params.id));
       
       if (!question) {
         return res.status(404).json({ message: 'Question not found' });
+      }
+      
+      const bc = await verifyBoardCategoryOwnership(question.boardCategoryId, userId);
+      if (!bc) {
+        return res.status(404).json({ message: "Board category not found" });
       }
 
       const isCorrect = question.correctAnswer === answer;
@@ -353,11 +429,12 @@ export async function registerRoutes(
   // Get full board data for gameplay - protected
   app.get("/api/boards/:id/full", isAuthenticated, async (req, res) => {
     try {
-      const board = await storage.getBoard(Number(req.params.id));
+      const userId = req.session.userId!;
+      const board = await storage.getBoard(Number(req.params.id), userId);
       if (!board) {
         return res.status(404).json({ message: "Board not found" });
       }
-      const categoriesWithQuestions = await storage.getBoardWithCategoriesAndQuestions(Number(req.params.id));
+      const categoriesWithQuestions = await storage.getBoardWithCategoriesAndQuestions(Number(req.params.id), userId);
       res.json({ board, categories: categoriesWithQuestions });
     } catch (err) {
       console.error("Error getting full board:", err);
