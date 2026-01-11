@@ -17,7 +17,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { DoubleDipPair, DoubleDipQuestion, DoubleDipDailySet, DoubleDipAnswer, DoubleDipMilestone, CategoryInsight } from "@shared/schema";
+import type { DoubleDipPair, DoubleDipQuestion, DoubleDipDailySet, DoubleDipAnswer, DoubleDipMilestone, CategoryInsight, DoubleDipWeeklyStake } from "@shared/schema";
+import { SYNC_STAKES } from "@shared/schema";
 
 const CATEGORY_CONFIG: Record<string, { name: string; color: string; bg: string }> = {
   deep_end: { name: "The Deep End", color: "text-blue-500", bg: "bg-blue-500/10" },
@@ -73,6 +74,13 @@ interface StoryboardResponse {
     totalFavorites: number;
     totalMilestones: number;
   };
+}
+
+interface WeeklyStakeResponse {
+  stake: DoubleDipWeeklyStake | null;
+  weekStartDate: string;
+  daysRemaining: number;
+  isUserA: boolean;
 }
 
 function formatDate(dateStr: string): string {
@@ -146,6 +154,13 @@ export default function RelationshipHub() {
     queryKey: ['/api/double-dip/storyboard'],
     enabled: isAuthenticated && !!pair && pair.status === 'active',
   });
+
+  const { data: weeklyStake, isLoading: isLoadingWeeklyStake } = useQuery<WeeklyStakeResponse>({
+    queryKey: ['/api/double-dip/weekly-stake'],
+    enabled: isAuthenticated && !!pair && pair.status === 'active',
+  });
+  
+  const [selectedStakeId, setSelectedStakeId] = useState<string | null>(null);
 
   // Persist answers in localStorage to survive navigation/reloads
   const storageKey = dailyData?.dailySet?.id ? `dd-answers-${dailyData.dailySet.id}` : null;
@@ -255,6 +270,44 @@ export default function RelationshipHub() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to save anniversary", variant: "destructive" });
+    },
+  });
+
+  const setWeeklyStakeMutation = useMutation({
+    mutationFn: async (stakeId: string) => {
+      const res = await apiRequest('POST', '/api/double-dip/weekly-stake', { stakeId });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/double-dip/weekly-stake'] });
+      setSelectedStakeId(null);
+      toast({ title: "Stakes Set!", description: "This week's challenge is on!" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to set weekly stake", variant: "destructive" });
+    },
+  });
+
+  const revealWeeklyStakeMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', '/api/double-dip/weekly-stake/reveal', {});
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/double-dip/weekly-stake'] });
+      if (data.winnerId) {
+        triggerConfetti();
+        const isUserWinner = data.winnerId === user?.id;
+        toast({ 
+          title: isUserWinner ? "You Won!" : "Your Partner Won!", 
+          description: isUserWinner ? "Time to collect your reward!" : "Better luck next week!"
+        });
+      } else {
+        toast({ title: "It's a Tie!", description: "You're perfectly matched this week" });
+      }
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to reveal winner", variant: "destructive" });
     },
   });
 
@@ -562,6 +615,124 @@ export default function RelationshipHub() {
                         {anniversaryMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
                       </Button>
                     </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Sync-Stakes Weekly Challenge */}
+              {!isLoadingWeeklyStake && (
+                <Card className="bg-gradient-to-br from-purple-500/5 to-indigo-500/5 border-purple-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Trophy className="w-5 h-5 text-purple-500" />
+                      <h3 className="font-bold text-foreground">Sync-Stakes</h3>
+                      {weeklyStake?.stake && !weeklyStake.stake.isRevealed && (
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          {weeklyStake.daysRemaining} days left
+                        </span>
+                      )}
+                    </div>
+                    
+                    {!weeklyStake?.stake ? (
+                      <div className="space-y-3">
+                        <p className="text-sm text-muted-foreground">
+                          Set a weekly stake! First to complete daily questions earns a point. 85%+ compatibility bonus!
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {SYNC_STAKES.map((stake) => (
+                            <Button
+                              key={stake.id}
+                              variant={selectedStakeId === stake.id ? "default" : "outline"}
+                              size="sm"
+                              className="text-xs h-auto py-2 px-3"
+                              onClick={() => setSelectedStakeId(selectedStakeId === stake.id ? null : stake.id)}
+                              data-testid={`button-stake-${stake.id}`}
+                            >
+                              {stake.winner.replace("Winner ", "")}
+                            </Button>
+                          ))}
+                        </div>
+                        {selectedStakeId && (
+                          <Button
+                            onClick={() => setWeeklyStakeMutation.mutate(selectedStakeId)}
+                            disabled={setWeeklyStakeMutation.isPending}
+                            className="w-full"
+                            data-testid="button-set-stake"
+                          >
+                            {setWeeklyStakeMutation.isPending ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              "Lock In This Week's Stakes"
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    ) : weeklyStake.stake.isRevealed ? (
+                      <div className="text-center py-2">
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {weeklyStake.stake.winnerId ? (
+                            weeklyStake.stake.winnerId === user?.id ? (
+                              <span className="text-green-500 font-bold">You won this week!</span>
+                            ) : (
+                              <span className="text-orange-500 font-bold">Your partner won!</span>
+                            )
+                          ) : (
+                            <span className="text-purple-500 font-bold">It was a tie!</span>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {(() => {
+                            const stakeInfo = SYNC_STAKES.find(s => s.id === weeklyStake.stake?.stakeId);
+                            if (!stakeInfo || !weeklyStake.stake?.winnerId) return "No reward this week";
+                            return weeklyStake.stake.winnerId === user?.id ? stakeInfo.winner : stakeInfo.loser;
+                          })()}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">You</span>
+                          <span className="font-bold text-purple-500">
+                            {weeklyStake.isUserA ? weeklyStake.stake.userAScore : weeklyStake.stake.userBScore} pts
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Partner</span>
+                          <span className="font-bold text-pink-500">
+                            {weeklyStake.isUserA ? weeklyStake.stake.userBScore : weeklyStake.stake.userAScore} pts
+                          </span>
+                        </div>
+                        <Progress 
+                          value={(() => {
+                            const userScore = weeklyStake.isUserA ? weeklyStake.stake.userAScore : weeklyStake.stake.userBScore;
+                            const partnerScore = weeklyStake.isUserA ? weeklyStake.stake.userBScore : weeklyStake.stake.userAScore;
+                            const total = userScore + partnerScore;
+                            return total > 0 ? (userScore / total) * 100 : 50;
+                          })()}
+                          className="h-2"
+                        />
+                        <p className="text-xs text-muted-foreground text-center">
+                          {(() => {
+                            const stakeInfo = SYNC_STAKES.find(s => s.id === weeklyStake.stake?.stakeId);
+                            return stakeInfo?.winner || "Weekly challenge active";
+                          })()}
+                        </p>
+                        {weeklyStake.daysRemaining <= 0 && (
+                          <Button
+                            onClick={() => revealWeeklyStakeMutation.mutate()}
+                            disabled={revealWeeklyStakeMutation.isPending}
+                            className="w-full"
+                            data-testid="button-reveal-winner"
+                          >
+                            {revealWeeklyStakeMutation.isPending ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              "Reveal Winner"
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
