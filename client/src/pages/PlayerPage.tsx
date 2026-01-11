@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles } from "lucide-react";
+import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles, Users, ChevronUp, ChevronDown } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { soundManager } from "@/lib/sounds";
@@ -67,12 +67,15 @@ export default function PlayerPage() {
   const [showBuzzFlash, setShowBuzzFlash] = useState(false);
   const [showCorrectFlash, setShowCorrectFlash] = useState(false);
   const [showWrongFlash, setShowWrongFlash] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<Array<{ id: string; name: string; score: number }>>([]);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const joinedRef = useRef(false);
   const shouldReconnectRef = useRef(true);
   const reconnectAttemptsRef = useRef(0);
+  const playerIdRef = useRef<string | null>(playerId);
 
   const connect = useCallback((isReconnect = false) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -108,6 +111,7 @@ export default function PlayerPage() {
           setJoined(true);
           joinedRef.current = true;
           setPlayerId(data.playerId);
+          playerIdRef.current = data.playerId;
           setBuzzerLocked(data.buzzerLocked);
           if (data.score !== undefined) setScore(data.score);
           saveSession(roomCode.toUpperCase(), playerName, data.playerId);
@@ -128,8 +132,12 @@ export default function PlayerPage() {
           }
           break;
         case "scores:sync":
-          const myScore = data.players?.find((p: any) => p.id === playerId)?.score;
+          const currentPlayerId = playerIdRef.current;
+          const myScore = data.players?.find((p: any) => p.id === currentPlayerId)?.score;
           if (myScore !== undefined) setScore(myScore);
+          if (data.players) {
+            setLeaderboard(data.players.map((p: any) => ({ id: p.id, name: p.name, score: p.score })));
+          }
           break;
         case "error":
           setStatus("error");
@@ -377,9 +385,59 @@ export default function PlayerPage() {
         </div>
       </header>
       
-      <div className="px-4 py-2 bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-primary/10 flex items-center justify-center gap-2">
+      <div className="px-4 py-2 bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-primary/10 flex items-center justify-between">
         <span className="text-lg font-bold text-foreground">{playerName}</span>
+        {leaderboard.length > 0 && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setShowLeaderboard(!showLeaderboard)}
+            className="gap-1 text-xs"
+            data-testid="button-toggle-leaderboard"
+          >
+            <Users className="w-4 h-4" />
+            Scores
+            {showLeaderboard ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </Button>
+        )}
       </div>
+
+      <AnimatePresence>
+        {showLeaderboard && leaderboard.length > 0 && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 py-3 bg-card/50 border-b border-primary/10 space-y-2">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Leaderboard</p>
+              {[...leaderboard].sort((a, b) => b.score - a.score).map((player, idx) => (
+                <div
+                  key={player.id}
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg ${
+                    player.id === playerId ? 'bg-primary/20 border border-primary/30' : 'bg-muted/30'
+                  }`}
+                  data-testid={`leaderboard-player-${player.id}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${
+                      idx === 0 ? 'bg-yellow-500 text-black' : idx === 1 ? 'bg-gray-400 text-black' : idx === 2 ? 'bg-amber-600 text-white' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {idx + 1}
+                    </span>
+                    <span className={`font-medium ${player.id === playerId ? 'text-primary' : 'text-foreground'}`}>
+                      {player.name}
+                      {player.id === playerId && <span className="text-xs ml-1">(you)</span>}
+                    </span>
+                  </div>
+                  <span className="font-bold text-foreground">{player.score}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {status === "reconnecting" && (
         <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-4 py-2 text-center text-sm text-foreground">
