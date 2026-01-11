@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Settings, Grid3X3, LogOut, Sun, Moon, ArrowRight, Zap, Trophy, Clock, Lock, Sparkles, PartyPopper, Users, HelpCircle, ChevronRight } from "lucide-react";
+import { Loader2, Settings, Grid3X3, LogOut, Sun, Moon, ArrowRight, Zap, Trophy, Clock, Lock, Sparkles, PartyPopper, Users, HelpCircle, ChevronRight, Shield } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -131,6 +131,13 @@ export default function Home() {
                 <Settings className="w-5 h-5" />
               </Button>
             </Link>
+            {user?.role === 'super_admin' && (
+              <Link href="/admin/super">
+                <Button variant="ghost" size="icon" className="text-purple-500 hover:text-purple-400" data-testid="button-super-admin" title="Super Admin">
+                  <Shield className="w-5 h-5" />
+                </Button>
+              </Link>
+            )}
             <Button 
               variant="ghost" 
               size="icon" 
