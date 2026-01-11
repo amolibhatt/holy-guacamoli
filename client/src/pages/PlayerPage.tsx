@@ -149,12 +149,18 @@ export default function PlayerPage() {
           setStatus("error");
           if (data.message === "Room not found") {
             clearSession();
+            toast({
+              title: "Game not found",
+              description: "Check the room code and try again. The game may have ended.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Connection issue",
+              description: data.message || "Please check your connection and try again.",
+              variant: "destructive",
+            });
           }
-          toast({
-            title: "Error",
-            description: data.message,
-            variant: "destructive",
-          });
           break;
         case "kicked":
           clearSession();
@@ -535,7 +541,7 @@ export default function PlayerPage() {
       {status === "reconnecting" && (
         <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-4 py-2 text-center text-sm text-foreground">
           <RefreshCw className="w-4 h-4 inline-block mr-2 animate-spin" />
-          Connection lost. Reconnecting in {reconnectCountdown ?? '...'}s (Attempt {reconnectAttempts + 1}/5)
+          Reconnecting in {reconnectCountdown ?? '...'}s... (Attempt {reconnectAttempts + 1}/5)
         </div>
       )}
 
@@ -543,8 +549,8 @@ export default function PlayerPage() {
         <div className="bg-red-500/20 border-b border-red-500/30 px-4 py-3 text-center">
           <p className="text-sm text-foreground mb-2">
             {reconnectAttempts >= 5 
-              ? "Connection lost after multiple attempts" 
-              : "Connection lost"}
+              ? "Couldn't reconnect - tap below to try again" 
+              : "Disconnected from game"}
           </p>
           <Button 
             size="sm" 

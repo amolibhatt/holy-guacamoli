@@ -3,6 +3,16 @@ import type { Server } from "http";
 import { randomUUID } from "crypto";
 import { storage } from "./storage";
 import type { GameMode, SessionPlayer } from "@shared/schema";
+import { PLAYER_AVATARS } from "@shared/schema";
+
+const VALID_AVATAR_IDS = new Set(PLAYER_AVATARS.map(a => a.id as string));
+
+function sanitizeAvatar(avatar: string | undefined): string {
+  if (avatar && VALID_AVATAR_IDS.has(avatar)) {
+    return avatar;
+  }
+  return "cat";
+}
 
 interface Player {
   id: string;
@@ -261,7 +271,7 @@ export function setupWebSocket(server: Server) {
                     playerScore = existingPlayer.score;
                   }
                   
-                  const avatar = message.avatar || existingPlayer?.avatar || "cat";
+                  const avatar = sanitizeAvatar(message.avatar || existingPlayer?.avatar);
                   
                   const dbPlayer = await storage.addPlayerToSession({
                     sessionId: room.sessionId,
