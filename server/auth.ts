@@ -2,10 +2,13 @@ import session from "express-session";
 import type { Express, RequestHandler, Request, Response, NextFunction } from "express";
 import connectPg from "connect-pg-simple";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { db } from "./db";
 import { users, loginSchema, insertUserSchema } from "@shared/models/auth";
-import { eq } from "drizzle-orm";
+import { passwordResetTokens } from "@shared/schema";
+import { eq, and, isNull, gt } from "drizzle-orm";
 import type { SafeUser } from "@shared/models/auth";
+import { z } from "zod";
 
 declare module "express-session" {
   interface SessionData {
@@ -153,6 +156,102 @@ export function registerAuthRoutes(app: Express): void {
     } catch (error) {
       console.error("Get user error:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  const forgotPasswordSchema = z.object({
+    email: z.string().email("Please enter a valid email address"),
+  });
+
+  app.post("/api/auth/forgot-password", async (req: Request, res: Response) => {
+    try {
+      const parsed = forgotPasswordSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          message: parsed.error.errors[0].message,
+          field: parsed.error.errors[0].path.join('.')
+        });
+      }
+
+      const { email } = parsed.data;
+
+      const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+      
+      if (user) {
+        const token = crypto.randomBytes(32).toString("hex");
+        const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+        const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+        await db.insert(passwordResetTokens).values({
+          userId: user.id,
+          tokenHash,
+          expiresAt,
+        });
+
+        const resetUrl = `${req.protocol}://${req.get("host")}/reset-password?token=${token}`;
+        
+        console.log(`\n[Password Reset] Token generated for ${email}`);
+        console.log(`[Password Reset] Reset URL: ${resetUrl}\n`);
+      }
+
+      res.status(202).json({ 
+        message: "If an account with that email exists, a password reset link has been sent." 
+      });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ message: "Failed to process request" });
+    }
+  });
+
+  const resetPasswordSchema = z.object({
+    token: z.string().min(1, "Reset token is required"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+  });
+
+  app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
+    try {
+      const parsed = resetPasswordSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          message: parsed.error.errors[0].message,
+          field: parsed.error.errors[0].path.join('.')
+        });
+      }
+
+      const { token, password } = parsed.data;
+      const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+      const [resetToken] = await db.select()
+        .from(passwordResetTokens)
+        .where(
+          and(
+            eq(passwordResetTokens.tokenHash, tokenHash),
+            isNull(passwordResetTokens.usedAt),
+            gt(passwordResetTokens.expiresAt, new Date())
+          )
+        )
+        .limit(1);
+
+      if (!resetToken) {
+        return res.status(400).json({ 
+          message: "Invalid or expired reset link. Please request a new one." 
+        });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      await db.update(users)
+        .set({ password: hashedPassword })
+        .where(eq(users.id, resetToken.userId));
+
+      await db.update(passwordResetTokens)
+        .set({ usedAt: new Date() })
+        .where(eq(passwordResetTokens.id, resetToken.id));
+
+      res.json({ message: "Password has been reset successfully. You can now sign in." });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Failed to reset password" });
     }
   });
 }

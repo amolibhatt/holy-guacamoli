@@ -10,6 +10,8 @@ import Home from "@/pages/Home";
 import CategoryPage from "@/pages/CategoryPage";
 import Admin from "@/pages/Admin";
 import PlayerPage from "@/pages/PlayerPage";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 
 function Router() {
   return (
@@ -18,6 +20,8 @@ function Router() {
       <Route path="/category/:id" component={CategoryPage} />
       <Route path="/admin" component={Admin} />
       <Route path="/play/:code?" component={PlayerPage} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       <Route component={NotFound} />
     </Switch>
   );

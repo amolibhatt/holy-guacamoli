@@ -12,6 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, insertUserSchema } from "@shared/models/auth";
 import type { LoginCredentials, InsertUser } from "@shared/models/auth";
+import { Link } from "wouter";
 
 export default function LandingPage() {
   const { loginAsync, registerAsync, isLoggingIn, isRegistering, loginError, registerError } = useAuth();
@@ -152,6 +153,11 @@ export default function LandingPage() {
                       {loginForm.formState.errors.password && (
                         <p className="text-destructive text-sm">{loginForm.formState.errors.password.message}</p>
                       )}
+                    </div>
+                    <div className="text-right">
+                      <Link href="/forgot-password" className="text-sm text-primary/70 hover:text-primary hover:underline" data-testid="link-forgot-password">
+                        Forgot password?
+                      </Link>
                     </div>
                     {loginError && (
                       <p className="text-destructive text-sm" data-testid="text-login-error">
