@@ -7,6 +7,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { setupWebSocket, getRoomInfo } from "./gameRoom";
+import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -32,6 +33,10 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  
+  // Setup auth BEFORE other routes
+  await setupAuth(app);
+  registerAuthRoutes(app);
   
   setupWebSocket(httpServer);
 

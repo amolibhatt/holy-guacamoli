@@ -3,6 +3,9 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
+// Auth exports (required for Replit Auth)
+export * from "./models/auth";
+
 // === TABLE DEFINITIONS ===
 export const boards = pgTable("boards", {
   id: serial("id").primaryKey(),
