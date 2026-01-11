@@ -640,10 +640,7 @@ export default function Admin() {
                                   className="h-9 px-4 text-sm rounded-md bg-background border border-border data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary"
                                   data-testid={`category-tab-${bc.id}`}
                                 >
-                                  <span className="truncate max-w-[100px]">{bc.category.name}</span>
-                                  <span className={`ml-2 text-[10px] px-1.5 py-0.5 rounded ${(bc.questionCount ?? 0) >= 5 ? 'bg-primary/20' : 'bg-muted'}`}>
-                                    {bc.questionCount ?? 0}/5
-                                  </span>
+                                  <span className="truncate max-w-[120px]">{bc.category.name}</span>
                                 </TabsTrigger>
                               </TooltipTrigger>
                               <TooltipContent>
@@ -702,6 +699,9 @@ export default function Admin() {
                         <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border shrink-0">
                           <div className="flex items-center gap-3">
                             <h3 className="font-semibold text-foreground">{selectedBc.category.name}</h3>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${(selectedBc.questionCount ?? 0) >= 5 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                              {selectedBc.questionCount ?? 0}/5 questions
+                            </span>
                             {selectedBc.category.description && (
                               <span className="text-xs text-muted-foreground">— {selectedBc.category.description}</span>
                             )}
