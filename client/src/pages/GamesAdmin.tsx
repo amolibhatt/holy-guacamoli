@@ -8,36 +8,23 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, ArrowLeft, Loader2, Pencil, X, Check, Grid3X3, Layers, Play, Sun, Moon, Smartphone, Zap, Timer } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Loader2, Pencil, X, Check, Grid3X3, Layers, Play, Sun, Moon, Smartphone } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "@/context/ThemeContext";
-import type { Game, Board, HeadsUpDeck, HeadsUpCard, GameMode, RapidFireSettings, LiarPromptPack, LiarPrompt } from "@shared/schema";
-import { Skull } from "lucide-react";
+import type { Game, Board, HeadsUpDeck, HeadsUpCard, GameMode } from "@shared/schema";
 
 const MODE_LABELS: Record<GameMode, string> = {
   jeopardy: "Jeopardy (Multi-Board)",
   heads_up: "Heads Up",
   board: "Grid of Grudges",
-  rapid_fire: "Brain Rot Blitz",
-  submission: "Liar's Lobby",
 };
 
 const MODE_ICONS: Record<GameMode, typeof Grid3X3> = {
   jeopardy: Grid3X3,
   heads_up: Smartphone,
   board: Grid3X3,
-  rapid_fire: Zap,
-  submission: Skull,
-};
-
-const DEFAULT_RAPID_FIRE_SETTINGS: RapidFireSettings = {
-  timerSeconds: 60,
-  basePoints: 10,
-  multiplierIncrement: 0.5,
-  maxMultiplier: 5,
-  resetOnWrong: true,
 };
 
 export default function GamesAdmin() {
@@ -50,7 +37,6 @@ export default function GamesAdmin() {
   const [showNewGameForm, setShowNewGameForm] = useState(false);
   const [newGameName, setNewGameName] = useState("");
   const [newGameMode, setNewGameMode] = useState<GameMode>("board");
-  const [rapidFireSettings, setRapidFireSettings] = useState<RapidFireSettings>(DEFAULT_RAPID_FIRE_SETTINGS);
   
   const [selectedDeckId, setSelectedDeckId] = useState<number | null>(null);
   const [showNewDeckForm, setShowNewDeckForm] = useState(false);
@@ -69,19 +55,6 @@ export default function GamesAdmin() {
   
   const [editingCardId, setEditingCardId] = useState<number | null>(null);
   const [editCardPrompt, setEditCardPrompt] = useState("");
-  
-  const [selectedPackId, setSelectedPackId] = useState<number | null>(null);
-  const [showNewPackForm, setShowNewPackForm] = useState(false);
-  const [newPackName, setNewPackName] = useState("");
-  const [showNewPromptForm, setShowNewPromptForm] = useState(false);
-  const [newPromptClue, setNewPromptClue] = useState("");
-  const [newPromptTruth, setNewPromptTruth] = useState("");
-  
-  const [editingPackId, setEditingPackId] = useState<number | null>(null);
-  const [editPackName, setEditPackName] = useState("");
-  const [editingPromptId, setEditingPromptId] = useState<number | null>(null);
-  const [editPromptClue, setEditPromptClue] = useState("");
-  const [editPromptTruth, setEditPromptTruth] = useState("");
 
   const { data: games = [], isLoading: loadingGames } = useQuery<Game[]>({
     queryKey: ['/api/games'],
@@ -103,7 +76,7 @@ export default function GamesAdmin() {
 
   const { data: gameBoards = [] } = useQuery<{ id: number; gameId: number; boardId: number; position: number; board: Board }[]>({
     queryKey: ['/api/games', selectedGameId, 'boards'],
-    enabled: !!selectedGameId && (selectedGame?.mode === 'jeopardy' || selectedGame?.mode === 'board' || selectedGame?.mode === 'rapid_fire'),
+    enabled: !!selectedGameId && (selectedGame?.mode === 'jeopardy' || selectedGame?.mode === 'board'),
   });
 
   const { data: gameDecks = [] } = useQuery<{ id: number; gameId: number; deckId: number; position: number; deck: HeadsUpDeck }[]>({
@@ -116,26 +89,6 @@ export default function GamesAdmin() {
     enabled: !!selectedDeckId,
   });
 
-  const { data: liarPacks = [], isLoading: loadingPacks } = useQuery<(LiarPromptPack & { promptCount: number })[]>({
-    queryKey: ['/api/liar-packs'],
-    enabled: isAuthenticated,
-  });
-
-  const selectedPack = liarPacks.find(p => p.id === selectedPackId);
-
-  const { data: prompts = [], isLoading: loadingPrompts } = useQuery<LiarPrompt[]>({
-    queryKey: ['/api/liar-packs', selectedPackId, 'prompts'],
-    enabled: !!selectedPackId,
-  });
-
-  const { data: gameLiarPacks = [] } = useQuery<{ id: number; gameId: number; packId: number; position: number; pack: LiarPromptPack }[]>({
-    queryKey: ['/api/games', selectedGameId, 'liar-packs'],
-    enabled: !!selectedGameId && selectedGame?.mode === 'submission',
-  });
-
-  const linkedPackIds = gameLiarPacks.map(gp => gp.packId);
-  const availablePacks = liarPacks.filter(p => !linkedPackIds.includes(p.id));
-
   const linkedBoardIds = gameBoards.map(gb => gb.boardId);
   const availableBoards = boards.filter(b => !linkedBoardIds.includes(b.id));
 
@@ -143,14 +96,13 @@ export default function GamesAdmin() {
   const availableDecks = decks.filter(d => !linkedDeckIds.includes(d.id));
 
   const createGameMutation = useMutation({
-    mutationFn: async (data: { name: string; mode: GameMode; settings?: Record<string, unknown> }) => {
+    mutationFn: async (data: { name: string; mode: GameMode }) => {
       return apiRequest('POST', '/api/games', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
       setNewGameName("");
       setNewGameMode("board");
-      setRapidFireSettings(DEFAULT_RAPID_FIRE_SETTINGS);
       setShowNewGameForm(false);
       toast({ title: "Game created!" });
     },
@@ -291,96 +243,6 @@ export default function GamesAdmin() {
     },
   });
 
-  const createPackMutation = useMutation({
-    mutationFn: async (data: { name: string }) => {
-      return apiRequest('POST', '/api/liar-packs', data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/liar-packs'] });
-      setNewPackName("");
-      setShowNewPackForm(false);
-      toast({ title: "Pack created!" });
-    },
-  });
-
-  const updatePackMutation = useMutation({
-    mutationFn: async ({ id, name }: { id: number; name: string }) => {
-      return apiRequest('PUT', `/api/liar-packs/${id}`, { name });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/liar-packs'] });
-      setEditingPackId(null);
-      toast({ title: "Pack updated!" });
-    },
-  });
-
-  const deletePackMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return apiRequest('DELETE', `/api/liar-packs/${id}`);
-    },
-    onSuccess: (_, deletedId) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/liar-packs'] });
-      if (selectedPackId === deletedId) setSelectedPackId(null);
-      toast({ title: "Pack deleted" });
-    },
-  });
-
-  const createPromptMutation = useMutation({
-    mutationFn: async (data: { packId: number; clue: string; truth: string }) => {
-      return apiRequest('POST', `/api/liar-packs/${data.packId}/prompts`, { clue: data.clue, truth: data.truth });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/liar-packs', selectedPackId, 'prompts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/liar-packs'] });
-      setNewPromptClue("");
-      setNewPromptTruth("");
-      setShowNewPromptForm(false);
-      toast({ title: "Prompt added!" });
-    },
-  });
-
-  const updatePromptMutation = useMutation({
-    mutationFn: async ({ id, clue, truth }: { id: number; clue: string; truth: string }) => {
-      return apiRequest('PUT', `/api/liar-prompts/${id}`, { clue, truth });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/liar-packs', selectedPackId, 'prompts'] });
-      setEditingPromptId(null);
-      toast({ title: "Prompt updated!" });
-    },
-  });
-
-  const deletePromptMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return apiRequest('DELETE', `/api/liar-prompts/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/liar-packs', selectedPackId, 'prompts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/liar-packs'] });
-      toast({ title: "Prompt deleted" });
-    },
-  });
-
-  const addPackToGameMutation = useMutation({
-    mutationFn: async ({ gameId, packId }: { gameId: number; packId: number }) => {
-      return apiRequest('POST', `/api/games/${gameId}/liar-packs`, { packId });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/games', selectedGameId, 'liar-packs'] });
-      toast({ title: "Pack added to game!" });
-    },
-  });
-
-  const removePackFromGameMutation = useMutation({
-    mutationFn: async ({ gameId, packId }: { gameId: number; packId: number }) => {
-      return apiRequest('DELETE', `/api/games/${gameId}/liar-packs/${packId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/games', selectedGameId, 'liar-packs'] });
-      toast({ title: "Pack removed from game" });
-    },
-  });
-
   useEffect(() => {
     if (!isAuthLoading && !isAuthenticated) {
       setLocation("/");
@@ -424,7 +286,7 @@ export default function GamesAdmin() {
 
       <div className="max-w-[1600px] mx-auto p-6">
         <Tabs defaultValue="games" className="space-y-6">
-          <TabsList className="grid w-full max-w-xl grid-cols-3">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="games" className="gap-2" data-testid="tab-games">
               <Layers className="w-4 h-4" />
               Games
@@ -433,445 +295,270 @@ export default function GamesAdmin() {
               <Smartphone className="w-4 h-4" />
               Heads Up Decks
             </TabsTrigger>
-            <TabsTrigger value="liar-packs" className="gap-2" data-testid="tab-liar-packs">
-              <Skull className="w-4 h-4" />
-              Liar's Lobby
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="games">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-4">
-                <Card className="bg-card border-border shadow-sm">
-                  <CardHeader className="py-4 px-4 border-b border-border bg-muted/30">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2 text-foreground text-sm font-semibold uppercase tracking-wide">
-                        <Layers className="w-4 h-4 text-primary" />
-                        Your Games
-                      </CardTitle>
-                      <Button
-                        size="icon"
-                        variant={showNewGameForm ? "secondary" : "default"}
-                        onClick={() => setShowNewGameForm(!showNewGameForm)}
-                        className="h-8 w-8"
-                        data-testid="button-toggle-game-form"
-                      >
-                        {showNewGameForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                      </Button>
-                    </div>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
+                    <CardTitle className="text-lg">Your Games</CardTitle>
+                    <Button 
+                      size="sm" 
+                      className="gap-1"
+                      onClick={() => setShowNewGameForm(true)}
+                      data-testid="button-new-game"
+                    >
+                      <Plus className="w-4 h-4" />
+                      New Game
+                    </Button>
                   </CardHeader>
-                  <CardContent className="p-3 space-y-3">
+                  <CardContent className="space-y-2">
                     <AnimatePresence>
                       {showNewGameForm && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
+                          animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="space-y-3 p-3 bg-muted/20 rounded-lg border border-border"
+                          className="space-y-3 p-3 bg-muted/50 rounded-lg border border-border"
                         >
                           <Input
-                            placeholder="Game name"
+                            placeholder="Game name..."
                             value={newGameName}
                             onChange={(e) => setNewGameName(e.target.value)}
-                            data-testid="input-game-name"
+                            data-testid="input-new-game-name"
                           />
                           <Select value={newGameMode} onValueChange={(v) => setNewGameMode(v as GameMode)}>
                             <SelectTrigger data-testid="select-game-mode">
-                              <SelectValue />
+                              <SelectValue placeholder="Select mode" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="board">Grid of Grudges (Classic Board)</SelectItem>
-                              <SelectItem value="rapid_fire">Brain Rot Blitz (Rapid Fire)</SelectItem>
-                              <SelectItem value="submission">Liar's Lobby (Submission Mode)</SelectItem>
+                              <SelectItem value="board">Grid of Grudges</SelectItem>
                               <SelectItem value="jeopardy">Jeopardy (Multi-Board)</SelectItem>
                               <SelectItem value="heads_up">Heads Up</SelectItem>
                             </SelectContent>
                           </Select>
-                          {newGameMode === 'rapid_fire' && (
-                            <div className="space-y-2 p-2 bg-muted/30 rounded border border-border">
-                              <p className="text-xs font-medium text-muted-foreground">Rapid Fire Settings</p>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                  <label className="text-xs text-muted-foreground">Timer (sec)</label>
-                                  <Input
-                                    type="number"
-                                    value={rapidFireSettings.timerSeconds}
-                                    onChange={(e) => setRapidFireSettings(s => ({ ...s, timerSeconds: parseInt(e.target.value) || 60 }))}
-                                    className="h-8"
-                                    data-testid="input-rapid-timer"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="text-xs text-muted-foreground">Base Points</label>
-                                  <Input
-                                    type="number"
-                                    value={rapidFireSettings.basePoints}
-                                    onChange={(e) => setRapidFireSettings(s => ({ ...s, basePoints: parseInt(e.target.value) || 10 }))}
-                                    className="h-8"
-                                    data-testid="input-rapid-points"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="text-xs text-muted-foreground">Max Multiplier</label>
-                                  <Input
-                                    type="number"
-                                    value={rapidFireSettings.maxMultiplier}
-                                    onChange={(e) => setRapidFireSettings(s => ({ ...s, maxMultiplier: parseInt(e.target.value) || 5 }))}
-                                    className="h-8"
-                                    data-testid="input-rapid-max-mult"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="text-xs text-muted-foreground">Mult. Step</label>
-                                  <Input
-                                    type="number"
-                                    step="0.1"
-                                    value={rapidFireSettings.multiplierIncrement}
-                                    onChange={(e) => setRapidFireSettings(s => ({ ...s, multiplierIncrement: parseFloat(e.target.value) || 0.5 }))}
-                                    className="h-8"
-                                    data-testid="input-rapid-mult-step"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                          <Button
-                            onClick={() => {
-                              const settings = newGameMode === 'rapid_fire' ? rapidFireSettings : {};
-                              createGameMutation.mutate({ name: newGameName, mode: newGameMode, settings });
-                            }}
-                            disabled={!newGameName.trim()}
-                            className="w-full"
-                            size="sm"
-                            data-testid="button-create-game"
-                          >
-                            Create Game
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              onClick={() => createGameMutation.mutate({ name: newGameName, mode: newGameMode })}
+                              disabled={!newGameName.trim() || createGameMutation.isPending}
+                              data-testid="button-save-new-game"
+                            >
+                              {createGameMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => { setShowNewGameForm(false); setNewGameName(""); }} data-testid="button-cancel-new-game">
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
 
-                    <div className="space-y-2">
-                      {loadingGames ? (
-                        <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin" /></div>
-                      ) : games.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-4 text-sm">No games yet. Create one above!</p>
-                      ) : games.map(game => {
-                        const ModeIcon = MODE_ICONS[game.mode as GameMode] || Grid3X3;
-                        const isEditing = editingGameId === game.id;
+                    {loadingGames ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : games.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">No games yet</p>
+                    ) : (
+                      games.map((game) => {
+                        const Icon = MODE_ICONS[game.mode] || Grid3X3;
                         return (
-                          <div
+                          <motion.div
                             key={game.id}
-                            className={`flex items-center justify-between gap-2 p-2.5 rounded-lg cursor-pointer transition-all ${
-                              selectedGameId === game.id
-                                ? 'bg-primary/20 border-2 border-primary'
-                                : 'bg-muted/20 border border-border hover:bg-muted/30'
-                            }`}
-                            onClick={() => { if (!isEditing) setSelectedGameId(game.id); }}
+                            layout
+                            className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedGameId === game.id ? 'bg-primary/10 border-primary' : 'bg-card border-border hover:bg-muted/50'}`}
+                            onClick={() => setSelectedGameId(game.id)}
                             data-testid={`game-item-${game.id}`}
                           >
-                            <div className="min-w-0 flex-1 flex items-center gap-2">
-                              <ModeIcon className="w-4 h-4 text-primary shrink-0" />
-                              {isEditing ? (
-                                <div className="flex items-center gap-1 flex-1" onClick={(e) => e.stopPropagation()}>
-                                  <Input
-                                    value={editGameName}
-                                    onChange={(e) => setEditGameName(e.target.value)}
-                                    className="h-7 text-sm"
-                                    autoFocus
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter' && editGameName.trim()) {
-                                        updateGameMutation.mutate({ id: game.id, name: editGameName.trim() });
-                                      }
-                                      if (e.key === 'Escape') setEditingGameId(null);
-                                    }}
-                                    data-testid={`input-edit-game-${game.id}`}
-                                  />
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => updateGameMutation.mutate({ id: game.id, name: editGameName.trim() })}
-                                    disabled={!editGameName.trim()}
-                                    className="h-7 w-7 text-primary shrink-0"
-                                    data-testid={`button-save-game-${game.id}`}
-                                  >
-                                    <Check className="w-3 h-3" />
-                                  </Button>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => setEditingGameId(null)}
-                                    className="h-7 w-7 text-muted-foreground shrink-0"
-                                    data-testid={`button-cancel-edit-game-${game.id}`}
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="min-w-0">
-                                  <span className="font-medium text-sm text-foreground truncate block">{game.name}</span>
-                                  <span className="text-xs text-muted-foreground">{MODE_LABELS[game.mode as GameMode]}</span>
-                                </div>
-                              )}
-                            </div>
-                            {!isEditing && (
-                              <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                                  onClick={() => { setEditingGameId(game.id); setEditGameName(game.name); }}
-                                  data-testid={`button-edit-game-${game.id}`}
-                                >
-                                  <Pencil className="w-3 h-3" />
+                            {editingGameId === game.id ? (
+                              <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                <Input
+                                  value={editGameName}
+                                  onChange={(e) => setEditGameName(e.target.value)}
+                                  className="h-8"
+                                  data-testid="input-edit-game-name"
+                                />
+                                <Button size="sm" variant="ghost" onClick={() => updateGameMutation.mutate({ id: game.id, name: editGameName })}>
+                                  <Check className="w-4 h-4" />
                                 </Button>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                      data-testid={`button-delete-game-${game.id}`}
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Delete Game?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        This will permanently delete "{game.name}".
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => deleteGameMutation.mutate(game.id)}>
-                                        Delete
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
+                                <Button size="sm" variant="ghost" onClick={() => setEditingGameId(null)}>
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <Icon className="w-4 h-4 text-primary shrink-0" />
+                                  <span className="font-medium truncate">{game.name}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-muted-foreground">{MODE_LABELS[game.mode]}</span>
+                                  <Button 
+                                    size="icon" 
+                                    variant="ghost" 
+                                    className="h-7 w-7"
+                                    onClick={(e) => { e.stopPropagation(); setEditingGameId(game.id); setEditGameName(game.name); }}
+                                  >
+                                    <Pencil className="w-3 h-3" />
+                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={(e) => e.stopPropagation()}>
+                                        <Trash2 className="w-3 h-3" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete game?</AlertDialogTitle>
+                                        <AlertDialogDescription>This will permanently delete "{game.name}".</AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => deleteGameMutation.mutate(game.id)}>Delete</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
                               </div>
                             )}
-                          </div>
+                          </motion.div>
                         );
-                      })}
-                    </div>
+                      })
+                    )}
                   </CardContent>
                 </Card>
               </div>
 
               <div className="lg:col-span-8">
-                {!selectedGame ? (
-                  <Card className="bg-card border-border shadow-sm h-full flex items-center justify-center">
-                    <div className="text-center p-8">
-                      <Layers className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-foreground mb-2">Select a Game</h3>
-                      <p className="text-muted-foreground">Choose a game from the list to configure it</p>
-                    </div>
-                  </Card>
-                ) : (selectedGame.mode === 'jeopardy' || selectedGame.mode === 'board' || selectedGame.mode === 'rapid_fire') ? (
-                  <Card className="bg-card border-border shadow-sm">
-                    <CardHeader className="py-4 px-4 border-b border-border bg-muted/30">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2 text-foreground">
-                          {selectedGame.mode === 'rapid_fire' ? <Zap className="w-5 h-5 text-primary" /> : <Grid3X3 className="w-5 h-5 text-primary" />}
-                          {selectedGame.name} - {selectedGame.mode === 'board' ? 'Board' : selectedGame.mode === 'rapid_fire' ? 'Question Source' : 'Boards'}
-                        </CardTitle>
-                        <Link href={selectedGame.mode === 'board' ? `/grudges/${selectedGame.id}` : selectedGame.mode === 'rapid_fire' ? `/blitz/${selectedGame.id}` : `/game/${selectedGame.id}`}>
-                          <Button size="sm" className="gap-2" data-testid="button-play-game">
-                            <Play className="w-4 h-4" />
-                            Play Game
-                          </Button>
-                        </Link>
+                <Card className="h-full">
+                  <CardContent className="p-6">
+                    {!selectedGame ? (
+                      <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+                        <Layers className="w-12 h-12 mb-4 opacity-50" />
+                        <p>Select a game to configure it</p>
                       </div>
-                    </CardHeader>
-                    <CardContent className="p-4 space-y-4">
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-foreground">Linked Boards ({gameBoards.length})</h4>
-                        {gameBoards.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">No boards linked. Add boards below.</p>
-                        ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {gameBoards.map((gb, idx) => (
-                              <div key={gb.id} className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border">
-                                <div className="flex items-center gap-2">
-                                  <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-medium flex items-center justify-center">
-                                    {idx + 1}
-                                  </span>
-                                  <span className="font-medium text-foreground">{gb.board.name}</span>
+                    ) : (selectedGame.mode === 'jeopardy' || selectedGame.mode === 'board') ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-2">
+                            <Grid3X3 className="w-5 h-5 text-primary" />
+                            <h3 className="text-lg font-semibold">{selectedGame.name} - Boards</h3>
+                          </div>
+                          <Link href={`/grudges/${selectedGame.id}`}>
+                            <Button size="sm" className="gap-2" data-testid="button-play-game">
+                              <Play className="w-4 h-4" />
+                              Play
+                            </Button>
+                          </Link>
+                        </div>
+
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-medium text-foreground">Linked Boards ({gameBoards.length})</h4>
+                          {gameBoards.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No boards linked yet</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {gameBoards.map((gb) => (
+                                <div key={gb.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                                  <span className="font-medium">{gb.board.name}</span>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="text-destructive h-7"
+                                    onClick={() => removeBoardFromGameMutation.mutate({ gameId: selectedGame.id, boardId: gb.boardId })}
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
                                 </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {availableBoards.length > 0 && (
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-medium text-foreground">Add a Board</h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {availableBoards.map((board) => (
                                 <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                  onClick={() => removeBoardFromGameMutation.mutate({ gameId: selectedGame.id, boardId: gb.boardId })}
-                                  data-testid={`button-remove-board-${gb.boardId}`}
+                                  key={board.id}
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => addBoardToGameMutation.mutate({ gameId: selectedGame.id, boardId: board.id })}
+                                  className="justify-start"
+                                  data-testid={`button-add-board-${board.id}`}
                                 >
-                                  <X className="w-4 h-4" />
+                                  <Plus className="w-3 h-3 mr-1" />
+                                  {board.name}
                                 </Button>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
-
-                      {availableBoards.length > 0 && (
-                        <div className="space-y-2">
-                          <h4 className="text-sm font-medium text-foreground">Add Board</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                            {availableBoards.map(board => (
-                              <Button
-                                key={board.id}
-                                variant="outline"
-                                className="justify-start gap-2"
-                                onClick={() => addBoardToGameMutation.mutate({ gameId: selectedGame.id, boardId: board.id })}
-                                data-testid={`button-add-board-${board.id}`}
-                              >
-                                <Plus className="w-4 h-4" />
-                                {board.name}
-                              </Button>
-                            ))}
+                    ) : selectedGame.mode === 'heads_up' ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-2">
+                            <Smartphone className="w-5 h-5 text-primary" />
+                            <h3 className="text-lg font-semibold">{selectedGame.name} - Decks</h3>
                           </div>
+                          <Link href={`/heads-up/${selectedGame.id}`}>
+                            <Button size="sm" className="gap-2" data-testid="button-play-heads-up">
+                              <Play className="w-4 h-4" />
+                              Play
+                            </Button>
+                          </Link>
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ) : selectedGame.mode === 'heads_up' ? (
-                  <Card className="bg-card border-border shadow-sm">
-                    <CardHeader className="py-4 px-4 border-b border-border bg-muted/30">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2 text-foreground">
-                          <Smartphone className="w-5 h-5 text-primary" />
-                          {selectedGame.name} - Decks
-                        </CardTitle>
-                        <Link href={`/heads-up/${selectedGame.id}`}>
-                          <Button size="sm" className="gap-2" data-testid="button-play-heads-up">
-                            <Play className="w-4 h-4" />
-                            Play Game
-                          </Button>
-                        </Link>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 space-y-4">
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-foreground">Linked Decks ({gameDecks.length})</h4>
-                        {gameDecks.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">No decks linked. Add decks below.</p>
-                        ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {gameDecks.map((gd, idx) => (
-                              <div key={gd.id} className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border">
-                                <div className="flex items-center gap-2">
-                                  <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-medium flex items-center justify-center">
-                                    {idx + 1}
-                                  </span>
-                                  <span className="font-medium text-foreground">{gd.deck.name}</span>
+
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-medium text-foreground">Linked Decks ({gameDecks.length})</h4>
+                          {gameDecks.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No decks linked yet</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {gameDecks.map((gd) => (
+                                <div key={gd.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                                  <span className="font-medium">{gd.deck.name}</span>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="text-destructive h-7"
+                                    onClick={() => removeDeckFromGameMutation.mutate({ gameId: selectedGame.id, deckId: gd.deckId })}
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
                                 </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {availableDecks.length > 0 && (
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-medium text-foreground">Add a Deck</h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {availableDecks.map((deck) => (
                                 <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                  onClick={() => removeDeckFromGameMutation.mutate({ gameId: selectedGame.id, deckId: gd.deckId })}
-                                  data-testid={`button-remove-deck-${gd.deckId}`}
+                                  key={deck.id}
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => addDeckToGameMutation.mutate({ gameId: selectedGame.id, deckId: deck.id })}
+                                  className="justify-start"
                                 >
-                                  <X className="w-4 h-4" />
+                                  <Plus className="w-3 h-3 mr-1" />
+                                  {deck.name}
                                 </Button>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
-
-                      {availableDecks.length > 0 && (
-                        <div className="space-y-2">
-                          <h4 className="text-sm font-medium text-foreground">Add Deck</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                            {availableDecks.map(deck => (
-                              <Button
-                                key={deck.id}
-                                variant="outline"
-                                className="justify-start gap-2"
-                                onClick={() => addDeckToGameMutation.mutate({ gameId: selectedGame.id, deckId: deck.id })}
-                                data-testid={`button-add-deck-${deck.id}`}
-                              >
-                                <Plus className="w-4 h-4" />
-                                {deck.name}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ) : selectedGame.mode === 'submission' ? (
-                  <Card className="bg-card border-border shadow-sm">
-                    <CardHeader className="py-4 px-4 border-b border-border bg-muted/30">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2 text-foreground">
-                          <Skull className="w-5 h-5 text-primary" />
-                          {selectedGame.name} - Prompt Packs
-                        </CardTitle>
-                        <Link href={`/liars/${selectedGame.id}`}>
-                          <Button size="sm" className="gap-2" data-testid="button-play-liars">
-                            <Play className="w-4 h-4" />
-                            Play Game
-                          </Button>
-                        </Link>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 space-y-4">
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-foreground">Linked Packs ({gameLiarPacks.length})</h4>
-                        {gameLiarPacks.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">No packs linked. Add packs below.</p>
-                        ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {gameLiarPacks.map((gp, idx) => (
-                              <div key={gp.id} className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border">
-                                <div className="flex items-center gap-2">
-                                  <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-medium flex items-center justify-center">
-                                    {idx + 1}
-                                  </span>
-                                  <span className="font-medium text-foreground">{gp.pack.name}</span>
-                                </div>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                  onClick={() => removePackFromGameMutation.mutate({ gameId: selectedGame.id, packId: gp.packId })}
-                                  data-testid={`button-remove-pack-${gp.packId}`}
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {availablePacks.length > 0 && (
-                        <div className="space-y-2">
-                          <h4 className="text-sm font-medium text-foreground">Add Pack</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                            {availablePacks.map(pack => (
-                              <Button
-                                key={pack.id}
-                                variant="outline"
-                                className="justify-start gap-2"
-                                onClick={() => addPackToGameMutation.mutate({ gameId: selectedGame.id, packId: pack.id })}
-                                data-testid={`button-add-pack-${pack.id}`}
-                              >
-                                <Plus className="w-4 h-4" />
-                                {pack.name}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ) : null}
+                    ) : null}
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </TabsContent>
@@ -879,665 +566,264 @@ export default function GamesAdmin() {
           <TabsContent value="decks">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-4">
-                <Card className="bg-card border-border shadow-sm">
-                  <CardHeader className="py-4 px-4 border-b border-border bg-muted/30">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2 text-foreground text-sm font-semibold uppercase tracking-wide">
-                        <Smartphone className="w-4 h-4 text-primary" />
-                        Heads Up Decks
-                      </CardTitle>
-                      <Button
-                        size="icon"
-                        variant={showNewDeckForm ? "secondary" : "default"}
-                        onClick={() => setShowNewDeckForm(!showNewDeckForm)}
-                        className="h-8 w-8"
-                        data-testid="button-toggle-deck-form"
-                      >
-                        {showNewDeckForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                      </Button>
-                    </div>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
+                    <CardTitle className="text-lg">Heads Up Decks</CardTitle>
+                    <Button 
+                      size="sm" 
+                      className="gap-1"
+                      onClick={() => setShowNewDeckForm(true)}
+                      data-testid="button-new-deck"
+                    >
+                      <Plus className="w-4 h-4" />
+                      New Deck
+                    </Button>
                   </CardHeader>
-                  <CardContent className="p-3 space-y-3">
+                  <CardContent className="space-y-2">
                     <AnimatePresence>
                       {showNewDeckForm && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
+                          animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="space-y-3 p-3 bg-muted/20 rounded-lg border border-border"
+                          className="space-y-3 p-3 bg-muted/50 rounded-lg border border-border"
                         >
                           <Input
-                            placeholder="Deck name"
+                            placeholder="Deck name..."
                             value={newDeckName}
                             onChange={(e) => setNewDeckName(e.target.value)}
-                            data-testid="input-deck-name"
+                            data-testid="input-new-deck-name"
                           />
                           <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">Timer:</span>
                             <Input
                               type="number"
-                              placeholder="Timer (seconds)"
                               value={newDeckTimer}
-                              onChange={(e) => setNewDeckTimer(parseInt(e.target.value) || 60)}
-                              className="w-32"
-                              data-testid="input-deck-timer"
+                              onChange={(e) => setNewDeckTimer(Number(e.target.value))}
+                              className="w-20"
+                              data-testid="input-new-deck-timer"
                             />
-                            <span className="text-sm text-muted-foreground">seconds per round</span>
+                            <span className="text-sm text-muted-foreground">sec</span>
                           </div>
-                          <Button
-                            onClick={() => createDeckMutation.mutate({ name: newDeckName, timerSeconds: newDeckTimer })}
-                            disabled={!newDeckName.trim()}
-                            className="w-full"
-                            size="sm"
-                            data-testid="button-create-deck"
-                          >
-                            Create Deck
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              onClick={() => createDeckMutation.mutate({ name: newDeckName, timerSeconds: newDeckTimer })}
+                              disabled={!newDeckName.trim() || createDeckMutation.isPending}
+                            >
+                              {createDeckMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => { setShowNewDeckForm(false); setNewDeckName(""); setNewDeckTimer(60); }}>
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
 
-                    <div className="space-y-2">
-                      {loadingDecks ? (
-                        <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin" /></div>
-                      ) : decks.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-4 text-sm">No decks yet. Create one above!</p>
-                      ) : decks.map(deck => {
-                        const isEditing = editingDeckId === deck.id;
-                        return (
-                          <div
-                            key={deck.id}
-                            className={`flex items-center justify-between gap-2 p-2.5 rounded-lg cursor-pointer transition-all ${
-                              selectedDeckId === deck.id
-                                ? 'bg-primary/20 border-2 border-primary'
-                                : 'bg-muted/20 border border-border hover:bg-muted/30'
-                            }`}
-                            onClick={() => { if (!isEditing) setSelectedDeckId(deck.id); }}
-                            data-testid={`deck-item-${deck.id}`}
-                          >
-                            <div className="min-w-0 flex-1">
-                              {isEditing ? (
-                                <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
-                                  <Input
-                                    value={editDeckName}
-                                    onChange={(e) => setEditDeckName(e.target.value)}
-                                    className="h-7 text-sm"
-                                    autoFocus
-                                    data-testid={`input-edit-deck-${deck.id}`}
-                                  />
-                                  <div className="flex items-center gap-2">
-                                    <Input
-                                      type="number"
-                                      value={editDeckTimer}
-                                      onChange={(e) => setEditDeckTimer(parseInt(e.target.value) || 60)}
-                                      className="w-20 h-7 text-sm"
-                                      data-testid={`input-edit-deck-timer-${deck.id}`}
-                                    />
-                                    <span className="text-xs text-muted-foreground">sec</span>
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      onClick={() => updateDeckMutation.mutate({ id: deck.id, name: editDeckName.trim(), timerSeconds: editDeckTimer })}
-                                      disabled={!editDeckName.trim()}
-                                      className="h-7 w-7 text-primary shrink-0"
-                                      data-testid={`button-save-deck-${deck.id}`}
-                                    >
-                                      <Check className="w-3 h-3" />
-                                    </Button>
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      onClick={() => setEditingDeckId(null)}
-                                      className="h-7 w-7 text-muted-foreground shrink-0"
-                                      data-testid={`button-cancel-edit-deck-${deck.id}`}
-                                    >
-                                      <X className="w-3 h-3" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="min-w-0">
-                                  <span className="font-medium text-sm text-foreground truncate block">{deck.name}</span>
-                                  <span className="text-xs text-muted-foreground">{deck.cardCount} cards • {deck.timerSeconds}s</span>
-                                </div>
-                              )}
+                    {loadingDecks ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : decks.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">No decks yet</p>
+                    ) : (
+                      decks.map((deck) => (
+                        <motion.div
+                          key={deck.id}
+                          layout
+                          className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedDeckId === deck.id ? 'bg-primary/10 border-primary' : 'bg-card border-border hover:bg-muted/50'}`}
+                          onClick={() => setSelectedDeckId(deck.id)}
+                          data-testid={`deck-item-${deck.id}`}
+                        >
+                          {editingDeckId === deck.id ? (
+                            <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                              <Input
+                                value={editDeckName}
+                                onChange={(e) => setEditDeckName(e.target.value)}
+                                className="h-8"
+                              />
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  type="number"
+                                  value={editDeckTimer}
+                                  onChange={(e) => setEditDeckTimer(Number(e.target.value))}
+                                  className="w-20 h-8"
+                                />
+                                <span className="text-xs text-muted-foreground">sec</span>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button size="sm" variant="ghost" onClick={() => updateDeckMutation.mutate({ id: deck.id, name: editDeckName, timerSeconds: editDeckTimer })}>
+                                  <Check className="w-4 h-4" />
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => setEditingDeckId(null)}>
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
                             </div>
-                            {!isEditing && (
-                              <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                                  onClick={() => { setEditingDeckId(deck.id); setEditDeckName(deck.name); setEditDeckTimer(deck.timerSeconds); }}
-                                  data-testid={`button-edit-deck-${deck.id}`}
+                          ) : (
+                            <div className="flex items-center justify-between gap-2">
+                              <div>
+                                <span className="font-medium">{deck.name}</span>
+                                <div className="text-xs text-muted-foreground">{deck.cardCount} cards · {deck.timerSeconds}s</div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost" 
+                                  className="h-7 w-7"
+                                  onClick={(e) => { e.stopPropagation(); setEditingDeckId(deck.id); setEditDeckName(deck.name); setEditDeckTimer(deck.timerSeconds); }}
                                 >
                                   <Pencil className="w-3 h-3" />
                                 </Button>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                      data-testid={`button-delete-deck-${deck.id}`}
-                                    >
+                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={(e) => e.stopPropagation()}>
                                       <Trash2 className="w-3 h-3" />
                                     </Button>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
-                                      <AlertDialogTitle>Delete Deck?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        This will permanently delete "{deck.name}" and all its cards.
-                                      </AlertDialogDescription>
+                                      <AlertDialogTitle>Delete deck?</AlertDialogTitle>
+                                      <AlertDialogDescription>This will permanently delete "{deck.name}" and all its cards.</AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => deleteDeckMutation.mutate(deck.id)}>
-                                        Delete
-                                      </AlertDialogAction>
+                                      <AlertDialogAction onClick={() => deleteDeckMutation.mutate(deck.id)}>Delete</AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
                                 </AlertDialog>
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                            </div>
+                          )}
+                        </motion.div>
+                      ))
+                    )}
                   </CardContent>
                 </Card>
               </div>
 
               <div className="lg:col-span-8">
-                {!selectedDeck ? (
-                  <Card className="bg-card border-border shadow-sm h-full flex items-center justify-center">
-                    <div className="text-center p-8">
-                      <Smartphone className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-foreground mb-2">Select a Deck</h3>
-                      <p className="text-muted-foreground">Choose a deck from the list to manage its cards</p>
-                    </div>
-                  </Card>
-                ) : (
-                  <Card className="bg-card border-border shadow-sm">
-                    <CardHeader className="py-4 px-4 border-b border-border bg-muted/30">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2 text-foreground">
-                          <Smartphone className="w-5 h-5 text-primary" />
-                          {selectedDeck.name} - Cards
-                        </CardTitle>
-                        <Button
-                          size="sm"
-                          variant={showNewCardForm ? "secondary" : "default"}
-                          onClick={() => setShowNewCardForm(!showNewCardForm)}
-                          className="gap-2"
-                          data-testid="button-toggle-card-form"
-                        >
-                          {showNewCardForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                          Add Card
-                        </Button>
+                <Card className="h-full">
+                  <CardContent className="p-6">
+                    {!selectedDeck ? (
+                      <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+                        <Smartphone className="w-12 h-12 mb-4 opacity-50" />
+                        <p>Select a deck to manage its cards</p>
                       </div>
-                    </CardHeader>
-                    <CardContent className="p-4 space-y-4">
-                      <AnimatePresence>
-                        {showNewCardForm && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="flex items-center gap-2 p-3 bg-muted/20 rounded-lg border border-border"
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <h3 className="text-lg font-semibold">{selectedDeck.name} - Cards</h3>
+                          <Button 
+                            size="sm" 
+                            className="gap-1"
+                            onClick={() => setShowNewCardForm(true)}
+                            data-testid="button-new-card"
                           >
-                            <Input
-                              placeholder="Enter word or phrase to guess..."
-                              value={newCardPrompt}
-                              onChange={(e) => setNewCardPrompt(e.target.value)}
-                              className="flex-1"
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && newCardPrompt.trim()) {
-                                  createCardMutation.mutate({ deckId: selectedDeck.id, prompt: newCardPrompt.trim() });
-                                }
-                              }}
-                              data-testid="input-card-prompt"
-                            />
-                            <Button
-                              onClick={() => createCardMutation.mutate({ deckId: selectedDeck.id, prompt: newCardPrompt.trim() })}
-                              disabled={!newCardPrompt.trim()}
-                              data-testid="button-create-card"
-                            >
-                              Add
-                            </Button>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
-                      {loadingCards ? (
-                        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
-                      ) : cards.length === 0 ? (
-                        <div className="text-center py-8">
-                          <p className="text-muted-foreground">No cards in this deck yet.</p>
-                          <p className="text-sm text-muted-foreground">Add cards above to get started!</p>
+                            <Plus className="w-4 h-4" />
+                            Add Card
+                          </Button>
                         </div>
-                      ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {cards.map(card => {
-                            const isEditing = editingCardId === card.id;
-                            return (
-                              <div
+
+                        <AnimatePresence>
+                          {showNewCardForm && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="space-y-3 p-3 bg-muted/50 rounded-lg border border-border"
+                            >
+                              <Input
+                                placeholder="Card prompt..."
+                                value={newCardPrompt}
+                                onChange={(e) => setNewCardPrompt(e.target.value)}
+                                data-testid="input-new-card-prompt"
+                              />
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => createCardMutation.mutate({ deckId: selectedDeck.id, prompt: newCardPrompt })}
+                                  disabled={!newCardPrompt.trim() || createCardMutation.isPending}
+                                >
+                                  {createCardMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => { setShowNewCardForm(false); setNewCardPrompt(""); }}>
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {loadingCards ? (
+                          <div className="flex justify-center py-8">
+                            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                          </div>
+                        ) : cards.length === 0 ? (
+                          <p className="text-center text-muted-foreground py-8">No cards in this deck</p>
+                        ) : (
+                          <div className="space-y-2 max-h-96 overflow-y-auto">
+                            {cards.map((card) => (
+                              <motion.div
                                 key={card.id}
-                                className="p-4 bg-muted/20 rounded-lg border border-border"
-                                data-testid={`card-item-${card.id}`}
+                                layout
+                                className="p-3 bg-muted/50 rounded-lg border border-border"
                               >
-                                {isEditing ? (
-                                  <div className="space-y-2">
+                                {editingCardId === card.id ? (
+                                  <div className="flex gap-2">
                                     <Input
                                       value={editCardPrompt}
                                       onChange={(e) => setEditCardPrompt(e.target.value)}
-                                      autoFocus
-                                      data-testid={`input-edit-card-${card.id}`}
+                                      className="flex-1"
                                     />
-                                    <div className="flex justify-end gap-1">
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => setEditingCardId(null)}
-                                        data-testid={`button-cancel-edit-card-${card.id}`}
-                                      >
-                                        Cancel
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        onClick={() => updateCardMutation.mutate({ id: card.id, prompt: editCardPrompt.trim() })}
-                                        disabled={!editCardPrompt.trim()}
-                                        data-testid={`button-save-card-${card.id}`}
-                                      >
-                                        Save
-                                      </Button>
-                                    </div>
+                                    <Button size="sm" variant="ghost" onClick={() => updateCardMutation.mutate({ id: card.id, prompt: editCardPrompt })}>
+                                      <Check className="w-4 h-4" />
+                                    </Button>
+                                    <Button size="sm" variant="ghost" onClick={() => setEditingCardId(null)}>
+                                      <X className="w-4 h-4" />
+                                    </Button>
                                   </div>
                                 ) : (
-                                  <div className="flex items-start justify-between gap-2">
-                                    <p className="font-medium text-foreground">{card.prompt}</p>
-                                    <div className="flex items-center gap-1 shrink-0">
-                                      <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span>{card.prompt}</span>
+                                    <div className="flex items-center gap-1">
+                                      <Button 
+                                        size="icon" 
+                                        variant="ghost" 
+                                        className="h-7 w-7"
                                         onClick={() => { setEditingCardId(card.id); setEditCardPrompt(card.prompt); }}
-                                        data-testid={`button-edit-card-${card.id}`}
                                       >
                                         <Pencil className="w-3 h-3" />
                                       </Button>
                                       <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                          <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                            data-testid={`button-delete-card-${card.id}`}
-                                          >
+                                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive">
                                             <Trash2 className="w-3 h-3" />
                                           </Button>
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                           <AlertDialogHeader>
-                                            <AlertDialogTitle>Delete Card?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                              This will permanently delete this card.
-                                            </AlertDialogDescription>
+                                            <AlertDialogTitle>Delete card?</AlertDialogTitle>
+                                            <AlertDialogDescription>This will permanently delete this card.</AlertDialogDescription>
                                           </AlertDialogHeader>
                                           <AlertDialogFooter>
                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => deleteCardMutation.mutate(card.id)}>
-                                              Delete
-                                            </AlertDialogAction>
+                                            <AlertDialogAction onClick={() => deleteCardMutation.mutate(card.id)}>Delete</AlertDialogAction>
                                           </AlertDialogFooter>
                                         </AlertDialogContent>
                                       </AlertDialog>
                                     </div>
                                   </div>
                                 )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="liar-packs">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-4">
-                <Card className="bg-card border-border shadow-sm">
-                  <CardHeader className="py-4 px-4 border-b border-border bg-muted/30">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2 text-foreground text-sm font-semibold uppercase tracking-wide">
-                        <Skull className="w-4 h-4 text-primary" />
-                        Prompt Packs
-                      </CardTitle>
-                      <Button
-                        size="icon"
-                        variant={showNewPackForm ? "secondary" : "default"}
-                        onClick={() => setShowNewPackForm(!showNewPackForm)}
-                        className="h-8 w-8"
-                        data-testid="button-toggle-pack-form"
-                      >
-                        {showNewPackForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-3 space-y-3">
-                    <AnimatePresence>
-                      {showNewPackForm && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="flex items-center gap-2 p-3 bg-muted/20 rounded-lg border border-border"
-                        >
-                          <Input
-                            placeholder="Pack name"
-                            value={newPackName}
-                            onChange={(e) => setNewPackName(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && newPackName.trim()) {
-                                createPackMutation.mutate({ name: newPackName.trim() });
-                              }
-                            }}
-                            data-testid="input-pack-name"
-                          />
-                          <Button
-                            onClick={() => createPackMutation.mutate({ name: newPackName.trim() })}
-                            disabled={!newPackName.trim()}
-                            data-testid="button-create-pack"
-                          >
-                            Create
-                          </Button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    <div className="space-y-2">
-                      {loadingPacks ? (
-                        <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin" /></div>
-                      ) : liarPacks.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-4 text-sm">No packs yet. Create one above!</p>
-                      ) : liarPacks.map(pack => {
-                        const isEditing = editingPackId === pack.id;
-                        return (
-                          <div
-                            key={pack.id}
-                            className={`flex items-center justify-between gap-2 p-2.5 rounded-lg cursor-pointer transition-all ${
-                              selectedPackId === pack.id
-                                ? 'bg-primary/20 border-2 border-primary'
-                                : 'bg-muted/20 border border-border hover:bg-muted/30'
-                            }`}
-                            onClick={() => { if (!isEditing) setSelectedPackId(pack.id); }}
-                            data-testid={`pack-item-${pack.id}`}
-                          >
-                            <div className="min-w-0 flex-1 flex items-center gap-2">
-                              <Skull className="w-4 h-4 text-primary shrink-0" />
-                              {isEditing ? (
-                                <div className="flex items-center gap-1 flex-1" onClick={(e) => e.stopPropagation()}>
-                                  <Input
-                                    value={editPackName}
-                                    onChange={(e) => setEditPackName(e.target.value)}
-                                    className="h-7 text-sm"
-                                    autoFocus
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter' && editPackName.trim()) {
-                                        updatePackMutation.mutate({ id: pack.id, name: editPackName.trim() });
-                                      }
-                                      if (e.key === 'Escape') setEditingPackId(null);
-                                    }}
-                                    data-testid={`input-edit-pack-${pack.id}`}
-                                  />
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => updatePackMutation.mutate({ id: pack.id, name: editPackName.trim() })}
-                                    disabled={!editPackName.trim()}
-                                    className="h-7 w-7 text-primary shrink-0"
-                                    data-testid={`button-save-pack-${pack.id}`}
-                                  >
-                                    <Check className="w-3 h-3" />
-                                  </Button>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => setEditingPackId(null)}
-                                    className="h-7 w-7 text-muted-foreground shrink-0"
-                                    data-testid={`button-cancel-edit-pack-${pack.id}`}
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="min-w-0">
-                                  <span className="font-medium text-sm text-foreground truncate block">{pack.name}</span>
-                                  <span className="text-xs text-muted-foreground">{pack.promptCount} prompts</span>
-                                </div>
-                              )}
-                            </div>
-                            {!isEditing && (
-                              <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                                  onClick={() => { setEditingPackId(pack.id); setEditPackName(pack.name); }}
-                                  data-testid={`button-edit-pack-${pack.id}`}
-                                >
-                                  <Pencil className="w-3 h-3" />
-                                </Button>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                      data-testid={`button-delete-pack-${pack.id}`}
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Delete Pack?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        This will permanently delete "{pack.name}" and all its prompts.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => deletePackMutation.mutate(pack.id)}>
-                                        Delete
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </div>
-                            )}
+                              </motion.div>
+                            ))}
                           </div>
-                        );
-                      })}
-                    </div>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
-              </div>
-
-              <div className="lg:col-span-8">
-                {!selectedPack ? (
-                  <Card className="bg-card border-border shadow-sm h-full flex items-center justify-center">
-                    <div className="text-center p-8">
-                      <Skull className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-foreground mb-2">Select a Pack</h3>
-                      <p className="text-muted-foreground">Choose a pack from the list to manage its prompts</p>
-                    </div>
-                  </Card>
-                ) : (
-                  <Card className="bg-card border-border shadow-sm">
-                    <CardHeader className="py-4 px-4 border-b border-border bg-muted/30">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2 text-foreground">
-                          <Skull className="w-5 h-5 text-primary" />
-                          {selectedPack.name} - Prompts
-                        </CardTitle>
-                        <Button
-                          size="icon"
-                          variant={showNewPromptForm ? "secondary" : "default"}
-                          onClick={() => setShowNewPromptForm(!showNewPromptForm)}
-                          className="h-8 w-8"
-                          data-testid="button-toggle-prompt-form"
-                        >
-                          {showNewPromptForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 space-y-4">
-                      <AnimatePresence>
-                        {showNewPromptForm && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="space-y-2 p-3 bg-muted/20 rounded-lg border border-border"
-                          >
-                            <Input
-                              placeholder="Clue (what players see)"
-                              value={newPromptClue}
-                              onChange={(e) => setNewPromptClue(e.target.value)}
-                              data-testid="input-prompt-clue"
-                            />
-                            <Input
-                              placeholder="Truth (the real answer)"
-                              value={newPromptTruth}
-                              onChange={(e) => setNewPromptTruth(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && newPromptClue.trim() && newPromptTruth.trim()) {
-                                  createPromptMutation.mutate({ packId: selectedPack.id, clue: newPromptClue.trim(), truth: newPromptTruth.trim() });
-                                }
-                              }}
-                              data-testid="input-prompt-truth"
-                            />
-                            <Button
-                              onClick={() => createPromptMutation.mutate({ packId: selectedPack.id, clue: newPromptClue.trim(), truth: newPromptTruth.trim() })}
-                              disabled={!newPromptClue.trim() || !newPromptTruth.trim()}
-                              className="w-full"
-                              data-testid="button-create-prompt"
-                            >
-                              Add Prompt
-                            </Button>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
-                      {loadingPrompts ? (
-                        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
-                      ) : prompts.length === 0 ? (
-                        <div className="text-center py-8">
-                          <p className="text-muted-foreground">No prompts in this pack yet.</p>
-                          <p className="text-sm text-muted-foreground">Add prompts above to get started!</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          {prompts.map(prompt => {
-                            const isEditing = editingPromptId === prompt.id;
-                            return (
-                              <div
-                                key={prompt.id}
-                                className="p-4 bg-muted/20 rounded-lg border border-border"
-                                data-testid={`prompt-item-${prompt.id}`}
-                              >
-                                {isEditing ? (
-                                  <div className="space-y-2">
-                                    <Input
-                                      value={editPromptClue}
-                                      onChange={(e) => setEditPromptClue(e.target.value)}
-                                      placeholder="Clue"
-                                      autoFocus
-                                      data-testid={`input-edit-prompt-clue-${prompt.id}`}
-                                    />
-                                    <Input
-                                      value={editPromptTruth}
-                                      onChange={(e) => setEditPromptTruth(e.target.value)}
-                                      placeholder="Truth"
-                                      data-testid={`input-edit-prompt-truth-${prompt.id}`}
-                                    />
-                                    <div className="flex justify-end gap-1">
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => setEditingPromptId(null)}
-                                        data-testid={`button-cancel-edit-prompt-${prompt.id}`}
-                                      >
-                                        Cancel
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        onClick={() => updatePromptMutation.mutate({ id: prompt.id, clue: editPromptClue.trim(), truth: editPromptTruth.trim() })}
-                                        disabled={!editPromptClue.trim() || !editPromptTruth.trim()}
-                                        data-testid={`button-save-prompt-${prompt.id}`}
-                                      >
-                                        Save
-                                      </Button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-start justify-between gap-4">
-                                    <div className="flex-1 min-w-0">
-                                      <p className="font-medium text-foreground">{prompt.clue}</p>
-                                      <p className="text-sm text-muted-foreground mt-1">Answer: {prompt.truth}</p>
-                                    </div>
-                                    <div className="flex items-center gap-1 shrink-0">
-                                      <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                                        onClick={() => { setEditingPromptId(prompt.id); setEditPromptClue(prompt.clue); setEditPromptTruth(prompt.truth); }}
-                                        data-testid={`button-edit-prompt-${prompt.id}`}
-                                      >
-                                        <Pencil className="w-3 h-3" />
-                                      </Button>
-                                      <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                          <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                            data-testid={`button-delete-prompt-${prompt.id}`}
-                                          >
-                                            <Trash2 className="w-3 h-3" />
-                                          </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                          <AlertDialogHeader>
-                                            <AlertDialogTitle>Delete Prompt?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                              This will permanently delete this prompt.
-                                            </AlertDialogDescription>
-                                          </AlertDialogHeader>
-                                          <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => deletePromptMutation.mutate(prompt.id)}>
-                                              Delete
-                                            </AlertDialogAction>
-                                          </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                      </AlertDialog>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
               </div>
             </div>
           </TabsContent>

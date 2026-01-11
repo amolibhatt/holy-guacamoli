@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, liarPromptPacks, liarPrompts, gameLiarPacks, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type LiarPromptPack, type InsertLiarPromptPack, type LiarPrompt, type InsertLiarPrompt, type GameLiarPack, type InsertGameLiarPack, type LiarPromptPackWithCount } from "@shared/schema";
+import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount } from "@shared/schema";
 import { eq, and, asc, count, inArray } from "drizzle-orm";
 
 export interface IStorage {
@@ -62,25 +62,6 @@ export interface IStorage {
   getGameDecks(gameId: number): Promise<(GameDeck & { deck: HeadsUpDeck })[]>;
   addDeckToGame(data: InsertGameDeck): Promise<GameDeck>;
   removeDeckFromGame(gameId: number, deckId: number): Promise<boolean>;
-  
-  // Liar Prompt Packs
-  getLiarPromptPacks(userId: string, role?: string): Promise<LiarPromptPackWithCount[]>;
-  getLiarPromptPack(id: number, userId: string, role?: string): Promise<LiarPromptPack | undefined>;
-  createLiarPromptPack(pack: InsertLiarPromptPack): Promise<LiarPromptPack>;
-  updateLiarPromptPack(id: number, data: Partial<InsertLiarPromptPack>, userId: string, role?: string): Promise<LiarPromptPack | undefined>;
-  deleteLiarPromptPack(id: number, userId: string, role?: string): Promise<boolean>;
-  
-  // Liar Prompts
-  getLiarPrompts(packId: number): Promise<LiarPrompt[]>;
-  getLiarPrompt(id: number): Promise<LiarPrompt | undefined>;
-  createLiarPrompt(prompt: InsertLiarPrompt): Promise<LiarPrompt>;
-  updateLiarPrompt(id: number, data: Partial<InsertLiarPrompt>): Promise<LiarPrompt | undefined>;
-  deleteLiarPrompt(id: number): Promise<boolean>;
-  
-  // Game Liar Packs (junction)
-  getGameLiarPacks(gameId: number): Promise<(GameLiarPack & { pack: LiarPromptPack })[]>;
-  addLiarPackToGame(data: InsertGameLiarPack): Promise<GameLiarPack>;
-  removeLiarPackFromGame(gameId: number, packId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -540,125 +521,6 @@ export class DatabaseStorage implements IStorage {
   async removeDeckFromGame(gameId: number, deckId: number): Promise<boolean> {
     const result = await db.delete(gameDecks)
       .where(and(eq(gameDecks.gameId, gameId), eq(gameDecks.deckId, deckId)))
-      .returning();
-    return result.length > 0;
-  }
-
-  // === LIAR PROMPT PACKS ===
-  async getLiarPromptPacks(userId: string, role?: string): Promise<LiarPromptPackWithCount[]> {
-    const packs = role === 'super_admin' 
-      ? await db.select().from(liarPromptPacks)
-      : await db.select().from(liarPromptPacks).where(eq(liarPromptPacks.userId, userId));
-    
-    const result: LiarPromptPackWithCount[] = [];
-    for (const pack of packs) {
-      const [{ count: promptCount }] = await db.select({ count: count() })
-        .from(liarPrompts)
-        .where(eq(liarPrompts.packId, pack.id));
-      result.push({ ...pack, promptCount: Number(promptCount) });
-    }
-    return result;
-  }
-
-  async getLiarPromptPack(id: number, userId: string, role?: string): Promise<LiarPromptPack | undefined> {
-    if (role === 'super_admin') {
-      const [pack] = await db.select().from(liarPromptPacks).where(eq(liarPromptPacks.id, id));
-      return pack;
-    }
-    const [pack] = await db.select().from(liarPromptPacks)
-      .where(and(eq(liarPromptPacks.id, id), eq(liarPromptPacks.userId, userId)));
-    return pack;
-  }
-
-  async createLiarPromptPack(pack: InsertLiarPromptPack): Promise<LiarPromptPack> {
-    const [newPack] = await db.insert(liarPromptPacks).values(pack as any).returning();
-    return newPack;
-  }
-
-  async updateLiarPromptPack(id: number, data: Partial<InsertLiarPromptPack>, userId: string, role?: string): Promise<LiarPromptPack | undefined> {
-    if (role === 'super_admin') {
-      const [updated] = await db.update(liarPromptPacks).set(data as any).where(eq(liarPromptPacks.id, id)).returning();
-      return updated;
-    }
-    const [updated] = await db.update(liarPromptPacks).set(data as any)
-      .where(and(eq(liarPromptPacks.id, id), eq(liarPromptPacks.userId, userId))).returning();
-    return updated;
-  }
-
-  async deleteLiarPromptPack(id: number, userId: string, role?: string): Promise<boolean> {
-    const pack = await this.getLiarPromptPack(id, userId, role);
-    if (!pack) return false;
-    await db.delete(liarPrompts).where(eq(liarPrompts.packId, id));
-    await db.delete(gameLiarPacks).where(eq(gameLiarPacks.packId, id));
-    if (role === 'super_admin') {
-      const result = await db.delete(liarPromptPacks).where(eq(liarPromptPacks.id, id)).returning();
-      return result.length > 0;
-    }
-    const result = await db.delete(liarPromptPacks)
-      .where(and(eq(liarPromptPacks.id, id), eq(liarPromptPacks.userId, userId))).returning();
-    return result.length > 0;
-  }
-
-  // === LIAR PROMPTS ===
-  async getLiarPrompts(packId: number): Promise<LiarPrompt[]> {
-    return await db.select().from(liarPrompts).where(eq(liarPrompts.packId, packId));
-  }
-
-  async getLiarPrompt(id: number): Promise<LiarPrompt | undefined> {
-    const [prompt] = await db.select().from(liarPrompts).where(eq(liarPrompts.id, id));
-    return prompt;
-  }
-
-  async createLiarPrompt(prompt: InsertLiarPrompt): Promise<LiarPrompt> {
-    const [newPrompt] = await db.insert(liarPrompts).values(prompt as any).returning();
-    return newPrompt;
-  }
-
-  async updateLiarPrompt(id: number, data: Partial<InsertLiarPrompt>): Promise<LiarPrompt | undefined> {
-    const [updated] = await db.update(liarPrompts).set(data as any).where(eq(liarPrompts.id, id)).returning();
-    return updated;
-  }
-
-  async deleteLiarPrompt(id: number): Promise<boolean> {
-    const result = await db.delete(liarPrompts).where(eq(liarPrompts.id, id)).returning();
-    return result.length > 0;
-  }
-
-  // === GAME LIAR PACKS ===
-  async getGameLiarPacks(gameId: number): Promise<(GameLiarPack & { pack: LiarPromptPack })[]> {
-    const result = await db
-      .select({
-        id: gameLiarPacks.id,
-        gameId: gameLiarPacks.gameId,
-        packId: gameLiarPacks.packId,
-        position: gameLiarPacks.position,
-        pack: liarPromptPacks,
-      })
-      .from(gameLiarPacks)
-      .innerJoin(liarPromptPacks, eq(gameLiarPacks.packId, liarPromptPacks.id))
-      .where(eq(gameLiarPacks.gameId, gameId))
-      .orderBy(asc(gameLiarPacks.position));
-    return result.map(r => ({
-      id: r.id,
-      gameId: r.gameId,
-      packId: r.packId,
-      position: r.position,
-      pack: r.pack,
-    }));
-  }
-
-  async addLiarPackToGame(data: InsertGameLiarPack): Promise<GameLiarPack> {
-    const currentCount = await db.select({ count: count() })
-      .from(gameLiarPacks)
-      .where(eq(gameLiarPacks.gameId, data.gameId));
-    const position = data.position ?? (currentCount[0]?.count ?? 0);
-    const [newGlp] = await db.insert(gameLiarPacks).values({ ...data, position }).returning();
-    return newGlp;
-  }
-
-  async removeLiarPackFromGame(gameId: number, packId: number): Promise<boolean> {
-    const result = await db.delete(gameLiarPacks)
-      .where(and(eq(gameLiarPacks.gameId, gameId), eq(gameLiarPacks.packId, packId)))
       .returning();
     return result.length > 0;
   }
