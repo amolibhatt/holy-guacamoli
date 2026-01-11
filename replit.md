@@ -45,6 +45,12 @@ Preferred communication style: Simple, everyday language.
 10. **Sync-Stakes (Weekly Stakes)**: Couples can set weekly stakes with curated rewards/penalties. First completer each day earns 1 point; bonus point for 85%+ compatibility. Atomic SQL prevents race conditions. Weekly winner revealed on Sundays.
 
 ### Recent Changes (January 2026)
+- **Onboarding Tooltips**: Step-by-step tooltips guide first-time users with analytics tracking (started/completed/skipped)
+- **Tab State Persistence**: RelationshipHub remembers active tab via localStorage
+- **AI Response Caching**: 1-hour TTL cache with MD5 keys reduces API calls, 100-entry max
+- **Code Splitting**: React.lazy loads 9 heavy routes (Admin, RelationshipHub, etc.) for faster initial load
+- **Funnel Analytics**: New events for pair invites, stake reveals, AI insights, favorites, onboarding
+- **Improved Error Messages**: User-friendly copy like "Couldn't save - check your connection"
 - **Login Rate Limiting**: 5 failed attempts triggers 15-minute lockout
 - **Vault/Journey Loading States**: Added skeleton loaders for smoother UX
 - **Sync-Stakes Backend**: Complete API for weekly stakes with atomic scoring
