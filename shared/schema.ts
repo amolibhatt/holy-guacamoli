@@ -49,6 +49,7 @@ export const doubleDipDailySets = pgTable("double_dip_daily_sets", {
   userACompleted: boolean("user_a_completed").notNull().default(false),
   userBCompleted: boolean("user_b_completed").notNull().default(false),
   revealed: boolean("revealed").notNull().default(false),
+  followupTask: text("followup_task"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   unique().on(table.pairId, table.dateKey),

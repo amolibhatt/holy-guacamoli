@@ -1250,6 +1250,30 @@ export async function registerRoutes(
             streakCount: newStreak,
             lastCompletedDate: today,
           });
+          
+          // Generate AI follow-up task
+          try {
+            const { generateFollowupTask } = await import("./ai");
+            const allQuestions = await storage.getDoubleDipQuestions();
+            const allAnswers = await storage.getDoubleDipAnswers(dailySet.id);
+            const todayQuestions = allQuestions.filter(q => (dailySet.questionIds as number[]).includes(q.id));
+            
+            const questionsAndAnswers = todayQuestions.map(q => {
+              const userAAnswer = allAnswers.find(a => a.questionId === q.id && a.userId === pair.userAId);
+              const userBAnswer = allAnswers.find(a => a.questionId === q.id && a.userId === pair.userBId);
+              return {
+                question: q.questionText,
+                userAAnswer: userAAnswer?.answerText || "",
+                userBAnswer: userBAnswer?.answerText || "",
+              };
+            });
+            
+            const followupTask = await generateFollowupTask(questionsAndAnswers);
+            updateData.followupTask = followupTask;
+          } catch (aiError) {
+            console.error("Error generating follow-up task:", aiError);
+            updateData.followupTask = "Take 5 minutes to share one thing you appreciated about each other today.";
+          }
         }
         
         await storage.updateDoubleDipDailySet(dailySet.id, updateData);
