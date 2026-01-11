@@ -48,6 +48,11 @@ Preferred communication style: Simple, everyday language.
 - **Login Rate Limiting**: 5 failed attempts triggers 15-minute lockout
 - **Vault/Journey Loading States**: Added skeleton loaders for smoother UX
 - **Sync-Stakes Backend**: Complete API for weekly stakes with atomic scoring
+- **Score Undo Feature**: Hosts can undo last 20 score changes with previousScore tracking for accurate reversals
+- **Database Indices**: 12 new indices on Double Dip tables for query optimization
+- **Bulk Import Validation**: Enhanced with length limits, board-specific point values, max 50 items per import
+- **Analytics Improvements**: Server-side validation, 10% log sampling, event batching
+- **AI Fallback**: Rate-limit detection, empty answer handling with 30% scoring
 
 ### Planned Features (Schema Ready, UI Pending)
 - **Mirror Mechanic**: Prediction phase for multiple choice questions (questionType, options, prediction fields)

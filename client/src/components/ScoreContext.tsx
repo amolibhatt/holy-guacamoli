@@ -186,6 +186,7 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
   const resetGameEnd = () => setGameEnded(false);
 
   const syncContestantScore = (id: string, score: number) => {
+    setScoreHistory([]);
     setContestants((prev) =>
       prev.map((c) => (c.id === id ? { ...c, score } : c))
     );
