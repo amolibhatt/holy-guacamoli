@@ -9,6 +9,28 @@ interface Player {
   lastPing: number;
 }
 
+interface LiarSubmission {
+  playerId: string;
+  playerName: string;
+  answer: string;
+  isReal: boolean;
+}
+
+interface LiarVote {
+  playerId: string;
+  votedFor: string; // submission index
+}
+
+interface LiarRoundState {
+  phase: 'idle' | 'submission' | 'voting' | 'results';
+  clue: string;
+  truth: string;
+  promptId: number | null;
+  submissions: LiarSubmission[];
+  votes: LiarVote[];
+  timerEnd: number | null;
+}
+
 interface GameRoom {
   code: string;
   hostWs: WebSocket | null;
@@ -17,6 +39,8 @@ interface GameRoom {
   buzzerQueue: string[];
   buzzerLocked: boolean;
   currentQuestion: number | null;
+  gameMode: 'buzzer' | 'liar';
+  liarState: LiarRoundState;
 }
 
 const rooms = new Map<string, GameRoom>();
@@ -47,6 +71,7 @@ export function setupWebSocket(server: Server) {
         switch (message.type) {
           case "host:create": {
             const code = generateRoomCode();
+            const gameMode = message.gameMode || 'buzzer';
             const room: GameRoom = {
               code,
               hostWs: ws,
@@ -55,11 +80,21 @@ export function setupWebSocket(server: Server) {
               buzzerQueue: [],
               buzzerLocked: true,
               currentQuestion: null,
+              gameMode,
+              liarState: {
+                phase: 'idle',
+                clue: '',
+                truth: '',
+                promptId: null,
+                submissions: [],
+                votes: [],
+                timerEnd: null,
+              },
             };
             rooms.set(code, room);
             currentRoom = code;
             isHost = true;
-            ws.send(JSON.stringify({ type: "room:created", code }));
+            ws.send(JSON.stringify({ type: "room:created", code, gameMode }));
             break;
           }
 
@@ -254,6 +289,205 @@ export function setupWebSocket(server: Server) {
                     playerName: player.name,
                   }));
                 }
+              }
+            }
+            break;
+          }
+
+          // === LIAR'S LOBBY MESSAGES ===
+          case "liar:start-submission": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room && room.gameMode === 'liar') {
+                const { clue, truth, promptId, timerSeconds } = message;
+                room.liarState = {
+                  phase: 'submission',
+                  clue,
+                  truth,
+                  promptId: promptId || null,
+                  submissions: [],
+                  votes: [],
+                  timerEnd: timerSeconds ? Date.now() + timerSeconds * 1000 : null,
+                };
+                room.players.forEach((player) => {
+                  if (player.ws.readyState === WebSocket.OPEN) {
+                    player.ws.send(JSON.stringify({
+                      type: "liar:submission-phase",
+                      clue,
+                      timerEnd: room.liarState.timerEnd,
+                    }));
+                  }
+                });
+                ws.send(JSON.stringify({ type: "liar:submission-started" }));
+              }
+            }
+            break;
+          }
+
+          case "liar:submit": {
+            if (playerId && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room && room.liarState.phase === 'submission') {
+                const player = room.players.get(playerId);
+                const existingIdx = room.liarState.submissions.findIndex(s => s.playerId === playerId);
+                if (existingIdx >= 0) {
+                  room.liarState.submissions[existingIdx].answer = message.answer;
+                } else {
+                  room.liarState.submissions.push({
+                    playerId,
+                    playerName: player?.name || 'Unknown',
+                    answer: message.answer,
+                    isReal: false,
+                  });
+                }
+                ws.send(JSON.stringify({ type: "liar:submit-confirmed" }));
+                if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
+                  room.hostWs.send(JSON.stringify({
+                    type: "liar:submission-received",
+                    playerId,
+                    playerName: player?.name,
+                    submissionCount: room.liarState.submissions.length,
+                    totalPlayers: room.players.size,
+                  }));
+                }
+              }
+            }
+            break;
+          }
+
+          case "liar:start-voting": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room && room.liarState.phase === 'submission') {
+                const { timerSeconds } = message;
+                room.liarState.submissions.push({
+                  playerId: 'truth',
+                  playerName: 'The Truth',
+                  answer: room.liarState.truth,
+                  isReal: true,
+                });
+                for (let i = room.liarState.submissions.length - 1; i > 0; i--) {
+                  const j = Math.floor(Math.random() * (i + 1));
+                  [room.liarState.submissions[i], room.liarState.submissions[j]] = 
+                    [room.liarState.submissions[j], room.liarState.submissions[i]];
+                }
+                room.liarState.phase = 'voting';
+                room.liarState.votes = [];
+                room.liarState.timerEnd = timerSeconds ? Date.now() + timerSeconds * 1000 : null;
+                const votingOptions = room.liarState.submissions.map((s, idx) => ({
+                  index: idx,
+                  answer: s.answer,
+                }));
+                room.players.forEach((player) => {
+                  if (player.ws.readyState === WebSocket.OPEN) {
+                    player.ws.send(JSON.stringify({
+                      type: "liar:voting-phase",
+                      clue: room.liarState.clue,
+                      options: votingOptions,
+                      timerEnd: room.liarState.timerEnd,
+                      mySubmissionIndex: room.liarState.submissions.findIndex(s => s.playerId === player.id),
+                    }));
+                  }
+                });
+                ws.send(JSON.stringify({ 
+                  type: "liar:voting-started",
+                  options: votingOptions,
+                }));
+              }
+            }
+            break;
+          }
+
+          case "liar:vote": {
+            if (playerId && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room && room.liarState.phase === 'voting') {
+                const existingIdx = room.liarState.votes.findIndex(v => v.playerId === playerId);
+                if (existingIdx >= 0) {
+                  room.liarState.votes[existingIdx].votedFor = String(message.optionIndex);
+                } else {
+                  room.liarState.votes.push({
+                    playerId,
+                    votedFor: String(message.optionIndex),
+                  });
+                }
+                ws.send(JSON.stringify({ type: "liar:vote-confirmed" }));
+                if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
+                  room.hostWs.send(JSON.stringify({
+                    type: "liar:vote-received",
+                    playerId,
+                    voteCount: room.liarState.votes.length,
+                    totalPlayers: room.players.size,
+                  }));
+                }
+              }
+            }
+            break;
+          }
+
+          case "liar:reveal": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room && room.liarState.phase === 'voting') {
+                room.liarState.phase = 'results';
+                const results = room.liarState.submissions.map((sub, idx) => {
+                  const votesForThis = room.liarState.votes.filter(v => v.votedFor === String(idx));
+                  return {
+                    index: idx,
+                    answer: sub.answer,
+                    playerId: sub.playerId,
+                    playerName: sub.playerName,
+                    isReal: sub.isReal,
+                    voterIds: votesForThis.map(v => v.playerId),
+                    voterNames: votesForThis.map(v => room.players.get(v.playerId)?.name || 'Unknown'),
+                    voteCount: votesForThis.length,
+                  };
+                });
+                const truthResult = results.find(r => r.isReal);
+                const fooledEveryone = results.filter(r => 
+                  !r.isReal && r.voteCount > 0 && 
+                  r.voteCount === room.liarState.votes.length
+                );
+                room.players.forEach((player) => {
+                  if (player.ws.readyState === WebSocket.OPEN) {
+                    const myVote = room.liarState.votes.find(v => v.playerId === player.id);
+                    const votedCorrectly = myVote && truthResult && myVote.votedFor === String(truthResult.index);
+                    player.ws.send(JSON.stringify({
+                      type: "liar:results",
+                      results,
+                      votedCorrectly,
+                    }));
+                  }
+                });
+                ws.send(JSON.stringify({
+                  type: "liar:results",
+                  results,
+                  fooledEveryone: fooledEveryone.map(r => ({ playerId: r.playerId, playerName: r.playerName })),
+                }));
+              }
+            }
+            break;
+          }
+
+          case "liar:reset": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room) {
+                room.liarState = {
+                  phase: 'idle',
+                  clue: '',
+                  truth: '',
+                  promptId: null,
+                  submissions: [],
+                  votes: [],
+                  timerEnd: null,
+                };
+                room.players.forEach((player) => {
+                  if (player.ws.readyState === WebSocket.OPEN) {
+                    player.ws.send(JSON.stringify({ type: "liar:reset" }));
+                  }
+                });
+                ws.send(JSON.stringify({ type: "liar:reset" }));
               }
             }
             break;
