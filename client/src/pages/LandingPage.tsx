@@ -68,7 +68,7 @@ export default function LandingPage() {
             Holy GuacAmoli!
           </h1>
           <p className="text-muted-foreground text-sm uppercase tracking-widest mb-6" data-testid="text-tagline">
-            Amoli's Birthday Trivia
+            Dip into the facts!
           </p>
           
           <p className="text-muted-foreground text-lg mb-8" data-testid="text-description">
