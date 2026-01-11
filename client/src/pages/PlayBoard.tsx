@@ -113,7 +113,7 @@ export default function PlayBoard() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gradient-game">
-        <p className="text-white/60">Please log in to play</p>
+        <p className="text-muted-foreground">Please log in to play</p>
         <Link href="/">
           <Button className="mt-4">Go Home</Button>
         </Link>
@@ -123,22 +123,11 @@ export default function PlayBoard() {
 
   if (isLoadingBoard || isLoadingCategories) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gradient-game">
-        <motion.div 
-          className="relative"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-        >
-          <div className="absolute inset-0 blur-3xl bg-white/20 rounded-full" />
-          <Loader2 className="w-16 h-16 text-white animate-spin relative z-10" />
-        </motion.div>
-        <motion.p 
-          className="text-muted-foreground mt-6 text-lg"
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <Loader2 className="w-16 h-16 text-primary animate-spin" />
+        <p className="text-muted-foreground mt-6 text-lg">
           Loading game board...
-        </motion.p>
+        </p>
       </div>
     );
   }
@@ -147,8 +136,8 @@ export default function PlayBoard() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gradient-game p-8">
         <AvocadoIcon className="w-20 h-20 opacity-30 mb-6" />
-        <h2 className="text-2xl font-bold text-white mb-2">Board not found</h2>
-        <p className="text-white/50 mb-6">This board doesn't exist or was deleted</p>
+        <h2 className="text-2xl font-bold text-foreground mb-2">Board not found</h2>
+        <p className="text-muted-foreground mb-6">This board doesn't exist or was deleted</p>
         <Link href="/">
           <Button className="gap-2">
             <Home className="w-4 h-4" />
@@ -181,31 +170,19 @@ export default function PlayBoard() {
               </Button>
             </Link>
             <div className="relative hidden sm:block">
-              <motion.div 
-                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-gray-800 via-gray-900 to-black border border-white/20"
-                animate={{ 
-                  rotate: [0, -5, 5, -5, 0],
-                  scale: [1, 1.05, 1]
-                }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              <div 
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center bg-card border border-border"
               >
-                <motion.div
-                  animate={{ y: [0, -3, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  <AvocadoIcon className="w-6 h-6 sm:w-8 sm:h-8 drop-shadow-lg" />
-                </motion.div>
-              </motion.div>
+                <AvocadoIcon className="w-6 h-6 sm:w-8 sm:h-8 drop-shadow-lg" />
+              </div>
             </div>
             <div className="flex flex-col">
-              <motion.span 
-                className="text-[8px] sm:text-[10px] font-bold text-white/50 tracking-[0.2em] sm:tracking-[0.3em] uppercase"
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 3, repeat: Infinity }}
+              <span 
+                className="text-[10px] sm:text-xs font-bold text-muted-foreground tracking-[0.2em] sm:tracking-[0.3em] uppercase"
               >
                 {board.name}
-              </motion.span>
-              <h1 className="text-lg sm:text-2xl font-black tracking-tight leading-tight text-white text-glow">
+              </span>
+              <h1 className="text-lg sm:text-2xl font-black tracking-tight leading-tight text-foreground">
                 Grid of Grudges
               </h1>
             </div>
@@ -288,20 +265,15 @@ export default function PlayBoard() {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <motion.div 
-              className="text-center py-20 px-8 bg-white/5 rounded-3xl border border-white/10 max-w-md"
+              className="text-center py-20 px-8 bg-card rounded-3xl border border-border max-w-md"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
             >
-              <motion.div
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <AvocadoIcon className="w-16 h-16 opacity-30 mx-auto mb-6" />
-              </motion.div>
-              <h3 className="text-2xl font-bold text-white">No categories yet</h3>
-              <p className="text-white/50 mt-2 mb-6">Add categories to this board in the admin panel</p>
+              <AvocadoIcon className="w-16 h-16 opacity-30 mx-auto mb-6" />
+              <h3 className="text-2xl font-bold text-foreground">No categories yet</h3>
+              <p className="text-muted-foreground mt-2 mb-6">Add categories to this board in the admin panel</p>
               <Link href="/admin">
-                <Button className="bg-white text-black hover:bg-white/90 glow-primary" data-testid="button-go-admin">
+                <Button data-testid="button-go-admin">
                   Go to Admin
                 </Button>
               </Link>

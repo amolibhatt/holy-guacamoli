@@ -58,18 +58,17 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
     >
       <motion.button
         whileHover={hasQuestion && !isCompleted ? { 
-          scale: 1.05, 
-          y: -4,
+          scale: 1.03
         } : undefined}
-        whileTap={hasQuestion && !isCompleted ? { scale: 0.95 } : undefined}
+        whileTap={hasQuestion && !isCompleted ? { scale: 0.97 } : undefined}
         className={`
           w-full h-full flex items-center justify-center rounded-xl font-black text-xl sm:text-2xl lg:text-3xl transition-all relative overflow-hidden
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background
           ${!hasQuestion 
-            ? 'bg-primary/5 text-primary/20 cursor-not-allowed border border-primary/10' 
+            ? 'bg-muted text-muted-foreground/30 cursor-not-allowed border border-border' 
             : isCompleted 
               ? 'completed-cell text-primary/50 cursor-not-allowed border border-primary/20' 
-              : 'bg-gradient-to-br from-gray-900 to-black text-primary cursor-pointer border-2 border-primary/50 shadow-lg shadow-primary/30 hover:shadow-xl hover:border-primary/70'
+              : 'bg-card text-primary cursor-pointer border-2 border-primary/50 shadow-lg shadow-primary/20 hover:shadow-xl hover:border-primary/70'
           }
         `}
         onClick={handleClick}
@@ -160,7 +159,7 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }:
           </motion.div>
         )}
         <h2 
-          className="font-black text-xs sm:text-sm lg:text-base leading-tight uppercase tracking-wide relative z-10 drop-shadow-lg break-words hyphens-auto" 
+          className="font-black text-sm sm:text-base lg:text-lg leading-tight uppercase tracking-wide relative z-10 drop-shadow-lg break-words hyphens-auto" 
           data-testid={`text-category-${boardCategory.id}`}
         >
           {boardCategory.category.name}
