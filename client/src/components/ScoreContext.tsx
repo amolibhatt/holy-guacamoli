@@ -17,7 +17,7 @@ export interface Contestant {
 interface ScoreContextType {
   contestants: Contestant[];
   addContestant: (name: string) => void;
-  addContestantWithId: (id: string, name: string) => void;
+  addContestantWithId: (id: string, name: string, score?: number) => void;
   removeContestant: (id: string) => void;
   awardPoints: (contestantId: string, points: number) => void;
   deductPoints: (contestantId: string, points: number) => void;
@@ -28,6 +28,9 @@ interface ScoreContextType {
   gameEnded: boolean;
   endGame: () => void;
   resetGameEnd: () => void;
+  syncContestantScore: (id: string, score: number) => void;
+  setCompletedQuestionsFromServer: (questionIds: number[]) => void;
+  initializeFromSession: (players: { id: string; name: string; score: number }[], completedQuestionIds: number[]) => void;
 }
 
 const ScoreContext = createContext<ScoreContextType | undefined>(undefined);
@@ -48,11 +51,17 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
     }]);
   };
 
-  const addContestantWithId = (id: string, name: string) => {
+  const addContestantWithId = (id: string, name: string, score: number = 0) => {
     setContestants((prev) => {
-      if (prev.some((c) => c.id === id)) return prev;
+      const existing = prev.find((c) => c.id === id);
+      if (existing) {
+        if (existing.score !== score) {
+          return prev.map((c) => (c.id === id ? { ...c, score } : c));
+        }
+        return prev;
+      }
       const colorIndex = prev.length % AVATAR_COLORS.length;
-      return [...prev, { id, name, score: 0, color: AVATAR_COLORS[colorIndex] }];
+      return [...prev, { id, name, score, color: AVATAR_COLORS[colorIndex] }];
     });
   };
 
@@ -116,6 +125,31 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
   const endGame = () => setGameEnded(true);
   const resetGameEnd = () => setGameEnded(false);
 
+  const syncContestantScore = (id: string, score: number) => {
+    setContestants((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, score } : c))
+    );
+  };
+
+  const setCompletedQuestionsFromServer = (questionIds: number[]) => {
+    setCompletedQuestions(questionIds);
+  };
+
+  const initializeFromSession = (
+    players: { id: string; name: string; score: number }[],
+    completedQuestionIds: number[]
+  ) => {
+    setContestants(
+      players.map((p, idx) => ({
+        id: p.id,
+        name: p.name,
+        score: p.score,
+        color: AVATAR_COLORS[idx % AVATAR_COLORS.length],
+      }))
+    );
+    setCompletedQuestions(completedQuestionIds);
+  };
+
   return (
     <ScoreContext.Provider
       value={{
@@ -132,6 +166,9 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
         gameEnded,
         endGame,
         resetGameEnd,
+        syncContestantScore,
+        setCompletedQuestionsFromServer,
+        initializeFromSession,
       }}
     >
       {children}

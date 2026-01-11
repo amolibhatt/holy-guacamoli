@@ -6,7 +6,7 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { setupWebSocket, getRoomInfo } from "./gameRoom";
+import { setupWebSocket, getRoomInfo, getOrRestoreSession } from "./gameRoom";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./auth";
 
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -745,6 +745,112 @@ export async function registerRoutes(
       return res.status(404).json({ message: "Deck not linked to this game" });
     }
     res.json({ success: true });
+  });
+
+  // Session API routes
+  app.get("/api/session/:code", async (req, res) => {
+    try {
+      const session = await getOrRestoreSession(req.params.code);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      res.json(session);
+    } catch (err) {
+      console.error("Error getting session:", err);
+      res.status(500).json({ message: "Failed to get session" });
+    }
+  });
+
+  app.get("/api/session/:code/players", async (req, res) => {
+    try {
+      const session = await storage.getSessionByCode(req.params.code.toUpperCase());
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      const players = await storage.getSessionPlayers(session.id);
+      res.json(players.map(p => ({
+        id: p.playerId,
+        name: p.name,
+        score: p.score,
+        isConnected: p.isConnected,
+      })));
+    } catch (err) {
+      console.error("Error getting session players:", err);
+      res.status(500).json({ message: "Failed to get players" });
+    }
+  });
+
+  app.get("/api/session/:code/completed-questions", async (req, res) => {
+    try {
+      const session = await storage.getSessionByCode(req.params.code.toUpperCase());
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      const questionIds = await storage.getCompletedQuestions(session.id);
+      res.json(questionIds);
+    } catch (err) {
+      console.error("Error getting completed questions:", err);
+      res.status(500).json({ message: "Failed to get completed questions" });
+    }
+  });
+
+  app.post("/api/session/:code/end", isAuthenticated, async (req, res) => {
+    try {
+      const session = await storage.getSessionByCode(req.params.code.toUpperCase());
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      if (session.hostId !== req.session.userId && req.session.userRole !== 'super_admin') {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      await storage.updateSession(session.id, { state: 'ended' });
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error ending session:", err);
+      res.status(500).json({ message: "Failed to end session" });
+    }
+  });
+
+  app.delete("/api/session/:code", isAuthenticated, async (req, res) => {
+    try {
+      const session = await storage.getSessionByCode(req.params.code.toUpperCase());
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      if (session.hostId !== req.session.userId && req.session.userRole !== 'super_admin') {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      await storage.deleteSession(session.id);
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting session:", err);
+      res.status(500).json({ message: "Failed to delete session" });
+    }
+  });
+
+  // Get active session for current host
+  app.get("/api/my-session", isAuthenticated, async (req, res) => {
+    try {
+      const session = await storage.getActiveSessionForHost(req.session.userId!);
+      if (!session) {
+        return res.json(null);
+      }
+      const players = await storage.getSessionPlayers(session.id);
+      const completedQuestions = await storage.getCompletedQuestions(session.id);
+      res.json({
+        ...session,
+        players: players.map(p => ({
+          id: p.playerId,
+          name: p.name,
+          score: p.score,
+          isConnected: p.isConnected,
+        })),
+        completedQuestions,
+      });
+    } catch (err) {
+      console.error("Error getting active session:", err);
+      res.status(500).json({ message: "Failed to get session" });
+    }
   });
 
   app.post('/api/upload', isAuthenticated, upload.single('file'), (req, res) => {
