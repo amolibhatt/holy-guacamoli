@@ -1,7 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Settings, Grid3X3, LogOut, Sun, Moon, ArrowRight, Zap, Skull } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Loader2, Settings, Grid3X3, LogOut, Sun, Moon, ArrowRight } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -10,15 +8,11 @@ import { useAuth } from "@/hooks/use-auth";
 import LandingPage from "./LandingPage";
 import type { Board } from "@shared/schema";
 import { motion } from "framer-motion";
-import { useState } from "react";
-
-type GameMode = 'grid' | 'blitz' | 'liar' | null;
 
 export default function Home() {
   const { user, isLoading: isAuthLoading, isAuthenticated, logout, isLoggingOut } = useAuth();
   const { colorMode, toggleColorMode } = useTheme();
   const [, setLocation] = useLocation();
-  const [selectedMode, setSelectedMode] = useState<GameMode>(null);
 
   const { data: boards = [], isLoading: isLoadingBoards } = useQuery<Board[]>({
     queryKey: ['/api/boards'],
@@ -42,32 +36,6 @@ export default function Home() {
     setLocation(`/board/${board.id}`);
   };
 
-  const gameModes = [
-    {
-      id: 'grid' as GameMode,
-      name: 'Grid of Grudges',
-      description: 'Classic Jeopardy-style board game',
-      icon: Grid3X3,
-      gradient: 'from-violet-500 to-purple-600',
-      available: true,
-    },
-    {
-      id: 'blitz' as GameMode,
-      name: 'Brain Rot Blitz',
-      description: 'Rapid-fire trivia with multipliers',
-      icon: Zap,
-      gradient: 'from-amber-500 to-orange-600',
-      available: false,
-    },
-    {
-      id: 'liar' as GameMode,
-      name: "Liar's Lobby",
-      description: 'Bluff your way to victory',
-      icon: Skull,
-      gradient: 'from-rose-500 to-pink-600',
-      available: false,
-    },
-  ];
 
   return (
     <div className="min-h-screen gradient-game grid-bg flex flex-col">
@@ -124,85 +92,12 @@ export default function Home() {
             </motion.p>
           )}
 
-          {selectedMode === null ? (
-            <>
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-foreground mb-2">Choose Your Game</h2>
-                <p className="text-muted-foreground">Select a game mode to play</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {gameModes.map((mode, idx) => {
-                  const Icon = mode.icon;
-                  return (
-                    <motion.div
-                      key={mode.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.1 }}
-                    >
-                      <Card 
-                        className={`relative overflow-hidden border-2 transition-all duration-300 ${
-                          mode.available 
-                            ? 'cursor-pointer hover:scale-105 hover:border-primary/50 bg-card/60 border-primary/20' 
-                            : 'opacity-60 cursor-not-allowed bg-card/30 border-white/10'
-                        }`}
-                        onClick={() => mode.available && setSelectedMode(mode.id)}
-                        data-testid={`tile-${mode.id}`}
-                      >
-                        <CardContent className="p-6 text-center">
-                          <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${mode.gradient} flex items-center justify-center mx-auto mb-4`}>
-                            <Icon className="w-8 h-8 text-white" />
-                          </div>
-                          <h3 className={`text-xl font-bold mb-2 ${mode.available ? 'text-foreground' : 'text-muted-foreground'}`}>
-                            {mode.name}
-                          </h3>
-                          <p className={`text-sm ${mode.available ? 'text-muted-foreground' : 'text-muted-foreground/60'}`}>
-                            {mode.description}
-                          </p>
-                          {!mode.available && (
-                            <Badge variant="secondary" className="mt-3">
-                              Coming Soon
-                            </Badge>
-                          )}
-                          {mode.available && (
-                            <Button className="mt-4 gap-2" size="sm" data-testid={`button-play-${mode.id}`}>
-                              Play Now
-                              <ArrowRight className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </>
-          ) : selectedMode === 'grid' && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="max-w-4xl mx-auto"
-            >
-              <div className="flex items-center justify-between mb-8">
-                <Button 
-                  variant="ghost" 
-                  className="text-muted-foreground hover:text-foreground gap-2"
-                  onClick={() => setSelectedMode(null)}
-                  data-testid="button-back-to-modes"
-                >
-                  <ArrowRight className="w-4 h-4 rotate-180" />
-                  Back
-                </Button>
-                <Link href="/admin">
-                  <Button variant="outline" size="sm" className="gap-2 border-border text-muted-foreground hover:text-foreground hover:bg-foreground/10">
-                    <Settings className="w-4 h-4" />
-                    Manage Boards
-                  </Button>
-                </Link>
-              </div>
-
-              <div className="text-center mb-8">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="max-w-4xl mx-auto"
+          >
+            <div className="text-center mb-8">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4">
                   <Grid3X3 className="w-8 h-8 text-white" />
                 </div>
@@ -263,8 +158,7 @@ export default function Home() {
                   ))}
                 </div>
               )}
-            </motion.div>
-          )}
+          </motion.div>
         </div>
       </main>
     </div>

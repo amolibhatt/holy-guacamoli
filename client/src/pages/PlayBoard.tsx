@@ -44,7 +44,10 @@ export default function PlayBoard() {
     if (board?.theme) {
       setTheme(board.theme as ThemeName);
     }
-  }, [board?.theme, setTheme]);
+    if (board?.id) {
+      buzzerRef.current?.setBoard(board.id);
+    }
+  }, [board?.theme, board?.id, setTheme]);
 
   useEffect(() => {
     if (gameEnded) {
@@ -101,9 +104,6 @@ export default function PlayBoard() {
   };
 
   const handleCloseQuestion = () => {
-    if (selectedQuestion) {
-      markQuestionCompleted(selectedQuestion.id);
-    }
     setSelectedQuestion(null);
     buzzerRef.current?.lock();
   };
@@ -307,6 +307,9 @@ export default function PlayBoard() {
                   isLocked={false}
                   onComplete={handleCloseQuestion}
                   buzzQueue={buzzQueue}
+                  onAwardPoints={(playerId, points) => buzzerRef.current?.updateScore(playerId, points)}
+                  onDeductPoints={(playerId, points) => buzzerRef.current?.updateScore(playerId, points)}
+                  onCompleteQuestion={(questionId, playerId, points) => buzzerRef.current?.completeQuestion(questionId, playerId, points)}
                 />
               </motion.div>
             </DialogContent>
