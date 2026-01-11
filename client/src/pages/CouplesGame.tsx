@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, Heart, Copy, Check, Loader2, Send, Lock, Unlock, Flame, Users, Sparkles, MessageCircle, BookOpen } from "lucide-react";
+import { ArrowLeft, Heart, Copy, Check, Loader2, Send, Lock, Unlock, Flame, Users, Sparkles, MessageCircle, BookOpen, Archive, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { DoubleDipPair, DoubleDipQuestion, DoubleDipDailySet, DoubleDipAnswer, CategoryInsight, DoubleDipFavorite } from "@shared/schema";
+import type { DoubleDipPair, DoubleDipQuestion, DoubleDipDailySet, DoubleDipAnswer, CategoryInsight } from "@shared/schema";
 
 const CATEGORY_CONFIG: Record<string, { name: string; emoji: string; color: string; bg: string }> = {
   deep_end: { name: "The Deep End", emoji: "ocean", color: "text-blue-500", bg: "bg-blue-500/10" },
@@ -48,21 +48,6 @@ export default function CouplesGame() {
   const { data: dailyData, isLoading: isLoadingDaily } = useQuery<DailyResponse>({
     queryKey: ['/api/double-dip/daily'],
     enabled: isAuthenticated && !!pair && pair.status === 'active',
-  });
-
-  const { data: favorites = [] } = useQuery<DoubleDipFavorite[]>({
-    queryKey: ['/api/double-dip/favorites'],
-    enabled: isAuthenticated && !!pair && pair.status === 'active',
-  });
-
-  const toggleFavoriteMutation = useMutation({
-    mutationFn: async (answerId: number) => {
-      const res = await apiRequest('POST', '/api/double-dip/favorites', { answerId });
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/double-dip/favorites'] });
-    },
   });
 
   const createPairMutation = useMutation({
@@ -350,115 +335,61 @@ export default function CouplesGame() {
 
                 {dailyData.revealed ? (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between py-4">
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 text-green-500 rounded-full"
-                      >
-                        <Unlock className="w-4 h-4" />
-                        <span className="font-medium">Answers Revealed!</span>
-                        <Sparkles className="w-4 h-4" />
-                      </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="text-center py-6"
+                    >
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center">
+                        <Check className="w-8 h-8 text-green-500" />
+                      </div>
+                      <h3 className="text-xl font-bold text-foreground mb-2">Today's Complete!</h3>
+                      <p className="text-sm text-muted-foreground">
+                        You both answered {dailyData.questions.length} questions today
+                      </p>
+                      {dailyData.dailySet.categoryInsights && dailyData.dailySet.categoryInsights.length > 0 && (() => {
+                        const avgScore = Math.round(
+                          dailyData.dailySet.categoryInsights.reduce((acc, i) => acc + i.compatibilityScore, 0) / 
+                          dailyData.dailySet.categoryInsights.length
+                        );
+                        return (
+                          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 rounded-full">
+                            <TrendingUp className="w-4 h-4 text-green-500" />
+                            <span className="font-bold text-green-500">{avgScore}%</span>
+                            <span className="text-sm text-muted-foreground">compatibility today</span>
+                          </div>
+                        );
+                      })()}
+                    </motion.div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <Link href="/couples/vault">
+                        <Card className="hover-elevate cursor-pointer h-full" data-testid="card-vault">
+                          <CardContent className="p-4 flex flex-col items-center justify-center text-center gap-2">
+                            <div className="w-10 h-10 rounded-full bg-pink-500/10 flex items-center justify-center">
+                              <Archive className="w-5 h-5 text-pink-500" />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-foreground">The Vault</h4>
+                              <p className="text-xs text-muted-foreground">View past answers</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
                       <Link href="/couples/storyboard">
-                        <Button variant="outline" size="sm" data-testid="button-storyboard">
-                          <BookOpen className="w-4 h-4 mr-2" />
-                          Storyboard
-                        </Button>
+                        <Card className="hover-elevate cursor-pointer h-full" data-testid="card-storyboard">
+                          <CardContent className="p-4 flex flex-col items-center justify-center text-center gap-2">
+                            <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
+                              <BookOpen className="w-5 h-5 text-purple-500" />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-foreground">Storyboard</h4>
+                              <p className="text-xs text-muted-foreground">Your journey</p>
+                            </div>
+                          </CardContent>
+                        </Card>
                       </Link>
                     </div>
-                    
-                    {dailyData.questions.map((question) => {
-                      const config = CATEGORY_CONFIG[question.category] || CATEGORY_CONFIG.deep_end;
-                      const userAnswer = dailyData.answers.find(a => a.questionId === question.id && a.userId === user?.id);
-                      const partnerAnswer = dailyData.answers.find(a => a.questionId === question.id && a.userId !== user?.id);
-                      const isUserFavorited = userAnswer && favorites.some(f => f.answerId === userAnswer.id);
-                      const isPartnerFavorited = partnerAnswer && favorites.some(f => f.answerId === partnerAnswer.id);
-                      
-                      return (
-                        <Card key={question.id} className="overflow-hidden">
-                          <div className={`${config.bg} px-4 py-2`}>
-                            <span className={`text-xs font-medium uppercase tracking-wider ${config.color}`}>
-                              {config.name}
-                            </span>
-                          </div>
-                          <CardContent className="p-4 space-y-4">
-                            <p className="font-medium text-foreground">{question.questionText}</p>
-                            
-                            <div className="grid grid-cols-2 gap-3">
-                              <div className="bg-pink-500/5 rounded-lg p-3 relative group">
-                                <p className="text-xs text-pink-500 font-medium mb-1">Your Answer</p>
-                                <p className="text-sm text-foreground pr-6">{userAnswer?.answerText || "—"}</p>
-                                {userAnswer && (
-                                  <button
-                                    onClick={() => toggleFavoriteMutation.mutate(userAnswer.id)}
-                                    className="absolute top-2 right-2 p-1 rounded-full hover:bg-pink-500/20 transition-colors"
-                                    data-testid={`button-favorite-user-${question.id}`}
-                                  >
-                                    <Heart className={`w-4 h-4 ${isUserFavorited ? 'text-pink-500 fill-pink-500' : 'text-muted-foreground'}`} />
-                                  </button>
-                                )}
-                              </div>
-                              <div className="bg-purple-500/5 rounded-lg p-3 relative group">
-                                <p className="text-xs text-purple-500 font-medium mb-1">Partner's Answer</p>
-                                <p className="text-sm text-foreground pr-6">{partnerAnswer?.answerText || "—"}</p>
-                                {partnerAnswer && (
-                                  <button
-                                    onClick={() => toggleFavoriteMutation.mutate(partnerAnswer.id)}
-                                    className="absolute top-2 right-2 p-1 rounded-full hover:bg-purple-500/20 transition-colors"
-                                    data-testid={`button-favorite-partner-${question.id}`}
-                                  >
-                                    <Heart className={`w-4 h-4 ${isPartnerFavorited ? 'text-pink-500 fill-pink-500' : 'text-muted-foreground'}`} />
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                    
-                    {dailyData.dailySet.categoryInsights && dailyData.dailySet.categoryInsights.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                      >
-                        <Card>
-                          <CardContent className="p-5">
-                            <h4 className="font-bold text-foreground mb-4 flex items-center gap-2">
-                              <Heart className="w-5 h-5 text-pink-500" />
-                              Compatibility Insights
-                            </h4>
-                            <div className="space-y-3">
-                              {dailyData.dailySet.categoryInsights.map((insight) => {
-                                const config = CATEGORY_CONFIG[insight.category] || CATEGORY_CONFIG.deep_end;
-                                const score = insight.compatibilityScore;
-                                const scoreColor = score >= 80 ? "text-green-500" : score >= 60 ? "text-yellow-500" : "text-orange-500";
-                                
-                                return (
-                                  <div key={insight.category} className="space-y-1">
-                                    <div className="flex items-center justify-between">
-                                      <span className={`text-sm font-medium ${config.color}`}>{config.name}</span>
-                                      <span className={`text-sm font-bold ${scoreColor}`}>{score}%</span>
-                                    </div>
-                                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                      <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${score}%` }}
-                                        transition={{ duration: 0.8, delay: 0.3 }}
-                                        className={`h-full rounded-full ${config.bg.replace('/10', '')}`}
-                                      />
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">{insight.insight}</p>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    )}
                     
                     {dailyData.dailySet.followupTask && (
                       <motion.div

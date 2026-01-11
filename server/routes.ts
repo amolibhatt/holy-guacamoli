@@ -1375,13 +1375,26 @@ export async function registerRoutes(
         return res.status(404).json({ message: "No pair found" });
       }
       
-      // Get all revealed daily sets for this pair
-      const allQuestions = await storage.getDoubleDipQuestions();
+      // Get all revealed daily sets and questions
+      const [dailySets, allQuestions] = await Promise.all([
+        storage.getDoubleDipDailySets(pair.id),
+        storage.getDoubleDipQuestions(),
+      ]);
       
-      // For now, return a simple structure - can be enhanced later
+      // Build entries with questions and answers for each set
+      const entries = await Promise.all(
+        dailySets.map(async (dailySet) => {
+          const answers = await storage.getDoubleDipAnswers(dailySet.id);
+          const questions = allQuestions.filter(q => 
+            (dailySet.questionIds as number[]).includes(q.id)
+          );
+          return { dailySet, questions, answers };
+        })
+      );
+      
       res.json({
-        pair,
-        questions: allQuestions,
+        entries,
+        pair: { userAId: pair.userAId, userBId: pair.userBId },
       });
     } catch (err) {
       console.error("Error getting vault:", err);
