@@ -986,5 +986,48 @@ export async function registerRoutes(
     }
   });
 
+  // Game Types (Super Admin only for management)
+  app.get("/api/super-admin/game-types", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const types = await storage.getGameTypes();
+      res.json(types);
+    } catch (err) {
+      console.error("Error getting game types:", err);
+      res.status(500).json({ message: "Failed to get game types" });
+    }
+  });
+
+  app.patch("/api/super-admin/game-types/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const { hostEnabled, playerEnabled, description, sortOrder } = req.body;
+      const updated = await storage.updateGameType(id, { 
+        hostEnabled, 
+        playerEnabled, 
+        description,
+        sortOrder 
+      });
+      if (!updated) {
+        return res.status(404).json({ message: "Game type not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      console.error("Error updating game type:", err);
+      res.status(500).json({ message: "Failed to update game type" });
+    }
+  });
+
+  // Game Types (public - for hosts and players)
+  app.get("/api/game-types", async (req, res) => {
+    try {
+      const forHost = req.query.forHost === 'true';
+      const types = await storage.getEnabledGameTypes(forHost);
+      res.json(types);
+    } catch (err) {
+      console.error("Error getting enabled game types:", err);
+      res.status(500).json({ message: "Failed to get game types" });
+    }
+  });
+
   return httpServer;
 }
