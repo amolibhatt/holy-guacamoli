@@ -3,11 +3,11 @@ import { boards, categories, boardCategories, questions, type Board, type Insert
 import { eq, and, asc, count, inArray } from "drizzle-orm";
 
 export interface IStorage {
-  getBoards(userId: string): Promise<Board[]>;
-  getBoard(id: number, userId: string): Promise<Board | undefined>;
+  getBoards(userId: string, role?: string): Promise<Board[]>;
+  getBoard(id: number, userId: string, role?: string): Promise<Board | undefined>;
   createBoard(board: InsertBoard & { userId: string }): Promise<Board>;
-  updateBoard(id: number, data: Partial<InsertBoard>, userId: string): Promise<Board | undefined>;
-  deleteBoard(id: number, userId: string): Promise<boolean>;
+  updateBoard(id: number, data: Partial<InsertBoard>, userId: string, role?: string): Promise<Board | undefined>;
+  deleteBoard(id: number, userId: string, role?: string): Promise<boolean>;
   
   getCategories(): Promise<Category[]>;
   getCategory(id: number): Promise<Category | undefined>;
@@ -28,16 +28,23 @@ export interface IStorage {
   updateQuestion(id: number, data: Partial<InsertQuestion>): Promise<Question | undefined>;
   deleteQuestion(id: number): Promise<boolean>;
   
-  getBoardWithCategoriesAndQuestions(boardId: number, userId: string): Promise<BoardCategoryWithQuestions[]>;
-  getBoardSummaries(userId: string): Promise<{ id: number; name: string; categoryCount: number; categories: { id: number; name: string; questionCount: number; remaining: number }[] }[]>;
+  getBoardWithCategoriesAndQuestions(boardId: number, userId: string, role?: string): Promise<BoardCategoryWithQuestions[]>;
+  getBoardSummaries(userId: string, role?: string): Promise<{ id: number; name: string; categoryCount: number; categories: { id: number; name: string; questionCount: number; remaining: number }[] }[]>;
 }
 
 export class DatabaseStorage implements IStorage {
-  async getBoards(userId: string): Promise<Board[]> {
+  async getBoards(userId: string, role?: string): Promise<Board[]> {
+    if (role === 'super_admin') {
+      return await db.select().from(boards);
+    }
     return await db.select().from(boards).where(eq(boards.userId, userId));
   }
 
-  async getBoard(id: number, userId: string): Promise<Board | undefined> {
+  async getBoard(id: number, userId: string, role?: string): Promise<Board | undefined> {
+    if (role === 'super_admin') {
+      const [board] = await db.select().from(boards).where(eq(boards.id, id));
+      return board;
+    }
     const [board] = await db.select().from(boards).where(and(eq(boards.id, id), eq(boards.userId, userId)));
     return board;
   }
@@ -47,7 +54,7 @@ export class DatabaseStorage implements IStorage {
     return newBoard;
   }
 
-  async updateBoard(id: number, data: Partial<InsertBoard>, userId: string): Promise<Board | undefined> {
+  async updateBoard(id: number, data: Partial<InsertBoard>, userId: string, role?: string): Promise<Board | undefined> {
     const updateData: Record<string, any> = {};
     for (const [key, value] of Object.entries(data)) {
       if (value !== undefined) {
@@ -55,20 +62,28 @@ export class DatabaseStorage implements IStorage {
       }
     }
     if (Object.keys(updateData).length === 0) {
-      return this.getBoard(id, userId);
+      return this.getBoard(id, userId, role);
+    }
+    if (role === 'super_admin') {
+      const [updated] = await db.update(boards).set(updateData).where(eq(boards.id, id)).returning();
+      return updated;
     }
     const [updated] = await db.update(boards).set(updateData).where(and(eq(boards.id, id), eq(boards.userId, userId))).returning();
     return updated;
   }
 
-  async deleteBoard(id: number, userId: string): Promise<boolean> {
-    const board = await this.getBoard(id, userId);
+  async deleteBoard(id: number, userId: string, role?: string): Promise<boolean> {
+    const board = await this.getBoard(id, userId, role);
     if (!board) return false;
     const bcs = await db.select().from(boardCategories).where(eq(boardCategories.boardId, id));
     for (const bc of bcs) {
       await db.delete(questions).where(eq(questions.boardCategoryId, bc.id));
     }
     await db.delete(boardCategories).where(eq(boardCategories.boardId, id));
+    if (role === 'super_admin') {
+      const result = await db.delete(boards).where(eq(boards.id, id)).returning();
+      return result.length > 0;
+    }
     const result = await db.delete(boards).where(and(eq(boards.id, id), eq(boards.userId, userId))).returning();
     return result.length > 0;
   }
@@ -200,8 +215,8 @@ export class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
 
-  async getBoardWithCategoriesAndQuestions(boardId: number, userId: string): Promise<BoardCategoryWithQuestions[]> {
-    const board = await this.getBoard(boardId, userId);
+  async getBoardWithCategoriesAndQuestions(boardId: number, userId: string, role?: string): Promise<BoardCategoryWithQuestions[]> {
+    const board = await this.getBoard(boardId, userId, role);
     if (!board) return [];
     
     const bcs = await this.getBoardCategories(boardId);
@@ -218,8 +233,8 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async getBoardSummaries(userId: string): Promise<{ id: number; name: string; categoryCount: number; categories: { id: number; name: string; questionCount: number; remaining: number }[] }[]> {
-    const allBoards = await this.getBoards(userId);
+  async getBoardSummaries(userId: string, role?: string): Promise<{ id: number; name: string; categoryCount: number; categories: { id: number; name: string; questionCount: number; remaining: number }[] }[]> {
+    const allBoards = await this.getBoards(userId, role);
     const summaries = [];
     
     for (const board of allBoards) {
