@@ -24,6 +24,7 @@ function Router() {
       <Route path="/category/:id" component={CategoryPage} />
       <Route path="/admin" component={Admin} />
       <Route path="/admin/games" component={GamesAdmin} />
+      <Route path="/games" component={GamesAdmin} />
       <Route path="/board/:boardId" component={PlayBoard} />
       <Route path="/play/:code?" component={PlayerPage} />
       <Route path="/forgot-password" component={ForgotPassword} />
