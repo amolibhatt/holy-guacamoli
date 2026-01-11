@@ -22,7 +22,7 @@ const CATEGORY_CONFIG: Record<string, { name: string; emoji: string; color: stri
 
 interface DailyResponse {
   pair: DoubleDipPair;
-  dailySet: DoubleDipDailySet;
+  dailySet: DoubleDipDailySet & { followupTask?: string };
   questions: DoubleDipQuestion[];
   answers: DoubleDipAnswer[];
   userCompleted: boolean;
@@ -376,6 +376,30 @@ export default function CouplesGame() {
                         </Card>
                       );
                     })}
+                    
+                    {dailyData.dailySet.followupTask && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                      >
+                        <Card className="border-2 border-pink-500/30 bg-gradient-to-br from-pink-500/5 to-purple-500/5">
+                          <CardContent className="p-5">
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center shrink-0">
+                                <Sparkles className="w-5 h-5 text-white" />
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-bold text-foreground mb-1">Your Follow-up Task</h4>
+                                <p className="text-muted-foreground text-sm leading-relaxed">
+                                  {dailyData.dailySet.followupTask}
+                                </p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    )}
                   </div>
                 ) : dailyData.userCompleted ? (
                   <Card className="text-center py-12">
