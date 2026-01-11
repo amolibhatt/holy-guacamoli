@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Settings, Grid3X3, LogOut, Sun, Moon, ArrowRight, Zap, Trophy, Clock, Lock, Sparkles, PartyPopper, Users, HelpCircle, ChevronRight, Shield, Heart, Grid2X2 } from "lucide-react";
+import { Loader2, Settings, Grid3X3, LogOut, Sun, Moon, ArrowRight, Zap, Trophy, Clock, Lock, Sparkles, PartyPopper, Users, HelpCircle, ChevronRight, Shield, Heart } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -8,36 +8,57 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/hooks/use-auth";
 import LandingPage from "./LandingPage";
-import type { Board, GameType } from "@shared/schema";
+import type { GameType } from "@shared/schema";
 import { motion } from "framer-motion";
 
 const GUIDE_STEPS = [
   {
-    title: "Create a Board",
-    description: "Go to Admin Panel and create a new game board with your chosen point values (10-100)",
+    title: "Pick a Game",
+    description: "Choose from available game modes like Grid of Grudges or Couples Quiz",
     icon: Grid3X3,
   },
   {
-    title: "Add Categories",
-    description: "Add 3-6 trivia categories to your board (e.g., Movies, History, Sports)",
+    title: "Create Content",
+    description: "Set up boards, categories, questions, or prompts depending on the game",
     icon: Sparkles,
   },
   {
-    title: "Write Questions",
-    description: "Add 5 questions per category, one for each point value. Include the correct answer.",
-    icon: HelpCircle,
-  },
-  {
-    title: "Start the Game",
-    description: "Click your board to launch it. Share the QR code for players to join on their phones.",
+    title: "Start Hosting",
+    description: "Launch your game and share the QR code for players to join",
     icon: Users,
   },
   {
-    title: "Host the Show!",
-    description: "Click cells to reveal questions. When players buzz in, award or deduct points for answers.",
+    title: "Run the Show!",
+    description: "Control the game flow, reveal content, and manage scoring",
     icon: Trophy,
   },
 ];
+
+const GAME_CONFIG: Record<string, { 
+  icon: typeof Grid3X3; 
+  gradient: string; 
+  shadowColor: string;
+  hoverBorder: string;
+  route: string;
+  playerCount: string;
+}> = {
+  grid_of_grudges: {
+    icon: Grid3X3,
+    gradient: "from-primary to-secondary",
+    shadowColor: "shadow-primary/20",
+    hoverBorder: "hover:border-primary/50 hover:shadow-primary/10",
+    route: "/host/grid-of-grudges",
+    playerCount: "Multiplayer",
+  },
+  couples_quiz: {
+    icon: Heart,
+    gradient: "from-pink-500 to-rose-500",
+    shadowColor: "shadow-pink-500/20",
+    hoverBorder: "hover:border-pink-500/50 hover:shadow-pink-500/10",
+    route: "/host/couples-quiz",
+    playerCount: "2 Players",
+  },
+};
 
 export default function Home() {
   const { user, isLoading: isAuthLoading, isAuthenticated, logout, isLoggingOut } = useAuth();
@@ -45,12 +66,7 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const [showGuide, setShowGuide] = useState(false);
 
-  const { data: boards = [], isLoading: isLoadingBoards } = useQuery<Board[]>({
-    queryKey: ['/api/boards'],
-    enabled: isAuthenticated,
-  });
-
-  const { data: gameTypes = [] } = useQuery<GameType[]>({
+  const { data: gameTypes = [], isLoading: isLoadingGames } = useQuery<GameType[]>({
     queryKey: ['/api/game-types', 'forHost'],
     queryFn: async () => {
       const res = await fetch('/api/game-types?forHost=true');
@@ -58,9 +74,6 @@ export default function Home() {
     },
     enabled: isAuthenticated,
   });
-
-  const gridOfGrudgesEnabled = gameTypes.some(g => g.slug === 'grid_of_grudges');
-  const couplesQuizEnabled = gameTypes.some(g => g.slug === 'couples_quiz');
 
   useEffect(() => {
     try {
@@ -94,10 +107,6 @@ export default function Home() {
   if (!isAuthenticated) {
     return <LandingPage />;
   }
-
-  const handleSelectBoard = (board: Board) => {
-    setLocation(`/board/${board.id}`);
-  };
 
   return (
     <div className="min-h-screen gradient-game grid-bg flex flex-col">
@@ -183,148 +192,81 @@ export default function Home() {
             </motion.div>
             
             <h2 className="text-4xl md:text-5xl font-black text-foreground mb-3">
-              Ready to Host?
+              Choose Your Game
             </h2>
             <p className="text-lg text-muted-foreground max-w-md mx-auto">
-              Pick a game mode and let the trivia showdown begin
+              Pick a game mode and get ready to host
             </p>
           </motion.div>
 
-          {gridOfGrudgesEnabled && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="mb-12"
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20">
-                <Grid3X3 className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-foreground">Grid of Grudges</h3>
-                <p className="text-sm text-muted-foreground">Classic Jeopardy-style gameplay</p>
-              </div>
+          {isLoadingGames ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="w-10 h-10 animate-spin text-primary" />
             </div>
-
-            {isLoadingBoards ? (
-              <div className="flex justify-center py-16">
-                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+          ) : gameTypes.length === 0 ? (
+            <motion.div 
+              className="text-center py-16 px-8 bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
+                <AvocadoIcon className="w-10 h-10 opacity-40" />
               </div>
-            ) : boards.length === 0 ? (
-              <motion.div 
-                className="text-center py-16 px-8 bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
-                  <AvocadoIcon className="w-10 h-10 opacity-40" />
-                </div>
-                <h3 className="text-2xl font-bold text-foreground mb-2">No boards yet</h3>
-                <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                  Create your first game board to start hosting trivia nights
-                </p>
-                <Link href="/admin">
-                  <Button size="lg" className="gap-2" data-testid="button-create-board">
-                    <Settings className="w-5 h-5" />
-                    Create Your First Board
-                  </Button>
-                </Link>
-              </motion.div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {boards.map((board, index) => (
+              <h3 className="text-2xl font-bold text-foreground mb-2">No games available</h3>
+              <p className="text-muted-foreground max-w-sm mx-auto">
+                Contact the administrator to enable game modes
+              </p>
+            </motion.div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+              {gameTypes.map((game, index) => {
+                const config = GAME_CONFIG[game.slug] || {
+                  icon: Grid3X3,
+                  gradient: "from-primary to-secondary",
+                  shadowColor: "shadow-primary/20",
+                  hoverBorder: "hover:border-primary/50 hover:shadow-primary/10",
+                  route: "/",
+                  playerCount: "Multiplayer",
+                };
+                const Icon = config.icon;
+
+                return (
                   <motion.button
-                    key={board.id}
-                    onClick={() => handleSelectBoard(board)}
+                    key={game.id}
+                    onClick={() => setLocation(config.route)}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 + index * 0.05 }}
+                    transition={{ delay: 0.1 + index * 0.1 }}
                     whileHover={{ scale: 1.02, y: -4 }}
                     whileTap={{ scale: 0.98 }}
-                    className="relative flex flex-col p-6 bg-card border border-border rounded-xl text-left transition-all hover:border-primary/50 hover:shadow-xl hover:shadow-primary/10 group overflow-hidden"
-                    data-testid={`button-board-${board.id}`}
+                    className={`relative flex flex-col p-8 bg-card border border-border rounded-xl text-left transition-all hover:shadow-xl group overflow-hidden ${config.hoverBorder}`}
+                    data-testid={`button-game-${game.slug}`}
                   >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-bl-full" />
+                    <div className={`absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl ${config.gradient} opacity-10 rounded-bl-full`} />
                     
-                    <div className="flex items-start justify-between gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/20 flex items-center justify-center group-hover:from-primary group-hover:to-secondary group-hover:border-transparent transition-all">
-                        <Grid3X3 className="w-6 h-6 text-primary group-hover:text-white transition-colors" />
+                    <div className="flex items-start justify-between gap-3 mb-6">
+                      <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${config.gradient} flex items-center justify-center shadow-lg ${config.shadowColor}`}>
+                        <Icon className="w-8 h-8 text-white" />
                       </div>
-                      <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                      <ArrowRight className="w-6 h-6 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
                     </div>
                     
-                    <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors mb-1">
-                      {board.name}
+                    <h3 className="text-2xl font-bold text-foreground mb-2">
+                      {game.displayName}
                     </h3>
                     
-                    {board.description ? (
-                      <p className="text-sm text-muted-foreground line-clamp-2">{board.description}</p>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        {(board.pointValues as number[])?.length || 5} point levels
-                      </p>
-                    )}
+                    <p className="text-muted-foreground mb-6 flex-1">
+                      {game.description}
+                    </p>
                     
-                    <div className="mt-4 pt-4 border-t border-border/50 flex items-center gap-2 text-xs text-muted-foreground">
-                      <Users className="w-3.5 h-3.5" />
-                      <span>Multiplayer</span>
+                    <div className="pt-4 border-t border-border/50 flex items-center gap-2 text-sm text-muted-foreground">
+                      <Users className="w-4 h-4" />
+                      <span>{config.playerCount}</span>
                     </div>
                   </motion.button>
-                ))}
-              </div>
-            )}
-          </motion.div>
-          )}
-
-          {couplesQuizEnabled && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mb-12"
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center shadow-lg shadow-pink-500/20">
-                <Heart className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-foreground">Couples Quiz</h3>
-                <p className="text-sm text-muted-foreground">Fun challenges for pairs</p>
-              </div>
+                );
+              })}
             </div>
-
-            <motion.button
-              onClick={() => setLocation('/couples')}
-              whileHover={{ scale: 1.02, y: -4 }}
-              whileTap={{ scale: 0.98 }}
-              className="relative w-full flex flex-col p-6 bg-card border border-border rounded-xl text-left transition-all hover:border-pink-500/50 hover:shadow-xl hover:shadow-pink-500/10 group overflow-hidden"
-              data-testid="button-couples-quiz"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-pink-500/10 to-transparent rounded-bl-full" />
-              
-              <div className="flex items-start justify-between gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500/20 to-rose-500/20 border border-pink-500/20 flex items-center justify-center group-hover:from-pink-500 group-hover:to-rose-500 group-hover:border-transparent transition-all">
-                  <Heart className="w-6 h-6 text-pink-500 group-hover:text-white transition-colors" />
-                </div>
-                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-pink-500 group-hover:translate-x-1 transition-all" />
-              </div>
-              
-              <h3 className="text-lg font-bold text-foreground group-hover:text-pink-500 transition-colors mb-1">
-                Start Couples Quiz
-              </h3>
-              
-              <p className="text-sm text-muted-foreground">
-                Fun prompts and challenges to test how well you know each other
-              </p>
-              
-              <div className="mt-4 pt-4 border-t border-border/50 flex items-center gap-2 text-xs text-muted-foreground">
-                <Users className="w-3.5 h-3.5" />
-                <span>2 Players</span>
-              </div>
-            </motion.button>
-          </motion.div>
           )}
 
           <motion.div
@@ -399,7 +341,7 @@ export default function Home() {
               How to Host a Game
             </DialogTitle>
             <DialogDescription>
-              Follow these simple steps to run your trivia night
+              Follow these simple steps to run your game night
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-2">
@@ -422,11 +364,9 @@ export default function Home() {
             <Button variant="outline" onClick={handleCloseGuide} className="flex-1">
               Got it!
             </Button>
-            <Link href="/admin" className="flex-1">
-              <Button className="w-full gap-2" onClick={handleCloseGuide}>
-                Go to Admin <ChevronRight className="w-4 h-4" />
-              </Button>
-            </Link>
+            <Button className="flex-1 gap-2" onClick={handleCloseGuide}>
+              Start Hosting <ChevronRight className="w-4 h-4" />
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

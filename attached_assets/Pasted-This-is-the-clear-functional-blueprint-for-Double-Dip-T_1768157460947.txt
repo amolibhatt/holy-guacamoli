@@ -1,0 +1,85 @@
+This is the clear, functional blueprint for Double Dip.
+
+The Feature List
+
+1. Private Account & Pairing
+
+Personal Profiles: Each player creates an individual account to keep their answers private.
+
+One-to-One Linking: A user generates a unique invite link. Once the partner joins, the pair is "locked" together.
+
+Duo-Only Access: The game is strictly for two people. No other users can view or join an established pair's session.
+
+2. AI Daily Question Engine
+
+Daily Refresh: Every 24 hours, the AI generates 5 new questions.
+
+Standard Categories:
+
+The Deep End: Emotional and meaningful questions.
+
+The Danger Zone: Playful debates and spicy "hot takes."
+
+The Daily Loop: Routine, habits, and lifestyle questions.
+
+The Rewind: Relationship history and memories.
+
+The Glitch: Bizarre and "unhinged" hypothetical scenarios.
+
+3. The Double-Blind Reveal
+
+Hidden Answers: You cannot see your partner’s answer until you have submitted your own.
+
+Simultaneous Unveiling: Once both partners hit "Submit," the answers are revealed to both players at the same time.
+
+4. The Dip Vault (History Archive)
+
+Permanent Records: Every shared answer is automatically saved into a chronological timeline.
+
+Category Filtering: Players can sort their history to view only specific categories (e.g., see every "Danger Zone" answer from the last month).
+
+Search Function: A search bar to find past answers using keywords.
+
+5. Engagement & Scoring
+
+The Ripeness Streak: Tracks how many consecutive days the couple has completed their daily set.
+
+The Nudge: A "Reminder" button to alert a partner who hasn't answered yet.
+
+Reactions: After a reveal, players can add a reaction (emoji or heart) to their partner's answer.
+
+The Workflow
+
+Step 1: The Setup
+
+User A signs up and sends an invite link to User B.
+
+User B accepts, and the two accounts are permanently linked.
+
+Step 2: The Daily Drop
+
+At midnight, the AI generates 5 new questions for the couple.
+
+Both partners receive a notification that "The Daily Dip" is ready.
+
+Step 3: Answering
+
+Partner A opens the app and types their responses. They see a "Locked" status for Partner B’s side.
+
+Partner B opens the app later and types their responses. They see that Partner A has already finished.
+
+Step 4: The Reveal
+
+The moment Partner B hits "Submit," the privacy shields disappear for both players.
+
+Both partners can now see their answers side-by-side.
+
+Step 5: Archiving
+
+The answers move from the home screen to "The Vault."
+
+The couple's "Streak" count increases by one.
+
+Step 6: Reviewing
+
+At any time, either partner can enter "The Vault" to scroll through their history or look back at a specific memory from weeks or months ago.
