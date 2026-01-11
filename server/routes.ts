@@ -332,8 +332,9 @@ export async function registerRoutes(
   app.post(api.questions.create.path, isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const role = req.session.userRole;
       const data = api.questions.create.input.parse(req.body);
-      const bc = await verifyBoardCategoryOwnership(data.boardCategoryId, userId);
+      const bc = await verifyBoardCategoryOwnership(data.boardCategoryId, userId, role);
       if (!bc) {
         return res.status(404).json({ message: "Board category not found" });
       }
@@ -360,12 +361,13 @@ export async function registerRoutes(
   app.put(api.questions.update.path, isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const role = req.session.userRole;
       const data = api.questions.update.input.parse(req.body);
       const existingQuestion = await storage.getQuestion(Number(req.params.id));
       if (!existingQuestion) {
         return res.status(404).json({ message: 'Question not found' });
       }
-      const bc = await verifyBoardCategoryOwnership(existingQuestion.boardCategoryId, userId);
+      const bc = await verifyBoardCategoryOwnership(existingQuestion.boardCategoryId, userId, role);
       if (!bc) {
         return res.status(404).json({ message: "Board category not found" });
       }
@@ -390,11 +392,12 @@ export async function registerRoutes(
 
   app.delete(api.questions.delete.path, isAuthenticated, async (req, res) => {
     const userId = req.session.userId!;
+    const role = req.session.userRole;
     const existingQuestion = await storage.getQuestion(Number(req.params.id));
     if (!existingQuestion) {
       return res.status(404).json({ message: 'Question not found' });
     }
-    const bc = await verifyBoardCategoryOwnership(existingQuestion.boardCategoryId, userId);
+    const bc = await verifyBoardCategoryOwnership(existingQuestion.boardCategoryId, userId, role);
     if (!bc) {
       return res.status(404).json({ message: "Board category not found" });
     }
@@ -408,6 +411,7 @@ export async function registerRoutes(
   app.post(api.questions.verifyAnswer.path, isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const role = req.session.userRole;
       const { answer } = api.questions.verifyAnswer.input.parse(req.body);
       const question = await storage.getQuestion(Number(req.params.id));
       
@@ -415,7 +419,7 @@ export async function registerRoutes(
         return res.status(404).json({ message: 'Question not found' });
       }
       
-      const bc = await verifyBoardCategoryOwnership(question.boardCategoryId, userId);
+      const bc = await verifyBoardCategoryOwnership(question.boardCategoryId, userId, role);
       if (!bc) {
         return res.status(404).json({ message: "Board category not found" });
       }
