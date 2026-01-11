@@ -5,6 +5,37 @@ import { relations } from "drizzle-orm";
 
 export * from "./models/auth";
 
+// Game Types Catalog - defines available games with visibility controls
+export const gameTypes = pgTable("game_types", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  description: text("description"),
+  icon: text("icon").notNull().default("gamepad"),
+  hostEnabled: boolean("host_enabled").notNull().default(true),
+  playerEnabled: boolean("player_enabled").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Couples Game specific tables
+export const couplesPromptPacks = pgTable("couples_prompt_packs", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  isDefault: boolean("is_default").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const couplesPrompts = pgTable("couples_prompts", {
+  id: serial("id").primaryKey(),
+  packId: integer("pack_id").notNull(),
+  promptType: text("prompt_type").notNull().$type<"would_rather" | "most_likely" | "truth" | "dare" | "hot_seat">(),
+  promptText: text("prompt_text").notNull(),
+  intensity: integer("intensity").notNull().default(1),
+});
+
 export const boards = pgTable("boards", {
   id: serial("id").primaryKey(),
   userId: text("user_id"),
@@ -230,6 +261,17 @@ export const headsUpCardsRelations = relations(headsUpCards, ({ one }) => ({
   }),
 }));
 
+export const couplesPromptPacksRelations = relations(couplesPromptPacks, ({ many }) => ({
+  prompts: many(couplesPrompts),
+}));
+
+export const couplesPromptsRelations = relations(couplesPrompts, ({ one }) => ({
+  pack: one(couplesPromptPacks, {
+    fields: [couplesPrompts.packId],
+    references: [couplesPromptPacks.id],
+  }),
+}));
+
 export const boardsRelations = relations(boards, ({ many }) => ({
   boardCategories: many(boardCategories),
   gameBoards: many(gameBoards),
@@ -270,6 +312,9 @@ export const insertGameDeckSchema = createInsertSchema(gameDecks).omit({ id: tru
 export const insertGameSessionSchema = createInsertSchema(gameSessions).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertSessionPlayerSchema = createInsertSchema(sessionPlayers).omit({ id: true, joinedAt: true, lastSeenAt: true });
 export const insertSessionCompletedQuestionSchema = createInsertSchema(sessionCompletedQuestions).omit({ id: true, completedAt: true });
+export const insertGameTypeSchema = createInsertSchema(gameTypes).omit({ id: true, createdAt: true });
+export const insertCouplesPromptPackSchema = createInsertSchema(couplesPromptPacks).omit({ id: true, createdAt: true });
+export const insertCouplesPromptSchema = createInsertSchema(couplesPrompts).omit({ id: true });
 
 export type Board = typeof boards.$inferSelect;
 export type Category = typeof categories.$inferSelect;
@@ -284,6 +329,11 @@ export type GameDeck = typeof gameDecks.$inferSelect;
 export type GameSession = typeof gameSessions.$inferSelect;
 export type SessionPlayer = typeof sessionPlayers.$inferSelect;
 export type SessionCompletedQuestion = typeof sessionCompletedQuestions.$inferSelect;
+export type GameType = typeof gameTypes.$inferSelect;
+export type CouplesPromptPack = typeof couplesPromptPacks.$inferSelect;
+export type CouplesPrompt = typeof couplesPrompts.$inferSelect;
+
+export type CouplesPromptPackWithCount = CouplesPromptPack & { promptCount: number };
 export type InsertBoard = z.infer<typeof insertBoardSchema>;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertBoardCategory = z.infer<typeof insertBoardCategorySchema>;
@@ -296,6 +346,9 @@ export type InsertGameDeck = z.infer<typeof insertGameDeckSchema>;
 export type InsertGameSession = z.infer<typeof insertGameSessionSchema>;
 export type InsertSessionPlayer = z.infer<typeof insertSessionPlayerSchema>;
 export type InsertSessionCompletedQuestion = z.infer<typeof insertSessionCompletedQuestionSchema>;
+export type InsertGameType = z.infer<typeof insertGameTypeSchema>;
+export type InsertCouplesPromptPack = z.infer<typeof insertCouplesPromptPackSchema>;
+export type InsertCouplesPrompt = z.infer<typeof insertCouplesPromptSchema>;
 
 export type BoardCategoryWithCategory = BoardCategory & { category: Category };
 export type BoardCategoryWithCount = BoardCategoryWithCategory & { questionCount: number; position: number };
