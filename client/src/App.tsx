@@ -12,6 +12,8 @@ import Admin from "@/pages/Admin";
 import PlayerPage from "@/pages/PlayerPage";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
+import GamesAdmin from "@/pages/GamesAdmin";
+import HeadsUpGame from "@/pages/HeadsUpGame";
 
 function Router() {
   return (
@@ -19,9 +21,11 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/category/:id" component={CategoryPage} />
       <Route path="/admin" component={Admin} />
+      <Route path="/admin/games" component={GamesAdmin} />
       <Route path="/play/:code?" component={PlayerPage} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/heads-up/:gameId" component={HeadsUpGame} />
       <Route component={NotFound} />
     </Switch>
   );
