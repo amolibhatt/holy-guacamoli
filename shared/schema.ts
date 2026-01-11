@@ -51,8 +51,23 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
 });
 
 // Game mode enum values
-export const GAME_MODES = ["jeopardy", "heads_up"] as const;
+export const GAME_MODES = ["jeopardy", "heads_up", "board", "rapid_fire"] as const;
 export type GameMode = typeof GAME_MODES[number];
+
+// Settings types for different game modes
+export interface BoardModeSettings {
+  categoryCount?: number; // Default 5
+  pointLevels?: number[]; // Default [100, 200, 300, 400, 500]
+  enableBuzzers?: boolean; // Default true
+}
+
+export interface RapidFireSettings {
+  timerSeconds: number; // Default 60
+  basePoints: number; // Default 10
+  multiplierIncrement: number; // How much multiplier increases per correct (e.g., 0.5 means 1x -> 1.5x -> 2x)
+  maxMultiplier: number; // Cap on multiplier (e.g., 5)
+  resetOnWrong: boolean; // Whether wrong answer resets multiplier to 1x
+}
 
 // Games table - container for different game types
 export const games = pgTable("games", {

@@ -8,21 +8,33 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, ArrowLeft, Loader2, Pencil, X, Check, Grid3X3, Layers, Play, Sun, Moon, Smartphone } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Loader2, Pencil, X, Check, Grid3X3, Layers, Play, Sun, Moon, Smartphone, Zap, Timer } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "@/context/ThemeContext";
-import type { Game, Board, HeadsUpDeck, HeadsUpCard, GameMode, GAME_MODES } from "@shared/schema";
+import type { Game, Board, HeadsUpDeck, HeadsUpCard, GameMode, RapidFireSettings } from "@shared/schema";
 
 const MODE_LABELS: Record<GameMode, string> = {
   jeopardy: "Jeopardy (Multi-Board)",
   heads_up: "Heads Up",
+  board: "Grid of Grudges",
+  rapid_fire: "Brain Rot Blitz",
 };
 
 const MODE_ICONS: Record<GameMode, typeof Grid3X3> = {
   jeopardy: Grid3X3,
   heads_up: Smartphone,
+  board: Grid3X3,
+  rapid_fire: Zap,
+};
+
+const DEFAULT_RAPID_FIRE_SETTINGS: RapidFireSettings = {
+  timerSeconds: 60,
+  basePoints: 10,
+  multiplierIncrement: 0.5,
+  maxMultiplier: 5,
+  resetOnWrong: true,
 };
 
 export default function GamesAdmin() {
@@ -34,7 +46,8 @@ export default function GamesAdmin() {
   const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
   const [showNewGameForm, setShowNewGameForm] = useState(false);
   const [newGameName, setNewGameName] = useState("");
-  const [newGameMode, setNewGameMode] = useState<GameMode>("jeopardy");
+  const [newGameMode, setNewGameMode] = useState<GameMode>("board");
+  const [rapidFireSettings, setRapidFireSettings] = useState<RapidFireSettings>(DEFAULT_RAPID_FIRE_SETTINGS);
   
   const [selectedDeckId, setSelectedDeckId] = useState<number | null>(null);
   const [showNewDeckForm, setShowNewDeckForm] = useState(false);
@@ -74,7 +87,7 @@ export default function GamesAdmin() {
 
   const { data: gameBoards = [] } = useQuery<{ id: number; gameId: number; boardId: number; position: number; board: Board }[]>({
     queryKey: ['/api/games', selectedGameId, 'boards'],
-    enabled: !!selectedGameId && selectedGame?.mode === 'jeopardy',
+    enabled: !!selectedGameId && (selectedGame?.mode === 'jeopardy' || selectedGame?.mode === 'board' || selectedGame?.mode === 'rapid_fire'),
   });
 
   const { data: gameDecks = [] } = useQuery<{ id: number; gameId: number; deckId: number; position: number; deck: HeadsUpDeck }[]>({
@@ -109,13 +122,14 @@ export default function GamesAdmin() {
   }
 
   const createGameMutation = useMutation({
-    mutationFn: async (data: { name: string; mode: GameMode }) => {
+    mutationFn: async (data: { name: string; mode: GameMode; settings?: Record<string, unknown> }) => {
       return apiRequest('POST', '/api/games', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
       setNewGameName("");
-      setNewGameMode("jeopardy");
+      setNewGameMode("board");
+      setRapidFireSettings(DEFAULT_RAPID_FIRE_SETTINGS);
       setShowNewGameForm(false);
       toast({ title: "Game created!" });
     },
@@ -336,12 +350,65 @@ export default function GamesAdmin() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
+                              <SelectItem value="board">Grid of Grudges (Classic Board)</SelectItem>
+                              <SelectItem value="rapid_fire">Brain Rot Blitz (Rapid Fire)</SelectItem>
                               <SelectItem value="jeopardy">Jeopardy (Multi-Board)</SelectItem>
                               <SelectItem value="heads_up">Heads Up</SelectItem>
                             </SelectContent>
                           </Select>
+                          {newGameMode === 'rapid_fire' && (
+                            <div className="space-y-2 p-2 bg-muted/30 rounded border border-border">
+                              <p className="text-xs font-medium text-muted-foreground">Rapid Fire Settings</p>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="text-xs text-muted-foreground">Timer (sec)</label>
+                                  <Input
+                                    type="number"
+                                    value={rapidFireSettings.timerSeconds}
+                                    onChange={(e) => setRapidFireSettings(s => ({ ...s, timerSeconds: parseInt(e.target.value) || 60 }))}
+                                    className="h-8"
+                                    data-testid="input-rapid-timer"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs text-muted-foreground">Base Points</label>
+                                  <Input
+                                    type="number"
+                                    value={rapidFireSettings.basePoints}
+                                    onChange={(e) => setRapidFireSettings(s => ({ ...s, basePoints: parseInt(e.target.value) || 10 }))}
+                                    className="h-8"
+                                    data-testid="input-rapid-points"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs text-muted-foreground">Max Multiplier</label>
+                                  <Input
+                                    type="number"
+                                    value={rapidFireSettings.maxMultiplier}
+                                    onChange={(e) => setRapidFireSettings(s => ({ ...s, maxMultiplier: parseInt(e.target.value) || 5 }))}
+                                    className="h-8"
+                                    data-testid="input-rapid-max-mult"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs text-muted-foreground">Mult. Step</label>
+                                  <Input
+                                    type="number"
+                                    step="0.1"
+                                    value={rapidFireSettings.multiplierIncrement}
+                                    onChange={(e) => setRapidFireSettings(s => ({ ...s, multiplierIncrement: parseFloat(e.target.value) || 0.5 }))}
+                                    className="h-8"
+                                    data-testid="input-rapid-mult-step"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
                           <Button
-                            onClick={() => createGameMutation.mutate({ name: newGameName, mode: newGameMode })}
+                            onClick={() => {
+                              const settings = newGameMode === 'rapid_fire' ? rapidFireSettings : {};
+                              createGameMutation.mutate({ name: newGameName, mode: newGameMode, settings });
+                            }}
                             disabled={!newGameName.trim()}
                             className="w-full"
                             size="sm"
@@ -472,15 +539,15 @@ export default function GamesAdmin() {
                       <p className="text-muted-foreground">Choose a game from the list to configure it</p>
                     </div>
                   </Card>
-                ) : selectedGame.mode === 'jeopardy' ? (
+                ) : (selectedGame.mode === 'jeopardy' || selectedGame.mode === 'board' || selectedGame.mode === 'rapid_fire') ? (
                   <Card className="bg-card border-border shadow-sm">
                     <CardHeader className="py-4 px-4 border-b border-border bg-muted/30">
                       <div className="flex items-center justify-between">
                         <CardTitle className="flex items-center gap-2 text-foreground">
-                          <Grid3X3 className="w-5 h-5 text-primary" />
-                          {selectedGame.name} - Boards
+                          {selectedGame.mode === 'rapid_fire' ? <Zap className="w-5 h-5 text-primary" /> : <Grid3X3 className="w-5 h-5 text-primary" />}
+                          {selectedGame.name} - {selectedGame.mode === 'board' ? 'Board' : selectedGame.mode === 'rapid_fire' ? 'Question Source' : 'Boards'}
                         </CardTitle>
-                        <Link href={`/game/${selectedGame.id}`}>
+                        <Link href={selectedGame.mode === 'board' ? `/grudges/${selectedGame.id}` : selectedGame.mode === 'rapid_fire' ? `/blitz/${selectedGame.id}` : `/game/${selectedGame.id}`}>
                           <Button size="sm" className="gap-2" data-testid="button-play-game">
                             <Play className="w-4 h-4" />
                             Play Game

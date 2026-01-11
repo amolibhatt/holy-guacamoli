@@ -14,6 +14,8 @@ import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import GamesAdmin from "@/pages/GamesAdmin";
 import HeadsUpGame from "@/pages/HeadsUpGame";
+import GridOfGrudges from "@/pages/GridOfGrudges";
+import BrainRotBlitz from "@/pages/BrainRotBlitz";
 
 function Router() {
   return (
@@ -26,6 +28,8 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/heads-up/:gameId" component={HeadsUpGame} />
+      <Route path="/grudges/:gameId" component={GridOfGrudges} />
+      <Route path="/blitz/:gameId" component={BrainRotBlitz} />
       <Route component={NotFound} />
     </Switch>
   );
