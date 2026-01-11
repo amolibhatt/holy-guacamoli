@@ -698,7 +698,11 @@ export default function Admin() {
                     );
                   })}
                   {boards.length === 0 && !loadingBoards && (
-                    <p className="text-center text-muted-foreground text-sm py-4">No boards yet</p>
+                    <div className="text-center py-6 px-3">
+                      <Grid3X3 className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
+                      <p className="text-muted-foreground text-sm mb-1">No boards yet</p>
+                      <p className="text-muted-foreground/70 text-xs">Click + above to create your first game board</p>
+                    </div>
                   )}
                 </div>
               </CardContent>

@@ -57,7 +57,31 @@ Respond in JSON format:
     return parsed.insights || [];
   } catch (error) {
     console.error("Error generating category insights:", error);
-    return [];
+    // Generate deterministic fallback insights based on answer similarity
+    return questionsAndAnswers.map(qa => {
+      const answerA = qa.userAAnswer.toLowerCase().trim();
+      const answerB = qa.userBAnswer.toLowerCase().trim();
+      
+      // Simple similarity check
+      let score = 50; // base score
+      if (answerA === answerB) {
+        score = 95;
+      } else if (answerA.includes(answerB) || answerB.includes(answerA)) {
+        score = 80;
+      } else {
+        // Check for common words
+        const wordsA = answerA.split(/\s+/).filter(w => w.length > 3);
+        const wordsB = answerB.split(/\s+/).filter(w => w.length > 3);
+        const common = wordsA.filter(w => wordsB.includes(w)).length;
+        score = Math.min(75, 50 + common * 10);
+      }
+      
+      return {
+        category: qa.category,
+        compatibilityScore: score,
+        insight: "Keep exploring this area together!"
+      };
+    });
   }
 }
 

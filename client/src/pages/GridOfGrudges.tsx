@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Sun, Moon, Users, Volume2 } from "lucide-react";
+import { ArrowLeft, Sun, Moon, Users, Volume2, Grid3X3, Settings } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
@@ -99,13 +99,25 @@ export default function GridOfGrudges() {
   if (!game || !selectedBoard) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
-        <h2 className="text-xl font-bold text-foreground mb-4">No board configured for this game</h2>
-        <Link href="/admin/games">
-          <Button variant="outline" className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Games
-          </Button>
-        </Link>
+        <Grid3X3 className="w-16 h-16 text-muted-foreground/30 mb-4" />
+        <h2 className="text-xl font-bold text-foreground mb-2">No board configured</h2>
+        <p className="text-muted-foreground text-sm mb-6 max-w-sm text-center">
+          This game needs a board with categories and questions before you can play.
+        </p>
+        <div className="flex flex-col gap-2">
+          <Link href="/admin/games">
+            <Button variant="default" className="gap-2">
+              <Settings className="w-4 h-4" />
+              Configure in Games Admin
+            </Button>
+          </Link>
+          <Link href="/admin/games">
+            <Button variant="ghost" className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Games
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }
