@@ -443,7 +443,7 @@ export async function registerRoutes(
       }
 
       // Get board-specific point values
-      const board = await storage.getBoard(bc.boardId);
+      const board = await storage.getBoard(bc.boardId, userId, role);
       const validPointValues = board?.pointValues || [10, 20, 30, 40, 50];
 
       const { questions } = req.body as { questions: Array<{ question: string; correctAnswer: string; points: number }> };
@@ -1428,8 +1428,8 @@ export async function registerRoutes(
                         // Jaccard similarity: intersection / union
                         const setA = new Set(tokensA);
                         const setB = new Set(tokensB);
-                        const intersection = [...setA].filter(x => setB.has(x)).length;
-                        const union = new Set([...tokensA, ...tokensB]).size;
+                        const intersection = Array.from(setA).filter(x => setB.has(x)).length;
+                        const union = new Set(tokensA.concat(tokensB)).size;
                         const jaccard = union > 0 ? (intersection / union) * 100 : 0;
                         
                         totalScore += jaccard;
@@ -1918,8 +1918,10 @@ export async function registerRoutes(
   const VALID_EVENT_NAMES = new Set([
     'page_view', 'login', 'logout', 'game_started', 'game_completed',
     'question_answered', 'buzzer_pressed', 'pair_created', 'pair_joined',
-    'daily_questions_submitted', 'weekly_stake_set', 'board_created',
-    'category_created', 'question_created'
+    'pair_invite_sent', 'pair_invite_accepted', 'daily_questions_submitted', 
+    'weekly_stake_set', 'weekly_stake_revealed', 'ai_insight_viewed',
+    'answer_favorited', 'board_created', 'category_created', 'question_created',
+    'onboarding_started', 'onboarding_completed', 'onboarding_skipped'
   ]);
   
   app.post("/api/analytics/events", async (req, res) => {

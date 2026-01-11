@@ -8,12 +8,14 @@ import {
   Sparkles, Calendar, ChevronDown, ChevronRight, Trophy, Star, BookOpen,
   Archive, TrendingUp, Target, Gift
 } from "lucide-react";
+import { OnboardingTooltip, COUPLES_ONBOARDING_STEPS } from "@/components/OnboardingTooltip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -128,7 +130,16 @@ export default function RelationshipHub() {
   const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState("today");
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('dd-active-tab') || 'today';
+    }
+    return 'today';
+  });
+  
+  useEffect(() => {
+    localStorage.setItem('dd-active-tab', activeTab);
+  }, [activeTab]);
   const [joinCode, setJoinCode] = useState("");
   const [copied, setCopied] = useState(false);
   const [anniversaryDate, setAnniversaryDate] = useState("");
@@ -221,7 +232,7 @@ export default function RelationshipHub() {
       queryClient.invalidateQueries({ queryKey: ['/api/double-dip/pair'] });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to create pair", variant: "destructive" });
+      toast({ title: "Oops!", description: "We couldn't start your couple profile. Please try again.", variant: "destructive" });
     },
   });
 
@@ -235,7 +246,7 @@ export default function RelationshipHub() {
       toast({ title: "Paired!", description: "You're now connected with your partner" });
     },
     onError: (error: any) => {
-      toast({ title: "Error", description: error.message || "Invalid invite code", variant: "destructive" });
+      toast({ title: "Code not found", description: error.message || "Check the code and try again. It should be 6 characters.", variant: "destructive" });
     },
   });
 
@@ -253,7 +264,7 @@ export default function RelationshipHub() {
       toast({ title: "Submitted!", description: "Your answers have been locked in" });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to submit answers", variant: "destructive" });
+      toast({ title: "Couldn't save", description: "Your answers weren't submitted. Check your connection and try again.", variant: "destructive" });
     },
   });
 
@@ -269,7 +280,7 @@ export default function RelationshipHub() {
       toast({ title: "Anniversary Saved!", description: "Your special date has been added" });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to save anniversary", variant: "destructive" });
+      toast({ title: "Couldn't save", description: "Your anniversary date wasn't saved. Please try again.", variant: "destructive" });
     },
   });
 
@@ -284,7 +295,7 @@ export default function RelationshipHub() {
       toast({ title: "Stakes Set!", description: "This week's challenge is on!" });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to set weekly stake", variant: "destructive" });
+      toast({ title: "Stakes not set", description: "Couldn't save your weekly challenge. Try again in a moment.", variant: "destructive" });
     },
   });
 
@@ -307,7 +318,7 @@ export default function RelationshipHub() {
       }
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to reveal winner", variant: "destructive" });
+      toast({ title: "Reveal failed", description: "Couldn't reveal the winner right now. Give it another try!", variant: "destructive" });
     },
   });
 
@@ -912,8 +923,17 @@ export default function RelationshipHub() {
               className="space-y-4"
             >
               {isLoadingVault ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <Skeleton className="h-4 w-32" />
+                    <Card><CardContent className="p-4"><div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-3/4" /></div></CardContent></Card>
+                    <Card><CardContent className="p-4"><div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-2/3" /></div></CardContent></Card>
+                  </div>
+                  <Skeleton className="h-4 w-40 mt-6" />
+                  <div className="space-y-3">
+                    <Card><CardContent className="p-4"><Skeleton className="h-16 w-full" /></CardContent></Card>
+                    <Card><CardContent className="p-4"><Skeleton className="h-16 w-full" /></CardContent></Card>
+                  </div>
                 </div>
               ) : (
               <>
@@ -1084,8 +1104,18 @@ export default function RelationshipHub() {
               className="space-y-6"
             >
               {isLoadingStoryboard ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+                <div className="space-y-6">
+                  <div className="grid grid-cols-4 gap-2">
+                    {[...Array(4)].map((_, i) => (
+                      <Card key={i} className="p-3"><Skeleton className="h-8 w-8 mx-auto mb-1" /><Skeleton className="h-3 w-10 mx-auto" /></Card>
+                    ))}
+                  </div>
+                  <Card><CardContent className="p-4"><Skeleton className="h-4 w-40 mb-2" /><Skeleton className="h-3 w-full" /></CardContent></Card>
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <Card key={i}><CardContent className="p-4"><div className="flex gap-3"><Skeleton className="w-10 h-10 rounded-full" /><div className="flex-1"><Skeleton className="h-4 w-24 mb-2" /><Skeleton className="h-3 w-full" /></div></div></CardContent></Card>
+                    ))}
+                  </div>
                 </div>
               ) : (
               <>
@@ -1237,6 +1267,11 @@ export default function RelationshipHub() {
           )}
         </AnimatePresence>
       </main>
+      
+      <OnboardingTooltip 
+        steps={COUPLES_ONBOARDING_STEPS} 
+        storageKey="dd-onboarding-seen"
+      />
     </div>
   );
 }

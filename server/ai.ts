@@ -1,10 +1,37 @@
 import OpenAI from "openai";
+import crypto from "crypto";
 
 // Using Groq API which is OpenAI-compatible
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: "https://api.groq.com/openai/v1"
 });
+
+// Simple in-memory cache for AI responses (1 hour TTL)
+const responseCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+function getCacheKey(data: any): string {
+  return crypto.createHash('md5').update(JSON.stringify(data)).digest('hex');
+}
+
+function getCached<T>(key: string): T | null {
+  const cached = responseCache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data as T;
+  }
+  responseCache.delete(key);
+  return null;
+}
+
+function setCache(key: string, data: any): void {
+  // Limit cache size to prevent memory issues
+  if (responseCache.size > 100) {
+    const oldestKey = responseCache.keys().next().value;
+    if (oldestKey) responseCache.delete(oldestKey);
+  }
+  responseCache.set(key, { data, timestamp: Date.now() });
+}
 
 interface QuestionAnswer {
   question: string;
@@ -23,6 +50,14 @@ interface CategoryInsight {
 }
 
 export async function generateCategoryInsights(questionsAndAnswers: CategoryQuestionAnswer[]): Promise<CategoryInsight[]> {
+  // Check cache first
+  const cacheKey = getCacheKey({ type: 'insights', qa: questionsAndAnswers });
+  const cached = getCached<CategoryInsight[]>(cacheKey);
+  if (cached) {
+    console.log('[AI] Cache hit for category insights');
+    return cached;
+  }
+
   const prompt = `You are a relationship analyst. Analyze these couples' answers and rate their compatibility for each category on a scale of 1-100.
 
 Questions and Answers by Category:
@@ -54,7 +89,9 @@ Respond in JSON format:
 
     const content = response.choices[0].message.content || "{}";
     const parsed = JSON.parse(content);
-    return parsed.insights || [];
+    const insights = parsed.insights || [];
+    setCache(cacheKey, insights);
+    return insights;
   } catch (error: any) {
     const isRateLimit = error?.status === 429 || error?.message?.includes('rate limit');
     console.error("Error generating category insights:", isRateLimit ? "Rate limited" : error);
@@ -97,6 +134,14 @@ Respond in JSON format:
 }
 
 export async function generateFollowupTask(questionsAndAnswers: QuestionAnswer[]): Promise<string> {
+  // Check cache first  
+  const cacheKey = getCacheKey({ type: 'followup', qa: questionsAndAnswers });
+  const cached = getCached<string>(cacheKey);
+  if (cached) {
+    console.log('[AI] Cache hit for followup task');
+    return cached;
+  }
+
   const prompt = `You are a warm, thoughtful relationship coach. Based on these couples' answers to daily questions, create ONE specific, actionable follow-up activity they can do together today to deepen their connection.
 
 Questions and Answers:
@@ -126,7 +171,9 @@ Respond with ONLY the task text, nothing else.`;
       max_tokens: 150,
     });
 
-    return response.choices[0].message.content || "Take 5 minutes to share one thing you appreciated about your partner today.";
+    const task = response.choices[0].message.content || "Take 5 minutes to share one thing you appreciated about your partner today.";
+    setCache(cacheKey, task);
+    return task;
   } catch (error) {
     console.error("Error generating follow-up task:", error);
     return "Take 5 minutes to share one thing you appreciated about your partner today.";
