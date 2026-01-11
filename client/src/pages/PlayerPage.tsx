@@ -333,10 +333,14 @@ export default function PlayerPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="text-center"
+              role="status"
+              aria-live="polite"
             >
-              <Clock className="w-24 h-24 text-muted-foreground mx-auto opacity-50" />
-              <h2 className="text-2xl font-bold text-muted-foreground mt-4">Waiting for question...</h2>
-              <p className="text-muted-foreground mt-2">The host will unlock the buzzer</p>
+              <div className="w-48 h-48 rounded-full bg-muted/30 border-4 border-dashed border-muted-foreground/30 flex items-center justify-center mx-auto">
+                <Clock className="w-16 h-16 text-muted-foreground opacity-50" />
+              </div>
+              <h2 className="text-xl font-bold text-muted-foreground mt-4">Buzzer Locked</h2>
+              <p className="text-sm text-muted-foreground mt-1">Wait for host to open a question</p>
             </motion.div>
           ) : (
             <motion.button
@@ -345,22 +349,26 @@ export default function PlayerPage() {
               animate={{ scale: 1 }}
               whileTap={{ scale: 0.9 }}
               onClick={handleBuzz}
-              className="w-64 h-64 rounded-full gradient-header flex items-center justify-center shadow-2xl active:shadow-lg transition-shadow"
+              className="w-64 h-64 rounded-full gradient-header flex items-center justify-center shadow-2xl active:shadow-lg transition-shadow focus:outline-none focus:ring-4 focus:ring-primary/50"
               data-testid="button-buzz"
+              aria-label="Buzz in - tap to answer"
+              role="button"
             >
               <motion.div
                 animate={{ scale: [1, 1.1, 1] }}
                 transition={{ duration: 0.5, repeat: Infinity }}
               >
-                <Zap className="w-24 h-24 text-white" />
+                <Zap className="w-24 h-24 text-white" aria-hidden="true" />
               </motion.div>
             </motion.button>
           )}
         </AnimatePresence>
       </main>
 
-      <footer className="p-4 text-center text-sm text-muted-foreground">
-        {buzzerLocked ? "Buzzer locked" : "Tap to buzz in!"}
+      <footer className="p-4 text-center" role="status" aria-live="polite">
+        <span className={`text-sm font-medium ${buzzerLocked ? "text-muted-foreground" : "text-primary"}`}>
+          {buzzerLocked ? "Buzzer locked - waiting for host" : "Buzzer ready - tap to answer!"}
+        </span>
       </footer>
     </div>
   );
