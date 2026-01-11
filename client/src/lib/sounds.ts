@@ -16,6 +16,7 @@ type SoundName = keyof typeof SOUND_URLS;
 class SoundManager {
   private audioCache: Map<string, HTMLAudioElement> = new Map();
   private enabled: boolean = true;
+  private listeners: Set<() => void> = new Set();
 
   constructor() {
     Object.entries(SOUND_URLS).forEach(([name, url]) => {
@@ -23,6 +24,15 @@ class SoundManager {
       audio.preload = 'auto';
       this.audioCache.set(name, audio);
     });
+    
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('soundEnabled');
+        if (stored !== null) {
+          this.enabled = stored === 'true';
+        }
+      } catch {}
+    }
   }
 
   play(name: SoundName, volume: number = 0.5) {
@@ -38,6 +48,8 @@ class SoundManager {
 
   toggle() {
     this.enabled = !this.enabled;
+    this.persistPreference();
+    this.notifyListeners();
     return this.enabled;
   }
 
@@ -47,6 +59,25 @@ class SoundManager {
 
   setEnabled(enabled: boolean) {
     this.enabled = enabled;
+    this.persistPreference();
+    this.notifyListeners();
+  }
+
+  private persistPreference() {
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('soundEnabled', String(this.enabled));
+      } catch {}
+    }
+  }
+
+  subscribe(listener: () => void) {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private notifyListeners() {
+    this.listeners.forEach(fn => fn());
   }
 }
 

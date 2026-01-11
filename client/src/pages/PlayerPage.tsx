@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles, Users, ChevronUp, ChevronDown } from "lucide-react";
+import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles, Users, ChevronUp, ChevronDown, Volume2, VolumeX } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { soundManager } from "@/lib/sounds";
@@ -69,7 +69,10 @@ export default function PlayerPage() {
   const [showWrongFlash, setShowWrongFlash] = useState(false);
   const [leaderboard, setLeaderboard] = useState<Array<{ id: string; name: string; score: number }>>([]);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [reconnectCountdown, setReconnectCountdown] = useState<number | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(soundManager.isEnabled());
   const wsRef = useRef<WebSocket | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const joinedRef = useRef(false);
@@ -225,11 +228,24 @@ export default function PlayerPage() {
 
     ws.onclose = () => {
       if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
       
       if (joinedRef.current && shouldReconnectRef.current && reconnectAttemptsRef.current < 5) {
         setStatus("reconnecting");
         const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
+        const seconds = Math.ceil(delay / 1000);
+        setReconnectCountdown(seconds);
+        
+        countdownIntervalRef.current = setInterval(() => {
+          setReconnectCountdown(prev => {
+            if (prev !== null && prev > 1) return prev - 1;
+            return prev;
+          });
+        }, 1000);
+        
         reconnectTimeoutRef.current = setTimeout(() => {
+          if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+          setReconnectCountdown(null);
           reconnectAttemptsRef.current++;
           setReconnectAttempts(reconnectAttemptsRef.current);
           connect(true);
@@ -252,9 +268,20 @@ export default function PlayerPage() {
     return () => {
       if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
       wsRef.current?.close();
     };
   }, []);
+
+  useEffect(() => {
+    return soundManager.subscribe(() => {
+      setSoundEnabled(soundManager.isEnabled());
+    });
+  }, []);
+
+  const handleToggleSound = () => {
+    soundManager.toggle();
+  };
 
   const handleLeaveGame = () => {
     clearSession();
@@ -267,6 +294,8 @@ export default function PlayerPage() {
   };
 
   const handleManualReconnect = () => {
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    setReconnectCountdown(null);
     reconnectAttemptsRef.current = 0;
     setReconnectAttempts(0);
     shouldReconnectRef.current = true;
@@ -379,6 +408,16 @@ export default function PlayerPage() {
             <span className="text-2xl font-black text-primary" data-testid="text-player-score">{score}</span>
             <span className="text-xs text-muted-foreground ml-1">pts</span>
           </motion.div>
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            onClick={handleToggleSound}
+            className="h-8 w-8"
+            data-testid="button-toggle-sound"
+            title={soundEnabled ? "Mute sounds" : "Unmute sounds"}
+          >
+            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-muted-foreground" />}
+          </Button>
           <Button size="sm" variant="ghost" onClick={handleLeaveGame} className="text-xs text-muted-foreground hover:text-destructive" data-testid="button-leave-game">
             Leave
           </Button>
@@ -442,7 +481,7 @@ export default function PlayerPage() {
       {status === "reconnecting" && (
         <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-4 py-2 text-center text-sm text-foreground">
           <RefreshCw className="w-4 h-4 inline-block mr-2 animate-spin" />
-          Connection lost. Reconnecting... (Attempt {reconnectAttempts + 1}/5)
+          Connection lost. Reconnecting in {reconnectCountdown ?? '...'}s (Attempt {reconnectAttempts + 1}/5)
         </div>
       )}
 
