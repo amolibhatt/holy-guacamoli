@@ -77,7 +77,7 @@ export function Scoreboard() {
                         flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap relative overflow-hidden
                         ${idx === 0 && contestant.score > 0 
                           ? 'gradient-gold text-black glow-gold' 
-                          : 'bg-primary/10 border border-primary/40 text-white'
+                          : 'bg-primary/10 border border-primary/40 text-foreground'
                         }
                       `}
                       data-testid={`contestant-${contestant.id}`}
@@ -99,8 +99,11 @@ export function Scoreboard() {
                       <Popover>
                         <PopoverTrigger asChild>
                           <button
-                            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white relative z-10 hover:ring-2 hover:ring-white/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all"
-                            style={{ backgroundColor: contestant.color }}
+                            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold relative z-10 hover:ring-2 hover:ring-foreground/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all"
+                            style={{ 
+                              backgroundColor: contestant.color,
+                              color: parseInt(contestant.color.slice(1), 16) > 0x888888 ? '#1a1a2e' : 'white'
+                            }}
                             aria-label={`${contestant.name}'s color: click to change`}
                           >
                             {contestant.name.charAt(0).toUpperCase()}
@@ -168,7 +171,7 @@ export function Scoreboard() {
             variant="ghost"
             size="icon"
             onClick={toggleSound}
-            className="text-white/50 hover:text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary"
+            className="text-muted-foreground hover:text-foreground hover:bg-foreground/10 focus-visible:ring-2 focus-visible:ring-primary"
             data-testid="button-toggle-sound"
             aria-label={soundEnabled ? "Mute sounds" : "Unmute sounds"}
             aria-pressed={soundEnabled}
@@ -196,7 +199,7 @@ export function Scoreboard() {
                   variant="ghost" 
                   size="icon"
                   onClick={resetGame} 
-                  className="text-white/50 hover:text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary"
+                  className="text-muted-foreground hover:text-foreground hover:bg-foreground/10 focus-visible:ring-2 focus-visible:ring-primary"
                   data-testid="button-reset-game"
                   aria-label="Reset game scores"
                 >
