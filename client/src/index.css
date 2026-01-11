@@ -44,7 +44,7 @@
   --destructive: 0 70% 50%;
   --destructive-foreground: 0 0% 100%;
   
-  --success: 160 60% 45%;
+  --success: 45 100% 50%;
   
   --sidebar: 270 30% 6%;
   --sidebar-foreground: 0 0% 90%;
@@ -131,7 +131,7 @@
   }
   
   .glow-success {
-    box-shadow: 0 0 20px rgba(74, 222, 128, 0.4);
+    box-shadow: 0 0 20px rgba(250, 204, 21, 0.4);
   }
   
   .completed-cell {
