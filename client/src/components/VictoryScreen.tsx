@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Trophy, Star, Crown, Sparkles, Download, Share2, Copy, Check } from "lucide-react";
+import { Trophy, Star, Crown, Sparkles, Share2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useScore, Contestant } from "./ScoreContext";
 import confetti from "canvas-confetti";
@@ -26,8 +26,8 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
     let text = `Holy GuacAmoli! Game Results - ${date}\n\n`;
     text += "Final Standings:\n";
     sortedContestants.forEach((c, i) => {
-      const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
-      text += `${medal} ${c.name}: ${c.score} points\n`;
+      const position = i === 0 ? "1st" : i === 1 ? "2nd" : i === 2 ? "3rd" : `${i + 1}th`;
+      text += `${position} Place - ${c.name}: ${c.score} points\n`;
     });
     return text;
   };
@@ -48,8 +48,10 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
     if (navigator.share) {
       try {
         await navigator.share({ title: "Holy GuacAmoli! Results", text });
-      } catch {
-        handleCopyResults();
+      } catch (err) {
+        if (err instanceof Error && err.name !== "AbortError") {
+          handleCopyResults();
+        }
       }
     } else {
       handleCopyResults();
