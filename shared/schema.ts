@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, jsonb, boolean, unique, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, jsonb, boolean, unique, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -32,7 +32,11 @@ export const doubleDipPairs = pgTable("double_dip_pairs", {
   lastCompletedDate: text("last_completed_date"),
   anniversaryDate: text("anniversary_date"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("idx_pairs_user_a").on(table.userAId),
+  index("idx_pairs_user_b").on(table.userBId),
+  index("idx_pairs_status").on(table.status),
+]);
 
 export const QUESTION_TYPES = ["open_ended", "multiple_choice"] as const;
 export type QuestionType = typeof QUESTION_TYPES[number];
@@ -70,6 +74,8 @@ export const doubleDipDailySets = pgTable("double_dip_daily_sets", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   unique().on(table.pairId, table.dateKey),
+  index("idx_daily_sets_pair").on(table.pairId),
+  index("idx_daily_sets_date").on(table.dateKey),
 ]);
 
 export const doubleDipAnswers = pgTable("double_dip_answers", {
@@ -84,6 +90,8 @@ export const doubleDipAnswers = pgTable("double_dip_answers", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   unique().on(table.dailySetId, table.questionId, table.userId),
+  index("idx_answers_daily_set").on(table.dailySetId),
+  index("idx_answers_user").on(table.userId),
 ]);
 
 export const doubleDipReactions = pgTable("double_dip_reactions", {
@@ -94,6 +102,7 @@ export const doubleDipReactions = pgTable("double_dip_reactions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   unique().on(table.answerId, table.userId),
+  index("idx_reactions_answer").on(table.answerId),
 ]);
 
 export const MILESTONE_TYPES = ["streak", "compatibility", "favorite", "first_reveal", "category_master", "anniversary"] as const;
@@ -110,7 +119,10 @@ export const doubleDipMilestones = pgTable("double_dip_milestones", {
   answerId: integer("answer_id"),
   metadata: jsonb("metadata").$type<Record<string, unknown>>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("idx_milestones_pair").on(table.pairId),
+  index("idx_milestones_type").on(table.type),
+]);
 
 export const doubleDipFavorites = pgTable("double_dip_favorites", {
   id: serial("id").primaryKey(),
@@ -120,6 +132,7 @@ export const doubleDipFavorites = pgTable("double_dip_favorites", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   unique().on(table.answerId, table.userId),
+  index("idx_favorites_pair").on(table.pairId),
 ]);
 
 export const SYNC_STAKES = [
@@ -144,6 +157,7 @@ export const doubleDipWeeklyStakes = pgTable("double_dip_weekly_stakes", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   unique().on(table.pairId, table.weekStartDate),
+  index("idx_weekly_stakes_pair").on(table.pairId),
 ]);
 
 export const boards = pgTable("boards", {

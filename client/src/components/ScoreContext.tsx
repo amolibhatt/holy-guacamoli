@@ -19,6 +19,7 @@ interface ScoreChange {
   contestantId: string;
   points: number;
   type: 'award' | 'deduct';
+  previousScore: number;
   timestamp: number;
 }
 
@@ -81,8 +82,18 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
   };
 
   const awardPoints = (contestantId: string, points: number) => {
-    setScoreHistory(prev => [...prev.slice(-19), { contestantId, points, type: 'award', timestamp: Date.now() }]);
     setContestants((prev) => {
+      const contestant = prev.find(c => c.id === contestantId);
+      if (contestant) {
+        setScoreHistory(history => [...history.slice(-19), { 
+          contestantId, 
+          points, 
+          type: 'award', 
+          previousScore: contestant.score,
+          timestamp: Date.now() 
+        }]);
+      }
+      
       const oldSorted = [...prev].sort((a, b) => b.score - a.score);
       const oldRanks = new Map(oldSorted.map((c, idx) => [c.id, idx]));
       
@@ -103,8 +114,18 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
   };
 
   const deductPoints = (contestantId: string, points: number) => {
-    setScoreHistory(prev => [...prev.slice(-19), { contestantId, points, type: 'deduct', timestamp: Date.now() }]);
     setContestants((prev) => {
+      const contestant = prev.find(c => c.id === contestantId);
+      if (contestant) {
+        setScoreHistory(history => [...history.slice(-19), { 
+          contestantId, 
+          points, 
+          type: 'deduct', 
+          previousScore: contestant.score,
+          timestamp: Date.now() 
+        }]);
+      }
+      
       const oldSorted = [...prev].sort((a, b) => b.score - a.score);
       const oldRanks = new Map(oldSorted.map((c, idx) => [c.id, idx]));
       
@@ -125,16 +146,17 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
     const lastChange = scoreHistory[scoreHistory.length - 1];
     setScoreHistory(prev => prev.slice(0, -1));
     
-    // Reverse the change
-    if (lastChange.type === 'award') {
-      setContestants(prev => prev.map(c => 
-        c.id === lastChange.contestantId ? { ...c, score: c.score - lastChange.points } : c
-      ));
-    } else {
-      setContestants(prev => prev.map(c => 
-        c.id === lastChange.contestantId ? { ...c, score: c.score + lastChange.points } : c
-      ));
-    }
+    // Restore to exact previous score (safer than arithmetic reversal)
+    setContestants(prev => {
+      const oldSorted = [...prev].sort((a, b) => b.score - a.score);
+      const oldRanks = new Map(oldSorted.map((c, idx) => [c.id, idx]));
+      
+      return prev.map(c => ({
+        ...c,
+        score: c.id === lastChange.contestantId ? lastChange.previousScore : c.score,
+        previousRank: oldRanks.get(c.id) ?? 0
+      }));
+    });
     
     return lastChange;
   };
@@ -157,6 +179,7 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
     setContestants((prev) => prev.map((c) => ({ ...c, score: 0, previousRank: undefined })));
     setCompletedQuestions([]);
     setGameEnded(false);
+    setScoreHistory([]);
   };
 
   const endGame = () => setGameEnded(true);
@@ -176,6 +199,7 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
     players: { id: string; name: string; score: number }[],
     completedQuestionIds: number[]
   ) => {
+    setScoreHistory([]);
     setContestants(
       players.map((p, idx) => ({
         id: p.id,
