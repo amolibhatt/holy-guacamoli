@@ -316,3 +316,38 @@
     animation-duration: 0.01ms !important;
   }
 }
+
+/* Enhanced focus states for accessibility on dark backgrounds - apply to direct interactive children only */
+.gradient-header > button:focus-visible,
+.gradient-header > a:focus-visible,
+.gradient-header > input:focus-visible,
+.gradient-card > button:focus-visible,
+.gradient-card > a:focus-visible {
+  outline: 2px solid white !important;
+  outline-offset: 2px;
+}
+
+/* Skip to content link for keyboard navigation */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 8px 16px;
+  z-index: 100;
+  transition: top 0.3s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* iOS safe area padding utilities */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
