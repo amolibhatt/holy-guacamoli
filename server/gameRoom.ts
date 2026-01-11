@@ -284,6 +284,26 @@ export function setupWebSocket(server: Server) {
                     buzzerLocked: room.buzzerLocked,
                   }));
 
+                  const allPlayers = Array.from(room.players.values()).map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    score: p.score,
+                  }));
+                  
+                  ws.send(JSON.stringify({
+                    type: "scores:sync",
+                    players: allPlayers,
+                  }));
+                  
+                  room.players.forEach((p) => {
+                    if (p.id !== newPlayerId && p.ws && p.ws.readyState === WebSocket.OPEN) {
+                      p.ws.send(JSON.stringify({
+                        type: "scores:sync",
+                        players: allPlayers,
+                      }));
+                    }
+                  });
+
                   if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
                     room.hostWs.send(JSON.stringify({
                       type: "player:joined",

@@ -412,6 +412,61 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
+  // Bulk import questions
+  app.post("/api/board-categories/:boardCategoryId/questions/bulk", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const boardCategoryId = Number(req.params.boardCategoryId);
+      const bc = await verifyBoardCategoryOwnership(boardCategoryId, userId, role);
+      if (!bc) {
+        return res.status(404).json({ message: "Board category not found" });
+      }
+
+      const { questions } = req.body as { questions: Array<{ question: string; correctAnswer: string; points: number }> };
+      if (!Array.isArray(questions) || questions.length === 0) {
+        return res.status(400).json({ message: "No questions provided" });
+      }
+
+      const existingQuestions = await storage.getQuestionsByBoardCategory(boardCategoryId);
+      const existingPoints = new Set(existingQuestions.map(q => q.points));
+      const results: { success: number; errors: string[] } = { success: 0, errors: [] };
+
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
+        if (!q.question?.trim() || !q.correctAnswer?.trim() || !q.points) {
+          results.errors.push(`Line ${i + 1}: Missing required fields`);
+          continue;
+        }
+        if (existingPoints.has(q.points)) {
+          results.errors.push(`Line ${i + 1}: ${q.points}-point question already exists`);
+          continue;
+        }
+        if (existingQuestions.length + results.success >= 5) {
+          results.errors.push(`Line ${i + 1}: Category already has 5 questions (maximum)`);
+          continue;
+        }
+        try {
+          await storage.createQuestion({
+            boardCategoryId,
+            question: q.question.trim(),
+            correctAnswer: q.correctAnswer.trim(),
+            points: q.points,
+          });
+          existingPoints.add(q.points);
+          results.success++;
+        } catch (err) {
+          results.errors.push(`Line ${i + 1}: Failed to create question`);
+        }
+      }
+
+      res.json(results);
+    } catch (err) {
+      console.error("Bulk import error:", err);
+      res.status(500).json({ message: "Failed to import questions" });
+    }
+  });
+
   app.post(api.questions.verifyAnswer.path, isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;

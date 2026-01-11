@@ -12,7 +12,7 @@ import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, LogOut, Sun, Moon, Layers, Upload } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, LogOut, Sun, Moon, Layers, Upload, FileText, Eye } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import MDEditor from '@uiw/react-md-editor';
@@ -77,6 +77,9 @@ export default function Admin() {
   const [newCategoryDescription, setNewCategoryDescription] = useState("");
   const [questionFormOpen, setQuestionFormOpen] = useState(false);
   const [draggedQuestionId, setDraggedQuestionId] = useState<number | null>(null);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
+  const [bulkImportText, setBulkImportText] = useState("");
+  const [showBoardPreview, setShowBoardPreview] = useState(false);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -344,6 +347,47 @@ export default function Admin() {
     },
   });
 
+  const bulkImportMutation = useMutation({
+    mutationFn: async (data: { boardCategoryId: number; questions: Array<{ question: string; correctAnswer: string; points: number }> }) => {
+      const res = await apiRequest('POST', `/api/board-categories/${data.boardCategoryId}/questions/bulk`, { questions: data.questions });
+      return res.json();
+    },
+    onSuccess: (data: { success: number; errors: string[] }) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/board-categories', selectedBoardCategoryId, 'questions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
+      setBulkImportText("");
+      setBulkImportOpen(false);
+      if (data.errors.length > 0) {
+        toast({ 
+          title: `Imported ${data.success} question(s)`, 
+          description: `${data.errors.length} error(s): ${data.errors.slice(0, 2).join('; ')}${data.errors.length > 2 ? '...' : ''}`,
+          variant: data.success > 0 ? "default" : "destructive"
+        });
+      } else {
+        toast({ title: `Imported ${data.success} question(s)!` });
+      }
+    },
+    onError: () => {
+      toast({ title: "Import failed", variant: "destructive" });
+    },
+  });
+
+  const parseBulkImport = (text: string): Array<{ question: string; correctAnswer: string; points: number }> => {
+    const lines = text.split('\n').filter(l => l.trim());
+    const questions: Array<{ question: string; correctAnswer: string; points: number }> = [];
+    for (const line of lines) {
+      const parts = line.split('|').map(p => p.trim());
+      if (parts.length >= 3) {
+        const points = parseInt(parts[0], 10);
+        if (!isNaN(points) && parts[1] && parts[2]) {
+          questions.push({ points, question: parts[1], correctAnswer: parts[2] });
+        }
+      }
+    }
+    return questions;
+  };
+
   const handleFileUpload = async (file: File, isEdit: boolean = false) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -579,6 +623,19 @@ export default function Admin() {
                         </div>
                         {!isEditing && (
                           <div className="flex items-center gap-1 shrink-0">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                window.open(`/play/${board.id}`, '_blank');
+                              }}
+                              className="h-7 w-7 text-muted-foreground hover:text-primary"
+                              data-testid={`button-preview-board-${board.id}`}
+                              title="Preview board"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </Button>
                             <Button
                               size="icon"
                               variant="ghost"
@@ -1055,6 +1112,64 @@ export default function Admin() {
                             </Select>
                             <Button onClick={handleCreateQuestion} disabled={!newQuestion.trim() || !newCorrectAnswer.trim() || availablePoints.length === 0} className="px-6" data-testid="button-add-question">
                               <Plus className="w-4 h-4 mr-2" /> Add
+                            </Button>
+                          </div>
+                        </motion.div>
+                      </CollapsibleContent>
+                    </Collapsible>
+
+                    <Collapsible open={bulkImportOpen} onOpenChange={setBulkImportOpen}>
+                      <CollapsibleTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          className="w-full justify-between h-12 px-4 bg-gradient-to-r from-accent/30 to-accent/10 border-dashed"
+                          data-testid="button-toggle-bulk-import"
+                        >
+                          <span className="flex items-center gap-2">
+                            <FileText className="w-4 h-4" />
+                            <span className="font-medium">Bulk Import Questions</span>
+                          </span>
+                          <ChevronDown className={`w-4 h-4 transition-transform ${bulkImportOpen ? 'rotate-180' : ''}`} />
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="mt-3 space-y-4 p-5 bg-gradient-to-b from-accent/10 to-transparent rounded-xl border border-border"
+                        >
+                          <div className="space-y-2">
+                            <p className="text-xs text-muted-foreground">
+                              Paste questions in format: <code className="bg-muted px-1 rounded">points | question | answer</code>
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Example: <code className="bg-muted px-1 rounded">10 | What is 2+2? | 4</code>
+                            </p>
+                          </div>
+                          <textarea
+                            value={bulkImportText}
+                            onChange={(e) => setBulkImportText(e.target.value)}
+                            placeholder={`10 | What is the capital of France? | Paris\n20 | What year did WW2 end? | 1945\n30 | Who painted the Mona Lisa? | Leonardo da Vinci`}
+                            className="w-full h-32 p-3 text-sm rounded-md border border-border bg-background resize-none font-mono"
+                            data-testid="textarea-bulk-import"
+                          />
+                          <div className="flex justify-between items-center">
+                            <p className="text-xs text-muted-foreground">
+                              {parseBulkImport(bulkImportText).length} valid question(s) detected
+                            </p>
+                            <Button
+                              onClick={() => {
+                                const questions = parseBulkImport(bulkImportText);
+                                if (questions.length > 0 && selectedBoardCategoryId) {
+                                  bulkImportMutation.mutate({ boardCategoryId: selectedBoardCategoryId, questions });
+                                }
+                              }}
+                              disabled={parseBulkImport(bulkImportText).length === 0 || bulkImportMutation.isPending}
+                              className="px-6"
+                              data-testid="button-bulk-import"
+                            >
+                              {bulkImportMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                              Import {parseBulkImport(bulkImportText).length} Question(s)
                             </Button>
                           </div>
                         </motion.div>
