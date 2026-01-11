@@ -100,9 +100,82 @@ export const gameDecks = pgTable("game_decks", {
   unique().on(table.gameId, table.deckId),
 ]);
 
+// Game Sessions - for maintaining player connections and scores across boards/modes
+export const SESSION_STATES = ["waiting", "active", "paused", "ended"] as const;
+export type SessionState = typeof SESSION_STATES[number];
+
+export const gameSessions = pgTable("game_sessions", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  hostId: text("host_id").notNull(),
+  gameId: integer("game_id"),
+  currentBoardId: integer("current_board_id"),
+  currentMode: text("current_mode").$type<GameMode>().default("board"),
+  state: text("state").$type<SessionState>().notNull().default("waiting"),
+  buzzerLocked: boolean("buzzer_locked").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const sessionPlayers = pgTable("session_players", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull(),
+  playerId: text("player_id").notNull(),
+  name: text("name").notNull(),
+  score: integer("score").notNull().default(0),
+  isConnected: boolean("is_connected").notNull().default(true),
+  joinedAt: timestamp("joined_at").notNull().defaultNow(),
+  lastSeenAt: timestamp("last_seen_at").notNull().defaultNow(),
+}, (table) => [
+  unique().on(table.sessionId, table.playerId),
+]);
+
+export const sessionCompletedQuestions = pgTable("session_completed_questions", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull(),
+  questionId: integer("question_id").notNull(),
+  answeredByPlayerId: text("answered_by_player_id"),
+  pointsAwarded: integer("points_awarded").default(0),
+  completedAt: timestamp("completed_at").notNull().defaultNow(),
+}, (table) => [
+  unique().on(table.sessionId, table.questionId),
+]);
+
+export const gameSessionsRelations = relations(gameSessions, ({ one, many }) => ({
+  game: one(games, {
+    fields: [gameSessions.gameId],
+    references: [games.id],
+  }),
+  currentBoard: one(boards, {
+    fields: [gameSessions.currentBoardId],
+    references: [boards.id],
+  }),
+  players: many(sessionPlayers),
+  completedQuestions: many(sessionCompletedQuestions),
+}));
+
+export const sessionPlayersRelations = relations(sessionPlayers, ({ one }) => ({
+  session: one(gameSessions, {
+    fields: [sessionPlayers.sessionId],
+    references: [gameSessions.id],
+  }),
+}));
+
+export const sessionCompletedQuestionsRelations = relations(sessionCompletedQuestions, ({ one }) => ({
+  session: one(gameSessions, {
+    fields: [sessionCompletedQuestions.sessionId],
+    references: [gameSessions.id],
+  }),
+  question: one(questions, {
+    fields: [sessionCompletedQuestions.questionId],
+    references: [questions.id],
+  }),
+}));
+
 export const gamesRelations = relations(games, ({ many }) => ({
   gameBoards: many(gameBoards),
   gameDecks: many(gameDecks),
+  sessions: many(gameSessions),
 }));
 
 export const gameBoardsRelations = relations(gameBoards, ({ one }) => ({
@@ -176,6 +249,9 @@ export const insertGameBoardSchema = createInsertSchema(gameBoards).omit({ id: t
 export const insertHeadsUpDeckSchema = createInsertSchema(headsUpDecks).omit({ id: true });
 export const insertHeadsUpCardSchema = createInsertSchema(headsUpCards).omit({ id: true });
 export const insertGameDeckSchema = createInsertSchema(gameDecks).omit({ id: true });
+export const insertGameSessionSchema = createInsertSchema(gameSessions).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertSessionPlayerSchema = createInsertSchema(sessionPlayers).omit({ id: true, joinedAt: true, lastSeenAt: true });
+export const insertSessionCompletedQuestionSchema = createInsertSchema(sessionCompletedQuestions).omit({ id: true, completedAt: true });
 
 export type Board = typeof boards.$inferSelect;
 export type Category = typeof categories.$inferSelect;
@@ -187,6 +263,9 @@ export type GameBoard = typeof gameBoards.$inferSelect;
 export type HeadsUpDeck = typeof headsUpDecks.$inferSelect;
 export type HeadsUpCard = typeof headsUpCards.$inferSelect;
 export type GameDeck = typeof gameDecks.$inferSelect;
+export type GameSession = typeof gameSessions.$inferSelect;
+export type SessionPlayer = typeof sessionPlayers.$inferSelect;
+export type SessionCompletedQuestion = typeof sessionCompletedQuestions.$inferSelect;
 export type InsertBoard = z.infer<typeof insertBoardSchema>;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertBoardCategory = z.infer<typeof insertBoardCategorySchema>;
@@ -196,6 +275,9 @@ export type InsertGameBoard = z.infer<typeof insertGameBoardSchema>;
 export type InsertHeadsUpDeck = z.infer<typeof insertHeadsUpDeckSchema>;
 export type InsertHeadsUpCard = z.infer<typeof insertHeadsUpCardSchema>;
 export type InsertGameDeck = z.infer<typeof insertGameDeckSchema>;
+export type InsertGameSession = z.infer<typeof insertGameSessionSchema>;
+export type InsertSessionPlayer = z.infer<typeof insertSessionPlayerSchema>;
+export type InsertSessionCompletedQuestion = z.infer<typeof insertSessionCompletedQuestionSchema>;
 
 export type BoardCategoryWithCategory = BoardCategory & { category: Category };
 export type BoardCategoryWithCount = BoardCategoryWithCategory & { questionCount: number; position: number };
@@ -205,6 +287,12 @@ export type GameWithBoards = Game & { boards: Board[] };
 export type GameWithDecks = Game & { decks: HeadsUpDeck[] };
 export type HeadsUpDeckWithCards = HeadsUpDeck & { cards: HeadsUpCard[] };
 export type HeadsUpDeckWithCardCount = HeadsUpDeck & { cardCount: number };
+export type GameSessionWithPlayers = GameSession & { players: SessionPlayer[] };
+export type GameSessionFull = GameSession & { 
+  players: SessionPlayer[]; 
+  completedQuestions: number[];
+  currentBoard?: Board | null;
+};
 
 export type VerifyAnswerRequest = {
   questionId: number;
