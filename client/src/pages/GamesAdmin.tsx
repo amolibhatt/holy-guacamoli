@@ -106,21 +106,6 @@ export default function GamesAdmin() {
   const linkedDeckIds = gameDecks.map(gd => gd.deckId);
   const availableDecks = decks.filter(d => !linkedDeckIds.includes(d.id));
 
-  useEffect(() => {
-    if (!isAuthLoading && !isAuthenticated) {
-      setLocation("/");
-    }
-  }, [isAuthLoading, isAuthenticated, setLocation]);
-
-  if (isAuthLoading || !isAuthenticated) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-        <Loader2 className="w-12 h-12 text-primary animate-spin" />
-        <p className="text-muted-foreground mt-4">Loading...</p>
-      </div>
-    );
-  }
-
   const createGameMutation = useMutation({
     mutationFn: async (data: { name: string; mode: GameMode; settings?: Record<string, unknown> }) => {
       return apiRequest('POST', '/api/games', data);
@@ -269,6 +254,21 @@ export default function GamesAdmin() {
       toast({ title: "Card deleted" });
     },
   });
+
+  useEffect(() => {
+    if (!isAuthLoading && !isAuthenticated) {
+      setLocation("/");
+    }
+  }, [isAuthLoading, isAuthenticated, setLocation]);
+
+  if (isAuthLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <Loader2 className="w-12 h-12 text-primary animate-spin" />
+        <p className="text-muted-foreground mt-4">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-muted/30">
