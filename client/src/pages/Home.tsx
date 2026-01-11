@@ -104,9 +104,7 @@ export default function Home() {
                 className="text-[10px] font-bold text-white/50 tracking-[0.2em] uppercase"
                 animate={{ opacity: [0.5, 1, 0.5] }}
                 transition={{ duration: 3, repeat: Infinity }}
-              >
-                Amoli's Birthday Trivia
-              </motion.span>
+              >Dip into the facts!</motion.span>
             </div>
           </motion.div>
           <motion.div 
@@ -142,7 +140,6 @@ export default function Home() {
           </motion.div>
         </div>
       </header>
-
       <main className="flex-1 p-6 overflow-y-auto">
         <div className="max-w-4xl mx-auto">
           {user && (
