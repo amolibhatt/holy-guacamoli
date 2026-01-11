@@ -143,13 +143,13 @@ export default function LandingPage() {
         >
           <div className="text-center mb-6">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/20 flex items-center justify-center">
-              <Users className="w-8 h-8 text-primary" />
+              <Sparkles className="w-8 h-8 text-primary" />
             </div>
             <h2 className="text-2xl font-bold text-foreground" data-testid="text-login-title">
-              Host Access
+              Ready to Play?
             </h2>
             <p className="text-muted-foreground text-sm mt-1" data-testid="text-login-description">
-              Sign in or create an account to host games
+              Create your free account and start hosting games in minutes
             </p>
           </div>
 
@@ -291,9 +291,12 @@ export default function LandingPage() {
             </CardContent>
           </Card>
 
-          <p className="text-muted-foreground/70 text-sm mt-4 text-center" data-testid="text-free-notice">
-            Players join via QR code - no account needed!
-          </p>
+          <div className="mt-6 p-4 rounded-xl bg-muted/30 border border-border text-center" data-testid="text-free-notice">
+            <p className="text-sm text-foreground font-medium mb-1">Playing with friends?</p>
+            <p className="text-muted-foreground text-xs">
+              Players join instantly via QR code or room code - no account needed!
+            </p>
+          </div>
         </motion.div>
       </div>
     </div>
