@@ -685,7 +685,7 @@ export default function Admin() {
 
                   </div>
 
-                  <CardContent className="p-5 flex-1 overflow-hidden flex flex-col">
+                  <CardContent className="p-5 flex-1 overflow-y-auto flex flex-col">
                     {!selectedBoardCategoryId ? (
                       <div className="flex-1 flex items-center justify-center">
                         <div className="text-center p-8">
@@ -697,7 +697,7 @@ export default function Admin() {
                         </div>
                       </div>
                     ) : (
-                  <div className="flex-1 flex flex-col overflow-hidden gap-4">
+                  <div className="flex flex-col gap-4">
                     {/* Category toolbar */}
                     {(() => {
                       const selectedBc = boardCategories.find(bc => bc.id === selectedBoardCategoryId);
@@ -922,7 +922,7 @@ export default function Admin() {
                       </CollapsibleContent>
                     </Collapsible>
 
-                    <div className="flex-1 overflow-y-auto space-y-3">
+                    <div className="space-y-3">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="text-sm font-medium text-muted-foreground">Questions ({questions.length}/5)</h4>
                       </div>
