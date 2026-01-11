@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameMode, type SessionState } from "@shared/schema";
+import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, couplesPromptPacks, couplesPrompts, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameMode, type SessionState, type GameType, type InsertGameType, type CouplesPromptPack, type InsertCouplesPromptPack, type CouplesPrompt, type InsertCouplesPrompt, type CouplesPromptPackWithCount } from "@shared/schema";
 import { users } from "@shared/models/auth";
 import { eq, and, asc, count, inArray, desc, sql, gte } from "drizzle-orm";
 
@@ -86,6 +86,26 @@ export interface IStorage {
   markQuestionCompleted(data: InsertSessionCompletedQuestion): Promise<SessionCompletedQuestion>;
   getCompletedQuestions(sessionId: number): Promise<number[]>;
   resetCompletedQuestions(sessionId: number): Promise<boolean>;
+  
+  // Game Types
+  getGameTypes(): Promise<GameType[]>;
+  getEnabledGameTypes(forHost: boolean): Promise<GameType[]>;
+  getGameType(id: number): Promise<GameType | undefined>;
+  getGameTypeBySlug(slug: string): Promise<GameType | undefined>;
+  updateGameType(id: number, data: Partial<InsertGameType>): Promise<GameType | undefined>;
+  
+  // Couples Prompt Packs
+  getCouplesPromptPacks(userId: string, role?: string): Promise<CouplesPromptPackWithCount[]>;
+  getCouplesPromptPack(id: number): Promise<CouplesPromptPack | undefined>;
+  createCouplesPromptPack(data: InsertCouplesPromptPack): Promise<CouplesPromptPack>;
+  updateCouplesPromptPack(id: number, data: Partial<InsertCouplesPromptPack>): Promise<CouplesPromptPack | undefined>;
+  deleteCouplesPromptPack(id: number): Promise<boolean>;
+  
+  // Couples Prompts
+  getCouplesPrompts(packId: number): Promise<CouplesPrompt[]>;
+  createCouplesPrompt(data: InsertCouplesPrompt): Promise<CouplesPrompt>;
+  updateCouplesPrompt(id: number, data: Partial<InsertCouplesPrompt>): Promise<CouplesPrompt | undefined>;
+  deleteCouplesPrompt(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -846,6 +866,104 @@ export class DatabaseStorage implements IStorage {
     await db.delete(boardCategories).where(eq(boardCategories.boardId, boardId));
     await db.delete(gameBoards).where(eq(gameBoards.boardId, boardId));
     await db.delete(boards).where(eq(boards.id, boardId));
+  }
+
+  // Game Types
+  async getGameTypes(): Promise<GameType[]> {
+    return await db.select().from(gameTypes).orderBy(asc(gameTypes.sortOrder));
+  }
+
+  async getEnabledGameTypes(forHost: boolean): Promise<GameType[]> {
+    if (forHost) {
+      return await db.select().from(gameTypes)
+        .where(eq(gameTypes.hostEnabled, true))
+        .orderBy(asc(gameTypes.sortOrder));
+    }
+    return await db.select().from(gameTypes)
+      .where(eq(gameTypes.playerEnabled, true))
+      .orderBy(asc(gameTypes.sortOrder));
+  }
+
+  async getGameType(id: number): Promise<GameType | undefined> {
+    const [gameType] = await db.select().from(gameTypes).where(eq(gameTypes.id, id));
+    return gameType;
+  }
+
+  async getGameTypeBySlug(slug: string): Promise<GameType | undefined> {
+    const [gameType] = await db.select().from(gameTypes).where(eq(gameTypes.slug, slug));
+    return gameType;
+  }
+
+  async updateGameType(id: number, data: Partial<InsertGameType>): Promise<GameType | undefined> {
+    const [updated] = await db.update(gameTypes).set(data).where(eq(gameTypes.id, id)).returning();
+    return updated;
+  }
+
+  // Couples Prompt Packs
+  async getCouplesPromptPacks(userId: string, role?: string): Promise<CouplesPromptPackWithCount[]> {
+    let packs;
+    if (role === 'super_admin') {
+      packs = await db.select().from(couplesPromptPacks).orderBy(desc(couplesPromptPacks.id));
+    } else {
+      packs = await db.select().from(couplesPromptPacks)
+        .where(eq(couplesPromptPacks.userId, userId))
+        .orderBy(desc(couplesPromptPacks.id));
+    }
+    
+    const packsWithCounts = await Promise.all(packs.map(async (pack) => {
+      const [promptCount] = await db.select({ count: count() })
+        .from(couplesPrompts)
+        .where(eq(couplesPrompts.packId, pack.id));
+      return {
+        ...pack,
+        promptCount: promptCount?.count ?? 0,
+      };
+    }));
+    
+    return packsWithCounts;
+  }
+
+  async getCouplesPromptPack(id: number): Promise<CouplesPromptPack | undefined> {
+    const [pack] = await db.select().from(couplesPromptPacks).where(eq(couplesPromptPacks.id, id));
+    return pack;
+  }
+
+  async createCouplesPromptPack(data: InsertCouplesPromptPack): Promise<CouplesPromptPack> {
+    const [pack] = await db.insert(couplesPromptPacks).values(data).returning();
+    return pack;
+  }
+
+  async updateCouplesPromptPack(id: number, data: Partial<InsertCouplesPromptPack>): Promise<CouplesPromptPack | undefined> {
+    const [updated] = await db.update(couplesPromptPacks).set(data).where(eq(couplesPromptPacks.id, id)).returning();
+    return updated;
+  }
+
+  async deleteCouplesPromptPack(id: number): Promise<boolean> {
+    await db.delete(couplesPrompts).where(eq(couplesPrompts.packId, id));
+    const result = await db.delete(couplesPromptPacks).where(eq(couplesPromptPacks.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Couples Prompts
+  async getCouplesPrompts(packId: number): Promise<CouplesPrompt[]> {
+    return await db.select().from(couplesPrompts)
+      .where(eq(couplesPrompts.packId, packId))
+      .orderBy(asc(couplesPrompts.intensity));
+  }
+
+  async createCouplesPrompt(data: InsertCouplesPrompt): Promise<CouplesPrompt> {
+    const [prompt] = await db.insert(couplesPrompts).values(data).returning();
+    return prompt;
+  }
+
+  async updateCouplesPrompt(id: number, data: Partial<InsertCouplesPrompt>): Promise<CouplesPrompt | undefined> {
+    const [updated] = await db.update(couplesPrompts).set(data).where(eq(couplesPrompts.id, id)).returning();
+    return updated;
+  }
+
+  async deleteCouplesPrompt(id: number): Promise<boolean> {
+    const result = await db.delete(couplesPrompts).where(eq(couplesPrompts.id, id));
+    return result.rowCount > 0;
   }
 }
 
