@@ -48,18 +48,18 @@ export async function registerRoutes(
     res.json(info);
   });
 
-  // Board routes
-  app.get("/api/boards", async (req, res) => {
+  // Board routes - protected (hosts only)
+  app.get("/api/boards", isAuthenticated, async (req, res) => {
     const boards = await storage.getBoards();
     res.json(boards);
   });
 
-  app.get("/api/boards/summary", async (req, res) => {
+  app.get("/api/boards/summary", isAuthenticated, async (req, res) => {
     const summaries = await storage.getBoardSummaries();
     res.json(summaries);
   });
 
-  app.get("/api/boards/:id", async (req, res) => {
+  app.get("/api/boards/:id", isAuthenticated, async (req, res) => {
     const board = await storage.getBoard(Number(req.params.id));
     if (!board) {
       return res.status(404).json({ message: "Board not found" });
@@ -67,7 +67,7 @@ export async function registerRoutes(
     res.json(board);
   });
 
-  app.post("/api/boards", async (req, res) => {
+  app.post("/api/boards", isAuthenticated, async (req, res) => {
     try {
       const { name, description, pointValues } = req.body;
       if (!name) {
@@ -85,7 +85,7 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/boards/:id", async (req, res) => {
+  app.put("/api/boards/:id", isAuthenticated, async (req, res) => {
     try {
       const { name, description, pointValues } = req.body;
       const board = await storage.updateBoard(Number(req.params.id), {
@@ -103,7 +103,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/boards/:id", async (req, res) => {
+  app.delete("/api/boards/:id", isAuthenticated, async (req, res) => {
     const deleted = await storage.deleteBoard(Number(req.params.id));
     if (!deleted) {
       return res.status(404).json({ message: "Board not found" });
@@ -111,13 +111,13 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
-  // Board categories (junction table)
-  app.get("/api/boards/:boardId/categories", async (req, res) => {
+  // Board categories (junction table) - protected
+  app.get("/api/boards/:boardId/categories", isAuthenticated, async (req, res) => {
     const boardCategories = await storage.getBoardCategories(Number(req.params.boardId));
     res.json(boardCategories);
   });
 
-  app.post("/api/boards/:boardId/categories", async (req, res) => {
+  app.post("/api/boards/:boardId/categories", isAuthenticated, async (req, res) => {
     try {
       const boardId = Number(req.params.boardId);
       const { categoryId } = req.body;
@@ -143,7 +143,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/board-categories/:id", async (req, res) => {
+  app.delete("/api/board-categories/:id", isAuthenticated, async (req, res) => {
     const deleted = await storage.deleteBoardCategory(Number(req.params.id));
     if (!deleted) {
       return res.status(404).json({ message: "Board category link not found" });
@@ -151,7 +151,7 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
-  app.put("/api/boards/:boardId/categories/reorder", async (req, res) => {
+  app.put("/api/boards/:boardId/categories/reorder", isAuthenticated, async (req, res) => {
     try {
       const boardId = Number(req.params.boardId);
       const { orderedIds } = req.body;
@@ -174,7 +174,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/boards/:boardId/categories/create-and-link", async (req, res) => {
+  app.post("/api/boards/:boardId/categories/create-and-link", isAuthenticated, async (req, res) => {
     try {
       const boardId = Number(req.params.boardId);
       const { name, description } = req.body;
@@ -204,13 +204,13 @@ export async function registerRoutes(
     }
   });
 
-  // Global categories (templates)
-  app.get(api.categories.list.path, async (req, res) => {
+  // Global categories (templates) - protected
+  app.get(api.categories.list.path, isAuthenticated, async (req, res) => {
     const categories = await storage.getCategories();
     res.json(categories);
   });
 
-  app.get(api.categories.get.path, async (req, res) => {
+  app.get(api.categories.get.path, isAuthenticated, async (req, res) => {
     const category = await storage.getCategory(Number(req.params.id));
     if (!category) {
       return res.status(404).json({ message: 'Category not found' });
@@ -218,7 +218,7 @@ export async function registerRoutes(
     res.json(category);
   });
 
-  app.post(api.categories.create.path, async (req, res) => {
+  app.post(api.categories.create.path, isAuthenticated, async (req, res) => {
     try {
       const data = api.categories.create.input.parse(req.body);
       const category = await storage.createCategory(data);
@@ -234,7 +234,7 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/categories/:id", async (req, res) => {
+  app.put("/api/categories/:id", isAuthenticated, async (req, res) => {
     try {
       const { name, description, imageUrl } = req.body;
       const category = await storage.updateCategory(Number(req.params.id), {
@@ -252,7 +252,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete(api.categories.delete.path, async (req, res) => {
+  app.delete(api.categories.delete.path, isAuthenticated, async (req, res) => {
     const deleted = await storage.deleteCategory(Number(req.params.id));
     if (!deleted) {
       return res.status(404).json({ message: 'Category not found' });
@@ -260,13 +260,13 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
-  // Questions (by board-category)
-  app.get("/api/board-categories/:boardCategoryId/questions", async (req, res) => {
+  // Questions (by board-category) - protected
+  app.get("/api/board-categories/:boardCategoryId/questions", isAuthenticated, async (req, res) => {
     const questions = await storage.getQuestionsByBoardCategory(Number(req.params.boardCategoryId));
     res.json(questions);
   });
 
-  app.post(api.questions.create.path, async (req, res) => {
+  app.post(api.questions.create.path, isAuthenticated, async (req, res) => {
     try {
       const data = api.questions.create.input.parse(req.body);
       const existingQuestions = await storage.getQuestionsByBoardCategory(data.boardCategoryId);
@@ -289,7 +289,7 @@ export async function registerRoutes(
     }
   });
 
-  app.put(api.questions.update.path, async (req, res) => {
+  app.put(api.questions.update.path, isAuthenticated, async (req, res) => {
     try {
       const data = api.questions.update.input.parse(req.body);
       const existingQuestion = await storage.getQuestion(Number(req.params.id));
@@ -315,7 +315,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete(api.questions.delete.path, async (req, res) => {
+  app.delete(api.questions.delete.path, isAuthenticated, async (req, res) => {
     const deleted = await storage.deleteQuestion(Number(req.params.id));
     if (!deleted) {
       return res.status(404).json({ message: 'Question not found' });
@@ -323,7 +323,7 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
-  app.post(api.questions.verifyAnswer.path, async (req, res) => {
+  app.post(api.questions.verifyAnswer.path, isAuthenticated, async (req, res) => {
     try {
       const { answer } = api.questions.verifyAnswer.input.parse(req.body);
       const question = await storage.getQuestion(Number(req.params.id));
@@ -350,8 +350,8 @@ export async function registerRoutes(
     }
   });
 
-  // Get full board data for gameplay
-  app.get("/api/boards/:id/full", async (req, res) => {
+  // Get full board data for gameplay - protected
+  app.get("/api/boards/:id/full", isAuthenticated, async (req, res) => {
     try {
       const board = await storage.getBoard(Number(req.params.id));
       if (!board) {
@@ -365,7 +365,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post('/api/upload', upload.single('file'), (req, res) => {
+  app.post('/api/upload', isAuthenticated, upload.single('file'), (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }

@@ -1,5 +1,5 @@
 import { useBoards, useBoardCategories, useBoard } from "@/hooks/use-quiz";
-import { Loader2, Settings, Maximize2, Minimize2, Sparkles, Star, ArrowLeft, Grid3X3 } from "lucide-react";
+import { Loader2, Settings, Maximize2, Minimize2, Sparkles, Star, ArrowLeft, Grid3X3, LogOut } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -15,10 +15,14 @@ import { ThemeDecorations } from "@/components/ThemeDecorations";
 import { BuzzerPanel, BuzzerPanelHandle, BuzzEvent } from "@/components/BuzzerPanel";
 import { useScore } from "@/components/ScoreContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useAuth } from "@/hooks/use-auth";
+import LandingPage from "./LandingPage";
 import type { Question, Board } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Home() {
+  const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
   const { data: boards, isLoading: isLoadingBoards } = useBoards();
   const { data: selectedBoard } = useBoard(selectedBoardId);
@@ -94,6 +98,21 @@ export default function Home() {
   };
 
   const pointValues = selectedBoard?.pointValues || [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+
+  // Show loading while checking auth
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gradient-game">
+        <Loader2 className="w-12 h-12 text-primary animate-spin" />
+        <p className="text-white/60 mt-4">Loading...</p>
+      </div>
+    );
+  }
+  
+  // Show landing page if not authenticated
+  if (!isAuthenticated) {
+    return <LandingPage />;
+  }
 
   if (isLoadingBoards) {
     return (
@@ -172,6 +191,11 @@ export default function Home() {
                   <Settings className="w-5 h-5" />
                 </Button>
               </Link>
+              <a href="/api/logout">
+                <Button variant="ghost" size="icon" className="text-white/60 hover:text-white hover:bg-white/10" data-testid="button-logout">
+                  <LogOut className="w-5 h-5" />
+                </Button>
+              </a>
             </motion.div>
           </div>
         </header>
@@ -182,6 +206,11 @@ export default function Home() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
           >
+            {user && (
+              <p className="text-white/60 text-sm mb-2">
+                Welcome, {user.firstName || user.email || 'Host'}!
+              </p>
+            )}
             <motion.h2 
               className="text-4xl md:text-5xl font-black text-white mb-3 text-glow"
             >
