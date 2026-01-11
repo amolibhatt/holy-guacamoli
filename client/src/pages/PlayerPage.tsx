@@ -125,6 +125,18 @@ export default function PlayerPage() {
             variant: "destructive",
           });
           break;
+        case "room:closed":
+          clearSession();
+          setJoined(false);
+          joinedRef.current = false;
+          shouldReconnectRef.current = false;
+          setStatus("disconnected");
+          toast({
+            title: "Game ended",
+            description: data.reason || "The game room has been closed.",
+            variant: "destructive",
+          });
+          break;
         case "buzzer:unlocked":
           setBuzzerLocked(false);
           setHasBuzzed(false);
@@ -205,6 +217,14 @@ export default function PlayerPage() {
     setStatus("disconnected");
   };
 
+  const handleManualReconnect = () => {
+    reconnectAttemptsRef.current = 0;
+    setReconnectAttempts(0);
+    shouldReconnectRef.current = true;
+    setStatus("connecting");
+    connect(true);
+  };
+
   const handleJoin = () => {
     if (roomCode.trim() && playerName.trim()) {
       setStatus("connecting");
@@ -282,8 +302,8 @@ export default function PlayerPage() {
   }
 
   return (
-    <div className="min-h-screen gradient-game flex flex-col">
-      <header className="p-4 flex items-center justify-between bg-card/40 backdrop-blur border-b border-primary/20">
+    <div className="min-h-screen gradient-game flex flex-col" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <header className="p-4 flex items-center justify-between bg-card/40 backdrop-blur border-b border-primary/20" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
         <div className="flex items-center gap-4">
           <div>
             <span className="text-xs text-muted-foreground">Room</span>
@@ -306,9 +326,24 @@ export default function PlayerPage() {
       </header>
 
       {status === "reconnecting" && (
-        <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-4 py-2 text-center text-sm text-yellow-200">
+        <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-4 py-2 text-center text-sm text-foreground">
           <RefreshCw className="w-4 h-4 inline-block mr-2 animate-spin" />
           Connection lost. Reconnecting... (Attempt {reconnectAttempts + 1}/5)
+        </div>
+      )}
+
+      {status === "disconnected" && joined === false && playerId && (
+        <div className="bg-red-500/20 border-b border-red-500/30 px-4 py-3 text-center">
+          <p className="text-sm text-foreground mb-2">Connection lost after multiple attempts</p>
+          <Button 
+            size="sm" 
+            onClick={handleManualReconnect}
+            className="gap-2"
+            data-testid="button-reconnect"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Try Again
+          </Button>
         </div>
       )}
 
@@ -394,7 +429,7 @@ export default function PlayerPage() {
         </AnimatePresence>
       </main>
 
-      <footer className="p-4 text-center" role="status" aria-live="polite">
+      <footer className="p-4 text-center" role="status" aria-live="polite" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
         <span className={`text-sm font-medium ${buzzerLocked ? "text-muted-foreground" : "text-primary"}`}>
           {buzzerLocked ? "Buzzer locked - waiting for host" : "Buzzer ready - tap to answer!"}
         </span>

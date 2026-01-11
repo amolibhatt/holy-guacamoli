@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Trophy, Star, Crown, Sparkles } from "lucide-react";
+import { Trophy, Star, Crown, Sparkles, Download, Share2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useScore, Contestant } from "./ScoreContext";
 import confetti from "canvas-confetti";
 import { soundManager } from "@/lib/sounds";
+import { useToast } from "@/hooks/use-toast";
 
 interface VictoryScreenProps {
   onClose: () => void;
@@ -12,11 +13,48 @@ interface VictoryScreenProps {
 
 export function VictoryScreen({ onClose }: VictoryScreenProps) {
   const { contestants, resetGame, resetGameEnd } = useScore();
+  const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
 
   const sortedContestants = [...contestants].sort((a, b) => b.score - a.score);
   const winner = sortedContestants[0];
   const runnerUp = sortedContestants[1];
   const thirdPlace = sortedContestants[2];
+
+  const generateResultsText = () => {
+    const date = new Date().toLocaleDateString();
+    let text = `Holy GuacAmoli! Game Results - ${date}\n\n`;
+    text += "Final Standings:\n";
+    sortedContestants.forEach((c, i) => {
+      const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
+      text += `${medal} ${c.name}: ${c.score} points\n`;
+    });
+    return text;
+  };
+
+  const handleCopyResults = async () => {
+    try {
+      await navigator.clipboard.writeText(generateResultsText());
+      setCopied(true);
+      toast({ title: "Results copied to clipboard!" });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({ title: "Failed to copy", variant: "destructive" });
+    }
+  };
+
+  const handleShareResults = async () => {
+    const text = generateResultsText();
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Holy GuacAmoli! Results", text });
+      } catch {
+        handleCopyResults();
+      }
+    } else {
+      handleCopyResults();
+    }
+  };
 
   useEffect(() => {
     soundManager.play('victory', 0.6);
@@ -181,23 +219,49 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
           initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 1 }}
-          className="flex justify-center gap-4"
+          className="flex flex-col items-center gap-4"
         >
-          <Button
-            size="lg"
-            onClick={handlePlayAgain}
-            className="gradient-header text-white font-bold glow-primary"
-          >
-            Play Again
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            onClick={handleClose}
-            className="border-white/30 text-white hover:bg-white/10"
-          >
-            Close
-          </Button>
+          <div className="flex justify-center gap-3">
+            <Button
+              size="lg"
+              onClick={handlePlayAgain}
+              className="gradient-header text-white font-bold glow-primary"
+              data-testid="button-play-again"
+            >
+              Play Again
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={handleClose}
+              className="border-white/30 text-white hover:bg-white/10"
+              data-testid="button-close-victory"
+            >
+              Close
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleCopyResults}
+              className="text-white/70 hover:text-white hover:bg-white/10 gap-2"
+              data-testid="button-copy-results"
+            >
+              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              {copied ? "Copied!" : "Copy Results"}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleShareResults}
+              className="text-white/70 hover:text-white hover:bg-white/10 gap-2"
+              data-testid="button-share-results"
+            >
+              <Share2 className="w-4 h-4" />
+              Share
+            </Button>
+          </div>
         </motion.div>
       </motion.div>
     </motion.div>
