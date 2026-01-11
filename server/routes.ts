@@ -1336,5 +1336,168 @@ export async function registerRoutes(
     }
   });
 
+  // ===============================
+  // Storyboard Routes
+  // ===============================
+
+  // Get storyboard (timeline of milestones and favorite answers)
+  app.get("/api/double-dip/storyboard", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const pair = await storage.getDoubleDipPairForUser(userId);
+      
+      if (!pair) {
+        return res.status(404).json({ message: "No pair found" });
+      }
+      
+      // Get all data for storyboard
+      const [milestones, favorites, dailySets, allQuestions] = await Promise.all([
+        storage.getDoubleDipMilestones(pair.id),
+        storage.getDoubleDipFavorites(pair.id),
+        storage.getDoubleDipDailySets(pair.id),
+        storage.getDoubleDipQuestions(),
+      ]);
+      
+      // Get all answers for revealed sets
+      const answersMap: Record<number, any[]> = {};
+      for (const set of dailySets) {
+        answersMap[set.id] = await storage.getDoubleDipAnswers(set.id);
+      }
+      
+      // Build timeline items
+      const timelineItems: any[] = [];
+      
+      // Add milestones to timeline
+      for (const milestone of milestones) {
+        timelineItems.push({
+          type: 'milestone',
+          id: `milestone-${milestone.id}`,
+          date: milestone.createdAt,
+          data: milestone,
+        });
+      }
+      
+      // Add favorite answers to timeline
+      for (const fav of favorites) {
+        const answer = Object.values(answersMap).flat().find((a: any) => a.id === fav.answerId);
+        if (answer) {
+          const question = allQuestions.find(q => q.id === answer.questionId);
+          timelineItems.push({
+            type: 'favorite',
+            id: `favorite-${fav.id}`,
+            date: fav.createdAt,
+            data: {
+              favorite: fav,
+              answer,
+              question,
+            },
+          });
+        }
+      }
+      
+      // Add revealed daily sets as entries
+      for (const set of dailySets) {
+        timelineItems.push({
+          type: 'reveal',
+          id: `reveal-${set.id}`,
+          date: set.createdAt,
+          data: {
+            dailySet: set,
+            answers: answersMap[set.id] || [],
+            questions: allQuestions.filter(q => (set.questionIds as number[]).includes(q.id)),
+          },
+        });
+      }
+      
+      // Sort by date descending
+      timelineItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      
+      res.json({
+        pair,
+        timeline: timelineItems,
+        stats: {
+          totalDays: dailySets.length,
+          currentStreak: pair.streakCount,
+          totalFavorites: favorites.length,
+          totalMilestones: milestones.length,
+        },
+      });
+    } catch (err) {
+      console.error("Error getting storyboard:", err);
+      res.status(500).json({ message: "Failed to get storyboard" });
+    }
+  });
+
+  // Toggle favorite on an answer
+  app.post("/api/double-dip/favorites", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { answerId } = req.body;
+      
+      const pair = await storage.getDoubleDipPairForUser(userId);
+      if (!pair) {
+        return res.status(404).json({ message: "No pair found" });
+      }
+      
+      // Check if already favorited
+      const existing = await storage.getDoubleDipFavorite(answerId, userId);
+      
+      if (existing) {
+        // Remove favorite
+        await storage.deleteDoubleDipFavorite(answerId, userId);
+        res.json({ favorited: false });
+      } else {
+        // Add favorite
+        await storage.createDoubleDipFavorite({
+          pairId: pair.id,
+          answerId,
+          userId,
+        });
+        res.json({ favorited: true });
+      }
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
+      res.status(500).json({ message: "Failed to toggle favorite" });
+    }
+  });
+
+  // Get milestones
+  app.get("/api/double-dip/milestones", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const pair = await storage.getDoubleDipPairForUser(userId);
+      
+      if (!pair) {
+        return res.status(404).json({ message: "No pair found" });
+      }
+      
+      const milestones = await storage.getDoubleDipMilestones(pair.id);
+      res.json(milestones);
+    } catch (err) {
+      console.error("Error getting milestones:", err);
+      res.status(500).json({ message: "Failed to get milestones" });
+    }
+  });
+
+  // Get user's favorites for current session (to show heart states)
+  app.get("/api/double-dip/favorites", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const pair = await storage.getDoubleDipPairForUser(userId);
+      
+      if (!pair) {
+        return res.status(404).json({ message: "No pair found" });
+      }
+      
+      const favorites = await storage.getDoubleDipFavorites(pair.id);
+      // Filter to only user's favorites
+      const userFavorites = favorites.filter(f => f.userId === userId);
+      res.json(userFavorites);
+    } catch (err) {
+      console.error("Error getting favorites:", err);
+      res.status(500).json({ message: "Failed to get favorites" });
+    }
+  });
+
   return httpServer;
 }

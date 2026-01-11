@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction } from "@shared/schema";
+import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite } from "@shared/schema";
 import { users } from "@shared/models/auth";
 import { eq, and, asc, count, inArray, desc, sql, gte } from "drizzle-orm";
 
@@ -117,6 +117,19 @@ export interface IStorage {
   // Double Dip - Reactions
   createDoubleDipReaction(data: InsertDoubleDipReaction): Promise<DoubleDipReaction>;
   getDoubleDipReactions(answerId: number): Promise<DoubleDipReaction[]>;
+  
+  // Double Dip - Milestones
+  getDoubleDipMilestones(pairId: number): Promise<DoubleDipMilestone[]>;
+  createDoubleDipMilestone(data: InsertDoubleDipMilestone): Promise<DoubleDipMilestone>;
+  
+  // Double Dip - Favorites
+  getDoubleDipFavorites(pairId: number): Promise<DoubleDipFavorite[]>;
+  getDoubleDipFavorite(answerId: number, userId: string): Promise<DoubleDipFavorite | undefined>;
+  createDoubleDipFavorite(data: InsertDoubleDipFavorite): Promise<DoubleDipFavorite>;
+  deleteDoubleDipFavorite(answerId: number, userId: string): Promise<boolean>;
+  
+  // Double Dip - Get all daily sets for storyboard
+  getDoubleDipDailySets(pairId: number): Promise<DoubleDipDailySet[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -993,6 +1006,49 @@ export class DatabaseStorage implements IStorage {
 
   async getDoubleDipReactions(answerId: number): Promise<DoubleDipReaction[]> {
     return await db.select().from(doubleDipReactions).where(eq(doubleDipReactions.answerId, answerId));
+  }
+  
+  // Double Dip - Milestones
+  async getDoubleDipMilestones(pairId: number): Promise<DoubleDipMilestone[]> {
+    return await db.select().from(doubleDipMilestones)
+      .where(eq(doubleDipMilestones.pairId, pairId))
+      .orderBy(desc(doubleDipMilestones.createdAt));
+  }
+  
+  async createDoubleDipMilestone(data: InsertDoubleDipMilestone): Promise<DoubleDipMilestone> {
+    const [milestone] = await db.insert(doubleDipMilestones).values(data as any).returning();
+    return milestone;
+  }
+  
+  // Double Dip - Favorites
+  async getDoubleDipFavorites(pairId: number): Promise<DoubleDipFavorite[]> {
+    return await db.select().from(doubleDipFavorites)
+      .where(eq(doubleDipFavorites.pairId, pairId))
+      .orderBy(desc(doubleDipFavorites.createdAt));
+  }
+  
+  async getDoubleDipFavorite(answerId: number, userId: string): Promise<DoubleDipFavorite | undefined> {
+    const [fav] = await db.select().from(doubleDipFavorites)
+      .where(and(eq(doubleDipFavorites.answerId, answerId), eq(doubleDipFavorites.userId, userId)));
+    return fav;
+  }
+  
+  async createDoubleDipFavorite(data: InsertDoubleDipFavorite): Promise<DoubleDipFavorite> {
+    const [fav] = await db.insert(doubleDipFavorites).values(data as any).returning();
+    return fav;
+  }
+  
+  async deleteDoubleDipFavorite(answerId: number, userId: string): Promise<boolean> {
+    const result = await db.delete(doubleDipFavorites)
+      .where(and(eq(doubleDipFavorites.answerId, answerId), eq(doubleDipFavorites.userId, userId)));
+    return true;
+  }
+  
+  // Double Dip - All daily sets for storyboard
+  async getDoubleDipDailySets(pairId: number): Promise<DoubleDipDailySet[]> {
+    return await db.select().from(doubleDipDailySets)
+      .where(and(eq(doubleDipDailySets.pairId, pairId), eq(doubleDipDailySets.revealed, true)))
+      .orderBy(desc(doubleDipDailySets.createdAt));
   }
 }
 
