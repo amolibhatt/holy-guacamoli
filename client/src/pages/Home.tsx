@@ -215,74 +215,105 @@ export default function Home() {
             </>
           ) : selectedMode === 'grid' && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="max-w-lg mx-auto"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="max-w-4xl mx-auto"
             >
-              <Button 
-                variant="ghost" 
-                className="mb-6 text-white/60 hover:text-white gap-2"
-                onClick={() => setSelectedMode(null)}
-                data-testid="button-back-to-modes"
-              >
-                <ArrowRight className="w-4 h-4 rotate-180" />
-                Back to Game Modes
-              </Button>
-
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
-                  <Grid3X3 className="w-8 h-8 text-white" />
-                </div>
-                <h2 className="text-3xl font-black text-white mb-2 text-glow">Grid of Grudges</h2>
-                <p className="text-white/60">Select a board to play</p>
+              <div className="flex items-center justify-between mb-8">
+                <Button 
+                  variant="ghost" 
+                  className="text-white/60 hover:text-white gap-2"
+                  onClick={() => setSelectedMode(null)}
+                  data-testid="button-back-to-modes"
+                >
+                  <ArrowRight className="w-4 h-4 rotate-180" />
+                  Back
+                </Button>
+                <Link href="/admin">
+                  <Button variant="outline" size="sm" className="gap-2 border-white/20 text-white/60 hover:text-white hover:bg-white/10">
+                    <Settings className="w-4 h-4" />
+                    Manage Boards
+                  </Button>
+                </Link>
               </div>
 
+              <motion.div 
+                className="text-center mb-10"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <motion.div 
+                  className="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 flex items-center justify-center mx-auto mb-5 shadow-2xl shadow-purple-500/30"
+                  animate={{ 
+                    boxShadow: ['0 25px 50px -12px rgba(168, 85, 247, 0.3)', '0 25px 50px -12px rgba(168, 85, 247, 0.5)', '0 25px 50px -12px rgba(168, 85, 247, 0.3)']
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Grid3X3 className="w-10 h-10 text-white" />
+                </motion.div>
+                <h2 className="text-4xl md:text-5xl font-black text-white mb-3 text-glow">Grid of Grudges</h2>
+                <p className="text-white/50 text-lg">Choose your battlefield</p>
+              </motion.div>
+
               {isLoadingBoards ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <div className="flex justify-center py-12">
+                  <Loader2 className="w-10 h-10 animate-spin text-primary" />
                 </div>
               ) : boards.length === 0 ? (
                 <motion.div 
-                  className="text-center py-12 px-8 bg-card/60 rounded-2xl border border-white/10"
+                  className="text-center py-16 px-8 bg-gradient-to-b from-card/80 to-card/40 rounded-3xl border border-white/10 backdrop-blur-xl"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2 }}
                 >
-                  <AvocadoIcon className="w-16 h-16 opacity-30 mx-auto mb-4" />
-                  <h3 className="text-xl font-bold text-white mb-2">No boards yet</h3>
-                  <p className="text-white/50 mb-6">Create a board in the admin panel</p>
+                  <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6">
+                    <AvocadoIcon className="w-14 h-14 opacity-40" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-3">No boards yet</h3>
+                  <p className="text-white/50 mb-8 max-w-sm mx-auto">Create your first game board in the admin panel to get started</p>
                   <Link href="/admin">
-                    <Button className="gap-2" data-testid="button-create-board">
-                      <Settings className="w-4 h-4" />
-                      Go to Admin Panel
+                    <Button size="lg" className="gap-2" data-testid="button-create-board">
+                      <Settings className="w-5 h-5" />
+                      Create Your First Board
                     </Button>
                   </Link>
                 </motion.div>
               ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {boards.map((board, idx) => (
                     <motion.button
                       key={board.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      whileHover={{ x: 8 }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 + idx * 0.05 }}
+                      whileHover={{ scale: 1.02, y: -4 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleSelectBoard(board)}
-                      className="w-full flex items-center gap-4 px-6 py-4 bg-card/60 backdrop-blur-sm border border-primary/20 rounded-xl text-left transition-all hover:bg-card/80 hover:border-primary/50 group"
+                      className="relative overflow-hidden flex flex-col items-center gap-4 p-8 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-primary/20 rounded-2xl text-center transition-all hover:border-primary/50 hover:shadow-xl hover:shadow-primary/10 group"
                       data-testid={`button-board-${board.id}`}
                     >
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                        <Grid3X3 className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-white group-hover:text-primary transition-colors">
+                      <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-transparent to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <motion.div 
+                        className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30"
+                        whileHover={{ rotate: 5 }}
+                      >
+                        <Grid3X3 className="w-8 h-8 text-white" />
+                      </motion.div>
+                      <div className="relative z-10">
+                        <h3 className="text-2xl font-bold text-white group-hover:text-primary transition-colors mb-1">
                           {board.name}
                         </h3>
-                        {board.description && (
-                          <p className="text-white/50 text-sm truncate">{board.description}</p>
+                        {board.description ? (
+                          <p className="text-white/50 text-sm">{board.description}</p>
+                        ) : (
+                          <p className="text-white/30 text-sm">{(board.pointValues as number[])?.length || 5} point levels</p>
                         )}
                       </div>
-                      <ArrowRight className="w-5 h-5 text-white/30 group-hover:text-primary transition-colors" />
+                      <div className="flex items-center gap-2 text-primary/80 group-hover:text-primary transition-colors mt-2">
+                        <span className="text-sm font-medium">Play Now</span>
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
                     </motion.button>
                   ))}
                 </div>
