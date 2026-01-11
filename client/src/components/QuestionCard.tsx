@@ -70,7 +70,7 @@ function QuestionContent({ content }: { content: string }) {
                   <img 
                     src={src} 
                     alt={alt || ''} 
-                    className="max-w-full max-h-80 mx-auto rounded-xl my-4 shadow-lg"
+                    className="max-w-full max-h-48 mx-auto rounded-xl my-4 shadow-lg object-contain"
                   />
                 ),
               }}
@@ -226,17 +226,35 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
           <span className="text-2xl font-bold text-white/80">pts</span>
         </motion.div>
         <div className="flex items-center gap-3 relative z-10">
+          <Button
+            variant="outline"
+            onClick={() => startTimer(7)}
+            disabled={isTimerRunning}
+            className="border-white/40 text-white hover:bg-white/20"
+          >
+            <Timer className="w-4 h-4 mr-2" />
+            7s
+          </Button>
           {timer !== null && (
             <motion.div 
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               className={`
-                w-16 h-16 rounded-full flex items-center justify-center font-mono text-2xl font-black border-4
-                ${timer <= 5 ? 'bg-red-500 text-white border-red-300 animate-pulse shadow-lg shadow-red-500/50' : 'bg-white/20 text-white border-white/30'}
+                w-14 h-14 rounded-full flex items-center justify-center font-mono text-2xl font-black border-4
+                ${timer <= 3 ? 'bg-red-500 text-white border-red-300 animate-pulse shadow-lg shadow-red-500/50' : 'bg-white/20 text-white border-white/30'}
               `}
             >
               {timer}
             </motion.div>
+          )}
+          {isTimerRunning && (
+            <Button
+              variant="outline"
+              onClick={stopTimer}
+              className="border-red-400/50 text-red-300 hover:bg-red-500/20"
+            >
+              Stop
+            </Button>
           )}
           <Button
             size="lg"
@@ -349,37 +367,6 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [] }:
           )}
         </AnimatePresence>
 
-        <div className="flex justify-center gap-3 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Button
-              variant="outline"
-              onClick={() => startTimer(5)}
-              disabled={isTimerRunning}
-              className="border-primary/40 text-foreground hover:bg-primary/20"
-            >
-              <Timer className="w-4 h-4 mr-2" />
-              5s
-            </Button>
-          </motion.div>
-          {isTimerRunning && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-            >
-              <Button
-                variant="outline"
-                onClick={stopTimer}
-                className="border-red-500/50 text-red-400 hover:bg-red-500/20"
-              >
-                Stop
-              </Button>
-            </motion.div>
-          )}
-        </div>
 
         {contestants.length > 0 ? (
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
