@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, Heart, Copy, Check, Loader2, Send, Lock, Unlock, Flame, Users, Sparkles, MessageCircle } from "lucide-react";
+import { ArrowLeft, Heart, Copy, Check, Loader2, Send, Lock, Unlock, Flame, Users, Sparkles, MessageCircle, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { DoubleDipPair, DoubleDipQuestion, DoubleDipDailySet, DoubleDipAnswer, CategoryInsight } from "@shared/schema";
+import type { DoubleDipPair, DoubleDipQuestion, DoubleDipDailySet, DoubleDipAnswer, CategoryInsight, DoubleDipFavorite } from "@shared/schema";
 
 const CATEGORY_CONFIG: Record<string, { name: string; emoji: string; color: string; bg: string }> = {
   deep_end: { name: "The Deep End", emoji: "ocean", color: "text-blue-500", bg: "bg-blue-500/10" },
@@ -48,6 +48,21 @@ export default function CouplesGame() {
   const { data: dailyData, isLoading: isLoadingDaily } = useQuery<DailyResponse>({
     queryKey: ['/api/double-dip/daily'],
     enabled: isAuthenticated && !!pair && pair.status === 'active',
+  });
+
+  const { data: favorites = [] } = useQuery<DoubleDipFavorite[]>({
+    queryKey: ['/api/double-dip/favorites'],
+    enabled: isAuthenticated && !!pair && pair.status === 'active',
+  });
+
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async (answerId: number) => {
+      const res = await apiRequest('POST', '/api/double-dip/favorites', { answerId });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/double-dip/favorites'] });
+    },
   });
 
   const createPairMutation = useMutation({
@@ -335,7 +350,7 @@ export default function CouplesGame() {
 
                 {dailyData.revealed ? (
                   <div className="space-y-4">
-                    <div className="text-center py-4">
+                    <div className="flex items-center justify-between py-4">
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
@@ -345,12 +360,20 @@ export default function CouplesGame() {
                         <span className="font-medium">Answers Revealed!</span>
                         <Sparkles className="w-4 h-4" />
                       </motion.div>
+                      <Link href="/couples/storyboard">
+                        <Button variant="outline" size="sm" data-testid="button-storyboard">
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          Storyboard
+                        </Button>
+                      </Link>
                     </div>
                     
                     {dailyData.questions.map((question) => {
                       const config = CATEGORY_CONFIG[question.category] || CATEGORY_CONFIG.deep_end;
                       const userAnswer = dailyData.answers.find(a => a.questionId === question.id && a.userId === user?.id);
                       const partnerAnswer = dailyData.answers.find(a => a.questionId === question.id && a.userId !== user?.id);
+                      const isUserFavorited = userAnswer && favorites.some(f => f.answerId === userAnswer.id);
+                      const isPartnerFavorited = partnerAnswer && favorites.some(f => f.answerId === partnerAnswer.id);
                       
                       return (
                         <Card key={question.id} className="overflow-hidden">
@@ -363,13 +386,31 @@ export default function CouplesGame() {
                             <p className="font-medium text-foreground">{question.questionText}</p>
                             
                             <div className="grid grid-cols-2 gap-3">
-                              <div className="bg-pink-500/5 rounded-lg p-3">
+                              <div className="bg-pink-500/5 rounded-lg p-3 relative group">
                                 <p className="text-xs text-pink-500 font-medium mb-1">Your Answer</p>
-                                <p className="text-sm text-foreground">{userAnswer?.answerText || "—"}</p>
+                                <p className="text-sm text-foreground pr-6">{userAnswer?.answerText || "—"}</p>
+                                {userAnswer && (
+                                  <button
+                                    onClick={() => toggleFavoriteMutation.mutate(userAnswer.id)}
+                                    className="absolute top-2 right-2 p-1 rounded-full hover:bg-pink-500/20 transition-colors"
+                                    data-testid={`button-favorite-user-${question.id}`}
+                                  >
+                                    <Heart className={`w-4 h-4 ${isUserFavorited ? 'text-pink-500 fill-pink-500' : 'text-muted-foreground'}`} />
+                                  </button>
+                                )}
                               </div>
-                              <div className="bg-purple-500/5 rounded-lg p-3">
+                              <div className="bg-purple-500/5 rounded-lg p-3 relative group">
                                 <p className="text-xs text-purple-500 font-medium mb-1">Partner's Answer</p>
-                                <p className="text-sm text-foreground">{partnerAnswer?.answerText || "—"}</p>
+                                <p className="text-sm text-foreground pr-6">{partnerAnswer?.answerText || "—"}</p>
+                                {partnerAnswer && (
+                                  <button
+                                    onClick={() => toggleFavoriteMutation.mutate(partnerAnswer.id)}
+                                    className="absolute top-2 right-2 p-1 rounded-full hover:bg-purple-500/20 transition-colors"
+                                    data-testid={`button-favorite-partner-${question.id}`}
+                                  >
+                                    <Heart className={`w-4 h-4 ${isPartnerFavorited ? 'text-pink-500 fill-pink-500' : 'text-muted-foreground'}`} />
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </CardContent>
