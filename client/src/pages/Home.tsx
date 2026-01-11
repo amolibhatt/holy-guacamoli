@@ -29,7 +29,7 @@ export default function Home() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gradient-game">
         <Loader2 className="w-12 h-12 text-primary animate-spin" />
-        <p className="text-white/60 mt-4">Loading...</p>
+        <p className="text-muted-foreground mt-4">Loading...</p>
       </div>
     );
   }
@@ -78,10 +78,10 @@ export default function Home() {
               <AvocadoIcon className="w-7 h-7" />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-xl font-bold tracking-tight text-white">
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
                 Holy GuacAmoli!
               </h1>
-              <span className="text-xs text-white/50">Dip into the facts!</span>
+              <span className="text-xs text-muted-foreground">Dip into the facts!</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -102,7 +102,7 @@ export default function Home() {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-white/60 hover:text-white hover:bg-white/10" 
+              className="text-muted-foreground hover:text-foreground hover:bg-foreground/10" 
               data-testid="button-logout"
               onClick={() => logout()}
               disabled={isLoggingOut}
@@ -116,7 +116,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto">
           {user && (
             <motion.p 
-              className="text-white/60 text-sm text-center mb-6"
+              className="text-muted-foreground text-sm text-center mb-6"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
@@ -127,8 +127,8 @@ export default function Home() {
           {selectedMode === null ? (
             <>
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-white mb-2">Choose Your Game</h2>
-                <p className="text-white/50">Select a game mode to play</p>
+                <h2 className="text-3xl font-bold text-foreground mb-2">Choose Your Game</h2>
+                <p className="text-muted-foreground">Select a game mode to play</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -154,10 +154,10 @@ export default function Home() {
                           <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${mode.gradient} flex items-center justify-center mx-auto mb-4`}>
                             <Icon className="w-8 h-8 text-white" />
                           </div>
-                          <h3 className={`text-xl font-bold mb-2 ${mode.available ? 'text-white' : 'text-white/60'}`}>
+                          <h3 className={`text-xl font-bold mb-2 ${mode.available ? 'text-foreground' : 'text-muted-foreground'}`}>
                             {mode.name}
                           </h3>
-                          <p className={`text-sm ${mode.available ? 'text-white/60' : 'text-white/40'}`}>
+                          <p className={`text-sm ${mode.available ? 'text-muted-foreground' : 'text-muted-foreground/60'}`}>
                             {mode.description}
                           </p>
                           {!mode.available && (
@@ -187,7 +187,7 @@ export default function Home() {
               <div className="flex items-center justify-between mb-8">
                 <Button 
                   variant="ghost" 
-                  className="text-white/60 hover:text-white gap-2"
+                  className="text-muted-foreground hover:text-foreground gap-2"
                   onClick={() => setSelectedMode(null)}
                   data-testid="button-back-to-modes"
                 >
@@ -195,7 +195,7 @@ export default function Home() {
                   Back
                 </Button>
                 <Link href="/admin">
-                  <Button variant="outline" size="sm" className="gap-2 border-white/20 text-white/60 hover:text-white hover:bg-white/10">
+                  <Button variant="outline" size="sm" className="gap-2 border-border text-muted-foreground hover:text-foreground hover:bg-foreground/10">
                     <Settings className="w-4 h-4" />
                     Manage Boards
                   </Button>
@@ -206,8 +206,8 @@ export default function Home() {
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4">
                   <Grid3X3 className="w-8 h-8 text-white" />
                 </div>
-                <h2 className="text-3xl font-bold text-white mb-2">Grid of Grudges</h2>
-                <p className="text-white/50">Choose your battlefield</p>
+                <h2 className="text-3xl font-bold text-foreground mb-2">Grid of Grudges</h2>
+                <p className="text-muted-foreground">Choose your battlefield</p>
               </div>
 
               {isLoadingBoards ? (
@@ -224,8 +224,8 @@ export default function Home() {
                   <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6">
                     <AvocadoIcon className="w-14 h-14 opacity-40" />
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-3">No boards yet</h3>
-                  <p className="text-white/50 mb-8 max-w-sm mx-auto">Create your first game board in the admin panel to get started</p>
+                  <h3 className="text-2xl font-bold text-foreground mb-3">No boards yet</h3>
+                  <p className="text-muted-foreground mb-8 max-w-sm mx-auto">Create your first game board in the admin panel to get started</p>
                   <Link href="/admin">
                     <Button size="lg" className="gap-2" data-testid="button-create-board">
                       <Settings className="w-5 h-5" />

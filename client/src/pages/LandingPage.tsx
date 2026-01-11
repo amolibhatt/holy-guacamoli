@@ -64,14 +64,14 @@ export default function LandingPage() {
             <AvocadoIcon className="w-14 h-14 drop-shadow-lg" />
           </motion.div>
           
-          <h1 className="text-4xl lg:text-5xl font-black text-white mb-2 text-glow" data-testid="text-title">
+          <h1 className="text-4xl lg:text-5xl font-black text-foreground mb-2 text-glow" data-testid="text-title">
             Holy GuacAmoli!
           </h1>
-          <p className="text-white/50 text-sm uppercase tracking-widest mb-6" data-testid="text-tagline">
+          <p className="text-muted-foreground text-sm uppercase tracking-widest mb-6" data-testid="text-tagline">
             Amoli's Birthday Trivia
           </p>
           
-          <p className="text-white/70 text-lg mb-8" data-testid="text-description">
+          <p className="text-muted-foreground text-lg mb-8" data-testid="text-description">
             Host an exciting Jeopardy-style trivia game for your party. Create custom categories, manage questions, and let players buzz in from their phones!
           </p>
 
@@ -80,19 +80,19 @@ export default function LandingPage() {
               <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-primary" />
               </div>
-              <span className="text-white/60 text-sm">Custom Categories</span>
+              <span className="text-muted-foreground text-sm">Custom Categories</span>
             </div>
             <div className="flex flex-col items-center lg:items-start gap-2" data-testid="feature-buzzer">
               <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
                 <QrCode className="w-5 h-5 text-primary" />
               </div>
-              <span className="text-white/60 text-sm">QR Code Buzzer</span>
+              <span className="text-muted-foreground text-sm">QR Code Buzzer</span>
             </div>
             <div className="flex flex-col items-center lg:items-start gap-2" data-testid="feature-scoreboard">
               <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
                 <Trophy className="w-5 h-5 text-primary" />
               </div>
-              <span className="text-white/60 text-sm">Live Scoreboard</span>
+              <span className="text-muted-foreground text-sm">Live Scoreboard</span>
             </div>
           </div>
         </motion.div>
@@ -110,10 +110,10 @@ export default function LandingPage() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/20 flex items-center justify-center">
               <Users className="w-8 h-8 text-primary" />
             </div>
-            <h2 className="text-2xl font-bold text-white" data-testid="text-login-title">
+            <h2 className="text-2xl font-bold text-foreground" data-testid="text-login-title">
               Host Access
             </h2>
-            <p className="text-white/60 text-sm mt-1" data-testid="text-login-description">
+            <p className="text-muted-foreground text-sm mt-1" data-testid="text-login-description">
               Sign in or create an account to host games
             </p>
           </div>
@@ -256,7 +256,7 @@ export default function LandingPage() {
             </CardContent>
           </Card>
 
-          <p className="text-white/40 text-sm mt-4 text-center" data-testid="text-free-notice">
+          <p className="text-muted-foreground/70 text-sm mt-4 text-center" data-testid="text-free-notice">
             Players join via QR code - no account needed!
           </p>
         </motion.div>
