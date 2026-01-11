@@ -13,13 +13,15 @@ import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "@/context/ThemeContext";
-import type { Game, Board, HeadsUpDeck, HeadsUpCard, GameMode, RapidFireSettings } from "@shared/schema";
+import type { Game, Board, HeadsUpDeck, HeadsUpCard, GameMode, RapidFireSettings, LiarPromptPack, LiarPrompt } from "@shared/schema";
+import { Skull } from "lucide-react";
 
 const MODE_LABELS: Record<GameMode, string> = {
   jeopardy: "Jeopardy (Multi-Board)",
   heads_up: "Heads Up",
   board: "Grid of Grudges",
   rapid_fire: "Brain Rot Blitz",
+  submission: "Liar's Lobby",
 };
 
 const MODE_ICONS: Record<GameMode, typeof Grid3X3> = {
@@ -27,6 +29,7 @@ const MODE_ICONS: Record<GameMode, typeof Grid3X3> = {
   heads_up: Smartphone,
   board: Grid3X3,
   rapid_fire: Zap,
+  submission: Skull,
 };
 
 const DEFAULT_RAPID_FIRE_SETTINGS: RapidFireSettings = {
@@ -66,6 +69,19 @@ export default function GamesAdmin() {
   
   const [editingCardId, setEditingCardId] = useState<number | null>(null);
   const [editCardPrompt, setEditCardPrompt] = useState("");
+  
+  const [selectedPackId, setSelectedPackId] = useState<number | null>(null);
+  const [showNewPackForm, setShowNewPackForm] = useState(false);
+  const [newPackName, setNewPackName] = useState("");
+  const [showNewPromptForm, setShowNewPromptForm] = useState(false);
+  const [newPromptClue, setNewPromptClue] = useState("");
+  const [newPromptTruth, setNewPromptTruth] = useState("");
+  
+  const [editingPackId, setEditingPackId] = useState<number | null>(null);
+  const [editPackName, setEditPackName] = useState("");
+  const [editingPromptId, setEditingPromptId] = useState<number | null>(null);
+  const [editPromptClue, setEditPromptClue] = useState("");
+  const [editPromptTruth, setEditPromptTruth] = useState("");
 
   const { data: games = [], isLoading: loadingGames } = useQuery<Game[]>({
     queryKey: ['/api/games'],
@@ -99,6 +115,26 @@ export default function GamesAdmin() {
     queryKey: ['/api/heads-up-decks', selectedDeckId, 'cards'],
     enabled: !!selectedDeckId,
   });
+
+  const { data: liarPacks = [], isLoading: loadingPacks } = useQuery<(LiarPromptPack & { promptCount: number })[]>({
+    queryKey: ['/api/liar-packs'],
+    enabled: isAuthenticated,
+  });
+
+  const selectedPack = liarPacks.find(p => p.id === selectedPackId);
+
+  const { data: prompts = [], isLoading: loadingPrompts } = useQuery<LiarPrompt[]>({
+    queryKey: ['/api/liar-packs', selectedPackId, 'prompts'],
+    enabled: !!selectedPackId,
+  });
+
+  const { data: gameLiarPacks = [] } = useQuery<{ id: number; gameId: number; packId: number; position: number; pack: LiarPromptPack }[]>({
+    queryKey: ['/api/games', selectedGameId, 'liar-packs'],
+    enabled: !!selectedGameId && selectedGame?.mode === 'submission',
+  });
+
+  const linkedPackIds = gameLiarPacks.map(gp => gp.packId);
+  const availablePacks = liarPacks.filter(p => !linkedPackIds.includes(p.id));
 
   const linkedBoardIds = gameBoards.map(gb => gb.boardId);
   const availableBoards = boards.filter(b => !linkedBoardIds.includes(b.id));
@@ -193,9 +229,9 @@ export default function GamesAdmin() {
     mutationFn: async (id: number) => {
       return apiRequest('DELETE', `/api/heads-up-decks/${id}`);
     },
-    onSuccess: () => {
+    onSuccess: (_, deletedId) => {
       queryClient.invalidateQueries({ queryKey: ['/api/heads-up-decks'] });
-      if (selectedDeckId === selectedDeckId) setSelectedDeckId(null);
+      if (selectedDeckId === deletedId) setSelectedDeckId(null);
       toast({ title: "Deck deleted" });
     },
   });
@@ -255,6 +291,96 @@ export default function GamesAdmin() {
     },
   });
 
+  const createPackMutation = useMutation({
+    mutationFn: async (data: { name: string }) => {
+      return apiRequest('POST', '/api/liar-packs', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/liar-packs'] });
+      setNewPackName("");
+      setShowNewPackForm(false);
+      toast({ title: "Pack created!" });
+    },
+  });
+
+  const updatePackMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: number; name: string }) => {
+      return apiRequest('PUT', `/api/liar-packs/${id}`, { name });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/liar-packs'] });
+      setEditingPackId(null);
+      toast({ title: "Pack updated!" });
+    },
+  });
+
+  const deletePackMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest('DELETE', `/api/liar-packs/${id}`);
+    },
+    onSuccess: (_, deletedId) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/liar-packs'] });
+      if (selectedPackId === deletedId) setSelectedPackId(null);
+      toast({ title: "Pack deleted" });
+    },
+  });
+
+  const createPromptMutation = useMutation({
+    mutationFn: async (data: { packId: number; clue: string; truth: string }) => {
+      return apiRequest('POST', `/api/liar-packs/${data.packId}/prompts`, { clue: data.clue, truth: data.truth });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/liar-packs', selectedPackId, 'prompts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/liar-packs'] });
+      setNewPromptClue("");
+      setNewPromptTruth("");
+      setShowNewPromptForm(false);
+      toast({ title: "Prompt added!" });
+    },
+  });
+
+  const updatePromptMutation = useMutation({
+    mutationFn: async ({ id, clue, truth }: { id: number; clue: string; truth: string }) => {
+      return apiRequest('PUT', `/api/liar-prompts/${id}`, { clue, truth });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/liar-packs', selectedPackId, 'prompts'] });
+      setEditingPromptId(null);
+      toast({ title: "Prompt updated!" });
+    },
+  });
+
+  const deletePromptMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest('DELETE', `/api/liar-prompts/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/liar-packs', selectedPackId, 'prompts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/liar-packs'] });
+      toast({ title: "Prompt deleted" });
+    },
+  });
+
+  const addPackToGameMutation = useMutation({
+    mutationFn: async ({ gameId, packId }: { gameId: number; packId: number }) => {
+      return apiRequest('POST', `/api/games/${gameId}/liar-packs`, { packId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/games', selectedGameId, 'liar-packs'] });
+      toast({ title: "Pack added to game!" });
+    },
+  });
+
+  const removePackFromGameMutation = useMutation({
+    mutationFn: async ({ gameId, packId }: { gameId: number; packId: number }) => {
+      return apiRequest('DELETE', `/api/games/${gameId}/liar-packs/${packId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/games', selectedGameId, 'liar-packs'] });
+      toast({ title: "Pack removed from game" });
+    },
+  });
+
   useEffect(() => {
     if (!isAuthLoading && !isAuthenticated) {
       setLocation("/");
@@ -298,7 +424,7 @@ export default function GamesAdmin() {
 
       <div className="max-w-[1600px] mx-auto p-6">
         <Tabs defaultValue="games" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-xl grid-cols-3">
             <TabsTrigger value="games" className="gap-2" data-testid="tab-games">
               <Layers className="w-4 h-4" />
               Games
@@ -306,6 +432,10 @@ export default function GamesAdmin() {
             <TabsTrigger value="decks" className="gap-2" data-testid="tab-decks">
               <Smartphone className="w-4 h-4" />
               Heads Up Decks
+            </TabsTrigger>
+            <TabsTrigger value="liar-packs" className="gap-2" data-testid="tab-liar-packs">
+              <Skull className="w-4 h-4" />
+              Liar's Lobby
             </TabsTrigger>
           </TabsList>
 
@@ -352,6 +482,7 @@ export default function GamesAdmin() {
                             <SelectContent>
                               <SelectItem value="board">Grid of Grudges (Classic Board)</SelectItem>
                               <SelectItem value="rapid_fire">Brain Rot Blitz (Rapid Fire)</SelectItem>
+                              <SelectItem value="submission">Liar's Lobby (Submission Mode)</SelectItem>
                               <SelectItem value="jeopardy">Jeopardy (Multi-Board)</SelectItem>
                               <SelectItem value="heads_up">Heads Up</SelectItem>
                             </SelectContent>
@@ -606,7 +737,7 @@ export default function GamesAdmin() {
                       )}
                     </CardContent>
                   </Card>
-                ) : (
+                ) : selectedGame.mode === 'heads_up' ? (
                   <Card className="bg-card border-border shadow-sm">
                     <CardHeader className="py-4 px-4 border-b border-border bg-muted/30">
                       <div className="flex items-center justify-between">
@@ -673,7 +804,74 @@ export default function GamesAdmin() {
                       )}
                     </CardContent>
                   </Card>
-                )}
+                ) : selectedGame.mode === 'submission' ? (
+                  <Card className="bg-card border-border shadow-sm">
+                    <CardHeader className="py-4 px-4 border-b border-border bg-muted/30">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2 text-foreground">
+                          <Skull className="w-5 h-5 text-primary" />
+                          {selectedGame.name} - Prompt Packs
+                        </CardTitle>
+                        <Link href={`/liars/${selectedGame.id}`}>
+                          <Button size="sm" className="gap-2" data-testid="button-play-liars">
+                            <Play className="w-4 h-4" />
+                            Play Game
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-4 space-y-4">
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium text-foreground">Linked Packs ({gameLiarPacks.length})</h4>
+                        {gameLiarPacks.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">No packs linked. Add packs below.</p>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {gameLiarPacks.map((gp, idx) => (
+                              <div key={gp.id} className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-medium flex items-center justify-center">
+                                    {idx + 1}
+                                  </span>
+                                  <span className="font-medium text-foreground">{gp.pack.name}</span>
+                                </div>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                  onClick={() => removePackFromGameMutation.mutate({ gameId: selectedGame.id, packId: gp.packId })}
+                                  data-testid={`button-remove-pack-${gp.packId}`}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {availablePacks.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium text-foreground">Add Pack</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                            {availablePacks.map(pack => (
+                              <Button
+                                key={pack.id}
+                                variant="outline"
+                                className="justify-start gap-2"
+                                onClick={() => addPackToGameMutation.mutate({ gameId: selectedGame.id, packId: pack.id })}
+                                data-testid={`button-add-pack-${pack.id}`}
+                              >
+                                <Plus className="w-4 h-4" />
+                                {pack.name}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ) : null}
               </div>
             </div>
           </TabsContent>
@@ -989,6 +1187,341 @@ export default function GamesAdmin() {
                                           <AlertDialogFooter>
                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                                             <AlertDialogAction onClick={() => deleteCardMutation.mutate(card.id)}>
+                                              Delete
+                                            </AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="liar-packs">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-4">
+                <Card className="bg-card border-border shadow-sm">
+                  <CardHeader className="py-4 px-4 border-b border-border bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-foreground text-sm font-semibold uppercase tracking-wide">
+                        <Skull className="w-4 h-4 text-primary" />
+                        Prompt Packs
+                      </CardTitle>
+                      <Button
+                        size="icon"
+                        variant={showNewPackForm ? "secondary" : "default"}
+                        onClick={() => setShowNewPackForm(!showNewPackForm)}
+                        className="h-8 w-8"
+                        data-testid="button-toggle-pack-form"
+                      >
+                        {showNewPackForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-3 space-y-3">
+                    <AnimatePresence>
+                      {showNewPackForm && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="flex items-center gap-2 p-3 bg-muted/20 rounded-lg border border-border"
+                        >
+                          <Input
+                            placeholder="Pack name"
+                            value={newPackName}
+                            onChange={(e) => setNewPackName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && newPackName.trim()) {
+                                createPackMutation.mutate({ name: newPackName.trim() });
+                              }
+                            }}
+                            data-testid="input-pack-name"
+                          />
+                          <Button
+                            onClick={() => createPackMutation.mutate({ name: newPackName.trim() })}
+                            disabled={!newPackName.trim()}
+                            data-testid="button-create-pack"
+                          >
+                            Create
+                          </Button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <div className="space-y-2">
+                      {loadingPacks ? (
+                        <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin" /></div>
+                      ) : liarPacks.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-4 text-sm">No packs yet. Create one above!</p>
+                      ) : liarPacks.map(pack => {
+                        const isEditing = editingPackId === pack.id;
+                        return (
+                          <div
+                            key={pack.id}
+                            className={`flex items-center justify-between gap-2 p-2.5 rounded-lg cursor-pointer transition-all ${
+                              selectedPackId === pack.id
+                                ? 'bg-primary/20 border-2 border-primary'
+                                : 'bg-muted/20 border border-border hover:bg-muted/30'
+                            }`}
+                            onClick={() => { if (!isEditing) setSelectedPackId(pack.id); }}
+                            data-testid={`pack-item-${pack.id}`}
+                          >
+                            <div className="min-w-0 flex-1 flex items-center gap-2">
+                              <Skull className="w-4 h-4 text-primary shrink-0" />
+                              {isEditing ? (
+                                <div className="flex items-center gap-1 flex-1" onClick={(e) => e.stopPropagation()}>
+                                  <Input
+                                    value={editPackName}
+                                    onChange={(e) => setEditPackName(e.target.value)}
+                                    className="h-7 text-sm"
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' && editPackName.trim()) {
+                                        updatePackMutation.mutate({ id: pack.id, name: editPackName.trim() });
+                                      }
+                                      if (e.key === 'Escape') setEditingPackId(null);
+                                    }}
+                                    data-testid={`input-edit-pack-${pack.id}`}
+                                  />
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => updatePackMutation.mutate({ id: pack.id, name: editPackName.trim() })}
+                                    disabled={!editPackName.trim()}
+                                    className="h-7 w-7 text-primary shrink-0"
+                                    data-testid={`button-save-pack-${pack.id}`}
+                                  >
+                                    <Check className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => setEditingPackId(null)}
+                                    className="h-7 w-7 text-muted-foreground shrink-0"
+                                    data-testid={`button-cancel-edit-pack-${pack.id}`}
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="min-w-0">
+                                  <span className="font-medium text-sm text-foreground truncate block">{pack.name}</span>
+                                  <span className="text-xs text-muted-foreground">{pack.promptCount} prompts</span>
+                                </div>
+                              )}
+                            </div>
+                            {!isEditing && (
+                              <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                  onClick={() => { setEditingPackId(pack.id); setEditPackName(pack.name); }}
+                                  data-testid={`button-edit-pack-${pack.id}`}
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                      data-testid={`button-delete-pack-${pack.id}`}
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Pack?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will permanently delete "{pack.name}" and all its prompts.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => deletePackMutation.mutate(pack.id)}>
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="lg:col-span-8">
+                {!selectedPack ? (
+                  <Card className="bg-card border-border shadow-sm h-full flex items-center justify-center">
+                    <div className="text-center p-8">
+                      <Skull className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-foreground mb-2">Select a Pack</h3>
+                      <p className="text-muted-foreground">Choose a pack from the list to manage its prompts</p>
+                    </div>
+                  </Card>
+                ) : (
+                  <Card className="bg-card border-border shadow-sm">
+                    <CardHeader className="py-4 px-4 border-b border-border bg-muted/30">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2 text-foreground">
+                          <Skull className="w-5 h-5 text-primary" />
+                          {selectedPack.name} - Prompts
+                        </CardTitle>
+                        <Button
+                          size="icon"
+                          variant={showNewPromptForm ? "secondary" : "default"}
+                          onClick={() => setShowNewPromptForm(!showNewPromptForm)}
+                          className="h-8 w-8"
+                          data-testid="button-toggle-prompt-form"
+                        >
+                          {showNewPromptForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-4 space-y-4">
+                      <AnimatePresence>
+                        {showNewPromptForm && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="space-y-2 p-3 bg-muted/20 rounded-lg border border-border"
+                          >
+                            <Input
+                              placeholder="Clue (what players see)"
+                              value={newPromptClue}
+                              onChange={(e) => setNewPromptClue(e.target.value)}
+                              data-testid="input-prompt-clue"
+                            />
+                            <Input
+                              placeholder="Truth (the real answer)"
+                              value={newPromptTruth}
+                              onChange={(e) => setNewPromptTruth(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && newPromptClue.trim() && newPromptTruth.trim()) {
+                                  createPromptMutation.mutate({ packId: selectedPack.id, clue: newPromptClue.trim(), truth: newPromptTruth.trim() });
+                                }
+                              }}
+                              data-testid="input-prompt-truth"
+                            />
+                            <Button
+                              onClick={() => createPromptMutation.mutate({ packId: selectedPack.id, clue: newPromptClue.trim(), truth: newPromptTruth.trim() })}
+                              disabled={!newPromptClue.trim() || !newPromptTruth.trim()}
+                              className="w-full"
+                              data-testid="button-create-prompt"
+                            >
+                              Add Prompt
+                            </Button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      {loadingPrompts ? (
+                        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+                      ) : prompts.length === 0 ? (
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">No prompts in this pack yet.</p>
+                          <p className="text-sm text-muted-foreground">Add prompts above to get started!</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {prompts.map(prompt => {
+                            const isEditing = editingPromptId === prompt.id;
+                            return (
+                              <div
+                                key={prompt.id}
+                                className="p-4 bg-muted/20 rounded-lg border border-border"
+                                data-testid={`prompt-item-${prompt.id}`}
+                              >
+                                {isEditing ? (
+                                  <div className="space-y-2">
+                                    <Input
+                                      value={editPromptClue}
+                                      onChange={(e) => setEditPromptClue(e.target.value)}
+                                      placeholder="Clue"
+                                      autoFocus
+                                      data-testid={`input-edit-prompt-clue-${prompt.id}`}
+                                    />
+                                    <Input
+                                      value={editPromptTruth}
+                                      onChange={(e) => setEditPromptTruth(e.target.value)}
+                                      placeholder="Truth"
+                                      data-testid={`input-edit-prompt-truth-${prompt.id}`}
+                                    />
+                                    <div className="flex justify-end gap-1">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => setEditingPromptId(null)}
+                                        data-testid={`button-cancel-edit-prompt-${prompt.id}`}
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => updatePromptMutation.mutate({ id: prompt.id, clue: editPromptClue.trim(), truth: editPromptTruth.trim() })}
+                                        disabled={!editPromptClue.trim() || !editPromptTruth.trim()}
+                                        data-testid={`button-save-prompt-${prompt.id}`}
+                                      >
+                                        Save
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium text-foreground">{prompt.clue}</p>
+                                      <p className="text-sm text-muted-foreground mt-1">Answer: {prompt.truth}</p>
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                        onClick={() => { setEditingPromptId(prompt.id); setEditPromptClue(prompt.clue); setEditPromptTruth(prompt.truth); }}
+                                        data-testid={`button-edit-prompt-${prompt.id}`}
+                                      >
+                                        <Pencil className="w-3 h-3" />
+                                      </Button>
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                            data-testid={`button-delete-prompt-${prompt.id}`}
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                          </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>Delete Prompt?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              This will permanently delete this prompt.
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => deletePromptMutation.mutate(prompt.id)}>
                                               Delete
                                             </AlertDialogAction>
                                           </AlertDialogFooter>
