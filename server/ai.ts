@@ -1,7 +1,10 @@
 import OpenAI from "openai";
 
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Using Groq API which is OpenAI-compatible
+const openai = new OpenAI({ 
+  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: "https://api.groq.com/openai/v1"
+});
 
 interface QuestionAnswer {
   question: string;
@@ -34,9 +37,9 @@ Respond with ONLY the task text, nothing else.`;
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-5",
+      model: "llama-3.3-70b-versatile",
       messages: [{ role: "user", content: prompt }],
-      max_completion_tokens: 150,
+      max_tokens: 150,
     });
 
     return response.choices[0].message.content || "Take 5 minutes to share one thing you appreciated about your partner today.";
