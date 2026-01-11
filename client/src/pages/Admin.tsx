@@ -12,12 +12,12 @@ import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, LogOut } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, LogOut, Sun, Moon } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import MDEditor from '@uiw/react-md-editor';
 import { useAuth } from "@/hooks/use-auth";
-import { ThemeName, THEMES } from "@/context/ThemeContext";
+import { ThemeName, THEMES, useTheme } from "@/context/ThemeContext";
 import type { Category, Question, Board, BoardCategoryWithCount } from "@shared/schema";
 
 const THEME_LABELS: Record<ThemeName, string> = {
@@ -33,6 +33,7 @@ const ALL_POINT_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 export default function Admin() {
   const { toast } = useToast();
   const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
+  const { colorMode, toggleColorMode } = useTheme();
   const [, setLocation] = useLocation();
   
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
@@ -399,6 +400,15 @@ export default function Admin() {
               )}
             </div>
           )}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-muted-foreground hover:text-foreground" 
+            onClick={toggleColorMode}
+            data-testid="button-color-mode-admin"
+          >
+            {colorMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </Button>
         </div>
       </div>
 

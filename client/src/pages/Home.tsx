@@ -1,5 +1,5 @@
 import { useBoards, useBoardCategories, useBoard } from "@/hooks/use-quiz";
-import { Loader2, Settings, Maximize2, Minimize2, Sparkles, Star, ArrowLeft, Grid3X3, LogOut } from "lucide-react";
+import { Loader2, Settings, Maximize2, Minimize2, Sparkles, Star, ArrowLeft, Grid3X3, LogOut, Sun, Moon } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ export default function Home() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
   const { gameEnded, resetGameEnd, markQuestionCompleted } = useScore();
-  const { colors, setTheme } = useTheme();
+  const { colors, setTheme, colorMode, toggleColorMode } = useTheme();
   const buzzerRef = useRef<BuzzerPanelHandle>(null);
   const [buzzQueue, setBuzzQueue] = useState<BuzzEvent[]>([]);
 
@@ -190,6 +190,15 @@ export default function Home() {
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               <ThemeDecorations placement="header" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-primary/80 hover:text-primary hover:bg-primary/10" 
+                onClick={toggleColorMode}
+                data-testid="button-color-mode"
+              >
+                {colorMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </Button>
               <Link href="/admin">
                 <Button variant="ghost" size="icon" className="text-primary/80 hover:text-primary hover:bg-primary/10" data-testid="button-admin">
                   <Settings className="w-5 h-5" />
@@ -384,6 +393,15 @@ export default function Home() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-primary/80 hover:text-primary hover:bg-primary/10" 
+              onClick={toggleColorMode}
+              data-testid="button-color-mode-game"
+            >
+              {colorMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </Button>
             <Button 
               variant="ghost" 
               size="icon" 

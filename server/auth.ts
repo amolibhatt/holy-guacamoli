@@ -73,11 +73,14 @@ export function registerAuthRoutes(app: Express): void {
 
       const hashedPassword = await bcrypt.hash(password, 10);
 
+      const role = email === 'amoli.bhatt@gmail.com' ? 'super_admin' : 'host';
+
       const [newUser] = await db.insert(users).values({
         email,
         password: hashedPassword,
         firstName: firstName || null,
         lastName: lastName || null,
+        role,
       }).returning();
 
       req.session.userId = newUser.id;

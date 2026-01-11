@@ -96,11 +96,16 @@ export const THEME_DECOR: Record<ThemeName, ThemeDecor> = {
   },
 };
 
+export type ColorMode = 'light' | 'dark';
+
 interface ThemeContextType {
   theme: ThemeName;
   setTheme: (theme: ThemeName) => void;
   colors: ThemeColors;
   decor: ThemeDecor;
+  colorMode: ColorMode;
+  setColorMode: (mode: ColorMode) => void;
+  toggleColorMode: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -110,6 +115,25 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem('quiz-theme');
     return (saved as ThemeName) || 'birthday';
   });
+
+  const [colorMode, setColorMode] = useState<ColorMode>(() => {
+    const saved = localStorage.getItem('quiz-color-mode');
+    if (saved === 'light' || saved === 'dark') return saved;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  const toggleColorMode = () => {
+    setColorMode(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
+  useEffect(() => {
+    localStorage.setItem('quiz-color-mode', colorMode);
+    if (colorMode === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [colorMode]);
 
   useEffect(() => {
     localStorage.setItem('quiz-theme', theme);
@@ -130,7 +154,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       theme, 
       setTheme, 
       colors: THEMES[theme],
-      decor: THEME_DECOR[theme]
+      decor: THEME_DECOR[theme],
+      colorMode,
+      setColorMode,
+      toggleColorMode,
     }}>
       {children}
     </ThemeContext.Provider>
