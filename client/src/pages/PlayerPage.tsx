@@ -9,6 +9,7 @@ import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { soundManager } from "@/lib/sounds";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { PLAYER_AVATARS, type AvatarId } from "@shared/schema";
 
 type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error" | "reconnecting";
 
@@ -32,9 +33,9 @@ function getSession() {
   } catch { return null; }
 }
 
-function saveSession(roomCode: string, playerName: string, playerId: string) {
+function saveSession(roomCode: string, playerName: string, playerId: string, avatar: string) {
   try {
-    localStorage.setItem("buzzer-session", JSON.stringify({ roomCode, playerName, playerId }));
+    localStorage.setItem("buzzer-session", JSON.stringify({ roomCode, playerName, playerId, avatar }));
   } catch {}
 }
 
@@ -56,6 +57,7 @@ export default function PlayerPage() {
   const [roomCode, setRoomCode] = useState(codeFromUrl || savedSession?.roomCode || "");
   const [playerName, setPlayerName] = useState(savedSession?.playerName || "");
   const [playerId, setPlayerId] = useState<string | null>(savedSession?.playerId || null);
+  const [selectedAvatar, setSelectedAvatar] = useState<AvatarId>(savedSession?.avatar || "cat");
   const [joined, setJoined] = useState(false);
   const [status, setStatus] = useState<ConnectionStatus>("disconnected");
   const [buzzerLocked, setBuzzerLocked] = useState(true);
@@ -67,7 +69,7 @@ export default function PlayerPage() {
   const [showBuzzFlash, setShowBuzzFlash] = useState(false);
   const [showCorrectFlash, setShowCorrectFlash] = useState(false);
   const [showWrongFlash, setShowWrongFlash] = useState(false);
-  const [leaderboard, setLeaderboard] = useState<Array<{ id: string; name: string; score: number }>>([]);
+  const [leaderboard, setLeaderboard] = useState<Array<{ id: string; name: string; avatar?: string; score: number }>>([]);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [reconnectCountdown, setReconnectCountdown] = useState<number | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(soundManager.isEnabled());
@@ -95,6 +97,7 @@ export default function PlayerPage() {
         type: "player:join",
         code: roomCode.toUpperCase(),
         name: playerName,
+        avatar: selectedAvatar,
         playerId: isReconnect ? playerId : undefined,
       }));
       
@@ -117,7 +120,7 @@ export default function PlayerPage() {
           playerIdRef.current = data.playerId;
           setBuzzerLocked(data.buzzerLocked);
           if (data.score !== undefined) setScore(data.score);
-          saveSession(roomCode.toUpperCase(), playerName, data.playerId);
+          saveSession(roomCode.toUpperCase(), playerName, data.playerId, selectedAvatar);
           break;
         case "score:updated":
           if (data.score !== undefined) {
@@ -139,7 +142,7 @@ export default function PlayerPage() {
           const myScore = data.players?.find((p: any) => p.id === currentPlayerId)?.score;
           if (myScore !== undefined) setScore(myScore);
           if (data.players) {
-            setLeaderboard(data.players.map((p: any) => ({ id: p.id, name: p.name, score: p.score })));
+            setLeaderboard(data.players.map((p: any) => ({ id: p.id, name: p.name, avatar: p.avatar, score: p.score })));
           }
           break;
         case "error":
@@ -262,7 +265,7 @@ export default function PlayerPage() {
     ws.onerror = () => {
       setStatus("error");
     };
-  }, [roomCode, playerName, playerId]);
+  }, [roomCode, playerName, playerId, selectedAvatar]);
 
   useEffect(() => {
     return () => {
@@ -274,9 +277,10 @@ export default function PlayerPage() {
   }, []);
 
   useEffect(() => {
-    return soundManager.subscribe(() => {
+    const unsubscribe = soundManager.subscribe(() => {
       setSoundEnabled(soundManager.isEnabled());
     });
+    return () => { unsubscribe(); };
   }, []);
 
   const handleToggleSound = () => {
@@ -385,6 +389,27 @@ export default function PlayerPage() {
                   }}
                 />
               </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Choose Your Avatar</label>
+                <div className="grid grid-cols-6 gap-2">
+                  {PLAYER_AVATARS.map((avatar) => (
+                    <button
+                      key={avatar.id}
+                      type="button"
+                      onClick={() => setSelectedAvatar(avatar.id)}
+                      className={`w-10 h-10 rounded-lg text-xl flex items-center justify-center transition-all ${
+                        selectedAvatar === avatar.id
+                          ? 'bg-primary/20 ring-2 ring-primary scale-110'
+                          : 'bg-muted/50 hover:bg-muted'
+                      }`}
+                      title={avatar.label}
+                      data-testid={`avatar-${avatar.id}`}
+                    >
+                      {avatar.emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <Button
                 onClick={handleJoin}
                 disabled={!roomCode.trim() || !playerName.trim() || status === "connecting"}
@@ -490,6 +515,9 @@ export default function PlayerPage() {
                       idx === 0 ? 'bg-yellow-500 text-black' : idx === 1 ? 'bg-gray-400 text-black' : idx === 2 ? 'bg-amber-600 text-white' : 'bg-muted text-muted-foreground'
                     }`}>
                       {idx + 1}
+                    </span>
+                    <span className="text-lg">
+                      {PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
                     </span>
                     <span className={`font-medium ${player.id === playerId ? 'text-primary' : 'text-foreground'}`}>
                       {player.name}

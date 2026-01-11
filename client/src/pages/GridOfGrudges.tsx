@@ -11,7 +11,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useScore, Contestant } from "@/components/ScoreContext";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { Game, Board, BoardCategoryWithCount, Question } from "@shared/schema";
+import { PLAYER_AVATARS, type Game, type Board, type BoardCategoryWithCount, type Question } from "@shared/schema";
 
 export default function GridOfGrudges() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -178,7 +178,10 @@ export default function GridOfGrudges() {
           <div className="mt-6 flex flex-wrap gap-4 justify-center">
             {contestants.map((c: Contestant) => (
               <Card key={c.id} className="p-4 min-w-[120px] text-center">
-                <p className="font-medium text-foreground">{c.name}</p>
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <span className="text-xl">{PLAYER_AVATARS.find(a => a.id === c.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
+                  <p className="font-medium text-foreground">{c.name}</p>
+                </div>
                 <p className="text-2xl font-bold text-primary">{c.score}</p>
               </Card>
             ))}
@@ -232,7 +235,7 @@ export default function GridOfGrudges() {
                             onClick={() => handleAwardPoints(c.id)}
                             data-testid={`button-award-${c.id}`}
                           >
-                            +{selectedQuestion?.points} {c.name}
+                            +{selectedQuestion?.points} {PLAYER_AVATARS.find(a => a.id === c.avatar)?.emoji || PLAYER_AVATARS[0].emoji} {c.name}
                           </Button>
                           <Button
                             variant="destructive"

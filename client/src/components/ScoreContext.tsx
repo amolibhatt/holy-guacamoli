@@ -9,6 +9,7 @@ const AVATAR_COLORS = [
 export interface Contestant {
   id: string;
   name: string;
+  avatar?: string;
   score: number;
   color: string;
   previousRank?: number;
@@ -17,7 +18,7 @@ export interface Contestant {
 interface ScoreContextType {
   contestants: Contestant[];
   addContestant: (name: string) => void;
-  addContestantWithId: (id: string, name: string, score?: number) => void;
+  addContestantWithId: (id: string, name: string, score?: number, avatar?: string) => void;
   removeContestant: (id: string) => void;
   awardPoints: (contestantId: string, points: number) => void;
   deductPoints: (contestantId: string, points: number) => void;
@@ -51,17 +52,17 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
     }]);
   };
 
-  const addContestantWithId = (id: string, name: string, score: number = 0) => {
+  const addContestantWithId = (id: string, name: string, score: number = 0, avatar?: string) => {
     setContestants((prev) => {
       const existing = prev.find((c) => c.id === id);
       if (existing) {
-        if (existing.score !== score) {
-          return prev.map((c) => (c.id === id ? { ...c, score } : c));
+        if (existing.score !== score || (avatar && existing.avatar !== avatar)) {
+          return prev.map((c) => (c.id === id ? { ...c, score, avatar: avatar || c.avatar } : c));
         }
         return prev;
       }
       const colorIndex = prev.length % AVATAR_COLORS.length;
-      return [...prev, { id, name, score, color: AVATAR_COLORS[colorIndex] }];
+      return [...prev, { id, name, avatar, score, color: AVATAR_COLORS[colorIndex] }];
     });
   };
 
