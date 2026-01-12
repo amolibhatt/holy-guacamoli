@@ -14,22 +14,22 @@ import { motion } from "framer-motion";
 const GUIDE_STEPS = [
   {
     title: "Pick a Game",
-    description: "Choose from available game modes like Buzzkill or Double Dip",
+    description: "Choose from our growing collection of party games",
     icon: Grid3X3,
   },
   {
     title: "Create Content",
-    description: "Set up boards, categories, questions, or prompts depending on the game",
+    description: "Build your game with custom questions, prompts, and challenges",
     icon: Sparkles,
   },
   {
     title: "Start Hosting",
-    description: "Launch your game and share the QR code for players to join",
+    description: "Launch your game and invite players to join",
     icon: Users,
   },
   {
     title: "Run the Show!",
-    description: "Control the game flow, reveal content, and manage scoring",
+    description: "Control the game, reveal content, and keep score",
     icon: Trophy,
   },
 ];
