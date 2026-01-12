@@ -917,6 +917,18 @@ export class DatabaseStorage implements IStorage {
       .orderBy(asc(gameTypes.sortOrder));
   }
 
+  async getHomepageGameTypes(): Promise<GameType[]> {
+    // Get games that are active or coming_soon (exclude hidden)
+    return await db.select().from(gameTypes)
+      .where(
+        and(
+          eq(gameTypes.hostEnabled, true),
+          sql`${gameTypes.status} != 'hidden'`
+        )
+      )
+      .orderBy(asc(gameTypes.sortOrder));
+  }
+
   async getGameType(id: number): Promise<GameType | undefined> {
     const [gameType] = await db.select().from(gameTypes).where(eq(gameTypes.id, id));
     return gameType;

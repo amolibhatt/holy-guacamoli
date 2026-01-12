@@ -5,7 +5,8 @@ import { motion } from "framer-motion";
 import { 
   Users, Grid3X3, BarChart3, ArrowLeft, Shield, 
   UserCheck, UserX, Trash2, Eye, MoreHorizontal,
-  TrendingUp, Gamepad2, Clock, Activity, Heart, Grid2X2
+  TrendingUp, Gamepad2, Clock, Activity, Heart, Grid2X2,
+  Library, Globe, Lock, Building
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +30,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { GameStatus, BoardVisibility } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
@@ -80,15 +83,30 @@ export default function SuperAdmin() {
   });
 
   const updateGameTypeMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: { hostEnabled?: boolean; playerEnabled?: boolean } }) => {
+    mutationFn: async ({ id, data }: { id: number; data: { hostEnabled?: boolean; playerEnabled?: boolean; status?: GameStatus } }) => {
       await apiRequest('PATCH', `/api/super-admin/game-types/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/game-types'] });
-      toast({ title: "Game visibility updated" });
+      queryClient.invalidateQueries({ queryKey: ['/api/game-types'] });
+      toast({ title: "Game updated" });
     },
     onError: () => {
       toast({ title: "Couldn't update game", description: "Please try again.", variant: "destructive" });
+    },
+  });
+
+  const toggleGlobalBoardMutation = useMutation({
+    mutationFn: async ({ boardId, isGlobal }: { boardId: number; isGlobal: boolean }) => {
+      await apiRequest('PATCH', `/api/super-admin/boards/${boardId}/global`, { isGlobal });
+      return isGlobal;
+    },
+    onSuccess: (wasAdded) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
+      toast({ title: wasAdded ? "Added to Master Bank" : "Removed from Master Bank" });
+    },
+    onError: () => {
+      toast({ title: "Couldn't update board", description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -182,22 +200,26 @@ export default function SuperAdmin() {
 
       <main className="p-6 max-w-7xl mx-auto">
         <Tabs defaultValue="analytics" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 max-w-xl">
+          <TabsList className="grid w-full grid-cols-5 max-w-2xl">
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="w-4 h-4" />
-              Analytics
+              <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
             <TabsTrigger value="games" className="gap-2">
               <Gamepad2 className="w-4 h-4" />
-              Games
+              <span className="hidden sm:inline">Games</span>
+            </TabsTrigger>
+            <TabsTrigger value="master-bank" className="gap-2">
+              <Library className="w-4 h-4" />
+              <span className="hidden sm:inline">Master Bank</span>
             </TabsTrigger>
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4" />
-              Users
+              <span className="hidden sm:inline">Users</span>
             </TabsTrigger>
             <TabsTrigger value="boards" className="gap-2">
               <Grid3X3 className="w-4 h-4" />
-              Boards
+              <span className="hidden sm:inline">Boards</span>
             </TabsTrigger>
           </TabsList>
 
@@ -261,18 +283,18 @@ export default function SuperAdmin() {
               animate={{ opacity: 1, y: 0 }}
             >
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-foreground">Game Visibility</h2>
+                <h2 className="text-2xl font-bold text-foreground">Game Manager</h2>
                 <Badge variant="secondary">{gameTypes.length} games</Badge>
               </div>
 
               <p className="text-muted-foreground mb-6">
-                Control which games are visible to hosts and players. Disabled games won't appear in the game selection menu.
+                Control game status on homepage and visibility to hosts/players. "Coming Soon" games appear grayed out on the homepage.
               </p>
 
               {isLoadingGameTypes ? (
                 <div className="space-y-3">
                   {[1, 2].map((i) => (
-                    <Skeleton key={i} className="h-24 w-full" />
+                    <Skeleton key={i} className="h-32 w-full" />
                   ))}
                 </div>
               ) : (
@@ -280,7 +302,7 @@ export default function SuperAdmin() {
                   {gameTypes.map((gameType) => (
                     <Card key={gameType.id} className="hover-elevate">
                       <CardContent className="p-6">
-                        <div className="flex items-start justify-between gap-4">
+                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                           <div className="flex items-start gap-4">
                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                               gameType.slug === 'grid_of_grudges' 
@@ -294,16 +316,45 @@ export default function SuperAdmin() {
                               )}
                             </div>
                             <div>
-                              <h3 className="font-semibold text-lg text-foreground">
-                                {gameType.displayName}
-                              </h3>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold text-lg text-foreground">
+                                  {gameType.displayName}
+                                </h3>
+                                {(gameType as any).status === 'coming_soon' && (
+                                  <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+                                )}
+                                {(gameType as any).status === 'hidden' && (
+                                  <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>
+                                )}
+                              </div>
                               <p className="text-sm text-muted-foreground mt-1">
                                 {gameType.description || 'No description'}
                               </p>
                             </div>
                           </div>
                           
-                          <div className="flex flex-col gap-4">
+                          <div className="flex flex-col gap-4 min-w-[200px]">
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-sm text-muted-foreground">Homepage Status</span>
+                              <Select
+                                value={(gameType as any).status || 'active'}
+                                onValueChange={(value: GameStatus) => {
+                                  updateGameTypeMutation.mutate({
+                                    id: gameType.id,
+                                    data: { status: value }
+                                  });
+                                }}
+                              >
+                                <SelectTrigger className="w-[130px]" data-testid={`select-status-${gameType.slug}`}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="active">Active</SelectItem>
+                                  <SelectItem value="coming_soon">Coming Soon</SelectItem>
+                                  <SelectItem value="hidden">Hidden</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                             <div className="flex items-center justify-between gap-4">
                               <span className="text-sm text-muted-foreground">Show to Hosts</span>
                               <Switch
@@ -342,6 +393,121 @@ export default function SuperAdmin() {
                       </CardContent>
                     </Card>
                   )}
+                </div>
+              )}
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="master-bank" className="space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-foreground">Master Bank</h2>
+                <Badge variant="secondary">
+                  {allBoards.filter((b: any) => b.isGlobal).length} global boards
+                </Badge>
+              </div>
+
+              <p className="text-muted-foreground mb-6">
+                Global boards in the Master Bank can be cloned by all admins/hosts. Mark any board as global to add it to the shared library.
+              </p>
+
+              {isLoadingBoards ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-20 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                      <Globe className="w-5 h-5 text-primary" />
+                      Global Boards
+                    </h3>
+                    {allBoards.filter((b: any) => b.isGlobal).length === 0 ? (
+                      <Card>
+                        <CardContent className="p-6 text-center text-muted-foreground">
+                          No global boards yet. Mark boards as global below to add them to the Master Bank.
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <div className="space-y-2">
+                        {allBoards.filter((b: any) => b.isGlobal).map((board: any) => (
+                          <Card key={board.id} className="hover-elevate border-primary/30">
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                                    <Globe className="w-5 h-5 text-primary" />
+                                  </div>
+                                  <div>
+                                    <div className="font-medium text-foreground">{board.name}</div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {board.categoryCount} categories, {board.questionCount} questions
+                                    </div>
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: false })}
+                                  data-testid={`button-remove-global-${board.id}`}
+                                >
+                                  Remove from Bank
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                      <Lock className="w-5 h-5 text-muted-foreground" />
+                      Private Boards (Add to Master Bank)
+                    </h3>
+                    <div className="space-y-2">
+                      {allBoards.filter((b: any) => !b.isGlobal).map((board: any) => (
+                        <Card key={board.id} className="hover-elevate">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                                  <Grid3X3 className="w-5 h-5 text-muted-foreground" />
+                                </div>
+                                <div>
+                                  <div className="font-medium text-foreground">{board.name}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    by {board.ownerName || board.ownerEmail} - {board.categoryCount} categories
+                                  </div>
+                                </div>
+                              </div>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: true })}
+                                data-testid={`button-add-global-${board.id}`}
+                              >
+                                Add to Bank
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                      {allBoards.filter((b: any) => !b.isGlobal).length === 0 && (
+                        <Card>
+                          <CardContent className="p-6 text-center text-muted-foreground">
+                            All boards are in the Master Bank.
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </motion.div>

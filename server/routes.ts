@@ -1029,6 +1029,21 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/super-admin/boards/:id/global", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const boardId = Number(req.params.id);
+      const { isGlobal } = req.body;
+      const updated = await storage.setGlobalBoard(boardId, isGlobal);
+      if (!updated) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      console.error("Error updating board global status:", err);
+      res.status(500).json({ message: "Failed to update board" });
+    }
+  });
+
   // Game Types (Super Admin only for management)
   app.get("/api/super-admin/game-types", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
@@ -1043,12 +1058,13 @@ export async function registerRoutes(
   app.patch("/api/super-admin/game-types/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
       const id = Number(req.params.id);
-      const { hostEnabled, playerEnabled, description, sortOrder } = req.body;
+      const { hostEnabled, playerEnabled, description, sortOrder, status } = req.body;
       const updated = await storage.updateGameType(id, { 
         hostEnabled, 
         playerEnabled, 
         description,
-        sortOrder 
+        sortOrder,
+        status
       });
       if (!updated) {
         return res.status(404).json({ message: "Game type not found" });
@@ -1068,6 +1084,17 @@ export async function registerRoutes(
       res.json(types);
     } catch (err) {
       console.error("Error getting enabled game types:", err);
+      res.status(500).json({ message: "Failed to get game types" });
+    }
+  });
+
+  // Game Types for homepage (includes active and coming_soon, excludes hidden)
+  app.get("/api/game-types/homepage", isAuthenticated, async (req, res) => {
+    try {
+      const types = await storage.getHomepageGameTypes();
+      res.json(types);
+    } catch (err) {
+      console.error("Error getting homepage game types:", err);
       res.status(500).json({ message: "Failed to get game types" });
     }
   });
