@@ -408,6 +408,7 @@ export function setupWebSocket(server: Server) {
                       type: "player:buzzed",
                       playerId,
                       playerName: player.name,
+                      playerAvatar: player.avatar,
                       position,
                       timestamp: Date.now(),
                     }));

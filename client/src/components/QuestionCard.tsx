@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Question } from "@shared/schema";
+import { Question, PLAYER_AVATARS } from "@shared/schema";
 import { useScore } from "./ScoreContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
@@ -16,6 +16,7 @@ import { soundManager } from "@/lib/sounds";
 interface BuzzEvent {
   playerId: string;
   playerName: string;
+  playerAvatar?: string;
   position: number;
   timestamp: number;
 }
@@ -305,13 +306,15 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
                     key={buzz.playerId}
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className={`px-4 py-2 rounded-full text-sm font-bold ${
+                    className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 ${
                       idx === 0
                         ? "gradient-gold text-purple-900 shadow-lg"
                         : "bg-white/10 text-foreground border border-white/20"
                     }`}
                   >
-                    #{buzz.position} {buzz.playerName}
+                    <span>#{buzz.position}</span>
+                    <span>{PLAYER_AVATARS.find(a => a.id === buzz.playerAvatar)?.emoji || "🎮"}</span>
+                    <span>{buzz.playerName}</span>
                   </motion.div>
                 ))}
               </div>
@@ -331,7 +334,10 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
                 className="bg-card rounded-xl p-3 border border-primary/20 hover:border-primary/40 transition-colors"
               >
                 <div className="text-center mb-3">
-                  <span className="font-bold text-foreground text-base block">{contestant.name}</span>
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-xl">{PLAYER_AVATARS.find(a => a.id === contestant.avatar)?.emoji || "🎮"}</span>
+                    <span className="font-bold text-foreground text-base">{contestant.name}</span>
+                  </div>
                   <div className="flex items-center justify-center gap-2 mt-1">
                     <Button
                       size="icon"
