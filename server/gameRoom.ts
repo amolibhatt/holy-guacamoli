@@ -702,6 +702,80 @@ export function setupWebSocket(server: Server) {
           // Sequence Squeeze Game Handlers
           // ========================================
 
+          case "sequence:host:switchMode": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room && (room.currentMode === "board" || room.currentMode === "jeopardy" || room.currentMode === "heads_up")) {
+                room.currentMode = "sequence" as GameMode;
+                room.buzzerLocked = true;
+                
+                const existingScores = room.sequenceRound?.sessionScores || new Map<string, number>();
+                room.players.forEach((player) => {
+                  if (!existingScores.has(player.id)) {
+                    existingScores.set(player.id, player.score);
+                  }
+                });
+                
+                room.sequenceRound = {
+                  questionId: 0,
+                  question: null,
+                  correctOrder: [],
+                  startTime: 0,
+                  endTime: 0,
+                  revealTimer: null,
+                  answeringTimer: null,
+                  submissions: new Map(),
+                  revealed: false,
+                  gameState: "lobby",
+                  currentQuestionIndex: 0,
+                  totalQuestions: 0,
+                  sessionScores: existingScores,
+                };
+                
+                const playerList = Array.from(room.players.values()).map(p => ({
+                  playerId: p.id,
+                  playerName: p.name,
+                  playerAvatar: p.avatar,
+                  score: existingScores.get(p.id) || p.score,
+                }));
+                
+                room.players.forEach((player) => {
+                  try {
+                    if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+                      player.ws.send(JSON.stringify({
+                        type: "room:modeChanged",
+                        mode: "sequence",
+                        score: existingScores.get(player.id) || player.score,
+                      }));
+                    }
+                  } catch (e) {
+                    console.error("Failed to notify player of mode change:", e);
+                  }
+                });
+                
+                ws.send(JSON.stringify({ 
+                  type: "sequence:mode:switched",
+                  code: room.code,
+                  players: playerList,
+                }));
+              } else if (room && room.currentMode === "sequence") {
+                const existingScores = room.sequenceRound?.sessionScores || new Map<string, number>();
+                const playerList = Array.from(room.players.values()).map(p => ({
+                  playerId: p.id,
+                  playerName: p.name,
+                  playerAvatar: p.avatar,
+                  score: existingScores.get(p.id) || p.score,
+                }));
+                ws.send(JSON.stringify({ 
+                  type: "sequence:mode:switched",
+                  code: room.code,
+                  players: playerList,
+                }));
+              }
+            }
+            break;
+          }
+
           case "sequence:host:create": {
             const code = generateRoomCode();
             const hostId = message.hostId || randomUUID();

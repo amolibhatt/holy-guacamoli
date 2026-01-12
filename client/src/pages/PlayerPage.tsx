@@ -232,6 +232,12 @@ export default function PlayerPage() {
           break;
         case "pong":
           break;
+        case "room:modeChanged":
+          if (data.mode === "sequence") {
+            if (data.score !== undefined) setScore(data.score);
+            setLocation(`/play/sequence/${roomCode.toUpperCase()}`);
+          }
+          break;
       }
     };
 

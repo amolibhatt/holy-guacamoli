@@ -255,7 +255,7 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const GAME_MODES = ["jeopardy", "heads_up", "board"] as const;
+export const GAME_MODES = ["jeopardy", "heads_up", "board", "sequence"] as const;
 export type GameMode = typeof GAME_MODES[number];
 
 export interface BoardModeSettings {

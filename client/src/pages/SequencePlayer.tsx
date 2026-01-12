@@ -33,8 +33,11 @@ interface Question {
 
 function getSession() {
   try {
-    const data = localStorage.getItem("sequence-session");
-    return data ? JSON.parse(data) : null;
+    const sequenceData = localStorage.getItem("sequence-session");
+    if (sequenceData) return JSON.parse(sequenceData);
+    const buzzerData = localStorage.getItem("buzzer-session");
+    if (buzzerData) return JSON.parse(buzzerData);
+    return null;
   } catch { return null; }
 }
 
