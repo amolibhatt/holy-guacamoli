@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { AppHeader } from "@/components/AppHeader";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { DoubleDipPair, DoubleDipQuestion, DoubleDipDailySet, DoubleDipAnswer, CategoryInsight } from "@shared/schema";
 
@@ -160,32 +161,19 @@ export default function CouplesGame() {
 
   return (
     <div className="min-h-screen gradient-game flex flex-col">
-      <header className="border-b border-pink-500/20 bg-card/60 backdrop-blur-xl sticky top-0 z-50">
-        <div className="px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Link href="/">
-              <Button variant="ghost" size="icon" data-testid="button-back" aria-label="Back to home">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center shadow-lg shadow-pink-500/20">
-                <Heart className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-foreground">Double Dip</h1>
-                <span className="text-xs text-muted-foreground">Daily Questions for Couples</span>
-              </div>
-            </div>
-          </div>
-          {dailyData && (
+      <AppHeader
+        title="Double Dip"
+        subtitle="Daily Questions for Couples"
+        backHref="/"
+        rightContent={
+          dailyData && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-500/10 rounded-full">
               <Flame className="w-4 h-4 text-orange-500" />
               <span className="text-sm font-bold text-orange-500">{dailyData.streakCount}</span>
             </div>
-          )}
-        </div>
-      </header>
+          )
+        }
+      />
 
       <main className="flex-1 p-6 overflow-y-auto">
         <div className="max-w-lg mx-auto">

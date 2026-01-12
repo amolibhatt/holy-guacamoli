@@ -3,11 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Play, Pause, RotateCcw, Check, X, ChevronLeft, ChevronRight, Sun, Moon, Timer } from "lucide-react";
+import { ArrowLeft, Play, Pause, RotateCcw, Check, X, ChevronLeft, ChevronRight, Timer } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
-import { useTheme } from "@/context/ThemeContext";
+import { AppHeader } from "@/components/AppHeader";
 import type { Game, HeadsUpDeck, HeadsUpCard } from "@shared/schema";
 
 type GameState = "idle" | "playing" | "paused" | "finished";
@@ -138,24 +138,11 @@ export default function HeadsUpGame() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="sticky top-0 z-50 bg-background border-b border-border px-4 py-3">
-        <div className="flex items-center justify-between max-w-2xl mx-auto">
-          <Link href="/admin/games">
-            <Button variant="ghost" size="icon" data-testid="button-back">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <h1 className="text-lg font-bold text-foreground">{game.name}</h1>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={toggleColorMode}
-            data-testid="button-color-mode"
-          >
-            {colorMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </Button>
-        </div>
-      </div>
+      <AppHeader
+        title="Heads Up"
+        subtitle={game.name}
+        backHref="/admin/games"
+      />
 
       <div className="flex-1 flex flex-col items-center justify-center p-4">
         {gameState === "idle" && (

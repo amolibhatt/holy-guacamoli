@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, ChevronDown, ChevronRight, Heart, Sparkles, TrendingUp } from "lucide-react";
+import { Calendar, ChevronDown, ChevronRight, Heart, Sparkles, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
+import { AppHeader } from "@/components/AppHeader";
 import type { DoubleDipDailySet, DoubleDipQuestion, DoubleDipAnswer, CategoryInsight } from "@shared/schema";
 
 const CATEGORY_CONFIG: Record<string, { name: string; color: string; bg: string }> = {
@@ -61,21 +62,11 @@ export default function Vault() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Link href="/couples">
-            <Button variant="ghost" size="icon" data-testid="button-back" aria-label="Back to Relationship Hub">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
-              The Vault
-            </h1>
-            <p className="text-xs text-muted-foreground">Your answered questions</p>
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        title="The Vault"
+        subtitle="Your answered questions"
+        backHref="/couples"
+      />
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         {!data?.entries || data.entries.length === 0 ? (

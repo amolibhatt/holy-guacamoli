@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { 
-  Users, Grid3X3, BarChart3, ArrowLeft, Shield, 
+  Users, Grid3X3, BarChart3, Shield, ArrowLeft,
   UserCheck, UserX, Trash2, Eye, MoreHorizontal,
   TrendingUp, Gamepad2, Clock, Activity, Heart, Grid2X2,
   Library, Globe, Lock, Building, ListOrdered
@@ -35,6 +35,7 @@ import type { GameStatus, BoardVisibility } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { AppHeader } from "@/components/AppHeader";
 import type { Board, GameType } from "@shared/schema";
 import type { SafeUser } from "@shared/models/auth";
 
@@ -174,29 +175,16 @@ export default function SuperAdmin() {
 
   return (
     <div className="min-h-screen gradient-game">
-      <header className="border-b border-primary/20 bg-card/60 backdrop-blur-xl sticky top-0 z-50">
-        <div className="px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Link href="/">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-foreground">Super Admin</h1>
-                <span className="text-xs text-muted-foreground">Platform Management</span>
-              </div>
-            </div>
-          </div>
+      <AppHeader
+        title="Super Admin"
+        subtitle="Platform Management"
+        backHref="/"
+        rightContent={
           <Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/30">
             Super Admin
           </Badge>
-        </div>
-      </header>
+        }
+      />
 
       <main className="p-6 max-w-7xl mx-auto">
         <Tabs defaultValue="analytics" className="space-y-6">
