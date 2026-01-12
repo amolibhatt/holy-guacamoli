@@ -23,6 +23,25 @@ interface Player {
   score: number;
 }
 
+interface SequenceSubmission {
+  playerId: string;
+  playerName: string;
+  playerAvatar: string;
+  sequence: string[];
+  timeMs: number;
+}
+
+interface SequenceRoundState {
+  questionId: number;
+  question: any;
+  correctOrder: string[];
+  startTime: number;
+  endTime: number;
+  revealTimer: NodeJS.Timeout | null;
+  submissions: Map<string, SequenceSubmission>;
+  revealed: boolean;
+}
+
 interface GameRoom {
   code: string;
   sessionId: number;
@@ -35,6 +54,7 @@ interface GameRoom {
   currentQuestion: number | null;
   currentBoardId: number | null;
   currentMode: GameMode;
+  sequenceRound: SequenceRoundState | null;
 }
 
 const rooms = new Map<string, GameRoom>();
@@ -667,6 +687,267 @@ export function setupWebSocket(server: Server) {
             ws.send(JSON.stringify({ type: "pong" }));
             break;
           }
+
+          // ========================================
+          // Sequence Squeeze Game Handlers
+          // ========================================
+
+          case "sequence:host:create": {
+            const code = generateRoomCode();
+            const hostId = message.hostId || randomUUID();
+            
+            const room: GameRoom = {
+              code,
+              sessionId: 0,
+              hostId,
+              hostWs: ws,
+              hostLastPing: Date.now(),
+              players: new Map(),
+              buzzerQueue: [],
+              buzzerLocked: true,
+              currentQuestion: null,
+              currentBoardId: null,
+              currentMode: "board",
+              sequenceRound: null,
+            };
+            rooms.set(code, room);
+            currentRoom = code;
+            isHost = true;
+            ws.send(JSON.stringify({ type: "sequence:room:created", code }));
+            break;
+          }
+
+          case "sequence:player:join": {
+            const roomCode = message.code?.toUpperCase();
+            const room = rooms.get(roomCode);
+            
+            if (room) {
+              const name = String(message.name || "").trim().slice(0, 50);
+              if (!name) {
+                ws.send(JSON.stringify({ type: "error", message: "Name is required" }));
+                return;
+              }
+              
+              const newPlayerId = message.playerId || randomUUID();
+              playerId = newPlayerId;
+              const avatar = sanitizeAvatar(message.avatar);
+              
+              const player: Player = {
+                id: newPlayerId,
+                name,
+                avatar,
+                ws,
+                lastPing: Date.now(),
+                score: 0,
+              };
+              room.players.set(newPlayerId, player);
+              currentRoom = roomCode;
+
+              ws.send(JSON.stringify({ 
+                type: "sequence:joined", 
+                playerId: newPlayerId,
+              }));
+
+              if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
+                room.hostWs.send(JSON.stringify({
+                  type: "sequence:player:joined",
+                  playerName: name,
+                  playerAvatar: avatar,
+                  playerId: newPlayerId,
+                }));
+              }
+            } else {
+              ws.send(JSON.stringify({ type: "error", message: "Room not found" }));
+            }
+            break;
+          }
+
+          case "sequence:host:startQuestion": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room && message.question && message.correctOrder) {
+                if (room.sequenceRound?.revealTimer) {
+                  clearTimeout(room.sequenceRound.revealTimer);
+                }
+                
+                const now = Date.now();
+                const endTime = now + 15500;
+                
+                const broadcastReveal = () => {
+                  if (!room.sequenceRound || room.sequenceRound.revealed) return;
+                  room.sequenceRound.revealed = true;
+                  
+                  const subs = Array.from(room.sequenceRound.submissions.values());
+                  const correctOrder = room.sequenceRound.correctOrder;
+                  
+                  const scoredSubs = subs.map(sub => ({
+                    ...sub,
+                    isCorrect: JSON.stringify(sub.sequence) === JSON.stringify(correctOrder),
+                  }));
+                  
+                  const correctSubs = scoredSubs.filter(s => s.isCorrect).sort((a, b) => a.timeMs - b.timeMs);
+                  const rankings = correctSubs.map((sub, idx) => ({
+                    playerId: sub.playerId,
+                    rank: idx + 1,
+                  }));
+                  
+                  room.players.forEach((player) => {
+                    if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+                      const playerRanking = rankings.find(r => r.playerId === player.id);
+                      player.ws.send(JSON.stringify({
+                        type: "sequence:reveal",
+                        correctOrder,
+                        rank: playerRanking?.rank || null,
+                      }));
+                    }
+                  });
+                  
+                  if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
+                    room.hostWs.send(JSON.stringify({
+                      type: "sequence:reveal:complete",
+                      correctOrder,
+                      rankings,
+                      submissions: scoredSubs,
+                    }));
+                  }
+                };
+                
+                room.sequenceRound = {
+                  questionId: message.question.id,
+                  question: message.question,
+                  correctOrder: message.correctOrder,
+                  startTime: now,
+                  endTime,
+                  revealTimer: setTimeout(broadcastReveal, 15500),
+                  submissions: new Map(),
+                  revealed: false,
+                };
+                
+                room.players.forEach((player) => {
+                  if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+                    player.ws.send(JSON.stringify({
+                      type: "sequence:question:start",
+                      question: message.question,
+                      endTime,
+                    }));
+                  }
+                });
+                
+                if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
+                  room.hostWs.send(JSON.stringify({
+                    type: "sequence:round:started",
+                    endTime,
+                  }));
+                }
+              }
+            }
+            break;
+          }
+
+          case "sequence:player:submit": {
+            if (playerId && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room && room.sequenceRound && !room.sequenceRound.revealed) {
+                const now = Date.now();
+                if (now > room.sequenceRound.endTime) {
+                  ws.send(JSON.stringify({ type: "sequence:submission:late" }));
+                  break;
+                }
+                
+                const player = room.players.get(playerId);
+                if (player && !room.sequenceRound.submissions.has(playerId)) {
+                  const timeMs = now - room.sequenceRound.startTime;
+                  const submission: SequenceSubmission = {
+                    playerId,
+                    playerName: player.name,
+                    playerAvatar: player.avatar,
+                    sequence: message.sequence,
+                    timeMs,
+                  };
+                  room.sequenceRound.submissions.set(playerId, submission);
+                  
+                  if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
+                    room.hostWs.send(JSON.stringify({
+                      type: "sequence:submission",
+                      submission,
+                      totalSubmissions: room.sequenceRound.submissions.size,
+                    }));
+                  }
+                  
+                  ws.send(JSON.stringify({ type: "sequence:submission:accepted" }));
+                }
+              }
+            }
+            break;
+          }
+
+          case "sequence:host:reveal": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room && room.sequenceRound && !room.sequenceRound.revealed) {
+                if (room.sequenceRound.revealTimer) {
+                  clearTimeout(room.sequenceRound.revealTimer);
+                  room.sequenceRound.revealTimer = null;
+                }
+                
+                room.sequenceRound.revealed = true;
+                
+                const subs = Array.from(room.sequenceRound.submissions.values());
+                const correctOrder = room.sequenceRound.correctOrder;
+                
+                const scoredSubs = subs.map(sub => ({
+                  ...sub,
+                  isCorrect: JSON.stringify(sub.sequence) === JSON.stringify(correctOrder),
+                }));
+                
+                const correctSubs = scoredSubs.filter(s => s.isCorrect).sort((a, b) => a.timeMs - b.timeMs);
+                const rankings = correctSubs.map((sub, idx) => ({
+                  playerId: sub.playerId,
+                  rank: idx + 1,
+                }));
+                
+                room.players.forEach((player) => {
+                  if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+                    const playerRanking = rankings.find(r => r.playerId === player.id);
+                    player.ws.send(JSON.stringify({
+                      type: "sequence:reveal",
+                      correctOrder,
+                      rank: playerRanking?.rank || null,
+                    }));
+                  }
+                });
+                
+                if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
+                  room.hostWs.send(JSON.stringify({
+                    type: "sequence:reveal:complete",
+                    correctOrder,
+                    rankings,
+                    submissions: scoredSubs,
+                  }));
+                }
+              }
+            }
+            break;
+          }
+
+          case "sequence:host:reset": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room) {
+                if (room.sequenceRound?.revealTimer) {
+                  clearTimeout(room.sequenceRound.revealTimer);
+                }
+                room.sequenceRound = null;
+                
+                room.players.forEach((player) => {
+                  if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+                    player.ws.send(JSON.stringify({ type: "sequence:reset" }));
+                  }
+                });
+              }
+            }
+            break;
+          }
         }
       } catch (err) {
         console.error("WebSocket message error:", err);
@@ -682,15 +963,20 @@ export function setupWebSocket(server: Server) {
           } else if (playerId) {
             const player = room.players.get(playerId);
             if (player) {
-              player.ws = null as any;
               storage.updatePlayerConnection(room.sessionId, playerId, false);
+              room.players.delete(playerId);
             }
             
             if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
               room.hostWs.send(JSON.stringify({
-                type: "player:disconnected",
+                type: "player:left",
                 playerId,
                 playerName: player?.name,
+                remainingPlayers: Array.from(room.players.values()).map(p => ({
+                  id: p.id,
+                  name: p.name,
+                  avatar: p.avatar,
+                })),
               }));
             }
           }
@@ -712,12 +998,18 @@ export function setupWebSocket(server: Server) {
           if (player.ws && player.ws.readyState === WebSocket.OPEN) {
             player.ws.close();
           }
+          const playerName = player.name;
           room.players.delete(playerId);
           if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
             room.hostWs.send(JSON.stringify({
               type: "player:left",
               playerId,
-              playerName: player.name,
+              playerName,
+              remainingPlayers: Array.from(room.players.values()).map(p => ({
+                id: p.id,
+                name: p.name,
+                avatar: p.avatar,
+              })),
             }));
           }
         }

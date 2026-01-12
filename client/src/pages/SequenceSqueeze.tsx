@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
@@ -38,11 +38,14 @@ export default function SequenceSqueeze() {
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<SequenceQuestion | null>(null);
   const [timerSeconds, setTimerSeconds] = useState(15);
+  const [endTime, setEndTime] = useState<number | null>(null);
   const [submissions, setSubmissions] = useState<PlayerSubmission[]>([]);
   const [showQR, setShowQR] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<SequenceQuestion | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [ws, setWs] = useState<WebSocket | null>(null);
+  const [players, setPlayers] = useState<{ id: string; name: string; avatar?: string }[]>([]);
+  const submissionsRef = useRef<PlayerSubmission[]>([]);
 
   const { data: questions = [], isLoading: isLoadingQuestions } = useQuery<SequenceQuestion[]>({
     queryKey: ["/api/sequence-squeeze/questions"],
@@ -88,9 +91,34 @@ export default function SequenceSqueeze() {
           break;
         case "sequence:player:joined":
           toast({ title: `${data.playerName} joined!` });
+          setPlayers(prev => [...prev.filter(p => p.id !== data.playerId), { 
+            id: data.playerId, 
+            name: data.playerName, 
+            avatar: data.playerAvatar 
+          }]);
           break;
         case "sequence:submission":
-          setSubmissions(prev => [...prev, data.submission]);
+          setSubmissions(prev => {
+            const newSubmissions = [...prev, data.submission];
+            submissionsRef.current = newSubmissions;
+            return newSubmissions;
+          });
+          break;
+        case "sequence:round:started":
+          if (data.endTime) {
+            setEndTime(data.endTime);
+          }
+          break;
+        case "sequence:reveal:complete":
+          setGameState("revealing");
+          if (data.submissions) {
+            setSubmissions(data.submissions);
+            submissionsRef.current = data.submissions;
+          }
+          break;
+        case "player:left":
+          toast({ title: `${data.playerName} left the game` });
+          setPlayers(prev => prev.filter(p => p.id !== data.playerId));
           break;
       }
     };
@@ -106,7 +134,9 @@ export default function SequenceSqueeze() {
   const startQuestion = (question: SequenceQuestion) => {
     setCurrentQuestion(question);
     setSubmissions([]);
+    submissionsRef.current = [];
     setTimerSeconds(15);
+    setEndTime(null);
     setGameState("playing");
 
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -120,53 +150,46 @@ export default function SequenceSqueeze() {
           optionC: question.optionC,
           optionD: question.optionD,
           hint: question.hint,
-        }
+        },
+        correctOrder: question.correctOrder,
       }));
     }
   };
 
-  const revealAnswer = () => {
-    setGameState("revealing");
-
-    if (ws && ws.readyState === WebSocket.OPEN && currentQuestion) {
-      ws.send(JSON.stringify({ 
-        type: "sequence:host:reveal", 
-        correctOrder: currentQuestion.correctOrder 
-      }));
-    }
-
-    const scoredSubmissions = submissions.map(sub => ({
-      ...sub,
-      isCorrect: JSON.stringify(sub.sequence) === JSON.stringify(currentQuestion?.correctOrder),
-    }));
-    setSubmissions(scoredSubmissions);
-  };
+  const revealAnswer = useCallback(() => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({ type: "sequence:host:reveal" }));
+  }, [ws]);
 
   const showResults = () => {
     setGameState("results");
   };
 
-  const resetGame = () => {
+  const resetGame = useCallback(() => {
     setCurrentQuestion(null);
     setSubmissions([]);
+    submissionsRef.current = [];
     setGameState("waiting");
-  };
+    
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "sequence:host:reset" }));
+    }
+  }, [ws]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (gameState === "playing" && timerSeconds > 0) {
-      interval = setInterval(() => {
-        setTimerSeconds(prev => {
-          if (prev <= 1) {
-            revealAnswer();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    if (gameState === "playing" && endTime) {
+      const updateTimer = () => {
+        const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+        setTimerSeconds(remaining);
+      };
+      updateTimer();
+      interval = setInterval(updateTimer, 200);
     }
-    return () => clearInterval(interval);
-  }, [gameState, timerSeconds]);
+    return () => {
+      clearInterval(interval);
+    };
+  }, [gameState, endTime]);
 
   useEffect(() => {
     return () => {
@@ -187,7 +210,7 @@ export default function SequenceSqueeze() {
     return null;
   }
 
-  const joinUrl = `${window.location.origin}/play/${roomCode}?game=sequence`;
+  const joinUrl = `${window.location.origin}/sequence/${roomCode}`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -333,7 +356,28 @@ export default function SequenceSqueeze() {
                 <span className="text-muted-foreground">Room Code:</span>
                 <span className="text-3xl font-mono font-bold text-foreground">{roomCode}</span>
               </div>
+              {players.length > 0 && (
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge className="bg-emerald-500 gap-1">
+                    <Users className="w-3 h-3" />
+                    {players.length} player{players.length !== 1 ? 's' : ''} connected
+                  </Badge>
+                </div>
+              )}
             </div>
+
+            {players.length > 0 && (
+              <div className="mt-6">
+                <h3 className="font-semibold mb-3">Players:</h3>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {players.map(p => (
+                    <Badge key={p.id} variant="secondary" className="gap-1">
+                      {p.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mt-8 space-y-3">
               <h3 className="font-semibold">Select a question to start:</h3>
