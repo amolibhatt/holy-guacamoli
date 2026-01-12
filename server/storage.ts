@@ -1244,32 +1244,47 @@ export class DatabaseStorage implements IStorage {
   }
 
   async seedGameTypes(): Promise<void> {
+    const requiredGameTypes = [
+      {
+        slug: "grid_of_grudges",
+        displayName: "Buzzkill",
+        description: "Race the clock, decode the clues, and claim the grid.",
+        icon: "grid",
+        status: "active" as const,
+        hostEnabled: true,
+        playerEnabled: true,
+        sortOrder: 1,
+      },
+      {
+        slug: "sequence_squeeze",
+        displayName: "Sequence Squeeze",
+        description: "Race to put 4 options in the correct order! Fastest correct sequence wins.",
+        icon: "list-ordered",
+        status: "active" as const,
+        hostEnabled: true,
+        playerEnabled: true,
+        sortOrder: 2,
+      },
+      {
+        slug: "double_dip",
+        displayName: "Double Dip",
+        description: "Deep dives and daily drives into the mind of your favorite person.",
+        icon: "heart",
+        status: "active" as const,
+        hostEnabled: true,
+        playerEnabled: true,
+        sortOrder: 3,
+      },
+    ];
+
     const existingTypes = await db.select().from(gameTypes);
-    if (existingTypes.length === 0) {
-      console.log("Seeding default game types...");
-      await db.insert(gameTypes).values([
-        {
-          slug: "grid_of_grudges",
-          displayName: "Buzzkill",
-          description: "Race the clock, decode the clues, and claim the grid.",
-          icon: "grid",
-          status: "active",
-          hostEnabled: true,
-          playerEnabled: true,
-          sortOrder: 1,
-        },
-        {
-          slug: "double_dip",
-          displayName: "Double Dip",
-          description: "Deep dives and daily drives into the mind of your favorite person.",
-          icon: "heart",
-          status: "active",
-          hostEnabled: true,
-          playerEnabled: true,
-          sortOrder: 2,
-        },
-      ]);
-      console.log("Game types seeded successfully.");
+    const existingSlugs = new Set(existingTypes.map(t => t.slug));
+
+    for (const gameType of requiredGameTypes) {
+      if (!existingSlugs.has(gameType.slug)) {
+        console.log(`Adding missing game type: ${gameType.displayName}`);
+        await db.insert(gameTypes).values(gameType);
+      }
     }
   }
 
