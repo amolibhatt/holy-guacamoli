@@ -655,7 +655,7 @@ export default function Admin() {
               <h2 className="text-2xl font-bold text-foreground mb-2">Select a Game to Manage</h2>
               <p className="text-muted-foreground">Choose which game content you want to create or edit</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

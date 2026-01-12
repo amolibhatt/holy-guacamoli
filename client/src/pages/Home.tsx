@@ -238,7 +238,7 @@ export default function Home() {
               </p>
             </motion.div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
               {gameTypes.map((game, index) => {
                 const config = GAME_CONFIG[game.slug] || {
                   icon: Grid3X3,
