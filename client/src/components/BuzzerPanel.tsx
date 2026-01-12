@@ -76,6 +76,7 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
+  const forceNewRoomRef = useRef(false);
   const { addContestantWithId, removeContestant, syncContestantScore, setCompletedQuestionsFromServer, markQuestionCompleted } = useScore();
   const { user } = useAuth();
 
@@ -91,7 +92,11 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
       setReconnecting(false);
       reconnectAttemptsRef.current = 0;
       
-      if (roomCode) {
+      // Check if we should force create a new room (after delete/reset)
+      if (forceNewRoomRef.current) {
+        forceNewRoomRef.current = false;
+        ws.send(JSON.stringify({ type: "host:create", hostId: user?.id || crypto.randomUUID() }));
+      } else if (roomCode) {
         ws.send(JSON.stringify({ type: "host:join", code: roomCode }));
       } else {
         ws.send(JSON.stringify({ type: "host:create", hostId: user?.id || crypto.randomUUID() }));
@@ -256,7 +261,18 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
     setRoomCode(null);
     setPlayers([]);
     setBuzzQueue([]);
-    wsRef.current?.close();
+    setSessionId(null);
+    
+    // Set flag to force new room creation on next connect
+    forceNewRoomRef.current = true;
+    
+    // Close existing connection and reconnect
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    
+    // Reconnect using the main connect function (which will use forceNewRoomRef)
     setTimeout(() => connect(), 100);
   }, [connect]);
 
