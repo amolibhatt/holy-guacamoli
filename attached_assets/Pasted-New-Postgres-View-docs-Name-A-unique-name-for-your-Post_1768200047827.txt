@@ -1,0 +1,94 @@
+New Postgres
+View docs
+Name
+A unique name for your Postgres instance.
+
+example-postgresql-name
+
+ProjectOptional
+Add this database to a project once it’s created.
+
+Project
+
+Select a project…
+/
+Environment
+
+Select an environment…
+DatabaseOptional
+The Postgres dbname
+
+randomly generated unless specified
+UserOptional
+randomly generated unless specified
+Region
+Your services in the same region can communicate over a private network. You currently have services running in singapore.
+
+Region Selector
+Singapore (Southeast Asia)
+1 existing service
+
+Deploy in a new region
+PostgreSQL Version
+
+18
+Datadog API KeyOptional
+The API key to use for sending metrics to Datadog. Setting this will enable Datadog monitoring.
+
+Datadog RegionOptional
+The region key to use for sending metrics to Datadog.
+
+
+US1 (default)
+Plan Options
+Instance type
+Instance Type
+Set your database's RAM and CPU. You can change your instance type later.
+
+Free
+For testing out Render Postgres
+
+
+Free
+$0/ month
+256 MB (RAM)
+0.1 CPU
+1 GB (Storage)
+
+Basic
+Reliability and performance for hobby projects. Starting at $6 / month plus storage.
+
+
+Pro
+Perfect for production use cases at any scale. Starting at $55 / month plus storage.
+
+
+Accelerated
+Memory-optimized plans offer significant performance improvements. Starting at $160 / month plus storage.
+
+Need a custom instance type? We support up to 1024 GB RAM, 128 CPUs, and 16 TB storage.
+
+Storage
+Your database's capacity, in GB. You can increase storage later, but you can't decrease it.
+Specify 1 GB or any multiple of 5 GB.
+1
+GB
+$0 / month
+Storage Autoscaling
+When your database is 90% full, automatically increase its storage by 50% (rounded up to the nearest 5 GB).
+Max one increase per 12 hours. Learn more
+
+Disabled
+High Availability
+Run a standby instance of your database and automatically fail over to it if the primary encounters an issue. Learn more
+
+Disabled
+Only available for Pro instances and higher.
+Monthly Total
+Database instances are billed and prorated by the second.
+
+Instance: Free
+$0 / month
+Total
+$0 / month
+Create Database
