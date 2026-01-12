@@ -874,6 +874,7 @@ export async function registerRoutes(
       res.json(players.map(p => ({
         id: p.playerId,
         name: p.name,
+        avatar: p.avatar,
         score: p.score,
         isConnected: p.isConnected,
       })));

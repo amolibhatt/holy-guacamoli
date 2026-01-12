@@ -108,6 +108,7 @@ export default function SequencePlayer() {
           setJoined(true);
           setPlayerId(data.playerId);
           saveSession(roomCode.toUpperCase(), playerName, data.playerId, selectedAvatar);
+          if (data.score !== undefined) setMyScore(data.score);
           setPhase("waiting");
           break;
           
@@ -151,6 +152,7 @@ export default function SequencePlayer() {
           setIsCorrect(correct);
           if (data.rank) setRank(data.rank);
           if (data.leaderboard) setLeaderboard(data.leaderboard);
+          if (data.yourScore !== undefined) setMyScore(data.yourScore);
           if (data.myScore !== undefined) setMyScore(data.myScore);
           if (data.winner) setWinner(data.winner);
           if (correct && data.rank === 1) {
