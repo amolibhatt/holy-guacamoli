@@ -12,7 +12,7 @@ import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, LogOut, Sun, Moon, Layers, Upload, FileText, Eye } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, LogOut, Sun, Moon, Layers, Upload, FileText, Eye, BarChart2, Users, Activity } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -82,6 +82,7 @@ export default function Admin() {
   const [bulkImportText, setBulkImportText] = useState("");
   const [bulkPreviewMode, setBulkPreviewMode] = useState(false);
   const [showBoardPreview, setShowBoardPreview] = useState(false);
+  const [adminTab, setAdminTab] = useState<"content" | "analytics">("content");
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -120,6 +121,18 @@ export default function Admin() {
   const { data: questions = [], isLoading: loadingQuestions } = useQuery<Question[]>({
     queryKey: ['/api/board-categories', selectedBoardCategoryId, 'questions'],
     enabled: !!selectedBoardCategoryId && isAuthenticated,
+  });
+
+  type HostAnalytics = { totalSessions: number; totalPlayers: number; activeSessions: number };
+  const { data: hostAnalytics, isLoading: loadingAnalytics } = useQuery<HostAnalytics>({
+    queryKey: ['/api/host/analytics'],
+    enabled: isAuthenticated && adminTab === 'analytics',
+  });
+
+  type SessionWithPlayers = { id: number; code: string; hostId: string; gameId: number | null; currentBoardId: number | null; state: string; createdAt: string; players: { playerId: string; name: string; score: number }[] };
+  const { data: hostSessions = [], isLoading: loadingSessions } = useQuery<SessionWithPlayers[]>({
+    queryKey: ['/api/host/sessions'],
+    enabled: isAuthenticated && adminTab === 'analytics',
   });
 
   const usedPoints = questions.map(q => q.points);
@@ -461,6 +474,28 @@ export default function Admin() {
               )}
             </div>
           )}
+          <div className="flex items-center border border-border rounded-lg overflow-hidden">
+            <Button
+              variant={adminTab === 'content' ? 'default' : 'ghost'}
+              size="sm"
+              className="rounded-none gap-2"
+              onClick={() => setAdminTab('content')}
+              data-testid="button-tab-content"
+            >
+              <Grid3X3 className="w-4 h-4" />
+              Content
+            </Button>
+            <Button
+              variant={adminTab === 'analytics' ? 'default' : 'ghost'}
+              size="sm"
+              className="rounded-none gap-2"
+              onClick={() => setAdminTab('analytics')}
+              data-testid="button-tab-analytics"
+            >
+              <BarChart2 className="w-4 h-4" />
+              Analytics
+            </Button>
+          </div>
           <Link href="/admin/games">
             <Button variant="outline" size="sm" className="gap-2" data-testid="button-manage-games">
               <Layers className="w-4 h-4" />
@@ -480,6 +515,117 @@ export default function Admin() {
       </div>
 
       <main className="max-w-[1600px] mx-auto p-6" role="main" aria-label="Admin panel content">
+        {adminTab === 'analytics' ? (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="bg-card border-border">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Activity className="w-4 h-4" />
+                    Total Sessions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {loadingAnalytics ? (
+                    <Skeleton className="h-8 w-16" />
+                  ) : (
+                    <p className="text-3xl font-bold text-foreground" data-testid="text-total-sessions">
+                      {hostAnalytics?.totalSessions || 0}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+              <Card className="bg-card border-border">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Total Players
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {loadingAnalytics ? (
+                    <Skeleton className="h-8 w-16" />
+                  ) : (
+                    <p className="text-3xl font-bold text-foreground" data-testid="text-total-players">
+                      {hostAnalytics?.totalPlayers || 0}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+              <Card className="bg-card border-border">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-green-500" />
+                    Active Sessions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {loadingAnalytics ? (
+                    <Skeleton className="h-8 w-16" />
+                  ) : (
+                    <p className="text-3xl font-bold text-green-500" data-testid="text-active-sessions">
+                      {hostAnalytics?.activeSessions || 0}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-foreground">Session History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingSessions ? (
+                  <div className="space-y-2">
+                    {[1, 2, 3].map(i => (
+                      <Skeleton key={i} className="h-12 w-full" />
+                    ))}
+                  </div>
+                ) : hostSessions.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">No sessions yet. Start hosting games to see your history here.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Code</th>
+                          <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Date</th>
+                          <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Status</th>
+                          <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Players</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {hostSessions.map(session => (
+                          <tr key={session.id} className="border-b border-border hover-elevate" data-testid={`row-session-${session.id}`}>
+                            <td className="py-3 px-3">
+                              <span className="font-mono text-sm font-medium text-foreground">{session.code}</span>
+                            </td>
+                            <td className="py-3 px-3 text-sm text-muted-foreground">
+                              {new Date(session.createdAt).toLocaleDateString()} {new Date(session.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </td>
+                            <td className="py-3 px-3">
+                              <span className={`text-xs px-2 py-1 rounded-full ${
+                                session.state === 'ended' 
+                                  ? 'bg-muted text-muted-foreground' 
+                                  : session.state === 'playing' 
+                                    ? 'bg-green-500/20 text-green-500'
+                                    : 'bg-yellow-500/20 text-yellow-500'
+                              }`}>
+                                {session.state}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-sm text-foreground">{session.players.length}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-120px)]">
           <div className="lg:col-span-3 overflow-y-auto">
             <Card className="bg-card border-border shadow-sm">
@@ -1386,6 +1532,7 @@ export default function Admin() {
             </Card>
           </div>
         </div>
+        )}
       </main>
     </div>
   );

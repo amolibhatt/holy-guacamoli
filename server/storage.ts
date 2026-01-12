@@ -72,6 +72,8 @@ export interface IStorage {
   getActiveSessionForHost(hostId: string): Promise<GameSession | undefined>;
   updateSession(id: number, data: Partial<InsertGameSession>): Promise<GameSession | undefined>;
   deleteSession(id: number): Promise<boolean>;
+  getHostSessions(hostId: string): Promise<GameSessionWithPlayers[]>;
+  getHostAnalytics(hostId: string): Promise<{ totalSessions: number; totalPlayers: number; activeSessions: number }>;
   
   // Session Players
   addPlayerToSession(data: InsertSessionPlayer): Promise<SessionPlayer>;
@@ -653,6 +655,40 @@ export class DatabaseStorage implements IStorage {
     await db.delete(sessionPlayers).where(eq(sessionPlayers.sessionId, id));
     const result = await db.delete(gameSessions).where(eq(gameSessions.id, id)).returning();
     return result.length > 0;
+  }
+
+  async getHostSessions(hostId: string): Promise<GameSessionWithPlayers[]> {
+    const sessions = await db.select().from(gameSessions)
+      .where(eq(gameSessions.hostId, hostId))
+      .orderBy(desc(gameSessions.createdAt));
+    
+    const result: GameSessionWithPlayers[] = [];
+    for (const session of sessions) {
+      const players = await this.getSessionPlayers(session.id);
+      result.push({ ...session, players });
+    }
+    return result;
+  }
+
+  async getHostAnalytics(hostId: string): Promise<{ totalSessions: number; totalPlayers: number; activeSessions: number }> {
+    const allSessions = await db.select().from(gameSessions)
+      .where(eq(gameSessions.hostId, hostId));
+    
+    const activeSessions = allSessions.filter(s => s.state !== 'ended').length;
+    
+    let totalPlayers = 0;
+    for (const session of allSessions) {
+      const players = await db.select({ count: sql<number>`count(*)` })
+        .from(sessionPlayers)
+        .where(eq(sessionPlayers.sessionId, session.id));
+      totalPlayers += Number(players[0]?.count || 0);
+    }
+    
+    return {
+      totalSessions: allSessions.length,
+      totalPlayers,
+      activeSessions
+    };
   }
 
   // === SESSION PLAYERS ===

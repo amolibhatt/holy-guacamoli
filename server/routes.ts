@@ -956,6 +956,30 @@ export async function registerRoutes(
     }
   });
 
+  // Host analytics - get session history
+  app.get("/api/host/sessions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const sessions = await storage.getHostSessions(userId);
+      res.json(sessions);
+    } catch (err) {
+      console.error("Error getting host sessions:", err);
+      res.status(500).json({ message: "Failed to get sessions" });
+    }
+  });
+
+  // Host analytics - get summary stats
+  app.get("/api/host/analytics", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const analytics = await storage.getHostAnalytics(userId);
+      res.json(analytics);
+    } catch (err) {
+      console.error("Error getting host analytics:", err);
+      res.status(500).json({ message: "Failed to get analytics" });
+    }
+  });
+
   app.post('/api/upload', isAuthenticated, upload.single('file'), (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
