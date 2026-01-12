@@ -48,7 +48,7 @@ export function AppHeader({
               </Button>
             </Link>
           )}
-          <BuzzkillLogo size="md" themed={themed} animate={false} />
+          <BuzzkillLogo size="md" themed={themed} />
           <div className="flex flex-col">
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)' }}>
               <span className="text-foreground">Holy </span>
