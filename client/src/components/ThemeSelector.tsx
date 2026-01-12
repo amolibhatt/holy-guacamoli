@@ -14,6 +14,7 @@ const THEME_LABELS: Record<ThemeName, string> = {
   sports: 'Sports',
   ocean: 'Ocean',
   neon: 'Neon',
+  football: 'Football',
 };
 
 export function ThemeSelector() {

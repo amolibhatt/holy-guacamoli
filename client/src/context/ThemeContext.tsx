@@ -5,10 +5,11 @@ import {
   Trophy, Medal, Target, Zap,
   Waves, Shell, Anchor, Sun,
   Bolt, Orbit, CircleDot, Flame,
+  Goal, Flag, Timer, Users,
   LucideIcon
 } from "lucide-react";
 
-export type ThemeName = 'birthday' | 'holiday' | 'sports' | 'ocean' | 'neon';
+export type ThemeName = 'birthday' | 'holiday' | 'sports' | 'ocean' | 'neon' | 'football';
 
 interface ThemeColors {
   gradient1: string;
@@ -66,6 +67,14 @@ export const THEMES: Record<ThemeName, ThemeColors> = {
     glow: 'rgba(247, 37, 133, 0.4)',
     primaryHsl: '333 93% 55%',
   },
+  football: {
+    gradient1: '#16A34A',
+    gradient2: '#15803D',
+    gradient3: '#166534',
+    accent: '#854D0E',
+    glow: 'rgba(22, 163, 74, 0.4)',
+    primaryHsl: '142 72% 42%',
+  },
 };
 
 export const THEME_DECOR: Record<ThemeName, ThemeDecor> = {
@@ -94,6 +103,11 @@ export const THEME_DECOR: Record<ThemeName, ThemeDecor> = {
     label: 'Neon',
     emoji: '⚡',
   },
+  football: {
+    icons: [Goal, Trophy, Flag, Timer],
+    label: 'Football',
+    emoji: '⚽',
+  },
 };
 
 export type ColorMode = 'light' | 'dark';
@@ -120,7 +134,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('quiz-theme');
-    if (savedTheme && (savedTheme === 'birthday' || savedTheme === 'holiday' || savedTheme === 'sports' || savedTheme === 'ocean' || savedTheme === 'neon')) {
+    if (savedTheme && (savedTheme === 'birthday' || savedTheme === 'holiday' || savedTheme === 'sports' || savedTheme === 'ocean' || savedTheme === 'neon' || savedTheme === 'football')) {
       setTheme(savedTheme);
     }
     const savedColorMode = localStorage.getItem('quiz-color-mode');
