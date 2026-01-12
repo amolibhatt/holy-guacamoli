@@ -693,37 +693,6 @@ export default function Admin() {
                 transition={{ delay: 0.2 }}
               >
                 <Card 
-                  className="hover-elevate cursor-pointer border-2 border-transparent hover:border-pink-500/50 transition-all"
-                  onClick={() => setSelectedGameType('double_dip')}
-                  data-testid="card-game-double-dip"
-                >
-                  <CardContent className="p-8 text-center">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-400 via-pink-500 to-fuchsia-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-pink-500/20">
-                      <Heart className="w-10 h-10 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-foreground mb-2">Double Dip</h3>
-                    <p className="text-muted-foreground text-sm mb-4">
-                      Daily prompts and deep questions for couples
-                    </p>
-                    <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Heart className="w-3 h-3" />
-                        Couples Game
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Sparkles className="w-3 h-3" />
-                        Daily Prompts
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <Card 
                   className="hover-elevate cursor-pointer border-2 border-transparent hover:border-teal-500/50 transition-all"
                   onClick={() => setSelectedGameType('sequence_squeeze')}
                   data-testid="card-game-sequence-squeeze"
@@ -744,6 +713,37 @@ export default function Admin() {
                       <span className="flex items-center gap-1">
                         <Sparkles className="w-3 h-3" />
                         Speed Challenge
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Card 
+                  className="hover-elevate cursor-pointer border-2 border-transparent hover:border-pink-500/50 transition-all"
+                  onClick={() => setSelectedGameType('double_dip')}
+                  data-testid="card-game-double-dip"
+                >
+                  <CardContent className="p-8 text-center">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-400 via-pink-500 to-fuchsia-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-pink-500/20">
+                      <Heart className="w-10 h-10 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground mb-2">Double Dip</h3>
+                    <p className="text-muted-foreground text-sm mb-4">
+                      Daily prompts and deep questions for couples
+                    </p>
+                    <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Heart className="w-3 h-3" />
+                        Couples Game
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        Daily Prompts
                       </span>
                     </div>
                   </CardContent>
