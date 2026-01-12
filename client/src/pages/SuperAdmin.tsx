@@ -6,7 +6,7 @@ import {
   Users, Grid3X3, BarChart3, ArrowLeft, Shield, 
   UserCheck, UserX, Trash2, Eye, MoreHorizontal,
   TrendingUp, Gamepad2, Clock, Activity, Heart, Grid2X2,
-  Library, Globe, Lock, Building
+  Library, Globe, Lock, Building, ListOrdered
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -306,11 +306,15 @@ export default function SuperAdmin() {
                           <div className="flex items-start gap-4">
                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                               gameType.slug === 'grid_of_grudges' 
-                                ? 'bg-gradient-to-br from-green-500 to-emerald-500' 
-                                : 'bg-gradient-to-br from-pink-500 to-rose-500'
+                                ? 'bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-500' 
+                                : gameType.slug === 'sequence_squeeze'
+                                  ? 'bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500'
+                                  : 'bg-gradient-to-br from-rose-400 via-pink-500 to-fuchsia-500'
                             }`}>
                               {gameType.slug === 'grid_of_grudges' ? (
-                                <Grid2X2 className="w-6 h-6 text-white" />
+                                <Grid3X3 className="w-6 h-6 text-white" />
+                              ) : gameType.slug === 'sequence_squeeze' ? (
+                                <ListOrdered className="w-6 h-6 text-white" />
                               ) : (
                                 <Heart className="w-6 h-6 text-white" />
                               )}

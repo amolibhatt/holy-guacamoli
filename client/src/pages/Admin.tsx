@@ -12,7 +12,7 @@ import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, LogOut, Sun, Moon, Layers, Upload, FileText, Eye, BarChart2, Users, Activity, Heart, Gamepad2 } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, LogOut, Sun, Moon, Layers, Upload, FileText, Eye, BarChart2, Users, Activity, Heart, Gamepad2, ListOrdered } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -659,12 +659,12 @@ export default function Admin() {
                 transition={{ delay: 0.1 }}
               >
                 <Card 
-                  className="hover-elevate cursor-pointer border-2 border-transparent hover:border-primary/50 transition-all"
+                  className="hover-elevate cursor-pointer border-2 border-transparent hover:border-violet-500/50 transition-all"
                   onClick={() => setSelectedGameType('buzzkill')}
                   data-testid="card-game-buzzkill"
                 >
                   <CardContent className="p-8 text-center">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-violet-500/20">
                       <Grid3X3 className="w-10 h-10 text-white" />
                     </div>
                     <h3 className="text-xl font-bold text-foreground mb-2">Buzzkill</h3>
@@ -695,7 +695,7 @@ export default function Admin() {
                   data-testid="card-game-double-dip"
                 >
                   <CardContent className="p-8 text-center">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-pink-500/20">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-400 via-pink-500 to-fuchsia-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-pink-500/20">
                       <Heart className="w-10 h-10 text-white" />
                     </div>
                     <h3 className="text-xl font-bold text-foreground mb-2">Double Dip</h3>
