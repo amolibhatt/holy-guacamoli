@@ -114,7 +114,7 @@ export default function Home() {
         <div className="px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <motion.div 
-              className="w-11 h-11 rounded-xl flex items-center justify-center bg-card border-2 border-primary/30 shadow-lg shadow-primary/20"
+              className="w-11 h-11 rounded-xl flex items-center justify-center bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30 border border-green-400/30"
               whileHover={{ scale: 1.15, rotate: 10 }}
               whileTap={{ scale: 0.9 }}
               animate={{ 
@@ -126,11 +126,11 @@ export default function Home() {
                 rotate: { duration: 4, repeat: Infinity, ease: "easeInOut" }
               }}
             >
-              <AvocadoIcon className="w-7 h-7" />
+              <span className="text-2xl">🥑</span>
             </motion.div>
             <div className="flex flex-col">
               <h1 className="text-xl font-black tracking-tight text-foreground">
-                Holy <span className="text-primary">Guac</span>Amoli!
+                Holy <span className="text-green-500">Guac</span>Amoli!
               </h1>
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Game Host</span>
             </div>
@@ -191,14 +191,14 @@ export default function Home() {
             className="text-center mb-10"
           >
             <motion.div 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 mb-6"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 mb-6"
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.1 }}
             >
-              <PartyPopper className="w-4 h-4 text-emerald-500" />
-              <span className="text-sm font-medium bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">Welcome back, {user?.firstName || 'Host'}!</span>
-              <Sparkles className="w-4 h-4 text-teal-500" />
+              <PartyPopper className="w-4 h-4 text-green-500" />
+              <span className="text-sm font-medium text-green-600 dark:text-green-400">Welcome back, {user?.firstName || 'Host'}!</span>
+              <Sparkles className="w-4 h-4 text-green-500" />
             </motion.div>
             
             <h2 className="text-4xl md:text-5xl font-black text-foreground mb-3">
