@@ -32,7 +32,7 @@ export default function HostGridOfGrudges() {
             </div>
             <div className="flex flex-col">
               <h1 className="text-lg font-bold tracking-tight text-foreground">
-                Grid of Grudges
+                Buzzkill
               </h1>
               <span className="text-xs text-muted-foreground">Select a board to host</span>
             </div>

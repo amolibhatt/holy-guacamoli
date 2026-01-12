@@ -19,7 +19,7 @@ import type { Game, Board, HeadsUpDeck, HeadsUpCard, GameMode } from "@shared/sc
 const MODE_LABELS: Record<GameMode, string> = {
   jeopardy: "Jeopardy (Multi-Board)",
   heads_up: "Heads Up",
-  board: "Grid of Grudges",
+  board: "Buzzkill",
 };
 
 const MODE_ICONS: Record<GameMode, typeof Grid3X3> = {
@@ -290,7 +290,7 @@ export default function GamesAdmin() {
           <TabsList className="grid w-full max-w-2xl grid-cols-4">
             <TabsTrigger value="games" className="gap-2" data-testid="tab-games">
               <Grid3X3 className="w-4 h-4" />
-              Grid of Grudges
+              Buzzkill
             </TabsTrigger>
             <TabsTrigger value="decks" className="gap-2" data-testid="tab-decks">
               <Smartphone className="w-4 h-4" />
@@ -344,7 +344,7 @@ export default function GamesAdmin() {
                               <SelectValue placeholder="Select mode" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="board">Grid of Grudges</SelectItem>
+                              <SelectItem value="board">Buzzkill</SelectItem>
                               <SelectItem value="jeopardy">Jeopardy (Multi-Board)</SelectItem>
                               <SelectItem value="heads_up">Heads Up</SelectItem>
                             </SelectContent>
