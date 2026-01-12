@@ -114,18 +114,16 @@ export default function Home() {
         <div className="px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <motion.div 
-              className="w-11 h-11 rounded-xl flex items-center justify-center bg-card border-2 border-primary/30 shadow-md"
-              whileHover={{ scale: 1.1, rotate: 8 }}
-              whileTap={{ scale: 0.95 }}
+              className="w-11 h-11 rounded-xl flex items-center justify-center bg-card border-2 border-primary/30 shadow-lg shadow-primary/20"
+              whileHover={{ scale: 1.15, rotate: 10 }}
+              whileTap={{ scale: 0.9 }}
               animate={{ 
-                boxShadow: [
-                  "0 4px 14px rgba(var(--primary), 0.15)",
-                  "0 4px 20px rgba(var(--primary), 0.25)",
-                  "0 4px 14px rgba(var(--primary), 0.15)"
-                ]
+                y: [0, -4, 0],
+                rotate: [0, 2, 0, -2, 0]
               }}
               transition={{ 
-                boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+                y: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+                rotate: { duration: 4, repeat: Infinity, ease: "easeInOut" }
               }}
             >
               <AvocadoIcon className="w-7 h-7" />
