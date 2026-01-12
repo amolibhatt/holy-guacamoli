@@ -1205,18 +1205,6 @@ export function setupWebSocket(server: Server) {
             break;
           }
 
-          case "sequence:host:forceEnd": {
-            if (isHost && currentRoom) {
-              const room = rooms.get(currentRoom);
-              if (room && room.sequenceRound && !room.sequenceRound.revealed) {
-                // Force end the timer and trigger reveal
-                ws.send(JSON.stringify({ type: "sequence:forceEnd:ack" }));
-                // This will be handled by the host:reveal handler
-              }
-            }
-            break;
-          }
-
           case "sequence:host:showLeaderboard": {
             if (isHost && currentRoom) {
               const room = rooms.get(currentRoom);

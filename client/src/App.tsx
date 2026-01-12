@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ScoreProvider } from "@/components/ScoreContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import PlayerPage from "@/pages/PlayerPage";
@@ -68,16 +69,18 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ThemeProvider>
-          <ScoreProvider>
-            <Router />
-            <Toaster />
-          </ScoreProvider>
-        </ThemeProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <ThemeProvider>
+            <ScoreProvider>
+              <Router />
+              <Toaster />
+            </ScoreProvider>
+          </ThemeProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
