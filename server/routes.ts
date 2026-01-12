@@ -2060,6 +2060,75 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/sequence-squeeze/questions/bulk", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { questions } = req.body;
+      
+      if (!Array.isArray(questions) || questions.length === 0) {
+        return res.status(400).json({ message: "No questions provided" });
+      }
+      
+      if (questions.length > 50) {
+        return res.status(400).json({ message: "Maximum 50 questions per import" });
+      }
+      
+      const validLetters = new Set(['A', 'B', 'C', 'D']);
+      const results = { success: 0, errors: [] as string[] };
+      
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
+        try {
+          if (!q.question || typeof q.question !== 'string' || q.question.trim().length === 0) {
+            results.errors.push(`Row ${i + 1}: Question text is required`);
+            continue;
+          }
+          if (!q.optionA || !q.optionB || !q.optionC || !q.optionD) {
+            results.errors.push(`Row ${i + 1}: All four options are required`);
+            continue;
+          }
+          if (!Array.isArray(q.correctOrder) || q.correctOrder.length !== 4) {
+            results.errors.push(`Row ${i + 1}: correctOrder must have 4 items`);
+            continue;
+          }
+          const orderSet = new Set(q.correctOrder);
+          if (orderSet.size !== 4 || !q.correctOrder.every((l: string) => validLetters.has(l))) {
+            results.errors.push(`Row ${i + 1}: correctOrder must contain A, B, C, D exactly once`);
+            continue;
+          }
+          if (q.question.length > 500) {
+            results.errors.push(`Row ${i + 1}: Question too long (max 500 chars)`);
+            continue;
+          }
+          if (q.optionA.length > 200 || q.optionB.length > 200 || q.optionC.length > 200 || q.optionD.length > 200) {
+            results.errors.push(`Row ${i + 1}: Option too long (max 200 chars)`);
+            continue;
+          }
+          
+          await storage.createSequenceQuestion({
+            userId,
+            question: q.question.trim(),
+            optionA: q.optionA.trim(),
+            optionB: q.optionB.trim(),
+            optionC: q.optionC.trim(),
+            optionD: q.optionD.trim(),
+            correctOrder: q.correctOrder,
+            hint: q.hint?.trim() || null,
+            isActive: true,
+          });
+          results.success++;
+        } catch (err) {
+          results.errors.push(`Row ${i + 1}: Database error`);
+        }
+      }
+      
+      res.json(results);
+    } catch (err) {
+      console.error("Error bulk importing sequence questions:", err);
+      res.status(500).json({ message: "Failed to import questions" });
+    }
+  });
+
   // Analytics endpoint - event collection with validation
   const VALID_EVENT_NAMES = new Set([
     'page_view', 'login', 'logout', 'game_started', 'game_completed',

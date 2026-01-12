@@ -8,8 +8,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Plus, Trash2, X, ListOrdered, Sparkles, GripVertical, Lightbulb, Check } from "lucide-react";
+import { Plus, Trash2, X, ListOrdered, Sparkles, GripVertical, Lightbulb, Check, Upload, Eye, ChevronDown, Loader2 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { SequenceQuestion } from "@shared/schema";
+
+type ParsedQuestion = {
+  question: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
+  correctOrder: string[];
+  hint: string | null;
+};
 
 export function SequenceSqueezeAdmin() {
   const { toast } = useToast();
@@ -21,6 +32,10 @@ export function SequenceSqueezeAdmin() {
   const [optionD, setOptionD] = useState("");
   const [correctOrder, setCorrectOrder] = useState<string[]>([]);
   const [hint, setHint] = useState("");
+  
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
+  const [bulkImportText, setBulkImportText] = useState("");
+  const [bulkPreviewMode, setBulkPreviewMode] = useState(false);
 
   const { data: questions = [], isLoading } = useQuery<SequenceQuestion[]>({
     queryKey: ["/api/sequence-squeeze/questions"],
@@ -71,6 +86,65 @@ export function SequenceSqueezeAdmin() {
       toast({ title: error.message || "Failed to delete question", variant: "destructive" });
     },
   });
+
+  const bulkImportMutation = useMutation({
+    mutationFn: async (questions: ParsedQuestion[]) => {
+      const res = await apiRequest("POST", "/api/sequence-squeeze/questions/bulk", { questions });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to import questions");
+      }
+      return res.json();
+    },
+    onSuccess: (data: { success: number; errors: string[] }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sequence-squeeze/questions"] });
+      setBulkImportText("");
+      setBulkImportOpen(false);
+      setBulkPreviewMode(false);
+      if (data.errors.length > 0) {
+        toast({ 
+          title: `Imported ${data.success} question(s)`, 
+          description: `${data.errors.length} error(s): ${data.errors.slice(0, 2).join('; ')}${data.errors.length > 2 ? '...' : ''}`,
+          variant: "destructive" 
+        });
+      } else {
+        toast({ title: `Successfully imported ${data.success} question(s)!` });
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message || "Failed to import questions", variant: "destructive" });
+    },
+  });
+
+  const parseBulkImport = (text: string): ParsedQuestion[] => {
+    const lines = text.split('\n').filter(l => l.trim());
+    const parsed: ParsedQuestion[] = [];
+    const validLetters = new Set(['A', 'B', 'C', 'D']);
+    
+    for (const line of lines) {
+      const parts = line.split('|').map(p => p.trim());
+      if (parts.length >= 6) {
+        const [q, a, b, c, d, orderStr, hintStr] = parts;
+        const order = orderStr.split(',').map(o => o.trim().toUpperCase());
+        
+        if (q && a && b && c && d && order.length === 4) {
+          const orderSet = new Set(order);
+          if (orderSet.size === 4 && order.every(l => validLetters.has(l))) {
+            parsed.push({
+              question: q,
+              optionA: a,
+              optionB: b,
+              optionC: c,
+              optionD: d,
+              correctOrder: order,
+              hint: hintStr?.trim() || null,
+            });
+          }
+        }
+      }
+    }
+    return parsed;
+  };
 
   const resetForm = () => {
     setShowForm(false);
@@ -303,6 +377,125 @@ export function SequenceSqueezeAdmin() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <Collapsible open={bulkImportOpen} onOpenChange={setBulkImportOpen}>
+        <CollapsibleTrigger asChild>
+          <Button 
+            variant="outline" 
+            className="w-full justify-between h-12 px-4 bg-gradient-to-r from-teal-500/10 to-cyan-500/10 border-dashed"
+            data-testid="button-toggle-bulk-import"
+          >
+            <span className="flex items-center gap-2">
+              <Upload className="w-4 h-4 text-teal-500" />
+              <span className="font-medium">Bulk Import Questions</span>
+            </span>
+            <ChevronDown className={`w-4 h-4 transition-transform ${bulkImportOpen ? 'rotate-180' : ''}`} />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-4"
+          >
+            <Card className="border-teal-500/30">
+              <CardContent className="p-4 space-y-4">
+                {!bulkPreviewMode ? (
+                  <>
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">
+                        Paste questions (one per line)
+                      </Label>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Format: Question | Option A | Option B | Option C | Option D | Order (A,B,C,D) | Hint (optional)
+                      </p>
+                      <textarea
+                        value={bulkImportText}
+                        onChange={(e) => setBulkImportText(e.target.value)}
+                        placeholder={`Arrange planets by size | Mercury | Venus | Earth | Mars | A,C,B,D | Smallest to largest\nOrder events chronologically | WW1 | WW2 | Moon Landing | Internet | A,B,C,D`}
+                        className="w-full h-40 p-3 text-sm rounded-md border border-border bg-background resize-none font-mono"
+                        data-testid="textarea-bulk-import"
+                      />
+                      <div className="flex justify-between items-center mt-3">
+                        <p className="text-xs text-muted-foreground">
+                          {parseBulkImport(bulkImportText).length} valid question(s) detected
+                        </p>
+                        <Button
+                          onClick={() => setBulkPreviewMode(true)}
+                          disabled={parseBulkImport(bulkImportText).length === 0}
+                          className="px-6"
+                          data-testid="button-preview-import"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Preview {parseBulkImport(bulkImportText).length} Question(s)
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="rounded-lg border border-border overflow-hidden">
+                      <div className="bg-muted/30 px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Preview Import
+                      </div>
+                      <div className="max-h-64 overflow-y-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/20 sticky top-0">
+                            <tr>
+                              <th className="px-3 py-2 text-left font-medium">Question</th>
+                              <th className="px-3 py-2 text-left font-medium">Options</th>
+                              <th className="px-3 py-2 text-left font-medium">Order</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {parseBulkImport(bulkImportText).map((q, idx) => (
+                              <tr key={idx} className="border-t border-border hover:bg-muted/30" data-testid={`preview-row-${idx}`}>
+                                <td className="px-3 py-2 truncate max-w-[200px]" title={q.question}>{q.question}</td>
+                                <td className="px-3 py-2 text-xs text-muted-foreground">
+                                  A: {q.optionA.slice(0, 15)}{q.optionA.length > 15 ? '...' : ''}
+                                </td>
+                                <td className="px-3 py-2 font-mono text-teal-600 text-xs">{q.correctOrder.join('→')}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-2">
+                      <p className="text-sm text-muted-foreground">
+                        {parseBulkImport(bulkImportText).length} question(s) will be added
+                      </p>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline"
+                          onClick={() => { setBulkPreviewMode(false); setBulkImportText(""); }}
+                          data-testid="button-cancel-import"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            const questions = parseBulkImport(bulkImportText);
+                            if (questions.length > 0) {
+                              bulkImportMutation.mutate(questions);
+                            }
+                          }}
+                          disabled={bulkImportMutation.isPending}
+                          className="px-6 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+                          data-testid="button-confirm-import"
+                        >
+                          {bulkImportMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                          Confirm Import
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {isLoading ? (
         <div className="text-center py-12">
