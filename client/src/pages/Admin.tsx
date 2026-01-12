@@ -20,6 +20,7 @@ import MDEditor from '@uiw/react-md-editor';
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeName, THEMES, useTheme } from "@/context/ThemeContext";
 import type { Category, Question, Board, BoardCategoryWithCount } from "@shared/schema";
+import { SequenceSqueezeAdmin } from "@/components/SequenceSqueezeAdmin";
 import { useUpload } from "@/hooks/use-upload";
 
 const THEME_LABELS: Record<ThemeName, string> = {
@@ -84,7 +85,7 @@ export default function Admin() {
   const [bulkPreviewMode, setBulkPreviewMode] = useState(false);
   const [showBoardPreview, setShowBoardPreview] = useState(false);
   const [adminTab, setAdminTab] = useState<"content" | "analytics">("content");
-  const [selectedGameType, setSelectedGameType] = useState<"buzzkill" | "double_dip" | null>(null);
+  const [selectedGameType, setSelectedGameType] = useState<"buzzkill" | "double_dip" | "sequence_squeeze" | null>(null);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -479,14 +480,16 @@ export default function Admin() {
           )}
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-foreground">
-              {selectedGameType === 'buzzkill' ? 'Buzzkill Admin' : selectedGameType === 'double_dip' ? 'Double Dip Admin' : 'Admin Panel'}
+              {selectedGameType === 'buzzkill' ? 'Buzzkill Admin' : selectedGameType === 'double_dip' ? 'Double Dip Admin' : selectedGameType === 'sequence_squeeze' ? 'Sequence Squeeze Admin' : 'Admin Panel'}
             </h1>
             <p className="text-sm text-muted-foreground">
               {selectedGameType === 'buzzkill' 
                 ? 'Manage your game boards, categories, and questions' 
                 : selectedGameType === 'double_dip'
                   ? 'Manage your couples game content'
-                  : 'Select a game to manage its content'}
+                  : selectedGameType === 'sequence_squeeze'
+                    ? 'Create ordering questions for speed challenges'
+                    : 'Select a game to manage its content'}
             </p>
           </div>
           {selectedGameType === 'buzzkill' && selectedBoard && (
@@ -710,6 +713,37 @@ export default function Admin() {
                       <span className="flex items-center gap-1">
                         <Sparkles className="w-3 h-3" />
                         Daily Prompts
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Card 
+                  className="hover-elevate cursor-pointer border-2 border-transparent hover:border-teal-500/50 transition-all"
+                  onClick={() => setSelectedGameType('sequence_squeeze')}
+                  data-testid="card-game-sequence-squeeze"
+                >
+                  <CardContent className="p-8 text-center">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-teal-500/20">
+                      <ListOrdered className="w-10 h-10 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground mb-2">Sequence Squeeze</h3>
+                    <p className="text-muted-foreground text-sm mb-4">
+                      Speed ordering game - arrange options in the right order
+                    </p>
+                    <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <ListOrdered className="w-3 h-3" />
+                        Ordering Game
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        Speed Challenge
                       </span>
                     </div>
                   </CardContent>
@@ -1642,7 +1676,7 @@ export default function Admin() {
             </Card>
           </div>
         </div>
-        ) : (
+        ) : selectedGameType === 'double_dip' ? (
           <div className="max-w-4xl mx-auto text-center py-12">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-500/20">
               <Heart className="w-10 h-10 text-white" />
@@ -1658,7 +1692,9 @@ export default function Admin() {
               </Button>
             </Link>
           </div>
-        )}
+        ) : selectedGameType === 'sequence_squeeze' ? (
+          <SequenceSqueezeAdmin />
+        ) : null}
       </main>
     </div>
   );
