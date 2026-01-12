@@ -165,7 +165,7 @@ export default function Storyboard() {
             <BookOpen className="w-16 h-16 mx-auto mb-4 text-pink-500" />
             <h2 className="text-xl font-bold mb-2">Your Storyboard</h2>
             <p className="text-muted-foreground mb-4">Sign in to view your relationship journey</p>
-            <Link href="/login">
+            <Link href="/">
               <Button data-testid="button-login">Sign In</Button>
             </Link>
           </CardContent>
