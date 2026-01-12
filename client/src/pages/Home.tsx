@@ -125,7 +125,6 @@ export default function Home() {
       <div className="fixed inset-0 bg-gradient-to-br from-primary/5 via-transparent to-pink-500/5 pointer-events-none" />
       
       <AppHeader 
-        title="Game Host Dashboard"
         showAdminButton={true}
         showHelpButton={true}
         showLogout={true}
