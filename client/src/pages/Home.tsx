@@ -44,17 +44,17 @@ const GAME_CONFIG: Record<string, {
 }> = {
   grid_of_grudges: {
     icon: Grid3X3,
-    gradient: "from-primary to-secondary",
-    shadowColor: "shadow-primary/20",
-    hoverBorder: "hover:border-primary/50 hover:shadow-primary/10",
+    gradient: "from-blue-500 via-indigo-500 to-violet-500",
+    shadowColor: "shadow-indigo-500/30",
+    hoverBorder: "hover:border-indigo-400/50 hover:shadow-indigo-500/20",
     route: "/host/buzzkill",
     playerCount: "Multiplayer",
   },
   double_dip: {
     icon: Heart,
-    gradient: "from-pink-500 to-rose-500",
-    shadowColor: "shadow-pink-500/20",
-    hoverBorder: "hover:border-pink-500/50 hover:shadow-pink-500/10",
+    gradient: "from-rose-400 via-pink-500 to-fuchsia-500",
+    shadowColor: "shadow-pink-500/30",
+    hoverBorder: "hover:border-pink-400/50 hover:shadow-pink-500/20",
     route: "/host/double-dip",
     playerCount: "2 Players",
   },
@@ -114,14 +114,14 @@ export default function Home() {
         <div className="px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <motion.div 
-              className="w-11 h-11 rounded-xl flex items-center justify-center bg-gradient-to-br from-primary to-secondary shadow-lg shadow-primary/20"
+              className="w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br from-emerald-400 via-green-500 to-emerald-600 shadow-lg shadow-emerald-500/30 border border-emerald-400/30"
               whileHover={{ scale: 1.05, rotate: 5 }}
               whileTap={{ scale: 0.95 }}
             >
-              <AvocadoIcon className="w-6 h-6" />
+              <AvocadoIcon className="w-7 h-7" />
             </motion.div>
             <div className="flex flex-col">
-              <h1 className="text-lg font-bold tracking-tight text-foreground">
+              <h1 className="text-xl font-black tracking-tight bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 bg-clip-text text-transparent">
                 Holy GuacAmoli!
               </h1>
               <span className="text-xs text-muted-foreground">Game Host Dashboard</span>
@@ -183,14 +183,14 @@ export default function Home() {
             className="text-center mb-10"
           >
             <motion.div 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 mb-6"
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.1 }}
             >
-              <PartyPopper className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-primary">Welcome back, {user?.firstName || 'Host'}!</span>
-              <Sparkles className="w-4 h-4 text-primary" />
+              <PartyPopper className="w-4 h-4 text-emerald-500" />
+              <span className="text-sm font-medium bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">Welcome back, {user?.firstName || 'Host'}!</span>
+              <Sparkles className="w-4 h-4 text-teal-500" />
             </motion.div>
             
             <h2 className="text-4xl md:text-5xl font-black text-foreground mb-3">
