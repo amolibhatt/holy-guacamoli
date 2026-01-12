@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Settings, Grid3X3, LogOut, Sun, Moon, ArrowRight, Zap, Trophy, Clock, Lock, Sparkles, PartyPopper, Users, HelpCircle, ChevronRight, Shield, Heart } from "lucide-react";
+import { Loader2, Settings, Grid3X3, LogOut, Sun, Moon, ArrowRight, Zap, Trophy, Clock, Lock, Sparkles, PartyPopper, Users, HelpCircle, ChevronRight, Shield, Heart, ListOrdered } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { BuzzkillLogo } from "@/components/BuzzkillLogo";
 import { Link, useLocation } from "wouter";
@@ -61,6 +61,15 @@ const GAME_CONFIG: Record<string, {
     route: "/host/double-dip",
     playerCount: "2 Players",
     accentColor: "#EC4899",
+  },
+  sequence_squeeze: {
+    icon: ListOrdered,
+    gradient: "from-emerald-400 via-teal-500 to-cyan-500",
+    shadowColor: "shadow-teal-500/30",
+    hoverBorder: "hover:border-teal-400/50 hover:shadow-teal-500/20",
+    route: "/host/sequence-squeeze",
+    playerCount: "Multiplayer",
+    accentColor: "#14B8A6",
   },
 };
 

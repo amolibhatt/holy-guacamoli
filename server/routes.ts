@@ -1965,6 +1965,73 @@ export async function registerRoutes(
     }
   });
 
+  // ============================================
+  // Sequence Squeeze Routes
+  // ============================================
+  
+  app.get("/api/sequence-squeeze/questions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const questions = await storage.getSequenceQuestions(userId, role);
+      res.json(questions);
+    } catch (err) {
+      console.error("Error fetching sequence questions:", err);
+      res.status(500).json({ message: "Failed to fetch questions" });
+    }
+  });
+
+  app.post("/api/sequence-squeeze/questions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { question, optionA, optionB, optionC, optionD, correctOrder, hint, isActive } = req.body;
+      
+      if (!question || !optionA || !optionB || !optionC || !optionD || !correctOrder) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      if (!Array.isArray(correctOrder) || correctOrder.length !== 4) {
+        return res.status(400).json({ message: "correctOrder must be an array of 4 letters" });
+      }
+      
+      const newQuestion = await storage.createSequenceQuestion({
+        userId,
+        question,
+        optionA,
+        optionB,
+        optionC,
+        optionD,
+        correctOrder,
+        hint: hint || null,
+        isActive: isActive !== false,
+      });
+      
+      res.status(201).json(newQuestion);
+    } catch (err) {
+      console.error("Error creating sequence question:", err);
+      res.status(500).json({ message: "Failed to create question" });
+    }
+  });
+
+  app.delete("/api/sequence-squeeze/questions/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      
+      const deleted = await storage.deleteSequenceQuestion(id, userId, role);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Question not found or unauthorized" });
+      }
+      
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting sequence question:", err);
+      res.status(500).json({ message: "Failed to delete question" });
+    }
+  });
+
   // Analytics endpoint - event collection with validation
   const VALID_EVENT_NAMES = new Set([
     'page_view', 'login', 'logout', 'game_started', 'game_completed',
