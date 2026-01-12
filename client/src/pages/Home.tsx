@@ -114,25 +114,25 @@ export default function Home() {
         <div className="px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <motion.div 
-              className="w-11 h-11 rounded-xl flex items-center justify-center bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30 border border-green-400/30"
-              whileHover={{ scale: 1.15, rotate: 10 }}
+              className="w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br from-green-400 via-emerald-500 to-green-600 shadow-lg shadow-green-500/40 border border-green-300/40"
+              whileHover={{ scale: 1.15, rotate: 12 }}
               whileTap={{ scale: 0.9 }}
               animate={{ 
-                y: [0, -4, 0],
-                rotate: [0, 2, 0, -2, 0]
+                y: [0, -5, 0],
+                rotate: [0, 3, 0, -3, 0]
               }}
               transition={{ 
-                y: { duration: 2, repeat: Infinity, ease: "easeInOut" },
-                rotate: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+                y: { duration: 2.5, repeat: Infinity, ease: "easeInOut" },
+                rotate: { duration: 5, repeat: Infinity, ease: "easeInOut" }
               }}
             >
-              <span className="text-2xl">🥑</span>
+              <span className="text-2xl drop-shadow-md">🥑</span>
             </motion.div>
             <div className="flex flex-col">
-              <h1 className="text-xl font-black tracking-tight text-foreground">
-                Holy <span className="text-green-500">Guac</span>Amoli!
+              <h1 className="text-2xl font-black tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+                Holy <span className="text-green-500 dark:text-green-400">Guac</span>Amoli!
               </h1>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Game Host</span>
+              <span className="text-xs text-muted-foreground">Game Host Dashboard</span>
             </div>
           </div>
           <div className="flex items-center gap-1">
