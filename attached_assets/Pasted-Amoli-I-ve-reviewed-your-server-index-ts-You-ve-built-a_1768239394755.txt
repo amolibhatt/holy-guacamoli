@@ -1,0 +1,99 @@
+Amoli, I’ve reviewed your server/index.ts. You’ve built a very solid foundation. Using raw ws with a central rooms Map is the "performance-first" way to do this, and your state management for the Sequence Squeeze is impressively detailed.
+
+Here is your Amoli-Approved Code Review with specific improvements to make it "Launch Ready."
+
+1. The "Fastest Finger" Fairness Fix (CRITICAL)
+
+In your sequence:player:submit handler, you calculate speed like this:
+
+code
+TypeScript
+download
+content_copy
+expand_less
+const timeMs = Date.now() - room.sequenceRound.startTime;
+
+The Problem: This uses the Server's Time. If I am playing on 5G and you are on a slow coffee-shop Wi-Fi, I will win every time even if your fingers were faster, because my data reaches the server sooner.
+
+The Fix:
+
+Have the Client (the phone) record the exact millisecond it received the "Go" signal.
+
+When the 4th button is tapped, the Client calculates the local delta (time elapsed on the phone).
+
+Send that delta in the submit message.
+
+Server Side: Validate that the delta isn't physically impossible (e.g., < 200ms) to prevent hackers from sending fake times.
+
+2. Implementing the "Duo-Lock" for Double Dip
+
+Currently, your player:join logic allows unlimited players. To support your "exactly 2 people" requirement for Double Dip, you need a gatekeeper.
+
+Add this to your player:join or sequence:player:join case:
+
+code
+TypeScript
+download
+content_copy
+expand_less
+if (room.currentMode === "double_dip" && room.players.size >= 2) {
+  ws.send(JSON.stringify({ 
+    type: "error", 
+    message: "Nacho Average Couple already in session! No third wheels allowed." 
+  }));
+  return;
+}
+3. The "Coming Soon" Logic
+
+You requested that Super Admin can enable/disable games. Your current host:setMode doesn't check if a mode is "Active."
+
+Refinement:
+Create a global config or fetch from storage the list of enabled games. In your switchMode handlers:
+
+code
+TypeScript
+download
+content_copy
+expand_less
+const activeGames = await storage.getActiveGames(); // Super Admin controlled
+if (!activeGames.includes(message.mode)) {
+    ws.send(JSON.stringify({ type: "error", message: "Amoli is still mashing this mode. Coming soon!" }));
+    return;
+}
+4. WebSocket "Zombies" & Cleanup
+
+Your setInterval for PING/PONG is great, but there's a risk: if a player refreshes their browser, they might get a new playerId but the old one stays in the room.players Map until the 30-second timeout.
+
+The Fix:
+In player:join, before adding a new player, check if a player with that Name already exists. If they do, "hijack" the old session and replace the ws object. You actually started doing this here:
+
+code
+TypeScript
+download
+content_copy
+expand_less
+room.players.forEach((p, key) => {
+  if (p.name === dbPlayer.name && key !== dbPlayer.playerId) {
+    room!.players.delete(key);
+  }
+});
+
+Suggestion: Make this logic more robust by checking playerId (stored in localStorage on the phone) rather than just the name.
+
+5. Multi-Stage Reveal Animation
+
+Your implementation of the 4-second "Drama Reveal" (animationDuration) using setTimeout is perfect. It ensures the host and players stay perfectly in sync.
+
+One small tweak:
+Send a serverTime timestamp in the sequence:animatedReveal message. This allows the client to sync their local 4-second countdown clock to your server clock, compensating for any network jitter.
+
+Summary of the Functional Scorecard:
+Feature	Status	Amoli’s Note
+Buzzer Sync	✅ Solid	Very clean logic in player:buzz.
+1-by-1 Reveal	✅ Excellent	The currentQuestionIndex loop is handled well.
+Fastest Finger	⚠️ Risky	Needs "Client-Side Delta" to be 100% fair.
+Duo-Lock	❌ Missing	Needs the players.size >= 2 check for couples.
+Multi-Tenancy	⚠️ Partial	Session persistence is there, but need tenant_id for Admin isolation.
+Next Technical Move:
+
+Would you like me to write the Client-Side JavaScript for the phone controller to handle that "Fair Millisecond" timing? It involves using performance.now() for maximum precision!
