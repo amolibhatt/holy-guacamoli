@@ -1277,14 +1277,24 @@ export class DatabaseStorage implements IStorage {
       },
     ];
 
+    console.log("[SEED] Checking for missing game types...");
     const existingTypes = await db.select().from(gameTypes);
     const existingSlugs = new Set(existingTypes.map(t => t.slug));
+    console.log(`[SEED] Found ${existingTypes.length} existing game types: ${Array.from(existingSlugs).join(', ')}`);
 
+    let addedCount = 0;
     for (const gameType of requiredGameTypes) {
       if (!existingSlugs.has(gameType.slug)) {
-        console.log(`Adding missing game type: ${gameType.displayName}`);
+        console.log(`[SEED] Adding missing game type: ${gameType.slug} (${gameType.displayName})`);
         await db.insert(gameTypes).values(gameType);
+        addedCount++;
       }
+    }
+    
+    if (addedCount === 0) {
+      console.log("[SEED] All game types already exist, nothing to add.");
+    } else {
+      console.log(`[SEED] Added ${addedCount} new game type(s).`);
     }
   }
 
@@ -1302,5 +1312,7 @@ export class DatabaseStorage implements IStorage {
 export const storage = new DatabaseStorage();
 
 export async function seedDatabase() {
+  console.log("[SEED] Starting database seeding...");
   await storage.seedGameTypes();
+  console.log("[SEED] Database seeding complete.");
 }
