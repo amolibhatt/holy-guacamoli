@@ -1445,6 +1445,10 @@ export function setupWebSocket(server: Server) {
       }
     });
 
+    ws.on("error", (err) => {
+      console.error("[WebSocket] Connection error:", err.message);
+    });
+
     ws.on("close", () => {
       if (currentRoom) {
         const room = rooms.get(currentRoom);
@@ -1454,21 +1458,27 @@ export function setupWebSocket(server: Server) {
           } else if (playerId) {
             const player = room.players.get(playerId);
             if (player) {
-              storage.updatePlayerConnection(room.sessionId, playerId, false);
+              storage.updatePlayerConnection(room.sessionId, playerId, false).catch(err => {
+                console.error("[WebSocket] Failed to update player connection:", err.message);
+              });
               room.players.delete(playerId);
             }
             
             if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
-              room.hostWs.send(JSON.stringify({
-                type: "player:left",
-                playerId,
-                playerName: player?.name,
-                remainingPlayers: Array.from(room.players.values()).map(p => ({
-                  id: p.id,
-                  name: p.name,
-                  avatar: p.avatar,
-                })),
-              }));
+              try {
+                room.hostWs.send(JSON.stringify({
+                  type: "player:left",
+                  playerId,
+                  playerName: player?.name,
+                  remainingPlayers: Array.from(room.players.values()).map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    avatar: p.avatar,
+                  })),
+                }));
+              } catch (sendErr) {
+                console.error("[WebSocket] Failed to notify host of player leave:", sendErr);
+              }
             }
           }
 
@@ -1478,6 +1488,10 @@ export function setupWebSocket(server: Server) {
         }
       }
     });
+  });
+
+  wss.on("error", (err) => {
+    console.error("[WebSocket Server] Error:", err.message);
   });
 
   setInterval(() => {

@@ -7,6 +7,31 @@ import { seedDatabase } from "./storage";
 const app = express();
 const httpServer = createServer(app);
 
+let isShuttingDown = false;
+
+const fatalShutdown = (source: string, err: Error | unknown) => {
+  console.error(`[FATAL] ${source}:`, err);
+  if (!isShuttingDown) {
+    isShuttingDown = true;
+    httpServer.close(() => {
+      console.error("[FATAL] Server closed after fatal error");
+      process.exit(1);
+    });
+    setTimeout(() => {
+      console.error("[FATAL] Forcing exit after timeout");
+      process.exit(1);
+    }, 5000);
+  }
+};
+
+process.on("uncaughtException", (err) => {
+  fatalShutdown("Uncaught Exception", err);
+});
+
+process.on("unhandledRejection", (reason) => {
+  fatalShutdown("Unhandled Rejection", reason);
+});
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
@@ -103,4 +128,19 @@ app.use((req, res, next) => {
       log(`serving on port ${port}`);
     },
   );
+
+  const gracefulShutdown = (signal: string) => {
+    log(`${signal} received, shutting down gracefully...`);
+    httpServer.close(() => {
+      log("HTTP server closed");
+      process.exit(0);
+    });
+    setTimeout(() => {
+      log("Forcing shutdown after timeout");
+      process.exit(1);
+    }, 10000);
+  };
+
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 })();
