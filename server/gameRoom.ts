@@ -286,6 +286,23 @@ export function setupWebSocket(server: Server) {
                 }
                 
                 if (room) {
+                  // FIX #2: Duo-Lock for Double Dip - limit to exactly 2 players
+                  if (room.currentMode === "double_dip" && room.players.size >= 2) {
+                    const incomingPlayerId = message.playerId;
+                    const existingPlayer = incomingPlayerId ? room.players.get(incomingPlayerId) : null;
+                    // Only allow reconnection if the existing player's WebSocket is NOT currently connected
+                    // This prevents spoofing - a third user can't claim to be a connected player
+                    const isValidReconnect = existingPlayer && (!existingPlayer.ws || existingPlayer.ws.readyState !== WebSocket.OPEN);
+                    
+                    if (!isValidReconnect) {
+                      ws.send(JSON.stringify({ 
+                        type: "error", 
+                        message: "Nacho Average Couple already in session! No third wheels allowed." 
+                      }));
+                      return;
+                    }
+                  }
+                  
                   const name = String(message.name || "").trim().slice(0, 50);
                   if (!name) {
                     ws.send(JSON.stringify({ type: "error", message: "Name is required" }));
@@ -312,9 +329,22 @@ export function setupWebSocket(server: Server) {
                     isConnected: true,
                   });
                   
-                  // Remove any stale entries with the same name but different ID
+                  // FIX #4: Robust zombie cleanup - check by playerId first (from localStorage), then by name
+                  // If a player with the same playerId exists but different WebSocket, replace it
+                  const existingByIdCheck = room.players.get(dbPlayer.playerId);
+                  if (existingByIdCheck && existingByIdCheck.ws !== ws) {
+                    // Same playerId reconnecting - close old socket if still open
+                    if (existingByIdCheck.ws && existingByIdCheck.ws.readyState === WebSocket.OPEN) {
+                      existingByIdCheck.ws.close();
+                    }
+                  }
+                  
+                  // Also remove stale entries with the same name but different ID (legacy cleanup)
                   room.players.forEach((p, key) => {
                     if (p.name === dbPlayer.name && key !== dbPlayer.playerId) {
+                      if (p.ws && p.ws.readyState === WebSocket.OPEN) {
+                        p.ws.close();
+                      }
                       room!.players.delete(key);
                     }
                   });
@@ -596,22 +626,50 @@ export function setupWebSocket(server: Server) {
             if (isHost && currentRoom) {
               const room = rooms.get(currentRoom);
               if (room && message.mode) {
-                room.currentMode = message.mode;
-                storage.updateSession(room.sessionId, { currentMode: message.mode });
-                
-                room.players.forEach((player) => {
-                  if (player.ws && player.ws.readyState === WebSocket.OPEN) {
-                    player.ws.send(JSON.stringify({ 
-                      type: "mode:changed", 
+                // FIX #3: Check if game mode is active before allowing switch
+                (async () => {
+                  try {
+                    // Map mode to game type slug
+                    const modeToSlugMap: Record<string, string> = {
+                      "board": "buzzkill",
+                      "jeopardy": "buzzkill", 
+                      "sequence": "sequence_squeeze",
+                      "double_dip": "double_dip",
+                    };
+                    const slug = modeToSlugMap[message.mode];
+                    
+                    if (slug) {
+                      const gameType = await storage.getGameTypeBySlug(slug);
+                      if (gameType && !gameType.hostEnabled) {
+                        ws.send(JSON.stringify({ 
+                          type: "error", 
+                          message: "Amoli is still mashing this mode. Coming soon!" 
+                        }));
+                        return;
+                      }
+                    }
+                    
+                    room.currentMode = message.mode;
+                    storage.updateSession(room.sessionId, { currentMode: message.mode });
+                    
+                    room.players.forEach((player) => {
+                      if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+                        player.ws.send(JSON.stringify({ 
+                          type: "mode:changed", 
+                          mode: message.mode 
+                        }));
+                      }
+                    });
+                    
+                    ws.send(JSON.stringify({ 
+                      type: "mode:set", 
                       mode: message.mode 
                     }));
+                  } catch (err) {
+                    console.error("Failed to set mode:", err);
+                    ws.send(JSON.stringify({ type: "error", message: "Failed to change mode" }));
                   }
-                });
-                
-                ws.send(JSON.stringify({ 
-                  type: "mode:set", 
-                  mode: message.mode 
-                }));
+                })();
               }
             }
             break;
@@ -847,6 +905,23 @@ export function setupWebSocket(server: Server) {
             const room = rooms.get(roomCode);
             
             if (room) {
+              // FIX #2: Duo-Lock for Double Dip in sequence join path
+              if (room.currentMode === "double_dip" && room.players.size >= 2) {
+                const incomingPlayerId = message.playerId;
+                const existingPlayer = incomingPlayerId ? room.players.get(incomingPlayerId) : null;
+                // Only allow reconnection if the existing player's WebSocket is NOT currently connected
+                // This prevents spoofing - a third user can't claim to be a connected player
+                const isValidReconnect = existingPlayer && (!existingPlayer.ws || existingPlayer.ws.readyState !== WebSocket.OPEN);
+                
+                if (!isValidReconnect) {
+                  ws.send(JSON.stringify({ 
+                    type: "error", 
+                    message: "Nacho Average Couple already in session! No third wheels allowed." 
+                  }));
+                  break;
+                }
+              }
+              
               (async () => {
                 try {
                   const name = String(message.name || "").trim().slice(0, 50);
@@ -1029,6 +1104,9 @@ export function setupWebSocket(server: Server) {
                   sessionScores: existingScores,
                 };
                 
+                // FIX #5: Add serverTime for client-side clock sync
+                const serverTime = Date.now();
+                
                 // Notify all players of animated reveal stage
                 room.players.forEach((player) => {
                   if (player.ws && player.ws.readyState === WebSocket.OPEN) {
@@ -1036,6 +1114,8 @@ export function setupWebSocket(server: Server) {
                       type: "sequence:animatedReveal",
                       questionIndex,
                       totalQuestions,
+                      serverTime,
+                      animationDuration,
                     }));
                   }
                 });
@@ -1047,6 +1127,8 @@ export function setupWebSocket(server: Server) {
                     question: message.question,
                     questionIndex,
                     totalQuestions,
+                    serverTime,
+                    animationDuration,
                   }));
                 }
                 
@@ -1059,12 +1141,14 @@ export function setupWebSocket(server: Server) {
                   room.sequenceRound.endTime = endTime;
                   
                   // Notify players to start answering with haptic
+                  const answerStartTime = Date.now();
                   room.players.forEach((player) => {
                     if (player.ws && player.ws.readyState === WebSocket.OPEN) {
                       player.ws.send(JSON.stringify({
                         type: "sequence:question:start",
                         question: message.question,
                         endTime,
+                        serverTime: answerStartTime,
                         triggerHaptic: true,
                       }));
                     }
@@ -1075,6 +1159,7 @@ export function setupWebSocket(server: Server) {
                     room.hostWs.send(JSON.stringify({
                       type: "sequence:answering:started",
                       endTime,
+                      serverTime: answerStartTime,
                     }));
                   }
                   
@@ -1098,7 +1183,25 @@ export function setupWebSocket(server: Server) {
                 
                 const player = room.players.get(playerId);
                 if (player && !room.sequenceRound.submissions.has(playerId)) {
-                  const timeMs = now - room.sequenceRound.startTime;
+                  // FIX #1: Use client-side delta time for fairness
+                  // Client sends their locally measured time, we validate it's not impossibly fast
+                  let timeMs: number;
+                  const clientDeltaMs = message.clientDeltaMs;
+                  const MIN_HUMANLY_POSSIBLE_MS = 200; // Can't be faster than 200ms
+                  const MAX_REASONABLE_MS = 60000; // 60 seconds max
+                  
+                  if (typeof clientDeltaMs === 'number' && clientDeltaMs >= MIN_HUMANLY_POSSIBLE_MS && clientDeltaMs <= MAX_REASONABLE_MS) {
+                    // Use client-reported time (fair for players with varying network latency)
+                    timeMs = clientDeltaMs;
+                  } else if (typeof clientDeltaMs === 'number' && clientDeltaMs < MIN_HUMANLY_POSSIBLE_MS) {
+                    // Suspiciously fast - possible cheat attempt, use server time instead
+                    console.warn(`[Sequence] Suspicious timing from ${player.name}: ${clientDeltaMs}ms - using server time`);
+                    timeMs = now - room.sequenceRound.startTime;
+                  } else {
+                    // No client delta provided, fall back to server time
+                    timeMs = now - room.sequenceRound.startTime;
+                  }
+                  
                   const submission: SequenceSubmission = {
                     playerId,
                     playerName: player.name,
