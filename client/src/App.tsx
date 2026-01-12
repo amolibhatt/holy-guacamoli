@@ -24,6 +24,7 @@ const SuperAdmin = lazy(() => import("@/pages/SuperAdmin"));
 const RelationshipHub = lazy(() => import("@/pages/RelationshipHub"));
 const HostGridOfGrudges = lazy(() => import("@/pages/HostGridOfGrudges"));
 const SequenceSqueeze = lazy(() => import("@/pages/SequenceSqueeze"));
+const SequencePlayer = lazy(() => import("@/pages/SequencePlayer"));
 
 function PageLoader() {
   return (
@@ -58,6 +59,7 @@ function Router() {
         <Route path="/grudges/:gameId" component={GridOfGrudges} />
         <Route path="/couples" component={RelationshipHub} />
         <Route path="/host/sequence-squeeze" component={SequenceSqueeze} />
+        <Route path="/sequence/:code?" component={SequencePlayer} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

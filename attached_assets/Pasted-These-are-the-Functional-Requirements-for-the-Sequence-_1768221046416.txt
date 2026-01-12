@@ -1,0 +1,64 @@
+These are the Functional Requirements for the Sequence Squeeze game mode. You can provide this list directly to your Replit Agent to ensure the logic and "game show" energy are built correctly.
+
+Functional Requirements: Sequence Squeeze Engine
+1. Host Administration & Remote Control
+
+1.1 Role Authentication: The system shall distinguish between the Host View (Public Display) and the Admin Controller (Private Overlay).
+
+1.2 State Management: The server shall maintain a currentQuestionIndex and a gameState (Lobby, AnimatedReveal, Answering, Result, Leaderboard).
+
+1.3 Trigger Control: The Admin shall have a "Start Question [X]" button that sends a trigger_question payload via WebSockets to all connected clients.
+
+1.4 Manual Override: The Admin shall have the ability to force-end a timer or skip to the next question if necessary.
+
+2. The Multi-Stage "Drama" Reveal (Host View)
+
+2.1 Visual Sequencing: Upon receiving the trigger_question event, the Host Screen shall execute a timed three-stage animation:
+
+Stage 1 (Teaser): Display a full-screen color splash with text: "QUESTION [X]/[TOTAL]: PREPARE YOUR FINGERS" for 2 seconds.
+
+Stage 2 (Question Drop): Slide the question text into the top third of the screen in a high-impact font.
+
+Stage 3 (Option Pulse): Simultaneously pop 4 option boxes (A, B, C, D) onto the screen with a 'Whoosh' audio effect.
+
+2.2 Audio Integration: The system shall play synchronized sound effects for the countdown, the option reveal, and the final buzzer.
+
+3. Player Sync-Lock & Input (Controller View)
+
+3.1 Real-Time Sync: The Player Controller shall remain in a "Waiting" state until the Host reaches Stage 3 of the reveal.
+
+3.2 Haptic Feedback: The system shall trigger the Vibration API on the player's mobile device exactly when the options appear.
+
+3.3 Tap-Ordering Logic:
+
+The Controller shall display 4 interactive buttons (A, B, C, D).
+
+As a player taps, the system shall assign a sequence number (1, 2, 3, 4) to the button and store it in a tapArray.
+
+Upon the 4th tap, the Controller shall automatically emit a submit_sprint event containing the tapArray and a highResolutionTimestamp.
+
+3.4 Timer Enforcement: The system shall display a 15-second visual progress bar. If the timer reaches zero, the input shall be disabled and a "Time Up" state displayed.
+
+4. Scoring, Reveal, and Leaderboard Loop
+
+4.1 Accuracy & Speed Calculation:
+
+The server shall filter all submit_sprint entries for the correct sequence.
+
+Among correct entries, the server shall identify the record with the lowest timestamp as the winner.
+
+4.2 Result Display: After the round ends, the Host Screen shall:
+
+Display the Correct Sequence (e.g., C → B → A → D).
+
+Trigger a Winner Spotlight animation featuring the name of the fastest correct player.
+
+4.3 Point Allocation: The system shall award 10 points to the fastest correct player's persistent account.
+
+4.4 Mini-Leaderboard: The Host Screen shall show a temporary "Top 3" leaderboard of the current session before the Admin triggers the next question.
+
+4.5 Game Completion: After the final question, the system shall display the Global Session Winner and provide a button for the Admin to return to the Main Lobby.
+
+Technical Implementation Note for Replit Agent:
+
+"When building the WebSocket Architecture, prioritize low-latency event broadcasting. Ensure that the highResolutionTimestamp is captured on the client side at the exact moment of the 4th tap to account for varying network speeds among players, ensuring the 'Fastest Finger' logic is 100% fair."
