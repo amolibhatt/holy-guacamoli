@@ -1277,12 +1277,24 @@ export class DatabaseStorage implements IStorage {
       },
     ];
 
-    // Migration: Rename old grid_of_grudges slug to buzzkill
+    // Migration: Handle old grid_of_grudges slug
+    // IMPORTANT: We must preserve the old row's ID to maintain foreign key relationships
     const oldSlug = await db.select().from(gameTypes).where(eq(gameTypes.slug, "grid_of_grudges"));
     if (oldSlug.length > 0) {
-      console.log("[SEED] Migrating: Renaming grid_of_grudges to buzzkill...");
-      await db.update(gameTypes).set({ slug: "buzzkill" }).where(eq(gameTypes.slug, "grid_of_grudges"));
-      console.log("[SEED] Migration complete: grid_of_grudges renamed to buzzkill");
+      const newSlugRecords = await db.select().from(gameTypes).where(eq(gameTypes.slug, "buzzkill"));
+      if (newSlugRecords.length > 0) {
+        // Both exist: Delete the NEW buzzkill row (no FK refs yet), then rename the OLD row
+        console.log("[SEED] Migrating: Removing orphan buzzkill row to preserve old grid_of_grudges FK relationships...");
+        await db.delete(gameTypes).where(eq(gameTypes.slug, "buzzkill"));
+        console.log("[SEED] Migrating: Renaming grid_of_grudges to buzzkill (preserving original ID)...");
+        await db.update(gameTypes).set({ slug: "buzzkill" }).where(eq(gameTypes.slug, "grid_of_grudges"));
+        console.log("[SEED] Migration complete: grid_of_grudges renamed to buzzkill with original ID preserved");
+      } else {
+        // Only old slug exists: simple rename
+        console.log("[SEED] Migrating: Renaming grid_of_grudges to buzzkill...");
+        await db.update(gameTypes).set({ slug: "buzzkill" }).where(eq(gameTypes.slug, "grid_of_grudges"));
+        console.log("[SEED] Migration complete: grid_of_grudges renamed to buzzkill");
+      }
     }
 
     console.log("[SEED] Checking for missing game types...");
