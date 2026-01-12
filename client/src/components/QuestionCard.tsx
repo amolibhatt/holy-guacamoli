@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Question, PLAYER_AVATARS } from "@shared/schema";
 import { useScore } from "./ScoreContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
-import { CheckCircle2, XCircle, Eye, EyeOff, Timer, X, Trophy, Zap, Plus, Minus, Users } from "lucide-react";
+import { CheckCircle2, XCircle, Eye, EyeOff, Timer, X, Trophy, Zap, Users, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
@@ -96,6 +96,9 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
   const [timer, setTimer] = useState<number | null>(null);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [awardedTo, setAwardedTo] = useState<string | null>(null);
+  const [lastAwardedId, setLastAwardedId] = useState<string | null>(null);
+  const [isDeduction, setIsDeduction] = useState(false);
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { contestants, awardPoints, deductPoints, markQuestionCompleted } = useScore();
   const { colors } = useTheme();
   const prefersReducedMotion = useReducedMotion();
@@ -137,6 +140,8 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
 
   const handleAward = (contestantId: string, contestantName: string) => {
     setAwardedTo(contestantName);
+    setLastAwardedId(contestantId);
+    setIsDeduction(false);
     awardPoints(contestantId, question.points);
     onAwardPoints?.(contestantId, question.points);
     soundManager.play('correct', 0.6);
@@ -150,17 +155,46 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
       });
     }
 
-    setTimeout(() => {
+    closeTimeoutRef.current = setTimeout(() => {
       markQuestionCompleted(question.id);
       onCompleteQuestion?.(question.id, contestantId, question.points);
       onComplete?.();
-    }, 2000);
+    }, 3000);
   };
 
-  const handleDeduct = (contestantId: string) => {
+  const handleDeduct = (contestantId: string, contestantName: string) => {
+    setAwardedTo(contestantName);
+    setLastAwardedId(contestantId);
+    setIsDeduction(true);
     deductPoints(contestantId, question.points);
     onDeductPoints?.(contestantId, -question.points);
     soundManager.play('wrong', 0.5);
+    
+    closeTimeoutRef.current = setTimeout(() => {
+      setAwardedTo(null);
+      setLastAwardedId(null);
+    }, 3000);
+  };
+
+  const handleUndo = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    
+    if (lastAwardedId) {
+      if (isDeduction) {
+        awardPoints(lastAwardedId, question.points);
+        onAwardPoints?.(lastAwardedId, question.points);
+      } else {
+        deductPoints(lastAwardedId, question.points);
+        onDeductPoints?.(lastAwardedId, -question.points);
+      }
+    }
+    
+    setAwardedTo(null);
+    setLastAwardedId(null);
+    setIsDeduction(false);
   };
 
   const handleNoAnswer = () => {
@@ -177,7 +211,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-center justify-center gradient-header"
+            className={`absolute inset-0 z-50 flex items-center justify-center ${isDeduction ? 'bg-destructive' : 'gradient-header'}`}
           >
             <motion.div 
               className="text-center"
@@ -185,7 +219,11 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
               animate={prefersReducedMotion ? { opacity: 1 } : { scale: 1, rotate: 0 }}
               transition={prefersReducedMotion ? { duration: 0.1 } : { type: "spring", stiffness: 200 }}
             >
-              <Trophy className="w-24 h-24 text-white mx-auto mb-4 drop-shadow-lg" />
+              {isDeduction ? (
+                <XCircle className="w-24 h-24 text-white mx-auto mb-4 drop-shadow-lg" />
+              ) : (
+                <Trophy className="w-24 h-24 text-white mx-auto mb-4 drop-shadow-lg" />
+              )}
               <h2 className="text-5xl font-black text-white drop-shadow-lg">{awardedTo}</h2>
               <motion.p 
                 className="text-4xl font-bold text-white/90 mt-2"
@@ -193,8 +231,25 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: prefersReducedMotion ? 0 : 0.3 }}
               >
-                +{question.points} points!
+                {isDeduction ? '-' : '+'}{question.points} points
               </motion.p>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="mt-6"
+              >
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={handleUndo}
+                  className="bg-white/20 border-white/40 text-white hover:bg-white/30 gap-2"
+                  data-testid="button-undo-award"
+                >
+                  <Undo2 className="w-5 h-5" />
+                  Undo - Made a mistake?
+                </Button>
+              </motion.div>
             </motion.div>
           </motion.div>
         )}
@@ -335,30 +390,10 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
               >
                 <div className="text-center mb-3">
                   <div className="flex items-center justify-center gap-2">
-                    <span className="text-xl">{PLAYER_AVATARS.find(a => a.id === contestant.avatar)?.emoji || "🎮"}</span>
+                    <span className="text-2xl">{PLAYER_AVATARS.find(a => a.id === contestant.avatar)?.emoji || "🎮"}</span>
                     <span className="font-bold text-foreground text-base">{contestant.name}</span>
                   </div>
-                  <div className="flex items-center justify-center gap-2 mt-1">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => deductPoints(contestant.id, question.points)}
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      data-testid={`button-adjust-minus-${contestant.id}`}
-                    >
-                      <Minus className="w-4 h-4" />
-                    </Button>
-                    <span className="text-lg font-semibold text-primary min-w-[60px]">{contestant.score}</span>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => awardPoints(contestant.id, question.points)}
-                      className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                      data-testid={`button-adjust-plus-${contestant.id}`}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  <span className="text-lg font-semibold text-primary">{contestant.score} pts</span>
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -373,10 +408,11 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
                   <Button
                     size="sm"
                     variant="destructive"
-                    onClick={() => handleDeduct(contestant.id)}
+                    onClick={() => handleDeduct(contestant.id, contestant.name)}
                     data-testid={`button-deduct-${contestant.id}`}
                   >
-                    <XCircle className="w-4 h-4" />
+                    <XCircle className="w-4 h-4 mr-1" />
+                    -{question.points}
                   </Button>
                 </div>
               </motion.div>
