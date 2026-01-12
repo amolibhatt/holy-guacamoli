@@ -6,7 +6,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/hooks/use-auth";
 
 interface AppHeaderProps {
-  title: string;
+  title?: string;
   subtitle?: string;
   backHref?: string;
   showAdminButton?: boolean;
@@ -56,7 +56,9 @@ export function AppHeader({
               <span className="text-foreground">Amoli</span>
               <span className="text-pink-500">!</span>
             </h1>
-            <span className="text-xs text-muted-foreground tracking-wide">{title}{subtitle ? ` - ${subtitle}` : ''}</span>
+            {(title || subtitle) && (
+              <span className="text-xs text-muted-foreground tracking-wide">{title}{subtitle ? ` - ${subtitle}` : ''}</span>
+            )}
           </div>
         </div>
 
