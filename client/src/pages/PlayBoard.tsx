@@ -185,13 +185,13 @@ export default function PlayBoard() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <Link href="/">
+            <Link href="/host/buzzkill">
               <Button 
                 variant="ghost" 
                 size="icon"
                 className="text-primary/80 hover:text-primary hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary"
-                data-testid="button-back-home"
-                aria-label="Go back home"
+                data-testid="button-back-boards"
+                aria-label="Go back to board list"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
