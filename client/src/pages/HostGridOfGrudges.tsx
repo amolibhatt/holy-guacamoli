@@ -25,7 +25,7 @@ export default function HostGridOfGrudges() {
         subtitle="Select a board"
         backHref="/"
         rightContent={
-          <Link href="/admin">
+          <Link href="/admin?game=buzzkill">
             <Button variant="outline" size="sm" className="gap-2" data-testid="button-manage-boards">
               <Settings className="w-4 h-4" />
               Manage Boards
@@ -53,7 +53,7 @@ export default function HostGridOfGrudges() {
               <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
                 Create your first game board to start hosting trivia nights
               </p>
-              <Link href="/admin">
+              <Link href="/admin?game=buzzkill">
                 <Button size="lg" className="gap-2" data-testid="button-create-board">
                   <Settings className="w-5 h-5" />
                   Create Your First Board
