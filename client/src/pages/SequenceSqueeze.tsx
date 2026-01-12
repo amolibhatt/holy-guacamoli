@@ -441,29 +441,28 @@ export default function SequenceSqueeze() {
               <Users className="w-12 h-12 text-white" />
             </div>
             <h2 className="text-3xl font-bold mb-2">Waiting for Players</h2>
-            <p className="text-muted-foreground mb-6">
-              Share the QR code or room code to let players join
+            <p className="text-muted-foreground mb-4">
+              Room Code: <span className="font-mono font-bold text-foreground text-xl">{roomCode}</span>
             </p>
 
-            <div className="inline-flex flex-col items-center gap-4 p-6 bg-card rounded-2xl border">
-              <QRCodeSVG value={joinUrl} size={200} />
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Room Code:</span>
-                <span className="text-3xl font-mono font-bold text-foreground">{roomCode}</span>
-              </div>
-              {players.length > 0 && (
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge className="bg-emerald-500 gap-1">
-                    <Users className="w-3 h-3" />
-                    {players.length} player{players.length !== 1 ? 's' : ''} connected
-                  </Badge>
-                </div>
-              )}
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowQR(true)}
+                className="gap-2"
+                data-testid="button-show-qr"
+              >
+                <QrCode className="w-4 h-4" />
+                Show QR Code
+              </Button>
+              <Badge className="bg-emerald-500 gap-1 text-sm px-3 py-1.5">
+                <Users className="w-3 h-3" />
+                {players.length} player{players.length !== 1 ? 's' : ''} connected
+              </Badge>
             </div>
 
             {players.length > 0 && (
-              <div className="mt-6">
-                <h3 className="font-semibold mb-3">Players:</h3>
+              <div className="mb-6">
                 <div className="flex flex-wrap justify-center gap-2">
                   {players.map(p => (
                     <Badge key={p.id} variant="secondary" className="gap-1">
@@ -474,25 +473,25 @@ export default function SequenceSqueeze() {
               </div>
             )}
 
-            <div className="mt-8 space-y-3">
-              <h3 className="font-semibold">Select a question to start:</h3>
-              <div className="grid gap-2 max-w-md mx-auto">
-                {questions.map((q, idx) => (
-                  <Button
-                    key={q.id}
-                    variant="outline"
-                    className="justify-start h-auto py-3"
-                    onClick={() => startQuestion(q, idx)}
-                    data-testid={`button-start-${q.id}`}
-                  >
-                    <span className="w-6 h-6 rounded bg-teal-500/20 flex items-center justify-center text-xs font-bold text-teal-600 mr-3">
-                      {idx + 1}
-                    </span>
-                    <span className="truncate">{q.question}</span>
-                  </Button>
-                ))}
-              </div>
-            </div>
+            <Button 
+              size="lg"
+              className="h-14 px-8 text-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-teal-500/30"
+              onClick={() => {
+                if (questions.length > 0) {
+                  startQuestion(questions[0], 0);
+                }
+              }}
+              disabled={players.length === 0 || questions.length === 0}
+              data-testid="button-begin-game"
+            >
+              <Play className="w-6 h-6 mr-2" />
+              Begin Game ({questions.length} questions)
+            </Button>
+            {players.length === 0 && (
+              <p className="text-sm text-muted-foreground mt-3">
+                Waiting for at least 1 player to join...
+              </p>
+            )}
           </motion.div>
         )}
 
