@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake } from "@shared/schema";
+import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion } from "@shared/schema";
 import { users } from "@shared/models/auth";
 import { eq, and, asc, count, inArray, desc, sql, gte } from "drizzle-orm";
 
@@ -142,6 +142,11 @@ export interface IStorage {
   createDoubleDipWeeklyStake(data: InsertDoubleDipWeeklyStake): Promise<DoubleDipWeeklyStake>;
   updateDoubleDipWeeklyStake(id: number, data: Partial<InsertDoubleDipWeeklyStake>): Promise<DoubleDipWeeklyStake | undefined>;
   scoreDoubleDipDailyForWeeklyStake(dailySetId: number, weeklyStakeId: number, userAPoints: number, userBPoints: number): Promise<boolean>;
+  
+  // Sequence Squeeze
+  getSequenceQuestions(userId: string, role?: string): Promise<SequenceQuestion[]>;
+  createSequenceQuestion(data: InsertSequenceQuestion): Promise<SequenceQuestion>;
+  deleteSequenceQuestion(id: number, userId: string, role?: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1214,6 +1219,28 @@ export class DatabaseStorage implements IStorage {
     }
     
     return true;
+  }
+
+  // Sequence Squeeze implementation
+  async getSequenceQuestions(userId: string, role?: string): Promise<SequenceQuestion[]> {
+    if (role === 'super_admin') {
+      return await db.select().from(sequenceQuestions).where(eq(sequenceQuestions.isActive, true)).orderBy(desc(sequenceQuestions.createdAt));
+    }
+    return await db.select().from(sequenceQuestions).where(and(eq(sequenceQuestions.userId, userId), eq(sequenceQuestions.isActive, true))).orderBy(desc(sequenceQuestions.createdAt));
+  }
+
+  async createSequenceQuestion(data: InsertSequenceQuestion): Promise<SequenceQuestion> {
+    const [question] = await db.insert(sequenceQuestions).values([data] as any).returning();
+    return question;
+  }
+
+  async deleteSequenceQuestion(id: number, userId: string, role?: string): Promise<boolean> {
+    if (role === 'super_admin') {
+      const result = await db.delete(sequenceQuestions).where(eq(sequenceQuestions.id, id));
+      return !!result;
+    }
+    const result = await db.delete(sequenceQuestions).where(and(eq(sequenceQuestions.id, id), eq(sequenceQuestions.userId, userId)));
+    return !!result;
   }
 
   async seedGameTypes(): Promise<void> {
