@@ -47,7 +47,7 @@ const GAME_CONFIG: Record<string, {
     gradient: "from-primary to-secondary",
     shadowColor: "shadow-primary/20",
     hoverBorder: "hover:border-primary/50 hover:shadow-primary/10",
-    route: "/host/grid-of-grudges",
+    route: "/host/buzzkill",
     playerCount: "Multiplayer",
   },
   double_dip: {

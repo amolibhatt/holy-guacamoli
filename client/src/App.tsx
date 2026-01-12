@@ -42,7 +42,7 @@ function Router() {
     <Suspense fallback={<PageLoader />}>
       <Switch>
         <Route path="/" component={Home} />
-        <Route path="/host/grid-of-grudges" component={HostGridOfGrudges} />
+        <Route path="/host/buzzkill" component={HostGridOfGrudges} />
         <Route path="/host/double-dip" component={RelationshipHub} />
         <Route path="/category/:id" component={CategoryPage} />
         <Route path="/admin" component={Admin} />
