@@ -71,6 +71,8 @@ export default function SequenceSqueeze() {
   const [winner, setWinner] = useState<WinnerInfo | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [buzzkillRoomCode, setBuzzkillRoomCode] = useState("");
+  const [importScores, setImportScores] = useState(false);
   const submissionsRef = useRef<PlayerSubmission[]>([]);
   const audioRef = useRef<{ [key: string]: HTMLAudioElement }>({});
 
@@ -100,12 +102,15 @@ export default function SequenceSqueeze() {
     },
   });
 
-  const connectWebSocket = useCallback(() => {
+  const connectWebSocket = useCallback((sourceCode?: string) => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const socket = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
     socket.onopen = () => {
-      socket.send(JSON.stringify({ type: "sequence:host:create" }));
+      socket.send(JSON.stringify({ 
+        type: "sequence:host:create",
+        sourceCode: sourceCode || undefined,
+      }));
     };
 
     socket.onmessage = (event) => {
@@ -115,6 +120,29 @@ export default function SequenceSqueeze() {
         case "sequence:room:created":
           setRoomCode(data.code);
           setGameState("waiting");
+          if (data.importError) {
+            toast({ 
+              title: "Could not import scores", 
+              description: data.importError,
+              variant: "destructive",
+            });
+          } else if (data.importedScores && data.importedScores.length > 0) {
+            setPlayers(data.importedScores.map((p: any) => ({
+              id: p.playerId,
+              name: p.playerName,
+              avatar: p.playerAvatar,
+            })));
+            setLeaderboard(data.importedScores.map((p: any) => ({
+              playerId: p.playerId,
+              playerName: p.playerName,
+              playerAvatar: p.playerAvatar,
+              score: p.score,
+            })));
+            toast({ 
+              title: "Scores imported!", 
+              description: `Imported ${data.importedScores.length} players from Buzzkill` 
+            });
+          }
           break;
         case "sequence:player:joined":
           toast({ title: `${data.playerName} joined!` });
@@ -411,19 +439,58 @@ export default function SequenceSqueeze() {
             ) : questions.length === 0 ? (
               <p className="text-muted-foreground mb-4">No questions available. Add some in the Admin panel.</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <Badge variant="secondary" className="text-base px-4 py-2">
                   {questions.length} question{questions.length !== 1 ? 's' : ''} ready
                 </Badge>
+                
+                <div className="max-w-sm mx-auto space-y-4">
+                  <div className="flex items-center justify-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="importScores"
+                      checked={importScores}
+                      onChange={(e) => setImportScores(e.target.checked)}
+                      className="w-4 h-4 rounded border-muted-foreground"
+                      data-testid="checkbox-import-scores"
+                    />
+                    <label htmlFor="importScores" className="text-sm cursor-pointer">
+                      Continue from Buzzkill (import player scores)
+                    </label>
+                  </div>
+                  
+                  {importScores && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-2"
+                    >
+                      <Input
+                        placeholder="Enter Buzzkill room code"
+                        value={buzzkillRoomCode}
+                        onChange={(e) => setBuzzkillRoomCode(e.target.value.toUpperCase())}
+                        className="text-center font-mono text-lg tracking-widest"
+                        maxLength={4}
+                        data-testid="input-buzzkill-code"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Keep your Buzzkill game open in another tab
+                      </p>
+                    </motion.div>
+                  )}
+                </div>
+                
                 <div>
                   <Button 
                     size="lg"
                     className="h-14 px-8 text-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-teal-500/30"
-                    onClick={connectWebSocket}
+                    onClick={() => connectWebSocket(importScores && buzzkillRoomCode ? buzzkillRoomCode : undefined)}
+                    disabled={importScores && buzzkillRoomCode.length !== 4}
                     data-testid="button-start-game"
                   >
                     <Play className="w-6 h-6 mr-2" />
-                    Start Game
+                    {importScores ? "Start with Imported Scores" : "Start Game"}
                   </Button>
                 </div>
               </div>
@@ -464,12 +531,23 @@ export default function SequenceSqueeze() {
             {players.length > 0 && (
               <div className="mb-6">
                 <div className="flex flex-wrap justify-center gap-2">
-                  {players.map(p => (
-                    <Badge key={p.id} variant="secondary" className="gap-1">
-                      {p.name}
-                    </Badge>
-                  ))}
+                  {players.map(p => {
+                    const playerScore = leaderboard.find(l => l.playerId === p.id)?.score;
+                    return (
+                      <Badge key={p.id} variant="secondary" className="gap-1">
+                        {p.name}
+                        {playerScore !== undefined && playerScore > 0 && (
+                          <span className="text-emerald-500 font-bold ml-1">({playerScore})</span>
+                        )}
+                      </Badge>
+                    );
+                  })}
                 </div>
+                {leaderboard.length > 0 && leaderboard.some(l => l.score > 0) && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Scores imported from Buzzkill
+                  </p>
+                )}
               </div>
             )}
 
