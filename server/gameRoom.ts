@@ -777,81 +777,61 @@ export function setupWebSocket(server: Server) {
           }
 
           case "sequence:host:create": {
-            const code = generateRoomCode();
-            const hostId = message.hostId || randomUUID();
-            const sourceCode = message.sourceCode?.toUpperCase();
-            
-            const room: GameRoom = {
-              code,
-              sessionId: 0,
-              hostId,
-              hostWs: ws,
-              hostLastPing: Date.now(),
-              players: new Map(),
-              buzzerQueue: [],
-              buzzerLocked: true,
-              currentQuestion: null,
-              currentBoardId: null,
-              currentMode: "board",
-              sequenceRound: null,
-            };
-            
-            let importedScores: { playerId: string; playerName: string; playerAvatar: string; score: number }[] = [];
-            let importError: string | null = null;
-            
-            if (sourceCode) {
-              const sourceRoom = rooms.get(sourceCode);
-              if (sourceRoom && sourceRoom.players.size > 0) {
-                sourceRoom.players.forEach((player) => {
-                  importedScores.push({
-                    playerId: player.id,
-                    playerName: player.name,
-                    playerAvatar: player.avatar,
-                    score: player.score,
-                  });
+            (async () => {
+              try {
+                const code = generateRoomCode();
+                const hostId = message.hostId || randomUUID();
+                
+                const session = await storage.createSession({
+                  code,
+                  hostId,
+                  currentMode: "sequence",
+                  state: "waiting",
+                  buzzerLocked: true,
                 });
                 
-                room.sequenceRound = {
-                  questionId: 0,
-                  question: null,
-                  correctOrder: [],
-                  startTime: 0,
-                  endTime: 0,
-                  revealTimer: null,
-                  answeringTimer: null,
-                  submissions: new Map(),
-                  revealed: false,
-                  gameState: "lobby",
-                  currentQuestionIndex: 0,
-                  totalQuestions: 0,
-                  sessionScores: new Map(importedScores.map(p => [p.playerId, p.score])),
+                const room: GameRoom = {
+                  code,
+                  sessionId: session.id,
+                  hostId,
+                  hostWs: ws,
+                  hostLastPing: Date.now(),
+                  players: new Map(),
+                  buzzerQueue: [],
+                  buzzerLocked: true,
+                  currentQuestion: null,
+                  currentBoardId: null,
+                  currentMode: "sequence",
+                  sequenceRound: {
+                    questionId: 0,
+                    question: null,
+                    correctOrder: [],
+                    startTime: 0,
+                    endTime: 0,
+                    revealTimer: null,
+                    answeringTimer: null,
+                    submissions: new Map(),
+                    revealed: false,
+                    gameState: "lobby",
+                    currentQuestionIndex: 0,
+                    totalQuestions: 0,
+                    sessionScores: new Map(),
+                  },
                 };
                 
-                sourceRoom.players.forEach((player) => {
-                  if (player.ws && player.ws.readyState === WebSocket.OPEN) {
-                    player.ws.send(JSON.stringify({
-                      type: "sequence:room:switched",
-                      newCode: code,
-                      score: player.score,
-                    }));
-                  }
-                });
-              } else if (!sourceRoom) {
-                importError = "Room not found or expired";
-              } else {
-                importError = "No players in source room";
+                rooms.set(code, room);
+                currentRoom = code;
+                isHost = true;
+                ws.send(JSON.stringify({ 
+                  type: "sequence:room:created", 
+                  code,
+                  sessionId: session.id,
+                }));
+              } catch (err) {
+                console.error("Failed to create sequence room:", err);
+                ws.send(JSON.stringify({ type: "error", message: "Failed to create room" }));
               }
-            }
-            
-            rooms.set(code, room);
-            currentRoom = code;
-            isHost = true;
-            ws.send(JSON.stringify({ 
-              type: "sequence:room:created", 
-              code,
-              importedScores: importedScores.length > 0 ? importedScores : undefined,
-              importError: importError || undefined,
-            }));
+            })();
             break;
           }
 
@@ -860,40 +840,64 @@ export function setupWebSocket(server: Server) {
             const room = rooms.get(roomCode);
             
             if (room) {
-              const name = String(message.name || "").trim().slice(0, 50);
-              if (!name) {
-                ws.send(JSON.stringify({ type: "error", message: "Name is required" }));
-                return;
-              }
-              
-              const newPlayerId = message.playerId || randomUUID();
-              playerId = newPlayerId;
-              const avatar = sanitizeAvatar(message.avatar);
-              
-              const player: Player = {
-                id: newPlayerId,
-                name,
-                avatar,
-                ws,
-                lastPing: Date.now(),
-                score: 0,
-              };
-              room.players.set(newPlayerId, player);
-              currentRoom = roomCode;
+              (async () => {
+                try {
+                  const name = String(message.name || "").trim().slice(0, 50);
+                  if (!name) {
+                    ws.send(JSON.stringify({ type: "error", message: "Name is required" }));
+                    return;
+                  }
+                  
+                  const newPlayerId = message.playerId || randomUUID();
+                  playerId = newPlayerId;
+                  const avatar = sanitizeAvatar(message.avatar);
+                  
+                  let existingScore = 0;
+                  if (room.sessionId > 0) {
+                    const dbPlayer = await storage.addPlayerToSession({
+                      sessionId: room.sessionId,
+                      playerId: newPlayerId,
+                      name,
+                      avatar,
+                    });
+                    existingScore = dbPlayer?.score || 0;
+                  }
+                  
+                  const player: Player = {
+                    id: newPlayerId,
+                    name,
+                    avatar,
+                    ws,
+                    lastPing: Date.now(),
+                    score: existingScore,
+                  };
+                  room.players.set(newPlayerId, player);
+                  currentRoom = roomCode;
+                  
+                  if (room.sequenceRound) {
+                    room.sequenceRound.sessionScores.set(newPlayerId, existingScore);
+                  }
 
-              ws.send(JSON.stringify({ 
-                type: "sequence:joined", 
-                playerId: newPlayerId,
-              }));
+                  ws.send(JSON.stringify({ 
+                    type: "sequence:joined", 
+                    playerId: newPlayerId,
+                    score: existingScore,
+                  }));
 
-              if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
-                room.hostWs.send(JSON.stringify({
-                  type: "sequence:player:joined",
-                  playerName: name,
-                  playerAvatar: avatar,
-                  playerId: newPlayerId,
-                }));
-              }
+                  if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
+                    room.hostWs.send(JSON.stringify({
+                      type: "sequence:player:joined",
+                      playerName: name,
+                      playerAvatar: avatar,
+                      playerId: newPlayerId,
+                      score: existingScore,
+                    }));
+                  }
+                } catch (err) {
+                  console.error("Failed to join sequence room:", err);
+                  ws.send(JSON.stringify({ type: "error", message: "Failed to join room" }));
+                }
+              })();
             } else {
               ws.send(JSON.stringify({ type: "error", message: "Room not found" }));
             }
@@ -943,7 +947,21 @@ export function setupWebSocket(server: Server) {
                     const fastest = rankings[0];
                     winner = { playerId: fastest.playerId, playerName: fastest.playerName, playerAvatar: fastest.playerAvatar, timeMs: fastest.timeMs };
                     const currentScore = room.sequenceRound.sessionScores.get(fastest.playerId) || 0;
-                    room.sequenceRound.sessionScores.set(fastest.playerId, currentScore + 10);
+                    const newScore = currentScore + 10;
+                    room.sequenceRound.sessionScores.set(fastest.playerId, newScore);
+                    
+                    // Persist to database
+                    if (room.sessionId > 0) {
+                      storage.updatePlayerScore(room.sessionId, fastest.playerId, 10).catch(err => {
+                        console.error("Failed to persist sequence score:", err);
+                      });
+                    }
+                    
+                    // Update in-memory player score too
+                    const playerObj = room.players.get(fastest.playerId);
+                    if (playerObj) {
+                      playerObj.score = newScore;
+                    }
                   }
                   
                   // Build leaderboard from session scores
