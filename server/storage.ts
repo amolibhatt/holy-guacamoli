@@ -1316,6 +1316,13 @@ export class DatabaseStorage implements IStorage {
     } else {
       console.log(`[SEED] Added ${addedCount} new game type(s).`);
     }
+
+    // Ensure correct sort order: Buzzkill(1), Sequence Squeeze(2), Double Dip(3)
+    console.log("[SEED] Updating game type sort orders...");
+    await db.update(gameTypes).set({ sortOrder: 1 }).where(eq(gameTypes.slug, "buzzkill"));
+    await db.update(gameTypes).set({ sortOrder: 2 }).where(eq(gameTypes.slug, "sequence_squeeze"));
+    await db.update(gameTypes).set({ sortOrder: 3 }).where(eq(gameTypes.slug, "double_dip"));
+    console.log("[SEED] Sort orders updated.");
   }
 
   // Master Bank - global boards
