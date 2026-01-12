@@ -4,14 +4,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { motion, AnimatePresence } from "framer-motion";
-import { ListOrdered, Wifi, WifiOff, Trophy, Timer, Check, X, RotateCcw, Sparkles, RefreshCw } from "lucide-react";
+import { ListOrdered, Wifi, WifiOff, Trophy, Timer, Check, X, RotateCcw, Sparkles, RefreshCw, Crown, Star, Medal, Lock } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { PLAYER_AVATARS, type AvatarId } from "@shared/schema";
 
 type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
-type GamePhase = "waiting" | "playing" | "submitted" | "revealing" | "results";
+type GamePhase = "waiting" | "animatedReveal" | "playing" | "submitted" | "revealing" | "results" | "leaderboard" | "gameComplete";
+
+interface LeaderboardEntry {
+  playerId: string;
+  playerName: string;
+  playerAvatar: string;
+  score: number;
+}
 
 interface Question {
   id: number;
@@ -60,6 +68,11 @@ export default function SequencePlayer() {
   const [correctOrder, setCorrectOrder] = useState<string[] | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [rank, setRank] = useState<number | null>(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(1);
+  const [totalQuestions, setTotalQuestions] = useState(1);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [myScore, setMyScore] = useState(0);
+  const [winner, setWinner] = useState<LeaderboardEntry | null>(null);
   
   const wsRef = useRef<WebSocket | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -95,6 +108,19 @@ export default function SequencePlayer() {
           setPhase("waiting");
           break;
           
+        case "sequence:animatedReveal":
+          setCurrentQuestion(data.question);
+          setSelectedSequence([]);
+          selectedSequenceRef.current = [];
+          setPhase("animatedReveal");
+          setIsCorrect(null);
+          setCorrectOrder(null);
+          setRank(null);
+          if (data.questionIndex) setCurrentQuestionIndex(data.questionIndex);
+          if (data.totalQuestions) setTotalQuestions(data.totalQuestions);
+          try { navigator.vibrate?.([100, 50, 100]); } catch {}
+          break;
+          
         case "sequence:question:start":
           setCurrentQuestion(data.question);
           setSelectedSequence([]);
@@ -121,8 +147,12 @@ export default function SequencePlayer() {
           const correct = JSON.stringify(currentSeq) === JSON.stringify(data.correctOrder);
           setIsCorrect(correct);
           if (data.rank) setRank(data.rank);
+          if (data.leaderboard) setLeaderboard(data.leaderboard);
+          if (data.myScore !== undefined) setMyScore(data.myScore);
+          if (data.winner) setWinner(data.winner);
           if (correct && data.rank === 1) {
-            confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+            confetti({ particleCount: 200, spread: 120, origin: { y: 0.6 } });
+            try { navigator.vibrate?.([100, 50, 100, 50, 200]); } catch {}
           } else if (correct) {
             confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
           }
@@ -131,6 +161,31 @@ export default function SequencePlayer() {
         case "sequence:results":
           setPhase("results");
           if (data.rank !== undefined) setRank(data.rank);
+          if (data.leaderboard) setLeaderboard(data.leaderboard);
+          if (data.myScore !== undefined) setMyScore(data.myScore);
+          break;
+        
+        case "sequence:leaderboard":
+          setPhase("leaderboard");
+          if (data.leaderboard) setLeaderboard(data.leaderboard);
+          if (data.myScore !== undefined) setMyScore(data.myScore);
+          break;
+          
+        case "sequence:gameComplete":
+          setPhase("gameComplete");
+          if (data.leaderboard) setLeaderboard(data.leaderboard);
+          if (data.winner) setWinner(data.winner);
+          if (data.myScore !== undefined) setMyScore(data.myScore);
+          if (data.leaderboard?.[0]?.playerId === playerId) {
+            confetti({ particleCount: 300, spread: 180, origin: { y: 0.4 } });
+            try { navigator.vibrate?.([200, 100, 200, 100, 400]); } catch {}
+          }
+          break;
+          
+        case "sequence:scoresReset":
+          setMyScore(0);
+          setLeaderboard([]);
+          setPhase("waiting");
           break;
           
         case "sequence:reset":
@@ -141,6 +196,7 @@ export default function SequencePlayer() {
           setCorrectOrder(null);
           setIsCorrect(null);
           setRank(null);
+          setWinner(null);
           break;
           
         case "error":
@@ -164,7 +220,8 @@ export default function SequencePlayer() {
   }, [roomCode, playerName, selectedAvatar, playerId, toast]);
 
   const handleLetterTap = (letter: string) => {
-    if (phase !== "playing" || selectedSequence.length >= 4) return;
+    if (phase !== "playing") return;
+    if (selectedSequence.length >= 4) return;
     if (selectedSequence.includes(letter)) return;
     
     const newSequence = [...selectedSequence, letter];
@@ -328,26 +385,84 @@ export default function SequencePlayer() {
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">Waiting for host...</h2>
             <p className="text-teal-200">Get ready to put things in order!</p>
+            {myScore > 0 && (
+              <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full">
+                <Star className="w-4 h-4 text-amber-400" />
+                <span className="text-white font-bold">{myScore} pts</span>
+              </div>
+            )}
           </motion.div>
+        )}
+
+        {phase === "animatedReveal" && currentQuestion && (
+          <div 
+            className="fixed inset-0 z-[100]"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-teal-600 via-cyan-700 to-emerald-700 pb-safe"
+            >
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 0.8, repeat: Infinity }}
+                className="mb-8"
+              >
+                <Lock className="w-20 h-20 text-white/80" />
+              </motion.div>
+              <motion.h1
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="text-4xl font-black text-white text-center mb-4"
+              >
+                QUESTION {currentQuestionIndex}/{totalQuestions}
+              </motion.h1>
+              <motion.p
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="text-2xl text-white/90 font-semibold text-center px-4 max-w-md"
+              >
+                {currentQuestion.question}
+              </motion.p>
+              <motion.p
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="mt-8 text-lg text-white/70"
+              >
+                Get ready to tap...
+              </motion.p>
+            </motion.div>
+          </div>
         )}
 
         {(phase === "playing" || phase === "submitted") && currentQuestion && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-md space-y-6"
+            className="w-full max-w-md space-y-4"
           >
             <div className="flex items-center justify-between">
+              <Badge variant="secondary" className="bg-white/10 text-white gap-1">
+                Q{currentQuestionIndex}/{totalQuestions}
+              </Badge>
               <Badge variant="secondary" className="bg-white/10 text-white">
                 {phase === "submitted" ? "Submitted!" : "Tap in order"}
               </Badge>
               <div className="flex items-center gap-2">
                 <Timer className={`w-5 h-5 ${timeRemaining <= 5 ? 'text-red-400' : 'text-teal-300'}`} />
-                <span className={`text-2xl font-mono font-bold ${timeRemaining <= 5 ? 'text-red-400' : 'text-white'}`}>
+                <span className={`text-2xl font-mono font-bold ${timeRemaining <= 5 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
                   {timeRemaining}s
                 </span>
               </div>
             </div>
+            
+            <Progress 
+              value={((15 - timeRemaining) / 15) * 100} 
+              className={`h-2 ${timeRemaining <= 5 ? 'bg-red-900/50' : 'bg-white/20'}`}
+            />
 
             <Card className="p-4 bg-white/10 border-white/20">
               <h3 className="text-lg font-semibold text-white text-center mb-4">
@@ -506,6 +621,105 @@ export default function SequencePlayer() {
               {rank === 1 ? "You won!" : rank ? `You finished #${rank}` : "Round complete!"}
             </h2>
             <p className="text-teal-200">Waiting for next question...</p>
+          </motion.div>
+        )}
+        
+        {phase === "leaderboard" && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center w-full max-w-sm"
+          >
+            <Trophy className="w-16 h-16 mx-auto text-amber-400 mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-6">Leaderboard</h2>
+            <div className="space-y-2 mb-6">
+              {leaderboard.map((entry, idx) => {
+                const isMe = entry.playerId === playerId;
+                return (
+                  <motion.div
+                    key={entry.playerId}
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className={`flex items-center justify-between p-3 rounded-lg ${
+                      isMe ? 'bg-teal-500/30 border-2 border-teal-400' :
+                      idx === 0 ? 'bg-amber-500/20' :
+                      idx === 1 ? 'bg-slate-400/20' :
+                      idx === 2 ? 'bg-orange-600/20' :
+                      'bg-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl font-black text-white/80">{idx + 1}</span>
+                      {idx === 0 && <Crown className="w-5 h-5 text-amber-400" />}
+                      {idx === 1 && <Medal className="w-5 h-5 text-slate-300" />}
+                      {idx === 2 && <Medal className="w-5 h-5 text-orange-400" />}
+                      <span className="font-semibold text-white">{entry.playerName}</span>
+                      {isMe && <Badge className="bg-teal-500 text-xs">You</Badge>}
+                    </div>
+                    <span className="font-bold text-white">{entry.score} pts</span>
+                  </motion.div>
+                );
+              })}
+            </div>
+            <p className="text-teal-200/60 text-sm">Waiting for next round...</p>
+          </motion.div>
+        )}
+        
+        {phase === "gameComplete" && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center w-full max-w-sm"
+          >
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            >
+              <Trophy className="w-24 h-24 mx-auto text-amber-400 mb-4" />
+            </motion.div>
+            <h1 className="text-4xl font-black text-white mb-2">GAME OVER!</h1>
+            
+            {leaderboard[0] && (
+              <div className="mb-6">
+                <h2 className="text-xl text-amber-400 font-bold">WINNER</h2>
+                <p className="text-3xl font-black text-white">{leaderboard[0].playerName}</p>
+                <p className="text-teal-200">{leaderboard[0].score} points</p>
+              </div>
+            )}
+
+            {leaderboard[0]?.playerId === playerId && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="mb-6 inline-block px-6 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 rounded-full"
+              >
+                <span className="text-xl font-black text-white">YOU WON!</span>
+              </motion.div>
+            )}
+
+            <div className="space-y-2 mb-6">
+              <h3 className="text-sm font-semibold text-teal-200">Final Standings</h3>
+              {leaderboard.slice(0, 5).map((entry, idx) => {
+                const isMe = entry.playerId === playerId;
+                return (
+                  <div
+                    key={entry.playerId}
+                    className={`flex items-center justify-between p-2 rounded-lg ${
+                      isMe ? 'bg-teal-500/30 border border-teal-400' : 'bg-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-white/70">{idx + 1}.</span>
+                      <span className="text-white">{entry.playerName}</span>
+                    </div>
+                    <span className="font-bold text-white">{entry.score}</span>
+                  </div>
+                );
+              })}
+            </div>
+            
+            <p className="text-teal-200/50 text-sm">Thanks for playing!</p>
           </motion.div>
         )}
       </main>

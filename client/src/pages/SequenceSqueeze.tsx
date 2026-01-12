@@ -10,15 +10,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import confetti from "canvas-confetti";
 import { 
   ArrowLeft, ListOrdered, Play, Pause, Users, QrCode, Timer, 
   Trophy, Plus, Trash2, Edit, Check, X, Loader2, Clock, Zap,
-  ChevronDown, ChevronUp, Sparkles, Crown, RefreshCw
+  ChevronDown, ChevronUp, Sparkles, Crown, RefreshCw, SkipForward,
+  Volume2, VolumeX, Medal, Star
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import type { SequenceQuestion, SequenceSession, SequenceSubmission } from "@shared/schema";
+
+type GameState = "setup" | "waiting" | "animatedReveal" | "playing" | "revealing" | "leaderboard" | "gameComplete" | "results";
+type AnimationStage = "teaser" | "questionDrop" | "optionPulse" | null;
 
 interface PlayerSubmission {
   playerId: string;
@@ -29,14 +35,31 @@ interface PlayerSubmission {
   isCorrect?: boolean;
 }
 
+interface LeaderboardEntry {
+  playerId: string;
+  playerName: string;
+  playerAvatar: string;
+  score: number;
+}
+
+interface WinnerInfo {
+  playerId: string;
+  playerName: string;
+  playerAvatar: string;
+  timeMs: number;
+}
+
 export default function SequenceSqueeze() {
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const [gameState, setGameState] = useState<"setup" | "waiting" | "playing" | "revealing" | "results">("setup");
+  const [gameState, setGameState] = useState<GameState>("setup");
+  const [animationStage, setAnimationStage] = useState<AnimationStage>(null);
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<SequenceQuestion | null>(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(1);
+  const [totalQuestions, setTotalQuestions] = useState(1);
   const [timerSeconds, setTimerSeconds] = useState(15);
   const [endTime, setEndTime] = useState<number | null>(null);
   const [submissions, setSubmissions] = useState<PlayerSubmission[]>([]);
@@ -45,7 +68,11 @@ export default function SequenceSqueeze() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [players, setPlayers] = useState<{ id: string; name: string; avatar?: string }[]>([]);
+  const [winner, setWinner] = useState<WinnerInfo | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [audioEnabled, setAudioEnabled] = useState(true);
   const submissionsRef = useRef<PlayerSubmission[]>([]);
+  const audioRef = useRef<{ [key: string]: HTMLAudioElement }>({});
 
   const { data: questions = [], isLoading: isLoadingQuestions } = useQuery<SequenceQuestion[]>({
     queryKey: ["/api/sequence-squeeze/questions"],
@@ -97,6 +124,28 @@ export default function SequenceSqueeze() {
             avatar: data.playerAvatar 
           }]);
           break;
+        case "sequence:animatedReveal:started":
+          setGameState("animatedReveal");
+          setAnimationStage("teaser");
+          setCurrentQuestionIndex(data.questionIndex || 1);
+          setTotalQuestions(data.totalQuestions || 1);
+          if (data.question) {
+            setCurrentQuestion(prev => prev || data.question);
+          }
+          playAudio("countdown");
+          setTimeout(() => setAnimationStage("questionDrop"), 2000);
+          setTimeout(() => {
+            setAnimationStage("optionPulse");
+            playAudio("whoosh");
+          }, 3000);
+          break;
+        case "sequence:answering:started":
+          setGameState("playing");
+          setAnimationStage(null);
+          if (data.endTime) {
+            setEndTime(data.endTime);
+          }
+          break;
         case "sequence:submission":
           setSubmissions(prev => {
             const newSubmissions = [...prev, data.submission];
@@ -111,10 +160,46 @@ export default function SequenceSqueeze() {
           break;
         case "sequence:reveal:complete":
           setGameState("revealing");
+          playAudio("buzzer");
           if (data.submissions) {
             setSubmissions(data.submissions);
             submissionsRef.current = data.submissions;
           }
+          if (data.winner) {
+            setWinner(data.winner);
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
+          } else {
+            setWinner(null);
+          }
+          if (data.leaderboard) {
+            setLeaderboard(data.leaderboard);
+          }
+          if (data.currentQuestionIndex) {
+            setCurrentQuestionIndex(data.currentQuestionIndex);
+          }
+          if (data.totalQuestions) {
+            setTotalQuestions(data.totalQuestions);
+          }
+          break;
+        case "sequence:leaderboard":
+          setGameState("leaderboard");
+          if (data.leaderboard) {
+            setLeaderboard(data.leaderboard);
+          }
+          break;
+        case "sequence:gameComplete":
+          setGameState("gameComplete");
+          if (data.leaderboard) {
+            setLeaderboard(data.leaderboard);
+          }
+          if (data.globalWinner) {
+            setWinner(data.globalWinner);
+            confetti({ particleCount: 300, spread: 180, origin: { y: 0.4 } });
+          }
+          break;
+        case "sequence:scoresReset":
+          setLeaderboard([]);
+          toast({ title: "Scores reset!" });
           break;
         case "player:left":
           toast({ title: `${data.playerName} left the game` });
@@ -131,13 +216,54 @@ export default function SequenceSqueeze() {
     setWs(socket);
   }, [toast]);
 
-  const startQuestion = (question: SequenceQuestion) => {
+  const audioContextRef = useRef<AudioContext | null>(null);
+  
+  const getAudioContext = useCallback(() => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContext();
+    }
+    if (audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume();
+    }
+    return audioContextRef.current;
+  }, []);
+  
+  const playAudio = useCallback((type: "countdown" | "whoosh" | "buzzer" | "winner") => {
+    if (!audioEnabled) return;
+    try {
+      const ctx = getAudioContext();
+      const frequencies: Record<string, { freqs: number[]; type: OscillatorType; duration: number }> = {
+        countdown: { freqs: [440, 520, 600], type: "sine", duration: 0.1 },
+        whoosh: { freqs: [800, 600, 400, 300], type: "sine", duration: 0.08 },
+        buzzer: { freqs: [300, 200, 150], type: "sawtooth", duration: 0.15 },
+        winner: { freqs: [523, 659, 784, 880, 1047], type: "sine", duration: 0.12 },
+      };
+      const config = frequencies[type] || frequencies.countdown;
+      config.freqs.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = config.type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.15, ctx.currentTime + i * config.duration);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * config.duration + config.duration * 0.9);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + i * config.duration);
+        osc.stop(ctx.currentTime + i * config.duration + config.duration);
+      });
+    } catch {}
+  }, [audioEnabled, getAudioContext]);
+
+  const startQuestion = (question: SequenceQuestion, idx?: number) => {
+    const questionIdx = idx !== undefined ? idx + 1 : currentQuestionIndex;
     setCurrentQuestion(question);
     setSubmissions([]);
     submissionsRef.current = [];
     setTimerSeconds(15);
     setEndTime(null);
-    setGameState("playing");
+    setWinner(null);
+    setCurrentQuestionIndex(questionIdx);
+    setTotalQuestions(questions.length);
 
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ 
@@ -152,6 +278,8 @@ export default function SequenceSqueeze() {
           hint: question.hint,
         },
         correctOrder: question.correctOrder,
+        questionIndex: questionIdx,
+        totalQuestions: questions.length,
       }));
     }
   };
@@ -237,6 +365,17 @@ export default function SequenceSqueeze() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setAudioEnabled(!audioEnabled);
+                if (!audioEnabled) getAudioContext();
+              }}
+              data-testid="button-audio-toggle"
+            >
+              {audioEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5 text-muted-foreground" />}
+            </Button>
             {roomCode && (
               <>
                 <Badge variant="outline" className="gap-1.5 px-3 py-1.5 text-sm font-mono">
@@ -387,7 +526,7 @@ export default function SequenceSqueeze() {
                     key={q.id}
                     variant="outline"
                     className="justify-start h-auto py-3"
-                    onClick={() => startQuestion(q)}
+                    onClick={() => startQuestion(q, idx)}
                     data-testid={`button-start-${q.id}`}
                   >
                     <span className="w-6 h-6 rounded bg-teal-500/20 flex items-center justify-center text-xs font-bold text-teal-600 mr-3">
@@ -401,24 +540,113 @@ export default function SequenceSqueeze() {
           </motion.div>
         )}
 
+        {gameState === "animatedReveal" && currentQuestion && (
+          <AnimatePresence mode="wait">
+            {animationStage === "teaser" && (
+              <motion.div
+                key="teaser"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.2 }}
+                className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-teal-600 via-cyan-600 to-emerald-600"
+              >
+                <div className="text-center text-white">
+                  <motion.div
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 0.5, repeat: Infinity }}
+                  >
+                    <Sparkles className="w-16 h-16 mx-auto mb-4" />
+                  </motion.div>
+                  <h1 className="text-5xl md:text-7xl font-black mb-4">
+                    QUESTION {currentQuestionIndex}/{totalQuestions}
+                  </h1>
+                  <p className="text-2xl md:text-3xl font-bold opacity-90">
+                    PREPARE YOUR FINGERS
+                  </p>
+                </div>
+              </motion.div>
+            )}
+            
+            {animationStage === "questionDrop" && (
+              <motion.div
+                key="questionDrop"
+                initial={{ y: -100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
+              >
+                <motion.h2
+                  initial={{ scale: 0.5 }}
+                  animate={{ scale: 1 }}
+                  className="text-3xl md:text-5xl font-black text-white text-center px-8 max-w-4xl"
+                >
+                  {currentQuestion.question}
+                </motion.h2>
+              </motion.div>
+            )}
+            
+            {animationStage === "optionPulse" && (
+              <motion.div
+                key="optionPulse"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4"
+              >
+                <motion.h2
+                  className="text-2xl md:text-4xl font-bold text-white text-center mb-8 max-w-3xl"
+                >
+                  {currentQuestion.question}
+                </motion.h2>
+                <div className="grid grid-cols-2 gap-4 max-w-2xl w-full">
+                  {["A", "B", "C", "D"].map((letter, i) => {
+                    const option = currentQuestion[`option${letter}` as keyof SequenceQuestion] as string;
+                    return (
+                      <motion.div
+                        key={letter}
+                        initial={{ scale: 0, rotate: -10 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ delay: i * 0.15, type: "spring", stiffness: 300 }}
+                        className="p-6 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl text-white text-center shadow-xl"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-white/20 text-white flex items-center justify-center mx-auto mb-3 text-2xl font-black">
+                          {letter}
+                        </div>
+                        <p className="text-lg font-semibold">{option}</p>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+                <p className="text-white/60 mt-6 text-sm">Get ready to tap...</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
+
         {gameState === "playing" && currentQuestion && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="space-y-6"
           >
-            <div className="flex items-center justify-between">
-              <Badge variant="secondary" className="gap-1">
-                <Users className="w-4 h-4" />
-                {submissions.length} submitted
-              </Badge>
-              <div className="flex items-center gap-2">
-                <Timer className="w-5 h-5 text-orange-500" />
-                <span className={`text-2xl font-mono font-bold ${timerSeconds <= 5 ? 'text-red-500' : 'text-foreground'}`}>
-                  {timerSeconds}s
-                </span>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Badge variant="outline">Q{currentQuestionIndex}/{totalQuestions}</Badge>
+                <Badge variant="secondary" className="gap-1">
+                  <Users className="w-4 h-4" />
+                  {submissions.length} submitted
+                </Badge>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Timer className="w-5 h-5 text-orange-500" />
+                  <span className={`text-3xl font-mono font-bold ${timerSeconds <= 5 ? 'text-red-500 animate-pulse' : 'text-foreground'}`}>
+                    {timerSeconds}s
+                  </span>
+                </div>
               </div>
             </div>
+            
+            <Progress value={((15 - timerSeconds) / 15) * 100} className="h-3 bg-muted" />
 
             <Card className="p-8 text-center bg-gradient-to-br from-card to-muted/50">
               <h2 className="text-3xl font-bold mb-8">{currentQuestion.question}</h2>
@@ -426,15 +654,16 @@ export default function SequenceSqueeze() {
                 {["A", "B", "C", "D"].map((letter) => {
                   const option = currentQuestion[`option${letter}` as keyof SequenceQuestion] as string;
                   return (
-                    <div
+                    <motion.div
                       key={letter}
-                      className="p-6 bg-card rounded-xl border-2 border-border"
+                      whileHover={{ scale: 1.02 }}
+                      className="p-6 bg-card rounded-xl border-2 border-border shadow-lg"
                     >
-                      <div className="w-10 h-10 rounded-full bg-teal-500 text-white flex items-center justify-center mx-auto mb-3 text-xl font-bold">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 text-white flex items-center justify-center mx-auto mb-3 text-xl font-bold shadow-md">
                         {letter}
                       </div>
                       <p className="text-lg font-medium">{option}</p>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
@@ -443,10 +672,25 @@ export default function SequenceSqueeze() {
               )}
             </Card>
 
-            <div className="flex justify-center">
-              <Button size="lg" onClick={revealAnswer} data-testid="button-reveal">
+            <div className="flex justify-center gap-3">
+              <Button size="lg" variant="destructive" onClick={revealAnswer} data-testid="button-reveal">
                 <Zap className="w-5 h-5 mr-2" />
-                Reveal Answer Now
+                Force Reveal Now
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                onClick={() => {
+                  revealAnswer();
+                  const nextIdx = currentQuestionIndex;
+                  if (nextIdx < questions.length) {
+                    setTimeout(() => startQuestion(questions[nextIdx], nextIdx), 3000);
+                  }
+                }}
+                data-testid="button-skip"
+              >
+                <SkipForward className="w-5 h-5 mr-2" />
+                Skip Question
               </Button>
             </div>
           </motion.div>
@@ -458,8 +702,28 @@ export default function SequenceSqueeze() {
             animate={{ opacity: 1, scale: 1 }}
             className="space-y-6"
           >
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold mb-2">Correct Order</h2>
+            {winner && (
+              <motion.div
+                initial={{ scale: 0, rotate: -10 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 200 }}
+                className="text-center py-6 px-8 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 rounded-2xl border-2 border-amber-500/30"
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
+                  transition={{ duration: 0.5, repeat: 3 }}
+                >
+                  <Crown className="w-16 h-16 mx-auto text-amber-500 mb-2" />
+                </motion.div>
+                <h2 className="text-3xl font-black text-amber-600 dark:text-amber-400">FASTEST FINGER!</h2>
+                <p className="text-2xl font-bold mt-2">{winner.playerName}</p>
+                <p className="text-muted-foreground">{(winner.timeMs / 1000).toFixed(2)} seconds</p>
+                <Badge className="mt-2 bg-amber-500">+10 points</Badge>
+              </motion.div>
+            )}
+
+            <div className="text-center">
+              <h2 className="text-xl font-bold mb-2">Correct Order</h2>
               <div className="flex justify-center gap-3 py-4">
                 {(currentQuestion.correctOrder as string[]).map((letter, idx) => {
                   const option = currentQuestion[`option${letter}` as keyof SequenceQuestion] as string;
@@ -468,63 +732,219 @@ export default function SequenceSqueeze() {
                       key={letter}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.3 }}
+                      transition={{ delay: idx * 0.2 }}
                       className="flex flex-col items-center"
                     >
-                      <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center text-2xl font-bold shadow-lg">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center text-xl font-bold shadow-lg">
                         {letter}
                       </div>
-                      <p className="mt-2 text-sm font-medium max-w-24 truncate">{option}</p>
+                      <p className="mt-2 text-xs font-medium max-w-20 truncate">{option}</p>
                     </motion.div>
                   );
                 })}
               </div>
             </div>
 
-            <Card className="p-6">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-amber-500" />
-                Results
-              </h3>
-              {submissions.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">No submissions received</p>
-              ) : (
-                <div className="space-y-2">
-                  {submissions
-                    .sort((a, b) => {
-                      if (a.isCorrect && !b.isCorrect) return -1;
-                      if (!a.isCorrect && b.isCorrect) return 1;
-                      return a.timeMs - b.timeMs;
-                    })
-                    .map((sub, idx) => (
+            <div className="grid md:grid-cols-2 gap-4">
+              <Card className="p-4">
+                <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm">
+                  <Medal className="w-4 h-4 text-amber-500" />
+                  Top 3 Leaderboard
+                </h3>
+                {leaderboard.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-2 text-sm">No scores yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {leaderboard.slice(0, 3).map((entry, idx) => (
                       <div
-                        key={sub.playerId}
-                        className={`flex items-center justify-between p-3 rounded-lg ${
-                          sub.isCorrect ? 'bg-emerald-500/10 border border-emerald-500/30' : 'bg-muted/50'
+                        key={entry.playerId}
+                        className={`flex items-center justify-between p-2 rounded-lg ${
+                          idx === 0 ? 'bg-amber-500/10 border border-amber-500/30' :
+                          idx === 1 ? 'bg-slate-400/10 border border-slate-400/30' :
+                          'bg-orange-600/10 border border-orange-600/30'
                         }`}
                       >
-                        <div className="flex items-center gap-3">
-                          {idx === 0 && sub.isCorrect && (
-                            <Crown className="w-5 h-5 text-amber-500" />
-                          )}
-                          <span className="font-medium">{sub.playerName}</span>
-                          {sub.isCorrect && (
-                            <Badge className="bg-emerald-500">Correct!</Badge>
-                          )}
+                        <div className="flex items-center gap-2">
+                          {idx === 0 && <Star className="w-4 h-4 text-amber-500" />}
+                          {idx === 1 && <Star className="w-4 h-4 text-slate-400" />}
+                          {idx === 2 && <Star className="w-4 h-4 text-orange-600" />}
+                          <span className="font-medium text-sm">{entry.playerName}</span>
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                          {(sub.timeMs / 1000).toFixed(2)}s
-                        </span>
+                        <span className="font-bold text-sm">{entry.score} pts</span>
                       </div>
                     ))}
+                  </div>
+                )}
+              </Card>
+
+              <Card className="p-4">
+                <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm">
+                  <Trophy className="w-4 h-4 text-teal-500" />
+                  Round Results
+                </h3>
+                {submissions.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-2 text-sm">No submissions</p>
+                ) : (
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {submissions
+                      .sort((a, b) => {
+                        if (a.isCorrect && !b.isCorrect) return -1;
+                        if (!a.isCorrect && b.isCorrect) return 1;
+                        return a.timeMs - b.timeMs;
+                      })
+                      .map((sub, idx) => (
+                        <div
+                          key={sub.playerId}
+                          className={`flex items-center justify-between p-2 rounded text-sm ${
+                            sub.isCorrect ? 'bg-emerald-500/10' : 'bg-muted/30'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {idx === 0 && sub.isCorrect && <Crown className="w-3 h-3 text-amber-500" />}
+                            <span className="font-medium">{sub.playerName}</span>
+                            {sub.isCorrect ? (
+                              <Check className="w-3 h-3 text-emerald-500" />
+                            ) : (
+                              <X className="w-3 h-3 text-destructive" />
+                            )}
+                          </div>
+                          <span className="text-muted-foreground text-xs">{(sub.timeMs / 1000).toFixed(2)}s</span>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </Card>
+            </div>
+
+            <div className="flex justify-center gap-3 flex-wrap">
+              <Button onClick={resetGame} data-testid="button-next">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Next Question
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => ws?.send(JSON.stringify({ type: "sequence:host:showLeaderboard" }))}
+                data-testid="button-show-leaderboard"
+              >
+                <Trophy className="w-4 h-4 mr-2" />
+                Full Leaderboard
+              </Button>
+              {currentQuestionIndex >= totalQuestions && (
+                <Button 
+                  variant="secondary"
+                  onClick={() => ws?.send(JSON.stringify({ type: "sequence:host:endGame" }))}
+                  data-testid="button-end-game"
+                >
+                  <Star className="w-4 h-4 mr-2" />
+                  End Game
+                </Button>
+              )}
+            </div>
+          </motion.div>
+        )}
+        
+        {gameState === "leaderboard" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-8"
+          >
+            <Trophy className="w-16 h-16 mx-auto text-amber-500 mb-4" />
+            <h2 className="text-3xl font-bold mb-6">Session Leaderboard</h2>
+            <Card className="max-w-md mx-auto p-6">
+              {leaderboard.length === 0 ? (
+                <p className="text-muted-foreground">No scores yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {leaderboard.map((entry, idx) => (
+                    <motion.div
+                      key={entry.playerId}
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: idx * 0.1 }}
+                      className={`flex items-center justify-between p-3 rounded-lg ${
+                        idx === 0 ? 'bg-amber-500/20 border-2 border-amber-500' :
+                        idx === 1 ? 'bg-slate-400/20 border border-slate-400' :
+                        idx === 2 ? 'bg-orange-600/20 border border-orange-600' :
+                        'bg-muted/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl font-black">{idx + 1}</span>
+                        <span className="font-semibold">{entry.playerName}</span>
+                      </div>
+                      <span className="text-xl font-bold">{entry.score} pts</span>
+                    </motion.div>
+                  ))}
                 </div>
               )}
             </Card>
-
-            <div className="flex justify-center gap-3">
-              <Button variant="outline" onClick={resetGame} data-testid="button-next">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Next Question
+            <div className="mt-6 flex justify-center gap-3">
+              <Button onClick={resetGame} data-testid="button-continue">
+                Continue Playing
+              </Button>
+              <Button 
+                variant="secondary"
+                onClick={() => ws?.send(JSON.stringify({ type: "sequence:host:endGame" }))}
+                data-testid="button-end-game-lb"
+              >
+                End Game
+              </Button>
+            </div>
+          </motion.div>
+        )}
+        
+        {gameState === "gameComplete" && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-12"
+          >
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            >
+              <Trophy className="w-24 h-24 mx-auto text-amber-500 mb-4" />
+            </motion.div>
+            <h1 className="text-4xl font-black mb-2">GAME OVER!</h1>
+            {leaderboard[0] && (
+              <>
+                <h2 className="text-2xl font-bold text-amber-500 mb-1">WINNER</h2>
+                <p className="text-3xl font-black">{leaderboard[0].playerName}</p>
+                <p className="text-xl text-muted-foreground">{leaderboard[0].score} points</p>
+              </>
+            )}
+            <Card className="max-w-md mx-auto mt-8 p-6">
+              <h3 className="font-semibold mb-4">Final Standings</h3>
+              <div className="space-y-2">
+                {leaderboard.map((entry, idx) => (
+                  <div
+                    key={entry.playerId}
+                    className={`flex items-center justify-between p-2 rounded ${
+                      idx === 0 ? 'bg-amber-500/20' : 'bg-muted/30'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold">{idx + 1}.</span>
+                      <span>{entry.playerName}</span>
+                    </div>
+                    <span className="font-bold">{entry.score} pts</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+            <div className="mt-8">
+              <Button 
+                size="lg"
+                onClick={() => {
+                  ws?.send(JSON.stringify({ type: "sequence:host:resetScores" }));
+                  setGameState("waiting");
+                  setLeaderboard([]);
+                }}
+                data-testid="button-new-game"
+              >
+                <RefreshCw className="w-5 h-5 mr-2" />
+                Start New Game
               </Button>
             </div>
           </motion.div>
