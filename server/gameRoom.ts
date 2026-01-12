@@ -31,6 +31,8 @@ interface SequenceSubmission {
   timeMs: number;
 }
 
+type SequenceGameState = "lobby" | "animatedReveal" | "answering" | "result" | "leaderboard" | "gameComplete";
+
 interface SequenceRoundState {
   questionId: number;
   question: any;
@@ -38,8 +40,13 @@ interface SequenceRoundState {
   startTime: number;
   endTime: number;
   revealTimer: NodeJS.Timeout | null;
+  answeringTimer: NodeJS.Timeout | null;
   submissions: Map<string, SequenceSubmission>;
   revealed: boolean;
+  gameState: SequenceGameState;
+  currentQuestionIndex: number;
+  totalQuestions: number;
+  sessionScores: Map<string, number>;
 }
 
 interface GameRoom {
@@ -141,6 +148,7 @@ export function setupWebSocket(server: Server) {
                   currentQuestion: null,
                   currentBoardId: null,
                   currentMode: "board",
+                  sequenceRound: null,
                 };
                 rooms.set(code, room);
                 currentRoom = code;
@@ -178,6 +186,7 @@ export function setupWebSocket(server: Server) {
                       currentQuestion: null,
                       currentBoardId: session.currentBoardId,
                       currentMode: session.currentMode || "board",
+                      sequenceRound: null,
                     };
                     
                     players.forEach(p => {
@@ -257,6 +266,7 @@ export function setupWebSocket(server: Server) {
                       currentQuestion: null,
                       currentBoardId: session.currentBoardId,
                       currentMode: session.currentMode || "board",
+                      sequenceRound: null,
                     };
                     
                     const existingPlayers = await storage.getSessionPlayers(session.id);
@@ -769,13 +779,18 @@ export function setupWebSocket(server: Server) {
                 if (room.sequenceRound?.revealTimer) {
                   clearTimeout(room.sequenceRound.revealTimer);
                 }
+                if (room.sequenceRound?.answeringTimer) {
+                  clearTimeout(room.sequenceRound.answeringTimer);
+                }
                 
-                const now = Date.now();
-                const endTime = now + 15500;
+                const questionIndex = message.questionIndex || 1;
+                const totalQuestions = message.totalQuestions || 1;
+                const existingScores = room.sequenceRound?.sessionScores || new Map<string, number>();
                 
                 const broadcastReveal = () => {
                   if (!room.sequenceRound || room.sequenceRound.revealed) return;
                   room.sequenceRound.revealed = true;
+                  room.sequenceRound.gameState = "result";
                   
                   const subs = Array.from(room.sequenceRound.submissions.values());
                   const correctOrder = room.sequenceRound.correctOrder;
@@ -788,16 +803,40 @@ export function setupWebSocket(server: Server) {
                   const correctSubs = scoredSubs.filter(s => s.isCorrect).sort((a, b) => a.timeMs - b.timeMs);
                   const rankings = correctSubs.map((sub, idx) => ({
                     playerId: sub.playerId,
+                    playerName: sub.playerName,
+                    playerAvatar: sub.playerAvatar,
                     rank: idx + 1,
+                    timeMs: sub.timeMs,
                   }));
+                  
+                  // Award 10 points to fastest correct player
+                  let winner: { playerId: string; playerName: string; playerAvatar: string; timeMs: number } | null = null;
+                  if (rankings.length > 0) {
+                    const fastest = rankings[0];
+                    winner = { playerId: fastest.playerId, playerName: fastest.playerName, playerAvatar: fastest.playerAvatar, timeMs: fastest.timeMs };
+                    const currentScore = room.sequenceRound.sessionScores.get(fastest.playerId) || 0;
+                    room.sequenceRound.sessionScores.set(fastest.playerId, currentScore + 10);
+                  }
+                  
+                  // Build leaderboard from session scores
+                  const leaderboard = Array.from(room.sequenceRound.sessionScores.entries())
+                    .map(([pid, score]) => {
+                      const player = room.players.get(pid);
+                      return { playerId: pid, playerName: player?.name || "Unknown", playerAvatar: player?.avatar || "cat", score };
+                    })
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, 3);
                   
                   room.players.forEach((player) => {
                     if (player.ws && player.ws.readyState === WebSocket.OPEN) {
                       const playerRanking = rankings.find(r => r.playerId === player.id);
+                      const playerScore = room.sequenceRound?.sessionScores.get(player.id) || 0;
                       player.ws.send(JSON.stringify({
                         type: "sequence:reveal",
                         correctOrder,
                         rank: playerRanking?.rank || null,
+                        isWinner: winner?.playerId === player.id,
+                        yourScore: playerScore,
                       }));
                     }
                   });
@@ -808,37 +847,87 @@ export function setupWebSocket(server: Server) {
                       correctOrder,
                       rankings,
                       submissions: scoredSubs,
+                      winner,
+                      leaderboard,
+                      currentQuestionIndex: room.sequenceRound.currentQuestionIndex,
+                      totalQuestions: room.sequenceRound.totalQuestions,
                     }));
                   }
                 };
+                
+                // Animation phase: 4 seconds for drama reveal
+                const animationDuration = 4000;
+                const answeringDuration = 15500;
+                const now = Date.now();
                 
                 room.sequenceRound = {
                   questionId: message.question.id,
                   question: message.question,
                   correctOrder: message.correctOrder,
-                  startTime: now,
-                  endTime,
-                  revealTimer: setTimeout(broadcastReveal, 15500),
+                  startTime: now + animationDuration,
+                  endTime: now + animationDuration + answeringDuration,
+                  revealTimer: null,
+                  answeringTimer: null,
                   submissions: new Map(),
                   revealed: false,
+                  gameState: "animatedReveal",
+                  currentQuestionIndex: questionIndex,
+                  totalQuestions: totalQuestions,
+                  sessionScores: existingScores,
                 };
                 
+                // Notify all players of animated reveal stage
                 room.players.forEach((player) => {
                   if (player.ws && player.ws.readyState === WebSocket.OPEN) {
                     player.ws.send(JSON.stringify({
-                      type: "sequence:question:start",
-                      question: message.question,
-                      endTime,
+                      type: "sequence:animatedReveal",
+                      questionIndex,
+                      totalQuestions,
                     }));
                   }
                 });
                 
+                // Notify host
                 if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
                   room.hostWs.send(JSON.stringify({
-                    type: "sequence:round:started",
-                    endTime,
+                    type: "sequence:animatedReveal:started",
+                    question: message.question,
+                    questionIndex,
+                    totalQuestions,
                   }));
                 }
+                
+                // After animation, start answering phase
+                room.sequenceRound.answeringTimer = setTimeout(() => {
+                  if (!room.sequenceRound) return;
+                  room.sequenceRound.gameState = "answering";
+                  const endTime = Date.now() + answeringDuration;
+                  room.sequenceRound.startTime = Date.now();
+                  room.sequenceRound.endTime = endTime;
+                  
+                  // Notify players to start answering with haptic
+                  room.players.forEach((player) => {
+                    if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+                      player.ws.send(JSON.stringify({
+                        type: "sequence:question:start",
+                        question: message.question,
+                        endTime,
+                        triggerHaptic: true,
+                      }));
+                    }
+                  });
+                  
+                  // Notify host
+                  if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
+                    room.hostWs.send(JSON.stringify({
+                      type: "sequence:answering:started",
+                      endTime,
+                    }));
+                  }
+                  
+                  // Set timer for auto-reveal
+                  room.sequenceRound!.revealTimer = setTimeout(broadcastReveal, answeringDuration);
+                }, animationDuration);
               }
             }
             break;
@@ -889,8 +978,13 @@ export function setupWebSocket(server: Server) {
                   clearTimeout(room.sequenceRound.revealTimer);
                   room.sequenceRound.revealTimer = null;
                 }
+                if (room.sequenceRound.answeringTimer) {
+                  clearTimeout(room.sequenceRound.answeringTimer);
+                  room.sequenceRound.answeringTimer = null;
+                }
                 
                 room.sequenceRound.revealed = true;
+                room.sequenceRound.gameState = "result";
                 
                 const subs = Array.from(room.sequenceRound.submissions.values());
                 const correctOrder = room.sequenceRound.correctOrder;
@@ -903,16 +997,40 @@ export function setupWebSocket(server: Server) {
                 const correctSubs = scoredSubs.filter(s => s.isCorrect).sort((a, b) => a.timeMs - b.timeMs);
                 const rankings = correctSubs.map((sub, idx) => ({
                   playerId: sub.playerId,
+                  playerName: sub.playerName,
+                  playerAvatar: sub.playerAvatar,
                   rank: idx + 1,
+                  timeMs: sub.timeMs,
                 }));
+                
+                // Award 10 points to fastest correct player
+                let winner: { playerId: string; playerName: string; playerAvatar: string; timeMs: number } | null = null;
+                if (rankings.length > 0) {
+                  const fastest = rankings[0];
+                  winner = { playerId: fastest.playerId, playerName: fastest.playerName, playerAvatar: fastest.playerAvatar, timeMs: fastest.timeMs };
+                  const currentScore = room.sequenceRound.sessionScores.get(fastest.playerId) || 0;
+                  room.sequenceRound.sessionScores.set(fastest.playerId, currentScore + 10);
+                }
+                
+                // Build leaderboard from session scores
+                const leaderboard = Array.from(room.sequenceRound.sessionScores.entries())
+                  .map(([pid, score]) => {
+                    const player = room.players.get(pid);
+                    return { playerId: pid, playerName: player?.name || "Unknown", playerAvatar: player?.avatar || "cat", score };
+                  })
+                  .sort((a, b) => b.score - a.score)
+                  .slice(0, 3);
                 
                 room.players.forEach((player) => {
                   if (player.ws && player.ws.readyState === WebSocket.OPEN) {
                     const playerRanking = rankings.find(r => r.playerId === player.id);
+                    const playerScore = room.sequenceRound?.sessionScores.get(player.id) || 0;
                     player.ws.send(JSON.stringify({
                       type: "sequence:reveal",
                       correctOrder,
                       rank: playerRanking?.rank || null,
+                      isWinner: winner?.playerId === player.id,
+                      yourScore: playerScore,
                     }));
                   }
                 });
@@ -923,6 +1041,95 @@ export function setupWebSocket(server: Server) {
                     correctOrder,
                     rankings,
                     submissions: scoredSubs,
+                    winner,
+                    leaderboard,
+                    currentQuestionIndex: room.sequenceRound.currentQuestionIndex,
+                    totalQuestions: room.sequenceRound.totalQuestions,
+                  }));
+                }
+              }
+            }
+            break;
+          }
+
+          case "sequence:host:forceEnd": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room && room.sequenceRound && !room.sequenceRound.revealed) {
+                // Force end the timer and trigger reveal
+                ws.send(JSON.stringify({ type: "sequence:forceEnd:ack" }));
+                // This will be handled by the host:reveal handler
+              }
+            }
+            break;
+          }
+
+          case "sequence:host:showLeaderboard": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room && room.sequenceRound) {
+                room.sequenceRound.gameState = "leaderboard";
+                
+                const leaderboard = Array.from(room.sequenceRound.sessionScores.entries())
+                  .map(([pid, score]) => {
+                    const player = room.players.get(pid);
+                    return { playerId: pid, playerName: player?.name || "Unknown", playerAvatar: player?.avatar || "cat", score };
+                  })
+                  .sort((a, b) => b.score - a.score);
+                
+                room.players.forEach((player) => {
+                  if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+                    const playerScore = room.sequenceRound?.sessionScores.get(player.id) || 0;
+                    player.ws.send(JSON.stringify({
+                      type: "sequence:leaderboard",
+                      leaderboard,
+                      yourScore: playerScore,
+                    }));
+                  }
+                });
+                
+                if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
+                  room.hostWs.send(JSON.stringify({
+                    type: "sequence:leaderboard",
+                    leaderboard,
+                  }));
+                }
+              }
+            }
+            break;
+          }
+
+          case "sequence:host:endGame": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room && room.sequenceRound) {
+                room.sequenceRound.gameState = "gameComplete";
+                
+                const leaderboard = Array.from(room.sequenceRound.sessionScores.entries())
+                  .map(([pid, score]) => {
+                    const player = room.players.get(pid);
+                    return { playerId: pid, playerName: player?.name || "Unknown", playerAvatar: player?.avatar || "cat", score };
+                  })
+                  .sort((a, b) => b.score - a.score);
+                
+                const globalWinner = leaderboard[0] || null;
+                
+                room.players.forEach((player) => {
+                  if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+                    player.ws.send(JSON.stringify({
+                      type: "sequence:gameComplete",
+                      leaderboard,
+                      globalWinner,
+                      yourScore: room.sequenceRound?.sessionScores.get(player.id) || 0,
+                    }));
+                  }
+                });
+                
+                if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
+                  room.hostWs.send(JSON.stringify({
+                    type: "sequence:gameComplete",
+                    leaderboard,
+                    globalWinner,
                   }));
                 }
               }
@@ -937,13 +1144,144 @@ export function setupWebSocket(server: Server) {
                 if (room.sequenceRound?.revealTimer) {
                   clearTimeout(room.sequenceRound.revealTimer);
                 }
+                if (room.sequenceRound?.answeringTimer) {
+                  clearTimeout(room.sequenceRound.answeringTimer);
+                }
+                // Preserve session scores for the next question
+                const existingScores = room.sequenceRound?.sessionScores || new Map<string, number>();
                 room.sequenceRound = null;
+                
+                // Create a minimal state to preserve scores
+                room.sequenceRound = {
+                  questionId: 0,
+                  question: null,
+                  correctOrder: [],
+                  startTime: 0,
+                  endTime: 0,
+                  revealTimer: null,
+                  answeringTimer: null,
+                  submissions: new Map(),
+                  revealed: false,
+                  gameState: "lobby",
+                  currentQuestionIndex: 0,
+                  totalQuestions: 0,
+                  sessionScores: existingScores,
+                };
                 
                 room.players.forEach((player) => {
                   if (player.ws && player.ws.readyState === WebSocket.OPEN) {
                     player.ws.send(JSON.stringify({ type: "sequence:reset" }));
                   }
                 });
+              }
+            }
+            break;
+          }
+
+          case "sequence:host:forceEnd": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room && room.sequenceRound && !room.sequenceRound.revealed) {
+                if (room.sequenceRound.revealTimer) {
+                  clearTimeout(room.sequenceRound.revealTimer);
+                  room.sequenceRound.revealTimer = null;
+                }
+                if (room.sequenceRound.answeringTimer) {
+                  clearTimeout(room.sequenceRound.answeringTimer);
+                  room.sequenceRound.answeringTimer = null;
+                }
+                // Trigger reveal
+                room.sequenceRound.revealed = true;
+                room.sequenceRound.gameState = "result";
+                
+                const subs = Array.from(room.sequenceRound.submissions.values());
+                const correctOrder = room.sequenceRound.correctOrder;
+                
+                const scoredSubs = subs.map(sub => ({
+                  ...sub,
+                  isCorrect: JSON.stringify(sub.sequence) === JSON.stringify(correctOrder),
+                }));
+                
+                const correctSubs = scoredSubs.filter(s => s.isCorrect).sort((a, b) => a.timeMs - b.timeMs);
+                
+                let winner: { playerId: string; playerName: string; playerAvatar: string; timeMs: number } | null = null;
+                if (correctSubs.length > 0) {
+                  const fastest = correctSubs[0];
+                  winner = { playerId: fastest.playerId, playerName: fastest.playerName, playerAvatar: fastest.playerAvatar, timeMs: fastest.timeMs };
+                  const currentScore = room.sequenceRound.sessionScores.get(fastest.playerId) || 0;
+                  room.sequenceRound.sessionScores.set(fastest.playerId, currentScore + 10);
+                }
+                
+                const leaderboard = Array.from(room.sequenceRound.sessionScores.entries())
+                  .map(([pid, score]) => {
+                    const player = room.players.get(pid);
+                    return { playerId: pid, playerName: player?.name || "Unknown", playerAvatar: player?.avatar || "cat", score };
+                  })
+                  .sort((a, b) => b.score - a.score);
+                
+                room.players.forEach((player) => {
+                  if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+                    const playerSub = scoredSubs.find(s => s.playerId === player.id);
+                    const playerRank = correctSubs.findIndex(s => s.playerId === player.id) + 1;
+                    const playerScore = room.sequenceRound?.sessionScores.get(player.id) || 0;
+                    player.ws.send(JSON.stringify({
+                      type: "sequence:reveal",
+                      correctOrder,
+                      isCorrect: playerSub?.isCorrect || false,
+                      rank: playerRank > 0 ? playerRank : undefined,
+                      winner,
+                      leaderboard,
+                      myScore: playerScore,
+                    }));
+                  }
+                });
+                
+                room.hostWs?.send(JSON.stringify({
+                  type: "sequence:reveal:complete",
+                  submissions: scoredSubs,
+                  winner,
+                  leaderboard,
+                  currentQuestionIndex: room.sequenceRound.currentQuestionIndex,
+                  totalQuestions: room.sequenceRound.totalQuestions,
+                }));
+              }
+            }
+            break;
+          }
+
+          case "sequence:host:resetScores": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room) {
+                if (room.sequenceRound) {
+                  room.sequenceRound.sessionScores = new Map();
+                } else {
+                  room.sequenceRound = {
+                    questionId: 0,
+                    question: null,
+                    correctOrder: [],
+                    startTime: 0,
+                    endTime: 0,
+                    revealTimer: null,
+                    answeringTimer: null,
+                    submissions: new Map(),
+                    revealed: false,
+                    gameState: "lobby",
+                    currentQuestionIndex: 0,
+                    totalQuestions: 0,
+                    sessionScores: new Map(),
+                  };
+                }
+                
+                room.players.forEach((player) => {
+                  if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+                    player.ws.send(JSON.stringify({ type: "sequence:scoresReset" }));
+                  }
+                });
+                
+                if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
+                  room.hostWs.send(JSON.stringify({ type: "sequence:scoresReset" }));
+                }
               }
             }
             break;
