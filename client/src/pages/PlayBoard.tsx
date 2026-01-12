@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
-import { Loader2, Settings, Maximize2, Minimize2, ArrowLeft, Sun, Moon, Home } from "lucide-react";
+import { Loader2, Settings, Maximize2, Minimize2, Sun, Moon, Home } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
-import { BuzzkillLogo } from "@/components/BuzzkillLogo";
+import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -177,71 +177,25 @@ export default function PlayBoard() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-hidden">
-      <header className="border-b border-primary/20 bg-card/40 backdrop-blur-xl sticky top-0 z-50">
-        <div className="px-4 py-3 flex items-center justify-between gap-4">
-          <motion.div 
-            className="flex items-center gap-2 sm:gap-4"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
+      <AppHeader
+        title="Buzzkill"
+        subtitle={board.name}
+        backHref="/host/buzzkill"
+        themed={true}
+        showAdminButton={true}
+        rightContent={
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleFullscreen}
+            className="hidden sm:flex text-muted-foreground hover:text-foreground"
+            data-testid="button-fullscreen"
+            aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
           >
-            <Link href="/host/buzzkill">
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="text-primary/80 hover:text-primary hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary"
-                data-testid="button-back-boards"
-                aria-label="Go back to board list"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
-            <BuzzkillLogo size="md" themed={true} />
-            <div className="flex flex-col">
-              <span 
-                className="text-[10px] sm:text-xs font-bold text-muted-foreground tracking-[0.2em] sm:tracking-[0.3em] uppercase"
-              >
-                {board.name}
-              </span>
-              <h1 className="text-lg sm:text-2xl font-black tracking-tight leading-tight text-primary">
-                Buzzkill
-              </h1>
-            </div>
-          </motion.div>
-          <motion.div 
-            className="flex items-center gap-1 sm:gap-2"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-primary/80 hover:text-primary hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary" 
-              onClick={toggleColorMode}
-              data-testid="button-color-mode-game"
-              aria-label={colorMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {colorMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={toggleFullscreen}
-              className="hidden sm:flex text-primary/80 hover:text-primary hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary"
-              data-testid="button-fullscreen"
-              aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-            >
-              {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
-            </Button>
-            <Link href="/admin">
-              <Button variant="ghost" size="icon" className="text-primary/80 hover:text-primary hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary" data-testid="button-admin" aria-label="Go to admin panel">
-                <Settings className="w-5 h-5" />
-              </Button>
-            </Link>
-          </motion.div>
-        </div>
-      </header>
+            {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+          </Button>
+        }
+      />
 
       <main className="flex-1 p-2 sm:p-4 lg:p-6 flex flex-col relative overflow-auto" role="main" aria-label="Game board">
         <ThemeDecorations placement="board" />

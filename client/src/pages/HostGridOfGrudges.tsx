@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Settings, Grid3X3, ArrowLeft, ArrowRight, Users } from "lucide-react";
+import { Loader2, Settings, Grid3X3, ArrowRight, Users } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
-import { BuzzkillLogo } from "@/components/BuzzkillLogo";
+import { AppHeader } from "@/components/AppHeader";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import type { Board } from "@shared/schema";
@@ -20,30 +20,19 @@ export default function HostGridOfGrudges() {
 
   return (
     <div className="min-h-screen gradient-game grid-bg flex flex-col">
-      <header className="border-b border-primary/20 bg-card/60 backdrop-blur-xl sticky top-0 z-50">
-        <div className="px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Link href="/">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" data-testid="button-back">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
-            <BuzzkillLogo size="sm" themed={false} animate={false} />
-            <div className="flex flex-col">
-              <h1 className="text-lg font-bold tracking-tight text-foreground">
-                Buzzkill
-              </h1>
-              <span className="text-xs text-muted-foreground">Select a board to host</span>
-            </div>
-          </div>
+      <AppHeader 
+        title="Buzzkill"
+        subtitle="Select a board"
+        backHref="/"
+        rightContent={
           <Link href="/admin">
             <Button variant="outline" size="sm" className="gap-2" data-testid="button-manage-boards">
               <Settings className="w-4 h-4" />
               Manage Boards
             </Button>
           </Link>
-        </div>
-      </header>
+        }
+      />
 
       <main className="flex-1 p-6 overflow-y-auto">
         <div className="max-w-5xl mx-auto">

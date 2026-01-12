@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Settings, Grid3X3, LogOut, Sun, Moon, ArrowRight, Zap, Trophy, Clock, Lock, Sparkles, PartyPopper, Users, HelpCircle, ChevronRight, Shield, Heart, ListOrdered } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, Zap, Trophy, Clock, Lock, Sparkles, PartyPopper, Users, ChevronRight, Heart, ListOrdered } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
-import { BuzzkillLogo } from "@/components/BuzzkillLogo";
-import { Link, useLocation } from "wouter";
+import { AppHeader } from "@/components/AppHeader";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/hooks/use-auth";
 import LandingPage from "./LandingPage";
 import type { GameType } from "@shared/schema";
@@ -74,8 +73,7 @@ const GAME_CONFIG: Record<string, {
 };
 
 export default function Home() {
-  const { user, isLoading: isAuthLoading, isAuthenticated, logout, isLoggingOut } = useAuth();
-  const { colorMode, toggleColorMode } = useTheme();
+  const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [showGuide, setShowGuide] = useState(false);
 
@@ -126,67 +124,13 @@ export default function Home() {
       {/* Subtle gradient overlay */}
       <div className="fixed inset-0 bg-gradient-to-br from-primary/5 via-transparent to-pink-500/5 pointer-events-none" />
       
-      <header className="border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <BuzzkillLogo size="md" themed={false} />
-            <div className="flex flex-col">
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)' }}>
-                <span className="text-foreground">Holy </span>
-                <span className="text-violet-500">Guac</span>
-                <span className="text-foreground">Amoli</span>
-                <span className="text-pink-500">!</span>
-              </h1>
-              <span className="text-xs text-muted-foreground tracking-wide">Game Host Dashboard</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-muted-foreground hover:text-primary" 
-              onClick={() => setShowGuide(true)}
-              data-testid="button-help"
-              aria-label="How to host"
-            >
-              <HelpCircle className="w-5 h-5" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-muted-foreground hover:text-foreground" 
-              onClick={toggleColorMode}
-              data-testid="button-color-mode"
-              aria-label={colorMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {colorMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </Button>
-            <Link href="/admin">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" data-testid="button-admin" aria-label="Admin settings">
-                <Settings className="w-5 h-5" />
-              </Button>
-            </Link>
-            {user?.role === 'super_admin' && (
-              <Link href="/admin/super">
-                <Button variant="ghost" size="icon" className="text-purple-500 hover:text-purple-400" data-testid="button-super-admin" aria-label="Super admin panel">
-                  <Shield className="w-5 h-5" />
-                </Button>
-              </Link>
-            )}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-muted-foreground hover:text-destructive" 
-              data-testid="button-logout"
-              onClick={() => logout()}
-              disabled={isLoggingOut}
-              aria-label="Log out"
-            >
-              <LogOut className="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
-      </header>
+      <AppHeader 
+        title="Game Host Dashboard"
+        showAdminButton={true}
+        showHelpButton={true}
+        showLogout={true}
+        onHelpClick={() => setShowGuide(true)}
+      />
 
       <main className="flex-1 p-6 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
