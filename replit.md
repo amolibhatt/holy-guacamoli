@@ -45,6 +45,9 @@ Preferred communication style: Simple, everyday language.
 10. **Sync-Stakes (Weekly Stakes)**: Couples can set weekly stakes with curated rewards/penalties. First completer each day earns 1 point; bonus point for 85%+ compatibility. Atomic SQL prevents race conditions. Weekly winner revealed on Sundays.
 
 ### Recent Changes (January 2026)
+- **React Error Boundary**: App-level error boundary catches render crashes and displays recovery UI with reload/try-again options
+- **Global Error Handlers**: Server-side uncaughtException/unhandledRejection handlers with graceful shutdown
+- **WebSocket Error Handling**: Added error handlers to prevent connection crashes from taking down the server
 - **Unified Party Scoreboard**: Scores now persist to the database (gameSessions/sessionPlayers tables) across all games. Both Buzzkill and Sequence Squeeze share the same session, so scores survive disconnects, mode switches, and reconnections. Players can rejoin and see their accumulated scores instantly.
 - **Cross-Game Mode Switch**: Host can switch from Buzzkill to Sequence Squeeze while keeping the same room and players. Scores carry over seamlessly.
 - **Sequence Squeeze Bulk Import**: Pipe-delimited format for bulk question upload with validation
@@ -62,6 +65,9 @@ Preferred communication style: Simple, everyday language.
 - **Bulk Import Validation**: Enhanced with length limits, board-specific point values, max 50 items per import
 - **Analytics Improvements**: Server-side validation, 10% log sampling, event batching
 - **AI Fallback**: Rate-limit detection, empty answer handling with 30% scoring
+
+### Known Security Notes
+- **Express v4 Vulnerabilities**: npm audit shows 3 HIGH severity vulnerabilities in express/qs/body-parser. Express v5 upgrade was attempted but reverted due to breaking changes in path-to-regexp (route syntax like `:param(*)` no longer works). Will revisit when upstream compatibility improves.
 
 ### Planned Features (Schema Ready, UI Pending)
 - **Mirror Mechanic**: Prediction phase for multiple choice questions (questionType, options, prediction fields)
