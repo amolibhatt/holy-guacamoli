@@ -112,20 +112,10 @@ export default function Home() {
     <div className="min-h-screen gradient-game grid-bg flex flex-col">
       <header className="border-b border-primary/20 bg-card/60 backdrop-blur-xl sticky top-0 z-50">
         <div className="px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <motion.div 
-              className="w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br from-emerald-400 via-green-500 to-emerald-600 shadow-lg shadow-emerald-500/30 border border-emerald-400/30"
-              whileHover={{ scale: 1.05, rotate: 5 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <AvocadoIcon className="w-7 h-7" />
-            </motion.div>
-            <div className="flex flex-col">
-              <h1 className="text-xl font-black tracking-tight bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 bg-clip-text text-transparent">
-                Holy GuacAmoli!
-              </h1>
-              <span className="text-xs text-muted-foreground">Game Host Dashboard</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-black tracking-tight text-foreground">
+              Holy <span className="text-primary">Guac</span>Amoli!
+            </h1>
           </div>
           <div className="flex items-center gap-1">
             <Button 
