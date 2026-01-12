@@ -112,7 +112,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F1E5] dark:bg-[#1A2E1C] flex flex-col">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
       {/* Subtle gradient overlay */}
       <div className="fixed inset-0 bg-gradient-to-br from-[#2BB769]/5 via-transparent to-[#FF6B8A]/5 pointer-events-none" />
       
