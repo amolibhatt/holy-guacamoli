@@ -35,29 +35,40 @@ export function SequenceSqueezeAdmin() {
       optionD: string;
       correctOrder: string[];
       hint: string | null;
+      isActive: boolean;
     }) => {
-      return apiRequest("POST", "/api/sequence-squeeze/questions", data);
+      const res = await apiRequest("POST", "/api/sequence-squeeze/questions", data);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to create question");
+      }
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sequence-squeeze/questions"] });
       toast({ title: "Question created!" });
       resetForm();
     },
-    onError: () => {
-      toast({ title: "Failed to create question", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: error.message || "Failed to create question", variant: "destructive" });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest("DELETE", `/api/sequence-squeeze/questions/${id}`);
+      const res = await apiRequest("DELETE", `/api/sequence-squeeze/questions/${id}`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to delete question");
+      }
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sequence-squeeze/questions"] });
       toast({ title: "Question deleted" });
     },
-    onError: () => {
-      toast({ title: "Failed to delete question", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: error.message || "Failed to delete question", variant: "destructive" });
     },
   });
 
@@ -97,6 +108,7 @@ export function SequenceSqueezeAdmin() {
       optionD,
       correctOrder,
       hint: hint || null,
+      isActive: true,
     });
   };
 
@@ -111,7 +123,7 @@ export function SequenceSqueezeAdmin() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6" data-testid="section-sequence-squeeze-admin">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-teal-500/20">

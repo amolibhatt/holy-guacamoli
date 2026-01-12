@@ -1986,24 +1986,52 @@ export async function registerRoutes(
       const userId = req.session.userId!;
       const { question, optionA, optionB, optionC, optionD, correctOrder, hint, isActive } = req.body;
       
-      if (!question || !optionA || !optionB || !optionC || !optionD || !correctOrder) {
-        return res.status(400).json({ message: "Missing required fields" });
+      if (!question || typeof question !== 'string' || question.trim().length === 0) {
+        return res.status(400).json({ message: "Question text is required" });
+      }
+      if (!optionA || typeof optionA !== 'string' || optionA.trim().length === 0) {
+        return res.status(400).json({ message: "Option A is required" });
+      }
+      if (!optionB || typeof optionB !== 'string' || optionB.trim().length === 0) {
+        return res.status(400).json({ message: "Option B is required" });
+      }
+      if (!optionC || typeof optionC !== 'string' || optionC.trim().length === 0) {
+        return res.status(400).json({ message: "Option C is required" });
+      }
+      if (!optionD || typeof optionD !== 'string' || optionD.trim().length === 0) {
+        return res.status(400).json({ message: "Option D is required" });
       }
       
       if (!Array.isArray(correctOrder) || correctOrder.length !== 4) {
         return res.status(400).json({ message: "correctOrder must be an array of 4 letters" });
       }
       
+      const validLetters = new Set(['A', 'B', 'C', 'D']);
+      const orderSet = new Set(correctOrder);
+      if (orderSet.size !== 4 || !correctOrder.every((l: string) => validLetters.has(l))) {
+        return res.status(400).json({ message: "correctOrder must contain exactly A, B, C, D in some order" });
+      }
+      
+      if (question.length > 500) {
+        return res.status(400).json({ message: "Question text must be 500 characters or less" });
+      }
+      if (optionA.length > 200 || optionB.length > 200 || optionC.length > 200 || optionD.length > 200) {
+        return res.status(400).json({ message: "Each option must be 200 characters or less" });
+      }
+      if (hint && hint.length > 200) {
+        return res.status(400).json({ message: "Hint must be 200 characters or less" });
+      }
+      
       const newQuestion = await storage.createSequenceQuestion({
         userId,
-        question,
-        optionA,
-        optionB,
-        optionC,
-        optionD,
+        question: question.trim(),
+        optionA: optionA.trim(),
+        optionB: optionB.trim(),
+        optionC: optionC.trim(),
+        optionD: optionD.trim(),
         correctOrder,
-        hint: hint || null,
-        isActive: isActive !== false,
+        hint: hint?.trim() || null,
+        isActive: isActive === true,
       });
       
       res.status(201).json(newQuestion);
