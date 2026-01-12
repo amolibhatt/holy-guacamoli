@@ -12,7 +12,7 @@ import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, LogOut, Sun, Moon, Layers, Upload, FileText, Eye, BarChart2, Users, Activity } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, LogOut, Sun, Moon, Layers, Upload, FileText, Eye, BarChart2, Users, Activity, Heart, Gamepad2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -83,6 +83,7 @@ export default function Admin() {
   const [bulkPreviewMode, setBulkPreviewMode] = useState(false);
   const [showBoardPreview, setShowBoardPreview] = useState(false);
   const [adminTab, setAdminTab] = useState<"content" | "analytics">("content");
+  const [selectedGameType, setSelectedGameType] = useState<"buzzkill" | "double_dip" | null>(null);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -452,17 +453,42 @@ export default function Admin() {
     <div className="min-h-screen bg-muted/30">
       <div className="sticky top-0 z-50 bg-background border-b border-border px-6 py-4">
         <div className="flex items-center gap-4 max-w-[1600px] mx-auto">
-          <Link href="/">
-            <Button variant="outline" size="sm" className="gap-2" data-testid="button-back-home">
+          {selectedGameType ? (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2" 
+              onClick={() => {
+                setSelectedGameType(null);
+                setSelectedBoardId(null);
+                setSelectedBoardCategoryId(null);
+              }}
+              data-testid="button-back-games"
+            >
               <ArrowLeft className="w-4 h-4" />
-              Back
+              Back to Games
             </Button>
-          </Link>
+          ) : (
+            <Link href="/">
+              <Button variant="outline" size="sm" className="gap-2" data-testid="button-back-home">
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </Button>
+            </Link>
+          )}
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">Quiz Admin</h1>
-            <p className="text-sm text-muted-foreground">Manage your game boards, categories, and questions</p>
+            <h1 className="text-2xl font-bold text-foreground">
+              {selectedGameType === 'buzzkill' ? 'Buzzkill Admin' : selectedGameType === 'double_dip' ? 'Double Dip Admin' : 'Admin Panel'}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {selectedGameType === 'buzzkill' 
+                ? 'Manage your game boards, categories, and questions' 
+                : selectedGameType === 'double_dip'
+                  ? 'Manage your couples game content'
+                  : 'Select a game to manage its content'}
+            </p>
           </div>
-          {selectedBoard && (
+          {selectedGameType === 'buzzkill' && selectedBoard && (
             <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg">
               <Grid3X3 className="w-4 h-4 text-primary" />
               <span className="font-medium text-foreground">{selectedBoard.name}</span>
@@ -482,8 +508,8 @@ export default function Admin() {
               onClick={() => setAdminTab('content')}
               data-testid="button-tab-content"
             >
-              <Grid3X3 className="w-4 h-4" />
-              Content
+              <Gamepad2 className="w-4 h-4" />
+              Games
             </Button>
             <Button
               variant={adminTab === 'analytics' ? 'default' : 'ghost'}
@@ -496,12 +522,6 @@ export default function Admin() {
               Analytics
             </Button>
           </div>
-          <Link href="/admin/games">
-            <Button variant="outline" size="sm" className="gap-2" data-testid="button-manage-games">
-              <Layers className="w-4 h-4" />
-              Games
-            </Button>
-          </Link>
           <Button 
             variant="ghost" 
             size="icon" 
@@ -625,7 +645,87 @@ export default function Admin() {
               </CardContent>
             </Card>
           </div>
-        ) : (
+        ) : selectedGameType === null ? (
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-foreground mb-2">Select a Game to Manage</h2>
+              <p className="text-muted-foreground">Choose which game content you want to create or edit</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <Card 
+                  className="hover-elevate cursor-pointer border-2 border-transparent hover:border-primary/50 transition-all"
+                  onClick={() => setSelectedGameType('buzzkill')}
+                  data-testid="card-game-buzzkill"
+                >
+                  <CardContent className="p-8 text-center">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
+                      <Grid3X3 className="w-10 h-10 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground mb-2">Buzzkill</h3>
+                    <p className="text-muted-foreground text-sm mb-4">
+                      Create trivia boards with categories and point-based questions
+                    </p>
+                    <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Grid3X3 className="w-3 h-3" />
+                        {boards.length} Boards
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Layers className="w-3 h-3" />
+                        Categories & Questions
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Card 
+                  className="hover-elevate cursor-pointer border-2 border-transparent hover:border-pink-500/50 transition-all"
+                  onClick={() => setSelectedGameType('double_dip')}
+                  data-testid="card-game-double-dip"
+                >
+                  <CardContent className="p-8 text-center">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-pink-500/20">
+                      <Heart className="w-10 h-10 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground mb-2">Double Dip</h3>
+                    <p className="text-muted-foreground text-sm mb-4">
+                      Daily prompts and deep questions for couples
+                    </p>
+                    <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Heart className="w-3 h-3" />
+                        Couples Game
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        Daily Prompts
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+            <div className="mt-8 text-center">
+              <Link href="/admin/games">
+                <Button variant="outline" className="gap-2" data-testid="button-manage-game-sessions">
+                  <Layers className="w-4 h-4" />
+                  Manage Game Sessions
+                </Button>
+              </Link>
+              <p className="text-xs text-muted-foreground mt-2">Bundle boards into playable game sessions</p>
+            </div>
+          </div>
+        ) : selectedGameType === 'buzzkill' ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-120px)]">
           <div className="lg:col-span-3 overflow-y-auto">
             <Card className="bg-card border-border shadow-sm">
@@ -1532,6 +1632,22 @@ export default function Admin() {
             </Card>
           </div>
         </div>
+        ) : (
+          <div className="max-w-4xl mx-auto text-center py-12">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-500/20">
+              <Heart className="w-10 h-10 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground mb-2">Double Dip Content</h2>
+            <p className="text-muted-foreground mb-6">
+              Double Dip content is managed through the Relationship Hub.
+            </p>
+            <Link href="/host/double-dip">
+              <Button className="gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600" data-testid="button-go-to-double-dip">
+                <Heart className="w-4 h-4" />
+                Open Relationship Hub
+              </Button>
+            </Link>
+          </div>
         )}
       </main>
     </div>
