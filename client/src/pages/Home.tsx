@@ -180,9 +180,34 @@ export default function Home() {
               </svg>
             </motion.div>
             <div className="flex flex-col">
-              <h1 className="text-2xl font-black tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
-                Holy <span className="text-green-500 dark:text-green-400">Guac</span>Amoli!
-              </h1>
+              <motion.h1 
+                className="text-2xl font-black tracking-tight flex items-baseline gap-0.5"
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
+                <motion.span 
+                  className="text-foreground"
+                  animate={{ rotate: [-2, 2, -2] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  H
+                </motion.span>
+                <span className="text-foreground">oly </span>
+                <motion.span 
+                  className="text-green-500 dark:text-green-400 inline-block"
+                  animate={{ y: [0, -3, 0], scale: [1, 1.05, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  Guac
+                </motion.span>
+                <span className="text-foreground">Amoli</span>
+                <motion.span 
+                  className="text-yellow-500"
+                  animate={{ rotate: [0, 15, 0], scale: [1, 1.2, 1] }}
+                  transition={{ duration: 0.8, repeat: Infinity }}
+                >
+                  !
+                </motion.span>
+              </motion.h1>
               <span className="text-xs text-muted-foreground">Game Host Dashboard</span>
             </div>
           </div>
