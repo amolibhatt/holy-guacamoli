@@ -705,6 +705,7 @@ export function setupWebSocket(server: Server) {
           case "sequence:host:create": {
             const code = generateRoomCode();
             const hostId = message.hostId || randomUUID();
+            const sourceCode = message.sourceCode?.toUpperCase();
             
             const room: GameRoom = {
               code,
@@ -720,10 +721,63 @@ export function setupWebSocket(server: Server) {
               currentMode: "board",
               sequenceRound: null,
             };
+            
+            let importedScores: { playerId: string; playerName: string; playerAvatar: string; score: number }[] = [];
+            let importError: string | null = null;
+            
+            if (sourceCode) {
+              const sourceRoom = rooms.get(sourceCode);
+              if (sourceRoom && sourceRoom.players.size > 0) {
+                sourceRoom.players.forEach((player) => {
+                  importedScores.push({
+                    playerId: player.id,
+                    playerName: player.name,
+                    playerAvatar: player.avatar,
+                    score: player.score,
+                  });
+                });
+                
+                room.sequenceRound = {
+                  questionId: 0,
+                  question: null,
+                  correctOrder: [],
+                  startTime: 0,
+                  endTime: 0,
+                  revealTimer: null,
+                  answeringTimer: null,
+                  submissions: new Map(),
+                  revealed: false,
+                  gameState: "lobby",
+                  currentQuestionIndex: 0,
+                  totalQuestions: 0,
+                  sessionScores: new Map(importedScores.map(p => [p.playerId, p.score])),
+                };
+                
+                sourceRoom.players.forEach((player) => {
+                  if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+                    player.ws.send(JSON.stringify({
+                      type: "sequence:room:switched",
+                      newCode: code,
+                      score: player.score,
+                    }));
+                  }
+                });
+              } else if (!sourceRoom) {
+                importError = "Room not found or expired";
+              } else {
+                importError = "No players in source room";
+              }
+            }
+            
             rooms.set(code, room);
             currentRoom = code;
             isHost = true;
-            ws.send(JSON.stringify({ type: "sequence:room:created", code }));
+            ws.send(JSON.stringify({ 
+              type: "sequence:room:created", 
+              code,
+              importedScores: importedScores.length > 0 ? importedScores : undefined,
+              importError: importError || undefined,
+            }));
             break;
           }
 
