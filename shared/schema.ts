@@ -366,28 +366,6 @@ export const sessionCompletedQuestions = pgTable("session_completed_questions", 
   unique().on(table.sessionId, table.questionId),
 ]);
 
-// Board Player Scores - persistent scores per board (for Buzzkill)
-// Unlike sessions, these persist even after players disconnect
-export const boardPlayerScores = pgTable("board_player_scores", {
-  id: serial("id").primaryKey(),
-  boardId: integer("board_id").notNull(),
-  playerId: text("player_id").notNull(),
-  displayName: text("display_name").notNull(),
-  avatar: text("avatar").notNull().default("cat"),
-  score: integer("score").notNull().default(0),
-  lastSeenAt: timestamp("last_seen_at").notNull().defaultNow(),
-}, (table) => [
-  unique().on(table.boardId, table.playerId),
-  index("idx_board_player_scores_board").on(table.boardId),
-]);
-
-export const boardPlayerScoresRelations = relations(boardPlayerScores, ({ one }) => ({
-  board: one(boards, {
-    fields: [boardPlayerScores.boardId],
-    references: [boards.id],
-  }),
-}));
-
 export const gameSessionsRelations = relations(gameSessions, ({ one, many }) => ({
   game: one(games, {
     fields: [gameSessions.gameId],
@@ -552,7 +530,6 @@ export const insertGameDeckSchema = createInsertSchema(gameDecks).omit({ id: tru
 export const insertGameSessionSchema = createInsertSchema(gameSessions).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertSessionPlayerSchema = createInsertSchema(sessionPlayers).omit({ id: true, joinedAt: true, lastSeenAt: true });
 export const insertSessionCompletedQuestionSchema = createInsertSchema(sessionCompletedQuestions).omit({ id: true, completedAt: true });
-export const insertBoardPlayerScoreSchema = createInsertSchema(boardPlayerScores).omit({ id: true, lastSeenAt: true });
 export const insertGameTypeSchema = createInsertSchema(gameTypes).omit({ id: true, createdAt: true });
 export const insertDoubleDipPairSchema = createInsertSchema(doubleDipPairs).omit({ id: true, createdAt: true });
 export const insertDoubleDipQuestionSchema = createInsertSchema(doubleDipQuestions).omit({ id: true, createdAt: true });
@@ -579,7 +556,6 @@ export type GameDeck = typeof gameDecks.$inferSelect;
 export type GameSession = typeof gameSessions.$inferSelect;
 export type SessionPlayer = typeof sessionPlayers.$inferSelect;
 export type SessionCompletedQuestion = typeof sessionCompletedQuestions.$inferSelect;
-export type BoardPlayerScore = typeof boardPlayerScores.$inferSelect;
 export type GameType = typeof gameTypes.$inferSelect;
 export type DoubleDipPair = typeof doubleDipPairs.$inferSelect;
 export type DoubleDipQuestion = typeof doubleDipQuestions.$inferSelect;
@@ -602,7 +578,6 @@ export type InsertGameDeck = z.infer<typeof insertGameDeckSchema>;
 export type InsertGameSession = z.infer<typeof insertGameSessionSchema>;
 export type InsertSessionPlayer = z.infer<typeof insertSessionPlayerSchema>;
 export type InsertSessionCompletedQuestion = z.infer<typeof insertSessionCompletedQuestionSchema>;
-export type InsertBoardPlayerScore = z.infer<typeof insertBoardPlayerScoreSchema>;
 export type InsertGameType = z.infer<typeof insertGameTypeSchema>;
 export type InsertDoubleDipPair = z.infer<typeof insertDoubleDipPairSchema>;
 export type InsertDoubleDipQuestion = z.infer<typeof insertDoubleDipQuestionSchema>;
