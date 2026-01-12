@@ -45,21 +45,21 @@ const GAME_CONFIG: Record<string, {
 }> = {
   grid_of_grudges: {
     icon: Grid3X3,
-    gradient: "from-[#2BB769] via-[#4AB2FF] to-[#2BB769]",
-    shadowColor: "shadow-[#2BB769]/30",
-    hoverBorder: "hover:border-[#2BB769]/50 hover:shadow-[#2BB769]/20",
+    gradient: "from-violet-500 via-purple-500 to-indigo-500",
+    shadowColor: "shadow-purple-500/30",
+    hoverBorder: "hover:border-purple-400/50 hover:shadow-purple-500/20",
     route: "/host/buzzkill",
     playerCount: "Multiplayer",
-    accentColor: "#2BB769",
+    accentColor: "#8B5CF6",
   },
   double_dip: {
     icon: Heart,
-    gradient: "from-[#FF6B8A] via-[#FFE66D] to-[#FF6B8A]",
-    shadowColor: "shadow-[#FF6B8A]/30",
-    hoverBorder: "hover:border-[#FF6B8A]/50 hover:shadow-[#FF6B8A]/20",
+    gradient: "from-rose-400 via-pink-500 to-fuchsia-500",
+    shadowColor: "shadow-pink-500/30",
+    hoverBorder: "hover:border-pink-400/50 hover:shadow-pink-500/20",
     route: "/host/double-dip",
     playerCount: "2 Players",
-    accentColor: "#FF6B8A",
+    accentColor: "#EC4899",
   },
 };
 
@@ -112,11 +112,11 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Subtle gradient overlay */}
-      <div className="fixed inset-0 bg-gradient-to-br from-[#2BB769]/5 via-transparent to-[#FF6B8A]/5 pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-br from-primary/5 via-transparent to-pink-500/5 pointer-events-none" />
       
-      <header className="border-b border-[#2BB769]/20 bg-white/70 dark:bg-[#1A2E1C]/80 backdrop-blur-xl sticky top-0 z-50">
+      <header className="border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             {/* Party Avocado Mascot */}
@@ -128,60 +128,60 @@ export default function Home() {
               transition={{ y: { duration: 3, repeat: Infinity, ease: "easeInOut" } }}
             >
               {/* Glow effect */}
-              <div className="absolute inset-0 bg-[#2BB769] rounded-full blur-xl opacity-30 scale-110" />
+              <div className="absolute inset-0 bg-primary rounded-full blur-xl opacity-30 scale-110" />
               <svg viewBox="0 0 64 72" className="w-12 h-12 relative z-10 drop-shadow-lg">
                 {/* Avocado body */}
-                <path d="M32 18 C18 18 8 32 8 50 C8 68 18 72 32 72 C46 72 56 68 56 50 C56 32 46 18 32 18Z" fill="url(#avoSkinFiesta)" />
-                <ellipse cx="32" cy="52" rx="18" ry="17" fill="#F7F1E5" />
-                <circle cx="32" cy="56" r="10" fill="url(#avoPitFiesta)" />
+                <path d="M32 18 C18 18 8 32 8 50 C8 68 18 72 32 72 C46 72 56 68 56 50 C56 32 46 18 32 18Z" fill="url(#avoSkinHome)" />
+                <ellipse cx="32" cy="52" rx="18" ry="17" fill="#FFF8E1" />
+                <circle cx="32" cy="56" r="10" fill="url(#avoPitHome)" />
                 <ellipse cx="28" cy="53" rx="3.5" ry="4" fill="#E8C9A0" opacity="0.4" />
                 {/* Eyes */}
-                <circle cx="24" cy="44" r="4" fill="#1A2E1C" />
-                <circle cx="40" cy="44" r="4" fill="#1A2E1C" />
+                <circle cx="24" cy="44" r="4" fill="#1A1A2E" />
+                <circle cx="40" cy="44" r="4" fill="#1A1A2E" />
                 <circle cx="25.5" cy="42.5" r="1.5" fill="white" />
                 <circle cx="41.5" cy="42.5" r="1.5" fill="white" />
                 {/* Big smile */}
-                <path d="M24 52 Q32 60 40 52" stroke="#1A2E1C" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+                <path d="M24 52 Q32 60 40 52" stroke="#1A1A2E" strokeWidth="2.5" strokeLinecap="round" fill="none" />
                 {/* Rosy cheeks */}
-                <circle cx="18" cy="50" r="4" fill="#FF6B8A" opacity="0.5" />
-                <circle cx="46" cy="50" r="4" fill="#FF6B8A" opacity="0.5" />
+                <circle cx="18" cy="50" r="4" fill="#EC4899" opacity="0.5" />
+                <circle cx="46" cy="50" r="4" fill="#EC4899" opacity="0.5" />
                 {/* Party hat */}
-                <path d="M20 18 L32 0 L44 18" fill="url(#partyHatFiesta)" />
-                <circle cx="32" cy="0" r="4" fill="#FFE66D" />
-                <circle cx="32" cy="0" r="2" fill="#FF6B8A" />
+                <path d="M20 18 L32 0 L44 18" fill="url(#partyHatHome)" />
+                <circle cx="32" cy="0" r="4" fill="#FBBF24" />
+                <circle cx="32" cy="0" r="2" fill="#EC4899" />
                 {/* Hat stripes */}
                 <line x1="26" y1="10" x2="26" y2="15" stroke="white" strokeWidth="2" opacity="0.8" />
                 <line x1="32" y1="6" x2="32" y2="12" stroke="white" strokeWidth="2" opacity="0.8" />
                 <line x1="38" y1="10" x2="38" y2="15" stroke="white" strokeWidth="2" opacity="0.8" />
                 <defs>
-                  <linearGradient id="avoSkinFiesta" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#2BB769" />
-                    <stop offset="100%" stopColor="#1A8F4A" />
+                  <linearGradient id="avoSkinHome" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#22C55E" />
+                    <stop offset="100%" stopColor="#16A34A" />
                   </linearGradient>
-                  <linearGradient id="avoPitFiesta" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#C9A66B" />
-                    <stop offset="100%" stopColor="#8B6914" />
+                  <linearGradient id="avoPitHome" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#D4A574" />
+                    <stop offset="100%" stopColor="#8B5A2B" />
                   </linearGradient>
-                  <linearGradient id="partyHatFiesta" x1="0%" y1="100%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#FF6B8A" />
-                    <stop offset="50%" stopColor="#FFE66D" />
-                    <stop offset="100%" stopColor="#4AB2FF" />
+                  <linearGradient id="partyHatHome" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#EC4899" />
+                    <stop offset="50%" stopColor="#FBBF24" />
+                    <stop offset="100%" stopColor="#8B5CF6" />
                   </linearGradient>
                 </defs>
               </svg>
               {/* Floating confetti */}
               <motion.div 
-                className="absolute -top-1 -left-2 w-2 h-2 rounded-full bg-[#FF6B8A]"
+                className="absolute -top-1 -left-2 w-2 h-2 rounded-full bg-pink-500"
                 animate={{ y: [0, -8, 0], opacity: [0.6, 1, 0.6], rotate: [0, 180, 360] }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
               <motion.div 
-                className="absolute -top-2 -right-1 w-1.5 h-1.5 rounded-full bg-[#4AB2FF]"
+                className="absolute -top-2 -right-1 w-1.5 h-1.5 rounded-full bg-violet-500"
                 animate={{ y: [0, -6, 0], opacity: [0.5, 1, 0.5] }}
                 transition={{ duration: 1.8, repeat: Infinity, delay: 0.3 }}
               />
               <motion.div 
-                className="absolute top-1 -right-3 w-2 h-2 rounded-full bg-[#FFE66D]"
+                className="absolute top-1 -right-3 w-2 h-2 rounded-full bg-amber-400"
                 animate={{ y: [0, -5, 0], rotate: [0, -180, -360] }}
                 transition={{ duration: 2.2, repeat: Infinity, delay: 0.6 }}
               />
@@ -190,10 +190,10 @@ export default function Home() {
             {/* Logo Text */}
             <div className="flex flex-col">
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)' }}>
-                <span className="text-[#1A2E1C] dark:text-white">Holy </span>
-                <span className="text-[#2BB769]">Guac</span>
-                <span className="text-[#1A2E1C] dark:text-white">Amoli</span>
-                <span className="text-[#FF6B8A]">!</span>
+                <span className="text-foreground">Holy </span>
+                <span className="text-green-500">Guac</span>
+                <span className="text-foreground">Amoli</span>
+                <span className="text-pink-500">!</span>
               </h1>
               <span className="text-xs text-muted-foreground tracking-wide">Game Host Dashboard</span>
             </div>
@@ -254,23 +254,23 @@ export default function Home() {
             className="text-center mb-10"
           >
             <motion.div 
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#2BB769]/10 via-[#4AB2FF]/10 to-[#FF6B8A]/10 border border-[#2BB769]/20 mb-6"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/10 border border-primary/20 mb-6"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1 }}
             >
               <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 2, repeat: Infinity }}>
-                <PartyPopper className="w-5 h-5 text-[#FF6B8A]" />
+                <PartyPopper className="w-5 h-5 text-pink-500" />
               </motion.div>
-              <span className="text-sm font-semibold text-[#1A2E1C] dark:text-white">Welcome back, <span className="text-[#2BB769]">{user?.firstName || 'Host'}</span>!</span>
+              <span className="text-sm font-semibold text-foreground">Welcome back, <span className="text-primary">{user?.firstName || 'Host'}</span>!</span>
               <motion.div animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }} transition={{ duration: 3, repeat: Infinity }}>
-                <Sparkles className="w-5 h-5 text-[#FFE66D]" />
+                <Sparkles className="w-5 h-5 text-amber-400" />
               </motion.div>
             </motion.div>
             
             <h2 className="text-4xl md:text-5xl font-black mb-3">
-              <span className="text-[#1A2E1C] dark:text-white">Choose Your </span>
-              <span className="bg-gradient-to-r from-[#2BB769] via-[#4AB2FF] to-[#FF6B8A] bg-clip-text text-transparent">Game</span>
+              <span className="text-foreground">Choose Your </span>
+              <span className="bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">Game</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-md mx-auto">
               Pick a game mode and let the fiesta begin
@@ -319,10 +319,10 @@ export default function Home() {
                     whileHover={isComingSoon ? {} : { scale: 1.02, y: -4 }}
                     whileTap={isComingSoon ? {} : { scale: 0.98 }}
                     disabled={isComingSoon}
-                    className={`relative flex flex-col p-8 bg-white dark:bg-[#1A2E1C]/60 border-2 rounded-2xl text-left transition-all group overflow-hidden ${
+                    className={`relative flex flex-col p-8 bg-card border-2 rounded-2xl text-left transition-all group overflow-hidden ${
                       isComingSoon 
                         ? 'opacity-60 cursor-not-allowed border-border' 
-                        : `hover:shadow-2xl border-[#2BB769]/20 ${config.hoverBorder}`
+                        : `hover:shadow-2xl border-border ${config.hoverBorder}`
                     }`}
                     data-testid={`button-game-${game.slug}`}
                   >
