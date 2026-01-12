@@ -72,7 +72,6 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
   const [showQR, setShowQR] = useState(false);
   const [copied, setCopied] = useState(false);
   const [justReset, setJustReset] = useState(false);
-  const [justSynced, setJustSynced] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -252,14 +251,6 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
     }
   }, []);
 
-  const syncPlayers = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: "host:sync" }));
-      setJustSynced(true);
-      setTimeout(() => setJustSynced(false), 1500);
-    }
-  }, []);
-
   const createNewRoom = useCallback(() => {
     localStorage.removeItem("buzzer-room-code");
     setRoomCode(null);
@@ -420,18 +411,6 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
             >
               {justReset ? <Check className="w-4 h-4" /> : <RotateCcw className="w-4 h-4" />}
               {justReset && <span className="ml-1 text-xs">Done</span>}
-            </Button>
-            <Button
-              size="sm"
-              variant={justSynced ? "default" : "outline"}
-              onClick={syncPlayers}
-              title="Re-sync all players"
-              className={`focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all ${justSynced ? 'bg-primary text-primary-foreground' : ''}`}
-              data-testid="button-sync-players"
-              aria-label="Re-sync all players"
-            >
-              {justSynced ? <Check className="w-4 h-4" /> : <RefreshCw className="w-4 h-4" />}
-              {justSynced && <span className="ml-1 text-xs">Synced</span>}
             </Button>
             <Button
               size="sm"
