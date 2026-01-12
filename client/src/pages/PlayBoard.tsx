@@ -195,20 +195,31 @@ export default function PlayBoard() {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <div className="relative hidden sm:block">
+            <motion.div 
+              className="relative hidden sm:block"
+              animate={{ 
+                rotate: [0, 3, 0, -3, 0],
+                scale: [1, 1.02, 1]
+              }}
+              transition={{ 
+                duration: 4, 
+                repeat: Infinity, 
+                ease: "easeInOut" 
+              }}
+            >
               <div 
-                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center bg-card border border-border"
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center gradient-header shadow-lg"
               >
-                <AvocadoIcon className="w-6 h-6 sm:w-8 sm:h-8 drop-shadow-lg" />
+                <ThemeDecorations placement="header" />
               </div>
-            </div>
+            </motion.div>
             <div className="flex flex-col">
               <span 
                 className="text-[10px] sm:text-xs font-bold text-muted-foreground tracking-[0.2em] sm:tracking-[0.3em] uppercase"
               >
                 {board.name}
               </span>
-              <h1 className="text-lg sm:text-2xl font-black tracking-tight leading-tight text-foreground">
+              <h1 className="text-lg sm:text-2xl font-black tracking-tight leading-tight text-primary">
                 Buzzkill
               </h1>
             </div>
