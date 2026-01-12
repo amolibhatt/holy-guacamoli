@@ -28,6 +28,7 @@ const THEME_LABELS: Record<ThemeName, string> = {
   sports: 'Sports',
   ocean: 'Ocean',
   neon: 'Neon',
+  football: 'Football',
 };
 
 const ALL_POINT_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
@@ -35,7 +36,7 @@ const ALL_POINT_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 export default function Admin() {
   const { toast } = useToast();
   const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
-  const { colorMode, toggleColorMode } = useTheme();
+  const { colorMode, toggleColorMode, setTheme } = useTheme();
   const [, setLocation] = useLocation();
   
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
@@ -824,7 +825,13 @@ export default function Admin() {
                             ? 'bg-primary/20 border-2 border-primary'
                             : 'bg-muted/20 border border-border hover:bg-muted/30'
                         }`}
-                        onClick={() => { if (!isEditing) { setSelectedBoardId(board.id); setSelectedBoardCategoryId(null); } }}
+                        onClick={() => { 
+                          if (!isEditing) { 
+                            setSelectedBoardId(board.id); 
+                            setSelectedBoardCategoryId(null); 
+                            if (board.theme) setTheme(board.theme as ThemeName);
+                          } 
+                        }}
                         data-testid={`board-item-${board.id}`}
                       >
                         {isEditing ? (
@@ -980,7 +987,10 @@ export default function Admin() {
                         <span className="text-xs text-muted-foreground">Theme:</span>
                         <Select
                           value={selectedBoard?.theme || 'birthday'}
-                          onValueChange={(value) => updateBoardMutation.mutate({ id: selectedBoardId!, theme: value })}
+                          onValueChange={(value) => {
+                            setTheme(value as ThemeName);
+                            updateBoardMutation.mutate({ id: selectedBoardId!, theme: value });
+                          }}
                         >
                           <SelectTrigger className="h-7 w-28 text-xs" data-testid="select-board-theme">
                             <SelectValue />
