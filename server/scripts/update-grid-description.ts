@@ -2,19 +2,20 @@ import { db } from "../db";
 import { gameTypes } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
-async function updateGridOfGrudgesDisplayName() {
-  console.log("Updating Grid of Grudges displayName to Buzzkill...");
+// Legacy script - no longer needed as slug is now "buzzkill"
+async function updateBuzzkillDisplayName() {
+  console.log("Updating Buzzkill display name...");
   
   await db
     .update(gameTypes)
     .set({ displayName: "Buzzkill" })
-    .where(eq(gameTypes.slug, "grid_of_grudges"));
+    .where(eq(gameTypes.slug, "buzzkill"));
   
   console.log("Display name updated successfully!");
   process.exit(0);
 }
 
-updateGridOfGrudgesDisplayName().catch((err) => {
+updateBuzzkillDisplayName().catch((err) => {
   console.error("Failed to update display name:", err);
   process.exit(1);
 });

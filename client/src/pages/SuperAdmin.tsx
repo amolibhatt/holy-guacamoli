@@ -347,13 +347,13 @@ export default function SuperAdmin() {
                             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                               <div className="flex items-start gap-4">
                                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                                  gameType.slug === 'grid_of_grudges' 
+                                  gameType.slug === 'buzzkill' 
                                     ? 'bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-500' 
                                     : gameType.slug === 'sequence_squeeze'
                                       ? 'bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500'
                                       : 'bg-gradient-to-br from-rose-400 via-pink-500 to-fuchsia-500'
                                 }`}>
-                                  {gameType.slug === 'grid_of_grudges' ? (
+                                  {gameType.slug === 'buzzkill' ? (
                                     <Grid3X3 className="w-6 h-6 text-white" />
                                   ) : gameType.slug === 'sequence_squeeze' ? (
                                     <ListOrdered className="w-6 h-6 text-white" />
