@@ -165,6 +165,47 @@ export const doubleDipWeeklyStakes = pgTable("double_dip_weekly_stakes", {
   index("idx_weekly_stakes_pair").on(table.pairId),
 ]);
 
+// Sequence Squeeze Game Tables
+export const sequenceQuestions = pgTable("sequence_questions", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id"),
+  question: text("question").notNull(),
+  optionA: text("option_a").notNull(),
+  optionB: text("option_b").notNull(),
+  optionC: text("option_c").notNull(),
+  optionD: text("option_d").notNull(),
+  correctOrder: jsonb("correct_order").$type<string[]>().notNull(), // e.g. ["C", "D", "B", "A"]
+  hint: text("hint"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const sequenceSessions = pgTable("sequence_sessions", {
+  id: serial("id").primaryKey(),
+  hostId: text("host_id").notNull(),
+  roomCode: text("room_code").notNull().unique(),
+  questionId: integer("question_id"),
+  status: text("status").notNull().$type<"waiting" | "playing" | "revealing" | "finished">().default("waiting"),
+  startedAt: timestamp("started_at"),
+  revealAt: timestamp("reveal_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const sequenceSubmissions = pgTable("sequence_submissions", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull(),
+  playerId: text("player_id").notNull(),
+  playerName: text("player_name").notNull(),
+  playerAvatar: text("player_avatar"),
+  sequence: jsonb("sequence").$type<string[]>().notNull(), // e.g. ["A", "C", "B", "D"]
+  submittedAt: timestamp("submitted_at").notNull().defaultNow(),
+  timeMs: integer("time_ms").notNull(), // milliseconds from question start
+  isCorrect: boolean("is_correct"),
+}, (table) => [
+  unique().on(table.sessionId, table.playerId),
+  index("idx_submissions_session").on(table.sessionId),
+]);
+
 // Board visibility - controls who can see/use the board
 export const BOARD_VISIBILITIES = ["private", "tenant", "public"] as const;
 export type BoardVisibility = typeof BOARD_VISIBILITIES[number];
@@ -498,6 +539,9 @@ export const insertDoubleDipReactionSchema = createInsertSchema(doubleDipReactio
 export const insertDoubleDipMilestoneSchema = createInsertSchema(doubleDipMilestones).omit({ id: true, createdAt: true });
 export const insertDoubleDipFavoriteSchema = createInsertSchema(doubleDipFavorites).omit({ id: true, createdAt: true });
 export const insertDoubleDipWeeklyStakeSchema = createInsertSchema(doubleDipWeeklyStakes).omit({ id: true, createdAt: true });
+export const insertSequenceQuestionSchema = createInsertSchema(sequenceQuestions).omit({ id: true, createdAt: true });
+export const insertSequenceSessionSchema = createInsertSchema(sequenceSessions).omit({ id: true, createdAt: true });
+export const insertSequenceSubmissionSchema = createInsertSchema(sequenceSubmissions).omit({ id: true, submittedAt: true });
 
 export type Board = typeof boards.$inferSelect;
 export type Category = typeof categories.$inferSelect;
@@ -542,6 +586,12 @@ export type InsertDoubleDipAnswer = z.infer<typeof insertDoubleDipAnswerSchema>;
 export type InsertDoubleDipReaction = z.infer<typeof insertDoubleDipReactionSchema>;
 export type InsertDoubleDipMilestone = z.infer<typeof insertDoubleDipMilestoneSchema>;
 export type InsertDoubleDipFavorite = z.infer<typeof insertDoubleDipFavoriteSchema>;
+export type SequenceQuestion = typeof sequenceQuestions.$inferSelect;
+export type SequenceSession = typeof sequenceSessions.$inferSelect;
+export type SequenceSubmission = typeof sequenceSubmissions.$inferSelect;
+export type InsertSequenceQuestion = z.infer<typeof insertSequenceQuestionSchema>;
+export type InsertSequenceSession = z.infer<typeof insertSequenceSessionSchema>;
+export type InsertSequenceSubmission = z.infer<typeof insertSequenceSubmissionSchema>;
 
 export type BoardCategoryWithCategory = BoardCategory & { category: Category };
 export type BoardCategoryWithCount = BoardCategoryWithCategory & { questionCount: number; position: number };
