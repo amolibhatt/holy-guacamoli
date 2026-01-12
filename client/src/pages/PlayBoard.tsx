@@ -209,7 +209,7 @@ export default function PlayBoard() {
                 {board.name}
               </span>
               <h1 className="text-lg sm:text-2xl font-black tracking-tight leading-tight text-foreground">
-                Grid of Grudges
+                Buzzkill
               </h1>
             </div>
           </motion.div>

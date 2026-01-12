@@ -14,7 +14,7 @@ import { motion } from "framer-motion";
 const GUIDE_STEPS = [
   {
     title: "Pick a Game",
-    description: "Choose from available game modes like Grid of Grudges or Double Dip",
+    description: "Choose from available game modes like Buzzkill or Double Dip",
     icon: Grid3X3,
   },
   {
