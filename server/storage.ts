@@ -928,7 +928,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateGameType(id: number, data: Partial<InsertGameType>): Promise<GameType | undefined> {
-    const [updated] = await db.update(gameTypes).set(data).where(eq(gameTypes.id, id)).returning();
+    const [updated] = await db.update(gameTypes).set(data as any).where(eq(gameTypes.id, id)).returning();
     return updated;
   }
 
@@ -1156,6 +1156,7 @@ export class DatabaseStorage implements IStorage {
           displayName: "Buzzkill",
           description: "Race the clock, decode the clues, and claim the grid.",
           icon: "grid",
+          status: "active",
           hostEnabled: true,
           playerEnabled: true,
           sortOrder: 1,
@@ -1165,6 +1166,7 @@ export class DatabaseStorage implements IStorage {
           displayName: "Double Dip",
           description: "Deep dives and daily drives into the mind of your favorite person.",
           icon: "heart",
+          status: "active",
           hostEnabled: true,
           playerEnabled: true,
           sortOrder: 2,
@@ -1172,6 +1174,16 @@ export class DatabaseStorage implements IStorage {
       ]);
       console.log("Game types seeded successfully.");
     }
+  }
+
+  // Master Bank - global boards
+  async getGlobalBoards(): Promise<Board[]> {
+    return await db.select().from(boards).where(eq(boards.isGlobal, true));
+  }
+
+  async setGlobalBoard(boardId: number, isGlobal: boolean): Promise<Board | undefined> {
+    const [updated] = await db.update(boards).set({ isGlobal }).where(eq(boards.id, boardId)).returning();
+    return updated;
   }
 }
 

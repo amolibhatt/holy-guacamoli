@@ -1,0 +1,82 @@
+This table is designed as a Technical Specification for your Replit Agent. It clearly defines the hierarchy, permissions, and logic required to build the Holy GuacAmoli! management system.
+
+Holy GuacAmoli! Admin Hierarchy & Logic
+Role	Responsibility	Key Features	Primary Workflow
+Super Admin (Amoli)	Global Controller (God Mode)	• Global Game Toggle: Enable/Disable modes (Buzzkill, Double Dip, etc.).<br>• Coming Soon Logic: Toggled-off games show as "Coming Soon" on the public homepage.<br>• Master Question Bank: Create/Edit/Delete global boards and AI prompts.<br>• Global Analytics: View total users, peak times, and global "Sync" trends.<br>• User Management: Master list of every user and tenant in the system.<br>• Tenant Management: Create and authorize new "Admin" (Tenant) accounts.	Launching a Mode: Amoli finishes a game 
+→
+→
+ Toggles "Active" 
+→
+→
+ Game appears on homepage. <br>Content Update: Amoli edits a global question 
+→
+→
+ Updates for all users instantly.
+Admin (Tenant/Host)	Local Manager (Group Mode)	• Tenant Dashboard: View only users/stats belonging to their specific group/link.<br>• Custom Game Manager: Create private "Buzzkill" boards for their group only.<br>• Local Settings: Adjust timers, lobby privacy, and active pack selection for their group.<br>• Member Stats: Track the "Sync Maps" and scores of their specific users.<br>• Lobby Controls: Start/Stop games, kick players, and manage room codes.	Private Event: Admin logs in 
+→
+→
+ Creates "Office Trivia" board 
+→
+→
+ Invites team 
+→
+→
+ Monitors live scores on their dashboard.
+System Workflows & Logic (Instructions for Replit)
+1. The "Coming Soon" Toggle Logic
+
+Database Field: games.is_active (Boolean).
+
+Frontend Logic:
+
+if (is_active === true): Render high-energy "PLAY NOW" card with full navigation.
+
+if (is_active === false): Render greyed-out "COMING SOON" card; disable click events.
+
+Super Admin Control: A dashboard with checkboxes for every game ID to flip this boolean.
+
+2. Multi-Tenancy (Data Privacy) Logic
+
+Database Association: Every User and Group Board must have a tenant_id.
+
+Data Isolation:
+
+Super Admin: Query returns SELECT * FROM table.
+
+Admin: Query returns SELECT * FROM table WHERE tenant_id = current_admin_id.
+
+Sharing: If tenant_id is NULL or 'GLOBAL', it appears for everyone.
+
+3. The "Buzzkill" Management Workflow
+
+Creation:
+
+Super Admin creates a "Master Pack" (Visible to all).
+
+Admin creates a "Custom Pack" (Visible only to their room/tenant).
+
+Game Start: The Admin selects which packs to include in the current 5x5 grid session.
+
+4. The "Double Dip" Management Workflow
+
+AI Prompting: Super Admin manages the "System Prompt" for OpenAI to ensure the daily questions match the Amoli brand.
+
+Stats Tracking: Super Admin sees global average compatibility; Admin sees which couples in their tenant group are most "Synced."
+
+Prompt to give Replit Agent:
+
+"Build a Multi-Tenant Admin System for the Holy GuacAmoli! app using the following logic:
+
+Authentication: Create a 'Super Admin' role (Unique to Amoli) and an 'Admin' role (for Tenants/Hosts).
+
+Global Game Control: Implement a 'Game Manager' for Super Admin to toggle specific game modes (e.g., Double Dip, Buzzkill) between 'Active' and 'Coming Soon'. This must reflect immediately on the public homepage.
+
+The Master Bank: Super Admin can manage a global library of boards/questions.
+
+Tenant Isolation: Admins should have a dashboard where they see ONLY their specific users and stats. Admins can create their own private 'Buzzkill' boards that aren't visible to the public or other tenants.
+
+Analytics: Super Admin sees a global dashboard (total users/global trends). Admin sees a tenant dashboard (group leaderboards/member activity).
+
+Database: Ensure all questions, users, and scores are linked to a tenant_id (or null for Global) to maintain strict data separation."
+
+Amoli, this covers the entire "Amoli-Control" structure. It keeps the public app simple and fun while giving you the power to manage everything behind the scenes! Ready to start the build?

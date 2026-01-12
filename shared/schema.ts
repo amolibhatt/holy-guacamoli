@@ -5,6 +5,10 @@ import { relations } from "drizzle-orm";
 
 export * from "./models/auth";
 
+// Game Status - controls display on homepage
+export const GAME_STATUSES = ["active", "coming_soon", "hidden"] as const;
+export type GameStatus = typeof GAME_STATUSES[number];
+
 // Game Types Catalog - defines available games with visibility controls
 export const gameTypes = pgTable("game_types", {
   id: serial("id").primaryKey(),
@@ -12,6 +16,7 @@ export const gameTypes = pgTable("game_types", {
   displayName: text("display_name").notNull(),
   description: text("description"),
   icon: text("icon").notNull().default("gamepad"),
+  status: text("status").notNull().$type<GameStatus>().default("active"),
   hostEnabled: boolean("host_enabled").notNull().default(true),
   playerEnabled: boolean("player_enabled").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
@@ -160,6 +165,10 @@ export const doubleDipWeeklyStakes = pgTable("double_dip_weekly_stakes", {
   index("idx_weekly_stakes_pair").on(table.pairId),
 ]);
 
+// Board visibility - controls who can see/use the board
+export const BOARD_VISIBILITIES = ["private", "tenant", "public"] as const;
+export type BoardVisibility = typeof BOARD_VISIBILITIES[number];
+
 export const boards = pgTable("boards", {
   id: serial("id").primaryKey(),
   userId: text("user_id"),
@@ -167,6 +176,8 @@ export const boards = pgTable("boards", {
   description: text("description"),
   pointValues: jsonb("point_values").$type<number[]>().notNull().default([10, 20, 30, 40, 50]),
   theme: text("theme").notNull().default("birthday"),
+  visibility: text("visibility").notNull().$type<BoardVisibility>().default("private"),
+  isGlobal: boolean("is_global").notNull().default(false),
 });
 
 export const categories = pgTable("categories", {
