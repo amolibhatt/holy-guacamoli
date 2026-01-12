@@ -183,6 +183,7 @@ export default function PlayBoard() {
         backHref="/host/buzzkill"
         themed={true}
         showAdminButton={true}
+        adminHref="/admin?game=buzzkill"
         rightContent={
           <Button 
             variant="ghost" 
