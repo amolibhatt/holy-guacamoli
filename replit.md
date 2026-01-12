@@ -45,7 +45,8 @@ Preferred communication style: Simple, everyday language.
 10. **Sync-Stakes (Weekly Stakes)**: Couples can set weekly stakes with curated rewards/penalties. First completer each day earns 1 point; bonus point for 85%+ compatibility. Atomic SQL prevents race conditions. Weekly winner revealed on Sundays.
 
 ### Recent Changes (January 2026)
-- **Cross-Game Score Transfer**: Sequence Squeeze can import player scores from an active Buzzkill room by entering the room code - keeps running totals across games
+- **Unified Party Scoreboard**: Scores now persist to the database (gameSessions/sessionPlayers tables) across all games. Both Buzzkill and Sequence Squeeze share the same session, so scores survive disconnects, mode switches, and reconnections. Players can rejoin and see their accumulated scores instantly.
+- **Cross-Game Mode Switch**: Host can switch from Buzzkill to Sequence Squeeze while keeping the same room and players. Scores carry over seamlessly.
 - **Sequence Squeeze Bulk Import**: Pipe-delimited format for bulk question upload with validation
 - **Onboarding Tooltips**: Step-by-step tooltips guide first-time users with analytics tracking (started/completed/skipped)
 - **Tab State Persistence**: RelationshipHub remembers active tab via localStorage
