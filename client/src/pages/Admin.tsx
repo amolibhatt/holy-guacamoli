@@ -20,6 +20,18 @@ import MDEditor from '@uiw/react-md-editor';
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeName, THEMES, useTheme } from "@/context/ThemeContext";
 import { AppHeader } from "@/components/AppHeader";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import type { Category, Question, Board, BoardCategoryWithCount } from "@shared/schema";
 import { SequenceSqueezeAdmin } from "@/components/SequenceSqueezeAdmin";
 import { useUpload } from "@/hooks/use-upload";
@@ -460,66 +472,97 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <AppHeader
-        title="Admin Panel"
-        subtitle={getAdminSubtitle()}
-        backHref={selectedGameType ? undefined : "/"}
-        rightContent={
-          <>
-            {selectedGameType && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="gap-2" 
-                onClick={() => {
-                  setSelectedGameType(null);
-                  setSelectedBoardId(null);
-                  setSelectedBoardCategoryId(null);
-                }}
-                data-testid="button-back-games"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Games
-              </Button>
-            )}
-            {selectedGameType === 'buzzkill' && selectedBoard && (
-              <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg">
-                <Grid3X3 className="w-4 h-4 text-primary" />
-                <span className="font-medium text-foreground">{selectedBoard.name}</span>
-                {selectedBoardCategory && (
-                  <>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium text-primary">{selectedBoardCategory.category.name}</span>
-                  </>
+    <SidebarProvider>
+      <div className="min-h-screen bg-muted/30 flex w-full">
+        <Sidebar className="border-r border-border">
+          <SidebarContent className="pt-4">
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">
+                Admin Panel
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton 
+                      onClick={() => setAdminTab('content')}
+                      isActive={adminTab === 'content'}
+                      className="gap-3"
+                      data-testid="sidebar-games"
+                    >
+                      <Gamepad2 className="w-4 h-4" />
+                      <span>Games</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton 
+                      onClick={() => setAdminTab('analytics')}
+                      isActive={adminTab === 'analytics'}
+                      className="gap-3"
+                      data-testid="sidebar-analytics"
+                    >
+                      <BarChart2 className="w-4 h-4" />
+                      <span>Analytics</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+            
+            <SidebarGroup className="mt-auto">
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <Link href="/">
+                      <SidebarMenuButton className="gap-3" data-testid="sidebar-back-home">
+                        <ArrowLeft className="w-4 h-4" />
+                        <span>Back to Home</span>
+                      </SidebarMenuButton>
+                    </Link>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+        </Sidebar>
+        
+        <div className="flex-1 flex flex-col min-w-0">
+          <AppHeader
+            title="Admin Panel"
+            subtitle={adminTab === 'analytics' ? 'Analytics' : getAdminSubtitle()}
+            rightContent={
+              <div className="flex items-center gap-2">
+                <SidebarTrigger data-testid="button-sidebar-toggle" />
+                {selectedGameType && adminTab === 'content' && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2" 
+                    onClick={() => {
+                      setSelectedGameType(null);
+                      setSelectedBoardId(null);
+                      setSelectedBoardCategoryId(null);
+                    }}
+                    data-testid="button-back-games"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Games
+                  </Button>
+                )}
+                {selectedGameType === 'buzzkill' && selectedBoard && (
+                  <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg">
+                    <Grid3X3 className="w-4 h-4 text-primary" />
+                    <span className="font-medium text-foreground">{selectedBoard.name}</span>
+                    {selectedBoardCategory && (
+                      <>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-medium text-primary">{selectedBoardCategory.category.name}</span>
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-            <div className="flex items-center border border-border rounded-lg overflow-hidden">
-              <Button
-                variant={adminTab === 'content' ? 'default' : 'ghost'}
-                size="sm"
-                className="rounded-none gap-2"
-                onClick={() => setAdminTab('content')}
-                data-testid="button-tab-content"
-              >
-                <Gamepad2 className="w-4 h-4" />
-                Games
-              </Button>
-              <Button
-                variant={adminTab === 'analytics' ? 'default' : 'ghost'}
-                size="sm"
-                className="rounded-none gap-2"
-                onClick={() => setAdminTab('analytics')}
-                data-testid="button-tab-analytics"
-              >
-                <BarChart2 className="w-4 h-4" />
-                Analytics
-              </Button>
-            </div>
-          </>
-        }
-      />
+            }
+          />
 
       <main className="max-w-[1600px] mx-auto p-6" role="main" aria-label="Admin panel content">
         {adminTab === 'analytics' ? (
@@ -1678,7 +1721,9 @@ export default function Admin() {
         ) : selectedGameType === 'sequence_squeeze' ? (
           <SequenceSqueezeAdmin />
         ) : null}
-      </main>
-    </div>
+        </main>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }
