@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, LogOut, Sun, Moon, Layers, Upload, FileText, Eye, BarChart2, Users, Activity, Heart, Gamepad2, ListOrdered } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import MDEditor from '@uiw/react-md-editor';
 import { useAuth } from "@/hooks/use-auth";
@@ -52,6 +52,7 @@ export default function Admin() {
   const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
   const { colorMode, toggleColorMode, setTheme } = useTheme();
   const [, setLocation] = useLocation();
+  const searchString = useSearch();
   
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
   const [selectedBoardCategoryId, setSelectedBoardCategoryId] = useState<number | null>(null);
@@ -99,6 +100,15 @@ export default function Admin() {
   const [showBoardPreview, setShowBoardPreview] = useState(false);
   const [adminTab, setAdminTab] = useState<"content" | "analytics">("content");
   const [selectedGameType, setSelectedGameType] = useState<"buzzkill" | "double_dip" | "sequence_squeeze" | null>(null);
+
+  // Read game type from URL param on mount
+  useEffect(() => {
+    const params = new URLSearchParams(searchString);
+    const game = params.get('game');
+    if (game === 'buzzkill' || game === 'double_dip' || game === 'sequence_squeeze') {
+      setSelectedGameType(game);
+    }
+  }, [searchString]);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
