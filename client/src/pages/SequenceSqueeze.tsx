@@ -15,12 +15,13 @@ import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { 
-  ArrowLeft, ListOrdered, Play, Pause, Users, QrCode, Timer, 
+  ListOrdered, Play, Pause, Users, QrCode, Timer, 
   Trophy, Plus, Trash2, Edit, Check, X, Loader2, Clock, Zap,
   ChevronDown, ChevronUp, Sparkles, Crown, RefreshCw, SkipForward,
   Volume2, VolumeX, Medal, Star
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { AppHeader } from "@/components/AppHeader";
 import type { SequenceQuestion, SequenceSession, SequenceSubmission } from "@shared/schema";
 
 type GameState = "setup" | "waiting" | "animatedReveal" | "playing" | "revealing" | "leaderboard" | "gameComplete" | "results";
@@ -378,27 +379,12 @@ export default function SequenceSqueeze() {
     <div className="min-h-screen bg-background">
       <div className="fixed inset-0 bg-gradient-to-br from-teal-500/5 via-transparent to-cyan-500/5 pointer-events-none" />
 
-      <header className="border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setLocation("/")}
-              data-testid="button-back"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-teal-500/30">
-              <ListOrdered className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Sequence Squeeze</h1>
-              <p className="text-xs text-muted-foreground">Put it in order, fast!</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
+      <AppHeader
+        title="Sequence Squeeze"
+        subtitle="Put it in order, fast!"
+        backHref="/"
+        rightContent={
+          <>
             <Button
               variant="ghost"
               size="icon"
@@ -421,9 +407,9 @@ export default function SequenceSqueeze() {
                 </Button>
               </>
             )}
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <main className="p-6 max-w-5xl mx-auto">
         {gameState === "setup" && (

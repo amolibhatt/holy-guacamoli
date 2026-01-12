@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import MDEditor from '@uiw/react-md-editor';
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeName, THEMES, useTheme } from "@/context/ThemeContext";
+import { AppHeader } from "@/components/AppHeader";
 import type { Category, Question, Board, BoardCategoryWithCount } from "@shared/schema";
 import { SequenceSqueezeAdmin } from "@/components/SequenceSqueezeAdmin";
 import { useUpload } from "@/hooks/use-upload";
@@ -451,92 +452,74 @@ export default function Admin() {
     setEditPoints(q.points);
   };
 
+  const getAdminSubtitle = () => {
+    if (selectedGameType === 'buzzkill') return 'Buzzkill';
+    if (selectedGameType === 'double_dip') return 'Double Dip';
+    if (selectedGameType === 'sequence_squeeze') return 'Sequence Squeeze';
+    return 'Manage Content';
+  };
+
   return (
     <div className="min-h-screen bg-muted/30">
-      <div className="sticky top-0 z-50 bg-background border-b border-border px-6 py-4">
-        <div className="flex items-center gap-4 max-w-[1600px] mx-auto">
-          {selectedGameType ? (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-2" 
-              onClick={() => {
-                setSelectedGameType(null);
-                setSelectedBoardId(null);
-                setSelectedBoardCategoryId(null);
-              }}
-              data-testid="button-back-games"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Games
-            </Button>
-          ) : (
-            <Link href="/">
-              <Button variant="outline" size="sm" className="gap-2" data-testid="button-back-home">
+      <AppHeader
+        title="Admin Panel"
+        subtitle={getAdminSubtitle()}
+        backHref={selectedGameType ? undefined : "/"}
+        rightContent={
+          <>
+            {selectedGameType && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2" 
+                onClick={() => {
+                  setSelectedGameType(null);
+                  setSelectedBoardId(null);
+                  setSelectedBoardCategoryId(null);
+                }}
+                data-testid="button-back-games"
+              >
                 <ArrowLeft className="w-4 h-4" />
-                Back
+                Back to Games
               </Button>
-            </Link>
-          )}
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">
-              {selectedGameType === 'buzzkill' ? 'Buzzkill Admin' : selectedGameType === 'double_dip' ? 'Double Dip Admin' : selectedGameType === 'sequence_squeeze' ? 'Sequence Squeeze Admin' : 'Admin Panel'}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {selectedGameType === 'buzzkill' 
-                ? 'Manage your game boards, categories, and questions' 
-                : selectedGameType === 'double_dip'
-                  ? 'Manage your couples game content'
-                  : selectedGameType === 'sequence_squeeze'
-                    ? 'Create ordering questions for speed challenges'
-                    : 'Select a game to manage its content'}
-            </p>
-          </div>
-          {selectedGameType === 'buzzkill' && selectedBoard && (
-            <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg">
-              <Grid3X3 className="w-4 h-4 text-primary" />
-              <span className="font-medium text-foreground">{selectedBoard.name}</span>
-              {selectedBoardCategory && (
-                <>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-medium text-primary">{selectedBoardCategory.category.name}</span>
-                </>
-              )}
+            )}
+            {selectedGameType === 'buzzkill' && selectedBoard && (
+              <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg">
+                <Grid3X3 className="w-4 h-4 text-primary" />
+                <span className="font-medium text-foreground">{selectedBoard.name}</span>
+                {selectedBoardCategory && (
+                  <>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-medium text-primary">{selectedBoardCategory.category.name}</span>
+                  </>
+                )}
+              </div>
+            )}
+            <div className="flex items-center border border-border rounded-lg overflow-hidden">
+              <Button
+                variant={adminTab === 'content' ? 'default' : 'ghost'}
+                size="sm"
+                className="rounded-none gap-2"
+                onClick={() => setAdminTab('content')}
+                data-testid="button-tab-content"
+              >
+                <Gamepad2 className="w-4 h-4" />
+                Games
+              </Button>
+              <Button
+                variant={adminTab === 'analytics' ? 'default' : 'ghost'}
+                size="sm"
+                className="rounded-none gap-2"
+                onClick={() => setAdminTab('analytics')}
+                data-testid="button-tab-analytics"
+              >
+                <BarChart2 className="w-4 h-4" />
+                Analytics
+              </Button>
             </div>
-          )}
-          <div className="flex items-center border border-border rounded-lg overflow-hidden">
-            <Button
-              variant={adminTab === 'content' ? 'default' : 'ghost'}
-              size="sm"
-              className="rounded-none gap-2"
-              onClick={() => setAdminTab('content')}
-              data-testid="button-tab-content"
-            >
-              <Gamepad2 className="w-4 h-4" />
-              Games
-            </Button>
-            <Button
-              variant={adminTab === 'analytics' ? 'default' : 'ghost'}
-              size="sm"
-              className="rounded-none gap-2"
-              onClick={() => setAdminTab('analytics')}
-              data-testid="button-tab-analytics"
-            >
-              <BarChart2 className="w-4 h-4" />
-              Analytics
-            </Button>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="text-muted-foreground hover:text-foreground" 
-            onClick={toggleColorMode}
-            data-testid="button-color-mode-admin"
-          >
-            {colorMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <main className="max-w-[1600px] mx-auto p-6" role="main" aria-label="Admin panel content">
         {adminTab === 'analytics' ? (

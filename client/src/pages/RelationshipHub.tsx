@@ -9,6 +9,7 @@ import {
   Archive, TrendingUp, Target, Gift
 } from "lucide-react";
 import { OnboardingTooltip, COUPLES_ONBOARDING_STEPS } from "@/components/OnboardingTooltip";
+import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -498,50 +499,37 @@ export default function RelationshipHub() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-500/5 via-background to-purple-500/5">
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b">
-        <div className="max-w-2xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <Link href="/">
-                <Button variant="ghost" size="icon" data-testid="button-back">
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
-                  Double Dip
-                </h1>
-                <p className="text-xs text-muted-foreground">Your relationship journey</p>
-              </div>
+      <AppHeader
+        title="Double Dip"
+        subtitle="Your relationship journey"
+        backHref="/"
+        rightContent={
+          currentStreak > 0 && (
+            <div className="flex items-center gap-1 bg-orange-500/10 px-2 py-1 rounded-full">
+              <Flame className="w-4 h-4 text-orange-500" />
+              <span className="text-sm font-bold text-orange-500">{currentStreak}</span>
             </div>
-            <div className="flex items-center gap-2">
-              {currentStreak > 0 && (
-                <div className="flex items-center gap-1 bg-orange-500/10 px-2 py-1 rounded-full">
-                  <Flame className="w-4 h-4 text-orange-500" />
-                  <span className="text-sm font-bold text-orange-500">{currentStreak}</span>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="today" className="gap-1" data-testid="tab-today">
-                <Heart className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Today</span>
-              </TabsTrigger>
-              <TabsTrigger value="vault" className="gap-1" data-testid="tab-vault">
-                <Archive className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Vault</span>
-              </TabsTrigger>
-              <TabsTrigger value="journey" className="gap-1" data-testid="tab-journey">
-                <BookOpen className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Journey</span>
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-      </header>
+          )
+        }
+      />
+      <div className="max-w-2xl mx-auto px-4 py-3">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="today" className="gap-1" data-testid="tab-today">
+              <Heart className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Today</span>
+            </TabsTrigger>
+            <TabsTrigger value="vault" className="gap-1" data-testid="tab-vault">
+              <Archive className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Vault</span>
+            </TabsTrigger>
+            <TabsTrigger value="journey" className="gap-1" data-testid="tab-journey">
+              <BookOpen className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Journey</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
       <main className="max-w-2xl mx-auto px-4 py-6">
         <AnimatePresence mode="wait">
