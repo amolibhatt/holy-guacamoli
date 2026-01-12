@@ -6,7 +6,7 @@ import {
   Users, Grid3X3, BarChart3, Shield, ArrowLeft,
   UserCheck, UserX, Trash2, Eye, MoreHorizontal,
   TrendingUp, Gamepad2, Clock, Activity, Heart, Grid2X2,
-  Library, Globe, Lock, Building, ListOrdered
+  Library, Globe, Lock, Building, ListOrdered, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -137,6 +137,20 @@ export default function SuperAdmin() {
     },
     onError: () => {
       toast({ title: "Couldn't delete board", description: "Please try again.", variant: "destructive" });
+    },
+  });
+
+  const seedDatabaseMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('POST', '/api/super-admin/seed');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/game-types'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/game-types'] });
+      toast({ title: "Database seeded", description: "Missing game types have been added." });
+    },
+    onError: () => {
+      toast({ title: "Seed failed", description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -300,11 +314,23 @@ export default function SuperAdmin() {
                 <>
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-bold text-foreground">Game Manager</h2>
-                    <Badge variant="secondary">{gameTypes.length} games</Badge>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => seedDatabaseMutation.mutate()}
+                        disabled={seedDatabaseMutation.isPending}
+                        data-testid="button-sync-games"
+                      >
+                        <RefreshCw className={`w-4 h-4 mr-2 ${seedDatabaseMutation.isPending ? 'animate-spin' : ''}`} />
+                        Sync Games
+                      </Button>
+                      <Badge variant="secondary">{gameTypes.length} games</Badge>
+                    </div>
                   </div>
 
                   <p className="text-muted-foreground mb-6">
-                    Control game status on homepage and visibility to hosts/players. "Coming Soon" games appear grayed out on the homepage.
+                    Control game status on homepage and visibility to hosts/players. "Coming Soon" games appear grayed out on the homepage. Click "Sync Games" to add any missing game types.
                   </p>
 
                   {isLoadingGameTypes ? (

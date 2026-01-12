@@ -1101,6 +1101,19 @@ export async function registerRoutes(
     }
   });
 
+  // Manual seed endpoint - triggers database seeding for missing game types
+  app.post("/api/super-admin/seed", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      console.log("Manual seed triggered by super admin");
+      await storage.seedGameTypes();
+      const types = await storage.getGameTypes();
+      res.json({ message: "Seed completed", gameTypes: types });
+    } catch (err) {
+      console.error("Error running seed:", err);
+      res.status(500).json({ message: "Failed to run seed" });
+    }
+  });
+
   // Game Types (public - for hosts and players)
   app.get("/api/game-types", async (req, res) => {
     try {
