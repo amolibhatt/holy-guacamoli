@@ -8,30 +8,32 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, ArrowLeft, Loader2, Pencil, X, Check, Grid3X3, Layers, Play, Sun, Moon, Smartphone, Zap, Skull } from "lucide-react";
+import { Plus, Trash2, Loader2, Pencil, X, Check, Grid3X3, Layers, Play, Smartphone, Zap, Skull } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
-import { useTheme } from "@/context/ThemeContext";
+import { AppHeader } from "@/components/AppHeader";
+import { ListOrdered } from "lucide-react";
 import type { Game, Board, HeadsUpDeck, HeadsUpCard, GameMode } from "@shared/schema";
 
 const MODE_LABELS: Record<GameMode, string> = {
   jeopardy: "Jeopardy (Multi-Board)",
   heads_up: "Heads Up",
   board: "Buzzkill",
+  sequence: "Sequence Squeeze",
 };
 
 const MODE_ICONS: Record<GameMode, typeof Grid3X3> = {
   jeopardy: Grid3X3,
   heads_up: Smartphone,
   board: Grid3X3,
+  sequence: ListOrdered,
 };
 
 export default function GamesAdmin() {
   const { toast } = useToast();
   const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
-  const { colorMode, toggleColorMode } = useTheme();
   const [, setLocation] = useLocation();
   
   const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
@@ -261,29 +263,11 @@ export default function GamesAdmin() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <div className="sticky top-0 z-50 bg-background border-b border-border px-6 py-4">
-        <div className="flex items-center gap-4 max-w-[1600px] mx-auto">
-          <Link href="/admin">
-            <Button variant="outline" size="sm" className="gap-2" data-testid="button-back-admin">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Admin
-            </Button>
-          </Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">Game Manager</h1>
-            <p className="text-sm text-muted-foreground">Create and configure different game types</p>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="text-muted-foreground hover:text-foreground" 
-            onClick={toggleColorMode}
-            data-testid="button-color-mode-games"
-          >
-            {colorMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </Button>
-        </div>
-      </div>
+      <AppHeader
+        title="Game Manager"
+        subtitle="Configure game types"
+        backHref="/admin"
+      />
 
       <div className="max-w-[1600px] mx-auto p-6">
         <Tabs defaultValue="games" className="space-y-6">

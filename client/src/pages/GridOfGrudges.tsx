@@ -3,12 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Sun, Moon, Users, Volume2, Grid3X3, Settings } from "lucide-react";
+import { Users, Grid3X3, Settings, ArrowLeft } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "@/context/ThemeContext";
 import { useScore, Contestant } from "@/components/ScoreContext";
+import { AppHeader } from "@/components/AppHeader";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { PLAYER_AVATARS, type Game, type Board, type BoardCategoryWithCount, type Question } from "@shared/schema";
@@ -124,32 +125,18 @@ export default function GridOfGrudges() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="sticky top-0 z-50 bg-background border-b border-border px-4 py-3">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <Link href="/admin/games">
-            <Button variant="ghost" size="icon" data-testid="button-back" aria-label="Back to games">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <h1 className="text-lg font-bold text-foreground">{game.name}</h1>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <Users className="w-4 h-4" aria-hidden="true" />
-              <span className="sr-only">Contestants:</span>
-              {contestants.length}
-            </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={toggleColorMode}
-              data-testid="button-color-mode"
-              aria-label={colorMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {colorMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </Button>
+      <AppHeader
+        title="Grid of Grudges"
+        subtitle={game.name}
+        backHref="/admin/games"
+        rightContent={
+          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <Users className="w-4 h-4" aria-hidden="true" />
+            <span className="sr-only">Contestants:</span>
+            {contestants.length}
           </div>
-        </div>
-      </div>
+        }
+      />
 
       <div className="flex-1 p-4 max-w-7xl mx-auto w-full">
         <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${boardCategories.length}, minmax(0, 1fr))` }}>
