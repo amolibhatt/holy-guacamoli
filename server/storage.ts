@@ -1246,7 +1246,7 @@ export class DatabaseStorage implements IStorage {
   async seedGameTypes(): Promise<void> {
     const requiredGameTypes = [
       {
-        slug: "grid_of_grudges",
+        slug: "buzzkill",
         displayName: "Buzzkill",
         description: "Race the clock, decode the clues, and claim the grid.",
         icon: "grid",
@@ -1276,6 +1276,14 @@ export class DatabaseStorage implements IStorage {
         sortOrder: 3,
       },
     ];
+
+    // Migration: Rename old grid_of_grudges slug to buzzkill
+    const oldSlug = await db.select().from(gameTypes).where(eq(gameTypes.slug, "grid_of_grudges"));
+    if (oldSlug.length > 0) {
+      console.log("[SEED] Migrating: Renaming grid_of_grudges to buzzkill...");
+      await db.update(gameTypes).set({ slug: "buzzkill" }).where(eq(gameTypes.slug, "grid_of_grudges"));
+      console.log("[SEED] Migration complete: grid_of_grudges renamed to buzzkill");
+    }
 
     console.log("[SEED] Checking for missing game types...");
     const existingTypes = await db.select().from(gameTypes);

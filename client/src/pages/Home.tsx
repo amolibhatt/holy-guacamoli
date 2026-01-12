@@ -43,7 +43,7 @@ const GAME_CONFIG: Record<string, {
   playerCount: string;
   accentColor: string;
 }> = {
-  grid_of_grudges: {
+  buzzkill: {
     icon: Grid3X3,
     gradient: "from-violet-500 via-purple-500 to-indigo-500",
     shadowColor: "shadow-purple-500/30",

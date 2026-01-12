@@ -1,6 +1,11 @@
--- Migration: Update Grid of Grudges description
--- This updates the description for the grid_of_grudges game type
+-- Migration: Update Buzzkill description
+-- This updates the description for the buzzkill game type
+-- Also renames old grid_of_grudges slug to buzzkill
+
+UPDATE game_types 
+SET slug = 'buzzkill'
+WHERE slug = 'grid_of_grudges';
 
 UPDATE game_types 
 SET description = 'Race the clock, decode the clues, and claim the grid.'
-WHERE slug = 'grid_of_grudges';
+WHERE slug = 'buzzkill';
