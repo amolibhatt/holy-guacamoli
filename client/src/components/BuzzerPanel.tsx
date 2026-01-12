@@ -190,6 +190,12 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
           if (data.message === "Room not found") {
             localStorage.removeItem("buzzer-room-code");
             setRoomCode(null);
+            // Reconnect to create a new room
+            wsRef.current?.close();
+            setTimeout(() => {
+              reconnectAttemptsRef.current = 0;
+              connect();
+            }, 500);
           }
           break;
       }
