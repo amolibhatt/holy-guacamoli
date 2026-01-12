@@ -114,8 +114,8 @@ export default function Home() {
         <div className="px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <motion.div 
-              className="w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br from-green-400 via-emerald-500 to-green-600 shadow-lg shadow-green-500/40 border border-green-300/40"
-              whileHover={{ scale: 1.15, rotate: 12 }}
+              className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-green-400 via-emerald-500 to-green-600 shadow-lg shadow-green-500/40 border border-green-300/40 relative overflow-visible"
+              whileHover={{ scale: 1.15, rotate: 8 }}
               whileTap={{ scale: 0.9 }}
               animate={{ 
                 y: [0, -5, 0],
@@ -126,7 +126,58 @@ export default function Home() {
                 rotate: { duration: 5, repeat: Infinity, ease: "easeInOut" }
               }}
             >
-              <span className="text-2xl drop-shadow-md">🥑</span>
+              <svg viewBox="0 0 64 72" className="w-10 h-10 drop-shadow-md">
+                {/* Confetti pieces */}
+                <motion.circle cx="8" cy="20" r="2" fill="#FFE66D" animate={{ y: [0, 3, 0], opacity: [0.8, 1, 0.8] }} transition={{ duration: 1.5, repeat: Infinity }} />
+                <motion.circle cx="56" cy="18" r="2.5" fill="#FF6B9D" animate={{ y: [0, -3, 0], opacity: [0.7, 1, 0.7] }} transition={{ duration: 2, repeat: Infinity, delay: 0.3 }} />
+                <motion.circle cx="12" cy="35" r="1.5" fill="#4ADE80" animate={{ x: [0, 2, 0], opacity: [0.6, 1, 0.6] }} transition={{ duration: 1.8, repeat: Infinity, delay: 0.5 }} />
+                <motion.circle cx="52" cy="40" r="2" fill="#60A5FA" animate={{ y: [0, 2, 0], opacity: [0.8, 1, 0.8] }} transition={{ duration: 1.6, repeat: Infinity, delay: 0.2 }} />
+                <motion.rect x="4" y="28" width="3" height="6" rx="1" fill="#FFE66D" transform="rotate(-20 4 28)" animate={{ rotate: [-20, -10, -20] }} transition={{ duration: 2, repeat: Infinity }} />
+                <motion.rect x="55" y="30" width="3" height="5" rx="1" fill="#FF6B9D" transform="rotate(15 55 30)" animate={{ rotate: [15, 25, 15] }} transition={{ duration: 2.5, repeat: Infinity }} />
+                {/* Sparkles */}
+                <motion.path d="M5 15 L6 12 L7 15 L10 16 L7 17 L6 20 L5 17 L2 16 Z" fill="#FFE66D" animate={{ scale: [1, 1.2, 1], opacity: [0.8, 1, 0.8] }} transition={{ duration: 1, repeat: Infinity }} />
+                <motion.path d="M58 45 L59 42 L60 45 L63 46 L60 47 L59 50 L58 47 L55 46 Z" fill="#4ADE80" animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }} transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }} />
+                {/* Avocado body */}
+                <path d="M32 20 C20 20 10 33 10 49 C10 67 20 72 32 72 C44 72 54 67 54 49 C54 33 44 20 32 20Z" fill="url(#avoSkinHome)" />
+                <ellipse cx="32" cy="52" rx="17" ry="16" fill="#FFF8E1" />
+                <circle cx="32" cy="56" r="9" fill="url(#avoPitHome)" />
+                <ellipse cx="29" cy="54" rx="3" ry="3.5" fill="#E8C9A0" opacity="0.5" />
+                {/* Eyes */}
+                <circle cx="25" cy="46" r="3.5" fill="#2D2D2D" />
+                <circle cx="39" cy="46" r="3.5" fill="#2D2D2D" />
+                <circle cx="26" cy="45" r="1.3" fill="white" />
+                <circle cx="40" cy="45" r="1.3" fill="white" />
+                {/* Smile */}
+                <path d="M27 52 Q32 56 37 52" stroke="#2D2D2D" strokeWidth="2" strokeLinecap="round" fill="none" />
+                {/* Cheeks */}
+                <circle cx="20" cy="50" r="3.5" fill="#FFB6C1" opacity="0.6" />
+                <circle cx="44" cy="50" r="3.5" fill="#FFB6C1" opacity="0.6" />
+                {/* Party hat */}
+                <path d="M22 20 L32 2 L42 20" fill="url(#partyHatHome)" stroke="#FFF" strokeWidth="1" />
+                <circle cx="32" cy="2" r="3" fill="#FFE66D" />
+                <circle cx="32" cy="2" r="1.5" fill="#FF6B9D" />
+                <line x1="27" y1="12" x2="27" y2="16" stroke="#FFF" strokeWidth="1.5" opacity="0.7" />
+                <line x1="32" y1="10" x2="32" y2="14" stroke="#FFF" strokeWidth="1.5" opacity="0.7" />
+                <line x1="37" y1="12" x2="37" y2="16" stroke="#FFF" strokeWidth="1.5" opacity="0.7" />
+                {/* Gradients */}
+                <defs>
+                  <linearGradient id="avoSkinHome" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#22C55E" />
+                    <stop offset="50%" stopColor="#16A34A" />
+                    <stop offset="100%" stopColor="#15803D" />
+                  </linearGradient>
+                  <linearGradient id="avoPitHome" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#D4A574" />
+                    <stop offset="100%" stopColor="#8B5A2B" />
+                  </linearGradient>
+                  <linearGradient id="partyHatHome" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#FF6B9D" />
+                    <stop offset="33%" stopColor="#FFE66D" />
+                    <stop offset="66%" stopColor="#60A5FA" />
+                    <stop offset="100%" stopColor="#4ADE80" />
+                  </linearGradient>
+                </defs>
+              </svg>
             </motion.div>
             <div className="flex flex-col">
               <h1 className="text-2xl font-black tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
