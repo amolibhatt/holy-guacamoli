@@ -709,7 +709,7 @@ export function setupWebSocket(server: Server) {
       room.players.forEach((player, playerId) => {
         if (now - player.lastPing > PING_TIMEOUT) {
           console.log(`[GameRoom] Removing stale player ${player.name} from room ${roomCode}`);
-          if (player.ws.readyState === WebSocket.OPEN) {
+          if (player.ws && player.ws.readyState === WebSocket.OPEN) {
             player.ws.close();
           }
           room.players.delete(playerId);
