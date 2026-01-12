@@ -1,0 +1,100 @@
+2026-01-12T07:34:10.085880492Z }
+2026-01-12T07:34:10.342858439Z 
+2026-01-12T07:34:10.34288075Z > rest-express@1.0.0 build
+2026-01-12T07:34:10.34288658Z > tsx script/build.ts
+2026-01-12T07:34:10.34289094Z 
+2026-01-12T07:34:11.234396642Z building client...
+2026-01-12T07:34:11.30755742Z vite v7.3.0 building client environment for production...
+2026-01-12T07:34:12.381982669Z transforming...
+2026-01-12T07:34:19.241504976Z ✓ 3009 modules transformed.
+2026-01-12T07:34:19.658085553Z rendering chunks...
+2026-01-12T07:34:20.090657705Z computing gzip size...
+2026-01-12T07:34:20.120761053Z ../dist/public/index.html                              2.94 kB │ gzip:   1.11 kB
+2026-01-12T07:34:20.120794314Z ../dist/public/assets/Admin-8cl7b6eX.css              34.01 kB │ gzip:   6.03 kB
+2026-01-12T07:34:20.120857496Z ../dist/public/assets/index-BjiCkp31.css             133.03 kB │ gzip:  19.76 kB
+2026-01-12T07:34:20.121045671Z ../dist/public/assets/check-Crv3PC9L.js                0.12 kB │ gzip:   0.13 kB
+2026-01-12T07:34:20.121134604Z ../dist/public/assets/chevron-left-DUhJOuDx.js         0.13 kB │ gzip:   0.14 kB
+2026-01-12T07:34:20.121142414Z ../dist/public/assets/play-CzN5m0xu.js                 0.13 kB │ gzip:   0.14 kB
+2026-01-12T07:34:20.121147114Z ../dist/public/assets/plus-CF2XeAmo.js                 0.15 kB │ gzip:   0.15 kB
+2026-01-12T07:34:20.121195296Z ../dist/public/assets/trending-up-B-XUSmhE.js          0.20 kB │ gzip:   0.18 kB
+2026-01-12T07:34:20.121198066Z ../dist/public/assets/copy-glJMBRo_.js                 0.23 kB │ gzip:   0.20 kB
+2026-01-12T07:34:20.121235567Z ../dist/public/assets/eye-DTkU_bYa.js                  0.25 kB │ gzip:   0.20 kB
+2026-01-12T07:34:20.121241307Z ../dist/public/assets/trash-2-B-uPYARM.js              0.35 kB │ gzip:   0.25 kB
+2026-01-12T07:34:20.121243607Z ../dist/public/assets/timer-vmsW0vxm.js                0.38 kB │ gzip:   0.27 kB
+2026-01-12T07:34:20.121293498Z ../dist/public/assets/badge-D62H3YLe.js                0.73 kB │ gzip:   0.40 kB
+2026-01-12T07:34:20.121297909Z ../dist/public/assets/use-quiz-D9rqsuKr.js             1.53 kB │ gzip:   0.67 kB
+2026-01-12T07:34:20.121305959Z ../dist/public/assets/CategoryPage-1C9D2n6H.js         1.94 kB │ gzip:   0.80 kB
+2026-01-12T07:34:20.121469714Z ../dist/public/assets/HostGridOfGrudges-CTXHdwfj.js    4.39 kB │ gzip:   1.52 kB
+2026-01-12T07:34:20.121477464Z ../dist/public/assets/alert-dialog-BJFN0nM5.js         4.89 kB │ gzip:   1.79 kB
+2026-01-12T07:34:20.121480564Z ../dist/public/assets/GridOfGrudges-DrAwt4iu.js        6.36 kB │ gzip:   2.24 kB
+2026-01-12T07:34:20.121506224Z ../dist/public/assets/HeadsUpGame-CUTkQ8Tx.js          7.33 kB │ gzip:   2.16 kB
+2026-01-12T07:34:20.121508545Z ../dist/public/assets/select-DgBBRsDa.js              21.33 kB │ gzip:   7.52 kB
+2026-01-12T07:34:20.121512245Z ../dist/public/assets/GamesAdmin-BTgiqifq.js          21.98 kB │ gzip:   4.61 kB
+2026-01-12T07:34:20.121515895Z ../dist/public/assets/SuperAdmin-Be1KYvni.js          37.10 kB │ gzip:  10.19 kB
+2026-01-12T07:34:20.121529115Z ../dist/public/assets/RelationshipHub-D6UKKifQ.js     40.71 kB │ gzip:   9.89 kB
+2026-01-12T07:34:20.121542646Z ../dist/public/assets/PlayBoard-B_Z2oDqu.js           68.49 kB │ gzip:  20.90 kB
+2026-01-12T07:34:20.121546846Z ../dist/public/assets/index-hbhqSn31.js              157.13 kB │ gzip:  47.65 kB
+2026-01-12T07:34:20.121552776Z ../dist/public/assets/index-DzY67q_3.js              632.40 kB │ gzip: 196.43 kB
+2026-01-12T07:34:20.121555586Z ../dist/public/assets/Admin-DkbysRf7.js              973.77 kB │ gzip: 334.83 kB
+2026-01-12T07:34:20.121731341Z 
+2026-01-12T07:34:20.121741531Z (!) Some chunks are larger than 500 kB after minification. Consider:
+2026-01-12T07:34:20.121745011Z - Using dynamic import() to code-split the application
+2026-01-12T07:34:20.121749862Z - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+2026-01-12T07:34:20.121752782Z - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+2026-01-12T07:34:20.12204311Z ✓ built in 8.62s
+2026-01-12T07:34:20.122165633Z building server...
+2026-01-12T07:34:20.450168853Z 
+2026-01-12T07:34:20.450196414Z   dist/index.cjs  1.4mb ⚠️
+2026-01-12T07:34:20.450199684Z 
+2026-01-12T07:34:20.450203214Z ⚡ Done in 314ms
+2026-01-12T07:34:26.833234778Z ==> Uploading build...
+2026-01-12T07:34:41.900541703Z ==> Uploaded in 5.5s. Compression took 9.6s
+2026-01-12T07:34:41.937954756Z ==> Build successful 🎉
+2026-01-12T07:34:45.692631225Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-01-12T07:34:45.855089369Z ==> Deploying...
+2026-01-12T07:35:06.700853142Z ==> Running 'npm start'
+2026-01-12T07:35:07.7950445Z 
+2026-01-12T07:35:07.79506821Z > rest-express@1.0.0 start
+2026-01-12T07:35:07.79507382Z > NODE_ENV=production node dist/index.cjs
+2026-01-12T07:35:07.79507626Z 
+2026-01-12T07:35:10.092272455Z 7:35:09 AM [express] serving on port 10000
+2026-01-12T07:35:17.316061276Z ==> Your service is live 🎉
+2026-01-12T07:35:17.507872672Z ==> 
+2026-01-12T07:35:17.708495936Z ==> ///////////////////////////////////////////////////////////
+2026-01-12T07:35:17.931485419Z ==> 
+2026-01-12T07:35:18.154027832Z ==> Available at your primary URL https://holy-guacamoli.onrender.com
+2026-01-12T07:35:18.349527587Z ==> 
+2026-01-12T07:35:18.538304552Z ==> ///////////////////////////////////////////////////////////
+2026-01-12T07:37:04.769001738Z Login error: Error: getaddrinfo ENOTFOUND base
+2026-01-12T07:37:04.769037609Z     at /opt/render/project/src/dist/index.cjs:64:13330
+2026-01-12T07:37:04.769042929Z     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-01-12T07:37:04.769046619Z     at async /opt/render/project/src/dist/index.cjs:150:2232
+2026-01-12T07:37:04.769050139Z     at async /opt/render/project/src/dist/index.cjs:166:15202 {
+2026-01-12T07:37:04.769053699Z   errno: -3008,
+2026-01-12T07:37:04.76905836Z   code: 'ENOTFOUND',
+2026-01-12T07:37:04.76906274Z   syscall: 'getaddrinfo',
+2026-01-12T07:37:04.76906642Z   hostname: 'base'
+2026-01-12T07:37:04.76906991Z }
+2026-01-12T07:37:04.770692955Z 7:37:04 AM [express] POST /api/auth/login 500 in 81ms :: {"message":"Login failed"}
+2026-01-12T07:37:09.759176254Z Login error: Error: getaddrinfo ENOTFOUND base
+2026-01-12T07:37:09.759201425Z     at /opt/render/project/src/dist/index.cjs:64:13330
+2026-01-12T07:37:09.759207625Z     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-01-12T07:37:09.759212375Z     at async /opt/render/project/src/dist/index.cjs:150:2232
+2026-01-12T07:37:09.759216995Z     at async /opt/render/project/src/dist/index.cjs:166:15202 {
+2026-01-12T07:37:09.759221335Z   errno: -3008,
+2026-01-12T07:37:09.759226195Z   code: 'ENOTFOUND',
+2026-01-12T07:37:09.759252616Z   syscall: 'getaddrinfo',
+2026-01-12T07:37:09.759257416Z   hostname: 'base'
+2026-01-12T07:37:09.759261976Z }
+2026-01-12T07:37:09.761073505Z 7:37:09 AM [express] POST /api/auth/login 500 in 5ms :: {"message":"Login failed"}
+2026-01-12T07:37:20.218747319Z Registration error: Error: getaddrinfo ENOTFOUND base
+2026-01-12T07:37:20.21876724Z     at /opt/render/project/src/dist/index.cjs:64:13330
+2026-01-12T07:37:20.21877312Z     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-01-12T07:37:20.2187772Z     at async /opt/render/project/src/dist/index.cjs:150:2232
+2026-01-12T07:37:20.21878098Z     at async /opt/render/project/src/dist/index.cjs:166:14297 {
+2026-01-12T07:37:20.21878482Z   errno: -3008,
+2026-01-12T07:37:20.21878947Z   code: 'ENOTFOUND',
+2026-01-12T07:37:20.21879467Z   syscall: 'getaddrinfo',
+2026-01-12T07:37:20.21879873Z   hostname: 'base'
+2026-01-12T07:37:20.21880289Z }
+2026-01-12T07:37:20.220008367Z 7:37:20 AM [express] POST /api/auth/register 500 in 5ms :: {"message":"Registration failed"}
