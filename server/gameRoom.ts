@@ -282,15 +282,23 @@ export function setupWebSocket(server: Server) {
                     isConnected: true,
                   });
                   
+                  // Remove any stale entries with the same name but different ID
+                  room.players.forEach((p, key) => {
+                    if (p.name === dbPlayer.name && key !== dbPlayer.playerId) {
+                      room!.players.delete(key);
+                    }
+                  });
+                  
                   const player: Player = {
-                    id: newPlayerId,
+                    id: dbPlayer.playerId,
                     name: dbPlayer.name,
                     avatar: dbPlayer.avatar,
                     ws,
                     lastPing: Date.now(),
                     score: dbPlayer.score,
                   };
-                  room.players.set(newPlayerId, player);
+                  room.players.set(dbPlayer.playerId, player);
+                  playerId = dbPlayer.playerId;
                   currentRoom = roomCode;
 
                   ws.send(JSON.stringify({ 
