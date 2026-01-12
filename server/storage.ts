@@ -79,6 +79,7 @@ export interface IStorage {
   addPlayerToSession(data: InsertSessionPlayer): Promise<SessionPlayer>;
   getSessionPlayers(sessionId: number): Promise<SessionPlayer[]>;
   getSessionPlayer(sessionId: number, playerId: string): Promise<SessionPlayer | undefined>;
+  getSessionPlayerByName(sessionId: number, name: string): Promise<SessionPlayer | undefined>;
   updatePlayerScore(sessionId: number, playerId: string, scoreChange: number): Promise<SessionPlayer | undefined>;
   setPlayerScore(sessionId: number, playerId: string, score: number): Promise<SessionPlayer | undefined>;
   updatePlayerConnection(sessionId: number, playerId: string, isConnected: boolean): Promise<SessionPlayer | undefined>;
@@ -705,6 +706,21 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return updated;
     }
+    
+    const existingByName = await this.getSessionPlayerByName(data.sessionId, data.name);
+    if (existingByName) {
+      const [updated] = await db.update(sessionPlayers)
+        .set({ 
+          playerId: data.playerId,
+          isConnected: true, 
+          lastSeenAt: new Date(),
+          avatar: data.avatar || existingByName.avatar,
+        })
+        .where(and(eq(sessionPlayers.sessionId, data.sessionId), eq(sessionPlayers.name, data.name)))
+        .returning();
+      return updated;
+    }
+    
     const [newPlayer] = await db.insert(sessionPlayers).values(data as any).returning();
     return newPlayer;
   }
@@ -718,6 +734,12 @@ export class DatabaseStorage implements IStorage {
   async getSessionPlayer(sessionId: number, playerId: string): Promise<SessionPlayer | undefined> {
     const [player] = await db.select().from(sessionPlayers)
       .where(and(eq(sessionPlayers.sessionId, sessionId), eq(sessionPlayers.playerId, playerId)));
+    return player;
+  }
+
+  async getSessionPlayerByName(sessionId: number, name: string): Promise<SessionPlayer | undefined> {
+    const [player] = await db.select().from(sessionPlayers)
+      .where(and(eq(sessionPlayers.sessionId, sessionId), eq(sessionPlayers.name, name)));
     return player;
   }
 
