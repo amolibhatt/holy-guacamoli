@@ -66,10 +66,10 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const [showGuide, setShowGuide] = useState(false);
 
-  const { data: gameTypes = [], isLoading: isLoadingGames } = useQuery<GameType[]>({
-    queryKey: ['/api/game-types', 'forHost'],
+  const { data: gameTypes = [], isLoading: isLoadingGames } = useQuery<(GameType & { status?: string })[]>({
+    queryKey: ['/api/game-types/homepage'],
     queryFn: async () => {
-      const res = await fetch('/api/game-types?forHost=true');
+      const res = await fetch('/api/game-types/homepage');
       return res.json();
     },
     enabled: isAuthenticated,
@@ -231,33 +231,48 @@ export default function Home() {
                   playerCount: "Multiplayer",
                 };
                 const Icon = config.icon;
+                const isComingSoon = (game as any).status === 'coming_soon';
 
                 return (
                   <motion.button
                     key={game.id}
-                    onClick={() => setLocation(config.route)}
+                    onClick={() => !isComingSoon && setLocation(config.route)}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 + index * 0.1 }}
-                    whileHover={{ scale: 1.02, y: -4 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`relative flex flex-col p-8 bg-card border border-border rounded-xl text-left transition-all hover:shadow-xl group overflow-hidden ${config.hoverBorder}`}
+                    whileHover={isComingSoon ? {} : { scale: 1.02, y: -4 }}
+                    whileTap={isComingSoon ? {} : { scale: 0.98 }}
+                    disabled={isComingSoon}
+                    className={`relative flex flex-col p-8 bg-card border border-border rounded-xl text-left transition-all group overflow-hidden ${
+                      isComingSoon 
+                        ? 'opacity-60 cursor-not-allowed' 
+                        : `hover:shadow-xl ${config.hoverBorder}`
+                    }`}
                     data-testid={`button-game-${game.slug}`}
                   >
-                    <div className={`absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl ${config.gradient} opacity-10 rounded-bl-full`} />
+                    <div className={`absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl ${config.gradient} ${isComingSoon ? 'opacity-5' : 'opacity-10'} rounded-bl-full`} />
+                    
+                    {isComingSoon && (
+                      <div className="absolute top-4 right-4 px-3 py-1 bg-muted rounded-full text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                        <Clock className="w-3 h-3" />
+                        Coming Soon
+                      </div>
+                    )}
                     
                     <div className="flex items-start justify-between gap-3 mb-6">
-                      <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${config.gradient} flex items-center justify-center shadow-lg ${config.shadowColor}`}>
+                      <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${config.gradient} ${isComingSoon ? 'opacity-50' : ''} flex items-center justify-center shadow-lg ${config.shadowColor}`}>
                         <Icon className="w-8 h-8 text-white" />
                       </div>
-                      <ArrowRight className="w-6 h-6 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+                      {!isComingSoon && (
+                        <ArrowRight className="w-6 h-6 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+                      )}
                     </div>
                     
-                    <h3 className="text-2xl font-bold text-foreground mb-2">
+                    <h3 className={`text-2xl font-bold mb-2 ${isComingSoon ? 'text-foreground/60' : 'text-foreground'}`}>
                       {game.displayName}
                     </h3>
                     
-                    <p className="text-muted-foreground mb-6 flex-1">
+                    <p className={`mb-6 flex-1 ${isComingSoon ? 'text-muted-foreground/60' : 'text-muted-foreground'}`}>
                       {game.description}
                     </p>
                     
