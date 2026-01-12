@@ -71,8 +71,6 @@ export default function SequenceSqueeze() {
   const [winner, setWinner] = useState<WinnerInfo | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [audioEnabled, setAudioEnabled] = useState(true);
-  const [buzzkillRoomCode, setBuzzkillRoomCode] = useState("");
-  const [importScores, setImportScores] = useState(false);
   const submissionsRef = useRef<PlayerSubmission[]>([]);
   const audioRef = useRef<{ [key: string]: HTMLAudioElement }>({});
 
@@ -102,47 +100,55 @@ export default function SequenceSqueeze() {
     },
   });
 
-  const connectWebSocket = useCallback((sourceCode?: string) => {
+  const connectWebSocket = useCallback((continueFromBuzzkill: boolean = false) => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const socket = new WebSocket(`${protocol}//${window.location.host}/ws`);
+    
+    const existingRoomCode = continueFromBuzzkill ? localStorage.getItem("buzzer-room-code") : null;
 
     socket.onopen = () => {
-      socket.send(JSON.stringify({ 
-        type: "sequence:host:create",
-        sourceCode: sourceCode || undefined,
-      }));
+      if (existingRoomCode) {
+        socket.send(JSON.stringify({ type: "host:join", code: existingRoomCode }));
+      } else {
+        socket.send(JSON.stringify({ type: "sequence:host:create" }));
+      }
     };
 
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       
       switch (data.type) {
-        case "sequence:room:created":
+        case "room:joined":
+          socket.send(JSON.stringify({ type: "sequence:host:switchMode" }));
+          break;
+        case "room:notFound":
+          localStorage.removeItem("buzzer-room-code");
+          socket.send(JSON.stringify({ type: "sequence:host:create" }));
+          break;
+        case "sequence:mode:switched":
           setRoomCode(data.code);
           setGameState("waiting");
-          if (data.importError) {
-            toast({ 
-              title: "Could not import scores", 
-              description: data.importError,
-              variant: "destructive",
-            });
-          } else if (data.importedScores && data.importedScores.length > 0) {
-            setPlayers(data.importedScores.map((p: any) => ({
+          if (data.players && data.players.length > 0) {
+            setPlayers(data.players.map((p: any) => ({
               id: p.playerId,
               name: p.playerName,
               avatar: p.playerAvatar,
             })));
-            setLeaderboard(data.importedScores.map((p: any) => ({
+            setLeaderboard(data.players.map((p: any) => ({
               playerId: p.playerId,
               playerName: p.playerName,
               playerAvatar: p.playerAvatar,
               score: p.score,
             })));
             toast({ 
-              title: "Scores imported!", 
-              description: `Imported ${data.importedScores.length} players from Buzzkill` 
+              title: "Game ready!", 
+              description: `${data.players.length} player${data.players.length !== 1 ? 's' : ''} connected with scores` 
             });
           }
+          break;
+        case "sequence:room:created":
+          setRoomCode(data.code);
+          setGameState("waiting");
           break;
         case "sequence:player:joined":
           toast({ title: `${data.playerName} joined!` });
@@ -439,60 +445,46 @@ export default function SequenceSqueeze() {
             ) : questions.length === 0 ? (
               <p className="text-muted-foreground mb-4">No questions available. Add some in the Admin panel.</p>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <Badge variant="secondary" className="text-base px-4 py-2">
                   {questions.length} question{questions.length !== 1 ? 's' : ''} ready
                 </Badge>
                 
-                <div className="max-w-sm mx-auto space-y-4">
-                  <div className="flex items-center justify-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="importScores"
-                      checked={importScores}
-                      onChange={(e) => setImportScores(e.target.checked)}
-                      className="w-4 h-4 rounded border-muted-foreground"
-                      data-testid="checkbox-import-scores"
-                    />
-                    <label htmlFor="importScores" className="text-sm cursor-pointer">
-                      Continue from Buzzkill (import player scores)
-                    </label>
-                  </div>
-                  
-                  {importScores && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="space-y-2"
+                {localStorage.getItem("buzzer-room-code") ? (
+                  <div className="flex flex-col gap-3 items-center">
+                    <Button 
+                      size="lg"
+                      className="h-14 px-8 text-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-teal-500/30"
+                      onClick={() => connectWebSocket(true)}
+                      data-testid="button-continue-buzzkill"
                     >
-                      <Input
-                        placeholder="Enter Buzzkill room code"
-                        value={buzzkillRoomCode}
-                        onChange={(e) => setBuzzkillRoomCode(e.target.value.toUpperCase())}
-                        className="text-center font-mono text-lg tracking-widest"
-                        maxLength={4}
-                        data-testid="input-buzzkill-code"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Keep your Buzzkill game open in another tab
-                      </p>
-                    </motion.div>
-                  )}
-                </div>
-                
-                <div>
-                  <Button 
-                    size="lg"
-                    className="h-14 px-8 text-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-teal-500/30"
-                    onClick={() => connectWebSocket(importScores && buzzkillRoomCode ? buzzkillRoomCode : undefined)}
-                    disabled={importScores && buzzkillRoomCode.length !== 4}
-                    data-testid="button-start-game"
-                  >
-                    <Play className="w-6 h-6 mr-2" />
-                    {importScores ? "Start with Imported Scores" : "Start Game"}
-                  </Button>
-                </div>
+                      <Play className="w-6 h-6 mr-2" />
+                      Continue from Buzzkill
+                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      Players and scores will carry over
+                    </p>
+                    <Button 
+                      variant="outline"
+                      onClick={() => connectWebSocket(false)}
+                      data-testid="button-start-fresh"
+                    >
+                      Start Fresh Game
+                    </Button>
+                  </div>
+                ) : (
+                  <div>
+                    <Button 
+                      size="lg"
+                      className="h-14 px-8 text-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-teal-500/30"
+                      onClick={() => connectWebSocket(false)}
+                      data-testid="button-start-game"
+                    >
+                      <Play className="w-6 h-6 mr-2" />
+                      Start Game
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </motion.div>
