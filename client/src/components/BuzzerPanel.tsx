@@ -33,6 +33,7 @@ interface ConnectedPlayer {
 export interface BuzzEvent {
   playerId: string;
   playerName: string;
+  playerAvatar?: string;
   position: number;
   timestamp: number;
 }

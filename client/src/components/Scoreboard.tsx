@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useScore, AVATAR_COLORS } from "./ScoreContext";
 import { Button } from "@/components/ui/button";
 import { X, RotateCcw, Crown, Trophy, Volume2, VolumeX, Users, ChevronDown, ChevronUp, Undo2 } from "lucide-react";
+import { PLAYER_AVATARS } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
@@ -113,14 +114,13 @@ export function Scoreboard() {
                       <Popover>
                         <PopoverTrigger asChild>
                           <button
-                            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold relative z-10 hover:ring-2 hover:ring-foreground/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all"
+                            className="w-7 h-7 rounded-full flex items-center justify-center text-base relative z-10 hover:ring-2 hover:ring-foreground/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all"
                             style={{ 
                               backgroundColor: contestant.color,
-                              color: parseInt(contestant.color.slice(1), 16) > 0x888888 ? '#1a1a2e' : 'white'
                             }}
-                            aria-label={`${contestant.name}'s color: click to change`}
+                            aria-label={`${contestant.name}'s avatar: click to change color`}
                           >
-                            {contestant.name.charAt(0).toUpperCase()}
+                            {PLAYER_AVATARS.find(a => a.id === contestant.avatar)?.emoji || contestant.name.charAt(0).toUpperCase()}
                           </button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-2" align="start">
