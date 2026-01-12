@@ -71,6 +71,8 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
   const [buzzerLocked, setBuzzerLocked] = useState(true);
   const [showQR, setShowQR] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [justReset, setJustReset] = useState(false);
+  const [justSynced, setJustSynced] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -245,12 +247,16 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "host:reset" }));
       setBuzzQueue([]);
+      setJustReset(true);
+      setTimeout(() => setJustReset(false), 1500);
     }
   }, []);
 
   const syncPlayers = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "host:sync" }));
+      setJustSynced(true);
+      setTimeout(() => setJustSynced(false), 1500);
     }
   }, []);
 
@@ -405,32 +411,38 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
             )}
             <Button
               size="sm"
-              variant="outline"
+              variant={justReset ? "default" : "outline"}
               onClick={resetBuzzer}
               title="Reset buzzer queue"
-              className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className={`focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all ${justReset ? 'bg-primary text-primary-foreground' : ''}`}
               data-testid="button-reset-buzzer"
               aria-label="Reset buzzer queue"
             >
-              <RotateCcw className="w-4 h-4" />
+              {justReset ? <Check className="w-4 h-4" /> : <RotateCcw className="w-4 h-4" />}
+              {justReset && <span className="ml-1 text-xs">Done</span>}
             </Button>
             <Button
               size="sm"
-              variant="outline"
+              variant={justSynced ? "default" : "outline"}
               onClick={syncPlayers}
               title="Re-sync all players"
-              className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className={`focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all ${justSynced ? 'bg-primary text-primary-foreground' : ''}`}
               data-testid="button-sync-players"
               aria-label="Re-sync all players"
             >
-              <RefreshCw className="w-4 h-4" />
+              {justSynced ? <Check className="w-4 h-4" /> : <RefreshCw className="w-4 h-4" />}
+              {justSynced && <span className="ml-1 text-xs">Synced</span>}
             </Button>
             <Button
               size="sm"
               variant="ghost"
-              onClick={createNewRoom}
+              onClick={() => {
+                if (window.confirm('Start a new game? This will disconnect all current players.')) {
+                  createNewRoom();
+                }
+              }}
               title="Create new room"
-              className="text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               data-testid="button-new-room"
               aria-label="Create new room"
             >
