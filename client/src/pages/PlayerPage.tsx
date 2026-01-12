@@ -98,7 +98,7 @@ export default function PlayerPage() {
         code: roomCode.toUpperCase(),
         name: playerName,
         avatar: selectedAvatar,
-        playerId: isReconnect ? playerId : undefined,
+        playerId: playerIdRef.current || playerId || undefined,
       }));
       
       if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
