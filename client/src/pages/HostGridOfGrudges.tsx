@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Settings, Grid3X3, ArrowLeft, ArrowRight, Users } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
+import { BuzzkillLogo } from "@/components/BuzzkillLogo";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import type { Board } from "@shared/schema";
@@ -27,9 +28,7 @@ export default function HostGridOfGrudges() {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20">
-              <Grid3X3 className="w-5 h-5 text-white" />
-            </div>
+            <BuzzkillLogo size="sm" themed={false} animate={false} />
             <div className="flex flex-col">
               <h1 className="text-lg font-bold tracking-tight text-foreground">
                 Buzzkill
