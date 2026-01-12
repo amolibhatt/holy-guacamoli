@@ -1,0 +1,50 @@
+2026-01-12T16:39:49.767086216Z ../dist/public/assets/GridOfGrudges-DYu21e4I.js          5.70 kB │ gzip:   2.13 kB
+2026-01-12T16:39:49.767120397Z ../dist/public/assets/Vault-vmBoHxAC.js                  5.77 kB │ gzip:   1.86 kB
+2026-01-12T16:39:49.767124127Z ../dist/public/assets/HeadsUpGame-5Jvisl04.js            6.82 kB │ gzip:   2.07 kB
+2026-01-12T16:39:49.767129167Z ../dist/public/assets/Storyboard-CjPSZiIU.js             7.88 kB │ gzip:   2.20 kB
+2026-01-12T16:39:49.767131367Z ../dist/public/assets/SequencePlayer--XM1P1J8.js        16.94 kB │ gzip:   4.76 kB
+2026-01-12T16:39:49.767167128Z ../dist/public/assets/index-CgznNN0_.js                 17.04 kB │ gzip:   6.37 kB
+2026-01-12T16:39:49.767171348Z ../dist/public/assets/GamesAdmin-D_Y_F8gP.js            21.15 kB │ gzip:   4.45 kB
+2026-01-12T16:39:49.767174918Z ../dist/public/assets/SequenceSqueeze-Bvq56i0l.js       24.77 kB │ gzip:   6.71 kB
+2026-01-12T16:39:49.767184298Z ../dist/public/assets/alert-dialog-BQk6MVzG.js          25.64 kB │ gzip:   8.61 kB
+2026-01-12T16:39:49.767187978Z ../dist/public/assets/RelationshipHub-DL3xH6xd.js       37.55 kB │ gzip:   8.83 kB
+2026-01-12T16:39:49.76725014Z ../dist/public/assets/SuperAdmin-BLSGyfob.js            41.27 kB │ gzip:  10.66 kB
+2026-01-12T16:39:49.76725472Z ../dist/public/assets/PlayBoard-B7SPvvV4.js             49.66 kB │ gzip:  14.26 kB
+2026-01-12T16:39:49.76725822Z ../dist/public/assets/index-CvUCYFcr.js                157.13 kB │ gzip:  47.65 kB
+2026-01-12T16:39:49.76726908Z ../dist/public/assets/index-C8Isz6Yy.js                645.01 kB │ gzip: 200.75 kB
+2026-01-12T16:39:49.7672728Z ../dist/public/assets/Admin-CtKqLJG3.js              1,008.10 kB │ gzip: 342.60 kB
+2026-01-12T16:39:49.767410783Z 
+2026-01-12T16:39:49.767415533Z (!) Some chunks are larger than 500 kB after minification. Consider:
+2026-01-12T16:39:49.767418824Z - Using dynamic import() to code-split the application
+2026-01-12T16:39:49.767431024Z - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+2026-01-12T16:39:49.767433034Z - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+2026-01-12T16:39:49.76772387Z ✓ built in 7.89s
+2026-01-12T16:39:49.767845303Z building server...
+2026-01-12T16:39:50.092317533Z 
+2026-01-12T16:39:50.092338583Z   dist/index.cjs  1.4mb ⚠️
+2026-01-12T16:39:50.092340783Z 
+2026-01-12T16:39:50.092343294Z ⚡ Done in 310ms
+2026-01-12T16:39:51.745071063Z ==> Uploading build...
+2026-01-12T16:40:02.434603193Z ==> Uploaded in 6.1s. Compression took 4.5s
+2026-01-12T16:40:02.487455967Z ==> Build successful 🎉
+2026-01-12T16:40:06.583755752Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-01-12T16:40:06.745283446Z ==> Deploying...
+2026-01-12T16:40:44.509168959Z ==> Running 'npm start'
+2026-01-12T16:40:45.424845924Z 
+2026-01-12T16:40:45.424869936Z > rest-express@1.0.0 start
+2026-01-12T16:40:45.424873976Z > NODE_ENV=production node dist/index.cjs
+2026-01-12T16:40:45.424876346Z 
+2026-01-12T16:40:48.416970157Z 4:40:48 PM [express] serving on port 10000
+2026-01-12T16:40:53.054113471Z ==> Your service is live 🎉
+2026-01-12T16:40:53.291740133Z ==> 
+2026-01-12T16:40:54.390657547Z ==> ///////////////////////////////////////////////////////////
+2026-01-12T16:40:54.596041592Z ==> 
+2026-01-12T16:40:54.778681517Z ==> Available at your primary URL https://holy-guacamoli.onrender.com
+2026-01-12T16:40:54.960743044Z ==> 
+2026-01-12T16:40:55.145721009Z ==> ///////////////////////////////////////////////////////////
+2026-01-12T16:40:58.929824704Z 4:40:58 PM [express] GET /api/auth/user 304 in 221ms :: {"id":"f6a23e56-76c5-40df-a1bb-876892018c67","email":"amoli.bhatt@gmail.com","firstName":"Amoli","lastName":"Bhatt","role":"super_admin","createdAt":"2026-01-12T07:51:30.294Z","updatedAt":"2026-01-12T07:51:30.294Z"}
+2026-01-12T16:40:58.930990543Z 4:40:58 PM [express] GET /api/game-types/homepage 304 in 219ms :: [{"id":1,"slug":"grid_of_grudges","displayName":"Buzzkill","description":"Race the clock, decode the clues, and claim the grid.","icon":"grid","status":"active","hostEnabled":true,"playerEnabled":true,"sortOrder":1,"createdAt":"2026-01-12T09:20:58.405Z"},{"id":2,"slug":"double_dip","displayName":"Double Dip","description":"Deep dives and daily drives into the mind of your favorite person.","icon":"heart","status":"active","hostEnabled":true,"playerEnabled":true,"sortOrder":2,"createdAt":"2026-01-12T09:20:58.405Z"},{"id":3,"slug":"sequence_squeeze","displayName":"Sequence Squeeze","description":"Race to put 4 options in the correct order! Fastest correct sequence wins.","icon":"list-ordered","status":"active","hostEnabled":true,"playerEnabled":true,"sortOrder":2,"createdAt":"2026-01-12T16:33:13.799Z"}]
+2026-01-12T16:41:03.03547611Z 4:41:03 PM [express] GET /api/auth/user 304 in 12ms :: {"id":"f6a23e56-76c5-40df-a1bb-876892018c67","email":"amoli.bhatt@gmail.com","firstName":"Amoli","lastName":"Bhatt","role":"super_admin","createdAt":"2026-01-12T07:51:30.294Z","updatedAt":"2026-01-12T07:51:30.294Z"}
+2026-01-12T16:41:03.160591742Z 4:41:03 PM [express] GET /api/game-types/homepage 304 in 11ms :: [{"id":1,"slug":"grid_of_grudges","displayName":"Buzzkill","description":"Race the clock, decode the clues, and claim the grid.","icon":"grid","status":"active","hostEnabled":true,"playerEnabled":true,"sortOrder":1,"createdAt":"2026-01-12T09:20:58.405Z"},{"id":2,"slug":"double_dip","displayName":"Double Dip","description":"Deep dives and daily drives into the mind of your favorite person.","icon":"heart","status":"active","hostEnabled":true,"playerEnabled":true,"sortOrder":2,"createdAt":"2026-01-12T09:20:58.405Z"},{"id":3,"slug":"sequence_squeeze","displayName":"Sequence Squeeze","description":"Race to put 4 options in the correct order! Fastest correct sequence wins.","icon":"list-ordered","status":"active","hostEnabled":true,"playerEnabled":true,"sortOrder":2,"createdAt":"2026-01-12T16:33:13.799Z"}]
+2026-01-12T16:41:06.903797975Z 4:41:06 PM [express] GET /api/auth/user 304 in 10ms :: {"id":"f6a23e56-76c5-40df-a1bb-876892018c67","email":"amoli.bhatt@gmail.com","firstName":"Amoli","lastName":"Bhatt","role":"super_admin","createdAt":"2026-01-12T07:51:30.294Z","updatedAt":"2026-01-12T07:51:30.294Z"}
+2026-01-12T16:41:07.027200985Z 4:41:07 PM [express] GET /api/game-types/homepage 304 in 10ms :: [{"id":1,"slug":"grid_of_grudges","displayName":"Buzzkill","description":"Race the clock, decode the clues, and claim the grid.","icon":"grid","status":"active","hostEnabled":true,"playerEnabled":true,"sortOrder":1,"createdAt":"2026-01-12T09:20:58.405Z"},{"id":2,"slug":"double_dip","displayName":"Double Dip","description":"Deep dives and daily drives into the mind of your favorite person.","icon":"heart","status":"active","hostEnabled":true,"playerEnabled":true,"sortOrder":2,"createdAt":"2026-01-12T09:20:58.405Z"},{"id":3,"slug":"sequence_squeeze","displayName":"Sequence Squeeze","description":"Race to put 4 options in the correct order! Fastest correct sequence wins.","icon":"list-ordered","status":"active","hostEnabled":true,"playerEnabled":true,"sortOrder":2,"createdAt":"2026-01-12T16:33:13.799Z"}]
