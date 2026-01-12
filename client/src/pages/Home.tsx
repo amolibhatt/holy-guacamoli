@@ -114,7 +114,7 @@ export default function Home() {
         <div className="px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <motion.div 
-              className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-green-400 via-emerald-500 to-green-600 shadow-lg shadow-green-500/40 border border-green-300/40 relative overflow-visible"
+              className="w-14 h-14 rounded-2xl flex items-center justify-center bg-card shadow-lg shadow-green-500/20 border-2 border-green-500/30 relative overflow-visible"
               whileHover={{ scale: 1.15, rotate: 8 }}
               whileTap={{ scale: 0.9 }}
               animate={{ 
