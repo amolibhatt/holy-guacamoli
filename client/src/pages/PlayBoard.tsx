@@ -4,6 +4,7 @@ import { useParams, Link } from "wouter";
 import { Loader2, Settings, Maximize2, Minimize2, ArrowLeft, Sun, Moon, Home } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
+import { BuzzkillLogo } from "@/components/BuzzkillLogo";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -195,24 +196,7 @@ export default function PlayBoard() {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <motion.div 
-              className="relative hidden sm:block"
-              animate={{ 
-                rotate: [0, 3, 0, -3, 0],
-                scale: [1, 1.02, 1]
-              }}
-              transition={{ 
-                duration: 4, 
-                repeat: Infinity, 
-                ease: "easeInOut" 
-              }}
-            >
-              <div 
-                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center gradient-header shadow-lg"
-              >
-                <ThemeDecorations placement="header" />
-              </div>
-            </motion.div>
+            <BuzzkillLogo size="md" themed={true} />
             <div className="flex flex-col">
               <span 
                 className="text-[10px] sm:text-xs font-bold text-muted-foreground tracking-[0.2em] sm:tracking-[0.3em] uppercase"

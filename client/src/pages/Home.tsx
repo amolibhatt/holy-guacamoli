@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Settings, Grid3X3, LogOut, Sun, Moon, ArrowRight, Zap, Trophy, Clock, Lock, Sparkles, PartyPopper, Users, HelpCircle, ChevronRight, Shield, Heart } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
+import { BuzzkillLogo } from "@/components/BuzzkillLogo";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -119,79 +120,11 @@ export default function Home() {
       <header className="border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            {/* Party Avocado Mascot */}
-            <motion.div 
-              className="relative"
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.95 }}
-              animate={{ y: [0, -3, 0] }}
-              transition={{ y: { duration: 3, repeat: Infinity, ease: "easeInOut" } }}
-            >
-              {/* Glow effect */}
-              <div className="absolute inset-0 bg-primary rounded-full blur-xl opacity-30 scale-110" />
-              <svg viewBox="0 0 64 72" className="w-12 h-12 relative z-10 drop-shadow-lg">
-                {/* Avocado body */}
-                <path d="M32 18 C18 18 8 32 8 50 C8 68 18 72 32 72 C46 72 56 68 56 50 C56 32 46 18 32 18Z" fill="url(#avoSkinHome)" />
-                <ellipse cx="32" cy="52" rx="18" ry="17" fill="#FFF8E1" />
-                <circle cx="32" cy="56" r="10" fill="url(#avoPitHome)" />
-                <ellipse cx="28" cy="53" rx="3.5" ry="4" fill="#E8C9A0" opacity="0.4" />
-                {/* Eyes */}
-                <circle cx="24" cy="44" r="4" fill="#1A1A2E" />
-                <circle cx="40" cy="44" r="4" fill="#1A1A2E" />
-                <circle cx="25.5" cy="42.5" r="1.5" fill="white" />
-                <circle cx="41.5" cy="42.5" r="1.5" fill="white" />
-                {/* Big smile */}
-                <path d="M24 52 Q32 60 40 52" stroke="#1A1A2E" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-                {/* Rosy cheeks */}
-                <circle cx="18" cy="50" r="4" fill="#EC4899" opacity="0.5" />
-                <circle cx="46" cy="50" r="4" fill="#EC4899" opacity="0.5" />
-                {/* Party hat */}
-                <path d="M20 18 L32 0 L44 18" fill="url(#partyHatHome)" />
-                <circle cx="32" cy="0" r="4" fill="#FBBF24" />
-                <circle cx="32" cy="0" r="2" fill="#EC4899" />
-                {/* Hat stripes */}
-                <line x1="26" y1="10" x2="26" y2="15" stroke="white" strokeWidth="2" opacity="0.8" />
-                <line x1="32" y1="6" x2="32" y2="12" stroke="white" strokeWidth="2" opacity="0.8" />
-                <line x1="38" y1="10" x2="38" y2="15" stroke="white" strokeWidth="2" opacity="0.8" />
-                <defs>
-                  <linearGradient id="avoSkinHome" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#22C55E" />
-                    <stop offset="100%" stopColor="#16A34A" />
-                  </linearGradient>
-                  <linearGradient id="avoPitHome" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#D4A574" />
-                    <stop offset="100%" stopColor="#8B5A2B" />
-                  </linearGradient>
-                  <linearGradient id="partyHatHome" x1="0%" y1="100%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#EC4899" />
-                    <stop offset="50%" stopColor="#FBBF24" />
-                    <stop offset="100%" stopColor="#8B5CF6" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              {/* Floating confetti */}
-              <motion.div 
-                className="absolute -top-1 -left-2 w-2 h-2 rounded-full bg-pink-500"
-                animate={{ y: [0, -8, 0], opacity: [0.6, 1, 0.6], rotate: [0, 180, 360] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-              <motion.div 
-                className="absolute -top-2 -right-1 w-1.5 h-1.5 rounded-full bg-violet-500"
-                animate={{ y: [0, -6, 0], opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 1.8, repeat: Infinity, delay: 0.3 }}
-              />
-              <motion.div 
-                className="absolute top-1 -right-3 w-2 h-2 rounded-full bg-amber-400"
-                animate={{ y: [0, -5, 0], rotate: [0, -180, -360] }}
-                transition={{ duration: 2.2, repeat: Infinity, delay: 0.6 }}
-              />
-            </motion.div>
-            
-            {/* Logo Text */}
+            <BuzzkillLogo size="md" themed={false} />
             <div className="flex flex-col">
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)' }}>
                 <span className="text-foreground">Holy </span>
-                <span className="text-green-500">Guac</span>
+                <span className="text-violet-500">Guac</span>
                 <span className="text-foreground">Amoli</span>
                 <span className="text-pink-500">!</span>
               </h1>
