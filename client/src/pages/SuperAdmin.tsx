@@ -66,6 +66,7 @@ export default function SuperAdmin() {
   const { toast } = useToast();
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [deleteBoardId, setDeleteBoardId] = useState<number | null>(null);
+  const [gamesSubtab, setGamesSubtab] = useState<'types' | 'boards' | 'master-bank'>('types');
 
   const { data: stats, isLoading: isLoadingStats } = useQuery<PlatformStats>({
     queryKey: ['/api/super-admin/stats'],
@@ -188,7 +189,7 @@ export default function SuperAdmin() {
 
       <main className="p-6 max-w-7xl mx-auto">
         <Tabs defaultValue="analytics" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 max-w-2xl">
+          <TabsList className="grid w-full grid-cols-3 max-w-lg">
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Analytics</span>
@@ -197,17 +198,9 @@ export default function SuperAdmin() {
               <Gamepad2 className="w-4 h-4" />
               <span className="hidden sm:inline">Games</span>
             </TabsTrigger>
-            <TabsTrigger value="master-bank" className="gap-2">
-              <Library className="w-4 h-4" />
-              <span className="hidden sm:inline">Master Bank</span>
-            </TabsTrigger>
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Users</span>
-            </TabsTrigger>
-            <TabsTrigger value="boards" className="gap-2">
-              <Grid3X3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Boards</span>
             </TabsTrigger>
           </TabsList>
 
@@ -270,237 +263,343 @@ export default function SuperAdmin() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-foreground">Game Manager</h2>
-                <Badge variant="secondary">{gameTypes.length} games</Badge>
+              <div className="flex gap-2 mb-6 flex-wrap">
+                <Button 
+                  variant={gamesSubtab === 'types' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setGamesSubtab('types')}
+                  className="gap-2"
+                  data-testid="button-subtab-types"
+                >
+                  <Gamepad2 className="w-4 h-4" />
+                  Game Types
+                </Button>
+                <Button 
+                  variant={gamesSubtab === 'boards' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setGamesSubtab('boards')}
+                  className="gap-2"
+                  data-testid="button-subtab-boards"
+                >
+                  <Grid3X3 className="w-4 h-4" />
+                  Boards
+                </Button>
+                <Button 
+                  variant={gamesSubtab === 'master-bank' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setGamesSubtab('master-bank')}
+                  className="gap-2"
+                  data-testid="button-subtab-master-bank"
+                >
+                  <Library className="w-4 h-4" />
+                  Master Bank
+                </Button>
               </div>
 
-              <p className="text-muted-foreground mb-6">
-                Control game status on homepage and visibility to hosts/players. "Coming Soon" games appear grayed out on the homepage.
-              </p>
-
-              {isLoadingGameTypes ? (
-                <div className="space-y-3">
-                  {[1, 2].map((i) => (
-                    <Skeleton key={i} className="h-32 w-full" />
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {gameTypes.map((gameType) => (
-                    <Card key={gameType.id} className="hover-elevate">
-                      <CardContent className="p-6">
-                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                          <div className="flex items-start gap-4">
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                              gameType.slug === 'grid_of_grudges' 
-                                ? 'bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-500' 
-                                : gameType.slug === 'sequence_squeeze'
-                                  ? 'bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500'
-                                  : 'bg-gradient-to-br from-rose-400 via-pink-500 to-fuchsia-500'
-                            }`}>
-                              {gameType.slug === 'grid_of_grudges' ? (
-                                <Grid3X3 className="w-6 h-6 text-white" />
-                              ) : gameType.slug === 'sequence_squeeze' ? (
-                                <ListOrdered className="w-6 h-6 text-white" />
-                              ) : (
-                                <Heart className="w-6 h-6 text-white" />
-                              )}
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-semibold text-lg text-foreground">
-                                  {gameType.displayName}
-                                </h3>
-                                {(gameType as any).status === 'coming_soon' && (
-                                  <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
-                                )}
-                                {(gameType as any).status === 'hidden' && (
-                                  <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>
-                                )}
-                              </div>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {gameType.description || 'No description'}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex flex-col gap-4 min-w-[200px]">
-                            <div className="flex items-center justify-between gap-4">
-                              <span className="text-sm text-muted-foreground">Homepage Status</span>
-                              <Select
-                                value={(gameType as any).status || 'active'}
-                                onValueChange={(value: GameStatus) => {
-                                  updateGameTypeMutation.mutate({
-                                    id: gameType.id,
-                                    data: { status: value }
-                                  });
-                                }}
-                              >
-                                <SelectTrigger className="w-[130px]" data-testid={`select-status-${gameType.slug}`}>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="active">Active</SelectItem>
-                                  <SelectItem value="coming_soon">Coming Soon</SelectItem>
-                                  <SelectItem value="hidden">Hidden</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="flex items-center justify-between gap-4">
-                              <span className="text-sm text-muted-foreground">Show to Hosts</span>
-                              <Switch
-                                checked={gameType.hostEnabled}
-                                onCheckedChange={(checked) => {
-                                  updateGameTypeMutation.mutate({
-                                    id: gameType.id,
-                                    data: { hostEnabled: checked }
-                                  });
-                                }}
-                                data-testid={`switch-host-${gameType.slug}`}
-                              />
-                            </div>
-                            <div className="flex items-center justify-between gap-4">
-                              <span className="text-sm text-muted-foreground">Show to Players</span>
-                              <Switch
-                                checked={gameType.playerEnabled}
-                                onCheckedChange={(checked) => {
-                                  updateGameTypeMutation.mutate({
-                                    id: gameType.id,
-                                    data: { playerEnabled: checked }
-                                  });
-                                }}
-                                data-testid={`switch-player-${gameType.slug}`}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                  {gameTypes.length === 0 && (
-                    <Card>
-                      <CardContent className="p-8 text-center text-muted-foreground">
-                        No games configured yet.
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              )}
-            </motion.div>
-          </TabsContent>
-
-          <TabsContent value="master-bank" className="space-y-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-foreground">Master Bank</h2>
-                <Badge variant="secondary">
-                  {allBoards.filter((b: any) => b.isGlobal).length} global boards
-                </Badge>
-              </div>
-
-              <p className="text-muted-foreground mb-6">
-                Global boards in the Master Bank can be cloned by all admins/hosts. Mark any board as global to add it to the shared library.
-              </p>
-
-              {isLoadingBoards ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-20 w-full" />
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                      <Globe className="w-5 h-5 text-primary" />
-                      Global Boards
-                    </h3>
-                    {allBoards.filter((b: any) => b.isGlobal).length === 0 ? (
-                      <Card>
-                        <CardContent className="p-6 text-center text-muted-foreground">
-                          No global boards yet. Mark boards as global below to add them to the Master Bank.
-                        </CardContent>
-                      </Card>
-                    ) : (
-                      <div className="space-y-2">
-                        {allBoards.filter((b: any) => b.isGlobal).map((board: any) => (
-                          <Card key={board.id} className="hover-elevate border-primary/30">
-                            <CardContent className="p-4">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                                    <Globe className="w-5 h-5 text-primary" />
-                                  </div>
-                                  <div>
-                                    <div className="font-medium text-foreground">{board.name}</div>
-                                    <div className="text-sm text-muted-foreground">
-                                      {board.categoryCount} categories, {board.questionCount} questions
-                                    </div>
-                                  </div>
-                                </div>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: false })}
-                                  data-testid={`button-remove-global-${board.id}`}
-                                >
-                                  Remove from Bank
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
+              {gamesSubtab === 'types' && (
+                <>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-foreground">Game Manager</h2>
+                    <Badge variant="secondary">{gameTypes.length} games</Badge>
                   </div>
 
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                      <Lock className="w-5 h-5 text-muted-foreground" />
-                      Private Boards (Add to Master Bank)
-                    </h3>
-                    <div className="space-y-2">
-                      {allBoards.filter((b: any) => !b.isGlobal).map((board: any) => (
-                        <Card key={board.id} className="hover-elevate">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                                  <Grid3X3 className="w-5 h-5 text-muted-foreground" />
+                  <p className="text-muted-foreground mb-6">
+                    Control game status on homepage and visibility to hosts/players. "Coming Soon" games appear grayed out on the homepage.
+                  </p>
+
+                  {isLoadingGameTypes ? (
+                    <div className="space-y-3">
+                      {[1, 2].map((i) => (
+                        <Skeleton key={i} className="h-32 w-full" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {gameTypes.map((gameType) => (
+                        <Card key={gameType.id} className="hover-elevate">
+                          <CardContent className="p-6">
+                            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                              <div className="flex items-start gap-4">
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                                  gameType.slug === 'grid_of_grudges' 
+                                    ? 'bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-500' 
+                                    : gameType.slug === 'sequence_squeeze'
+                                      ? 'bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500'
+                                      : 'bg-gradient-to-br from-rose-400 via-pink-500 to-fuchsia-500'
+                                }`}>
+                                  {gameType.slug === 'grid_of_grudges' ? (
+                                    <Grid3X3 className="w-6 h-6 text-white" />
+                                  ) : gameType.slug === 'sequence_squeeze' ? (
+                                    <ListOrdered className="w-6 h-6 text-white" />
+                                  ) : (
+                                    <Heart className="w-6 h-6 text-white" />
+                                  )}
                                 </div>
                                 <div>
-                                  <div className="font-medium text-foreground">{board.name}</div>
-                                  <div className="text-sm text-muted-foreground">
-                                    by {board.ownerName || board.ownerEmail} - {board.categoryCount} categories
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-semibold text-lg text-foreground">
+                                      {gameType.displayName}
+                                    </h3>
+                                    {(gameType as any).status === 'coming_soon' && (
+                                      <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+                                    )}
+                                    {(gameType as any).status === 'hidden' && (
+                                      <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>
+                                    )}
                                   </div>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    {gameType.description || 'No description'}
+                                  </p>
                                 </div>
                               </div>
-                              <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: true })}
-                                data-testid={`button-add-global-${board.id}`}
-                              >
-                                Add to Bank
-                              </Button>
+                              
+                              <div className="flex flex-col gap-4 min-w-[200px]">
+                                <div className="flex items-center justify-between gap-4">
+                                  <span className="text-sm text-muted-foreground">Homepage Status</span>
+                                  <Select
+                                    value={(gameType as any).status || 'active'}
+                                    onValueChange={(value: GameStatus) => {
+                                      updateGameTypeMutation.mutate({
+                                        id: gameType.id,
+                                        data: { status: value }
+                                      });
+                                    }}
+                                  >
+                                    <SelectTrigger className="w-[130px]" data-testid={`select-status-${gameType.slug}`}>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="active">Active</SelectItem>
+                                      <SelectItem value="coming_soon">Coming Soon</SelectItem>
+                                      <SelectItem value="hidden">Hidden</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="flex items-center justify-between gap-4">
+                                  <span className="text-sm text-muted-foreground">Show to Hosts</span>
+                                  <Switch
+                                    checked={gameType.hostEnabled}
+                                    onCheckedChange={(checked) => {
+                                      updateGameTypeMutation.mutate({
+                                        id: gameType.id,
+                                        data: { hostEnabled: checked }
+                                      });
+                                    }}
+                                    data-testid={`switch-host-${gameType.slug}`}
+                                  />
+                                </div>
+                                <div className="flex items-center justify-between gap-4">
+                                  <span className="text-sm text-muted-foreground">Show to Players</span>
+                                  <Switch
+                                    checked={gameType.playerEnabled}
+                                    onCheckedChange={(checked) => {
+                                      updateGameTypeMutation.mutate({
+                                        id: gameType.id,
+                                        data: { playerEnabled: checked }
+                                      });
+                                    }}
+                                    data-testid={`switch-player-${gameType.slug}`}
+                                  />
+                                </div>
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
                       ))}
-                      {allBoards.filter((b: any) => !b.isGlobal).length === 0 && (
+                      {gameTypes.length === 0 && (
                         <Card>
-                          <CardContent className="p-6 text-center text-muted-foreground">
-                            All boards are in the Master Bank.
+                          <CardContent className="p-8 text-center text-muted-foreground">
+                            No games configured yet.
                           </CardContent>
                         </Card>
                       )}
                     </div>
+                  )}
+                </>
+              )}
+
+              {gamesSubtab === 'master-bank' && (
+                <>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-foreground">Master Bank</h2>
+                    <Badge variant="secondary">
+                      {allBoards.filter((b: any) => b.isGlobal).length} global boards
+                    </Badge>
                   </div>
-                </div>
+
+                  <p className="text-muted-foreground mb-6">
+                    Global boards in the Master Bank can be cloned by all admins/hosts. Mark any board as global to add it to the shared library.
+                  </p>
+
+                  {isLoadingBoards ? (
+                    <div className="space-y-3">
+                      {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} className="h-20 w-full" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                          <Globe className="w-5 h-5 text-primary" />
+                          Global Boards
+                        </h3>
+                        {allBoards.filter((b: any) => b.isGlobal).length === 0 ? (
+                          <Card>
+                            <CardContent className="p-6 text-center text-muted-foreground">
+                              No global boards yet. Mark boards as global below to add them to the Master Bank.
+                            </CardContent>
+                          </Card>
+                        ) : (
+                          <div className="space-y-2">
+                            {allBoards.filter((b: any) => b.isGlobal).map((board: any) => (
+                              <Card key={board.id} className="hover-elevate border-primary/30">
+                                <CardContent className="p-4">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                                        <Globe className="w-5 h-5 text-primary" />
+                                      </div>
+                                      <div>
+                                        <div className="font-medium text-foreground">{board.name}</div>
+                                        <div className="text-sm text-muted-foreground">
+                                          {board.categoryCount} categories, {board.questionCount} questions
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: false })}
+                                      data-testid={`button-remove-global-${board.id}`}
+                                    >
+                                      Remove from Bank
+                                    </Button>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                          <Lock className="w-5 h-5 text-muted-foreground" />
+                          Private Boards (Add to Master Bank)
+                        </h3>
+                        <div className="space-y-2">
+                          {allBoards.filter((b: any) => !b.isGlobal).map((board: any) => (
+                            <Card key={board.id} className="hover-elevate">
+                              <CardContent className="p-4">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                                      <Grid3X3 className="w-5 h-5 text-muted-foreground" />
+                                    </div>
+                                    <div>
+                                      <div className="font-medium text-foreground">{board.name}</div>
+                                      <div className="text-sm text-muted-foreground">
+                                        by {board.ownerName || board.ownerEmail} - {board.categoryCount} categories
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: true })}
+                                    data-testid={`button-add-global-${board.id}`}
+                                  >
+                                    Add to Bank
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                          {allBoards.filter((b: any) => !b.isGlobal).length === 0 && (
+                            <Card>
+                              <CardContent className="p-6 text-center text-muted-foreground">
+                                All boards are in the Master Bank.
+                              </CardContent>
+                            </Card>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {gamesSubtab === 'boards' && (
+                <>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-foreground">Board Moderation</h2>
+                    <Badge variant="secondary">{allBoards.length} boards</Badge>
+                  </div>
+
+                  {isLoadingBoards ? (
+                    <div className="space-y-3">
+                      {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} className="h-20 w-full" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {allBoards.map((board) => (
+                        <Card key={board.id} className="hover-elevate">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                                  <Grid3X3 className="w-5 h-5 text-primary" />
+                                </div>
+                                <div>
+                                  <div className="font-medium text-foreground">{board.name}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    by {board.ownerName || board.ownerEmail}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <div className="text-right text-sm">
+                                  <div className="text-foreground">{board.categoryCount} categories</div>
+                                  <div className="text-muted-foreground">{board.questionCount} questions</div>
+                                </div>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                      <MoreHorizontal className="w-4 h-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => setLocation(`/board/${board.id}`)}>
+                                      <Eye className="w-4 h-4 mr-2" />
+                                      View Board
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-destructive"
+                                      onClick={() => setDeleteBoardId(board.id)}
+                                    >
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                      Delete Board
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                      {allBoards.length === 0 && (
+                        <Card>
+                          <CardContent className="p-8 text-center text-muted-foreground">
+                            No boards have been created yet.
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </motion.div>
           </TabsContent>
@@ -575,81 +674,6 @@ export default function SuperAdmin() {
                       </CardContent>
                     </Card>
                   ))}
-                </div>
-              )}
-            </motion.div>
-          </TabsContent>
-
-          <TabsContent value="boards" className="space-y-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-foreground">Board Moderation</h2>
-                <Badge variant="secondary">{allBoards.length} boards</Badge>
-              </div>
-
-              {isLoadingBoards ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-20 w-full" />
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {allBoards.map((board) => (
-                    <Card key={board.id} className="hover-elevate">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                              <Grid3X3 className="w-5 h-5 text-primary" />
-                            </div>
-                            <div>
-                              <div className="font-medium text-foreground">{board.name}</div>
-                              <div className="text-sm text-muted-foreground">
-                                by {board.ownerName || board.ownerEmail}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <div className="text-right text-sm">
-                              <div className="text-foreground">{board.categoryCount} categories</div>
-                              <div className="text-muted-foreground">{board.questionCount} questions</div>
-                            </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setLocation(`/board/${board.id}`)}>
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  View Board
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onClick={() => setDeleteBoardId(board.id)}
-                                >
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                  Delete Board
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                  {allBoards.length === 0 && (
-                    <Card>
-                      <CardContent className="p-8 text-center text-muted-foreground">
-                        No boards have been created yet.
-                      </CardContent>
-                    </Card>
-                  )}
                 </div>
               )}
             </motion.div>
