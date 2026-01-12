@@ -1145,6 +1145,38 @@ export class DatabaseStorage implements IStorage {
     
     return true;
   }
+
+  async seedGameTypes(): Promise<void> {
+    const existingTypes = await db.select().from(gameTypes);
+    if (existingTypes.length === 0) {
+      console.log("Seeding default game types...");
+      await db.insert(gameTypes).values([
+        {
+          slug: "grid_of_grudges",
+          displayName: "Buzzkill",
+          description: "Race the clock, decode the clues, and claim the grid.",
+          icon: "grid",
+          hostEnabled: true,
+          playerEnabled: true,
+          sortOrder: 1,
+        },
+        {
+          slug: "double_dip",
+          displayName: "Double Dip",
+          description: "Deep dives and daily drives into the mind of your favorite person.",
+          icon: "heart",
+          hostEnabled: true,
+          playerEnabled: true,
+          sortOrder: 2,
+        },
+      ]);
+      console.log("Game types seeded successfully.");
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
+
+export async function seedDatabase() {
+  await storage.seedGameTypes();
+}
