@@ -360,7 +360,7 @@ export default function RelationshipHub() {
             </div>
             <h2 className="text-2xl font-bold mb-2 text-foreground">Double Dip</h2>
             <p className="text-muted-foreground mb-6">Sign in to start your relationship journey</p>
-            <Link href="/login">
+            <Link href="/">
               <Button className="w-full" data-testid="button-login">Sign In</Button>
             </Link>
           </CardContent>
