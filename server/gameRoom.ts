@@ -709,6 +709,13 @@ export function setupWebSocket(server: Server) {
                 room.currentMode = "sequence" as GameMode;
                 room.buzzerLocked = true;
                 
+                // Persist mode change to database
+                if (room.sessionId > 0) {
+                  storage.updateSession(room.sessionId, { currentMode: "sequence" }).catch(err => {
+                    console.error("Failed to persist mode change:", err);
+                  });
+                }
+                
                 const existingScores = room.sequenceRound?.sessionScores || new Map<string, number>();
                 room.players.forEach((player) => {
                   if (!existingScores.has(player.id)) {
