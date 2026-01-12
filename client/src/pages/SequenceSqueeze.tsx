@@ -394,82 +394,38 @@ export default function SequenceSqueeze() {
       <main className="p-6 max-w-5xl mx-auto">
         {gameState === "setup" && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-16"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Question Library</h2>
-                <p className="text-muted-foreground">Create and manage your sequence questions</p>
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={() => setShowCreateDialog(true)} data-testid="button-create-question">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Question
-                </Button>
-                <Button 
-                  className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
-                  onClick={connectWebSocket}
-                  data-testid="button-start-game"
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  Start Game
-                </Button>
-              </div>
+            <div className="w-28 h-28 mx-auto mb-8 rounded-full bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 flex items-center justify-center shadow-2xl shadow-teal-500/40">
+              <ListOrdered className="w-14 h-14 text-white" />
             </div>
-
+            <h2 className="text-4xl font-black mb-3">Sequence Squeeze</h2>
+            <p className="text-lg text-muted-foreground mb-8">
+              Put it in order, fast!
+            </p>
+            
             {isLoadingQuestions ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map(i => (
-                  <Skeleton key={i} className="h-24 w-full" />
-                ))}
-              </div>
+              <Skeleton className="h-14 w-48 mx-auto" />
             ) : questions.length === 0 ? (
-              <Card className="p-12 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                  <ListOrdered className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">No questions yet</h3>
-                <p className="text-muted-foreground mb-4">Create your first sequence question to get started</p>
-                <Button onClick={() => setShowCreateDialog(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Question
-                </Button>
-              </Card>
+              <p className="text-muted-foreground mb-4">No questions available. Add some in the Admin panel.</p>
             ) : (
-              <div className="space-y-3">
-                {questions.map((q, idx) => (
-                  <Card key={q.id} className="p-4">
-                    <div className="flex items-start gap-4">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500/20 to-cyan-500/20 flex items-center justify-center shrink-0">
-                        <span className="text-sm font-bold text-teal-600">{idx + 1}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-foreground mb-2">{q.question}</h3>
-                        <div className="flex flex-wrap gap-2 mb-2">
-                          <Badge variant="secondary">A: {q.optionA}</Badge>
-                          <Badge variant="secondary">B: {q.optionB}</Badge>
-                          <Badge variant="secondary">C: {q.optionC}</Badge>
-                          <Badge variant="secondary">D: {q.optionD}</Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Correct order: {(q.correctOrder as string[]).join(" → ")}
-                        </p>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => deleteQuestionMutation.mutate(q.id)}
-                          data-testid={`button-delete-${q.id}`}
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+              <div className="space-y-4">
+                <Badge variant="secondary" className="text-base px-4 py-2">
+                  {questions.length} question{questions.length !== 1 ? 's' : ''} ready
+                </Badge>
+                <div>
+                  <Button 
+                    size="lg"
+                    className="h-14 px-8 text-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-teal-500/30"
+                    onClick={connectWebSocket}
+                    data-testid="button-start-game"
+                  >
+                    <Play className="w-6 h-6 mr-2" />
+                    Start Game
+                  </Button>
+                </div>
               </div>
             )}
           </motion.div>
