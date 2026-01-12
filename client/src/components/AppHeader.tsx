@@ -10,6 +10,7 @@ interface AppHeaderProps {
   subtitle?: string;
   backHref?: string;
   showAdminButton?: boolean;
+  adminHref?: string;
   showHelpButton?: boolean;
   showLogout?: boolean;
   onHelpClick?: () => void;
@@ -22,6 +23,7 @@ export function AppHeader({
   subtitle,
   backHref,
   showAdminButton = false,
+  adminHref = "/admin",
   showHelpButton = false,
   showLogout = false,
   onHelpClick,
@@ -90,7 +92,7 @@ export function AppHeader({
           </Button>
           
           {showAdminButton && (
-            <Link href="/admin">
+            <Link href={adminHref}>
               <Button 
                 variant="ghost" 
                 size="icon" 
