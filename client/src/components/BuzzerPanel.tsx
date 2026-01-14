@@ -48,6 +48,7 @@ export interface BuzzerPanelHandle {
   completeQuestion: (questionId: number, playerId?: string, points?: number) => void;
   setBoard: (boardId: number | null) => void;
   getSessionCode: () => string | null;
+  getSessionId: () => number | null;
 }
 
 function getSavedRoomCode(): string | null {
@@ -316,7 +317,8 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
     completeQuestion,
     setBoard,
     getSessionCode: () => roomCode,
-  }), [unlockBuzzer, lockBuzzer, resetBuzzer, players, buzzQueue, updateScore, completeQuestion, setBoard, roomCode]);
+    getSessionId: () => sessionId,
+  }), [unlockBuzzer, lockBuzzer, resetBuzzer, players, buzzQueue, updateScore, completeQuestion, setBoard, roomCode, sessionId]);
 
   const sendFeedback = (playerId: string, correct: boolean, points: number) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
