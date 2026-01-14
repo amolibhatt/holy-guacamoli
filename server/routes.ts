@@ -621,6 +621,17 @@ export async function registerRoutes(
     try {
       const sessionId = Number(req.params.sessionId);
       const result = await generateMashedBoard(sessionId);
+      
+      if (result.error) {
+        if (result.missingGroups) {
+          return res.status(409).json({ 
+            message: result.error,
+            missingGroups: result.missingGroups,
+          });
+        }
+        return res.status(400).json({ message: result.error });
+      }
+      
       res.json(result);
     } catch (err) {
       console.error("Error generating mashed board:", err);
