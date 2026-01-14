@@ -9,6 +9,8 @@ import fs from "fs";
 import { setupWebSocket, getRoomInfo, getOrRestoreSession } from "./gameRoom";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import { generateMashedBoard, getThemedBoardCategories, getPlayedCategoryStatus } from "./buzzkillBoards";
+import { SOURCE_GROUPS, type SourceGroup } from "@shared/schema";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -559,6 +561,94 @@ export async function registerRoutes(
     } catch (err) {
       console.error("Error getting full board:", err);
       res.status(500).json({ message: "Failed to get board data" });
+    }
+  });
+
+  // === SMART CATEGORY MANAGEMENT (Buzzkill) ===
+  
+  // Get all categories grouped by source group
+  app.get("/api/buzzkill/category-groups", isAuthenticated, async (req, res) => {
+    try {
+      const grouped = await storage.getCategoriesBySourceGroup();
+      const result: Record<string, any[]> = {};
+      grouped.forEach((cats, group) => {
+        result[group] = cats;
+      });
+      res.json({ groups: result, sourceGroups: SOURCE_GROUPS });
+    } catch (err) {
+      console.error("Error getting category groups:", err);
+      res.status(500).json({ message: "Failed to get category groups" });
+    }
+  });
+
+  // Update a category's source group (admin only)
+  app.patch("/api/categories/:id/source-group", isAuthenticated, async (req, res) => {
+    try {
+      const { sourceGroup } = req.body;
+      if (sourceGroup && !SOURCE_GROUPS.includes(sourceGroup)) {
+        return res.status(400).json({ message: "Invalid source group. Must be A, B, C, D, or E" });
+      }
+      const updated = await storage.updateCategory(Number(req.params.id), { 
+        sourceGroup: sourceGroup || null 
+      });
+      if (!updated) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      console.error("Error updating category source group:", err);
+      res.status(500).json({ message: "Failed to update category" });
+    }
+  });
+
+  // Get themed board categories (by source group)
+  app.get("/api/buzzkill/themed/:group", isAuthenticated, async (req, res) => {
+    try {
+      const group = req.params.group.toUpperCase() as SourceGroup;
+      if (!SOURCE_GROUPS.includes(group)) {
+        return res.status(400).json({ message: "Invalid source group" });
+      }
+      const categories = await getThemedBoardCategories(group);
+      res.json({ group, categories });
+    } catch (err) {
+      console.error("Error getting themed board:", err);
+      res.status(500).json({ message: "Failed to get themed board" });
+    }
+  });
+
+  // Generate a mashed board for a session (Daily Smash)
+  app.post("/api/buzzkill/mash/:sessionId", isAuthenticated, async (req, res) => {
+    try {
+      const sessionId = Number(req.params.sessionId);
+      const result = await generateMashedBoard(sessionId);
+      res.json(result);
+    } catch (err) {
+      console.error("Error generating mashed board:", err);
+      res.status(500).json({ message: "Failed to generate mashed board" });
+    }
+  });
+
+  // Get played category status for a session
+  app.get("/api/buzzkill/session/:sessionId/played", isAuthenticated, async (req, res) => {
+    try {
+      const sessionId = Number(req.params.sessionId);
+      const status = await getPlayedCategoryStatus(sessionId);
+      res.json(status);
+    } catch (err) {
+      console.error("Error getting played status:", err);
+      res.status(500).json({ message: "Failed to get played status" });
+    }
+  });
+
+  // Reset played categories for a session
+  app.post("/api/buzzkill/session/:sessionId/reset-played", isAuthenticated, async (req, res) => {
+    try {
+      const sessionId = Number(req.params.sessionId);
+      await storage.resetSessionPlayedCategories(sessionId);
+      res.json({ success: true, message: "Played categories reset" });
+    } catch (err) {
+      console.error("Error resetting played categories:", err);
+      res.status(500).json({ message: "Failed to reset played categories" });
     }
   });
 
