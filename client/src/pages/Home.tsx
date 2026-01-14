@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ArrowRight, Zap, Trophy, Clock, Lock, Sparkles, PartyPopper, Users, ChevronRight, Heart, ListOrdered } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, Lock, Sparkles, PartyPopper, Users, ChevronRight, Heart, ListOrdered, Trophy, Clock } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation } from "wouter";
@@ -181,8 +181,8 @@ export default function Home() {
               </p>
             </motion.div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-              {gameTypes.map((game, index) => {
+            <div className="flex justify-center mb-12">
+              {gameTypes.filter(g => g.slug === 'buzzkill').map((game, index) => {
                 const config = GAME_CONFIG[game.slug] || {
                   icon: Grid3X3,
                   gradient: "from-primary to-secondary",
@@ -204,7 +204,7 @@ export default function Home() {
                     whileHover={isComingSoon ? {} : { scale: 1.02, y: -4 }}
                     whileTap={isComingSoon ? {} : { scale: 0.98 }}
                     disabled={isComingSoon}
-                    className={`relative flex flex-col p-8 bg-card border-2 rounded-2xl text-left transition-all group overflow-hidden ${
+                    className={`relative flex flex-col p-8 bg-card border-2 rounded-2xl text-left transition-all group overflow-hidden max-w-md w-full ${
                       isComingSoon 
                         ? 'opacity-60 cursor-not-allowed border-border' 
                         : `hover:shadow-2xl border-border ${config.hoverBorder}`
@@ -258,18 +258,18 @@ export default function Home() {
               <div className="h-px flex-1 bg-border" />
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
               <div className="relative flex flex-col items-center gap-3 p-6 bg-card/30 border border-dashed border-border rounded-xl text-center">
                 <div className="absolute top-3 right-3 px-2 py-0.5 bg-muted rounded text-[10px] font-medium text-muted-foreground flex items-center gap-1">
                   <Lock className="w-3 h-3" />
                   Soon
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/20 flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-amber-500/60" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/20 flex items-center justify-center">
+                  <ListOrdered className="w-6 h-6 text-teal-500/60" />
                 </div>
                 <div>
-                  <h4 className="text-base font-semibold text-foreground/60 mb-1">Speed Round</h4>
-                  <p className="text-muted-foreground/60 text-xs">Race against the clock with rapid-fire questions</p>
+                  <h4 className="text-base font-semibold text-foreground/60 mb-1">Sequence Squeeze</h4>
+                  <p className="text-muted-foreground/60 text-xs">Put items in the right order to score points</p>
                 </div>
               </div>
 
@@ -278,26 +278,12 @@ export default function Home() {
                   <Lock className="w-3 h-3" />
                   Soon
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/20 flex items-center justify-center">
-                  <Trophy className="w-6 h-6 text-violet-500/60" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-rose-500/20 flex items-center justify-center">
+                  <Heart className="w-6 h-6 text-pink-500/60" />
                 </div>
                 <div>
-                  <h4 className="text-base font-semibold text-foreground/60 mb-1">Tournament</h4>
-                  <p className="text-muted-foreground/60 text-xs">Bracket-style elimination competition</p>
-                </div>
-              </div>
-
-              <div className="relative flex flex-col items-center gap-3 p-6 bg-card/30 border border-dashed border-border rounded-xl text-center">
-                <div className="absolute top-3 right-3 px-2 py-0.5 bg-muted rounded text-[10px] font-medium text-muted-foreground flex items-center gap-1">
-                  <Lock className="w-3 h-3" />
-                  Soon
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/20 flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-cyan-500/60" />
-                </div>
-                <div>
-                  <h4 className="text-base font-semibold text-foreground/60 mb-1">Daily Challenge</h4>
-                  <p className="text-muted-foreground/60 text-xs">New curated questions every day</p>
+                  <h4 className="text-base font-semibold text-foreground/60 mb-1">Double Dip</h4>
+                  <p className="text-muted-foreground/60 text-xs">Couples game to test how well you know each other</p>
                 </div>
               </div>
             </div>
