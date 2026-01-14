@@ -207,7 +207,7 @@ export default function ContentDashboard() {
     );
   }
 
-  if (!user || user.role !== 'super_admin') {
+  if (!user) {
     return (
       <div className="min-h-screen gradient-game flex items-center justify-center p-4">
         <Card className="max-w-md">
@@ -217,7 +217,7 @@ export default function ContentDashboard() {
               Access Denied
             </CardTitle>
             <CardDescription>
-              You don't have permission to access this page. This area is restricted to super administrators only.
+              Please log in to access this page.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -233,15 +233,20 @@ export default function ContentDashboard() {
     );
   }
 
+  const isSuperAdmin = user.role === 'super_admin';
+  const visibleCategories = isSuperAdmin 
+    ? allCategories 
+    : allCategories.filter(cat => cat.isActive);
+
   return (
     <div className="min-h-screen gradient-game">
       <AppHeader
         title="Content Dashboard"
         subtitle="Manage Boards, Categories & Questions"
-        backHref="/admin/super"
+        backHref={isSuperAdmin ? "/admin/super" : "/admin"}
         rightContent={
-          <Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/30">
-            Super Admin
+          <Badge variant="outline" className={isSuperAdmin ? "bg-purple-500/10 text-purple-500 border-purple-500/30" : "bg-blue-500/10 text-blue-500 border-blue-500/30"}>
+            {isSuperAdmin ? "Super Admin" : "Host"}
           </Badge>
         }
       />
@@ -310,17 +315,19 @@ export default function ContentDashboard() {
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-foreground">Boards</h2>
-                <Button
-                  onClick={() => setShowNewBoardForm(true)}
-                  disabled={showNewBoardForm}
-                  data-testid="button-new-board"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Board
-                </Button>
+                {isSuperAdmin && (
+                  <Button
+                    onClick={() => setShowNewBoardForm(true)}
+                    disabled={showNewBoardForm}
+                    data-testid="button-new-board"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Board
+                  </Button>
+                )}
               </div>
 
-              {showNewBoardForm && (
+              {showNewBoardForm && isSuperAdmin && (
                 <Card className="mb-4">
                   <CardContent className="p-4">
                     <div className="flex flex-wrap items-center gap-3">
@@ -392,7 +399,7 @@ export default function ContentDashboard() {
                             >
                               <Grid3X3 className="w-5 h-5 text-white" />
                             </div>
-                            {editingBoardId === board.id ? (
+                            {editingBoardId === board.id && isSuperAdmin ? (
                               <div className="flex items-center gap-2">
                                 <Input
                                   value={editBoardName}
@@ -446,7 +453,7 @@ export default function ContentDashboard() {
                             )}
                           </div>
                           <div className="flex items-center gap-2">
-                            {editingBoardId !== board.id && (
+                            {editingBoardId !== board.id && isSuperAdmin && (
                               <>
                                 <Button
                                   size="icon"
@@ -499,17 +506,19 @@ export default function ContentDashboard() {
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-foreground">Categories</h2>
-                <Button
-                  onClick={() => setShowNewCategoryForm(true)}
-                  disabled={showNewCategoryForm}
-                  data-testid="button-new-category"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Category
-                </Button>
+                {isSuperAdmin && (
+                  <Button
+                    onClick={() => setShowNewCategoryForm(true)}
+                    disabled={showNewCategoryForm}
+                    data-testid="button-new-category"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Category
+                  </Button>
+                )}
               </div>
 
-              {showNewCategoryForm && (
+              {showNewCategoryForm && isSuperAdmin && (
                 <Card className="mb-4">
                   <CardContent className="p-4">
                     <div className="flex flex-wrap items-center gap-3">
@@ -576,7 +585,7 @@ export default function ContentDashboard() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {allCategories.map((category) => (
+                  {visibleCategories.map((category) => (
                     <Card
                       key={category.id}
                       className={`hover-elevate ${!category.isActive ? 'opacity-60' : ''}`}
@@ -587,7 +596,7 @@ export default function ContentDashboard() {
                             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${category.isActive ? 'bg-primary/20' : 'bg-muted'}`}>
                               <Layers className={`w-5 h-5 ${category.isActive ? 'text-primary' : 'text-muted-foreground'}`} />
                             </div>
-                            {editingCategoryId === category.id ? (
+                            {editingCategoryId === category.id && isSuperAdmin ? (
                               <div className="flex items-center gap-2">
                                 <Input
                                   value={editCategoryName}
@@ -619,7 +628,7 @@ export default function ContentDashboard() {
                               <div>
                                 <div className="font-medium text-foreground flex items-center gap-2">
                                   {category.name}
-                                  {!category.isActive && (
+                                  {!category.isActive && isSuperAdmin && (
                                     <Badge variant="secondary" className="text-xs">Inactive</Badge>
                                   )}
                                 </div>
@@ -630,20 +639,22 @@ export default function ContentDashboard() {
                             )}
                           </div>
                           <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-muted-foreground">Active</span>
-                              <Switch
-                                checked={category.isActive}
-                                onCheckedChange={(checked) =>
-                                  updateCategoryMutation.mutate({
-                                    id: category.id,
-                                    isActive: checked,
-                                  })
-                                }
-                                data-testid={`switch-category-active-${category.id}`}
-                              />
-                            </div>
-                            {editingCategoryId !== category.id && (
+                            {isSuperAdmin && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-muted-foreground">Active</span>
+                                <Switch
+                                  checked={category.isActive}
+                                  onCheckedChange={(checked) =>
+                                    updateCategoryMutation.mutate({
+                                      id: category.id,
+                                      isActive: checked,
+                                    })
+                                  }
+                                  data-testid={`switch-category-active-${category.id}`}
+                                />
+                              </div>
+                            )}
+                            {editingCategoryId !== category.id && isSuperAdmin && (
                               <>
                                 <Button
                                   size="icon"
@@ -671,10 +682,12 @@ export default function ContentDashboard() {
                       </CardContent>
                     </Card>
                   ))}
-                  {allCategories.length === 0 && (
+                  {visibleCategories.length === 0 && (
                     <Card>
                       <CardContent className="p-8 text-center text-muted-foreground">
-                        No categories yet. Create your first category to get started.
+                        {isSuperAdmin 
+                          ? "No categories yet. Create your first category to get started."
+                          : "No active categories available. Please contact an administrator."}
                       </CardContent>
                     </Card>
                   )}
