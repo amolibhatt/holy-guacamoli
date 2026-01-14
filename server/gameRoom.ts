@@ -718,6 +718,138 @@ export function setupWebSocket(server: Server) {
             break;
           }
 
+          case "host:initializeBoard": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room && message.boardId) {
+                (async () => {
+                  try {
+                    const boardData = await storage.getBoardWithCategoriesAndQuestions(message.boardId, room.hostId, 'super_admin');
+                    const board = await storage.getBoard(message.boardId, room.hostId, 'super_admin');
+                    
+                    if (!board || !boardData) {
+                      ws.send(JSON.stringify({ type: "error", message: "Board not found" }));
+                      return;
+                    }
+                    
+                    room.currentBoardId = message.boardId;
+                    await storage.updateSession(room.sessionId, { currentBoardId: message.boardId });
+                    
+                    const completedQuestions = await storage.getCompletedQuestions(room.sessionId);
+                    
+                    const boardPayload = {
+                      type: "board:initialized",
+                      boardId: board.id,
+                      boardName: board.name,
+                      pointValues: board.pointValues,
+                      categories: boardData.map(bc => ({
+                        id: bc.category.id,
+                        name: bc.category.name,
+                        questions: bc.questions.map(q => ({
+                          id: q.id,
+                          question: q.question,
+                          options: q.options,
+                          points: q.points,
+                          isCompleted: completedQuestions.includes(q.id),
+                        })),
+                      })),
+                    };
+                    
+                    ws.send(JSON.stringify(boardPayload));
+                    
+                    room.players.forEach((player) => {
+                      if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+                        const playerPayload = {
+                          ...boardPayload,
+                          categories: boardPayload.categories.map(cat => ({
+                            ...cat,
+                            questions: cat.questions.map(q => ({
+                              id: q.id,
+                              points: q.points,
+                              isCompleted: q.isCompleted,
+                            })),
+                          })),
+                        };
+                        player.ws.send(JSON.stringify(playerPayload));
+                      }
+                    });
+                  } catch (err) {
+                    console.error("Failed to initialize board:", err);
+                    ws.send(JSON.stringify({ type: "error", message: "Failed to initialize board" }));
+                  }
+                })();
+              }
+            }
+            break;
+          }
+
+          case "host:generateMashedBoard": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room) {
+                (async () => {
+                  try {
+                    const { generateMashedBoard } = await import("./buzzkillBoards");
+                    const result = await generateMashedBoard(room.sessionId);
+                    
+                    ws.send(JSON.stringify({
+                      type: "mashed:generated",
+                      categories: result.categories,
+                      wasReset: result.wasReset,
+                      message: result.message,
+                    }));
+                  } catch (err) {
+                    console.error("Failed to generate mashed board:", err);
+                    ws.send(JSON.stringify({ type: "error", message: "Failed to generate mashed board" }));
+                  }
+                })();
+              }
+            }
+            break;
+          }
+
+          case "host:getPlayedCategories": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room) {
+                (async () => {
+                  try {
+                    const { getPlayedCategoryStatus } = await import("./buzzkillBoards");
+                    const status = await getPlayedCategoryStatus(room.sessionId);
+                    ws.send(JSON.stringify({
+                      type: "played:status",
+                      ...status,
+                    }));
+                  } catch (err) {
+                    console.error("Failed to get played status:", err);
+                  }
+                })();
+              }
+            }
+            break;
+          }
+
+          case "host:resetPlayedCategories": {
+            if (isHost && currentRoom) {
+              const room = rooms.get(currentRoom);
+              if (room) {
+                (async () => {
+                  try {
+                    await storage.resetSessionPlayedCategories(room.sessionId);
+                    ws.send(JSON.stringify({
+                      type: "played:reset",
+                      success: true,
+                      message: "Played categories have been reset",
+                    }));
+                  } catch (err) {
+                    console.error("Failed to reset played categories:", err);
+                  }
+                })();
+              }
+            }
+            break;
+          }
+
           case "host:getScores": {
             if (isHost && currentRoom) {
               const room = rooms.get(currentRoom);
