@@ -90,6 +90,11 @@ export interface IStorage {
   getCompletedQuestions(sessionId: number): Promise<number[]>;
   resetCompletedQuestions(sessionId: number): Promise<boolean>;
   
+  // Smart Category Management
+  getCategoriesBySourceGroup(): Promise<Map<string, Category[]>>;
+  updateSessionPlayedCategories(sessionId: number, categoryIds: number[]): Promise<GameSession | undefined>;
+  resetSessionPlayedCategories(sessionId: number): Promise<GameSession | undefined>;
+  
   // Game Types
   getGameTypes(): Promise<GameType[]>;
   getEnabledGameTypes(forHost: boolean): Promise<GameType[]>;
@@ -805,6 +810,38 @@ export class DatabaseStorage implements IStorage {
   async resetCompletedQuestions(sessionId: number): Promise<boolean> {
     await db.delete(sessionCompletedQuestions).where(eq(sessionCompletedQuestions.sessionId, sessionId));
     return true;
+  }
+
+  // === SMART CATEGORY MANAGEMENT ===
+  async getCategoriesBySourceGroup(): Promise<Map<string, Category[]>> {
+    const allCategories = await db.select().from(categories);
+    const grouped = new Map<string, Category[]>();
+    
+    for (const cat of allCategories) {
+      const group = cat.sourceGroup || 'unassigned';
+      if (!grouped.has(group)) {
+        grouped.set(group, []);
+      }
+      grouped.get(group)!.push(cat);
+    }
+    
+    return grouped;
+  }
+
+  async updateSessionPlayedCategories(sessionId: number, categoryIds: number[]): Promise<GameSession | undefined> {
+    const [updated] = await db.update(gameSessions)
+      .set({ playedCategoryIds: categoryIds })
+      .where(eq(gameSessions.id, sessionId))
+      .returning();
+    return updated;
+  }
+
+  async resetSessionPlayedCategories(sessionId: number): Promise<GameSession | undefined> {
+    const [updated] = await db.update(gameSessions)
+      .set({ playedCategoryIds: [] })
+      .where(eq(gameSessions.id, sessionId))
+      .returning();
+    return updated;
   }
 
   // === SUPER ADMIN METHODS ===
