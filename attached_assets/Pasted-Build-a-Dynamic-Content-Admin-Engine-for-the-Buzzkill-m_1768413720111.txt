@@ -1,0 +1,30 @@
+Build a Dynamic Content & Admin Engine for the Buzzkill mode:
+1. Database Schema (Drizzle/PostgreSQL):
+boards: id, name (e.g., 'Science'), color_code.
+categories: id, board_id, name, is_active (boolean).
+questions: id, category_id, clue_text, answer_text, point_value (10-50).
+2. The Scalable Shuffle Logic:
+Write a function generateDynamicBoard(sessionId):
+Step A: Get all unique board_ids that have at least one 'active' category.
+Step B: For each board_id, select one random category_id that is NOT in the session’s played_category_ids.
+Step C: If a specific Board runs out of unplayed categories, reset the history only for that board so the game can continue.
+Step D: Return a board where the number of columns equals the number of active Boards.
+3. Super Admin Dashboard (Route: /admin/content):
+Create a CRUD interface to:
+Add/Edit/Delete Boards.
+Add/Edit/Delete Categories.
+Add/Edit Questions (ensure exactly 5 per category).
+Add a 'Global Stats' counter: 'Total Boards', 'Total Categories', 'Ready to Play' (Active categories with 5 questions).
+4. Tenant Admin Visibility:
+Ensure that while Super Admin (Amoli) manages the Master Bank, the Tenant Admins (Hosts) can only see the 'Active' categories when they start a game."
+4. The Workflow: How you add content
+Log in as Super Admin: Go to your secret dashboard.
+Add a new Board: You name it "Red Carpet" (Bollywood).
+Add a Category: You name it "Cinematic Gaslighting."
+Add 5 Questions: You type in your "armless retiree" and "mustache" clues.
+Flip the Switch: Set category to ACTIVE.
+Instant Update: The very next time a user clicks "Shuffle/Daily Smash," your new Bollywood clues are officially in the "Mashup" rotation!
+UX Tip for Scalability:
+If you keep adding boards, the 5x5 grid might become a 10x5 grid (too wide for a screen).
+Tell Replit:
+"If the number of Boards exceeds 5, the generateDynamicBoard function should randomly pick 5 Boards first, then pick 1 category from each, to keep the UI clean as a 5-column grid."

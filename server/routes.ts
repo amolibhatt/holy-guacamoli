@@ -9,7 +9,7 @@ import fs from "fs";
 import { setupWebSocket, getRoomInfo, getOrRestoreSession } from "./gameRoom";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
-import { generateMashedBoard, getThemedBoardCategories, getPlayedCategoryStatus } from "./buzzkillBoards";
+import { generateDynamicBoard, getPlayedCategoryStatus, getContentStats, getActiveCategoriesForTenant } from "./buzzkillBoards";
 import { SOURCE_GROUPS, type SourceGroup } from "@shared/schema";
 
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -601,41 +601,42 @@ export async function registerRoutes(
     }
   });
 
-  // Get themed board categories (by source group)
-  app.get("/api/buzzkill/themed/:group", isAuthenticated, async (req, res) => {
+  // Get active categories for tenant view (only active categories visible)
+  app.get("/api/buzzkill/active-categories", isAuthenticated, async (req, res) => {
     try {
-      const group = req.params.group.toUpperCase() as SourceGroup;
-      if (!SOURCE_GROUPS.includes(group)) {
-        return res.status(400).json({ message: "Invalid source group" });
-      }
-      const categories = await getThemedBoardCategories(group);
-      res.json({ group, categories });
+      const categories = await getActiveCategoriesForTenant();
+      res.json({ categories });
     } catch (err) {
-      console.error("Error getting themed board:", err);
-      res.status(500).json({ message: "Failed to get themed board" });
+      console.error("Error getting active categories:", err);
+      res.status(500).json({ message: "Failed to get active categories" });
     }
   });
 
-  // Generate a mashed board for a session (Daily Smash)
-  app.post("/api/buzzkill/mash/:sessionId", isAuthenticated, async (req, res) => {
+  // Get content stats for admin dashboard
+  app.get("/api/buzzkill/content-stats", isAuthenticated, async (req, res) => {
+    try {
+      const stats = await getContentStats();
+      res.json(stats);
+    } catch (err) {
+      console.error("Error getting content stats:", err);
+      res.status(500).json({ message: "Failed to get content stats" });
+    }
+  });
+
+  // Generate a dynamic board for a session (Daily Smash / Shuffle)
+  app.post("/api/buzzkill/shuffle/:sessionId", isAuthenticated, async (req, res) => {
     try {
       const sessionId = Number(req.params.sessionId);
-      const result = await generateMashedBoard(sessionId);
+      const result = await generateDynamicBoard(sessionId);
       
       if (result.error) {
-        if (result.missingGroups) {
-          return res.status(409).json({ 
-            message: result.error,
-            missingGroups: result.missingGroups,
-          });
-        }
         return res.status(400).json({ message: result.error });
       }
       
       res.json(result);
     } catch (err) {
-      console.error("Error generating mashed board:", err);
-      res.status(500).json({ message: "Failed to generate mashed board" });
+      console.error("Error generating dynamic board:", err);
+      res.status(500).json({ message: "Failed to generate board" });
     }
   });
 

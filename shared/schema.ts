@@ -223,6 +223,7 @@ export const boards = pgTable("boards", {
   theme: text("theme").notNull().default("birthday"),
   visibility: text("visibility").notNull().$type<BoardVisibility>().default("private"),
   isGlobal: boolean("is_global").notNull().default(false),
+  colorCode: text("color_code").default("#6366f1"),
 });
 
 export const categories = pgTable("categories", {
@@ -231,6 +232,7 @@ export const categories = pgTable("categories", {
   description: text("description").notNull(),
   imageUrl: text("image_url").notNull(),
   sourceGroup: text("source_group").$type<SourceGroup>(),
+  isActive: boolean("is_active").notNull().default(false),
 });
 
 export const boardCategories = pgTable("board_categories", {

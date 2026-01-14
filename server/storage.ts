@@ -94,6 +94,9 @@ export interface IStorage {
   getCategoriesBySourceGroup(): Promise<Map<string, Category[]>>;
   updateSessionPlayedCategories(sessionId: number, categoryIds: number[]): Promise<GameSession | undefined>;
   resetSessionPlayedCategories(sessionId: number): Promise<GameSession | undefined>;
+  getActiveCategoriesByBoard(): Promise<Map<number, { board: Board; categories: Category[] }>>;
+  getQuestionCountForCategory(categoryId: number): Promise<number>;
+  getContentStats(): Promise<{ totalBoards: number; totalCategories: number; activeCategories: number; readyToPlay: number }>;
   
   // Game Types
   getGameTypes(): Promise<GameType[]>;
@@ -842,6 +845,74 @@ export class DatabaseStorage implements IStorage {
       .where(eq(gameSessions.id, sessionId))
       .returning();
     return updated;
+  }
+
+  async getActiveCategoriesByBoard(): Promise<Map<number, { board: Board; categories: Category[] }>> {
+    const activeCategories = await db.select()
+      .from(categories)
+      .where(eq(categories.isActive, true));
+    
+    const result = new Map<number, { board: Board; categories: Category[] }>();
+    
+    for (const category of activeCategories) {
+      const boardCats = await db.select()
+        .from(boardCategories)
+        .where(eq(boardCategories.categoryId, category.id));
+      
+      for (const bc of boardCats) {
+        const [board] = await db.select().from(boards).where(eq(boards.id, bc.boardId));
+        if (board) {
+          if (!result.has(board.id)) {
+            result.set(board.id, { board, categories: [] });
+          }
+          result.get(board.id)!.categories.push(category);
+        }
+      }
+    }
+    
+    return result;
+  }
+
+  async getQuestionCountForCategory(categoryId: number): Promise<number> {
+    const boardCats = await db.select({ id: boardCategories.id })
+      .from(boardCategories)
+      .where(eq(boardCategories.categoryId, categoryId));
+    
+    if (boardCats.length === 0) return 0;
+    
+    const bcIds = boardCats.map(bc => bc.id);
+    const [result] = await db.select({ count: count() })
+      .from(questions)
+      .where(inArray(questions.boardCategoryId, bcIds));
+    
+    return result?.count ?? 0;
+  }
+
+  async getContentStats(): Promise<{ totalBoards: number; totalCategories: number; activeCategories: number; readyToPlay: number }> {
+    const [boardCount] = await db.select({ count: count() }).from(boards);
+    const [categoryCount] = await db.select({ count: count() }).from(categories);
+    const [activeCategoryCount] = await db.select({ count: count() })
+      .from(categories)
+      .where(eq(categories.isActive, true));
+    
+    const activeCategories = await db.select()
+      .from(categories)
+      .where(eq(categories.isActive, true));
+    
+    let readyCount = 0;
+    for (const cat of activeCategories) {
+      const qCount = await this.getQuestionCountForCategory(cat.id);
+      if (qCount >= 5) {
+        readyCount++;
+      }
+    }
+    
+    return {
+      totalBoards: boardCount?.count ?? 0,
+      totalCategories: categoryCount?.count ?? 0,
+      activeCategories: activeCategoryCount?.count ?? 0,
+      readyToPlay: readyCount,
+    };
   }
 
   // === SUPER ADMIN METHODS ===
