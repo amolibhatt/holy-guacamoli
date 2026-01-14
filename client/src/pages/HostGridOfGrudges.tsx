@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Settings, Grid3X3, ArrowRight, Users, Shuffle } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, Users, Shuffle } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
-import { Link, useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 import type { Category } from "@shared/schema";
 import { motion } from "framer-motion";
 
@@ -59,14 +58,8 @@ export default function HostGridOfGrudges() {
         title="Buzzkill"
         subtitle="Choose your challenge"
         backHref="/"
-        rightContent={
-          <Link href="/admin?game=buzzkill">
-            <Button variant="outline" size="sm" className="gap-2" data-testid="button-manage-boards">
-              <Settings className="w-4 h-4" />
-              Manage
-            </Button>
-          </Link>
-        }
+        showAdminButton
+        adminHref="/admin?game=buzzkill"
       />
 
       <main className="flex-1 p-6 overflow-y-auto">
