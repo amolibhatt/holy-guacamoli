@@ -4,8 +4,9 @@ import { useLocation, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import type { Category } from "@shared/schema";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { BuzzerPanel, BuzzerPanelHandle } from "@/components/BuzzerPanel";
 
 interface MashedResult {
   categories: Category[];
@@ -20,9 +21,24 @@ export default function BuzzkillDailySmash() {
   const [mashedBoard, setMashedBoard] = useState<MashedResult | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
+  const [localSessionId, setLocalSessionId] = useState<string | null>(null);
+  const buzzerRef = useRef<BuzzerPanelHandle>(null);
   
   const params = new URLSearchParams(searchString);
-  const sessionId = params.get("session");
+  const urlSessionId = params.get("session");
+  const sessionId = urlSessionId || localSessionId;
+  
+  // Poll for session code from BuzzerPanel
+  useEffect(() => {
+    const checkSession = () => {
+      const code = buzzerRef.current?.getSessionCode();
+      if (code && !localSessionId) {
+        setLocalSessionId(code);
+      }
+    };
+    const interval = setInterval(checkSession, 500);
+    return () => clearInterval(interval);
+  }, [localSessionId]);
 
   const generateBoard = async () => {
     if (!sessionId) {
@@ -203,10 +219,8 @@ export default function BuzzkillDailySmash() {
         </div>
       </main>
       
-      <footer className="border-t border-border/50 bg-card/30 backdrop-blur px-6 py-4 text-center">
-        <p className="text-xs text-muted-foreground">
-          Made with love for Amoli's Birthday
-        </p>
+      <footer className="border-t border-border/50 bg-card/80 backdrop-blur p-4">
+        <BuzzerPanel ref={buzzerRef} />
       </footer>
     </div>
   );
