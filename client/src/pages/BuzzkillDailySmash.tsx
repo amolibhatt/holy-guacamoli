@@ -21,19 +21,19 @@ export default function BuzzkillDailySmash() {
   const [mashedBoard, setMashedBoard] = useState<MashedResult | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
-  const [localSessionId, setLocalSessionId] = useState<string | null>(null);
+  const [localSessionId, setLocalSessionId] = useState<number | null>(null);
   const buzzerRef = useRef<BuzzerPanelHandle>(null);
   
   const params = new URLSearchParams(searchString);
   const urlSessionId = params.get("session");
-  const sessionId = urlSessionId || localSessionId;
+  const sessionId = urlSessionId ? Number(urlSessionId) : localSessionId;
   
-  // Poll for session code from BuzzerPanel
+  // Poll for session ID from BuzzerPanel
   useEffect(() => {
     const checkSession = () => {
-      const code = buzzerRef.current?.getSessionCode();
-      if (code && !localSessionId) {
-        setLocalSessionId(code);
+      const id = buzzerRef.current?.getSessionId();
+      if (id && !localSessionId) {
+        setLocalSessionId(id);
       }
     };
     const interval = setInterval(checkSession, 500);
@@ -52,7 +52,7 @@ export default function BuzzkillDailySmash() {
 
     setIsGenerating(true);
     try {
-      const res = await fetch(`/api/buzzkill/mash/${sessionId}`, {
+      const res = await fetch(`/api/buzzkill/shuffle/${sessionId}`, {
         method: "POST",
         credentials: "include",
       });
