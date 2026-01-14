@@ -12,26 +12,14 @@ import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, LogOut, Sun, Moon, Layers, Upload, FileText, Eye, BarChart2, Users, Activity, Heart, Gamepad2, ListOrdered } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, Upload, FileText, Eye } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link, useLocation, useSearch } from "wouter";
+import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import MDEditor from '@uiw/react-md-editor';
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeName, THEMES, useTheme } from "@/context/ThemeContext";
 import { AppHeader } from "@/components/AppHeader";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
 import type { Category, Question, Board, BoardCategoryWithCount } from "@shared/schema";
 import { useUpload } from "@/hooks/use-upload";
 
@@ -49,9 +37,8 @@ const ALL_POINT_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 export default function Admin() {
   const { toast } = useToast();
   const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
-  const { colorMode, toggleColorMode, setTheme } = useTheme();
+  const { setTheme } = useTheme();
   const [, setLocation] = useLocation();
-  const searchString = useSearch();
   
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
   const [selectedBoardCategoryId, setSelectedBoardCategoryId] = useState<number | null>(null);
@@ -96,19 +83,6 @@ export default function Admin() {
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [bulkImportText, setBulkImportText] = useState("");
   const [bulkPreviewMode, setBulkPreviewMode] = useState(false);
-  const [showBoardPreview, setShowBoardPreview] = useState(false);
-  const [adminTab, setAdminTab] = useState<"content" | "analytics">("content");
-  const [selectedGameType, setSelectedGameType] = useState<"buzzkill" | null>(null);
-
-  // Read game type from URL param on mount
-  useEffect(() => {
-    const params = new URLSearchParams(searchString);
-    const game = params.get('game');
-    if (game === 'buzzkill') {
-      setSelectedGameType(game);
-    }
-  }, [searchString]);
-
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
   const editImageInputRef = useRef<HTMLInputElement>(null);
@@ -125,7 +99,7 @@ export default function Admin() {
     enabled: isAuthenticated,
   });
 
-  const { data: allCategories = [], isLoading: loadingCategories } = useQuery<Category[]>({
+  const { data: allCategories = [] } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
     enabled: isAuthenticated,
   });
@@ -148,18 +122,6 @@ export default function Admin() {
     enabled: !!selectedBoardCategoryId && isAuthenticated,
   });
 
-  type HostAnalytics = { totalSessions: number; totalPlayers: number; activeSessions: number };
-  const { data: hostAnalytics, isLoading: loadingAnalytics } = useQuery<HostAnalytics>({
-    queryKey: ['/api/host/analytics'],
-    enabled: isAuthenticated && adminTab === 'analytics',
-  });
-
-  type SessionWithPlayers = { id: number; code: string; hostId: string; gameId: number | null; currentBoardId: number | null; state: string; createdAt: string; players: { playerId: string; name: string; score: number }[] };
-  const { data: hostSessions = [], isLoading: loadingSessions } = useQuery<SessionWithPlayers[]>({
-    queryKey: ['/api/host/sessions'],
-    enabled: isAuthenticated && adminTab === 'analytics',
-  });
-
   const usedPoints = questions.map(q => q.points);
   const availablePoints = currentPointValues.filter(pt => !usedPoints.includes(pt));
 
@@ -169,6 +131,14 @@ export default function Admin() {
       setLocation("/");
     }
   }, [isAuthLoading, isAuthenticated, setLocation]);
+
+  // Auto-select first board when boards load
+  useEffect(() => {
+    if (boards.length > 0 && selectedBoardId === null) {
+      setSelectedBoardId(boards[0].id);
+      if (boards[0].theme) setTheme(boards[0].theme as ThemeName);
+    }
+  }, [boards, selectedBoardId, setTheme]);
 
   useEffect(() => {
     if (availablePoints.length > 0 && !availablePoints.includes(newPoints)) {
@@ -473,294 +443,23 @@ export default function Admin() {
     setEditPoints(q.points);
   };
 
-  const getAdminSubtitle = () => {
-    if (selectedGameType === 'buzzkill') return 'Buzzkill';
-    return 'Manage Content';
-  };
-
   return (
-    <SidebarProvider>
-      <div className="min-h-screen bg-muted/30 flex w-full">
-        <Sidebar className="border-r border-border">
-          <SidebarContent className="pt-4">
-            <SidebarGroup>
-              <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">
-                Admin Panel
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton 
-                      onClick={() => setAdminTab('content')}
-                      isActive={adminTab === 'content'}
-                      className="gap-3"
-                      data-testid="sidebar-games"
-                    >
-                      <Gamepad2 className="w-4 h-4" />
-                      <span>Games</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton 
-                      onClick={() => setAdminTab('analytics')}
-                      isActive={adminTab === 'analytics'}
-                      className="gap-3"
-                      data-testid="sidebar-analytics"
-                    >
-                      <BarChart2 className="w-4 h-4" />
-                      <span>Analytics</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-            
-            <SidebarGroup className="mt-auto">
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <Link href="/">
-                      <SidebarMenuButton className="gap-3" data-testid="sidebar-back-home">
-                        <ArrowLeft className="w-4 h-4" />
-                        <span>Back to Home</span>
-                      </SidebarMenuButton>
-                    </Link>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-        </Sidebar>
-        
-        <div className="flex-1 flex flex-col min-w-0">
-          <AppHeader
-            title="Admin Panel"
-            subtitle={adminTab === 'analytics' ? 'Analytics' : getAdminSubtitle()}
-            rightContent={
-              <div className="flex items-center gap-2">
-                <SidebarTrigger data-testid="button-sidebar-toggle" />
-                {selectedGameType && adminTab === 'content' && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="gap-2" 
-                    onClick={() => {
-                      setSelectedGameType(null);
-                      setSelectedBoardId(null);
-                      setSelectedBoardCategoryId(null);
-                    }}
-                    data-testid="button-back-games"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    Back to Games
-                  </Button>
-                )}
-                {selectedGameType === 'buzzkill' && selectedBoard && (
-                  <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg">
-                    <Grid3X3 className="w-4 h-4 text-primary" />
-                    <span className="font-medium text-foreground">{selectedBoard.name}</span>
-                    {selectedBoardCategory && (
-                      <>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium text-primary">{selectedBoardCategory.category.name}</span>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            }
-          />
+    <div className="min-h-screen bg-muted/30">
+      <AppHeader
+        title="Content Manager"
+        subtitle={selectedBoard ? selectedBoard.name : "Buzzkill"}
+        backHref="/"
+        rightContent={
+          selectedBoard && selectedBoardCategory && (
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg text-sm">
+              <Grid3X3 className="w-4 h-4 text-primary" />
+              <span className="font-medium text-primary">{selectedBoardCategory.category.name}</span>
+            </div>
+          )
+        }
+      />
 
       <main className="max-w-[1600px] mx-auto p-6" role="main" aria-label="Admin panel content">
-        {adminTab === 'analytics' ? (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="bg-card border-border">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Activity className="w-4 h-4" />
-                    Total Sessions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {loadingAnalytics ? (
-                    <Skeleton className="h-8 w-16" />
-                  ) : (
-                    <p className="text-3xl font-bold text-foreground" data-testid="text-total-sessions">
-                      {hostAnalytics?.totalSessions || 0}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-              <Card className="bg-card border-border">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Total Players
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {loadingAnalytics ? (
-                    <Skeleton className="h-8 w-16" />
-                  ) : (
-                    <p className="text-3xl font-bold text-foreground" data-testid="text-total-players">
-                      {hostAnalytics?.totalPlayers || 0}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-              <Card className="bg-card border-border">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-green-500" />
-                    Active Sessions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {loadingAnalytics ? (
-                    <Skeleton className="h-8 w-16" />
-                  ) : (
-                    <p className="text-3xl font-bold text-green-500" data-testid="text-active-sessions">
-                      {hostAnalytics?.activeSessions || 0}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle className="text-foreground">Session History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loadingSessions ? (
-                  <div className="space-y-2">
-                    {[1, 2, 3].map(i => (
-                      <Skeleton key={i} className="h-12 w-full" />
-                    ))}
-                  </div>
-                ) : hostSessions.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">No sessions yet. Start hosting games to see your history here.</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Code</th>
-                          <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Date</th>
-                          <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Status</th>
-                          <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Players</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {hostSessions.map(session => (
-                          <tr key={session.id} className="border-b border-border hover-elevate" data-testid={`row-session-${session.id}`}>
-                            <td className="py-3 px-3">
-                              <span className="font-mono text-sm font-medium text-foreground">{session.code}</span>
-                            </td>
-                            <td className="py-3 px-3 text-sm text-muted-foreground">
-                              {new Date(session.createdAt).toLocaleDateString()} {new Date(session.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </td>
-                            <td className="py-3 px-3">
-                              <span className={`text-xs px-2 py-1 rounded-full ${
-                                session.state === 'ended' 
-                                  ? 'bg-muted text-muted-foreground' 
-                                  : session.state === 'playing' 
-                                    ? 'bg-green-500/20 text-green-500'
-                                    : 'bg-yellow-500/20 text-yellow-500'
-                              }`}>
-                                {session.state}
-                              </span>
-                            </td>
-                            <td className="py-3 px-3 text-sm text-foreground">{session.players.length}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        ) : selectedGameType === null ? (
-          <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Select a Game to Manage</h2>
-              <p className="text-muted-foreground">Choose which game content you want to create or edit</p>
-            </div>
-            
-            <div className="flex justify-center mb-10">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="w-full max-w-md"
-              >
-                <Card 
-                  className="hover-elevate cursor-pointer border-2 border-transparent hover:border-violet-500/50 transition-all"
-                  onClick={() => setSelectedGameType('buzzkill')}
-                  data-testid="card-game-buzzkill"
-                >
-                  <CardContent className="p-8 text-center">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-violet-500/20">
-                      <Grid3X3 className="w-10 h-10 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-foreground mb-2">Buzzkill</h3>
-                    <p className="text-muted-foreground text-sm mb-4">
-                      Create trivia boards with categories and point-based questions
-                    </p>
-                    <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Grid3X3 className="w-3 h-3" />
-                        {boards.length} Boards
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Layers className="w-3 h-3" />
-                        Categories & Questions
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
-
-            <div className="flex items-center gap-2 mb-6">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-sm font-medium text-muted-foreground px-3">Coming Soon</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-              <div className="relative flex flex-col items-center gap-3 p-6 bg-card/30 border border-dashed border-border rounded-xl text-center">
-                <div className="absolute top-3 right-3 px-2 py-0.5 bg-muted rounded text-[10px] font-medium text-muted-foreground flex items-center gap-1">
-                  <X className="w-3 h-3" />
-                  Soon
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/20 flex items-center justify-center">
-                  <ListOrdered className="w-6 h-6 text-teal-500/60" />
-                </div>
-                <div>
-                  <h4 className="text-base font-semibold text-foreground/60 mb-1">Sequence Squeeze</h4>
-                  <p className="text-muted-foreground/60 text-xs">Put items in the right order to score points</p>
-                </div>
-              </div>
-
-              <div className="relative flex flex-col items-center gap-3 p-6 bg-card/30 border border-dashed border-border rounded-xl text-center">
-                <div className="absolute top-3 right-3 px-2 py-0.5 bg-muted rounded text-[10px] font-medium text-muted-foreground flex items-center gap-1">
-                  <X className="w-3 h-3" />
-                  Soon
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-rose-500/20 flex items-center justify-center">
-                  <Heart className="w-6 h-6 text-pink-500/60" />
-                </div>
-                <div>
-                  <h4 className="text-base font-semibold text-foreground/60 mb-1">Double Dip</h4>
-                  <p className="text-muted-foreground/60 text-xs">Couples game to test how well you know each other</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : selectedGameType === 'buzzkill' ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-120px)]">
           <div className="lg:col-span-3 overflow-y-auto">
             <Card className="bg-card border-border shadow-sm">
@@ -1676,10 +1375,7 @@ export default function Admin() {
             </Card>
           </div>
         </div>
-        ) : null}
-        </main>
-        </div>
-      </div>
-    </SidebarProvider>
+      </main>
+    </div>
   );
 }
