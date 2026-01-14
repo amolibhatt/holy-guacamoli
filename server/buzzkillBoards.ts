@@ -1,11 +1,16 @@
 import { storage } from "./storage";
-import { SOURCE_GROUPS, type Category, type SourceGroup } from "@shared/schema";
+import type { Category, Board } from "@shared/schema";
 
-export interface MashedBoardResult {
-  categories: Category[];
+export interface DynamicBoardResult {
+  categories: Array<{
+    category: Category;
+    board: Board;
+    questionCount: number;
+  }>;
+  boardsUsed: number;
   wasReset: boolean;
+  resetBoards?: string[];
   message?: string;
-  missingGroups?: string[];
   error?: string;
 }
 
@@ -21,93 +26,133 @@ export interface BoardWithQuestions {
   }[];
 }
 
-export async function generateMashedBoard(sessionId: number): Promise<MashedBoardResult> {
+export interface ContentStats {
+  totalBoards: number;
+  totalCategories: number;
+  activeCategories: number;
+  readyToPlay: number;
+}
+
+export async function generateDynamicBoard(sessionId: number): Promise<DynamicBoardResult> {
   const session = await storage.getSession(sessionId);
   if (!session) {
     return {
       categories: [],
+      boardsUsed: 0,
       wasReset: false,
       error: "Session not found",
     };
   }
 
-  const groupedCategories = await storage.getCategoriesBySourceGroup();
+  const activeCategoriesByBoard = await storage.getActiveCategoriesByBoard();
   
-  const emptyGroups: string[] = [];
-  for (const group of SOURCE_GROUPS) {
-    const count = (groupedCategories.get(group) || []).length;
-    if (count === 0) {
-      emptyGroups.push(group);
-    }
-  }
-  
-  if (emptyGroups.length > 0) {
+  if (activeCategoriesByBoard.size === 0) {
     return {
       categories: [],
+      boardsUsed: 0,
       wasReset: false,
-      error: `Missing categories in groups: ${emptyGroups.join(", ")}. Please add categories to all 5 groups (A-E).`,
-      missingGroups: emptyGroups,
+      error: "No active categories found. Please activate categories in the admin panel.",
     };
+  }
+
+  let boardIds = Array.from(activeCategoriesByBoard.keys());
+  
+  if (boardIds.length > 5) {
+    boardIds = shuffleArray(boardIds).slice(0, 5);
   }
 
   let playedCategoryIds = (session.playedCategoryIds as number[]) || [];
-  let wasReset = false;
-  let resetMessage: string | undefined;
-  
-  let needsReset = false;
-  for (const group of SOURCE_GROUPS) {
-    const categoriesInGroup = groupedCategories.get(group) || [];
-    const availableCategories = categoriesInGroup.filter(
+  const resetBoards: string[] = [];
+  const selectedCategories: Array<{
+    category: Category;
+    board: Board;
+    questionCount: number;
+  }> = [];
+
+  for (const boardId of boardIds) {
+    const boardData = activeCategoriesByBoard.get(boardId);
+    if (!boardData) continue;
+
+    const { board, categories } = boardData;
+    let availableCategories = categories.filter(
       cat => !playedCategoryIds.includes(cat.id)
     );
-    if (availableCategories.length === 0) {
-      needsReset = true;
-      break;
+
+    if (availableCategories.length === 0 && categories.length > 0) {
+      const boardCategoryIds = categories.map(c => c.id);
+      playedCategoryIds = playedCategoryIds.filter(id => !boardCategoryIds.includes(id));
+      resetBoards.push(board.name);
+      availableCategories = categories;
     }
-  }
-  
-  if (needsReset) {
-    await storage.resetSessionPlayedCategories(sessionId);
-    playedCategoryIds = [];
-    wasReset = true;
-    resetMessage = "All categories exhausted. Vault has been reset!";
-  }
-  
-  const selectedCategories: Category[] = [];
-  
-  for (const group of SOURCE_GROUPS) {
-    const categoriesInGroup = groupedCategories.get(group) || [];
-    const availableCategories = categoriesInGroup.filter(
-      cat => !playedCategoryIds.includes(cat.id)
-    );
-    
+
     if (availableCategories.length > 0) {
       const randomIndex = Math.floor(Math.random() * availableCategories.length);
-      selectedCategories.push(availableCategories[randomIndex]);
+      const selectedCategory = availableCategories[randomIndex];
+      
+      const questionCount = await storage.getQuestionCountForCategory(selectedCategory.id);
+      
+      selectedCategories.push({
+        category: selectedCategory,
+        board,
+        questionCount,
+      });
+      
+      playedCategoryIds.push(selectedCategory.id);
     }
   }
-  
-  if (selectedCategories.length !== 5) {
+
+  if (selectedCategories.length === 0) {
     return {
-      categories: selectedCategories,
-      wasReset,
-      error: `Could only select ${selectedCategories.length} categories. Each group needs at least one category.`,
+      categories: [],
+      boardsUsed: 0,
+      wasReset: false,
+      error: "Could not select any categories. Make sure categories are active and have questions.",
     };
   }
-  
-  const newPlayedIds = [...playedCategoryIds, ...selectedCategories.map(c => c.id)];
-  await storage.updateSessionPlayedCategories(sessionId, newPlayedIds);
-  
+
+  await storage.updateSessionPlayedCategories(sessionId, playedCategoryIds);
+
   return {
     categories: selectedCategories,
-    wasReset,
-    message: resetMessage,
+    boardsUsed: selectedCategories.length,
+    wasReset: resetBoards.length > 0,
+    resetBoards: resetBoards.length > 0 ? resetBoards : undefined,
+    message: resetBoards.length > 0 
+      ? `Categories reset for: ${resetBoards.join(", ")}` 
+      : undefined,
   };
 }
 
-export async function getThemedBoardCategories(sourceGroup: SourceGroup): Promise<Category[]> {
-  const groupedCategories = await storage.getCategoriesBySourceGroup();
-  return groupedCategories.get(sourceGroup) || [];
+export async function getContentStats(): Promise<ContentStats> {
+  const stats = await storage.getContentStats();
+  return stats;
+}
+
+export async function getActiveCategoriesForTenant(): Promise<Array<{
+  category: Category;
+  board: Board;
+  questionCount: number;
+}>> {
+  const activeCategoriesByBoard = await storage.getActiveCategoriesByBoard();
+  const result: Array<{
+    category: Category;
+    board: Board;
+    questionCount: number;
+  }> = [];
+
+  const entries = Array.from(activeCategoriesByBoard.entries());
+  for (const [, boardData] of entries) {
+    for (const category of boardData.categories) {
+      const questionCount = await storage.getQuestionCountForCategory(category.id);
+      result.push({
+        category,
+        board: boardData.board,
+        questionCount,
+      });
+    }
+  }
+
+  return result;
 }
 
 export async function getCategoryWithQuestionsForBoard(
@@ -138,40 +183,44 @@ export async function getCategoryWithQuestionsForBoard(
 export async function getPlayedCategoryStatus(sessionId: number): Promise<{
   playedCategoryIds: number[];
   totalPlayed: number;
-  totalCategories: number;
-  cycleComplete: boolean;
-  groupCounts: Record<string, number>;
+  totalActiveCategories: number;
+  boardStats: Record<number, { boardName: string; total: number; played: number }>;
 }> {
   const session = await storage.getSession(sessionId);
-  const groupedCategories = await storage.getCategoriesBySourceGroup();
+  const activeCategoriesByBoard = await storage.getActiveCategoriesByBoard();
   
-  let totalAssignedCategories = 0;
-  const groupCounts: Record<string, number> = {};
+  const playedCategoryIds = session ? (session.playedCategoryIds as number[]) || [] : [];
   
-  for (const group of SOURCE_GROUPS) {
-    const count = (groupedCategories.get(group) || []).length;
-    groupCounts[group] = count;
-    totalAssignedCategories += count;
-  }
+  let totalActiveCategories = 0;
+  const boardStats: Record<number, { boardName: string; total: number; played: number }> = {};
   
-  if (!session) {
-    return { 
-      playedCategoryIds: [], 
-      totalPlayed: 0, 
-      totalCategories: totalAssignedCategories,
-      cycleComplete: false,
-      groupCounts,
+  const entries = Array.from(activeCategoriesByBoard.entries());
+  for (const [boardId, boardData] of entries) {
+    const totalInBoard = boardData.categories.length;
+    const playedInBoard = boardData.categories.filter((c: Category) => playedCategoryIds.includes(c.id)).length;
+    
+    boardStats[boardId] = {
+      boardName: boardData.board.name,
+      total: totalInBoard,
+      played: playedInBoard,
     };
+    
+    totalActiveCategories += totalInBoard;
   }
-  
-  const playedCategoryIds = (session.playedCategoryIds as number[]) || [];
-  const cycleComplete = playedCategoryIds.length >= totalAssignedCategories && totalAssignedCategories > 0;
   
   return {
     playedCategoryIds,
     totalPlayed: playedCategoryIds.length,
-    totalCategories: totalAssignedCategories,
-    cycleComplete,
-    groupCounts,
+    totalActiveCategories,
+    boardStats,
   };
+}
+
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 }
