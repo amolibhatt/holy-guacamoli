@@ -40,7 +40,17 @@ export default function BuzzkillDailySmash() {
         method: "POST",
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to generate");
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: "Failed to generate" }));
+        toast({
+          title: "Cannot Generate Board",
+          description: errorData.message || "Failed to generate board",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const result: MashedResult = await res.json();
       setMashedBoard(result);
       setHasGenerated(true);
@@ -59,7 +69,7 @@ export default function BuzzkillDailySmash() {
     } catch (err) {
       toast({
         title: "Error",
-        description: "Failed to generate board",
+        description: "Failed to generate board. Check your connection.",
         variant: "destructive",
       });
     } finally {

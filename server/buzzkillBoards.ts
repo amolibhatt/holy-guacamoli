@@ -5,6 +5,8 @@ export interface MashedBoardResult {
   categories: Category[];
   wasReset: boolean;
   message?: string;
+  missingGroups?: string[];
+  error?: string;
 }
 
 export interface BoardWithQuestions {
@@ -22,28 +24,62 @@ export interface BoardWithQuestions {
 export async function generateMashedBoard(sessionId: number): Promise<MashedBoardResult> {
   const session = await storage.getSession(sessionId);
   if (!session) {
-    throw new Error("Session not found");
+    return {
+      categories: [],
+      wasReset: false,
+      error: "Session not found",
+    };
   }
 
-  const playedCategoryIds = (session.playedCategoryIds as number[]) || [];
   const groupedCategories = await storage.getCategoriesBySourceGroup();
   
-  const sourceGroups: SourceGroup[] = [...SOURCE_GROUPS];
-  const selectedCategories: Category[] = [];
+  const emptyGroups: string[] = [];
+  for (const group of SOURCE_GROUPS) {
+    const count = (groupedCategories.get(group) || []).length;
+    if (count === 0) {
+      emptyGroups.push(group);
+    }
+  }
+  
+  if (emptyGroups.length > 0) {
+    return {
+      categories: [],
+      wasReset: false,
+      error: `Missing categories in groups: ${emptyGroups.join(", ")}. Please add categories to all 5 groups (A-E).`,
+      missingGroups: emptyGroups,
+    };
+  }
+
+  let playedCategoryIds = (session.playedCategoryIds as number[]) || [];
   let wasReset = false;
   let resetMessage: string | undefined;
   
-  for (const group of sourceGroups) {
+  let needsReset = false;
+  for (const group of SOURCE_GROUPS) {
     const categoriesInGroup = groupedCategories.get(group) || [];
     const availableCategories = categoriesInGroup.filter(
       cat => !playedCategoryIds.includes(cat.id)
     );
-    
-    if (availableCategories.length === 0 && categoriesInGroup.length > 0) {
-      wasReset = true;
-      resetMessage = "All logic exhausted. Resetting the vault!";
+    if (availableCategories.length === 0) {
+      needsReset = true;
       break;
     }
+  }
+  
+  if (needsReset) {
+    await storage.resetSessionPlayedCategories(sessionId);
+    playedCategoryIds = [];
+    wasReset = true;
+    resetMessage = "All categories exhausted. Vault has been reset!";
+  }
+  
+  const selectedCategories: Category[] = [];
+  
+  for (const group of SOURCE_GROUPS) {
+    const categoriesInGroup = groupedCategories.get(group) || [];
+    const availableCategories = categoriesInGroup.filter(
+      cat => !playedCategoryIds.includes(cat.id)
+    );
     
     if (availableCategories.length > 0) {
       const randomIndex = Math.floor(Math.random() * availableCategories.length);
@@ -51,22 +87,12 @@ export async function generateMashedBoard(sessionId: number): Promise<MashedBoar
     }
   }
   
-  if (wasReset) {
-    await storage.resetSessionPlayedCategories(sessionId);
-    return generateMashedBoard(sessionId);
-  }
-  
-  if (selectedCategories.length < 5) {
-    const unassignedCategories = groupedCategories.get('unassigned') || [];
-    const availableUnassigned = unassignedCategories.filter(
-      cat => !playedCategoryIds.includes(cat.id)
-    );
-    
-    while (selectedCategories.length < 5 && availableUnassigned.length > 0) {
-      const randomIndex = Math.floor(Math.random() * availableUnassigned.length);
-      selectedCategories.push(availableUnassigned[randomIndex]);
-      availableUnassigned.splice(randomIndex, 1);
-    }
+  if (selectedCategories.length !== 5) {
+    return {
+      categories: selectedCategories,
+      wasReset,
+      error: `Could only select ${selectedCategories.length} categories. Each group needs at least one category.`,
+    };
   }
   
   const newPlayedIds = [...playedCategoryIds, ...selectedCategories.map(c => c.id)];
@@ -112,27 +138,40 @@ export async function getCategoryWithQuestionsForBoard(
 export async function getPlayedCategoryStatus(sessionId: number): Promise<{
   playedCategoryIds: number[];
   totalPlayed: number;
+  totalCategories: number;
   cycleComplete: boolean;
+  groupCounts: Record<string, number>;
 }> {
   const session = await storage.getSession(sessionId);
-  if (!session) {
-    return { playedCategoryIds: [], totalPlayed: 0, cycleComplete: false };
-  }
-  
-  const playedCategoryIds = (session.playedCategoryIds as number[]) || [];
   const groupedCategories = await storage.getCategoriesBySourceGroup();
   
   let totalAssignedCategories = 0;
+  const groupCounts: Record<string, number> = {};
+  
   for (const group of SOURCE_GROUPS) {
-    totalAssignedCategories += (groupedCategories.get(group) || []).length;
+    const count = (groupedCategories.get(group) || []).length;
+    groupCounts[group] = count;
+    totalAssignedCategories += count;
   }
   
-  const maxCycleSize = totalAssignedCategories;
-  const cycleComplete = playedCategoryIds.length >= maxCycleSize && maxCycleSize > 0;
+  if (!session) {
+    return { 
+      playedCategoryIds: [], 
+      totalPlayed: 0, 
+      totalCategories: totalAssignedCategories,
+      cycleComplete: false,
+      groupCounts,
+    };
+  }
+  
+  const playedCategoryIds = (session.playedCategoryIds as number[]) || [];
+  const cycleComplete = playedCategoryIds.length >= totalAssignedCategories && totalAssignedCategories > 0;
   
   return {
     playedCategoryIds,
     totalPlayed: playedCategoryIds.length,
+    totalCategories: totalAssignedCategories,
     cycleComplete,
+    groupCounts,
   };
 }
