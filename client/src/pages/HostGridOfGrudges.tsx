@@ -1,14 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Settings, Grid3X3, ArrowRight, Users, Shuffle, RefreshCcw, Check, LayoutGrid } from "lucide-react";
-import { AvocadoIcon } from "@/components/AvocadoIcon";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2, Settings, Grid3X3, ArrowRight, Users, Shuffle } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import type { Board, Category } from "@shared/schema";
+import type { Category } from "@shared/schema";
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 
 const SOURCE_GROUPS = ["A", "B", "C", "D", "E"] as const;
 
@@ -17,35 +13,13 @@ interface CategoryGroup {
   sourceGroups: string[];
 }
 
-interface PlayedStatus {
-  playedCategoryIds: number[];
-  totalCategories: number;
-  gamesPlayed: number;
-}
-
-interface MashedResult {
-  categories: Category[];
-  wasReset: boolean;
-  message: string;
-}
 
 export default function HostGridOfGrudges() {
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [selectedMode, setSelectedMode] = useState<"boards" | "smart">("smart");
 
-  const { data: boards = [], isLoading: boardsLoading } = useQuery<Board[]>({
-    queryKey: ['/api/boards'],
-  });
-
-  const { data: categoryGroups, isLoading: groupsLoading } = useQuery<CategoryGroup>({
+  const { data: categoryGroups, isLoading } = useQuery<CategoryGroup>({
     queryKey: ['/api/buzzkill/category-groups'],
   });
-
-  const handleSelectBoard = (board: Board) => {
-    setLocation(`/board/${board.id}`);
-  };
 
   const handleSelectSourceGroup = (group: string) => {
     setLocation(`/buzzkill/themed/${group}`);
@@ -54,8 +28,6 @@ export default function HostGridOfGrudges() {
   const handleDailySmash = () => {
     setLocation('/buzzkill/daily-smash');
   };
-
-  const isLoading = boardsLoading || groupsLoading;
 
   const getGroupCount = (group: string) => {
     return categoryGroups?.groups[group]?.length || 0;
@@ -88,34 +60,12 @@ export default function HostGridOfGrudges() {
         subtitle="Choose your challenge"
         backHref="/"
         rightContent={
-          <div className="flex gap-2">
-            <Button
-              variant={selectedMode === "smart" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedMode("smart")}
-              className="gap-2"
-              data-testid="button-mode-smart"
-            >
-              <Shuffle className="w-4 h-4" />
-              Smart Mix
+          <Link href="/admin?game=buzzkill">
+            <Button variant="outline" size="sm" className="gap-2" data-testid="button-manage-boards">
+              <Settings className="w-4 h-4" />
+              Manage
             </Button>
-            <Button
-              variant={selectedMode === "boards" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedMode("boards")}
-              className="gap-2"
-              data-testid="button-mode-boards"
-            >
-              <LayoutGrid className="w-4 h-4" />
-              Boards
-            </Button>
-            <Link href="/admin?game=buzzkill">
-              <Button variant="outline" size="sm" className="gap-2" data-testid="button-manage-boards">
-                <Settings className="w-4 h-4" />
-                Manage
-              </Button>
-            </Link>
-          </div>
+          </Link>
         }
       />
 
@@ -125,7 +75,7 @@ export default function HostGridOfGrudges() {
             <div className="flex justify-center py-16">
               <Loader2 className="w-10 h-10 animate-spin text-primary" />
             </div>
-          ) : selectedMode === "smart" ? (
+          ) : (
             <div className="space-y-8">
               <motion.button
                 onClick={handleDailySmash}
@@ -168,7 +118,7 @@ export default function HostGridOfGrudges() {
 
               <div className="space-y-3">
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 px-1">
-                  <LayoutGrid className="w-5 h-5 text-muted-foreground" />
+                  <Grid3X3 className="w-5 h-5 text-muted-foreground" />
                   Themed Groups
                 </h2>
                 
@@ -210,68 +160,6 @@ export default function HostGridOfGrudges() {
                   })}
                 </div>
               </div>
-            </div>
-          ) : boards.length === 0 ? (
-            <motion.div 
-              className="text-center py-16 px-8 bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-            >
-              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
-                <AvocadoIcon className="w-10 h-10 opacity-40" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground mb-2">No boards yet</h3>
-              <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                Create your first game board to start hosting trivia nights
-              </p>
-              <Link href="/admin?game=buzzkill">
-                <Button size="lg" className="gap-2" data-testid="button-create-board">
-                  <Settings className="w-5 h-5" />
-                  Create Your First Board
-                </Button>
-              </Link>
-            </motion.div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {boards.map((board, index) => (
-                <motion.button
-                  key={board.id}
-                  onClick={() => handleSelectBoard(board)}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  whileHover={{ scale: 1.02, y: -4 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="relative flex flex-col p-6 bg-card border border-border rounded-xl text-left transition-all hover:border-primary/50 hover:shadow-xl hover:shadow-primary/10 group overflow-hidden"
-                  data-testid={`button-board-${board.id}`}
-                >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-bl-full" />
-                  
-                  <div className="flex items-start justify-between gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/20 flex items-center justify-center group-hover:from-primary group-hover:to-secondary group-hover:border-transparent transition-all">
-                      <Grid3X3 className="w-6 h-6 text-primary group-hover:text-white transition-colors" />
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                  </div>
-                  
-                  <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors mb-1">
-                    {board.name}
-                  </h3>
-                  
-                  {board.description ? (
-                    <p className="text-sm text-muted-foreground line-clamp-2">{board.description}</p>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      {(board.pointValues as number[])?.length || 5} point levels
-                    </p>
-                  )}
-                  
-                  <div className="mt-4 pt-4 border-t border-border/50 flex items-center gap-2 text-xs text-muted-foreground">
-                    <Users className="w-3.5 h-3.5" />
-                    <span>Multiplayer</span>
-                  </div>
-                </motion.button>
-              ))}
             </div>
           )}
         </div>
