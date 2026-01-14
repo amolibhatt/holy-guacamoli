@@ -210,6 +210,10 @@ export const sequenceSubmissions = pgTable("sequence_submissions", {
 export const BOARD_VISIBILITIES = ["private", "tenant", "public"] as const;
 export type BoardVisibility = typeof BOARD_VISIBILITIES[number];
 
+// Source Groups for Smart Category Management (A through E)
+export const SOURCE_GROUPS = ["A", "B", "C", "D", "E"] as const;
+export type SourceGroup = typeof SOURCE_GROUPS[number];
+
 export const boards = pgTable("boards", {
   id: serial("id").primaryKey(),
   userId: text("user_id"),
@@ -226,6 +230,7 @@ export const categories = pgTable("categories", {
   name: text("name").notNull(),
   description: text("description").notNull(),
   imageUrl: text("image_url").notNull(),
+  sourceGroup: text("source_group").$type<SourceGroup>(),
 });
 
 export const boardCategories = pgTable("board_categories", {
@@ -320,6 +325,7 @@ export const gameSessions = pgTable("game_sessions", {
   currentMode: text("current_mode").$type<GameMode>().default("board"),
   state: text("state").$type<SessionState>().notNull().default("waiting"),
   buzzerLocked: boolean("buzzer_locked").notNull().default(true),
+  playedCategoryIds: jsonb("played_category_ids").$type<number[]>().default([]),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -519,7 +525,9 @@ export const questionsRelations = relations(questions, ({ one }) => ({
 }));
 
 export const insertBoardSchema = createInsertSchema(boards).omit({ id: true });
-export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
+export const insertCategorySchema = createInsertSchema(categories).omit({ id: true }).extend({
+  sourceGroup: z.enum(SOURCE_GROUPS).nullable().optional(),
+});
 export const insertBoardCategorySchema = createInsertSchema(boardCategories).omit({ id: true });
 export const insertQuestionSchema = createInsertSchema(questions).omit({ id: true });
 export const insertGameSchema = createInsertSchema(games).omit({ id: true, createdAt: true });
