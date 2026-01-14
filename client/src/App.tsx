@@ -28,6 +28,8 @@ const SequenceSqueeze = lazy(() => import("@/pages/SequenceSqueeze"));
 const SequencePlayer = lazy(() => import("@/pages/SequencePlayer"));
 const Vault = lazy(() => import("@/pages/Vault"));
 const Storyboard = lazy(() => import("@/pages/Storyboard"));
+const BuzzkillDailySmash = lazy(() => import("@/pages/BuzzkillDailySmash"));
+const BuzzkillThemed = lazy(() => import("@/pages/BuzzkillThemed"));
 
 function PageLoader() {
   return (
@@ -48,6 +50,9 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/host/buzzkill" component={HostGridOfGrudges} />
+        <Route path="/buzzkill" component={HostGridOfGrudges} />
+        <Route path="/buzzkill/daily-smash" component={BuzzkillDailySmash} />
+        <Route path="/buzzkill/themed/:group" component={BuzzkillThemed} />
         <Route path="/host/double-dip" component={RelationshipHub} />
         <Route path="/category/:id" component={CategoryPage} />
         <Route path="/admin" component={Admin} />
