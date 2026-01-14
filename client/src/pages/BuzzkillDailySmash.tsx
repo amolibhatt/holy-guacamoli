@@ -121,6 +121,8 @@ export default function BuzzkillDailySmash() {
         title="Daily Smash"
         subtitle={sessionId ? "Session active" : "Generate your mix"}
         backHref="/buzzkill"
+        showAdminButton
+        adminHref="/admin?game=buzzkill"
       />
 
       <main className="flex-1 p-6 overflow-y-auto">
