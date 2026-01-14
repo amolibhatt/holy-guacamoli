@@ -33,7 +33,6 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import type { Category, Question, Board, BoardCategoryWithCount } from "@shared/schema";
-import { SequenceSqueezeAdmin } from "@/components/SequenceSqueezeAdmin";
 import { useUpload } from "@/hooks/use-upload";
 
 const THEME_LABELS: Record<ThemeName, string> = {
@@ -99,13 +98,13 @@ export default function Admin() {
   const [bulkPreviewMode, setBulkPreviewMode] = useState(false);
   const [showBoardPreview, setShowBoardPreview] = useState(false);
   const [adminTab, setAdminTab] = useState<"content" | "analytics">("content");
-  const [selectedGameType, setSelectedGameType] = useState<"buzzkill" | "double_dip" | "sequence_squeeze" | null>(null);
+  const [selectedGameType, setSelectedGameType] = useState<"buzzkill" | null>(null);
 
   // Read game type from URL param on mount
   useEffect(() => {
     const params = new URLSearchParams(searchString);
     const game = params.get('game');
-    if (game === 'buzzkill' || game === 'double_dip' || game === 'sequence_squeeze') {
+    if (game === 'buzzkill') {
       setSelectedGameType(game);
     }
   }, [searchString]);
@@ -476,8 +475,6 @@ export default function Admin() {
 
   const getAdminSubtitle = () => {
     if (selectedGameType === 'buzzkill') return 'Buzzkill';
-    if (selectedGameType === 'double_dip') return 'Double Dip';
-    if (selectedGameType === 'sequence_squeeze') return 'Sequence Squeeze';
     return 'Manage Content';
   };
 
@@ -686,16 +683,18 @@ export default function Admin() {
             </Card>
           </div>
         ) : selectedGameType === null ? (
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-3xl mx-auto">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-foreground mb-2">Select a Game to Manage</h2>
               <p className="text-muted-foreground">Choose which game content you want to create or edit</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div className="flex justify-center mb-10">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
+                className="w-full max-w-md"
               >
                 <Card 
                   className="hover-elevate cursor-pointer border-2 border-transparent hover:border-violet-500/50 transition-all"
@@ -723,77 +722,42 @@ export default function Admin() {
                   </CardContent>
                 </Card>
               </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <Card 
-                  className="hover-elevate cursor-pointer border-2 border-transparent hover:border-teal-500/50 transition-all"
-                  onClick={() => setSelectedGameType('sequence_squeeze')}
-                  data-testid="card-game-sequence-squeeze"
-                >
-                  <CardContent className="p-8 text-center">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-teal-500/20">
-                      <ListOrdered className="w-10 h-10 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-foreground mb-2">Sequence Squeeze</h3>
-                    <p className="text-muted-foreground text-sm mb-4">
-                      Speed ordering game - arrange options in the right order
-                    </p>
-                    <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <ListOrdered className="w-3 h-3" />
-                        Ordering Game
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Sparkles className="w-3 h-3" />
-                        Speed Challenge
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <Card 
-                  className="hover-elevate cursor-pointer border-2 border-transparent hover:border-pink-500/50 transition-all"
-                  onClick={() => setSelectedGameType('double_dip')}
-                  data-testid="card-game-double-dip"
-                >
-                  <CardContent className="p-8 text-center">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-400 via-pink-500 to-fuchsia-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-pink-500/20">
-                      <Heart className="w-10 h-10 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-foreground mb-2">Double Dip</h3>
-                    <p className="text-muted-foreground text-sm mb-4">
-                      Daily prompts and deep questions for couples
-                    </p>
-                    <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Heart className="w-3 h-3" />
-                        Couples Game
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Sparkles className="w-3 h-3" />
-                        Daily Prompts
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
             </div>
-            <div className="mt-8 text-center">
-              <Link href="/admin/games">
-                <Button variant="outline" className="gap-2" data-testid="button-manage-game-sessions">
-                  <Layers className="w-4 h-4" />
-                  Manage Game Sessions
-                </Button>
-              </Link>
-              <p className="text-xs text-muted-foreground mt-2">Bundle boards into playable game sessions</p>
+
+            <div className="flex items-center gap-2 mb-6">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-sm font-medium text-muted-foreground px-3">Coming Soon</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+              <div className="relative flex flex-col items-center gap-3 p-6 bg-card/30 border border-dashed border-border rounded-xl text-center">
+                <div className="absolute top-3 right-3 px-2 py-0.5 bg-muted rounded text-[10px] font-medium text-muted-foreground flex items-center gap-1">
+                  <X className="w-3 h-3" />
+                  Soon
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/20 flex items-center justify-center">
+                  <ListOrdered className="w-6 h-6 text-teal-500/60" />
+                </div>
+                <div>
+                  <h4 className="text-base font-semibold text-foreground/60 mb-1">Sequence Squeeze</h4>
+                  <p className="text-muted-foreground/60 text-xs">Put items in the right order to score points</p>
+                </div>
+              </div>
+
+              <div className="relative flex flex-col items-center gap-3 p-6 bg-card/30 border border-dashed border-border rounded-xl text-center">
+                <div className="absolute top-3 right-3 px-2 py-0.5 bg-muted rounded text-[10px] font-medium text-muted-foreground flex items-center gap-1">
+                  <X className="w-3 h-3" />
+                  Soon
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-rose-500/20 flex items-center justify-center">
+                  <Heart className="w-6 h-6 text-pink-500/60" />
+                </div>
+                <div>
+                  <h4 className="text-base font-semibold text-foreground/60 mb-1">Double Dip</h4>
+                  <p className="text-muted-foreground/60 text-xs">Couples game to test how well you know each other</p>
+                </div>
+              </div>
             </div>
           </div>
         ) : selectedGameType === 'buzzkill' ? (
@@ -1712,24 +1676,6 @@ export default function Admin() {
             </Card>
           </div>
         </div>
-        ) : selectedGameType === 'double_dip' ? (
-          <div className="max-w-4xl mx-auto text-center py-12">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-500/20">
-              <Heart className="w-10 h-10 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">Double Dip Content</h2>
-            <p className="text-muted-foreground mb-6">
-              Double Dip content is managed through the Relationship Hub.
-            </p>
-            <Link href="/host/double-dip">
-              <Button className="gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600" data-testid="button-go-to-double-dip">
-                <Heart className="w-4 h-4" />
-                Open Relationship Hub
-              </Button>
-            </Link>
-          </div>
-        ) : selectedGameType === 'sequence_squeeze' ? (
-          <SequenceSqueezeAdmin />
         ) : null}
         </main>
         </div>
