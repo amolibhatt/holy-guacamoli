@@ -31,6 +31,7 @@ export interface ContentStats {
   totalCategories: number;
   activeCategories: number;
   readyToPlay: number;
+  totalQuestions: number;
 }
 
 export async function generateDynamicBoard(sessionId: number): Promise<DynamicBoardResult> {

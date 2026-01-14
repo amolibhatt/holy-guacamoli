@@ -96,7 +96,7 @@ export interface IStorage {
   resetSessionPlayedCategories(sessionId: number): Promise<GameSession | undefined>;
   getActiveCategoriesByBoard(): Promise<Map<number, { board: Board; categories: Category[] }>>;
   getQuestionCountForCategory(categoryId: number): Promise<number>;
-  getContentStats(): Promise<{ totalBoards: number; totalCategories: number; activeCategories: number; readyToPlay: number }>;
+  getContentStats(): Promise<{ totalBoards: number; totalCategories: number; activeCategories: number; readyToPlay: number; totalQuestions: number }>;
   
   // Game Types
   getGameTypes(): Promise<GameType[]>;
@@ -888,9 +888,10 @@ export class DatabaseStorage implements IStorage {
     return result?.count ?? 0;
   }
 
-  async getContentStats(): Promise<{ totalBoards: number; totalCategories: number; activeCategories: number; readyToPlay: number }> {
+  async getContentStats(): Promise<{ totalBoards: number; totalCategories: number; activeCategories: number; readyToPlay: number; totalQuestions: number }> {
     const [boardCount] = await db.select({ count: count() }).from(boards);
     const [categoryCount] = await db.select({ count: count() }).from(categories);
+    const [questionCount] = await db.select({ count: count() }).from(questions);
     const [activeCategoryCount] = await db.select({ count: count() })
       .from(categories)
       .where(eq(categories.isActive, true));
@@ -912,6 +913,7 @@ export class DatabaseStorage implements IStorage {
       totalCategories: categoryCount?.count ?? 0,
       activeCategories: activeCategoryCount?.count ?? 0,
       readyToPlay: readyCount,
+      totalQuestions: questionCount?.count ?? 0,
     };
   }
 
