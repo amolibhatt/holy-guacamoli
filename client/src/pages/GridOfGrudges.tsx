@@ -143,6 +143,9 @@ export default function GridOfGrudges() {
           {boardCategories.map(bc => (
             <div key={bc.id} className="text-center p-3 bg-primary/20 rounded-t-lg border border-primary/30">
               <h3 className="font-bold text-foreground text-sm md:text-base truncate">{bc.category.name}</h3>
+              {bc.category.rule && (
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">{bc.category.rule}</p>
+              )}
             </div>
           ))}
 

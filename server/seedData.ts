@@ -100,30 +100,6 @@ export const THEMED_BOARDS: SeedBoard[] = [
       },
     ],
   },
-  {
-    name: "LinkedIn Lunacy",
-    description: "The Business Board",
-    colorCode: "blue",
-    categories: [],
-  },
-  {
-    name: "Evolution's Drunk Designs",
-    description: "The Animal Board",
-    colorCode: "green",
-    categories: [
-      {
-        name: "Feline Overloads",
-        rule: null,
-        questions: [],
-      },
-    ],
-  },
-  {
-    name: "Warped Wood",
-    description: "The Entertainment Board",
-    colorCode: "pink",
-    categories: [],
-  },
 ];
 
 export function getColorForIndex(index: number): string {
