@@ -2,14 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2, Grid3X3, ArrowRight, Users, Shuffle, Sparkles, FolderPlus } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation } from "wouter";
-import type { Category, Board } from "@shared/schema";
+import type { Board } from "@shared/schema";
 import { motion } from "framer-motion";
 
-const SOURCE_GROUPS = ["A", "B", "C", "D", "E"] as const;
-
-interface CategoryGroup {
-  groups: Record<string, Category[]>;
-  sourceGroups: string[];
+interface PresetBoard extends Board {
+  categoryCount: number;
+  totalQuestions: number;
+  isComplete: boolean;
+  isPlayable: boolean;
 }
 
 interface CustomBoard extends Board {
@@ -41,46 +41,18 @@ const getBoardColor = (colorCode: string | null) => {
 export default function HostGridOfGrudges() {
   const [, setLocation] = useLocation();
 
-  const { data: categoryGroups, isLoading: isLoadingGroups } = useQuery<CategoryGroup>({
-    queryKey: ['/api/buzzkill/category-groups'],
+  const { data: presetBoards = [], isLoading: isLoadingPresets } = useQuery<PresetBoard[]>({
+    queryKey: ['/api/buzzkill/preset-boards'],
   });
 
   const { data: customBoards = [], isLoading: isLoadingBoards } = useQuery<CustomBoard[]>({
     queryKey: ['/api/buzzkill/custom-boards'],
   });
 
-  const isLoading = isLoadingGroups || isLoadingBoards;
-
-  const handleSelectSourceGroup = (group: string) => {
-    setLocation(`/buzzkill/themed/${group}`);
-  };
+  const isLoading = isLoadingPresets || isLoadingBoards;
 
   const handleDailySmash = () => {
     setLocation('/buzzkill/daily-smash');
-  };
-
-  const getGroupCount = (group: string) => {
-    return categoryGroups?.groups[group]?.length || 0;
-  };
-
-  const getGroupCategories = (group: string) => {
-    return categoryGroups?.groups[group] || [];
-  };
-
-  const groupColors: Record<string, string> = {
-    A: "from-rose-500/20 to-rose-600/10 border-rose-500/30 hover:border-rose-500/60",
-    B: "from-amber-500/20 to-amber-600/10 border-amber-500/30 hover:border-amber-500/60",
-    C: "from-emerald-500/20 to-emerald-600/10 border-emerald-500/30 hover:border-emerald-500/60",
-    D: "from-blue-500/20 to-blue-600/10 border-blue-500/30 hover:border-blue-500/60",
-    E: "from-purple-500/20 to-purple-600/10 border-purple-500/30 hover:border-purple-500/60",
-  };
-
-  const groupTextColors: Record<string, string> = {
-    A: "text-rose-400",
-    B: "text-amber-400",
-    C: "text-emerald-400",
-    D: "text-blue-400",
-    E: "text-purple-400",
   };
 
   return (
@@ -140,50 +112,53 @@ export default function HostGridOfGrudges() {
                 </div>
               </motion.button>
 
-              <div className="space-y-3">
-                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 px-1">
-                  <Sparkles className="w-5 h-5 text-amber-500" />
-                  Themed Groups
-                </h2>
-                
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                  {SOURCE_GROUPS.map((group, index) => {
-                    const count = getGroupCount(group);
-                    const categories = getGroupCategories(group);
-                    
-                    return (
-                      <motion.button
-                        key={group}
-                        onClick={() => handleSelectSourceGroup(group)}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        whileHover={{ scale: 1.03, y: -4 }}
-                        whileTap={{ scale: 0.97 }}
-                        disabled={count === 0}
-                        className={`relative flex flex-col p-5 bg-gradient-to-br ${groupColors[group]} rounded-xl text-left transition-all border-2 group overflow-hidden ${count === 0 ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:shadow-lg"}`}
-                        data-testid={`button-group-${group}`}
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <div className={`text-3xl font-black ${groupTextColors[group]}`}>
-                            {group}
+              {presetBoards.length > 0 && (
+                <div className="space-y-3">
+                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 px-1">
+                    <Sparkles className="w-5 h-5 text-amber-500" />
+                    Themed Boards
+                  </h2>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {presetBoards.map((board, index) => {
+                      const colors = getBoardColor(board.colorCode);
+                      return (
+                        <motion.button
+                          key={board.id}
+                          onClick={() => setLocation(`/board/${board.id}`)}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          whileHover={{ scale: 1.03, y: -4 }}
+                          whileTap={{ scale: 0.97 }}
+                          disabled={!board.isPlayable}
+                          className={`relative flex flex-col p-5 bg-gradient-to-br ${colors.gradient} rounded-xl text-left transition-all border-2 group overflow-hidden ${
+                            board.isPlayable 
+                              ? `${colors.border} cursor-pointer hover:shadow-lg` 
+                              : "border-border/50 opacity-50 cursor-not-allowed"
+                          }`}
+                          data-testid={`button-preset-${board.id}`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className={`text-2xl font-black ${colors.text}`}>
+                              {board.name.split(' ')[0]}
+                            </div>
+                            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
                           </div>
-                          <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
-                        </div>
-                        
-                        <div className="text-sm font-medium text-foreground mb-1">
-                          {count} {count === 1 ? "Category" : "Categories"}
-                        </div>
-                        
-                        <div className="text-xs text-muted-foreground line-clamp-2">
-                          {categories.slice(0, 2).map(c => c.name).join(", ")}
-                          {categories.length > 2 && "..."}
-                        </div>
-                      </motion.button>
-                    );
-                  })}
+                          
+                          <div className="text-sm font-medium text-foreground mb-1 truncate">
+                            {board.name}
+                          </div>
+                          
+                          <div className="text-xs text-muted-foreground">
+                            {board.categoryCount} Categories
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {customBoards.length > 0 && (
                 <div className="space-y-3">
