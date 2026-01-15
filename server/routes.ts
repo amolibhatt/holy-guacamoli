@@ -57,6 +57,32 @@ export async function registerRoutes(
   // Register object storage routes for image uploads
   registerObjectStorageRoutes(app);
   
+  // Auto-assign colors to existing boards that don't have one
+  const BOARD_COLORS = [
+    '#ef4444', // Red
+    '#f97316', // Orange
+    '#eab308', // Yellow
+    '#22c55e', // Green
+    '#06b6d4', // Cyan
+    '#3b82f6', // Blue
+    '#8b5cf6', // Violet
+    '#ec4899', // Pink
+  ];
+  
+  try {
+    const allBoards = await storage.getBoards('system', 'super_admin');
+    for (const board of allBoards) {
+      if (!board.colorCode) {
+        // Use board.id for deterministic color assignment
+        const colorIndex = (board.id - 1) % BOARD_COLORS.length;
+        await storage.updateBoard(board.id, { colorCode: BOARD_COLORS[colorIndex] }, 'system', 'super_admin');
+      }
+    }
+    console.log(`Checked ${allBoards.length} boards for color assignment`);
+  } catch (err) {
+    console.error('Error assigning colors to boards:', err);
+  }
+  
   setupWebSocket(httpServer);
 
   app.get("/api/room/:code", (req, res) => {
@@ -115,15 +141,20 @@ export async function registerRoutes(
       if (role !== 'super_admin') {
         return res.status(403).json({ message: "Only Super Admins can create boards" });
       }
-      const { name, description, pointValues, colorCode } = req.body;
+      const { name, description, pointValues } = req.body;
       if (!name) {
         return res.status(400).json({ message: "Name is required" });
       }
+      // Auto-assign a color based on total board count (use super_admin view to get all boards)
+      const allBoards = await storage.getBoards(userId, 'super_admin');
+      const colorIndex = allBoards.length % BOARD_COLORS.length;
+      const autoColor = BOARD_COLORS[colorIndex];
+      
       const board = await storage.createBoard({
         name,
         description: description || null,
         pointValues: pointValues || [10, 20, 30, 40, 50],
-        colorCode: colorCode || null,
+        colorCode: autoColor,
         userId,
       });
       res.status(201).json(board);
@@ -141,13 +172,12 @@ export async function registerRoutes(
       if (role !== 'super_admin') {
         return res.status(403).json({ message: "Only Super Admins can update boards" });
       }
-      const { name, description, pointValues, theme, colorCode, isGlobal } = req.body;
+      const { name, description, pointValues, theme, isGlobal } = req.body;
       const board = await storage.updateBoard(Number(req.params.id), {
         name,
         description,
         pointValues,
         theme,
-        colorCode,
         isGlobal,
       }, userId, role);
       if (!board) {

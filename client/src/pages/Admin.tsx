@@ -189,8 +189,8 @@ export default function Admin() {
   });
 
   const updateBoardMutation = useMutation({
-    mutationFn: async ({ id, name, theme, isGlobal, colorCode }: { id: number; name?: string; theme?: string; isGlobal?: boolean; colorCode?: string }) => {
-      return apiRequest('PUT', `/api/boards/${id}`, { name, theme, isGlobal, colorCode });
+    mutationFn: async ({ id, name, theme, isGlobal }: { id: number; name?: string; theme?: string; isGlobal?: boolean }) => {
+      return apiRequest('PUT', `/api/boards/${id}`, { name, theme, isGlobal });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
@@ -1020,40 +1020,6 @@ export default function Admin() {
                                     style={{ backgroundColor: THEMES[themeName].gradient1 }}
                                   />
                                   {THEME_LABELS[themeName]}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <span className="text-muted-foreground">|</span>
-                        <span className="text-xs text-muted-foreground">Color:</span>
-                        <Select
-                          value={selectedBoard?.colorCode ?? undefined}
-                          onValueChange={(value) => {
-                            updateBoardMutation.mutate({ id: selectedBoardId!, colorCode: value });
-                          }}
-                        >
-                          <SelectTrigger className="h-7 w-24 text-xs" data-testid="select-board-color">
-                            <SelectValue placeholder="None" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {[
-                              { value: '#ef4444', label: 'Red' },
-                              { value: '#f97316', label: 'Orange' },
-                              { value: '#eab308', label: 'Yellow' },
-                              { value: '#22c55e', label: 'Green' },
-                              { value: '#06b6d4', label: 'Cyan' },
-                              { value: '#3b82f6', label: 'Blue' },
-                              { value: '#8b5cf6', label: 'Violet' },
-                              { value: '#ec4899', label: 'Pink' },
-                            ].map((color) => (
-                              <SelectItem key={color.value} value={color.value} data-testid={`color-option-${color.label.toLowerCase()}`}>
-                                <div className="flex items-center gap-2">
-                                  <div 
-                                    className="w-3 h-3 rounded-full border border-border" 
-                                    style={{ backgroundColor: color.value }}
-                                  />
-                                  {color.label}
                                 </div>
                               </SelectItem>
                             ))}
