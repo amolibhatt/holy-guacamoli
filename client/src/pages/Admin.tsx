@@ -189,8 +189,8 @@ export default function Admin() {
   });
 
   const updateBoardMutation = useMutation({
-    mutationFn: async ({ id, name, theme }: { id: number; name?: string; theme?: string }) => {
-      return apiRequest('PUT', `/api/boards/${id}`, { name, theme });
+    mutationFn: async ({ id, name, theme, isGlobal }: { id: number; name?: string; theme?: string; isGlobal?: boolean }) => {
+      return apiRequest('PUT', `/api/boards/${id}`, { name, theme, isGlobal });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
@@ -730,6 +730,19 @@ export default function Admin() {
                                   variant="ghost"
                                   onClick={(e) => { 
                                     e.stopPropagation(); 
+                                    updateBoardMutation.mutate({ id: board.id, isGlobal: !board.isGlobal });
+                                  }}
+                                  className={`h-6 w-6 ${board.isGlobal ? 'text-amber-500' : 'text-muted-foreground hover:text-amber-500'}`}
+                                  data-testid={`button-toggle-preset-${board.id}`}
+                                  title={board.isGlobal ? "Remove from presets" : "Make preset"}
+                                >
+                                  <Sparkles className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={(e) => { 
+                                    e.stopPropagation(); 
                                     setEditingBoardId(board.id); 
                                     setEditBoardName(board.name); 
                                   }}
@@ -880,6 +893,19 @@ export default function Admin() {
                                             title="Preview board"
                                           >
                                             <Eye className="w-3 h-3" />
+                                          </Button>
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            onClick={(e) => { 
+                                              e.stopPropagation(); 
+                                              updateBoardMutation.mutate({ id: board.id, isGlobal: !board.isGlobal });
+                                            }}
+                                            className={`h-6 w-6 ${board.isGlobal ? 'text-amber-500' : 'text-muted-foreground hover:text-amber-500'}`}
+                                            data-testid={`button-toggle-preset-${board.id}`}
+                                            title={board.isGlobal ? "Remove from presets" : "Make preset"}
+                                          >
+                                            <Sparkles className="w-3 h-3" />
                                           </Button>
                                           <Button
                                             size="icon"
