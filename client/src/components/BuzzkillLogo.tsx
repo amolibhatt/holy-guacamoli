@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { useTheme } from "@/context/ThemeContext";
 
 interface BuzzkillLogoProps {
   size?: "sm" | "md" | "lg";
@@ -8,13 +7,20 @@ interface BuzzkillLogoProps {
   className?: string;
 }
 
+const defaultColors = {
+  gradient1: "#8B5CF6",
+  gradient2: "#7C3AED",
+  gradient3: "#EC4899",
+  accent: "#FBBF24",
+};
+
 export function BuzzkillLogo({ 
   size = "md", 
   themed = false,
   animate = true,
   className = "" 
 }: BuzzkillLogoProps) {
-  const { colors, decor } = useTheme();
+  const colors = defaultColors;
   
   const sizeClasses = {
     sm: "w-8 h-8",
@@ -32,8 +38,6 @@ export function BuzzkillLogo({
   
   const cheekColor = themed ? colors.accent : "#EC4899";
   const glowColor = themed ? colors.gradient1 : "#8B5CF6";
-
-  const ThemeIcon = themed && decor.icons[0] ? decor.icons[0] : null;
 
   const logoContent = (
     <>
@@ -84,17 +88,6 @@ export function BuzzkillLogo({
         <line x1="32" y1="6" x2="32" y2="12" stroke="white" strokeWidth="2" opacity="0.8" />
         <line x1="38" y1="10" x2="38" y2="15" stroke="white" strokeWidth="2" opacity="0.8" />
       </svg>
-      
-      {themed && ThemeIcon && (
-        <motion.div 
-          className="absolute -top-1 -right-1 p-1 rounded-full"
-          style={{ backgroundColor: colors.gradient1, color: 'white' }}
-          animate={animate ? { scale: [1, 1.1, 1] } : {}}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          <ThemeIcon className="w-3 h-3" />
-        </motion.div>
-      )}
       
       {!themed && (
         <>

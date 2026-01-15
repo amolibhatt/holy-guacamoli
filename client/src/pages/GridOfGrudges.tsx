@@ -7,7 +7,6 @@ import { Users, Grid3X3, Settings, ArrowLeft } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
-import { useTheme } from "@/context/ThemeContext";
 import { useScore, Contestant } from "@/components/ScoreContext";
 import { AppHeader } from "@/components/AppHeader";
 import ReactMarkdown from "react-markdown";
@@ -17,7 +16,6 @@ import { PLAYER_AVATARS, type Game, type Board, type BoardCategoryWithCount, typ
 export default function GridOfGrudges() {
   const { gameId } = useParams<{ gameId: string }>();
   const { isAuthenticated } = useAuth();
-  const { colorMode, toggleColorMode } = useTheme();
   const { contestants, awardPoints, deductPoints, completedQuestions, markQuestionCompleted } = useScore();
   
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);

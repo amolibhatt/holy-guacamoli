@@ -1,12 +1,15 @@
-import { useTheme } from "@/context/ThemeContext";
-
 interface AvocadoIconProps {
   className?: string;
 }
 
+const colors = {
+  gradient1: "#8B5CF6",
+  gradient2: "#7C3AED",
+  gradient3: "#EC4899",
+  accent: "#FBBF24",
+};
+
 export function AvocadoIcon({ className = "w-7 h-7" }: AvocadoIconProps) {
-  const { colors } = useTheme();
-  
   return (
     <svg
       viewBox="0 0 64 72"

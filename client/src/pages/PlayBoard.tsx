@@ -12,10 +12,8 @@ import { QuestionCard } from "@/components/QuestionCard";
 import { CategoryColumn } from "@/components/CategoryColumn";
 import { Scoreboard } from "@/components/Scoreboard";
 import { VictoryScreen } from "@/components/VictoryScreen";
-import { ThemeDecorations } from "@/components/ThemeDecorations";
 import { BuzzerPanel, BuzzerPanelHandle, BuzzEvent } from "@/components/BuzzerPanel";
 import { useScore } from "@/components/ScoreContext";
-import { useTheme, ThemeName } from "@/context/ThemeContext";
 import { useAuth } from "@/hooks/use-auth";
 import type { Question, Board, BoardCategoryWithCount } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,7 +21,6 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function PlayBoard() {
   const { boardId } = useParams<{ boardId: string }>();
   const { isAuthenticated } = useAuth();
-  const { setTheme, colorMode, toggleColorMode } = useTheme();
   const { gameEnded, resetGameEnd, markQuestionCompleted } = useScore();
   
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
@@ -43,13 +40,10 @@ export default function PlayBoard() {
   });
 
   useEffect(() => {
-    if (board?.theme) {
-      setTheme(board.theme as ThemeName);
-    }
     if (board?.id) {
       buzzerRef.current?.setBoard(board.id);
     }
-  }, [board?.theme, board?.id, setTheme]);
+  }, [board?.id]);
 
   useEffect(() => {
     if (gameEnded) {
@@ -199,7 +193,6 @@ export default function PlayBoard() {
       />
 
       <main className="flex-1 p-2 sm:p-4 lg:p-6 flex flex-col relative overflow-auto" role="main" aria-label="Game board">
-        <ThemeDecorations placement="board" />
         {categories && categories.length > 0 ? (
           <motion.div 
             initial={{ opacity: 0 }}
