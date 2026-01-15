@@ -813,7 +813,7 @@ export default function Admin() {
                           <>
                             <div className="flex items-center justify-between gap-2 mb-2">
                               <div className="flex items-center gap-2 min-w-0">
-                                <span className={`font-semibold text-sm truncate ${colorConfig.text}`}>{board.name}</span>
+                                <span className="font-semibold text-sm truncate text-white drop-shadow-sm">{board.name}</span>
                                 {isComplete ? (
                                   <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0" />
                                 ) : isIncomplete && (
