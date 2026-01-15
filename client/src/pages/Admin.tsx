@@ -13,7 +13,7 @@ import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, Upload, FileText, Eye, Download, FileUp } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, ArrowRight, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, Upload, FileText, Eye, Download, FileUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -810,91 +810,32 @@ export default function Admin() {
                             </Button>
                           </div>
                         ) : (
-                          <>
-                            {/* Header with actions */}
-                            <div className="flex items-start justify-between gap-2 mb-1">
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-bold text-base text-white drop-shadow-md">{board.name}</span>
-                                  {isComplete ? (
-                                    <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                                  ) : isIncomplete && (
-                                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-amber-500/30 text-amber-300 border-amber-400/50 shrink-0">
-                                      Incomplete
-                                    </Badge>
-                                  )}
-                                </div>
-                                {board.description && (
-                                  <p className="text-xs text-white/70 mt-0.5 truncate">{board.description}</p>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-0.5 shrink-0">
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    window.open(`/board/${board.id}`, '_blank');
-                                  }}
-                                  className="h-6 w-6 text-white/60 hover:text-white hover:bg-white/10"
-                                  data-testid={`button-preview-board-${board.id}`}
-                                  title="Preview board"
-                                >
-                                  <Eye className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    updateBoardMutation.mutate({ id: board.id, isGlobal: !board.isGlobal });
-                                  }}
-                                  className="h-6 w-6 text-amber-400 hover:text-amber-300 hover:bg-white/10"
-                                  data-testid={`button-toggle-preset-${board.id}`}
-                                  title="Remove from Starter Packs"
-                                >
-                                  <Sparkles className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    setEditingBoardId(board.id); 
-                                    setEditBoardName(board.name); 
-                                  }}
-                                  className="h-6 w-6 text-white/60 hover:text-white hover:bg-white/10"
-                                  data-testid={`button-edit-board-${board.id}`}
-                                >
-                                  <Pencil className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) => { e.stopPropagation(); deleteBoardMutation.mutate(board.id); }}
-                                  className="h-6 w-6 text-white/60 hover:text-red-400 hover:bg-white/10"
-                                  data-testid={`button-delete-board-${board.id}`}
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
+                          <div className="flex items-center gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="font-semibold text-white drop-shadow-sm truncate">{board.name}</div>
+                              {board.description && (
+                                <div className="text-xs text-white/60 truncate">{board.description}</div>
+                              )}
+                              <div className="text-[10px] text-white/50 mt-1">
+                                {categoryCount}/5 · {totalQuestions} Q
+                                {isComplete && <span className="text-emerald-400 ml-1">✓</span>}
                               </div>
                             </div>
-                            {/* Stats row */}
-                            <div className="flex items-center gap-3 mt-2 text-xs">
-                              <div className="flex items-center gap-1.5">
-                                <FolderPlus className="w-3 h-3 text-white/50" />
-                                <span className={`font-medium ${categoryCount >= 5 ? 'text-emerald-400' : 'text-white/80'}`}>
-                                  {categoryCount}/5 categories
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <HelpCircle className="w-3 h-3 text-white/50" />
-                                <span className={`font-medium ${questionProgress >= 100 ? 'text-emerald-400' : totalQuestions > 0 ? 'text-amber-300' : 'text-white/80'}`}>
-                                  {totalQuestions}/{maxQuestions || 0} questions
-                                </span>
-                              </div>
+                            <div className="flex items-center shrink-0">
+                              <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); window.open(`/board/${board.id}`, '_blank'); }} className="h-6 w-6 text-white/50 hover:text-white hover:bg-white/10" data-testid={`button-preview-board-${board.id}`} title="Preview">
+                                <Eye className="w-3 h-3" />
+                              </Button>
+                              <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); updateBoardMutation.mutate({ id: board.id, isGlobal: false }); }} className="h-6 w-6 text-amber-400/70 hover:text-amber-300 hover:bg-white/10" data-testid={`button-toggle-preset-${board.id}`} title="Remove from Starter Packs">
+                                <Sparkles className="w-3 h-3" />
+                              </Button>
+                              <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingBoardId(board.id); setEditBoardName(board.name); }} className="h-6 w-6 text-white/50 hover:text-white hover:bg-white/10" data-testid={`button-edit-board-${board.id}`} title="Rename">
+                                <Pencil className="w-3 h-3" />
+                              </Button>
+                              <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); deleteBoardMutation.mutate(board.id); }} className="h-6 w-6 text-white/50 hover:text-red-400 hover:bg-white/10" data-testid={`button-delete-board-${board.id}`} title="Delete">
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
                             </div>
-                          </>
+                          </div>
                         )}
                               </div>
                             );
@@ -978,92 +919,29 @@ export default function Admin() {
                                       </Button>
                                     </div>
                                   ) : (
-                                    <>
-                                      <div className="flex items-center justify-between gap-2 mb-2">
-                                        <div className="flex items-center gap-2 min-w-0">
-                                          <span className="font-medium text-foreground text-sm truncate">{board.name}</span>
-                                          {isComplete && (
-                                            <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0" />
-                                          )}
-                                        </div>
-                                        <div className="flex items-center gap-0.5 shrink-0">
-                                          <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            onClick={(e) => { 
-                                              e.stopPropagation(); 
-                                              window.open(`/board/${board.id}`, '_blank');
-                                            }}
-                                            className="h-6 w-6 text-muted-foreground hover:text-primary"
-                                            data-testid={`button-preview-board-${board.id}`}
-                                            title="Preview board"
-                                          >
-                                            <Eye className="w-3 h-3" />
-                                          </Button>
-                                          <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            onClick={(e) => { 
-                                              e.stopPropagation(); 
-                                              updateBoardMutation.mutate({ id: board.id, isGlobal: !board.isGlobal });
-                                            }}
-                                            className={`h-6 w-6 ${board.isGlobal ? 'text-amber-500' : 'text-muted-foreground hover:text-amber-500'}`}
-                                            data-testid={`button-toggle-preset-${board.id}`}
-                                            title={board.isGlobal ? "Remove from presets" : "Make preset"}
-                                          >
-                                            <Sparkles className="w-3 h-3" />
-                                          </Button>
-                                          <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            onClick={(e) => { 
-                                              e.stopPropagation(); 
-                                              setEditingBoardId(board.id); 
-                                              setEditBoardName(board.name); 
-                                            }}
-                                            className="h-6 w-6 text-muted-foreground hover:text-primary"
-                                            data-testid={`button-edit-board-${board.id}`}
-                                          >
-                                            <Pencil className="w-3 h-3" />
-                                          </Button>
-                                          <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            onClick={(e) => { e.stopPropagation(); deleteBoardMutation.mutate(board.id); }}
-                                            className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                                            data-testid={`button-delete-board-${board.id}`}
-                                          >
-                                            <Trash2 className="w-3 h-3" />
-                                          </Button>
+                                    <div className="flex items-center gap-2">
+                                      <div className="min-w-0 flex-1">
+                                        <div className="font-medium text-foreground text-sm truncate">{board.name}</div>
+                                        <div className="text-[10px] text-muted-foreground mt-0.5">
+                                          {categoryCount}/5 · {totalQuestions} Q
+                                          {isComplete && <span className="text-primary ml-1">✓</span>}
                                         </div>
                                       </div>
-                                      <div className="space-y-1.5">
-                                        <div className="flex items-center gap-2">
-                                          <FolderPlus className="w-3 h-3 text-muted-foreground shrink-0" />
-                                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                                            <div 
-                                              className={`h-full rounded-full transition-all ${categoryCount >= 5 ? 'bg-primary' : 'bg-primary/50'}`}
-                                              style={{ width: `${categoryProgress}%` }}
-                                            />
-                                          </div>
-                                          <span className={`text-[10px] font-medium w-8 text-right ${categoryCount >= 5 ? 'text-primary' : 'text-muted-foreground'}`}>
-                                            {categoryCount}/5
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                          <HelpCircle className="w-3 h-3 text-muted-foreground shrink-0" />
-                                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                                            <div 
-                                              className={`h-full rounded-full transition-all ${questionProgress >= 100 ? 'bg-primary' : questionProgress > 0 ? 'bg-amber-500' : 'bg-muted'}`}
-                                              style={{ width: `${Math.min(questionProgress, 100)}%` }}
-                                            />
-                                          </div>
-                                          <span className={`text-[10px] font-medium w-8 text-right ${questionProgress >= 100 ? 'text-primary' : questionProgress > 0 ? 'text-amber-500' : 'text-muted-foreground'}`}>
-                                            {totalQuestions}/{maxQuestions || 0}
-                                          </span>
-                                        </div>
+                                      <div className="flex items-center shrink-0">
+                                        <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); window.open(`/board/${board.id}`, '_blank'); }} className="h-6 w-6 text-muted-foreground hover:text-primary" data-testid={`button-preview-board-${board.id}`} title="Preview">
+                                          <Eye className="w-3 h-3" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); updateBoardMutation.mutate({ id: board.id, isGlobal: true }); }} className="h-6 w-6 text-muted-foreground hover:text-amber-500" data-testid={`button-toggle-preset-${board.id}`} title="Add to Starter Packs">
+                                          <Sparkles className="w-3 h-3" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingBoardId(board.id); setEditBoardName(board.name); }} className="h-6 w-6 text-muted-foreground hover:text-primary" data-testid={`button-edit-board-${board.id}`} title="Rename">
+                                          <Pencil className="w-3 h-3" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); deleteBoardMutation.mutate(board.id); }} className="h-6 w-6 text-muted-foreground hover:text-destructive" data-testid={`button-delete-board-${board.id}`} title="Delete">
+                                          <Trash2 className="w-3 h-3" />
+                                        </Button>
                                       </div>
-                                    </>
+                                    </div>
                                   )}
                                 </div>
                               );
@@ -1322,80 +1200,42 @@ export default function Admin() {
                       if (!selectedBc) return null;
                       return (
                         <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border shrink-0">
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-3">
+                          <div>
+                            <div className="flex items-center gap-2">
                               <h3 className="font-semibold text-foreground">{selectedBc.category.name}</h3>
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${(selectedBc.questionCount ?? 0) >= 5 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                                {selectedBc.questionCount ?? 0}/5 questions
+                              <span className={`text-xs ${(selectedBc.questionCount ?? 0) >= 5 ? 'text-primary' : 'text-muted-foreground'}`}>
+                                ({selectedBc.questionCount ?? 0}/5)
                               </span>
                             </div>
                             {selectedBc.category.rule && (
-                              <div className="flex items-center gap-2">
-                                <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20">
-                                  Rule: {selectedBc.category.rule}
-                                </Badge>
-                              </div>
+                              <p className="text-xs text-primary mt-0.5">Rule: {selectedBc.category.rule}</p>
                             )}
                           </div>
                           <div className="flex items-center gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => moveCategory(selectedIdx, 'up')}
-                              disabled={selectedIdx === 0}
-                              className="h-8 px-2"
-                              title="Move left"
-                              data-testid={`button-move-up-${selectedBc.id}`}
-                            >
-                              <ArrowUp className="w-4 h-4 rotate-[-90deg]" />
+                            <Button size="icon" variant="ghost" onClick={() => moveCategory(selectedIdx, 'up')} disabled={selectedIdx === 0} className="h-7 w-7 text-muted-foreground" data-testid={`button-move-left-${selectedBc.id}`} title="Move left">
+                              <ArrowLeft className="w-3.5 h-3.5" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => moveCategory(selectedIdx, 'down')}
-                              disabled={selectedIdx === boardCategories.length - 1}
-                              className="h-8 px-2"
-                              title="Move right"
-                              data-testid={`button-move-down-${selectedBc.id}`}
-                            >
-                              <ArrowDown className="w-4 h-4 rotate-[-90deg]" />
+                            <Button size="icon" variant="ghost" onClick={() => moveCategory(selectedIdx, 'down')} disabled={selectedIdx === boardCategories.length - 1} className="h-7 w-7 text-muted-foreground" data-testid={`button-move-right-${selectedBc.id}`} title="Move right">
+                              <ArrowRight className="w-3.5 h-3.5" />
                             </Button>
-                            <div className="w-px h-5 bg-border mx-1" />
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => { setEditingCategoryId(selectedBc.category.id); setEditCategoryName(selectedBc.category.name); setEditCategoryDescription(selectedBc.category.description || ''); setEditCategoryRule(selectedBc.category.rule || ''); }}
-                              className="h-8 gap-1"
-                              data-testid={`button-edit-category-${selectedBc.category.id}`}
-                            >
-                              <Pencil className="w-4 h-4" /> Edit
+                            <div className="w-px h-4 bg-border mx-1" />
+                            <Button size="icon" variant="ghost" onClick={() => { setEditingCategoryId(selectedBc.category.id); setEditCategoryName(selectedBc.category.name); setEditCategoryDescription(selectedBc.category.description || ''); setEditCategoryRule(selectedBc.category.rule || ''); }} className="h-7 w-7 text-muted-foreground" data-testid={`button-edit-category-${selectedBc.category.id}`} title="Edit">
+                              <Pencil className="w-3.5 h-3.5" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => unlinkCategoryMutation.mutate(selectedBc.id)}
-                              className="h-8 gap-1"
-                              title="Unlink from board (keeps category)"
-                              data-testid={`button-unlink-${selectedBc.id}`}
-                            >
-                              <Unlink className="w-4 h-4" /> Unlink
+                            <Button size="icon" variant="ghost" onClick={() => unlinkCategoryMutation.mutate(selectedBc.id)} className="h-7 w-7 text-muted-foreground" data-testid={`button-unlink-${selectedBc.id}`} title="Unlink">
+                              <Unlink className="w-3.5 h-3.5" />
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-8 gap-1 text-destructive hover:text-destructive"
-                                  data-testid={`button-delete-category-${selectedBc.category.id}`}
-                                >
-                                  <Trash2 className="w-4 h-4" /> Delete
+                                <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" data-testid={`button-delete-category-${selectedBc.category.id}`} title="Delete">
+                                  <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Delete "{selectedBc.category.name}"?</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    This will permanently delete this category and all its questions. This cannot be undone.
+                                    This will permanently delete this category and all its questions.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -1548,125 +1388,6 @@ export default function Admin() {
                               <Plus className="w-4 h-4 mr-2" /> Add
                             </Button>
                           </div>
-                        </motion.div>
-                      </CollapsibleContent>
-                    </Collapsible>
-
-                    <Collapsible open={bulkImportOpen} onOpenChange={setBulkImportOpen}>
-                      <CollapsibleTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          className="w-full justify-between h-12 px-4 bg-gradient-to-r from-accent/30 to-accent/10 border-dashed"
-                          data-testid="button-toggle-bulk-import"
-                        >
-                          <span className="flex items-center gap-2">
-                            <FileText className="w-4 h-4" />
-                            <span className="font-medium">Bulk Import Questions</span>
-                          </span>
-                          <ChevronDown className={`w-4 h-4 transition-transform ${bulkImportOpen ? 'rotate-180' : ''}`} />
-                        </Button>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="mt-3 space-y-4 p-5 bg-gradient-to-b from-accent/10 to-transparent rounded-xl border border-border"
-                        >
-                          {!bulkPreviewMode ? (
-                            <>
-                              <div className="space-y-2">
-                                <p className="text-xs text-muted-foreground">
-                                  Paste questions in format: <code className="bg-muted px-1 rounded">points | question | answer</code>
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  Example: <code className="bg-muted px-1 rounded">10 | What is 2+2? | 4</code>
-                                </p>
-                              </div>
-                              <textarea
-                                value={bulkImportText}
-                                onChange={(e) => setBulkImportText(e.target.value)}
-                                placeholder={`10 | What is the capital of France? | Paris\n20 | What year did WW2 end? | 1945\n30 | Who painted the Mona Lisa? | Leonardo da Vinci`}
-                                className="w-full h-32 p-3 text-sm rounded-md border border-border bg-background resize-none font-mono"
-                                data-testid="textarea-bulk-import"
-                              />
-                              <div className="flex justify-between items-center">
-                                <p className="text-xs text-muted-foreground">
-                                  {parseBulkImport(bulkImportText).length} valid question(s) detected
-                                </p>
-                                <Button
-                                  onClick={() => setBulkPreviewMode(true)}
-                                  disabled={parseBulkImport(bulkImportText).length === 0}
-                                  className="px-6"
-                                  data-testid="button-preview-import"
-                                >
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  Preview {parseBulkImport(bulkImportText).length} Question(s)
-                                </Button>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-sm font-semibold">Review before importing</h4>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  onClick={() => setBulkPreviewMode(false)}
-                                  data-testid="button-back-to-edit"
-                                >
-                                  <ArrowLeft className="w-4 h-4 mr-1" /> Edit
-                                </Button>
-                              </div>
-                              <div className="max-h-64 overflow-y-auto rounded-lg border border-border">
-                                <table className="w-full text-sm">
-                                  <thead className="bg-muted/50 sticky top-0">
-                                    <tr>
-                                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-16">Pts</th>
-                                      <th className="text-left px-3 py-2 font-medium text-muted-foreground">Question</th>
-                                      <th className="text-left px-3 py-2 font-medium text-muted-foreground w-32">Answer</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {parseBulkImport(bulkImportText).map((q, idx) => (
-                                      <tr key={idx} className="border-t border-border hover:bg-muted/30" data-testid={`preview-row-${idx}`}>
-                                        <td className="px-3 py-2 font-mono text-primary font-bold">{q.points}</td>
-                                        <td className="px-3 py-2 truncate max-w-[200px]" title={q.question}>{q.question}</td>
-                                        <td className="px-3 py-2 truncate max-w-[100px] text-muted-foreground" title={q.correctAnswer}>{q.correctAnswer}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                              <div className="flex justify-between items-center pt-2">
-                                <p className="text-xs text-muted-foreground">
-                                  {parseBulkImport(bulkImportText).length} question(s) will be added
-                                </p>
-                                <div className="flex gap-2">
-                                  <Button 
-                                    variant="outline"
-                                    onClick={() => { setBulkPreviewMode(false); setBulkImportText(""); }}
-                                    data-testid="button-cancel-import"
-                                  >
-                                    Cancel
-                                  </Button>
-                                  <Button
-                                    onClick={() => {
-                                      const questions = parseBulkImport(bulkImportText);
-                                      if (questions.length > 0 && selectedBoardCategoryId) {
-                                        bulkImportMutation.mutate({ boardCategoryId: selectedBoardCategoryId, questions });
-                                      }
-                                    }}
-                                    disabled={bulkImportMutation.isPending}
-                                    className="px-6"
-                                    data-testid="button-confirm-import"
-                                  >
-                                    {bulkImportMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
-                                    Confirm Import
-                                  </Button>
-                                </div>
-                              </div>
-                            </>
-                          )}
                         </motion.div>
                       </CollapsibleContent>
                     </Collapsible>
