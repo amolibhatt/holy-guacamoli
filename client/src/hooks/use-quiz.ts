@@ -27,7 +27,7 @@ export function useBoard(id: number | null) {
     queryKey: ["/api/boards", id],
     enabled: id !== null && isAuthenticated,
     queryFn: async () => {
-      const res = await fetch(`/api/boards/${id}`);
+      const res = await fetch(`/api/boards/${id}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch board");
       return res.json();
     },
@@ -41,7 +41,7 @@ export function useBoardCategories(boardId: number | null) {
     queryKey: ["/api/boards", boardId, "categories"],
     enabled: boardId !== null && isAuthenticated,
     queryFn: async () => {
-      const res = await fetch(`/api/boards/${boardId}/categories`);
+      const res = await fetch(`/api/boards/${boardId}/categories`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch board categories");
       return res.json();
     },
@@ -85,7 +85,7 @@ export function useQuestionsByBoardCategory(boardCategoryId: number) {
     queryKey: ["/api/board-categories", boardCategoryId, "questions"],
     enabled: !!boardCategoryId && isAuthenticated,
     queryFn: async () => {
-      const res = await fetch(`/api/board-categories/${boardCategoryId}/questions`);
+      const res = await fetch(`/api/board-categories/${boardCategoryId}/questions`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch questions");
       return res.json();
     },
