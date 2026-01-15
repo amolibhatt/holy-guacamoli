@@ -1451,5 +1451,121 @@ export const storage = new DatabaseStorage();
 export async function seedDatabase() {
   console.log("[SEED] Starting database seeding...");
   await storage.seedGameTypes();
+  await seedPresetBoards();
   console.log("[SEED] Database seeding complete.");
+}
+
+async function seedPresetBoards() {
+  // Check if ALPHABET board already exists
+  const existingBoards = await db.select().from(boards).where(eq(boards.name, "ALPHABET"));
+  let alphabetBoard;
+  
+  if (existingBoards.length > 0) {
+    alphabetBoard = existingBoards[0];
+    // Check if it has categories
+    const existingCategories = await db.select().from(boardCategories).where(eq(boardCategories.boardId, alphabetBoard.id));
+    if (existingCategories.length >= 5) {
+      console.log("[SEED] ALPHABET preset board already fully seeded, skipping.");
+      return;
+    }
+    console.log("[SEED] ALPHABET board exists but incomplete, continuing seed...");
+  } else {
+    console.log("[SEED] Creating ALPHABET preset board...");
+    
+    // Create the ALPHABET board as global (preset)
+    const [newBoard] = await db.insert(boards).values({
+      name: "ALPHABET",
+      description: "Word games with alphabetical twists",
+      pointValues: [10, 20, 30, 40, 50],
+      isGlobal: true,
+      isActive: true,
+      colorCode: "violet",
+    }).returning();
+    alphabetBoard = newBoard;
+  }
+
+  // Define categories with their rules
+  const categoriesData = [
+    { name: "The Flip-Flop", description: "Reverse spelling for 2: The act of consuming food vs. the hot beverage you drink with your pinky up while judging people.", imageUrl: "" },
+    { name: "Venn Diagram Vibes", description: "3 clues, 1 answer: Find the word that connects all three clues.", imageUrl: "" },
+    { name: "The Downward Spiral", description: "Answer contains 'DO': Each answer contains the letters D-O in sequence.", imageUrl: "" },
+    { name: "Vowel Movement", description: "Swap one vowel for 2: Change a single vowel to get a new word.", imageUrl: "" },
+    { name: "F.U.", description: "Answer starts with 'FU': All answers begin with the letters F-U.", imageUrl: "" },
+  ];
+
+  const categoryMap = new Map<string, number>();
+
+  for (const catData of categoriesData) {
+    const [cat] = await db.insert(categories).values(catData).returning();
+    categoryMap.set(catData.name, cat.id);
+    
+    // Link category to board
+    await db.insert(boardCategories).values({
+      boardId: alphabetBoard.id,
+      categoryId: cat.id,
+    });
+  }
+
+  // Define questions for each category
+  const questionsData = [
+    // The Flip-Flop (10-50 pts)
+    { category: "The Flip-Flop", question: "The act of consuming food vs. the hot beverage you drink with your pinky up while judging people.", answer: "Eat / Tea", points: 10 },
+    { category: "The Flip-Flop", question: "The state of being overwhelmed by 2026 news cycles vs. the sugary treats you eat to feel better about it.", answer: "Stressed / Desserts", points: 20 },
+    { category: "The Flip-Flop", question: "The state of being alive vs. the ultimate state of moral corruption and bad vibes.", answer: "Live / Evil", points: 30 },
+    { category: "The Flip-Flop", question: "A component or piece of a whole vs. a high-stakes mechanism used to catch an animal.", answer: "Part / Trap", points: 40 },
+    { category: "The Flip-Flop", question: "A sliding box in your desk used for storage vs. the positive result you get for being 'Technically Correct.'", answer: "Drawer / Reward", points: 50 },
+    
+    // Venn Diagram Vibes (10-50 pts)
+    { category: "Venn Diagram Vibes", question: "A video of a celebrity saying something they never said / The part of the pool where you realize you never learned to swim / What you take before a toxic argument", answer: "Deep (Deepfake, Deep end, Deep breath)", points: 10 },
+    { category: "Venn Diagram Vibes", question: "What your date does the second you start catching feelings / A pepper so spicy it makes you hallucinate / The mysterious person who wrote that influencer's autobiography", answer: "Ghost (Ghosting, Ghost pepper, Ghostwriter)", points: 20 },
+    { category: "Venn Diagram Vibes", question: "A fake company used by billionaires to hide money / The traumatic state after a 14-hour shift / Things you 'walk on' when avoiding a fight", answer: "Shell (Shell company, Shell-shocked, Eggshells)", points: 30 },
+    { category: "Venn Diagram Vibes", question: "Three shots of tequila that make you think you can sing / Money you actually have in your hand / What people call honey when they want to charge $50", answer: "Liquid (Liquid courage, Liquid asset, Liquid gold)", points: 40 },
+    { category: "Venn Diagram Vibes", question: "A protective bone structure that keeps your heart from getting squashed / A metal box to block Wi-Fi and tracking signals / An actor famous for screaming in every movie", answer: "Cage (Rib cage, Faraday cage, Nicolas Cage)", points: 50 },
+    
+    // The Downward Spiral (10-50 pts)
+    { category: "The Downward Spiral", question: "The rhythmic sequence shouted before a rocket leaves for space / The terrifying 5 seconds before a YouTube 'Skip Ad' button shows up", answer: "Countdown", points: 10 },
+    { category: "The Downward Spiral", question: "A total mental collapse after a 14-hour shift / What happens to your 10-year-old car the second you get on the highway.", answer: "Breakdown", points: 20 },
+    { category: "The Downward Spiral", question: "The corporate-friendly way to say 'you're all fired,' usually announced during a meeting that promised 'exciting structural changes.'", answer: "Downsizing", points: 30 },
+    { category: "The Downward Spiral", question: "A technical way to describe a website that has crashed, or the exact state of your productivity after you open Instagram for 'just a minute.'", answer: "Downtime", points: 40 },
+    { category: "The Downward Spiral", question: "A high-stakes final battle between a hero and a villain.", answer: "Showdown", points: 50 },
+    
+    // Vowel Movement (10-50 pts)
+    { category: "Vowel Movement", question: "An 'A' makes it a water vessel / An 'O' makes it a piece of footwear.", answer: "Boat / Boot", points: 10 },
+    { category: "Vowel Movement", question: "An 'I' makes it a small piece of sharp metal / An 'E' makes it the tool you use to sign a high-interest loan you'll never pay back.", answer: "Pin / Pen", points: 20 },
+    { category: "Vowel Movement", question: "An 'I' is a piece of paper telling you exactly how much money you owe; an 'A' is the round object people throw at each other in sports.", answer: "Bill / Ball", points: 30 },
+    { category: "Vowel Movement", question: "An 'I' is what a dog does to your face to be friendly / A 'U' is the magical force you need to actually win with this game.", answer: "Lick / Luck", points: 40 },
+    { category: "Vowel Movement", question: "An 'I' is what you do when you choose the best avocado; an 'A' is what you do to your suitcase right before a flight you're already late for.", answer: "Pick / Pack", points: 50 },
+    
+    // F.U. (10-50 pts)
+    { category: "F.U.", question: "The punctuation mark that doubles as a relationship-ender when used at the end of a one-word text.", answer: "Full-stop", points: 10 },
+    { category: "F.U.", question: "In the kitchen, it's a melt-in-your-mouth dessert made of sugar and butter. In conversation, it's the polite way to say another F-word.", answer: "Fudge", points: 20 },
+    { category: "F.U.", question: "A showy Japanese volcano you'll never actually climb, a retro camera you'll never learn to use properly, and a $5 fruit that's the only apple you'll accept as a snack.", answer: "Fuji", points: 30 },
+    { category: "F.U.", question: "A floral shade of pink so loud it's basically the visual equivalent of a scream.", answer: "Fuchsia", points: 40 },
+    { category: "F.U.", question: "The process of smashing atomic nuclei together, and the culinary excuse for putting Butter Chicken in a taco just to charge you $40 for 'the experience.'", answer: "Fusion", points: 50 },
+  ];
+
+  // Get board-category mappings
+  const boardCats = await db.select().from(boardCategories).where(eq(boardCategories.boardId, alphabetBoard.id));
+  const bcMap = new Map<number, number>();
+  for (const bc of boardCats) {
+    bcMap.set(bc.categoryId, bc.id);
+  }
+
+  // Insert questions
+  for (const q of questionsData) {
+    const categoryId = categoryMap.get(q.category);
+    if (!categoryId) continue;
+    const boardCategoryId = bcMap.get(categoryId);
+    if (!boardCategoryId) continue;
+
+    await db.insert(questions).values({
+      boardCategoryId,
+      question: q.question,
+      options: [q.answer],
+      correctAnswer: q.answer,
+      points: q.points,
+    });
+  }
+
+  console.log(`[SEED] Created ALPHABET board with 5 categories and ${questionsData.length} questions.`);
 }
