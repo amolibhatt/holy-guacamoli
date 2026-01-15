@@ -118,7 +118,7 @@ export default function BuzzkillDailySmash() {
   return (
     <div className="min-h-screen gradient-game grid-bg flex flex-col">
       <AppHeader 
-        title="Daily Smash"
+        title="Shuffle Play"
         subtitle={sessionId ? "Session active" : "Generate your mix"}
         backHref="/buzzkill"
         showAdminButton
@@ -136,9 +136,9 @@ export default function BuzzkillDailySmash() {
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/30">
                 <Shuffle className="w-12 h-12 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-2">Ready to Smash?</h3>
+              <h3 className="text-2xl font-bold text-foreground mb-2">Ready to Shuffle?</h3>
               <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                Generate a perfectly balanced board with one category from each of the 5 source groups. 
+                Generate a balanced board with one category from each group. 
                 Categories won't repeat until you've played through all of them!
               </p>
               
