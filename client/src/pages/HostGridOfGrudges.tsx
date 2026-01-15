@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ArrowRight, Users, Shuffle } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, Users, Shuffle, Sparkles, FolderPlus } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation } from "wouter";
-import type { Category } from "@shared/schema";
+import type { Category, Board } from "@shared/schema";
 import { motion } from "framer-motion";
 
 const SOURCE_GROUPS = ["A", "B", "C", "D", "E"] as const;
@@ -12,13 +12,25 @@ interface CategoryGroup {
   sourceGroups: string[];
 }
 
+interface CustomBoard extends Board {
+  categoryCount: number;
+  totalQuestions: number;
+  isReady: boolean;
+}
+
 
 export default function HostGridOfGrudges() {
   const [, setLocation] = useLocation();
 
-  const { data: categoryGroups, isLoading } = useQuery<CategoryGroup>({
+  const { data: categoryGroups, isLoading: isLoadingGroups } = useQuery<CategoryGroup>({
     queryKey: ['/api/buzzkill/category-groups'],
   });
+
+  const { data: customBoards = [], isLoading: isLoadingBoards } = useQuery<CustomBoard[]>({
+    queryKey: ['/api/buzzkill/custom-boards'],
+  });
+
+  const isLoading = isLoadingGroups || isLoadingBoards;
 
   const handleSelectSourceGroup = (group: string) => {
     setLocation(`/buzzkill/themed/${group}`);
@@ -111,7 +123,7 @@ export default function HostGridOfGrudges() {
 
               <div className="space-y-3">
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 px-1">
-                  <Grid3X3 className="w-5 h-5 text-muted-foreground" />
+                  <Sparkles className="w-5 h-5 text-amber-500" />
                   Themed Groups
                 </h2>
                 
@@ -153,6 +165,57 @@ export default function HostGridOfGrudges() {
                   })}
                 </div>
               </div>
+
+              {customBoards.length > 0 && (
+                <div className="space-y-3">
+                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 px-1">
+                    <FolderPlus className="w-5 h-5 text-primary" />
+                    Custom Boards
+                  </h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {customBoards.map((board, index) => (
+                      <motion.button
+                        key={board.id}
+                        onClick={() => setLocation(`/board/${board.id}`)}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                        disabled={!board.isReady}
+                        className={`relative flex flex-col p-5 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl text-left transition-all border-2 group overflow-hidden ${
+                          board.isReady 
+                            ? "border-primary/30 hover:border-primary/60 cursor-pointer hover:shadow-lg" 
+                            : "border-border/50 opacity-60 cursor-not-allowed"
+                        }`}
+                        data-testid={`button-board-${board.id}`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                            <Grid3X3 className="w-5 h-5 text-primary" />
+                          </div>
+                          <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+                        </div>
+                        
+                        <div className="font-semibold text-foreground mb-1 truncate">
+                          {board.name}
+                        </div>
+                        
+                        <div className="text-sm text-muted-foreground">
+                          {board.categoryCount} categories, {board.totalQuestions} questions
+                        </div>
+                        
+                        {!board.isReady && (
+                          <div className="mt-2 text-xs text-amber-500">
+                            Not ready - needs 5 categories with 5 questions each
+                          </div>
+                        )}
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
