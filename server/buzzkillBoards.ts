@@ -1,15 +1,11 @@
 import { storage } from "./storage";
 import type { Category, Board } from "@shared/schema";
+import { SOURCE_GROUPS } from "@shared/schema";
 
 export interface DynamicBoardResult {
-  categories: Array<{
-    category: Category;
-    board: Board;
-    questionCount: number;
-  }>;
-  boardsUsed: number;
+  categories: Category[];
   wasReset: boolean;
-  resetBoards?: string[];
+  resetGroups?: string[];
   message?: string;
   error?: string;
 }
@@ -39,65 +35,67 @@ export async function generateDynamicBoard(sessionId: number): Promise<DynamicBo
   if (!session) {
     return {
       categories: [],
-      boardsUsed: 0,
       wasReset: false,
       error: "Session not found",
     };
   }
 
-  const activeCategoriesByBoard = await storage.getActiveCategoriesByBoard();
+  // Get all categories grouped by source group (A-E)
+  const categoriesByGroup = await storage.getCategoriesBySourceGroup();
   
-  if (activeCategoriesByBoard.size === 0) {
+  // Filter to only active categories with questions
+  const activeGroupedCategories = new Map<string, Category[]>();
+  for (const group of SOURCE_GROUPS) {
+    const groupCats = categoriesByGroup.get(group) || [];
+    const activeCats: Category[] = [];
+    for (const cat of groupCats) {
+      if (cat.isActive) {
+        const questionCount = await storage.getQuestionCountForCategory(cat.id);
+        if (questionCount > 0) {
+          activeCats.push(cat);
+        }
+      }
+    }
+    if (activeCats.length > 0) {
+      activeGroupedCategories.set(group, activeCats);
+    }
+  }
+  
+  if (activeGroupedCategories.size === 0) {
     return {
       categories: [],
-      boardsUsed: 0,
       wasReset: false,
-      error: "No active categories found. Please activate categories in the admin panel.",
+      error: "No active categories with questions found. Please add categories to source groups in the admin panel.",
     };
   }
 
-  let boardIds = Array.from(activeCategoriesByBoard.keys());
-  
-  if (boardIds.length > 5) {
-    boardIds = shuffleArray(boardIds).slice(0, 5);
-  }
-
   let playedCategoryIds = (session.playedCategoryIds as number[]) || [];
-  const resetBoards: string[] = [];
-  const selectedCategories: Array<{
-    category: Category;
-    board: Board;
-    questionCount: number;
-  }> = [];
+  const resetGroups: string[] = [];
+  const selectedCategories: Category[] = [];
 
-  for (const boardId of boardIds) {
-    const boardData = activeCategoriesByBoard.get(boardId);
-    if (!boardData) continue;
+  // Pick 1 category from each source group (A-E)
+  for (const group of SOURCE_GROUPS) {
+    const groupCategories = activeGroupedCategories.get(group);
+    if (!groupCategories || groupCategories.length === 0) continue;
 
-    const { board, categories } = boardData;
-    let availableCategories = categories.filter(
+    // Filter out already-played categories
+    let availableCategories = groupCategories.filter(
       cat => !playedCategoryIds.includes(cat.id)
     );
 
-    if (availableCategories.length === 0 && categories.length > 0) {
-      const boardCategoryIds = categories.map(c => c.id);
-      playedCategoryIds = playedCategoryIds.filter(id => !boardCategoryIds.includes(id));
-      resetBoards.push(board.name);
-      availableCategories = categories;
+    // If all categories in this group have been played, reset the group
+    if (availableCategories.length === 0) {
+      const groupCategoryIds = groupCategories.map(c => c.id);
+      playedCategoryIds = playedCategoryIds.filter(id => !groupCategoryIds.includes(id));
+      resetGroups.push(`Group ${group}`);
+      availableCategories = groupCategories;
     }
 
+    // Randomly select one category from available
     if (availableCategories.length > 0) {
       const randomIndex = Math.floor(Math.random() * availableCategories.length);
       const selectedCategory = availableCategories[randomIndex];
-      
-      const questionCount = await storage.getQuestionCountForCategory(selectedCategory.id);
-      
-      selectedCategories.push({
-        category: selectedCategory,
-        board,
-        questionCount,
-      });
-      
+      selectedCategories.push(selectedCategory);
       playedCategoryIds.push(selectedCategory.id);
     }
   }
@@ -105,9 +103,8 @@ export async function generateDynamicBoard(sessionId: number): Promise<DynamicBo
   if (selectedCategories.length === 0) {
     return {
       categories: [],
-      boardsUsed: 0,
       wasReset: false,
-      error: "Could not select any categories. Make sure categories are active and have questions.",
+      error: "Could not select any categories. Make sure categories have source groups assigned.",
     };
   }
 
@@ -115,11 +112,10 @@ export async function generateDynamicBoard(sessionId: number): Promise<DynamicBo
 
   return {
     categories: selectedCategories,
-    boardsUsed: selectedCategories.length,
-    wasReset: resetBoards.length > 0,
-    resetBoards: resetBoards.length > 0 ? resetBoards : undefined,
-    message: resetBoards.length > 0 
-      ? `Categories reset for: ${resetBoards.join(", ")}` 
+    wasReset: resetGroups.length > 0,
+    resetGroups: resetGroups.length > 0 ? resetGroups : undefined,
+    message: resetGroups.length > 0 
+      ? `Categories reset for: ${resetGroups.join(", ")}` 
       : undefined,
   };
 }
