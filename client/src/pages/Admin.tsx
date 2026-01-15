@@ -13,7 +13,8 @@ import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, ArrowRight, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, Upload, FileText, Eye, Download, FileUp } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, ArrowRight, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, Upload, FileText, Eye, Download, FileUp, MoreVertical } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -160,7 +161,6 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
       setNewBoardName("");
-      setNewBoardPoints([10, 20, 30, 40, 50]);
       setShowNewBoardForm(false);
       toast({ title: "Board created!" });
     },
@@ -951,28 +951,42 @@ export default function Admin() {
                             </Button>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-start gap-3">
                             <div className="min-w-0 flex-1">
-                              <div className={`font-semibold truncate ${colorConfig.title}`}>{board.name}</div>
+                              <div className={`font-bold text-base leading-tight ${colorConfig.title}`}>{board.name}</div>
                               {board.description && (
-                                <div className={`text-xs truncate ${colorConfig.sub}`}>{board.description}</div>
+                                <div className={`text-xs mt-0.5 ${colorConfig.sub}`}>{board.description}</div>
                               )}
-                              <div className={`text-[10px] mt-1 ${colorConfig.sub}`}>
-                                {categoryCount}/5 · {totalQuestions} Q
-                                {isComplete && <span className="text-emerald-600 ml-1">✓</span>}
+                              <div className="flex items-center gap-2 mt-2">
+                                <div className="flex-1 h-1.5 bg-white/40 rounded-full overflow-hidden">
+                                  <div 
+                                    className={`h-full transition-all ${isComplete ? 'bg-emerald-500' : colorCode === 'violet' ? 'bg-violet-600' : colorCode === 'cyan' ? 'bg-cyan-600' : colorCode === 'orange' ? 'bg-orange-600' : colorCode === 'green' ? 'bg-green-600' : colorCode === 'pink' ? 'bg-pink-600' : colorCode === 'blue' ? 'bg-blue-600' : 'bg-primary'}`}
+                                    style={{ width: `${Math.min((totalQuestions / 25) * 100, 100)}%` }}
+                                  />
+                                </div>
+                                <span className={`text-[10px] font-medium ${colorConfig.sub}`}>
+                                  {Math.round((totalQuestions / 25) * 100)}%
+                                </span>
                               </div>
                             </div>
-                            <div className="flex items-center shrink-0">
-                              <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); window.open(`/board/${board.id}`, '_blank'); }} className={`h-6 w-6 ${colorConfig.icon} hover:opacity-80`} data-testid={`button-preview-board-${board.id}`} title="Preview">
-                                <Eye className="w-3 h-3" />
-                              </Button>
-                              <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingBoardId(board.id); setEditBoardName(board.name); }} className={`h-6 w-6 ${colorConfig.icon} hover:opacity-80`} data-testid={`button-edit-board-${board.id}`} title="Rename">
-                                <Pencil className="w-3 h-3" />
-                              </Button>
-                              <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); deleteBoardMutation.mutate(board.id); }} className={`h-6 w-6 ${colorConfig.icon} hover:text-red-500`} data-testid={`button-delete-board-${board.id}`} title="Delete">
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                <Button size="icon" variant="ghost" className={`h-7 w-7 ${colorConfig.icon} hover:bg-white/30`} data-testid={`button-board-menu-${board.id}`}>
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem onClick={() => window.open(`/board/${board.id}`, '_blank')} data-testid={`menu-preview-${board.id}`}>
+                                  <Eye className="w-4 h-4 mr-2" /> Preview
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setEditingBoardId(board.id); setEditBoardName(board.name); }} data-testid={`menu-rename-${board.id}`}>
+                                  <Pencil className="w-4 h-4 mr-2" /> Rename
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => deleteBoardMutation.mutate(board.id)} className="text-destructive focus:text-destructive" data-testid={`menu-delete-${board.id}`}>
+                                  <Trash2 className="w-4 h-4 mr-2" /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         )}
                               </div>
