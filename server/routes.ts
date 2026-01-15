@@ -826,6 +826,38 @@ export async function registerRoutes(
     }
   });
 
+  // Get preset/global boards for Buzzkill game selection (themed boards)
+  app.get("/api/buzzkill/preset-boards", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const globalBoards = await storage.getGlobalBoards();
+      
+      const summaries = await storage.getBoardSummaries(userId, role);
+      const boardsWithStatus = globalBoards.map(board => {
+        const summary = summaries.find(s => s.id === board.id);
+        const categoryCount = summary?.categoryCount || 0;
+        const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
+        const maxQuestions = categoryCount * 5;
+        const isComplete = categoryCount >= 5 && totalQuestions >= maxQuestions && maxQuestions > 0;
+        const isPlayable = categoryCount >= 1 && totalQuestions >= 1;
+        
+        return {
+          ...board,
+          categoryCount,
+          totalQuestions,
+          isComplete,
+          isPlayable,
+        };
+      });
+      
+      res.json(boardsWithStatus);
+    } catch (err) {
+      console.error("Error getting preset boards:", err);
+      res.status(500).json({ message: "Failed to get preset boards" });
+    }
+  });
+
   // === GAMES ===
   app.get("/api/games", isAuthenticated, async (req, res) => {
     const userId = req.session.userId!;
