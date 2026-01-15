@@ -132,11 +132,11 @@ export default function HostGridOfGrudges() {
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                     {presetBoards.map((board, index) => {
                       const pastelColors = [
-                        { bg: "bg-gradient-to-br from-rose-100 to-rose-200", text: "text-rose-600", border: "border-rose-200" },
-                        { bg: "bg-gradient-to-br from-emerald-100 to-emerald-200", text: "text-emerald-600", border: "border-emerald-200" },
-                        { bg: "bg-gradient-to-br from-cyan-100 to-cyan-200", text: "text-cyan-600", border: "border-cyan-200" },
-                        { bg: "bg-gradient-to-br from-blue-100 to-blue-200", text: "text-blue-600", border: "border-blue-200" },
-                        { bg: "bg-gradient-to-br from-violet-100 to-violet-200", text: "text-violet-600", border: "border-violet-200" },
+                        { bg: "bg-gradient-to-br from-orange-100 to-orange-200", text: "text-orange-700", border: "border-orange-200" },
+                        { bg: "bg-gradient-to-br from-green-100 to-green-200", text: "text-green-700", border: "border-green-200" },
+                        { bg: "bg-gradient-to-br from-teal-100 to-teal-200", text: "text-teal-700", border: "border-teal-200" },
+                        { bg: "bg-gradient-to-br from-indigo-100 to-indigo-200", text: "text-indigo-700", border: "border-indigo-200" },
+                        { bg: "bg-gradient-to-br from-purple-100 to-purple-200", text: "text-purple-700", border: "border-purple-200" },
                       ];
                       const colors = pastelColors[index % pastelColors.length];
                       return (
@@ -157,14 +157,14 @@ export default function HostGridOfGrudges() {
                           data-testid={`button-preset-${board.id}`}
                         >
                           <div className="flex items-center justify-between mb-3">
-                            <div className={`text-2xl font-black ${colors.text}`}>
-                              {board.name.charAt(0).toUpperCase()}
+                            <div className={`text-lg font-bold ${colors.text}`}>
+                              {board.name}
                             </div>
                             <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
                           </div>
                           
                           <div className="text-xs text-muted-foreground">
-                            {board.description || board.name}
+                            {board.description}
                           </div>
                         </motion.button>
                       );
