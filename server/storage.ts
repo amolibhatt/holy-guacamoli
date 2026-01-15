@@ -1456,8 +1456,8 @@ export async function seedDatabase() {
 }
 
 async function seedPresetBoards() {
-  // Check if ALPHABET board already exists
-  const existingBoards = await db.select().from(boards).where(eq(boards.name, "ALPHABET"));
+  // Check if ALPHABET ANARCHY board already exists
+  const existingBoards = await db.select().from(boards).where(eq(boards.name, "ALPHABET ANARCHY"));
   let alphabetBoard;
   
   if (existingBoards.length > 0) {
@@ -1470,11 +1470,11 @@ async function seedPresetBoards() {
     }
     console.log("[SEED] ALPHABET board exists but incomplete, continuing seed...");
   } else {
-    console.log("[SEED] Creating ALPHABET preset board...");
+    console.log("[SEED] Creating ALPHABET ANARCHY preset board...");
     
-    // Create the ALPHABET board as global (preset)
+    // Create the ALPHABET ANARCHY board as global (preset)
     const [newBoard] = await db.insert(boards).values({
-      name: "ALPHABET",
+      name: "ALPHABET ANARCHY",
       description: "Word games with alphabetical twists",
       pointValues: [10, 20, 30, 40, 50],
       isGlobal: true,
@@ -1484,13 +1484,13 @@ async function seedPresetBoards() {
     alphabetBoard = newBoard;
   }
 
-  // Define categories with their rules
+  // Define categories with their rules - all in source group A for themed play
   const categoriesData = [
-    { name: "The Flip-Flop", description: "Word pairs that spell each other backwards", rule: "Reverse spelling for 2", imageUrl: "" },
-    { name: "Venn Diagram Vibes", description: "Find the word that connects all three clues", rule: "3 clues, 1 answer", imageUrl: "" },
-    { name: "The Downward Spiral", description: "Each answer contains the letters D-O in sequence", rule: "Answer contains 'DO'", imageUrl: "" },
-    { name: "Vowel Movement", description: "Change a single vowel to get two different words", rule: "Swap one vowel for 2", imageUrl: "" },
-    { name: "F.U.", description: "All answers begin with the letters F-U", rule: "Answer starts with 'FU'", imageUrl: "" },
+    { name: "The Flip-Flop", description: "Word pairs that spell each other backwards", rule: "Reverse spelling for 2", imageUrl: "", sourceGroup: "A" as const },
+    { name: "Venn Diagram Vibes", description: "Find the word that connects all three clues", rule: "3 clues, 1 answer", imageUrl: "", sourceGroup: "A" as const },
+    { name: "The Downward Spiral", description: "Each answer contains the letters D-O in sequence", rule: "Answer contains 'DO'", imageUrl: "", sourceGroup: "A" as const },
+    { name: "Vowel Movement", description: "Change a single vowel to get two different words", rule: "Swap one vowel for 2", imageUrl: "", sourceGroup: "A" as const },
+    { name: "F.U.", description: "All answers begin with the letters F-U", rule: "Answer starts with 'FU'", imageUrl: "", sourceGroup: "A" as const },
   ];
 
   const categoryMap = new Map<string, number>();
