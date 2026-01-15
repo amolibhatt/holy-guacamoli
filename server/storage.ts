@@ -1459,41 +1459,31 @@ async function seedPresetBoards() {
   const { THEMED_BOARDS } = await import("./seedData");
   
   for (const boardData of THEMED_BOARDS) {
-    // Check if board already exists by name
-    const existingBoards = await db.select().from(boards).where(eq(boards.name, boardData.name));
+    // Skip boards with no categories that have questions - don't create empty preset boards
+    const categoriesWithQuestions = boardData.categories.filter(c => c.questions.length > 0);
+    if (categoriesWithQuestions.length === 0) {
+      console.log(`[SEED] Skipping "${boardData.name}" - no categories with questions.`);
+      continue;
+    }
+    
+    // Check if board already exists by name (case-insensitive)
+    const existingBoards = await db.select().from(boards).where(
+      sql`LOWER(${boards.name}) = LOWER(${boardData.name})`
+    );
     let board: typeof existingBoards[0] | undefined;
     
     if (existingBoards.length > 0) {
       board = existingBoards[0];
-      // Check if it has the expected number of categories with questions
+      // Check if it has the expected number of categories
       const existingBoardCats = await db.select().from(boardCategories).where(eq(boardCategories.boardId, board.id));
-      const expectedCategoriesWithQuestions = boardData.categories.filter(c => c.questions.length > 0).length;
       
-      if (existingBoardCats.length >= expectedCategoriesWithQuestions && expectedCategoriesWithQuestions > 0) {
+      if (existingBoardCats.length >= categoriesWithQuestions.length) {
         console.log(`[SEED] "${boardData.name}" already fully seeded, skipping.`);
-        continue;
-      }
-      
-      if (boardData.categories.length === 0) {
-        console.log(`[SEED] "${boardData.name}" has no categories in seed data, skipping.`);
         continue;
       }
       
       console.log(`[SEED] "${boardData.name}" exists but incomplete, continuing seed...`);
     } else {
-      if (boardData.categories.length === 0) {
-        console.log(`[SEED] "${boardData.name}" has no categories, creating board only...`);
-        await db.insert(boards).values({
-          name: boardData.name,
-          description: boardData.description,
-          pointValues: [10, 20, 30, 40, 50],
-          isGlobal: true,
-          isActive: true,
-          colorCode: boardData.colorCode,
-        });
-        continue;
-      }
-      
       console.log(`[SEED] Creating "${boardData.name}" preset board...`);
       const [newBoard] = await db.insert(boards).values({
         name: boardData.name,

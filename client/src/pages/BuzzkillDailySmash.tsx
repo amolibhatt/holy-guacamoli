@@ -199,8 +199,8 @@ export default function BuzzkillDailySmash() {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-foreground">{category.name}</h3>
-                      {category.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-1">{category.description}</p>
+                      {category.rule && (
+                        <p className="text-sm text-muted-foreground line-clamp-1">{category.rule}</p>
                       )}
                     </div>
                   </motion.div>
