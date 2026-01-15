@@ -613,7 +613,7 @@ export default function Admin() {
                   )}
                 </AnimatePresence>
 
-                <div className="space-y-2" role="list" aria-label="Game boards">
+                <div className="space-y-4" role="list" aria-label="Game boards">
                   {loadingBoards ? (
                     <div className="space-y-2">
                       {[1, 2, 3].map(i => (
@@ -626,7 +626,17 @@ export default function Admin() {
                         </div>
                       ))}
                     </div>
-                  ) : boards.map(board => {
+                  ) : (
+                    <>
+                      {/* Preset Boards Section */}
+                      {boards.filter(b => b.isGlobal).length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-2 px-1">
+                            <Sparkles className="w-3 h-3 text-amber-500" />
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Preset Boards</span>
+                          </div>
+                          <div className="space-y-2">
+                            {boards.filter(b => b.isGlobal).map(board => {
                     const summary = boardSummaries.find(s => s.id === board.id);
                     const categoryCount = summary?.categoryCount || 0;
                     const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
@@ -770,12 +780,174 @@ export default function Admin() {
                       </div>
                     );
                   })}
-                  {boards.length === 0 && !loadingBoards && (
-                    <div className="text-center py-6 px-3">
-                      <Grid3X3 className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
-                      <p className="text-muted-foreground text-sm mb-1">No boards yet</p>
-                      <p className="text-muted-foreground/70 text-xs">Click + above to create your first game board</p>
-                    </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Personal Boards Section */}
+                      {boards.filter(b => !b.isGlobal).length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-2 px-1">
+                            <Grid3X3 className="w-3 h-3 text-primary" />
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Your Boards</span>
+                          </div>
+                          <div className="space-y-2">
+                            {boards.filter(b => !b.isGlobal).map(board => {
+                              const summary = boardSummaries.find(s => s.id === board.id);
+                              const categoryCount = summary?.categoryCount || 0;
+                              const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
+                              const maxQuestions = categoryCount * 5;
+                              const categoryProgress = (categoryCount / 5) * 100;
+                              const questionProgress = maxQuestions > 0 ? (totalQuestions / maxQuestions) * 100 : 0;
+                              const isComplete = categoryCount >= 5 && totalQuestions >= maxQuestions && maxQuestions > 0;
+                              const isEditing = editingBoardId === board.id;
+                              return (
+                                <div
+                                  key={board.id}
+                                  className={`p-3 rounded-lg cursor-pointer transition-all ${
+                                    selectedBoardId === board.id
+                                      ? 'bg-primary/20 border-2 border-primary'
+                                      : 'bg-muted/20 border border-border hover:bg-muted/30'
+                                  }`}
+                                  onClick={() => { 
+                                    if (!isEditing) { 
+                                      setSelectedBoardId(board.id); 
+                                      setSelectedBoardCategoryId(null); 
+                                      if (board.theme) setTheme(board.theme as ThemeName);
+                                    } 
+                                  }}
+                                  data-testid={`board-item-${board.id}`}
+                                >
+                                  {isEditing ? (
+                                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                      <Input
+                                        value={editBoardName}
+                                        onChange={(e) => setEditBoardName(e.target.value)}
+                                        className="h-7 text-sm"
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter' && editBoardName.trim()) {
+                                            updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() });
+                                          }
+                                          if (e.key === 'Escape') {
+                                            setEditingBoardId(null);
+                                          }
+                                        }}
+                                        data-testid={`input-edit-board-${board.id}`}
+                                      />
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        onClick={() => {
+                                          if (editBoardName.trim()) {
+                                            updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() });
+                                          }
+                                        }}
+                                        className="h-7 w-7 text-primary shrink-0"
+                                        data-testid={`button-save-board-${board.id}`}
+                                      >
+                                        <Check className="w-3.5 h-3.5" />
+                                      </Button>
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        onClick={() => setEditingBoardId(null)}
+                                        className="h-7 w-7 text-muted-foreground shrink-0"
+                                        data-testid={`button-cancel-edit-board-${board.id}`}
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <div className="flex items-center justify-between gap-2 mb-2">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <span className="font-medium text-foreground text-sm truncate">{board.name}</span>
+                                          {isComplete && (
+                                            <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0" />
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-0.5 shrink-0">
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            onClick={(e) => { 
+                                              e.stopPropagation(); 
+                                              window.open(`/board/${board.id}`, '_blank');
+                                            }}
+                                            className="h-6 w-6 text-muted-foreground hover:text-primary"
+                                            data-testid={`button-preview-board-${board.id}`}
+                                            title="Preview board"
+                                          >
+                                            <Eye className="w-3 h-3" />
+                                          </Button>
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            onClick={(e) => { 
+                                              e.stopPropagation(); 
+                                              setEditingBoardId(board.id); 
+                                              setEditBoardName(board.name); 
+                                            }}
+                                            className="h-6 w-6 text-muted-foreground hover:text-primary"
+                                            data-testid={`button-edit-board-${board.id}`}
+                                          >
+                                            <Pencil className="w-3 h-3" />
+                                          </Button>
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            onClick={(e) => { e.stopPropagation(); deleteBoardMutation.mutate(board.id); }}
+                                            className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                            data-testid={`button-delete-board-${board.id}`}
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                      <div className="space-y-1.5">
+                                        <div className="flex items-center gap-2">
+                                          <FolderPlus className="w-3 h-3 text-muted-foreground shrink-0" />
+                                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                            <div 
+                                              className={`h-full rounded-full transition-all ${categoryCount >= 5 ? 'bg-primary' : 'bg-primary/50'}`}
+                                              style={{ width: `${categoryProgress}%` }}
+                                            />
+                                          </div>
+                                          <span className={`text-[10px] font-medium w-8 text-right ${categoryCount >= 5 ? 'text-primary' : 'text-muted-foreground'}`}>
+                                            {categoryCount}/5
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <HelpCircle className="w-3 h-3 text-muted-foreground shrink-0" />
+                                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                            <div 
+                                              className={`h-full rounded-full transition-all ${questionProgress >= 100 ? 'bg-primary' : questionProgress > 0 ? 'bg-amber-500' : 'bg-muted'}`}
+                                              style={{ width: `${Math.min(questionProgress, 100)}%` }}
+                                            />
+                                          </div>
+                                          <span className={`text-[10px] font-medium w-8 text-right ${questionProgress >= 100 ? 'text-primary' : questionProgress > 0 ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                                            {totalQuestions}/{maxQuestions || 0}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {boards.length === 0 && (
+                        <div className="text-center py-6 px-3">
+                          <Grid3X3 className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
+                          <p className="text-muted-foreground text-sm mb-1">No boards yet</p>
+                          <p className="text-muted-foreground/70 text-xs">Click + above to create your first game board</p>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </CardContent>
