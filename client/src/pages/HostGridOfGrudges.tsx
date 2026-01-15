@@ -103,11 +103,11 @@ export default function HostGridOfGrudges() {
                 </div>
                 
                 <h3 className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors mb-2 relative z-10">
-                  Daily Smash
+                  Shuffle Play
                 </h3>
                 <p className="text-muted-foreground relative z-10 max-w-lg">
-                  A perfectly balanced mix of 5 categories - one from each group. 
-                  Fresh selection every game, never repeating until all are played!
+                  A balanced mix of 5 categories - one from each group. 
+                  Fresh picks every game, never repeating until all are played!
                 </p>
                 
                 <div className="mt-6 flex items-center gap-4 text-sm relative z-10">
@@ -126,7 +126,7 @@ export default function HostGridOfGrudges() {
                 <div className="space-y-3">
                   <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 px-1">
                     <Grid3X3 className="w-5 h-5 text-muted-foreground" />
-                    Themed Boards
+                    Starter Packs
                   </h2>
                   
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -176,7 +176,7 @@ export default function HostGridOfGrudges() {
               <div className="space-y-3">
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 px-1">
                   <FolderPlus className="w-5 h-5 text-cyan-500" />
-                  Custom Boards
+                  My Boards
                 </h2>
                 
                 {customBoards.length > 0 ? (
