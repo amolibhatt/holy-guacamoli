@@ -125,13 +125,20 @@ export default function HostGridOfGrudges() {
               {presetBoards.length > 0 && (
                 <div className="space-y-3">
                   <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 px-1">
-                    <Sparkles className="w-5 h-5 text-amber-500" />
+                    <Grid3X3 className="w-5 h-5 text-muted-foreground" />
                     Themed Boards
                   </h2>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                     {presetBoards.map((board, index) => {
-                      const colors = getBoardColor(board.colorCode);
+                      const pastelColors = [
+                        { bg: "bg-gradient-to-br from-rose-100 to-rose-200", text: "text-rose-600", border: "border-rose-200" },
+                        { bg: "bg-gradient-to-br from-emerald-100 to-emerald-200", text: "text-emerald-600", border: "border-emerald-200" },
+                        { bg: "bg-gradient-to-br from-cyan-100 to-cyan-200", text: "text-cyan-600", border: "border-cyan-200" },
+                        { bg: "bg-gradient-to-br from-blue-100 to-blue-200", text: "text-blue-600", border: "border-blue-200" },
+                        { bg: "bg-gradient-to-br from-violet-100 to-violet-200", text: "text-violet-600", border: "border-violet-200" },
+                      ];
+                      const colors = pastelColors[index % pastelColors.length];
                       return (
                         <motion.button
                           key={board.id}
@@ -139,28 +146,26 @@ export default function HostGridOfGrudges() {
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.05 }}
-                          whileHover={{ scale: 1.03, y: -4 }}
-                          whileTap={{ scale: 0.97 }}
+                          whileHover={{ scale: 1.02, y: -2 }}
+                          whileTap={{ scale: 0.98 }}
                           disabled={!board.isPlayable}
-                          className={`relative flex flex-col p-5 bg-gradient-to-br ${colors.gradient} rounded-xl text-left transition-all border-2 group overflow-hidden ${
+                          className={`relative flex flex-col p-4 ${colors.bg} rounded-xl text-left transition-all border group overflow-hidden ${
                             board.isPlayable 
-                              ? `${colors.border} cursor-pointer hover:shadow-lg` 
+                              ? `${colors.border} cursor-pointer hover:shadow-md` 
                               : "border-border/50 opacity-50 cursor-not-allowed"
                           }`}
                           data-testid={`button-preset-${board.id}`}
                         >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className={`text-xl font-black ${colors.text}`}>
-                              {board.name}
+                          <div className="flex items-center justify-between mb-3">
+                            <div className={`text-2xl font-black ${colors.text}`}>
+                              {board.name.charAt(0).toUpperCase()}
                             </div>
                             <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
                           </div>
                           
-                          {board.description && (
-                            <div className="text-sm text-muted-foreground line-clamp-2">
-                              {board.description}
-                            </div>
-                          )}
+                          <div className="text-xs text-muted-foreground">
+                            {board.description || board.name}
+                          </div>
                         </motion.button>
                       );
                     })}
