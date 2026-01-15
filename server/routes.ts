@@ -834,7 +834,9 @@ export async function registerRoutes(
       const globalBoards = await storage.getGlobalBoards();
       
       const summaries = await storage.getBoardSummaries(userId, role);
-      const boardsWithStatus = globalBoards.map(board => {
+      // Sort by ID to maintain Excel order
+      const sortedBoards = [...globalBoards].sort((a, b) => a.id - b.id);
+      const boardsWithStatus = sortedBoards.map(board => {
         const summary = summaries.find(s => s.id === board.id);
         const categoryCount = summary?.categoryCount || 0;
         const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
