@@ -76,6 +76,11 @@ export default function BuzzkillDailySmash() {
           title: "Vault Reset!",
           description: result.message,
         });
+      } else if (result.categories.length < 5) {
+        toast({
+          title: "Board Generated",
+          description: `Only ${result.categories.length} categories available. Add more categories to source groups in Admin.`,
+        });
       } else {
         toast({
           title: "Board Generated!",
