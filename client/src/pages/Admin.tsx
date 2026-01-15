@@ -221,8 +221,8 @@ export default function Admin() {
   });
 
   const createAndLinkCategoryMutation = useMutation({
-    mutationFn: async (data: { name: string; description: string; imageUrl?: string; boardId: number }) => {
-      const res = await apiRequest('POST', `/api/boards/${data.boardId}/categories/create-and-link`, { name: data.name, description: data.description, imageUrl: data.imageUrl });
+    mutationFn: async (data: { name: string; description: string; rule?: string; imageUrl?: string; boardId: number }) => {
+      const res = await apiRequest('POST', `/api/boards/${data.boardId}/categories/create-and-link`, { name: data.name, description: data.description, rule: data.rule, imageUrl: data.imageUrl });
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to create category");
@@ -236,6 +236,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       setNewCategoryName("");
       setNewCategoryDescription("");
+      setNewCategoryRule("");
       setShowNewCategoryForm(false);
       toast({ title: "Category created and linked!" });
     },
@@ -720,12 +721,12 @@ export default function Admin() {
                     </div>
                   ) : (
                     <>
-                      {/* Preset Boards Section */}
+                      {/* Starter Packs Section */}
                       {boards.filter(b => b.isGlobal).length > 0 && (
                         <div>
                           <div className="flex items-center gap-2 mb-2 px-1">
                             <Sparkles className="w-3 h-3 text-amber-500" />
-                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Preset Boards</span>
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Starter Packs</span>
                           </div>
                           <div className="space-y-2">
                             {boards.filter(b => b.isGlobal).map(board => {
@@ -894,7 +895,7 @@ export default function Admin() {
                         <div>
                           <div className="flex items-center gap-2 mb-2 px-1">
                             <Grid3X3 className="w-3 h-3 text-primary" />
-                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Your Boards</span>
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">My Boards</span>
                           </div>
                           <div className="space-y-2">
                             {boards.filter(b => !b.isGlobal).map(board => {
@@ -1153,6 +1154,7 @@ export default function Admin() {
                               onClick={() => createAndLinkCategoryMutation.mutate({ 
                                 name: newCategoryName.trim(), 
                                 description: newCategoryDescription.trim(), 
+                                rule: newCategoryRule.trim() || undefined,
                                 imageUrl: newCategoryImageUrl || undefined,
                                 boardId: selectedBoardId! 
                               })}
@@ -1170,6 +1172,13 @@ export default function Admin() {
                             onChange={(e) => setNewCategoryDescription(e.target.value)}
                             className="h-8 text-sm"
                             data-testid="input-category-description"
+                          />
+                          <Input
+                            placeholder="Rule (e.g., 'Reverse spelling for 2nd word')"
+                            value={newCategoryRule}
+                            onChange={(e) => setNewCategoryRule(e.target.value)}
+                            className="h-8 text-sm"
+                            data-testid="input-category-rule"
                           />
                           <div className="flex gap-2 items-center">
                             <input
