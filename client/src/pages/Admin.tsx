@@ -729,14 +729,14 @@ export default function Admin() {
                     const isIncomplete = categoryCount < 5 || totalQuestions < maxQuestions;
                     const isEditing = editingBoardId === board.id;
                     const pastelColors: Record<string, { bg: string; title: string; sub: string; icon: string }> = {
-                      violet: { bg: 'from-violet-500/30 to-violet-600/15 border-violet-400/50', title: 'text-violet-900 dark:text-violet-100', sub: 'text-violet-700 dark:text-violet-300', icon: 'text-violet-600 dark:text-violet-400' },
-                      cyan: { bg: 'from-cyan-500/30 to-cyan-600/15 border-cyan-400/50', title: 'text-cyan-900 dark:text-cyan-100', sub: 'text-cyan-700 dark:text-cyan-300', icon: 'text-cyan-600 dark:text-cyan-400' },
-                      orange: { bg: 'from-orange-500/30 to-orange-600/15 border-orange-400/50', title: 'text-orange-900 dark:text-orange-100', sub: 'text-orange-700 dark:text-orange-300', icon: 'text-orange-600 dark:text-orange-400' },
-                      green: { bg: 'from-green-500/30 to-green-600/15 border-green-400/50', title: 'text-green-900 dark:text-green-100', sub: 'text-green-700 dark:text-green-300', icon: 'text-green-600 dark:text-green-400' },
-                      pink: { bg: 'from-pink-500/30 to-pink-600/15 border-pink-400/50', title: 'text-pink-900 dark:text-pink-100', sub: 'text-pink-700 dark:text-pink-300', icon: 'text-pink-600 dark:text-pink-400' },
-                      blue: { bg: 'from-blue-500/30 to-blue-600/15 border-blue-400/50', title: 'text-blue-900 dark:text-blue-100', sub: 'text-blue-700 dark:text-blue-300', icon: 'text-blue-600 dark:text-blue-400' },
-                      red: { bg: 'from-red-500/30 to-red-600/15 border-red-400/50', title: 'text-red-900 dark:text-red-100', sub: 'text-red-700 dark:text-red-300', icon: 'text-red-600 dark:text-red-400' },
-                      yellow: { bg: 'from-yellow-500/30 to-yellow-600/15 border-yellow-400/50', title: 'text-yellow-900 dark:text-yellow-100', sub: 'text-yellow-700 dark:text-yellow-300', icon: 'text-yellow-600 dark:text-yellow-400' },
+                      violet: { bg: 'from-violet-500/30 to-violet-600/15 border-violet-400/50', title: 'text-violet-900', sub: 'text-violet-700', icon: 'text-violet-600' },
+                      cyan: { bg: 'from-cyan-500/30 to-cyan-600/15 border-cyan-400/50', title: 'text-cyan-900', sub: 'text-cyan-700', icon: 'text-cyan-600' },
+                      orange: { bg: 'from-orange-500/30 to-orange-600/15 border-orange-400/50', title: 'text-orange-900', sub: 'text-orange-700', icon: 'text-orange-600' },
+                      green: { bg: 'from-green-500/30 to-green-600/15 border-green-400/50', title: 'text-green-900', sub: 'text-green-700', icon: 'text-green-600' },
+                      pink: { bg: 'from-pink-500/30 to-pink-600/15 border-pink-400/50', title: 'text-pink-900', sub: 'text-pink-700', icon: 'text-pink-600' },
+                      blue: { bg: 'from-blue-500/30 to-blue-600/15 border-blue-400/50', title: 'text-blue-900', sub: 'text-blue-700', icon: 'text-blue-600' },
+                      red: { bg: 'from-red-500/30 to-red-600/15 border-red-400/50', title: 'text-red-900', sub: 'text-red-700', icon: 'text-red-600' },
+                      yellow: { bg: 'from-yellow-500/30 to-yellow-600/15 border-yellow-400/50', title: 'text-yellow-900', sub: 'text-yellow-700', icon: 'text-yellow-600' },
                     };
                     const colorCode = board.colorCode || 'violet';
                     const colorConfig = pastelColors[colorCode] || pastelColors.violet;
@@ -805,14 +805,14 @@ export default function Admin() {
                               )}
                               <div className={`text-[10px] mt-1 ${colorConfig.sub}`}>
                                 {categoryCount}/5 · {totalQuestions} Q
-                                {isComplete && <span className="text-emerald-600 dark:text-emerald-400 ml-1">✓</span>}
+                                {isComplete && <span className="text-emerald-600 ml-1">✓</span>}
                               </div>
                             </div>
                             <div className="flex items-center shrink-0">
                               <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); window.open(`/board/${board.id}`, '_blank'); }} className={`h-6 w-6 ${colorConfig.icon} hover:opacity-80`} data-testid={`button-preview-board-${board.id}`} title="Preview">
                                 <Eye className="w-3 h-3" />
                               </Button>
-                              <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); updateBoardMutation.mutate({ id: board.id, isGlobal: false }); }} className="h-6 w-6 text-amber-600 dark:text-amber-400 hover:opacity-80" data-testid={`button-toggle-preset-${board.id}`} title="Remove from Starter Packs">
+                              <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); updateBoardMutation.mutate({ id: board.id, isGlobal: false }); }} className="h-6 w-6 text-amber-600 hover:opacity-80" data-testid={`button-toggle-preset-${board.id}`} title="Remove from Starter Packs">
                                 <Sparkles className="w-3 h-3" />
                               </Button>
                               <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingBoardId(board.id); setEditBoardName(board.name); }} className={`h-6 w-6 ${colorConfig.icon} hover:opacity-80`} data-testid={`button-edit-board-${board.id}`} title="Rename">
