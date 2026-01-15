@@ -741,14 +741,14 @@ export default function Admin() {
                     const isIncomplete = categoryCount < 5 || totalQuestions < maxQuestions;
                     const isEditing = editingBoardId === board.id;
                     const pastelColors: Record<string, { bg: string; text: string }> = {
-                      violet: { bg: 'from-violet-500/20 to-violet-600/10 border-violet-400/40', text: 'text-violet-100' },
-                      cyan: { bg: 'from-cyan-500/20 to-cyan-600/10 border-cyan-400/40', text: 'text-cyan-100' },
-                      orange: { bg: 'from-orange-500/20 to-orange-600/10 border-orange-400/40', text: 'text-orange-100' },
-                      green: { bg: 'from-green-500/20 to-green-600/10 border-green-400/40', text: 'text-green-100' },
-                      pink: { bg: 'from-pink-500/20 to-pink-600/10 border-pink-400/40', text: 'text-pink-100' },
-                      blue: { bg: 'from-blue-500/20 to-blue-600/10 border-blue-400/40', text: 'text-blue-100' },
-                      red: { bg: 'from-red-500/20 to-red-600/10 border-red-400/40', text: 'text-red-100' },
-                      yellow: { bg: 'from-yellow-500/20 to-yellow-600/10 border-yellow-400/40', text: 'text-yellow-100' },
+                      violet: { bg: 'from-violet-500/30 to-violet-600/15 border-violet-400/50', text: 'text-violet-300' },
+                      cyan: { bg: 'from-cyan-500/30 to-cyan-600/15 border-cyan-400/50', text: 'text-cyan-300' },
+                      orange: { bg: 'from-orange-500/30 to-orange-600/15 border-orange-400/50', text: 'text-orange-300' },
+                      green: { bg: 'from-green-500/30 to-green-600/15 border-green-400/50', text: 'text-green-300' },
+                      pink: { bg: 'from-pink-500/30 to-pink-600/15 border-pink-400/50', text: 'text-pink-300' },
+                      blue: { bg: 'from-blue-500/30 to-blue-600/15 border-blue-400/50', text: 'text-blue-300' },
+                      red: { bg: 'from-red-500/30 to-red-600/15 border-red-400/50', text: 'text-red-300' },
+                      yellow: { bg: 'from-yellow-500/30 to-yellow-600/15 border-yellow-400/50', text: 'text-yellow-300' },
                     };
                     const colorCode = board.colorCode || 'violet';
                     const colorConfig = pastelColors[colorCode] || pastelColors.violet;
