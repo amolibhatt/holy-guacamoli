@@ -1459,12 +1459,7 @@ async function seedPresetBoards() {
   const { THEMED_BOARDS } = await import("./seedData");
   
   for (const boardData of THEMED_BOARDS) {
-    // Skip boards with no categories that have questions - don't create empty preset boards
     const categoriesWithQuestions = boardData.categories.filter(c => c.questions.length > 0);
-    if (categoriesWithQuestions.length === 0) {
-      console.log(`[SEED] Skipping "${boardData.name}" - no categories with questions.`);
-      continue;
-    }
     
     // Check if board already exists by name (case-insensitive)
     const existingBoards = await db.select().from(boards).where(
@@ -1474,11 +1469,11 @@ async function seedPresetBoards() {
     
     if (existingBoards.length > 0) {
       board = existingBoards[0];
-      // Check if it has the expected number of categories
+      // Check if it has the expected number of categories (or no categories expected)
       const existingBoardCats = await db.select().from(boardCategories).where(eq(boardCategories.boardId, board.id));
       
-      if (existingBoardCats.length >= categoriesWithQuestions.length) {
-        console.log(`[SEED] "${boardData.name}" already fully seeded, skipping.`);
+      if (categoriesWithQuestions.length === 0 || existingBoardCats.length >= categoriesWithQuestions.length) {
+        console.log(`[SEED] "${boardData.name}" already seeded, skipping.`);
         continue;
       }
       
@@ -1494,6 +1489,12 @@ async function seedPresetBoards() {
         colorCode: boardData.colorCode,
       }).returning();
       board = newBoard;
+    }
+    
+    // If no categories with questions, we're done with this board
+    if (categoriesWithQuestions.length === 0) {
+      console.log(`[SEED] "${boardData.name}" created (empty - awaiting content).`);
+      continue;
     }
 
     const categoryMap = new Map<string, number>();
