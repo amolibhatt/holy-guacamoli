@@ -776,13 +776,15 @@ export async function registerRoutes(
         const categoryCount = summary?.categoryCount || 0;
         const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
         const maxQuestions = categoryCount * 5;
-        const isReady = categoryCount >= 5 && totalQuestions >= maxQuestions && maxQuestions > 0;
+        const isComplete = categoryCount >= 5 && totalQuestions >= maxQuestions && maxQuestions > 0;
+        const isPlayable = categoryCount >= 1 && totalQuestions >= 1;
         
         return {
           ...board,
           categoryCount,
           totalQuestions,
-          isReady,
+          isComplete,
+          isPlayable,
         };
       });
       
