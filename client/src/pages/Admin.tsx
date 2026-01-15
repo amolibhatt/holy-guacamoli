@@ -564,9 +564,12 @@ export default function Admin() {
                       <td className="p-2 font-mono text-xs">{item.row}</td>
                       <td className="p-2 text-orange-600">{item.issue}</td>
                       <td className="p-2 text-xs text-muted-foreground">
-                        {Object.entries(item.data).map(([k, v]) => (
-                          <div key={k}><span className="font-medium">{k}:</span> {v.substring(0, 50)}{v.length > 50 ? '...' : ''}</div>
-                        ))}
+                        {item.data && Object.entries(item.data).map(([k, v]) => {
+                          const val = String(v || '');
+                          return (
+                            <div key={k}><span className="font-medium">{k}:</span> {val.substring(0, 50)}{val.length > 50 ? '...' : ''}</div>
+                          );
+                        })}
                       </td>
                     </tr>
                   ))}
