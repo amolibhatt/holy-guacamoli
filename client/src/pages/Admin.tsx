@@ -812,9 +812,6 @@ export default function Admin() {
                               <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); window.open(`/board/${board.id}`, '_blank'); }} className={`h-6 w-6 ${colorConfig.icon} hover:opacity-80`} data-testid={`button-preview-board-${board.id}`} title="Preview">
                                 <Eye className="w-3 h-3" />
                               </Button>
-                              <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); updateBoardMutation.mutate({ id: board.id, isGlobal: false }); }} className="h-6 w-6 text-amber-600 hover:opacity-80" data-testid={`button-toggle-preset-${board.id}`} title="Remove from Starter Packs">
-                                <Sparkles className="w-3 h-3" />
-                              </Button>
                               <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingBoardId(board.id); setEditBoardName(board.name); }} className={`h-6 w-6 ${colorConfig.icon} hover:opacity-80`} data-testid={`button-edit-board-${board.id}`} title="Rename">
                                 <Pencil className="w-3 h-3" />
                               </Button>
