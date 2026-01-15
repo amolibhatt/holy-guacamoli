@@ -129,7 +129,7 @@ export default function HostGridOfGrudges() {
                     Themed Boards
                   </h2>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {presetBoards.map((board, index) => {
                       const colors = getBoardColor(board.colorCode);
                       return (
@@ -149,20 +149,18 @@ export default function HostGridOfGrudges() {
                           }`}
                           data-testid={`button-preset-${board.id}`}
                         >
-                          <div className="flex items-center justify-between mb-3">
-                            <div className={`text-2xl font-black ${colors.text}`}>
-                              {board.name.split(' ')[0]}
+                          <div className="flex items-center justify-between mb-2">
+                            <div className={`text-xl font-black ${colors.text}`}>
+                              {board.name}
                             </div>
                             <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
                           </div>
                           
-                          <div className="text-sm font-medium text-foreground mb-1 truncate">
-                            {board.name}
-                          </div>
-                          
-                          <div className="text-xs text-muted-foreground">
-                            {board.categoryCount} Categories
-                          </div>
+                          {board.description && (
+                            <div className="text-sm text-muted-foreground line-clamp-2">
+                              {board.description}
+                            </div>
+                          )}
                         </motion.button>
                       );
                     })}
