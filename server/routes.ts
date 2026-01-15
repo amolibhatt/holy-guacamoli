@@ -141,13 +141,14 @@ export async function registerRoutes(
       if (role !== 'super_admin') {
         return res.status(403).json({ message: "Only Super Admins can update boards" });
       }
-      const { name, description, pointValues, theme, colorCode } = req.body;
+      const { name, description, pointValues, theme, colorCode, isGlobal } = req.body;
       const board = await storage.updateBoard(Number(req.params.id), {
         name,
         description,
         pointValues,
         theme,
         colorCode,
+        isGlobal,
       }, userId, role);
       if (!board) {
         return res.status(404).json({ message: "Board not found" });
