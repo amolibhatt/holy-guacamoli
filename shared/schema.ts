@@ -230,6 +230,7 @@ export const categories = pgTable("categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description").notNull(),
+  rule: text("rule"),
   imageUrl: text("image_url").notNull(),
   sourceGroup: text("source_group").$type<SourceGroup>(),
   isActive: boolean("is_active").notNull().default(false),

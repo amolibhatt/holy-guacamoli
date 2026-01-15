@@ -1486,11 +1486,11 @@ async function seedPresetBoards() {
 
   // Define categories with their rules
   const categoriesData = [
-    { name: "The Flip-Flop", description: "Reverse spelling for 2: The act of consuming food vs. the hot beverage you drink with your pinky up while judging people.", imageUrl: "" },
-    { name: "Venn Diagram Vibes", description: "3 clues, 1 answer: Find the word that connects all three clues.", imageUrl: "" },
-    { name: "The Downward Spiral", description: "Answer contains 'DO': Each answer contains the letters D-O in sequence.", imageUrl: "" },
-    { name: "Vowel Movement", description: "Swap one vowel for 2: Change a single vowel to get a new word.", imageUrl: "" },
-    { name: "F.U.", description: "Answer starts with 'FU': All answers begin with the letters F-U.", imageUrl: "" },
+    { name: "The Flip-Flop", description: "Word pairs that spell each other backwards", rule: "Reverse spelling for 2", imageUrl: "" },
+    { name: "Venn Diagram Vibes", description: "Find the word that connects all three clues", rule: "3 clues, 1 answer", imageUrl: "" },
+    { name: "The Downward Spiral", description: "Each answer contains the letters D-O in sequence", rule: "Answer contains 'DO'", imageUrl: "" },
+    { name: "Vowel Movement", description: "Change a single vowel to get two different words", rule: "Swap one vowel for 2", imageUrl: "" },
+    { name: "F.U.", description: "All answers begin with the letters F-U", rule: "Answer starts with 'FU'", imageUrl: "" },
   ];
 
   const categoryMap = new Map<string, number>();

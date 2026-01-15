@@ -77,7 +77,9 @@ export default function Admin() {
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [editCategoryName, setEditCategoryName] = useState("");
   const [editCategoryDescription, setEditCategoryDescription] = useState("");
+  const [editCategoryRule, setEditCategoryRule] = useState("");
   const [newCategoryDescription, setNewCategoryDescription] = useState("");
+  const [newCategoryRule, setNewCategoryRule] = useState("");
   const [questionFormOpen, setQuestionFormOpen] = useState(false);
   const [draggedQuestionId, setDraggedQuestionId] = useState<number | null>(null);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
@@ -243,8 +245,8 @@ export default function Admin() {
   });
 
   const updateCategoryMutation = useMutation({
-    mutationFn: async ({ id, name, description }: { id: number; name: string; description: string }) => {
-      return apiRequest('PUT', `/api/categories/${id}`, { name, description });
+    mutationFn: async ({ id, name, description, rule }: { id: number; name: string; description: string; rule?: string }) => {
+      return apiRequest('PUT', `/api/categories/${id}`, { name, description, rule });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
@@ -252,6 +254,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       setEditingCategoryId(null);
       setEditCategoryDescription("");
+      setEditCategoryRule("");
       toast({ title: "Category updated!" });
     },
   });
@@ -1302,8 +1305,8 @@ export default function Admin() {
                             <span className={`text-xs px-2 py-0.5 rounded-full ${(selectedBc.questionCount ?? 0) >= 5 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
                               {selectedBc.questionCount ?? 0}/5 questions
                             </span>
-                            {selectedBc.category.description && (
-                              <span className="text-xs text-muted-foreground">— {selectedBc.category.description}</span>
+                            {selectedBc.category.rule && (
+                              <span className="text-xs text-muted-foreground">— {selectedBc.category.rule}</span>
                             )}
                           </div>
                           <div className="flex items-center gap-1">
@@ -1333,7 +1336,7 @@ export default function Admin() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => { setEditingCategoryId(selectedBc.category.id); setEditCategoryName(selectedBc.category.name); setEditCategoryDescription(selectedBc.category.description || ''); }}
+                              onClick={() => { setEditingCategoryId(selectedBc.category.id); setEditCategoryName(selectedBc.category.name); setEditCategoryDescription(selectedBc.category.description || ''); setEditCategoryRule(selectedBc.category.rule || ''); }}
                               className="h-8 gap-1"
                               data-testid={`button-edit-category-${selectedBc.category.id}`}
                             >
@@ -1403,12 +1406,17 @@ export default function Admin() {
                               autoFocus
                             />
                             <Input
+                              value={editCategoryRule}
+                              onChange={(e) => setEditCategoryRule(e.target.value)}
+                              placeholder="Rule (e.g., 'Reverse spelling for 2')"
+                            />
+                            <Input
                               value={editCategoryDescription}
                               onChange={(e) => setEditCategoryDescription(e.target.value)}
-                              placeholder="Short description (tooltip)"
+                              placeholder="Description (optional)"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
-                                  updateCategoryMutation.mutate({ id: editingCategoryId, name: editCategoryName.trim(), description: editCategoryDescription.trim() });
+                                  updateCategoryMutation.mutate({ id: editingCategoryId, name: editCategoryName.trim(), description: editCategoryDescription.trim(), rule: editCategoryRule.trim() });
                                 } else if (e.key === 'Escape') {
                                   setEditingCategoryId(null);
                                 }
@@ -1416,7 +1424,7 @@ export default function Admin() {
                             />
                             <div className="flex justify-end gap-2">
                               <Button size="sm" variant="ghost" onClick={() => setEditingCategoryId(null)}>Cancel</Button>
-                              <Button size="sm" onClick={() => updateCategoryMutation.mutate({ id: editingCategoryId, name: editCategoryName.trim(), description: editCategoryDescription.trim() })}>Save</Button>
+                              <Button size="sm" onClick={() => updateCategoryMutation.mutate({ id: editingCategoryId, name: editCategoryName.trim(), description: editCategoryDescription.trim(), rule: editCategoryRule.trim() })}>Save</Button>
                             </div>
                           </div>
                         </motion.div>

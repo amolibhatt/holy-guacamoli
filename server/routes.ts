@@ -390,10 +390,11 @@ export async function registerRoutes(
       if (role !== 'super_admin') {
         return res.status(403).json({ message: "Only Super Admins can update categories" });
       }
-      const { name, description, imageUrl, isActive } = req.body;
+      const { name, description, rule, imageUrl, isActive } = req.body;
       const category = await storage.updateCategory(Number(req.params.id), {
         name,
         description,
+        rule,
         imageUrl,
         isActive,
       });
