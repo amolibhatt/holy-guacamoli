@@ -5,7 +5,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ScoreProvider } from "@/components/ScoreContext";
-import { ThemeProvider } from "@/context/ThemeContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "@/pages/not-found";
@@ -83,12 +82,10 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <ThemeProvider>
-            <ScoreProvider>
-              <Router />
-              <Toaster />
-            </ScoreProvider>
-          </ThemeProvider>
+          <ScoreProvider>
+            <Router />
+            <Toaster />
+          </ScoreProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>

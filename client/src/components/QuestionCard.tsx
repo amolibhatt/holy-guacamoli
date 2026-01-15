@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Question, PLAYER_AVATARS } from "@shared/schema";
 import { useScore } from "./ScoreContext";
-import { useTheme } from "@/context/ThemeContext";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { CheckCircle2, XCircle, Eye, EyeOff, Timer, X, Trophy, Zap, Users, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -100,7 +99,6 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
   const [isDeduction, setIsDeduction] = useState(false);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { contestants, awardPoints, deductPoints, markQuestionCompleted } = useScore();
-  const { colors } = useTheme();
   const prefersReducedMotion = useReducedMotion();
 
   const correctAnswer = (question as any).correctAnswer;
@@ -151,7 +149,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
         particleCount: 80,
         spread: 90,
         origin: { y: 0.5 },
-        colors: [colors.gradient1, colors.gradient2, colors.accent, '#FFE66D']
+        colors: ['#8B5CF6', '#7C3AED', '#FBBF24', '#FFE66D']
       });
     }
 

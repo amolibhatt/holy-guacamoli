@@ -1,8 +1,8 @@
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { BuzzkillLogo } from "@/components/BuzzkillLogo";
 import { ArrowLeft, Sun, Moon, Settings, Shield, LogOut, HelpCircle } from "lucide-react";
-import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/hooks/use-auth";
 
 interface AppHeaderProps {
@@ -30,8 +30,19 @@ export function AppHeader({
   rightContent,
   themed = false,
 }: AppHeaderProps) {
-  const { colorMode, toggleColorMode } = useTheme();
+  const [colorMode, setColorMode] = useState<"light" | "dark">("dark");
   const { user, logout, isLoggingOut } = useAuth();
+  
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains("dark");
+    setColorMode(isDark ? "dark" : "light");
+  }, []);
+  
+  const toggleColorMode = () => {
+    const newMode = colorMode === "dark" ? "light" : "dark";
+    setColorMode(newMode);
+    document.documentElement.classList.toggle("dark", newMode === "dark");
+  };
 
   return (
     <header className="border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-50">

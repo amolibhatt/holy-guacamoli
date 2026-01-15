@@ -19,26 +19,15 @@ import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import MDEditor from '@uiw/react-md-editor';
 import { useAuth } from "@/hooks/use-auth";
-import { ThemeName, THEMES, useTheme } from "@/context/ThemeContext";
 import { AppHeader } from "@/components/AppHeader";
 import type { Category, Question, Board, BoardCategoryWithCount } from "@shared/schema";
 import { useUpload } from "@/hooks/use-upload";
-
-const THEME_LABELS: Record<ThemeName, string> = {
-  birthday: 'Birthday',
-  holiday: 'Holiday',
-  sports: 'Sports',
-  ocean: 'Ocean',
-  neon: 'Neon',
-  football: 'Football',
-};
 
 const ALL_POINT_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
 export default function Admin() {
   const { toast } = useToast();
   const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
-  const { setTheme } = useTheme();
   const [, setLocation] = useLocation();
   
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
@@ -141,9 +130,8 @@ export default function Admin() {
   useEffect(() => {
     if (boards.length > 0 && selectedBoardId === null) {
       setSelectedBoardId(boards[0].id);
-      if (boards[0].theme) setTheme(boards[0].theme as ThemeName);
     }
-  }, [boards, selectedBoardId, setTheme]);
+  }, [boards, selectedBoardId]);
 
   useEffect(() => {
     if (availablePoints.length > 0 && !availablePoints.includes(newPoints)) {
@@ -764,7 +752,6 @@ export default function Admin() {
                           if (!isEditing) { 
                             setSelectedBoardId(board.id); 
                             setSelectedBoardCategoryId(null); 
-                            if (board.theme) setTheme(board.theme as ThemeName);
                           } 
                         }}
                         data-testid={`board-item-${board.id}`}
@@ -873,7 +860,6 @@ export default function Admin() {
                                     if (!isEditing) { 
                                       setSelectedBoardId(board.id); 
                                       setSelectedBoardCategoryId(null); 
-                                      if (board.theme) setTheme(board.theme as ThemeName);
                                     } 
                                   }}
                                   data-testid={`board-item-${board.id}`}
@@ -983,32 +969,6 @@ export default function Admin() {
                       <div className="flex items-center gap-3">
                         <FolderPlus className="w-5 h-5 text-primary" />
                         <span className="text-sm font-semibold uppercase tracking-wide text-foreground">Categories</span>
-                        <span className="text-muted-foreground">|</span>
-                        <span className="text-xs text-muted-foreground">Theme:</span>
-                        <Select
-                          value={selectedBoard?.theme || 'birthday'}
-                          onValueChange={(value) => {
-                            setTheme(value as ThemeName);
-                            updateBoardMutation.mutate({ id: selectedBoardId!, theme: value });
-                          }}
-                        >
-                          <SelectTrigger className="h-7 w-28 text-xs" data-testid="select-board-theme">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(Object.keys(THEMES) as ThemeName[]).map((themeName) => (
-                              <SelectItem key={themeName} value={themeName} data-testid={`theme-option-${themeName}`}>
-                                <div className="flex items-center gap-2">
-                                  <div 
-                                    className="w-3 h-3 rounded-full" 
-                                    style={{ backgroundColor: THEMES[themeName].gradient1 }}
-                                  />
-                                  {THEME_LABELS[themeName]}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
                         <span className={`text-xs px-2 py-0.5 rounded-full ${boardCategories.length >= 5 ? 'bg-destructive/20 text-destructive' : 'bg-muted text-muted-foreground'}`}>
                           {boardCategories.length}/5
                         </span>

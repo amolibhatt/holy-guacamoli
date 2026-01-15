@@ -16,7 +16,6 @@ export default function HeadsUpGame() {
   const { gameId } = useParams<{ gameId: string }>();
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
-  const { colorMode, toggleColorMode } = useTheme();
   
   const [selectedDeckIndex, setSelectedDeckIndex] = useState(0);
   const [gameState, setGameState] = useState<GameState>("idle");
