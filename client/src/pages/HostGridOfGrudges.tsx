@@ -168,13 +168,13 @@ export default function HostGridOfGrudges() {
                 </div>
               )}
 
-              {customBoards.length > 0 && (
-                <div className="space-y-3">
-                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 px-1">
-                    <FolderPlus className="w-5 h-5 text-cyan-500" />
-                    Custom Boards
-                  </h2>
-                  
+              <div className="space-y-3">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 px-1">
+                  <FolderPlus className="w-5 h-5 text-cyan-500" />
+                  Custom Boards
+                </h2>
+                
+                {customBoards.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                     {customBoards.map((board, index) => {
                       const colors = getBoardColor(board.colorCode);
@@ -224,8 +224,12 @@ export default function HostGridOfGrudges() {
                       );
                     })}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="text-sm text-muted-foreground px-1">
+                    Boards you create in Admin will appear here.
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
