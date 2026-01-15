@@ -746,6 +746,53 @@ export async function registerRoutes(
     }
   });
 
+  // Get themed categories by group (public for gameplay)
+  app.get("/api/buzzkill/themed/:group", isAuthenticated, async (req, res) => {
+    try {
+      const group = req.params.group.toUpperCase() as typeof SOURCE_GROUPS[number];
+      if (!SOURCE_GROUPS.includes(group)) {
+        return res.status(400).json({ message: "Invalid group. Must be A, B, C, D, or E" });
+      }
+      const grouped = await storage.getCategoriesBySourceGroup();
+      const categories = grouped.get(group) || [];
+      res.json({ group, categories });
+    } catch (err) {
+      console.error("Error getting themed categories:", err);
+      res.status(500).json({ message: "Failed to get themed categories" });
+    }
+  });
+
+  // Get custom boards for Buzzkill game selection (authenticated - returns only user's non-global boards)
+  app.get("/api/buzzkill/custom-boards", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const allBoards = await storage.getBoards(userId, role);
+      const customBoards = allBoards.filter(b => !b.isGlobal);
+      
+      const summaries = await storage.getBoardSummaries(userId, role);
+      const boardsWithStatus = customBoards.map(board => {
+        const summary = summaries.find(s => s.id === board.id);
+        const categoryCount = summary?.categoryCount || 0;
+        const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
+        const maxQuestions = categoryCount * 5;
+        const isReady = categoryCount >= 5 && totalQuestions >= maxQuestions && maxQuestions > 0;
+        
+        return {
+          ...board,
+          categoryCount,
+          totalQuestions,
+          isReady,
+        };
+      });
+      
+      res.json(boardsWithStatus);
+    } catch (err) {
+      console.error("Error getting custom boards:", err);
+      res.status(500).json({ message: "Failed to get custom boards" });
+    }
+  });
+
   // === GAMES ===
   app.get("/api/games", isAuthenticated, async (req, res) => {
     const userId = req.session.userId!;
