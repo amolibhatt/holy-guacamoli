@@ -12,7 +12,7 @@ import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, Upload, FileText, Eye } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, Upload, FileText, Eye, Download, FileUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -87,6 +87,8 @@ export default function Admin() {
   const audioInputRef = useRef<HTMLInputElement>(null);
   const editImageInputRef = useRef<HTMLInputElement>(null);
   const editAudioInputRef = useRef<HTMLInputElement>(null);
+  const excelImportInputRef = useRef<HTMLInputElement>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const { data: boards = [], isLoading: loadingBoards } = useQuery<Board[]>({
     queryKey: ['/api/boards'],
@@ -443,19 +445,102 @@ export default function Admin() {
     setEditPoints(q.points);
   };
 
+  const handleExcelImport = async (file: File) => {
+    setIsImporting(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch('/api/import/excel', { 
+        method: 'POST', 
+        body: formData,
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Import failed');
+      }
+      const result = await res.json();
+      queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      toast({ 
+        title: "Import complete!", 
+        description: `Created ${result.boardsCreated} boards, ${result.categoriesCreated} categories, ${result.questionsCreated} questions${result.errors?.length ? ` (${result.errors.length} errors)` : ''}`
+      });
+    } catch (err: unknown) {
+      toast({ 
+        title: "Import failed", 
+        description: err instanceof Error ? err.message : "Please check your file format.", 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsImporting(false);
+      if (excelImportInputRef.current) {
+        excelImportInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleExcelExport = () => {
+    window.location.href = '/api/export/excel';
+  };
+
   return (
     <div className="min-h-screen bg-muted/30">
+      <input
+        type="file"
+        ref={excelImportInputRef}
+        className="hidden"
+        accept=".xlsx,.xls"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleExcelImport(file);
+        }}
+      />
       <AppHeader
         title="Content Manager"
         subtitle={selectedBoard ? selectedBoard.name : "Buzzkill"}
         backHref="/"
         rightContent={
-          selectedBoard && selectedBoardCategory && (
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg text-sm">
-              <Grid3X3 className="w-4 h-4 text-primary" />
-              <span className="font-medium text-primary">{selectedBoardCategory.category.name}</span>
-            </div>
-          )
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => excelImportInputRef.current?.click()}
+                  disabled={isImporting}
+                  className="h-8 gap-1.5"
+                  data-testid="button-import-excel"
+                >
+                  {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileUp className="w-4 h-4" />}
+                  <span className="hidden sm:inline">Import</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Import from Excel</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleExcelExport}
+                  className="h-8 gap-1.5"
+                  data-testid="button-export-excel"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">Export</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Export to Excel</TooltipContent>
+            </Tooltip>
+            {selectedBoard && selectedBoardCategory && (
+              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg text-sm">
+                <Grid3X3 className="w-4 h-4 text-primary" />
+                <span className="font-medium text-primary">{selectedBoardCategory.category.name}</span>
+              </div>
+            )}
+          </div>
         }
       />
 
