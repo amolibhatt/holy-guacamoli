@@ -20,6 +20,7 @@ interface CustomBoard extends Board {
 }
 
 const BOARD_COLORS: Record<string, { gradient: string; border: string; text: string }> = {
+  // Hex codes
   "#ef4444": { gradient: "from-red-500/20 to-red-600/10", border: "border-red-500/30 hover:border-red-500/60", text: "text-red-400" },
   "#f97316": { gradient: "from-orange-500/20 to-orange-600/10", border: "border-orange-500/30 hover:border-orange-500/60", text: "text-orange-400" },
   "#eab308": { gradient: "from-yellow-500/20 to-yellow-600/10", border: "border-yellow-500/30 hover:border-yellow-500/60", text: "text-yellow-400" },
@@ -28,6 +29,15 @@ const BOARD_COLORS: Record<string, { gradient: string; border: string; text: str
   "#3b82f6": { gradient: "from-blue-500/20 to-blue-600/10", border: "border-blue-500/30 hover:border-blue-500/60", text: "text-blue-400" },
   "#8b5cf6": { gradient: "from-violet-500/20 to-violet-600/10", border: "border-violet-500/30 hover:border-violet-500/60", text: "text-violet-400" },
   "#ec4899": { gradient: "from-pink-500/20 to-pink-600/10", border: "border-pink-500/30 hover:border-pink-500/60", text: "text-pink-400" },
+  // Color names
+  "red": { gradient: "from-rose-500/20 to-rose-600/10", border: "border-rose-500/30 hover:border-rose-500/60", text: "text-rose-400" },
+  "orange": { gradient: "from-amber-500/20 to-amber-600/10", border: "border-amber-500/30 hover:border-amber-500/60", text: "text-amber-400" },
+  "yellow": { gradient: "from-yellow-500/20 to-yellow-600/10", border: "border-yellow-500/30 hover:border-yellow-500/60", text: "text-yellow-400" },
+  "green": { gradient: "from-emerald-500/20 to-emerald-600/10", border: "border-emerald-500/30 hover:border-emerald-500/60", text: "text-emerald-400" },
+  "cyan": { gradient: "from-cyan-500/20 to-cyan-600/10", border: "border-cyan-500/30 hover:border-cyan-500/60", text: "text-cyan-400" },
+  "blue": { gradient: "from-blue-500/20 to-blue-600/10", border: "border-blue-500/30 hover:border-blue-500/60", text: "text-blue-400" },
+  "violet": { gradient: "from-purple-500/20 to-purple-600/10", border: "border-purple-500/30 hover:border-purple-500/60", text: "text-purple-400" },
+  "pink": { gradient: "from-pink-500/20 to-pink-600/10", border: "border-pink-500/30 hover:border-pink-500/60", text: "text-pink-400" },
 };
 
 const DEFAULT_COLOR = { gradient: "from-cyan-500/20 to-cyan-600/10", border: "border-cyan-500/30 hover:border-cyan-500/60", text: "text-cyan-400" };
