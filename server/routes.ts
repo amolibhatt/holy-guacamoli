@@ -11,7 +11,7 @@ import { setupWebSocket, getRoomInfo, getOrRestoreSession } from "./gameRoom";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { generateDynamicBoard, getPlayedCategoryStatus, getContentStats, getActiveCategoriesForTenant } from "./buzzkillBoards";
-import { SOURCE_GROUPS, type SourceGroup } from "@shared/schema";
+import { SOURCE_GROUPS, type SourceGroup, type Question } from "@shared/schema";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -2496,6 +2496,9 @@ export async function registerRoutes(
   });
 
   // Excel Import - Upload boards with categories and questions
+  // Supports two formats:
+  // Format 1: Board, Category, Rule, Question, Answer, Points (simple)
+  // Format 2: Board, Category, Question, Option A-D, Correct Answer, Points (multiple choice)
   app.post("/api/import/excel", isAuthenticated, excelUpload.single('file'), async (req, res) => {
     try {
       const userId = req.session.userId!;
@@ -2511,17 +2514,7 @@ export async function registerRoutes(
       
       const wb = XLSX.read(req.file.buffer, { type: 'buffer' });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const data = XLSX.utils.sheet_to_json<{
-        Board?: string;
-        Category?: string;
-        Question?: string;
-        "Option A"?: string;
-        "Option B"?: string;
-        "Option C"?: string;
-        "Option D"?: string;
-        "Correct Answer"?: string;
-        Points?: number;
-      }>(ws);
+      const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws);
       
       if (!data || data.length === 0) {
         return res.status(400).json({ message: "No data found in spreadsheet" });
@@ -2529,120 +2522,215 @@ export async function registerRoutes(
       
       const results = { 
         boardsCreated: 0, 
-        categoriesCreated: 0, 
+        categoriesCreated: 0,
+        categoriesLinked: 0,
         questionsCreated: 0, 
+        flagged: [] as { row: number; issue: string; data: Record<string, string> }[],
         errors: [] as string[] 
       };
       
       const boardMap = new Map<string, number>();
-      const categoryMap = new Map<string, number>();
+      const categoryMap = new Map<string, { id: number; description: string }>();
       const boardCategoryMap = new Map<string, number>();
+      
+      // Detect format by checking for "Rule" or "Answer" columns (simple format)
+      const hasSimpleFormat = data.some(row => 
+        'Rule' in row || 'Answer' in row || 'rule' in row || 'answer' in row
+      );
       
       for (let i = 0; i < data.length; i++) {
         const row = data[i];
         const rowNum = i + 2;
         
-        const boardName = String(row.Board || "").trim();
-        const categoryName = String(row.Category || "").trim();
-        const question = String(row.Question || "").trim();
-        const optA = String(row["Option A"] || "").trim();
-        const optB = String(row["Option B"] || "").trim();
-        const optC = String(row["Option C"] || "").trim();
-        const optD = String(row["Option D"] || "").trim();
-        const correctAnswer = String(row["Correct Answer"] || "").trim();
-        const points = Number(row.Points) || 10;
+        // Normalize column names (case-insensitive)
+        const getField = (names: string[]) => {
+          for (const name of names) {
+            if (row[name] !== undefined) return String(row[name]).trim();
+            const lower = name.toLowerCase();
+            for (const key of Object.keys(row)) {
+              if (key.toLowerCase() === lower) return String(row[key]).trim();
+            }
+          }
+          return "";
+        };
         
+        const boardName = getField(['Board', 'board']);
+        const categoryName = getField(['Category', 'category']);
+        const rule = getField(['Rule', 'rule', 'Description', 'description']);
+        const question = getField(['Question', 'question']);
+        const answer = getField(['Answer', 'answer', 'Correct Answer', 'correct_answer']);
+        const optA = getField(['Option A', 'option_a', 'A']);
+        const optB = getField(['Option B', 'option_b', 'B']);
+        const optC = getField(['Option C', 'option_c', 'C']);
+        const optD = getField(['Option D', 'option_d', 'D']);
+        const points = Number(getField(['Points', 'points', 'Point', 'point'])) || 10;
+        
+        // Track flagged data for manual fixes
+        const rowData: Record<string, string> = {};
+        if (boardName) rowData.board = boardName;
+        if (categoryName) rowData.category = categoryName;
+        if (rule) rowData.rule = rule;
+        if (question) rowData.question = question;
+        if (answer) rowData.answer = answer;
+        rowData.points = String(points);
+        
+        // Flag missing required fields
         if (!boardName) {
-          results.errors.push(`Row ${rowNum}: Board name is required`);
+          results.flagged.push({ row: rowNum, issue: "Missing board name", data: rowData });
           continue;
         }
         if (!categoryName) {
-          results.errors.push(`Row ${rowNum}: Category name is required`);
+          results.flagged.push({ row: rowNum, issue: "Missing category name", data: rowData });
           continue;
         }
         
         try {
-          let boardId = boardMap.get(boardName);
+          // Get or create board
+          let boardId = boardMap.get(boardName.toLowerCase());
           if (!boardId) {
             const existingBoards = await storage.getBoards(userId, role);
             const existing = existingBoards.find(b => b.name.toLowerCase() === boardName.toLowerCase());
             if (existing) {
               boardId = existing.id;
             } else {
+              // Auto-assign color for new boards
+              const allBoards = await storage.getBoards(userId, 'super_admin');
+              const colorIndex = allBoards.length % BOARD_COLORS.length;
               const newBoard = await storage.createBoard({
                 name: boardName,
                 description: null,
                 pointValues: [10, 20, 30, 40, 50],
-                colorCode: null,
+                colorCode: BOARD_COLORS[colorIndex],
                 userId,
               });
               boardId = newBoard.id;
               results.boardsCreated++;
             }
-            boardMap.set(boardName, boardId);
+            boardMap.set(boardName.toLowerCase(), boardId);
           }
           
+          // Get or create category
           const catKey = categoryName.toLowerCase();
-          let categoryId = categoryMap.get(catKey);
-          if (!categoryId) {
+          let categoryInfo = categoryMap.get(catKey);
+          if (!categoryInfo) {
             const existingCats = await storage.getCategories();
             const existing = existingCats.find(c => c.name.toLowerCase() === catKey);
             if (existing) {
-              categoryId = existing.id;
+              categoryInfo = { id: existing.id, description: existing.description || "" };
+              // Update description if rule provided and current is empty
+              if (rule && !existing.description) {
+                await storage.updateCategory(existing.id, { description: rule });
+                categoryInfo.description = rule;
+              }
             } else {
               const newCat = await storage.createCategory({
                 name: categoryName,
-                description: "",
+                description: rule || "",
                 imageUrl: "",
                 sourceGroup: null,
                 isActive: true,
               });
-              categoryId = newCat.id;
+              categoryInfo = { id: newCat.id, description: rule || "" };
               results.categoriesCreated++;
             }
-            categoryMap.set(catKey, categoryId);
+            categoryMap.set(catKey, categoryInfo);
+          } else if (rule && !categoryInfo.description) {
+            // Update description if we now have a rule
+            await storage.updateCategory(categoryInfo.id, { description: rule });
+            categoryInfo.description = rule;
           }
           
-          const bcKey = `${boardId}-${categoryId}`;
+          // Link category to board
+          const bcKey = `${boardId}-${categoryInfo.id}`;
           let boardCategoryId = boardCategoryMap.get(bcKey);
           if (!boardCategoryId) {
-            const existingBC = await storage.getBoardCategoryByIds(boardId, categoryId);
+            const existingBC = await storage.getBoardCategoryByIds(boardId, categoryInfo.id);
             if (existingBC) {
               boardCategoryId = existingBC.id;
             } else {
               const boardCats = await storage.getBoardCategories(boardId);
+              if (boardCats.length >= 5) {
+                results.flagged.push({ row: rowNum, issue: `Board "${boardName}" already has 5 categories`, data: rowData });
+                continue;
+              }
               const newBC = await storage.createBoardCategory({
                 boardId,
-                categoryId,
+                categoryId: categoryInfo.id,
                 position: boardCats.length,
               });
               boardCategoryId = newBC.id;
+              results.categoriesLinked++;
             }
             boardCategoryMap.set(bcKey, boardCategoryId);
           }
           
-          if (question && correctAnswer) {
-            const options = [optA, optB, optC, optD].filter(o => o);
-            if (options.length >= 2) {
-              await storage.createQuestion({
-                boardCategoryId,
-                question,
-                options,
-                correctAnswer,
-                points,
-              });
-              results.questionsCreated++;
-            } else if (options.length > 0) {
-              results.errors.push(`Row ${rowNum}: Need at least 2 options for question`);
+          // Create question if we have one
+          if (question) {
+            if (!answer) {
+              results.flagged.push({ row: rowNum, issue: "Missing answer for question", data: rowData });
+              continue;
             }
+            
+            // Check if question already exists for this board-category
+            const existingQuestions = await storage.getQuestionsByBoardCategory(boardCategoryId);
+            const duplicate = existingQuestions.find((q: Question) => 
+              q.question.toLowerCase() === question.toLowerCase()
+            );
+            if (duplicate) {
+              results.flagged.push({ row: rowNum, issue: "Duplicate question (skipped)", data: rowData });
+              continue;
+            }
+            
+            // For simple format (no options), create single-option question
+            // For multiple choice format, use provided options
+            let options: string[];
+            let correctAnswer = answer;
+            
+            if (hasSimpleFormat && !optA && !optB) {
+              // Simple format: just store the answer as the only option
+              options = [answer];
+            } else {
+              // Multiple choice format
+              options = [optA, optB, optC, optD].filter(o => o);
+              if (options.length < 2 && (optA || optB || optC || optD)) {
+                results.flagged.push({ row: rowNum, issue: "Need at least 2 options for multiple choice", data: rowData });
+                continue;
+              }
+              if (options.length === 0) {
+                options = [answer];
+              }
+            }
+            
+            await storage.createQuestion({
+              boardCategoryId,
+              question,
+              options,
+              correctAnswer,
+              points,
+            });
+            results.questionsCreated++;
+          } else if (!question && answer) {
+            results.flagged.push({ row: rowNum, issue: "Has answer but missing question", data: rowData });
           }
         } catch (err) {
-          results.errors.push(`Row ${rowNum}: Database error`);
+          results.errors.push(`Row ${rowNum}: Database error - ${err instanceof Error ? err.message : 'Unknown'}`);
           console.error(`Import error row ${rowNum}:`, err);
         }
       }
       
-      res.json(results);
+      res.json({
+        success: true,
+        summary: {
+          boardsCreated: results.boardsCreated,
+          categoriesCreated: results.categoriesCreated,
+          categoriesLinked: results.categoriesLinked,
+          questionsCreated: results.questionsCreated,
+          flaggedCount: results.flagged.length,
+          errorCount: results.errors.length,
+        },
+        flagged: results.flagged,
+        errors: results.errors,
+      });
     } catch (err) {
       console.error("Error importing Excel:", err);
       res.status(500).json({ message: "Failed to import data" });

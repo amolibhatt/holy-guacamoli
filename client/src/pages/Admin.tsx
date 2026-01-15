@@ -445,8 +445,15 @@ export default function Admin() {
     setEditPoints(q.points);
   };
 
+  const [importResult, setImportResult] = useState<{
+    summary: { boardsCreated: number; categoriesCreated: number; categoriesLinked: number; questionsCreated: number; flaggedCount: number; errorCount: number };
+    flagged: Array<{ row: number; issue: string; data: Record<string, string> }>;
+    errors: string[];
+  } | null>(null);
+
   const handleExcelImport = async (file: File) => {
     setIsImporting(true);
+    setImportResult(null);
     const formData = new FormData();
     formData.append('file', file);
     try {
@@ -463,9 +470,18 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      
+      const s = result.summary;
+      const hasIssues = s.flaggedCount > 0 || s.errorCount > 0;
+      
+      if (hasIssues) {
+        setImportResult(result);
+      }
+      
       toast({ 
-        title: "Import complete!", 
-        description: `Created ${result.boardsCreated} boards, ${result.categoriesCreated} categories, ${result.questionsCreated} questions${result.errors?.length ? ` (${result.errors.length} errors)` : ''}`
+        title: hasIssues ? "Import complete with issues" : "Import complete!", 
+        description: `Created ${s.boardsCreated} boards, ${s.categoriesCreated} categories, ${s.questionsCreated} questions${s.flaggedCount > 0 ? `. ${s.flaggedCount} rows need attention.` : ''}`,
+        variant: hasIssues ? "default" : "default"
       });
     } catch (err: unknown) {
       toast({ 
@@ -497,6 +513,76 @@ export default function Admin() {
           if (file) handleExcelImport(file);
         }}
       />
+      
+      <AlertDialog open={!!importResult} onOpenChange={(open) => !open && setImportResult(null)}>
+        <AlertDialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Import Results
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                {importResult?.summary && (
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="p-2 bg-green-500/10 rounded">
+                      <span className="font-medium text-green-600">{importResult.summary.boardsCreated}</span> boards created
+                    </div>
+                    <div className="p-2 bg-green-500/10 rounded">
+                      <span className="font-medium text-green-600">{importResult.summary.categoriesCreated}</span> categories created
+                    </div>
+                    <div className="p-2 bg-green-500/10 rounded">
+                      <span className="font-medium text-green-600">{importResult.summary.categoriesLinked}</span> categories linked
+                    </div>
+                    <div className="p-2 bg-green-500/10 rounded">
+                      <span className="font-medium text-green-600">{importResult.summary.questionsCreated}</span> questions created
+                    </div>
+                  </div>
+                )}
+                {importResult && importResult.flagged.length > 0 && (
+                  <div className="text-orange-600 font-medium">
+                    {importResult.flagged.length} rows need manual attention:
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          {importResult && importResult.flagged.length > 0 && (
+            <div className="flex-1 overflow-y-auto border rounded-md">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-muted">
+                  <tr>
+                    <th className="p-2 text-left font-medium">Row</th>
+                    <th className="p-2 text-left font-medium">Issue</th>
+                    <th className="p-2 text-left font-medium">Data</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {importResult.flagged.map((item, idx) => (
+                    <tr key={idx} className="border-t">
+                      <td className="p-2 font-mono text-xs">{item.row}</td>
+                      <td className="p-2 text-orange-600">{item.issue}</td>
+                      <td className="p-2 text-xs text-muted-foreground">
+                        {Object.entries(item.data).map(([k, v]) => (
+                          <div key={k}><span className="font-medium">{k}:</span> {v.substring(0, 50)}{v.length > 50 ? '...' : ''}</div>
+                        ))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setImportResult(null)}>
+              Got it
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
       <AppHeader
         title="Content Manager"
         subtitle={selectedBoard ? selectedBoard.name : "Buzzkill"}
