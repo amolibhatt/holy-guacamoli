@@ -1459,7 +1459,9 @@ export default function Admin() {
                       )}
                     </AnimatePresence>
 
-                    {/* Collapsible new question form */}
+                    {/* Add/Import forms - hidden when 5 questions exist */}
+                    {questions.length < 5 && (
+                    <>
                     <Collapsible open={questionFormOpen} onOpenChange={setQuestionFormOpen}>
                       <CollapsibleTrigger asChild>
                         <Button 
@@ -1668,6 +1670,8 @@ export default function Admin() {
                         </motion.div>
                       </CollapsibleContent>
                     </Collapsible>
+                    </>
+                    )}
 
                     <div className="space-y-3">
                       <div className="flex items-center justify-between mb-2">
