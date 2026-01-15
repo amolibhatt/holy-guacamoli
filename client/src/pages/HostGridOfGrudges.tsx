@@ -132,11 +132,11 @@ export default function HostGridOfGrudges() {
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                     {presetBoards.map((board, index) => {
                       const pastelColors = [
-                        { bg: "bg-gradient-to-br from-orange-100 to-orange-200", text: "text-orange-700", border: "border-orange-200" },
-                        { bg: "bg-gradient-to-br from-green-100 to-green-200", text: "text-green-700", border: "border-green-200" },
-                        { bg: "bg-gradient-to-br from-teal-100 to-teal-200", text: "text-teal-700", border: "border-teal-200" },
-                        { bg: "bg-gradient-to-br from-indigo-100 to-indigo-200", text: "text-indigo-700", border: "border-indigo-200" },
-                        { bg: "bg-gradient-to-br from-purple-100 to-purple-200", text: "text-purple-700", border: "border-purple-200" },
+                        { bg: "bg-[#f8d7c4]", text: "text-[#c17a5a]", border: "border-[#f0c4ad]" },
+                        { bg: "bg-[#c8ecd5]", text: "text-[#5a9e6f]", border: "border-[#b5e0c5]" },
+                        { bg: "bg-[#a8e4e4]", text: "text-[#3a9999]", border: "border-[#8ed4d4]" },
+                        { bg: "bg-[#c4d4f4]", text: "text-[#5a7abf]", border: "border-[#b0c4e8]" },
+                        { bg: "bg-[#e4d4f4]", text: "text-[#9a6abf]", border: "border-[#d4c4e8]" },
                       ];
                       const colors = pastelColors[index % pastelColors.length];
                       return (
