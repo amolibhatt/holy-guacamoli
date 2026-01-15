@@ -224,6 +224,7 @@ export const boards = pgTable("boards", {
   visibility: text("visibility").notNull().$type<BoardVisibility>().default("private"),
   isGlobal: boolean("is_global").notNull().default(false),
   colorCode: text("color_code").default("#6366f1"),
+  sortOrder: integer("sort_order").notNull().default(0),
 });
 
 export const categories = pgTable("categories", {

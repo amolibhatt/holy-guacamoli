@@ -72,8 +72,11 @@ export default function Admin() {
   const [newCategoryRule, setNewCategoryRule] = useState("");
   const [questionFormOpen, setQuestionFormOpen] = useState(false);
   const [draggedQuestionId, setDraggedQuestionId] = useState<number | null>(null);
+  const [draggedBoardId, setDraggedBoardId] = useState<number | null>(null);
+  const [dragOverBoardId, setDragOverBoardId] = useState<number | null>(null);
   const [myBoardsOpen, setMyBoardsOpen] = useState(true);
   const [starterPacksOpen, setStarterPacksOpen] = useState(true);
+  const [bulkEditMode, setBulkEditMode] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [bulkImportText, setBulkImportText] = useState("");
   const [bulkPreviewMode, setBulkPreviewMode] = useState(false);
@@ -182,8 +185,8 @@ export default function Admin() {
   });
 
   const updateBoardMutation = useMutation({
-    mutationFn: async ({ id, name, theme, isGlobal }: { id: number; name?: string; theme?: string; isGlobal?: boolean }) => {
-      return apiRequest('PUT', `/api/boards/${id}`, { name, theme, isGlobal });
+    mutationFn: async ({ id, name, theme, isGlobal, sortOrder }: { id: number; name?: string; theme?: string; isGlobal?: boolean; sortOrder?: number }) => {
+      return apiRequest('PUT', `/api/boards/${id}`, { name, theme, isGlobal, sortOrder });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
@@ -195,6 +198,11 @@ export default function Admin() {
       toast({ title: "Couldn't update board", description: "Please try again.", variant: "destructive" });
     },
   });
+
+  const reorderBoardsSilent = async (updates: { id: number; sortOrder: number }[]) => {
+    await Promise.all(updates.map(u => apiRequest('PUT', `/api/boards/${u.id}`, { sortOrder: u.sortOrder })));
+    queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
+  };
 
   const createCategoryMutation = useMutation({
     mutationFn: async (data: { name: string; description: string; imageUrl: string }) => {
@@ -724,21 +732,64 @@ export default function Admin() {
                         </CollapsibleTrigger>
                         <CollapsibleContent>
                           <div className="space-y-2">
-                            {boards.filter(b => !b.isGlobal).map(board => {
+                            {boards.filter(b => !b.isGlobal).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)).map((board, idx, arr) => {
                               const summary = boardSummaries.find(s => s.id === board.id);
                               const categoryCount = summary?.categoryCount || 0;
                               const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
-                              const maxQuestions = categoryCount * 5;
-                              const isComplete = categoryCount >= 5 && totalQuestions >= maxQuestions && maxQuestions > 0;
+                              const maxQuestions = 25;
+                              const progressPercent = Math.round((totalQuestions / maxQuestions) * 100);
+                              const isComplete = categoryCount >= 5 && totalQuestions >= maxQuestions;
                               const isEditing = editingBoardId === board.id;
+                              const isDragging = draggedBoardId === board.id;
+                              const isDragOver = dragOverBoardId === board.id && draggedBoardId !== board.id;
+                              
+                              const handleDragStart = (e: React.DragEvent) => {
+                                e.dataTransfer.effectAllowed = 'move';
+                                setDraggedBoardId(board.id);
+                              };
+                              const handleDragOver = (e: React.DragEvent) => {
+                                e.preventDefault();
+                                if (draggedBoardId && draggedBoardId !== board.id) {
+                                  setDragOverBoardId(board.id);
+                                }
+                              };
+                              const handleDragLeave = () => setDragOverBoardId(null);
+                              const handleDrop = () => {
+                                if (draggedBoardId && draggedBoardId !== board.id) {
+                                  const currentBoards = [...arr];
+                                  const draggedIdx = currentBoards.findIndex(b => b.id === draggedBoardId);
+                                  const dropIdx = idx;
+                                  if (draggedIdx !== -1 && dropIdx !== -1 && draggedIdx !== dropIdx) {
+                                    const [moved] = currentBoards.splice(draggedIdx, 1);
+                                    currentBoards.splice(dropIdx, 0, moved);
+                                    const updates = currentBoards.map((b, i) => ({ id: b.id, sortOrder: i }));
+                                    reorderBoardsSilent(updates);
+                                  }
+                                }
+                                setDraggedBoardId(null);
+                                setDragOverBoardId(null);
+                              };
+                              const handleDragEnd = () => {
+                                setDraggedBoardId(null);
+                                setDragOverBoardId(null);
+                              };
+                              
                               return (
                                 <div
                                   key={board.id}
+                                  draggable={!isEditing}
+                                  onDragStart={handleDragStart}
+                                  onDragOver={handleDragOver}
+                                  onDragLeave={handleDragLeave}
+                                  onDrop={handleDrop}
+                                  onDragEnd={handleDragEnd}
                                   className={`p-3 rounded-lg cursor-pointer transition-all ${
                                     selectedBoardId === board.id
                                       ? 'bg-primary/20 border-2 border-primary'
-                                      : 'bg-muted/20 border border-border hover:bg-muted/30'
-                                  }`}
+                                      : isDragOver
+                                        ? 'bg-primary/10 border-2 border-dashed border-primary'
+                                        : 'bg-muted/20 border border-border hover:bg-muted/30'
+                                  } ${isDragging ? 'opacity-50' : ''}`}
                                   onClick={() => { 
                                     if (!isEditing) { 
                                       setSelectedBoardId(board.id); 
@@ -764,36 +815,46 @@ export default function Admin() {
                                         }}
                                         data-testid={`input-edit-board-${board.id}`}
                                       />
-                                      <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        onClick={() => {
-                                          if (editBoardName.trim()) {
-                                            updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() });
-                                          }
-                                        }}
-                                        className="h-7 w-7 text-primary shrink-0"
-                                        data-testid={`button-save-board-${board.id}`}
-                                      >
+                                      <Button size="icon" variant="ghost" onClick={() => { if (editBoardName.trim()) updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() }); }} className="h-7 w-7 text-primary shrink-0" data-testid={`button-save-board-${board.id}`}>
                                         <Check className="w-3.5 h-3.5" />
                                       </Button>
-                                      <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        onClick={() => setEditingBoardId(null)}
-                                        className="h-7 w-7 text-muted-foreground shrink-0"
-                                        data-testid={`button-cancel-edit-board-${board.id}`}
-                                      >
+                                      <Button size="icon" variant="ghost" onClick={() => setEditingBoardId(null)} className="h-7 w-7 text-muted-foreground shrink-0" data-testid={`button-cancel-edit-board-${board.id}`}>
                                         <X className="w-3.5 h-3.5" />
                                       </Button>
                                     </div>
                                   ) : (
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-start gap-2">
+                                      <GripVertical className="w-3 h-3 text-muted-foreground/50 mt-1 cursor-grab shrink-0" />
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className="w-10 h-10 rounded bg-muted/50 border border-border grid grid-cols-5 grid-rows-5 gap-px p-0.5 shrink-0">
+                                            {Array.from({ length: 25 }).map((_, i) => {
+                                              const catIdx = Math.floor(i / 5);
+                                              const cat = summary?.categories[catIdx];
+                                              const hasCat = catIdx < categoryCount;
+                                              const hasQ = cat && i % 5 < cat.questionCount;
+                                              return (
+                                                <div key={i} className={`rounded-sm ${hasQ ? 'bg-primary' : hasCat ? 'bg-primary/30' : 'bg-muted-foreground/10'}`} />
+                                              );
+                                            })}
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="text-xs">
+                                          5x5 grid: {categoryCount} categories, {totalQuestions} questions
+                                        </TooltipContent>
+                                      </Tooltip>
                                       <div className="min-w-0 flex-1">
                                         <div className="font-medium text-foreground text-sm truncate">{board.name}</div>
-                                        <div className="text-[10px] text-muted-foreground mt-0.5">
-                                          {categoryCount}/5 · {totalQuestions} Q
-                                          {isComplete && <span className="text-primary ml-1">✓</span>}
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                            <div 
+                                              className={`h-full transition-all ${isComplete ? 'bg-emerald-500' : 'bg-primary'}`}
+                                              style={{ width: `${Math.min(progressPercent, 100)}%` }}
+                                            />
+                                          </div>
+                                          <span className={`text-[10px] ${isComplete ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                                            {progressPercent}%
+                                          </span>
                                         </div>
                                       </div>
                                       <div className="flex items-center shrink-0">
