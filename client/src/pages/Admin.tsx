@@ -72,6 +72,8 @@ export default function Admin() {
   const [newCategoryRule, setNewCategoryRule] = useState("");
   const [questionFormOpen, setQuestionFormOpen] = useState(false);
   const [draggedQuestionId, setDraggedQuestionId] = useState<number | null>(null);
+  const [myBoardsOpen, setMyBoardsOpen] = useState(true);
+  const [starterPacksOpen, setStarterPacksOpen] = useState(true);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [bulkImportText, setBulkImportText] = useState("");
   const [bulkPreviewMode, setBulkPreviewMode] = useState(false);
@@ -710,13 +712,125 @@ export default function Admin() {
                     </div>
                   ) : (
                     <>
+                      {/* My Boards Section */}
+                      <Collapsible open={myBoardsOpen} onOpenChange={setMyBoardsOpen}>
+                        <CollapsibleTrigger asChild>
+                          <button className="flex items-center gap-2 mb-2 px-1 w-full hover:opacity-80 transition-opacity">
+                            <Grid3X3 className="w-3 h-3 text-primary" />
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">My Boards</span>
+                            <span className="text-xs text-muted-foreground">({boards.filter(b => !b.isGlobal).length})</span>
+                            <ChevronDown className={`w-3 h-3 text-muted-foreground ml-auto transition-transform ${myBoardsOpen ? '' : '-rotate-90'}`} />
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="space-y-2">
+                            {boards.filter(b => !b.isGlobal).map(board => {
+                              const summary = boardSummaries.find(s => s.id === board.id);
+                              const categoryCount = summary?.categoryCount || 0;
+                              const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
+                              const maxQuestions = categoryCount * 5;
+                              const isComplete = categoryCount >= 5 && totalQuestions >= maxQuestions && maxQuestions > 0;
+                              const isEditing = editingBoardId === board.id;
+                              return (
+                                <div
+                                  key={board.id}
+                                  className={`p-3 rounded-lg cursor-pointer transition-all ${
+                                    selectedBoardId === board.id
+                                      ? 'bg-primary/20 border-2 border-primary'
+                                      : 'bg-muted/20 border border-border hover:bg-muted/30'
+                                  }`}
+                                  onClick={() => { 
+                                    if (!isEditing) { 
+                                      setSelectedBoardId(board.id); 
+                                      setSelectedBoardCategoryId(null); 
+                                    } 
+                                  }}
+                                  data-testid={`board-item-${board.id}`}
+                                >
+                                  {isEditing ? (
+                                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                      <Input
+                                        value={editBoardName}
+                                        onChange={(e) => setEditBoardName(e.target.value)}
+                                        className="h-7 text-sm"
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter' && editBoardName.trim()) {
+                                            updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() });
+                                          }
+                                          if (e.key === 'Escape') {
+                                            setEditingBoardId(null);
+                                          }
+                                        }}
+                                        data-testid={`input-edit-board-${board.id}`}
+                                      />
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        onClick={() => {
+                                          if (editBoardName.trim()) {
+                                            updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() });
+                                          }
+                                        }}
+                                        className="h-7 w-7 text-primary shrink-0"
+                                        data-testid={`button-save-board-${board.id}`}
+                                      >
+                                        <Check className="w-3.5 h-3.5" />
+                                      </Button>
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        onClick={() => setEditingBoardId(null)}
+                                        className="h-7 w-7 text-muted-foreground shrink-0"
+                                        data-testid={`button-cancel-edit-board-${board.id}`}
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <div className="min-w-0 flex-1">
+                                        <div className="font-medium text-foreground text-sm truncate">{board.name}</div>
+                                        <div className="text-[10px] text-muted-foreground mt-0.5">
+                                          {categoryCount}/5 · {totalQuestions} Q
+                                          {isComplete && <span className="text-primary ml-1">✓</span>}
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center shrink-0">
+                                        <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); window.open(`/board/${board.id}`, '_blank'); }} className="h-6 w-6 text-muted-foreground hover:text-primary" data-testid={`button-preview-board-${board.id}`} title="Preview">
+                                          <Eye className="w-3 h-3" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingBoardId(board.id); setEditBoardName(board.name); }} className="h-6 w-6 text-muted-foreground hover:text-primary" data-testid={`button-edit-board-${board.id}`} title="Rename">
+                                          <Pencil className="w-3 h-3" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); deleteBoardMutation.mutate(board.id); }} className="h-6 w-6 text-muted-foreground hover:text-destructive" data-testid={`button-delete-board-${board.id}`} title="Delete">
+                                          <Trash2 className="w-3 h-3" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            {boards.filter(b => !b.isGlobal).length === 0 && (
+                              <p className="text-xs text-muted-foreground text-center py-2">No boards yet. Click + to create one!</p>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+
                       {/* Starter Packs Section */}
                       {boards.filter(b => b.isGlobal).length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-2 px-1">
-                            <Sparkles className="w-3 h-3 text-amber-500" />
-                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Starter Packs</span>
-                          </div>
+                        <Collapsible open={starterPacksOpen} onOpenChange={setStarterPacksOpen}>
+                          <CollapsibleTrigger asChild>
+                            <button className="flex items-center gap-2 mb-2 px-1 w-full hover:opacity-80 transition-opacity">
+                              <Sparkles className="w-3 h-3 text-amber-500" />
+                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Starter Packs</span>
+                              <span className="text-xs text-muted-foreground">({boards.filter(b => b.isGlobal).length})</span>
+                              <ChevronDown className={`w-3 h-3 text-muted-foreground ml-auto transition-transform ${starterPacksOpen ? '' : '-rotate-90'}`} />
+                            </button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
                           <div className="space-y-2">
                             {boards.filter(b => b.isGlobal).map(board => {
                     const summary = boardSummaries.find(s => s.id === board.id);
@@ -825,109 +939,8 @@ export default function Admin() {
                             );
                           })}
                           </div>
-                        </div>
-                      )}
-
-                      {/* Personal Boards Section */}
-                      {boards.filter(b => !b.isGlobal).length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-2 px-1">
-                            <Grid3X3 className="w-3 h-3 text-primary" />
-                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">My Boards</span>
-                          </div>
-                          <div className="space-y-2">
-                            {boards.filter(b => !b.isGlobal).map(board => {
-                              const summary = boardSummaries.find(s => s.id === board.id);
-                              const categoryCount = summary?.categoryCount || 0;
-                              const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
-                              const maxQuestions = categoryCount * 5;
-                              const categoryProgress = (categoryCount / 5) * 100;
-                              const questionProgress = maxQuestions > 0 ? (totalQuestions / maxQuestions) * 100 : 0;
-                              const isComplete = categoryCount >= 5 && totalQuestions >= maxQuestions && maxQuestions > 0;
-                              const isEditing = editingBoardId === board.id;
-                              return (
-                                <div
-                                  key={board.id}
-                                  className={`p-3 rounded-lg cursor-pointer transition-all ${
-                                    selectedBoardId === board.id
-                                      ? 'bg-primary/20 border-2 border-primary'
-                                      : 'bg-muted/20 border border-border hover:bg-muted/30'
-                                  }`}
-                                  onClick={() => { 
-                                    if (!isEditing) { 
-                                      setSelectedBoardId(board.id); 
-                                      setSelectedBoardCategoryId(null); 
-                                    } 
-                                  }}
-                                  data-testid={`board-item-${board.id}`}
-                                >
-                                  {isEditing ? (
-                                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                                      <Input
-                                        value={editBoardName}
-                                        onChange={(e) => setEditBoardName(e.target.value)}
-                                        className="h-7 text-sm"
-                                        autoFocus
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter' && editBoardName.trim()) {
-                                            updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() });
-                                          }
-                                          if (e.key === 'Escape') {
-                                            setEditingBoardId(null);
-                                          }
-                                        }}
-                                        data-testid={`input-edit-board-${board.id}`}
-                                      />
-                                      <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        onClick={() => {
-                                          if (editBoardName.trim()) {
-                                            updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() });
-                                          }
-                                        }}
-                                        className="h-7 w-7 text-primary shrink-0"
-                                        data-testid={`button-save-board-${board.id}`}
-                                      >
-                                        <Check className="w-3.5 h-3.5" />
-                                      </Button>
-                                      <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        onClick={() => setEditingBoardId(null)}
-                                        className="h-7 w-7 text-muted-foreground shrink-0"
-                                        data-testid={`button-cancel-edit-board-${board.id}`}
-                                      >
-                                        <X className="w-3.5 h-3.5" />
-                                      </Button>
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center gap-2">
-                                      <div className="min-w-0 flex-1">
-                                        <div className="font-medium text-foreground text-sm truncate">{board.name}</div>
-                                        <div className="text-[10px] text-muted-foreground mt-0.5">
-                                          {categoryCount}/5 · {totalQuestions} Q
-                                          {isComplete && <span className="text-primary ml-1">✓</span>}
-                                        </div>
-                                      </div>
-                                      <div className="flex items-center shrink-0">
-                                        <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); window.open(`/board/${board.id}`, '_blank'); }} className="h-6 w-6 text-muted-foreground hover:text-primary" data-testid={`button-preview-board-${board.id}`} title="Preview">
-                                          <Eye className="w-3 h-3" />
-                                        </Button>
-                                        <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingBoardId(board.id); setEditBoardName(board.name); }} className="h-6 w-6 text-muted-foreground hover:text-primary" data-testid={`button-edit-board-${board.id}`} title="Rename">
-                                          <Pencil className="w-3 h-3" />
-                                        </Button>
-                                        <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); deleteBoardMutation.mutate(board.id); }} className="h-6 w-6 text-muted-foreground hover:text-destructive" data-testid={`button-delete-board-${board.id}`} title="Delete">
-                                          <Trash2 className="w-3 h-3" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
+                          </CollapsibleContent>
+                        </Collapsible>
                       )}
 
                       {boards.length === 0 && (
