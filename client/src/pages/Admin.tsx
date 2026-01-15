@@ -35,7 +35,6 @@ export default function Admin() {
   const [editingQuestionId, setEditingQuestionId] = useState<number | null>(null);
 
   const [newBoardName, setNewBoardName] = useState("");
-  const [newBoardPoints, setNewBoardPoints] = useState<number[]>([10, 20, 30, 40, 50]);
   const [showNewBoardForm, setShowNewBoardForm] = useState(false);
 
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -672,29 +671,9 @@ export default function Admin() {
                         onChange={(e) => setNewBoardName(e.target.value)}
                         data-testid="input-board-name"
                       />
-                      <div className="flex flex-wrap gap-1">
-                        {ALL_POINT_VALUES.map(pt => (
-                          <Button
-                            key={pt}
-                            size="sm"
-                            variant={newBoardPoints.includes(pt) ? "default" : "outline"}
-                            className="h-7 px-2 text-xs"
-                            onClick={() => {
-                              if (newBoardPoints.includes(pt)) {
-                                setNewBoardPoints(prev => prev.filter(p => p !== pt));
-                              } else {
-                                setNewBoardPoints(prev => [...prev, pt].sort((a, b) => a - b));
-                              }
-                            }}
-                            data-testid={`button-point-${pt}`}
-                          >
-                            {pt}
-                          </Button>
-                        ))}
-                      </div>
                       <Button
-                        onClick={() => createBoardMutation.mutate({ name: newBoardName, description: '', pointValues: newBoardPoints })}
-                        disabled={!newBoardName.trim() || newBoardPoints.length === 0}
+                        onClick={() => createBoardMutation.mutate({ name: newBoardName, description: '', pointValues: [10, 20, 30, 40, 50] })}
+                        disabled={!newBoardName.trim()}
                         className="w-full"
                         size="sm"
                         data-testid="button-create-board"
