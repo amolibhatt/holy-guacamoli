@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -737,14 +738,27 @@ export default function Admin() {
                     const categoryProgress = (categoryCount / 5) * 100;
                     const questionProgress = maxQuestions > 0 ? (totalQuestions / maxQuestions) * 100 : 0;
                     const isComplete = categoryCount >= 5 && totalQuestions >= maxQuestions && maxQuestions > 0;
+                    const isIncomplete = categoryCount < 5 || totalQuestions < maxQuestions;
                     const isEditing = editingBoardId === board.id;
+                    const pastelColors: Record<string, string> = {
+                      violet: 'from-violet-200/40 to-violet-300/20 border-violet-300/50',
+                      cyan: 'from-cyan-200/40 to-cyan-300/20 border-cyan-300/50',
+                      orange: 'from-orange-200/40 to-orange-300/20 border-orange-300/50',
+                      green: 'from-green-200/40 to-green-300/20 border-green-300/50',
+                      pink: 'from-pink-200/40 to-pink-300/20 border-pink-300/50',
+                      blue: 'from-blue-200/40 to-blue-300/20 border-blue-300/50',
+                      red: 'from-red-200/40 to-red-300/20 border-red-300/50',
+                      yellow: 'from-yellow-200/40 to-yellow-300/20 border-yellow-300/50',
+                    };
+                    const colorCode = board.colorCode || 'violet';
+                    const pastelClass = pastelColors[colorCode] || pastelColors.violet;
                     return (
                       <div
                         key={board.id}
-                        className={`p-3 rounded-lg cursor-pointer transition-all ${
+                        className={`p-3 rounded-lg cursor-pointer transition-all bg-gradient-to-br ${
                           selectedBoardId === board.id
-                            ? 'bg-primary/20 border-2 border-primary'
-                            : 'bg-muted/20 border border-border hover:bg-muted/30'
+                            ? `${pastelClass} border-2 border-primary`
+                            : `${pastelClass} border hover:opacity-80`
                         }`}
                         onClick={() => { 
                           if (!isEditing) { 
@@ -800,8 +814,12 @@ export default function Admin() {
                             <div className="flex items-center justify-between gap-2 mb-2">
                               <div className="flex items-center gap-2 min-w-0">
                                 <span className="font-medium text-foreground text-sm truncate">{board.name}</span>
-                                {isComplete && (
+                                {isComplete ? (
                                   <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0" />
+                                ) : isIncomplete && (
+                                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-amber-500/10 text-amber-600 border-amber-500/30 shrink-0">
+                                    Incomplete
+                                  </Badge>
                                 )}
                               </div>
                               <div className="flex items-center gap-0.5 shrink-0">
