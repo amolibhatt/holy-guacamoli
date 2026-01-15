@@ -15,8 +15,27 @@ interface CategoryGroup {
 interface CustomBoard extends Board {
   categoryCount: number;
   totalQuestions: number;
-  isReady: boolean;
+  isComplete: boolean;
+  isPlayable: boolean;
 }
+
+const BOARD_COLORS: Record<string, { gradient: string; border: string; text: string }> = {
+  "#ef4444": { gradient: "from-red-500/20 to-red-600/10", border: "border-red-500/30 hover:border-red-500/60", text: "text-red-400" },
+  "#f97316": { gradient: "from-orange-500/20 to-orange-600/10", border: "border-orange-500/30 hover:border-orange-500/60", text: "text-orange-400" },
+  "#eab308": { gradient: "from-yellow-500/20 to-yellow-600/10", border: "border-yellow-500/30 hover:border-yellow-500/60", text: "text-yellow-400" },
+  "#22c55e": { gradient: "from-green-500/20 to-green-600/10", border: "border-green-500/30 hover:border-green-500/60", text: "text-green-400" },
+  "#06b6d4": { gradient: "from-cyan-500/20 to-cyan-600/10", border: "border-cyan-500/30 hover:border-cyan-500/60", text: "text-cyan-400" },
+  "#3b82f6": { gradient: "from-blue-500/20 to-blue-600/10", border: "border-blue-500/30 hover:border-blue-500/60", text: "text-blue-400" },
+  "#8b5cf6": { gradient: "from-violet-500/20 to-violet-600/10", border: "border-violet-500/30 hover:border-violet-500/60", text: "text-violet-400" },
+  "#ec4899": { gradient: "from-pink-500/20 to-pink-600/10", border: "border-pink-500/30 hover:border-pink-500/60", text: "text-pink-400" },
+};
+
+const DEFAULT_COLOR = { gradient: "from-cyan-500/20 to-cyan-600/10", border: "border-cyan-500/30 hover:border-cyan-500/60", text: "text-cyan-400" };
+
+const getBoardColor = (colorCode: string | null) => {
+  if (!colorCode) return DEFAULT_COLOR;
+  return BOARD_COLORS[colorCode] || DEFAULT_COLOR;
+};
 
 
 export default function HostGridOfGrudges() {
@@ -174,45 +193,53 @@ export default function HostGridOfGrudges() {
                   </h2>
                   
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                    {customBoards.map((board, index) => (
-                      <motion.button
-                        key={board.id}
-                        onClick={() => setLocation(`/board/${board.id}`)}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        whileHover={{ scale: 1.03, y: -4 }}
-                        whileTap={{ scale: 0.97 }}
-                        disabled={!board.isReady}
-                        className={`relative flex flex-col p-5 bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 rounded-xl text-left transition-all border-2 group overflow-hidden ${
-                          board.isReady 
-                            ? "border-cyan-500/30 hover:border-cyan-500/60 cursor-pointer hover:shadow-lg" 
-                            : "border-border/50 opacity-50 cursor-not-allowed"
-                        }`}
-                        data-testid={`button-board-${board.id}`}
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="text-3xl font-black text-cyan-400">
-                            {board.name.charAt(0).toUpperCase()}
+                    {customBoards.map((board, index) => {
+                      const colors = getBoardColor(board.colorCode);
+                      return (
+                        <motion.button
+                          key={board.id}
+                          onClick={() => setLocation(`/board/${board.id}`)}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          whileHover={{ scale: 1.03, y: -4 }}
+                          whileTap={{ scale: 0.97 }}
+                          disabled={!board.isPlayable}
+                          className={`relative flex flex-col p-5 bg-gradient-to-br ${colors.gradient} rounded-xl text-left transition-all border-2 group overflow-hidden ${
+                            board.isPlayable 
+                              ? `${colors.border} cursor-pointer hover:shadow-lg` 
+                              : "border-border/50 opacity-50 cursor-not-allowed"
+                          }`}
+                          data-testid={`button-board-${board.id}`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className={`text-3xl font-black ${colors.text}`}>
+                              {board.name.charAt(0).toUpperCase()}
+                            </div>
+                            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
                           </div>
-                          <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
-                        </div>
-                        
-                        <div className="text-sm font-medium text-foreground mb-1 truncate">
-                          {board.name}
-                        </div>
-                        
-                        <div className="text-xs text-muted-foreground">
-                          {board.categoryCount} cats, {board.totalQuestions} Qs
-                        </div>
-                        
-                        {!board.isReady && (
-                          <div className="mt-2 text-[10px] text-amber-500">
-                            Needs 5 categories
+                          
+                          <div className="text-sm font-medium text-foreground mb-1 truncate">
+                            {board.name}
                           </div>
-                        )}
-                      </motion.button>
-                    ))}
+                          
+                          <div className="text-xs text-muted-foreground">
+                            {board.categoryCount} cats, {board.totalQuestions} Qs
+                          </div>
+                          
+                          {!board.isComplete && board.isPlayable && (
+                            <div className="mt-2 text-[10px] text-amber-500">
+                              Incomplete board
+                            </div>
+                          )}
+                          {!board.isPlayable && (
+                            <div className="mt-2 text-[10px] text-muted-foreground">
+                              Add categories first
+                            </div>
+                          )}
+                        </motion.button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
