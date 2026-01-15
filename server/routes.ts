@@ -6,6 +6,7 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import * as XLSX from "xlsx";
 import { setupWebSocket, getRoomInfo, getOrRestoreSession } from "./gameRoom";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
@@ -28,6 +29,18 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/ogg'];
+    cb(null, allowed.includes(file.mimetype));
+  }
+});
+
+const excelUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel'
+    ];
     cb(null, allowed.includes(file.mimetype));
   }
 });
@@ -2337,6 +2350,222 @@ export async function registerRoutes(
     } catch (err) {
       console.error("Error bulk importing sequence questions:", err);
       res.status(500).json({ message: "Failed to import questions" });
+    }
+  });
+
+  // Excel Export - Download all boards with categories and questions
+  app.get("/api/export/excel", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      
+      if (role !== 'super_admin') {
+        return res.status(403).json({ message: "Only Super Admins can export data" });
+      }
+      
+      const boards = await storage.getBoards(userId, role);
+      const rows: { Board: string; Category: string; Question: string; "Option A": string; "Option B": string; "Option C": string; "Option D": string; "Correct Answer": string; Points: number }[] = [];
+      
+      for (const board of boards) {
+        const boardCats = await storage.getBoardWithCategoriesAndQuestions(board.id, userId, role);
+        for (const bc of boardCats) {
+          if (bc.questions.length === 0) {
+            rows.push({
+              Board: board.name,
+              Category: bc.category.name,
+              Question: "",
+              "Option A": "",
+              "Option B": "",
+              "Option C": "",
+              "Option D": "",
+              "Correct Answer": "",
+              Points: 0
+            });
+          } else {
+            for (const q of bc.questions) {
+              const options = q.options || [];
+              rows.push({
+                Board: board.name,
+                Category: bc.category.name,
+                Question: q.question,
+                "Option A": options[0] || "",
+                "Option B": options[1] || "",
+                "Option C": options[2] || "",
+                "Option D": options[3] || "",
+                "Correct Answer": q.correctAnswer,
+                Points: q.points
+              });
+            }
+          }
+        }
+      }
+      
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(rows);
+      XLSX.utils.book_append_sheet(wb, ws, "Buzzkill Data");
+      
+      const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=buzzkill-export.xlsx');
+      res.send(buffer);
+    } catch (err) {
+      console.error("Error exporting Excel:", err);
+      res.status(500).json({ message: "Failed to export data" });
+    }
+  });
+
+  // Excel Import - Upload boards with categories and questions
+  app.post("/api/import/excel", isAuthenticated, excelUpload.single('file'), async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      
+      if (role !== 'super_admin') {
+        return res.status(403).json({ message: "Only Super Admins can import data" });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      const wb = XLSX.read(req.file.buffer, { type: 'buffer' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json<{
+        Board?: string;
+        Category?: string;
+        Question?: string;
+        "Option A"?: string;
+        "Option B"?: string;
+        "Option C"?: string;
+        "Option D"?: string;
+        "Correct Answer"?: string;
+        Points?: number;
+      }>(ws);
+      
+      if (!data || data.length === 0) {
+        return res.status(400).json({ message: "No data found in spreadsheet" });
+      }
+      
+      const results = { 
+        boardsCreated: 0, 
+        categoriesCreated: 0, 
+        questionsCreated: 0, 
+        errors: [] as string[] 
+      };
+      
+      const boardMap = new Map<string, number>();
+      const categoryMap = new Map<string, number>();
+      const boardCategoryMap = new Map<string, number>();
+      
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        const rowNum = i + 2;
+        
+        const boardName = String(row.Board || "").trim();
+        const categoryName = String(row.Category || "").trim();
+        const question = String(row.Question || "").trim();
+        const optA = String(row["Option A"] || "").trim();
+        const optB = String(row["Option B"] || "").trim();
+        const optC = String(row["Option C"] || "").trim();
+        const optD = String(row["Option D"] || "").trim();
+        const correctAnswer = String(row["Correct Answer"] || "").trim();
+        const points = Number(row.Points) || 10;
+        
+        if (!boardName) {
+          results.errors.push(`Row ${rowNum}: Board name is required`);
+          continue;
+        }
+        if (!categoryName) {
+          results.errors.push(`Row ${rowNum}: Category name is required`);
+          continue;
+        }
+        
+        try {
+          let boardId = boardMap.get(boardName);
+          if (!boardId) {
+            const existingBoards = await storage.getBoards(userId, role);
+            const existing = existingBoards.find(b => b.name.toLowerCase() === boardName.toLowerCase());
+            if (existing) {
+              boardId = existing.id;
+            } else {
+              const newBoard = await storage.createBoard({
+                name: boardName,
+                description: null,
+                pointValues: [10, 20, 30, 40, 50],
+                colorCode: null,
+                userId,
+              });
+              boardId = newBoard.id;
+              results.boardsCreated++;
+            }
+            boardMap.set(boardName, boardId);
+          }
+          
+          const catKey = categoryName.toLowerCase();
+          let categoryId = categoryMap.get(catKey);
+          if (!categoryId) {
+            const existingCats = await storage.getCategories();
+            const existing = existingCats.find(c => c.name.toLowerCase() === catKey);
+            if (existing) {
+              categoryId = existing.id;
+            } else {
+              const newCat = await storage.createCategory({
+                name: categoryName,
+                description: "",
+                imageUrl: "",
+                sourceGroup: null,
+                isActive: true,
+              });
+              categoryId = newCat.id;
+              results.categoriesCreated++;
+            }
+            categoryMap.set(catKey, categoryId);
+          }
+          
+          const bcKey = `${boardId}-${categoryId}`;
+          let boardCategoryId = boardCategoryMap.get(bcKey);
+          if (!boardCategoryId) {
+            const existingBC = await storage.getBoardCategoryByIds(boardId, categoryId);
+            if (existingBC) {
+              boardCategoryId = existingBC.id;
+            } else {
+              const boardCats = await storage.getBoardCategories(boardId);
+              const newBC = await storage.createBoardCategory({
+                boardId,
+                categoryId,
+                position: boardCats.length,
+              });
+              boardCategoryId = newBC.id;
+            }
+            boardCategoryMap.set(bcKey, boardCategoryId);
+          }
+          
+          if (question && correctAnswer) {
+            const options = [optA, optB, optC, optD].filter(o => o);
+            if (options.length >= 2) {
+              await storage.createQuestion({
+                boardCategoryId,
+                question,
+                options,
+                correctAnswer,
+                points,
+              });
+              results.questionsCreated++;
+            } else if (options.length > 0) {
+              results.errors.push(`Row ${rowNum}: Need at least 2 options for question`);
+            }
+          }
+        } catch (err) {
+          results.errors.push(`Row ${rowNum}: Database error`);
+          console.error(`Import error row ${rowNum}:`, err);
+        }
+      }
+      
+      res.json(results);
+    } catch (err) {
+      console.error("Error importing Excel:", err);
+      res.status(500).json({ message: "Failed to import data" });
     }
   });
 
