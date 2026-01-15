@@ -803,7 +803,7 @@ export default function Admin() {
                                     </div>
                                   ) : (
                                     <div className="flex items-start gap-2">
-                                      <GripVertical className="w-3 h-3 text-muted-foreground/50 mt-1 cursor-grab shrink-0" />
+                                      <GripVertical className="w-4 h-4 text-muted-foreground/40 mt-0.5 cursor-grab shrink-0" />
                                       <Tooltip>
                                         <TooltipTrigger asChild>
                                           <div className="w-10 h-10 rounded bg-muted/50 border border-border grid grid-cols-5 grid-rows-5 gap-px p-0.5 shrink-0">
@@ -823,30 +823,37 @@ export default function Admin() {
                                         </TooltipContent>
                                       </Tooltip>
                                       <div className="min-w-0 flex-1">
-                                        <div className="font-medium text-foreground text-sm truncate">{board.name}</div>
-                                        <div className="flex items-center gap-2 mt-1">
+                                        <div className="font-bold text-foreground truncate">{board.name}</div>
+                                        <div className="flex items-center gap-2 mt-1.5">
                                           <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                                             <div 
                                               className={`h-full transition-all ${isComplete ? 'bg-emerald-500' : 'bg-primary'}`}
                                               style={{ width: `${Math.min(progressPercent, 100)}%` }}
                                             />
                                           </div>
-                                          <span className={`text-[10px] ${isComplete ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                                          <span className={`text-[10px] font-medium ${isComplete ? 'text-emerald-600' : 'text-muted-foreground'}`}>
                                             {progressPercent}%
                                           </span>
                                         </div>
                                       </div>
-                                      <div className="flex items-center shrink-0">
-                                        <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); window.open(`/board/${board.id}`, '_blank'); }} className="h-6 w-6 text-muted-foreground hover:text-primary" data-testid={`button-preview-board-${board.id}`} title="Preview">
-                                          <Eye className="w-3 h-3" />
-                                        </Button>
-                                        <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingBoardId(board.id); setEditBoardName(board.name); }} className="h-6 w-6 text-muted-foreground hover:text-primary" data-testid={`button-edit-board-${board.id}`} title="Rename">
-                                          <Pencil className="w-3 h-3" />
-                                        </Button>
-                                        <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); deleteBoardMutation.mutate(board.id); }} className="h-6 w-6 text-muted-foreground hover:text-destructive" data-testid={`button-delete-board-${board.id}`} title="Delete">
-                                          <Trash2 className="w-3 h-3" />
-                                        </Button>
-                                      </div>
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                          <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground" data-testid={`button-board-menu-${board.id}`}>
+                                            <MoreVertical className="w-4 h-4" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-40">
+                                          <DropdownMenuItem onClick={() => window.open(`/board/${board.id}`, '_blank')} data-testid={`menu-preview-${board.id}`}>
+                                            <Eye className="w-4 h-4 mr-2" /> Preview
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => { setEditingBoardId(board.id); setEditBoardName(board.name); }} data-testid={`menu-rename-${board.id}`}>
+                                            <Pencil className="w-4 h-4 mr-2" /> Rename
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => deleteBoardMutation.mutate(board.id)} className="text-destructive focus:text-destructive" data-testid={`menu-delete-${board.id}`}>
+                                            <Trash2 className="w-4 h-4 mr-2" /> Delete
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
                                     </div>
                                   )}
                                 </div>
