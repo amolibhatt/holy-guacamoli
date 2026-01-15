@@ -1485,7 +1485,6 @@ async function seedPresetBoards() {
         description: boardData.description,
         pointValues: [10, 20, 30, 40, 50],
         isGlobal: true,
-        isActive: true,
         colorCode: boardData.colorCode,
       }).returning();
       board = newBoard;

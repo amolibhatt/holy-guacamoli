@@ -46,7 +46,7 @@ export default function GridOfGrudges() {
     queryFn: async () => {
       const questions: Question[] = [];
       for (const bc of boardCategories) {
-        const res = await fetch(`/api/board-categories/${bc.id}/questions`);
+        const res = await fetch(`/api/board-categories/${bc.id}/questions`, { credentials: "include" });
         if (res.ok) {
           const data = await res.json();
           questions.push(...data);
