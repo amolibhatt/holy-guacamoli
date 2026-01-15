@@ -811,15 +811,21 @@ export default function Admin() {
                           </div>
                         ) : (
                           <>
-                            <div className="flex items-center justify-between gap-2 mb-2">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span className="font-semibold text-sm truncate text-white drop-shadow-sm">{board.name}</span>
-                                {isComplete ? (
-                                  <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0" />
-                                ) : isIncomplete && (
-                                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-amber-500/20 text-amber-400 border-amber-500/40 shrink-0">
-                                    Incomplete
-                                  </Badge>
+                            {/* Header with actions */}
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-base text-white drop-shadow-md">{board.name}</span>
+                                  {isComplete ? (
+                                    <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                                  ) : isIncomplete && (
+                                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-amber-500/30 text-amber-300 border-amber-400/50 shrink-0">
+                                      Incomplete
+                                    </Badge>
+                                  )}
+                                </div>
+                                {board.description && (
+                                  <p className="text-xs text-white/70 mt-0.5 truncate">{board.description}</p>
                                 )}
                               </div>
                               <div className="flex items-center gap-0.5 shrink-0">
@@ -830,7 +836,7 @@ export default function Admin() {
                                     e.stopPropagation(); 
                                     window.open(`/board/${board.id}`, '_blank');
                                   }}
-                                  className="h-6 w-6 text-muted-foreground hover:text-primary"
+                                  className="h-6 w-6 text-white/60 hover:text-white hover:bg-white/10"
                                   data-testid={`button-preview-board-${board.id}`}
                                   title="Preview board"
                                 >
@@ -843,9 +849,9 @@ export default function Admin() {
                                     e.stopPropagation(); 
                                     updateBoardMutation.mutate({ id: board.id, isGlobal: !board.isGlobal });
                                   }}
-                                  className={`h-6 w-6 ${board.isGlobal ? 'text-amber-500' : 'text-muted-foreground hover:text-amber-500'}`}
+                                  className="h-6 w-6 text-amber-400 hover:text-amber-300 hover:bg-white/10"
                                   data-testid={`button-toggle-preset-${board.id}`}
-                                  title={board.isGlobal ? "Remove from presets" : "Make preset"}
+                                  title="Remove from Starter Packs"
                                 >
                                   <Sparkles className="w-3 h-3" />
                                 </Button>
@@ -857,7 +863,7 @@ export default function Admin() {
                                     setEditingBoardId(board.id); 
                                     setEditBoardName(board.name); 
                                   }}
-                                  className="h-6 w-6 text-muted-foreground hover:text-primary"
+                                  className="h-6 w-6 text-white/60 hover:text-white hover:bg-white/10"
                                   data-testid={`button-edit-board-${board.id}`}
                                 >
                                   <Pencil className="w-3 h-3" />
@@ -866,36 +872,25 @@ export default function Admin() {
                                   size="icon"
                                   variant="ghost"
                                   onClick={(e) => { e.stopPropagation(); deleteBoardMutation.mutate(board.id); }}
-                                  className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                  className="h-6 w-6 text-white/60 hover:text-red-400 hover:bg-white/10"
                                   data-testid={`button-delete-board-${board.id}`}
                                 >
                                   <Trash2 className="w-3 h-3" />
                                 </Button>
                               </div>
                             </div>
-                            <div className="space-y-1.5">
-                              <div className="flex items-center gap-2">
-                                <FolderPlus className="w-3 h-3 text-muted-foreground shrink-0" />
-                                <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                                  <div 
-                                    className={`h-full rounded-full transition-all ${categoryCount >= 5 ? 'bg-primary' : 'bg-primary/50'}`}
-                                    style={{ width: `${categoryProgress}%` }}
-                                  />
-                                </div>
-                                <span className={`text-[10px] font-medium w-8 text-right ${categoryCount >= 5 ? 'text-primary' : 'text-muted-foreground'}`}>
-                                  {categoryCount}/5
+                            {/* Stats row */}
+                            <div className="flex items-center gap-3 mt-2 text-xs">
+                              <div className="flex items-center gap-1.5">
+                                <FolderPlus className="w-3 h-3 text-white/50" />
+                                <span className={`font-medium ${categoryCount >= 5 ? 'text-emerald-400' : 'text-white/80'}`}>
+                                  {categoryCount}/5 categories
                                 </span>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <HelpCircle className="w-3 h-3 text-muted-foreground shrink-0" />
-                                <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                                  <div 
-                                    className={`h-full rounded-full transition-all ${questionProgress >= 100 ? 'bg-primary' : questionProgress > 0 ? 'bg-amber-500' : 'bg-muted'}`}
-                                    style={{ width: `${Math.min(questionProgress, 100)}%` }}
-                                  />
-                                </div>
-                                <span className={`text-[10px] font-medium w-8 text-right ${questionProgress >= 100 ? 'text-primary' : questionProgress > 0 ? 'text-amber-500' : 'text-muted-foreground'}`}>
-                                  {totalQuestions}/{maxQuestions || 0}
+                              <div className="flex items-center gap-1.5">
+                                <HelpCircle className="w-3 h-3 text-white/50" />
+                                <span className={`font-medium ${questionProgress >= 100 ? 'text-emerald-400' : totalQuestions > 0 ? 'text-amber-300' : 'text-white/80'}`}>
+                                  {totalQuestions}/{maxQuestions || 0} questions
                                 </span>
                               </div>
                             </div>
@@ -1327,13 +1322,19 @@ export default function Admin() {
                       if (!selectedBc) return null;
                       return (
                         <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border shrink-0">
-                          <div className="flex items-center gap-3">
-                            <h3 className="font-semibold text-foreground">{selectedBc.category.name}</h3>
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${(selectedBc.questionCount ?? 0) >= 5 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                              {selectedBc.questionCount ?? 0}/5 questions
-                            </span>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-3">
+                              <h3 className="font-semibold text-foreground">{selectedBc.category.name}</h3>
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${(selectedBc.questionCount ?? 0) >= 5 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                                {selectedBc.questionCount ?? 0}/5 questions
+                              </span>
+                            </div>
                             {selectedBc.category.rule && (
-                              <span className="text-xs text-muted-foreground">— {selectedBc.category.rule}</span>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20">
+                                  Rule: {selectedBc.category.rule}
+                                </Badge>
+                              </div>
                             )}
                           </div>
                           <div className="flex items-center gap-1">
