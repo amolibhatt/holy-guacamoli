@@ -132,11 +132,11 @@ export default function HostGridOfGrudges() {
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                     {presetBoards.map((board, index) => {
                       const pastelColors = [
-                        { bg: "bg-[#f5cbb8]", text: "text-[#b86a4a]", border: "border-[#edc0ad]" },
-                        { bg: "bg-[#c5e8d2]", text: "text-[#4a8f5f]", border: "border-[#b8dfc7]" },
-                        { bg: "bg-[#a0ddd8]", text: "text-[#2a8585]", border: "border-[#90d0cb]" },
-                        { bg: "bg-[#b8c8ec]", text: "text-[#5570b8]", border: "border-[#a8bce0]" },
-                        { bg: "bg-[#dcc8ec]", text: "text-[#8a5ab0]", border: "border-[#d0bce0]" },
+                        { bg: "bg-rose-200", text: "text-rose-700", border: "border-rose-300" },
+                        { bg: "bg-green-200", text: "text-green-700", border: "border-green-300" },
+                        { bg: "bg-cyan-200", text: "text-cyan-700", border: "border-cyan-300" },
+                        { bg: "bg-blue-200", text: "text-blue-700", border: "border-blue-300" },
+                        { bg: "bg-purple-200", text: "text-purple-700", border: "border-purple-300" },
                       ];
                       const colors = pastelColors[index % pastelColors.length];
                       return (
