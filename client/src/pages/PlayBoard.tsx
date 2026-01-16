@@ -222,6 +222,7 @@ export default function PlayBoard() {
                     boardCategory={boardCategory}
                     onSelectQuestion={handleSelectQuestion}
                     pointValues={pointValues}
+                    colorCode={board?.colorCode || undefined}
                   />
                 </motion.div>
               ))}
