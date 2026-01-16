@@ -102,7 +102,16 @@ export default function HostGridOfGrudges() {
                   </h2>
                   
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                    {presetBoards.map((board, index) => (
+                    {presetBoards.map((board, index) => {
+                      const gradients = [
+                        { bg: 'from-violet-500/20 via-purple-500/15 to-fuchsia-500/20', border: 'border-violet-500/30 hover:border-violet-400/60', accent: 'from-violet-500/15', text: 'group-hover:text-violet-600' },
+                        { bg: 'from-fuchsia-500/20 via-pink-500/15 to-rose-500/20', border: 'border-fuchsia-500/30 hover:border-fuchsia-400/60', accent: 'from-fuchsia-500/15', text: 'group-hover:text-fuchsia-600' },
+                        { bg: 'from-amber-500/20 via-orange-500/15 to-yellow-500/20', border: 'border-amber-500/30 hover:border-amber-400/60', accent: 'from-amber-500/15', text: 'group-hover:text-amber-600' },
+                        { bg: 'from-teal-500/20 via-cyan-500/15 to-sky-500/20', border: 'border-teal-500/30 hover:border-teal-400/60', accent: 'from-teal-500/15', text: 'group-hover:text-teal-600' },
+                        { bg: 'from-sky-500/20 via-blue-500/15 to-indigo-500/20', border: 'border-sky-500/30 hover:border-sky-400/60', accent: 'from-sky-500/15', text: 'group-hover:text-sky-600' },
+                      ];
+                      const style = gradients[index % gradients.length];
+                      return (
                         <motion.button
                           key={board.id}
                           onClick={() => setLocation(`/board/${board.id}`)}
@@ -112,26 +121,27 @@ export default function HostGridOfGrudges() {
                           whileHover={{ scale: 1.02, y: -2 }}
                           whileTap={{ scale: 0.98 }}
                           disabled={!board.isPlayable}
-                          className={`relative flex flex-col p-4 bg-gradient-to-br from-primary/20 via-secondary/15 to-accent/20 rounded-xl text-left transition-all border border-primary/30 group overflow-hidden ${
+                          className={`relative flex flex-col p-4 bg-gradient-to-br ${style.bg} rounded-xl text-left transition-all border ${style.border} group overflow-hidden ${
                             board.isPlayable 
-                              ? "cursor-pointer hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10" 
+                              ? "cursor-pointer hover:shadow-lg" 
                               : "opacity-50 cursor-not-allowed"
                           }`}
                           data-testid={`button-preset-${board.id}`}
                         >
-                          <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-primary/15 to-transparent rounded-bl-full" />
+                          <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl ${style.accent} to-transparent rounded-bl-full`} />
                           <div className="flex items-center justify-between mb-3 relative z-10">
-                            <div className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                            <div className={`text-lg font-bold text-foreground ${style.text} transition-colors`}>
                               {board.name}
                             </div>
-                            <ArrowRight className="w-4 h-4 text-primary/60 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
                           </div>
                           
                           <div className="text-xs text-muted-foreground relative z-10">
                             {board.description}
                           </div>
                         </motion.button>
-                      ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -144,7 +154,16 @@ export default function HostGridOfGrudges() {
                 
                 {customBoards.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                    {customBoards.map((board, index) => (
+                    {customBoards.map((board, index) => {
+                      const gradients = [
+                        { bg: 'from-violet-500/20 via-purple-500/15 to-fuchsia-500/20', border: 'border-violet-500/30 hover:border-violet-400/60', accent: 'from-violet-500/15', text: 'group-hover:text-violet-600' },
+                        { bg: 'from-fuchsia-500/20 via-pink-500/15 to-rose-500/20', border: 'border-fuchsia-500/30 hover:border-fuchsia-400/60', accent: 'from-fuchsia-500/15', text: 'group-hover:text-fuchsia-600' },
+                        { bg: 'from-amber-500/20 via-orange-500/15 to-yellow-500/20', border: 'border-amber-500/30 hover:border-amber-400/60', accent: 'from-amber-500/15', text: 'group-hover:text-amber-600' },
+                        { bg: 'from-teal-500/20 via-cyan-500/15 to-sky-500/20', border: 'border-teal-500/30 hover:border-teal-400/60', accent: 'from-teal-500/15', text: 'group-hover:text-teal-600' },
+                        { bg: 'from-sky-500/20 via-blue-500/15 to-indigo-500/20', border: 'border-sky-500/30 hover:border-sky-400/60', accent: 'from-sky-500/15', text: 'group-hover:text-sky-600' },
+                      ];
+                      const style = gradients[index % gradients.length];
+                      return (
                         <motion.button
                           key={board.id}
                           onClick={() => setLocation(`/board/${board.id}`)}
@@ -154,19 +173,19 @@ export default function HostGridOfGrudges() {
                           whileHover={{ scale: 1.02, y: -2 }}
                           whileTap={{ scale: 0.98 }}
                           disabled={!board.isPlayable}
-                          className={`relative flex flex-col p-4 bg-gradient-to-br from-primary/20 via-secondary/15 to-accent/20 rounded-xl text-left transition-all border border-primary/30 group overflow-hidden ${
+                          className={`relative flex flex-col p-4 bg-gradient-to-br ${style.bg} rounded-xl text-left transition-all border ${style.border} group overflow-hidden ${
                             board.isPlayable 
-                              ? "cursor-pointer hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10" 
+                              ? "cursor-pointer hover:shadow-lg" 
                               : "opacity-50 cursor-not-allowed"
                           }`}
                           data-testid={`button-board-${board.id}`}
                         >
-                          <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-primary/15 to-transparent rounded-bl-full" />
+                          <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl ${style.accent} to-transparent rounded-bl-full`} />
                           <div className="flex items-center justify-between mb-3 relative z-10">
-                            <div className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                            <div className={`text-lg font-bold text-foreground ${style.text} transition-colors`}>
                               {board.name}
                             </div>
-                            <ArrowRight className="w-4 h-4 text-primary/60 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
                           </div>
                           
                           <div className="text-xs text-muted-foreground relative z-10">
@@ -184,7 +203,8 @@ export default function HostGridOfGrudges() {
                             </div>
                           )}
                         </motion.button>
-                      ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-sm text-muted-foreground px-1">
