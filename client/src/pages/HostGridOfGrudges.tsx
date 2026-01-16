@@ -156,29 +156,25 @@ export default function HostGridOfGrudges() {
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.05 }}
-                          whileHover={{ scale: 1.03, y: -4 }}
-                          whileTap={{ scale: 0.97 }}
+                          whileHover={{ scale: 1.02, y: -2 }}
+                          whileTap={{ scale: 0.98 }}
                           disabled={!board.isPlayable}
-                          className={`relative flex flex-col p-5 bg-gradient-to-br ${colors.tile} rounded-xl text-left transition-all border-2 group overflow-hidden ${
+                          className={`relative flex flex-col p-4 bg-gradient-to-br ${colors.card} rounded-xl text-left transition-all border group overflow-hidden ${
                             board.isPlayable 
-                              ? `${colors.tileBorder} cursor-pointer hover:shadow-lg` 
+                              ? "cursor-pointer hover:shadow-md" 
                               : "border-border/50 opacity-50 cursor-not-allowed"
                           }`}
                           data-testid={`button-board-${board.id}`}
                         >
                           <div className="flex items-center justify-between mb-3">
-                            <div className={`text-3xl font-black ${colors.tileText}`}>
-                              {board.name.charAt(0).toUpperCase()}
+                            <div className={`text-lg font-bold ${colors.cardTitle}`}>
+                              {board.name}
                             </div>
                             <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
                           </div>
                           
-                          <div className="text-sm font-medium text-foreground mb-1 truncate">
-                            {board.name}
-                          </div>
-                          
-                          <div className="text-xs text-muted-foreground">
-                            {board.categoryCount} cats, {board.totalQuestions} Qs
+                          <div className={`text-xs ${colors.cardSub}`}>
+                            {board.categoryCount} categories, {board.totalQuestions} questions
                           </div>
                           
                           {!board.isComplete && board.isPlayable && (
