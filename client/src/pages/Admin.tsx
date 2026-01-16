@@ -23,6 +23,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
 import type { Category, Question, Board, BoardCategoryWithCount } from "@shared/schema";
 import { useUpload } from "@/hooks/use-upload";
+import { getBoardColorConfig } from "@/lib/boardColors";
 
 const ALL_POINT_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
@@ -889,25 +890,14 @@ export default function Admin() {
                     const isComplete = categoryCount >= 5 && totalQuestions >= maxQuestions && maxQuestions > 0;
                     const isIncomplete = categoryCount < 5 || totalQuestions < maxQuestions;
                     const isEditing = editingBoardId === board.id;
-                    const pastelColors: Record<string, { bg: string; title: string; sub: string; icon: string }> = {
-                      violet: { bg: 'from-violet-500/30 to-violet-600/15 border-violet-400/50', title: 'text-violet-900', sub: 'text-violet-700', icon: 'text-violet-600' },
-                      cyan: { bg: 'from-cyan-500/30 to-cyan-600/15 border-cyan-400/50', title: 'text-cyan-900', sub: 'text-cyan-700', icon: 'text-cyan-600' },
-                      orange: { bg: 'from-orange-500/30 to-orange-600/15 border-orange-400/50', title: 'text-orange-900', sub: 'text-orange-700', icon: 'text-orange-600' },
-                      green: { bg: 'from-green-500/30 to-green-600/15 border-green-400/50', title: 'text-green-900', sub: 'text-green-700', icon: 'text-green-600' },
-                      pink: { bg: 'from-pink-500/30 to-pink-600/15 border-pink-400/50', title: 'text-pink-900', sub: 'text-pink-700', icon: 'text-pink-600' },
-                      blue: { bg: 'from-blue-500/30 to-blue-600/15 border-blue-400/50', title: 'text-blue-900', sub: 'text-blue-700', icon: 'text-blue-600' },
-                      red: { bg: 'from-red-500/30 to-red-600/15 border-red-400/50', title: 'text-red-900', sub: 'text-red-700', icon: 'text-red-600' },
-                      yellow: { bg: 'from-yellow-500/30 to-yellow-600/15 border-yellow-400/50', title: 'text-yellow-900', sub: 'text-yellow-700', icon: 'text-yellow-600' },
-                    };
-                    const colorCode = board.colorCode || 'violet';
-                    const colorConfig = pastelColors[colorCode] || pastelColors.violet;
+                    const colorConfig = getBoardColorConfig(board.colorCode);
                     return (
                       <div
                         key={board.id}
                         className={`p-3 rounded-lg cursor-pointer transition-all bg-gradient-to-br ${
                           selectedBoardId === board.id
-                            ? `${colorConfig.bg} border-2 border-primary`
-                            : `${colorConfig.bg} border hover:opacity-80`
+                            ? `${colorConfig.card} border-2 border-primary`
+                            : `${colorConfig.card} border hover:opacity-80`
                         }`}
                         onClick={() => { 
                           if (!isEditing) { 
@@ -960,25 +950,25 @@ export default function Admin() {
                         ) : (
                           <div className="flex items-start gap-3">
                             <div className="min-w-0 flex-1">
-                              <div className={`font-bold text-base leading-tight ${colorConfig.title}`}>{board.name}</div>
+                              <div className={`font-bold text-base leading-tight ${colorConfig.cardTitle}`}>{board.name}</div>
                               {board.description && (
-                                <div className={`text-xs mt-0.5 ${colorConfig.sub}`}>{board.description}</div>
+                                <div className={`text-xs mt-0.5 ${colorConfig.cardSub}`}>{board.description}</div>
                               )}
                               <div className="flex items-center gap-2 mt-2">
                                 <div className="flex-1 h-1.5 bg-white/40 rounded-full overflow-hidden">
                                   <div 
-                                    className={`h-full transition-all ${isComplete ? 'bg-emerald-500' : colorCode === 'violet' ? 'bg-violet-600' : colorCode === 'cyan' ? 'bg-cyan-600' : colorCode === 'orange' ? 'bg-orange-600' : colorCode === 'green' ? 'bg-green-600' : colorCode === 'pink' ? 'bg-pink-600' : colorCode === 'blue' ? 'bg-blue-600' : 'bg-primary'}`}
+                                    className={`h-full transition-all ${isComplete ? 'bg-emerald-500' : board.colorCode === 'violet' ? 'bg-violet-600' : board.colorCode === 'cyan' ? 'bg-cyan-600' : board.colorCode === 'orange' ? 'bg-orange-600' : board.colorCode === 'green' ? 'bg-green-600' : board.colorCode === 'pink' ? 'bg-pink-600' : board.colorCode === 'blue' ? 'bg-blue-600' : 'bg-primary'}`}
                                     style={{ width: `${Math.min((totalQuestions / 25) * 100, 100)}%` }}
                                   />
                                 </div>
-                                <span className={`text-[10px] font-medium ${colorConfig.sub}`}>
+                                <span className={`text-[10px] font-medium ${colorConfig.cardSub}`}>
                                   {Math.round((totalQuestions / 25) * 100)}%
                                 </span>
                               </div>
                             </div>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                <Button size="icon" variant="ghost" className={`h-7 w-7 ${colorConfig.icon} hover:bg-white/30`} data-testid={`button-board-menu-${board.id}`}>
+                                <Button size="icon" variant="ghost" className={`h-7 w-7 ${colorConfig.cardIcon} hover:bg-white/30`} data-testid={`button-board-menu-${board.id}`}>
                                   <MoreVertical className="w-4 h-4" />
                                 </Button>
                               </DropdownMenuTrigger>
