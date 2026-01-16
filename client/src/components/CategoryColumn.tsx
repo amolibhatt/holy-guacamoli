@@ -114,19 +114,15 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
   );
 }
 
-import { getBoardColorConfig } from "@/lib/boardColors";
-
 interface CategoryColumnProps {
   boardCategory: BoardCategoryWithCategory;
   onSelectQuestion: (question: Question) => void;
   pointValues?: number[];
-  colorCode?: string;
 }
 
-export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues, colorCode }: CategoryColumnProps) {
+export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }: CategoryColumnProps) {
   const { data: questions, isLoading } = useQuestionsByBoardCategory(boardCategory.id);
   const { completedQuestions } = useScore();
-  const colorConfig = getBoardColorConfig(colorCode);
   
   const scoreValues = pointValues || DEFAULT_SCORE_VALUES;
   
@@ -146,10 +142,10 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues, c
   return (
     <div className="flex flex-col h-full">
       <div 
-        className={`text-white px-2 sm:px-3 text-center rounded-t-xl sm:rounded-t-2xl h-[70px] sm:h-[90px] lg:h-[100px] flex items-center justify-center relative overflow-hidden transition-all bg-gradient-to-br ${
+        className={`text-white px-2 sm:px-3 text-center rounded-t-xl sm:rounded-t-2xl h-[70px] sm:h-[90px] lg:h-[100px] flex items-center justify-center relative overflow-hidden transition-all ${
           allCompleted 
             ? 'gradient-gold' 
-            : colorConfig.header
+            : 'gradient-header'
         }`}
         role="heading"
         aria-level={2}

@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ArrowRight, Users, Shuffle, Sparkles, FolderPlus } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, Users, Shuffle, FolderPlus } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation } from "wouter";
 import type { Board } from "@shared/schema";
 import { motion } from "framer-motion";
-import { getBoardColorConfig } from "@/lib/boardColors";
 
 interface PresetBoard extends Board {
   categoryCount: number;
@@ -103,9 +102,7 @@ export default function HostGridOfGrudges() {
                   </h2>
                   
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                    {presetBoards.map((board, index) => {
-                      const colors = getBoardColorConfig(board.colorCode);
-                      return (
+                    {presetBoards.map((board, index) => (
                         <motion.button
                           key={board.id}
                           onClick={() => setLocation(`/board/${board.id}`)}
@@ -115,26 +112,26 @@ export default function HostGridOfGrudges() {
                           whileHover={{ scale: 1.02, y: -2 }}
                           whileTap={{ scale: 0.98 }}
                           disabled={!board.isPlayable}
-                          className={`relative flex flex-col p-4 bg-gradient-to-br ${colors.card} rounded-xl text-left transition-all border group overflow-hidden ${
+                          className={`relative flex flex-col p-4 bg-gradient-to-br from-primary/20 via-secondary/15 to-accent/20 rounded-xl text-left transition-all border border-primary/30 group overflow-hidden ${
                             board.isPlayable 
-                              ? "cursor-pointer hover:shadow-md" 
-                              : "border-border/50 opacity-50 cursor-not-allowed"
+                              ? "cursor-pointer hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10" 
+                              : "opacity-50 cursor-not-allowed"
                           }`}
                           data-testid={`button-preset-${board.id}`}
                         >
-                          <div className="flex items-center justify-between mb-3">
-                            <div className={`text-lg font-bold ${colors.cardTitle}`}>
+                          <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-primary/15 to-transparent rounded-bl-full" />
+                          <div className="flex items-center justify-between mb-3 relative z-10">
+                            <div className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
                               {board.name}
                             </div>
-                            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+                            <ArrowRight className="w-4 h-4 text-primary/60 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                           </div>
                           
-                          <div className={`text-xs ${colors.cardSub}`}>
+                          <div className="text-xs text-muted-foreground relative z-10">
                             {board.description}
                           </div>
                         </motion.button>
-                      );
-                    })}
+                      ))}
                   </div>
                 </div>
               )}
@@ -147,9 +144,7 @@ export default function HostGridOfGrudges() {
                 
                 {customBoards.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                    {customBoards.map((board, index) => {
-                      const colors = getBoardColorConfig(board.colorCode);
-                      return (
+                    {customBoards.map((board, index) => (
                         <motion.button
                           key={board.id}
                           onClick={() => setLocation(`/board/${board.id}`)}
@@ -159,37 +154,37 @@ export default function HostGridOfGrudges() {
                           whileHover={{ scale: 1.02, y: -2 }}
                           whileTap={{ scale: 0.98 }}
                           disabled={!board.isPlayable}
-                          className={`relative flex flex-col p-4 bg-gradient-to-br ${colors.card} rounded-xl text-left transition-all border group overflow-hidden ${
+                          className={`relative flex flex-col p-4 bg-gradient-to-br from-primary/20 via-secondary/15 to-accent/20 rounded-xl text-left transition-all border border-primary/30 group overflow-hidden ${
                             board.isPlayable 
-                              ? "cursor-pointer hover:shadow-md" 
-                              : "border-border/50 opacity-50 cursor-not-allowed"
+                              ? "cursor-pointer hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10" 
+                              : "opacity-50 cursor-not-allowed"
                           }`}
                           data-testid={`button-board-${board.id}`}
                         >
-                          <div className="flex items-center justify-between mb-3">
-                            <div className={`text-lg font-bold ${colors.cardTitle}`}>
+                          <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-primary/15 to-transparent rounded-bl-full" />
+                          <div className="flex items-center justify-between mb-3 relative z-10">
+                            <div className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
                               {board.name}
                             </div>
-                            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+                            <ArrowRight className="w-4 h-4 text-primary/60 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                           </div>
                           
-                          <div className={`text-xs ${colors.cardSub}`}>
+                          <div className="text-xs text-muted-foreground relative z-10">
                             {board.categoryCount} categories, {board.totalQuestions} questions
                           </div>
                           
                           {!board.isComplete && board.isPlayable && (
-                            <div className="mt-2 text-[10px] text-amber-500">
+                            <div className="mt-2 text-[10px] text-amber-500 relative z-10">
                               Incomplete board
                             </div>
                           )}
                           {!board.isPlayable && (
-                            <div className="mt-2 text-[10px] text-muted-foreground">
+                            <div className="mt-2 text-[10px] text-muted-foreground relative z-10">
                               Add categories first
                             </div>
                           )}
                         </motion.button>
-                      );
-                    })}
+                      ))}
                   </div>
                 ) : (
                   <div className="text-sm text-muted-foreground px-1">
