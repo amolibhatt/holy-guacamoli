@@ -957,7 +957,7 @@ export default function Admin() {
                               <div className="flex items-center gap-2 mt-2">
                                 <div className="flex-1 h-1.5 bg-white/40 rounded-full overflow-hidden">
                                   <div 
-                                    className={`h-full transition-all ${isComplete ? 'bg-emerald-500' : board.colorCode === 'violet' ? 'bg-violet-600' : board.colorCode === 'cyan' ? 'bg-cyan-600' : board.colorCode === 'orange' ? 'bg-orange-600' : board.colorCode === 'green' ? 'bg-green-600' : board.colorCode === 'pink' ? 'bg-pink-600' : board.colorCode === 'blue' ? 'bg-blue-600' : 'bg-primary'}`}
+                                    className={`h-full transition-all ${isComplete ? 'bg-emerald-500' : colorConfig.progress}`}
                                     style={{ width: `${Math.min((totalQuestions / 25) * 100, 100)}%` }}
                                   />
                                 </div>
