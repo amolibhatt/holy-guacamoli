@@ -114,13 +114,25 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
   );
 }
 
+const colorGradients: Record<string, string> = {
+  violet: 'from-violet-500 to-violet-700',
+  cyan: 'from-cyan-500 to-cyan-700',
+  orange: 'from-orange-500 to-orange-700',
+  green: 'from-green-500 to-green-700',
+  pink: 'from-pink-500 to-pink-700',
+  blue: 'from-blue-500 to-blue-700',
+  red: 'from-red-500 to-red-700',
+  yellow: 'from-yellow-500 to-yellow-700',
+};
+
 interface CategoryColumnProps {
   boardCategory: BoardCategoryWithCategory;
   onSelectQuestion: (question: Question) => void;
   pointValues?: number[];
+  colorCode?: string;
 }
 
-export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }: CategoryColumnProps) {
+export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues, colorCode }: CategoryColumnProps) {
   const { data: questions, isLoading } = useQuestionsByBoardCategory(boardCategory.id);
   const { completedQuestions } = useScore();
   
@@ -142,10 +154,12 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }:
   return (
     <div className="flex flex-col h-full">
       <div 
-        className={`text-white px-2 sm:px-3 text-center rounded-t-xl sm:rounded-t-2xl h-[70px] sm:h-[90px] lg:h-[100px] flex items-center justify-center relative overflow-hidden transition-all ${
+        className={`text-white px-2 sm:px-3 text-center rounded-t-xl sm:rounded-t-2xl h-[70px] sm:h-[90px] lg:h-[100px] flex items-center justify-center relative overflow-hidden transition-all bg-gradient-to-br ${
           allCompleted 
             ? 'gradient-gold' 
-            : 'gradient-header'
+            : colorCode && colorGradients[colorCode] 
+              ? colorGradients[colorCode] 
+              : 'gradient-header'
         }`}
         role="heading"
         aria-level={2}
