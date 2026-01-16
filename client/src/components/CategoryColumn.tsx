@@ -159,7 +159,7 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }:
             <Check className="w-4 h-4 sm:w-5 sm:h-5 text-white drop-shadow" aria-label="Category completed" />
           </motion.div>
         )}
-        <div className="flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center justify-center gap-0.5">
           <h2 
             className="font-black text-xs sm:text-sm lg:text-base leading-tight uppercase tracking-wide relative z-10 drop-shadow-lg line-clamp-2" 
             data-testid={`text-category-${boardCategory.id}`}
@@ -168,7 +168,7 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }:
             {boardCategory.category.name}
           </h2>
           {boardCategory.category.rule && (
-            <p className="text-[10px] sm:text-xs mt-1 opacity-80 font-medium drop-shadow line-clamp-1" title={boardCategory.category.rule}>
+            <p className="text-[9px] sm:text-[10px] lg:text-xs px-1 opacity-90 font-semibold drop-shadow italic">
               {boardCategory.category.rule}
             </p>
           )}
