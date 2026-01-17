@@ -51,6 +51,7 @@
     "@uppy/core": "^5.2.0",
     "@uppy/dashboard": "^5.1.0",
     "@uppy/react": "^5.1.1",
+    "@vitest/coverage-v8": "^4.0.17",
     "bcryptjs": "^3.0.3",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
