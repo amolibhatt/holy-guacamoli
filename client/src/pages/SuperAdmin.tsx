@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { 
   Users, Grid3X3, BarChart3, Shield, ArrowLeft,
@@ -45,8 +45,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
 import type { Board, GameType, BoardCategoryWithCount, Question } from "@shared/schema";
 import type { SafeUser } from "@shared/models/auth";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 
 interface PlatformStats {
   totalUsers: number;
@@ -71,7 +69,6 @@ interface BoardWithOwner extends Board {
 
 export default function SuperAdmin() {
   const { user, isLoading: isAuthLoading } = useAuth();
-  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [deleteBoardId, setDeleteBoardId] = useState<number | null>(null);
@@ -345,6 +342,16 @@ export default function SuperAdmin() {
                           <div 
                             className="p-4 cursor-pointer hover:bg-muted/30 transition-colors"
                             onClick={() => setSelectedGameSlug(isSelected ? null : gameType.slug)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setSelectedGameSlug(isSelected ? null : gameType.slug);
+                              }
+                            }}
+                            aria-expanded={isSelected}
+                            data-testid={`game-row-${gameType.slug}`}
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-4">
@@ -406,6 +413,7 @@ export default function SuperAdmin() {
                                         data: { status: value }
                                       });
                                     }}
+                                    disabled={updateGameTypeMutation.isPending}
                                   >
                                     <SelectTrigger className="w-[130px]" data-testid={`select-status-${gameType.slug}`}>
                                       <SelectValue />
@@ -427,6 +435,7 @@ export default function SuperAdmin() {
                                         data: { hostEnabled: checked }
                                       });
                                     }}
+                                    disabled={updateGameTypeMutation.isPending}
                                     data-testid={`switch-host-${gameType.slug}`}
                                   />
                                 </div>
@@ -440,6 +449,7 @@ export default function SuperAdmin() {
                                         data: { playerEnabled: checked }
                                       });
                                     }}
+                                    disabled={updateGameTypeMutation.isPending}
                                     data-testid={`switch-player-${gameType.slug}`}
                                   />
                                 </div>
@@ -471,8 +481,6 @@ export default function SuperAdmin() {
                                     <div className="space-y-3">
                                       {starterPacks.map((board: any) => {
                                         const isComplete = board.categoryCount >= 5 && board.questionCount >= 25;
-                                        const categoryProgress = Math.min(board.categoryCount, 5);
-                                        const questionProgress = Math.min(board.questionCount, 25);
                                         const isEditingThisPack = editingPackId === board.id;
                                         
                                         return (
@@ -560,6 +568,15 @@ export default function SuperAdmin() {
                                                           <div 
                                                             className={`flex items-center justify-between p-2 rounded cursor-pointer ${isSelectedCat ? 'bg-primary/10' : 'hover:bg-muted/50'}`}
                                                             onClick={() => setSelectedCategoryId(isSelectedCat ? null : bc.id)}
+                                                            role="button"
+                                                            tabIndex={0}
+                                                            onKeyDown={(e) => {
+                                                              if (e.key === 'Enter' || e.key === ' ') {
+                                                                e.preventDefault();
+                                                                setSelectedCategoryId(isSelectedCat ? null : bc.id);
+                                                              }
+                                                            }}
+                                                            aria-expanded={isSelectedCat}
                                                           >
                                                             <div className="flex items-center gap-2">
                                                               <ChevronRight className={`w-4 h-4 transition-transform ${isSelectedCat ? 'rotate-90' : ''}`} />
@@ -688,6 +705,12 @@ export default function SuperAdmin() {
                     <Skeleton key={i} className="h-20 w-full" />
                   ))}
                 </div>
+              ) : allUsers.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    No users found.
+                  </CardContent>
+                </Card>
               ) : (
                 <div className="space-y-3">
                   {allUsers.map((u) => (
@@ -730,6 +753,7 @@ export default function SuperAdmin() {
                                   <DropdownMenuItem
                                     className="text-destructive"
                                     onClick={() => setDeleteUserId(u.id)}
+                                    data-testid={`button-delete-user-${u.id}`}
                                   >
                                     <Trash2 className="w-4 h-4 mr-2" />
                                     Delete User
@@ -749,7 +773,7 @@ export default function SuperAdmin() {
         </Tabs>
       </main>
 
-      <AlertDialog open={!!deleteUserId} onOpenChange={() => setDeleteUserId(null)}>
+      <AlertDialog open={!!deleteUserId} onOpenChange={(open) => !deleteUserMutation.isPending && !open && setDeleteUserId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete User</AlertDialogTitle>
@@ -775,7 +799,7 @@ export default function SuperAdmin() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={!!deleteBoardId} onOpenChange={() => setDeleteBoardId(null)}>
+      <AlertDialog open={!!deleteBoardId} onOpenChange={(open) => !deleteBoardMutation.isPending && !open && setDeleteBoardId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Board</AlertDialogTitle>
@@ -801,7 +825,7 @@ export default function SuperAdmin() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={!!demotePackId} onOpenChange={() => setDemotePackId(null)}>
+      <AlertDialog open={!!demotePackId} onOpenChange={(open) => !toggleGlobalBoardMutation.isPending && !open && setDemotePackId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Starter Pack</AlertDialogTitle>
@@ -826,7 +850,7 @@ export default function SuperAdmin() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={showAllPromotableBoards} onOpenChange={setShowAllPromotableBoards}>
+      <Dialog open={showAllPromotableBoards} onOpenChange={(open) => !toggleGlobalBoardMutation.isPending && setShowAllPromotableBoards(open)}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Promote to Starter Pack</DialogTitle>
