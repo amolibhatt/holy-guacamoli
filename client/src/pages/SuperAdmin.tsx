@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
@@ -6,7 +6,8 @@ import {
   Users, Grid3X3, BarChart3, Shield, ArrowLeft,
   UserCheck, UserX, Trash2, Eye, MoreHorizontal,
   TrendingUp, Gamepad2, Clock, Activity, Heart, Grid2X2,
-  Library, Globe, Lock, Building, ListOrdered, RefreshCw
+  Library, Globe, Lock, Building, ListOrdered, RefreshCw,
+  ChevronRight, Plus, Pencil, Check, X, FileUp, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,8 +37,10 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
-import type { Board, GameType } from "@shared/schema";
+import type { Board, GameType, BoardCategoryWithCount, Question } from "@shared/schema";
 import type { SafeUser } from "@shared/models/auth";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface PlatformStats {
   totalUsers: number;
@@ -67,6 +70,12 @@ export default function SuperAdmin() {
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [deleteBoardId, setDeleteBoardId] = useState<number | null>(null);
   const [gamesSubtab, setGamesSubtab] = useState<'types' | 'boards' | 'master-bank'>('types');
+  
+  // Starter Pack editing state
+  const [editingPackId, setEditingPackId] = useState<number | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const excelImportRef = useRef<HTMLInputElement>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const { data: stats, isLoading: isLoadingStats } = useQuery<PlatformStats>({
     queryKey: ['/api/super-admin/stats'],
@@ -82,6 +91,18 @@ export default function SuperAdmin() {
 
   const { data: gameTypes = [], isLoading: isLoadingGameTypes } = useQuery<GameType[]>({
     queryKey: ['/api/super-admin/game-types'],
+  });
+
+  // Fetch categories for the selected Starter Pack
+  const { data: packCategories = [], isLoading: loadingPackCategories } = useQuery<BoardCategoryWithCount[]>({
+    queryKey: ['/api/boards', editingPackId, 'categories'],
+    enabled: !!editingPackId,
+  });
+
+  // Fetch questions for selected category
+  const { data: categoryQuestions = [], isLoading: loadingQuestions } = useQuery<Question[]>({
+    queryKey: ['/api/board-categories', selectedCategoryId, 'questions'],
+    enabled: !!selectedCategoryId,
   });
 
   const updateGameTypeMutation = useMutation({
@@ -506,6 +527,8 @@ export default function SuperAdmin() {
                               const isComplete = board.categoryCount >= 5 && board.questionCount >= 25;
                               const categoryProgress = Math.min(board.categoryCount, 5);
                               const questionProgress = Math.min(board.questionCount, 25);
+                              const isEditing = editingPackId === board.id;
+                              
                               return (
                                 <Card key={board.id} className={`border-2 ${isComplete ? 'border-green-500/30' : 'border-amber-500/30'}`}>
                                   <CardContent className="p-4">
@@ -550,11 +573,23 @@ export default function SuperAdmin() {
                                         </div>
                                       </div>
                                       <div className="flex flex-col gap-2">
-                                        <Link href={`/admin?board=${board.id}`}>
-                                          <Button variant="default" size="sm" data-testid={`button-edit-pack-${board.id}`}>
-                                            Edit Content
-                                          </Button>
-                                        </Link>
+                                        <Button 
+                                          variant={isEditing ? "secondary" : "default"} 
+                                          size="sm" 
+                                          onClick={() => {
+                                            if (isEditing) {
+                                              setEditingPackId(null);
+                                              setSelectedCategoryId(null);
+                                            } else {
+                                              setEditingPackId(board.id);
+                                              setSelectedCategoryId(null);
+                                            }
+                                          }}
+                                          data-testid={`button-edit-pack-${board.id}`}
+                                        >
+                                          {isEditing ? 'Close' : 'View Content'}
+                                          <ChevronRight className={`w-4 h-4 ml-1 transition-transform ${isEditing ? 'rotate-90' : ''}`} />
+                                        </Button>
                                         <Button
                                           variant="outline"
                                           size="sm"
@@ -565,6 +600,76 @@ export default function SuperAdmin() {
                                         </Button>
                                       </div>
                                     </div>
+                                    
+                                    {/* Expanded editing view */}
+                                    {isEditing && (
+                                      <div className="mt-4 pt-4 border-t border-border">
+                                        <div className="flex items-center justify-between mb-3">
+                                          <h4 className="font-medium text-foreground">Categories in this pack</h4>
+                                        </div>
+                                        
+                                        {loadingPackCategories ? (
+                                          <div className="space-y-2">
+                                            <Skeleton className="h-10 w-full" />
+                                            <Skeleton className="h-10 w-full" />
+                                          </div>
+                                        ) : packCategories.length === 0 ? (
+                                          <p className="text-sm text-muted-foreground py-4 text-center">
+                                            No categories yet. Use the Admin panel to add content, then make the board a Starter Pack.
+                                          </p>
+                                        ) : (
+                                          <div className="space-y-2">
+                                            {packCategories.map((bc) => {
+                                              const questionCount = bc.questionCount || 0;
+                                              const isSelected = selectedCategoryId === bc.id;
+                                              const hasAllQuestions = questionCount >= 5;
+                                              
+                                              return (
+                                                <div key={bc.id}>
+                                                  <div 
+                                                    className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                                                      isSelected ? 'bg-primary/10 border border-primary/30' : 'bg-muted/50 hover:bg-muted'
+                                                    }`}
+                                                    onClick={() => setSelectedCategoryId(isSelected ? null : bc.id)}
+                                                  >
+                                                    <div className="flex items-center gap-2">
+                                                      <ChevronRight className={`w-4 h-4 transition-transform ${isSelected ? 'rotate-90' : ''}`} />
+                                                      <span className="font-medium">{bc.category.name}</span>
+                                                    </div>
+                                                    <Badge variant={hasAllQuestions ? "default" : "outline"} className={hasAllQuestions ? 'bg-green-500/20 text-green-600' : ''}>
+                                                      {questionCount}/5 questions
+                                                    </Badge>
+                                                  </div>
+                                                  
+                                                  {/* Show questions when category is selected */}
+                                                  {isSelected && (
+                                                    <div className="ml-6 mt-2 space-y-1">
+                                                      {loadingQuestions ? (
+                                                        <Skeleton className="h-8 w-full" />
+                                                      ) : categoryQuestions.length === 0 ? (
+                                                        <p className="text-sm text-muted-foreground py-2">No questions yet</p>
+                                                      ) : (
+                                                        categoryQuestions.map((q) => (
+                                                          <div key={q.id} className="flex items-center justify-between p-2 bg-background rounded text-sm">
+                                                            <div className="flex items-center gap-2">
+                                                              <Badge variant="outline" className="text-xs">{q.points} pts</Badge>
+                                                              <span className="truncate max-w-[300px]">{q.question}</span>
+                                                            </div>
+                                                            <span className="text-muted-foreground text-xs truncate max-w-[150px]">
+                                                              {q.correctAnswer}
+                                                            </span>
+                                                          </div>
+                                                        ))
+                                                      )}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
                                   </CardContent>
                                 </Card>
                               );
