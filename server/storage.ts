@@ -104,6 +104,7 @@ export interface IStorage {
   clearBoardCategories(boardId: number): Promise<void>;
   getBoardCategoriesByCategoryId(categoryId: number): Promise<BoardCategory[]>;
   getSessionByRoomCode(roomCode: string): Promise<GameSession | undefined>;
+  getShuffleLiveCounts(userId: string, userRole: string): Promise<{ globalLiveCount: number; personalLiveCount: number }>;
   
   // Game Types
   getGameTypes(): Promise<GameType[]>;
@@ -959,6 +960,70 @@ export class DatabaseStorage implements IStorage {
   async getSessionByRoomCode(roomCode: string): Promise<GameSession | undefined> {
     const [session] = await db.select().from(gameSessions).where(eq(gameSessions.code, roomCode));
     return session;
+  }
+  
+  async getShuffleLiveCounts(userId: string, userRole: string): Promise<{ globalLiveCount: number; personalLiveCount: number }> {
+    // A Live category has questions at all 5 point tiers (10, 20, 30, 40, 50)
+    // Uses GROUP BY to efficiently count distinct point tiers per category
+    
+    // Count Live categories in global boards (all admins can see global)
+    const globalLiveResult = await db.execute(sql`
+      SELECT COUNT(*) as count
+      FROM (
+        SELECT bc.category_id
+        FROM board_categories bc
+        JOIN boards b ON bc.board_id = b.id
+        JOIN categories c ON bc.category_id = c.id
+        JOIN questions q ON q.board_category_id = bc.id
+        WHERE b.is_global = true
+          AND c.is_active = true
+          AND b.name NOT LIKE 'Shuffle Play%'
+          AND q.points IN (10, 20, 30, 40, 50)
+        GROUP BY bc.category_id
+        HAVING COUNT(DISTINCT q.points) = 5
+      ) live_cats
+    `);
+    const globalLiveCount = parseInt(String(globalLiveResult.rows[0]?.count ?? 0), 10);
+    
+    // Count Live categories in personal boards (user's own only, unless super_admin)
+    const personalLiveResult = userRole === "super_admin"
+      ? await db.execute(sql`
+          SELECT COUNT(*) as count
+          FROM (
+            SELECT bc.category_id
+            FROM board_categories bc
+            JOIN boards b ON bc.board_id = b.id
+            JOIN categories c ON bc.category_id = c.id
+            JOIN questions q ON q.board_category_id = bc.id
+            WHERE b.is_global = false
+              AND b.user_id IS NOT NULL
+              AND c.is_active = true
+              AND b.name NOT LIKE 'Shuffle Play%'
+              AND q.points IN (10, 20, 30, 40, 50)
+            GROUP BY bc.category_id
+            HAVING COUNT(DISTINCT q.points) = 5
+          ) live_cats
+        `)
+      : await db.execute(sql`
+          SELECT COUNT(*) as count
+          FROM (
+            SELECT bc.category_id
+            FROM board_categories bc
+            JOIN boards b ON bc.board_id = b.id
+            JOIN categories c ON bc.category_id = c.id
+            JOIN questions q ON q.board_category_id = bc.id
+            WHERE b.is_global = false
+              AND b.user_id = ${userId}
+              AND c.is_active = true
+              AND b.name NOT LIKE 'Shuffle Play%'
+              AND q.points IN (10, 20, 30, 40, 50)
+            GROUP BY bc.category_id
+            HAVING COUNT(DISTINCT q.points) = 5
+          ) live_cats
+        `);
+    const personalLiveCount = parseInt(String(personalLiveResult.rows[0]?.count ?? 0), 10);
+    
+    return { globalLiveCount, personalLiveCount };
   }
 
   // === SUPER ADMIN METHODS ===

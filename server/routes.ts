@@ -754,6 +754,26 @@ export async function registerRoutes(
     }
   });
 
+  // Get Live category stats for shuffle modal
+  app.get("/api/buzzkill/shuffle-stats", isAuthenticated, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const userId = user?.id;
+      const userRole = user?.role || "admin";
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      // Use optimized SQL query for counting Live categories
+      const stats = await storage.getShuffleLiveCounts(userId, userRole);
+      res.json(stats);
+    } catch (err) {
+      console.error("Error getting shuffle stats:", err);
+      res.status(500).json({ message: "Failed to get shuffle stats" });
+    }
+  });
+
   // Generate a shuffle board and return board ID for direct play
   app.post("/api/buzzkill/shuffle-board", isAuthenticated, async (req, res) => {
     try {
@@ -788,47 +808,58 @@ export async function registerRoutes(
         return res.status(400).json({ message: "No categories available for shuffle" });
       }
 
-      // Find or create the shuffle board
-      let shuffleBoard = await storage.getBoardByName("Shuffle Play");
+      // Find or create the shuffle board for this user
+      const shuffleBoardName = `Shuffle Play - ${userId}`;
+      let shuffleBoard = await storage.getBoardByName(shuffleBoardName);
       if (!shuffleBoard) {
         shuffleBoard = await storage.createBoard({
-          name: "Shuffle Play",
+          name: shuffleBoardName,
           description: "Auto-generated shuffle board",
           pointValues: [10, 20, 30, 40, 50],
           userId: userId,
         });
       }
 
-      // Clear existing board categories and add the new shuffled ones
+      // Clear existing board categories AND their questions for fresh shuffle
       await storage.clearBoardCategories(shuffleBoard.id);
       
-      for (const category of result.categories) {
-        // Link category to shuffle board
-        let boardCategory = await storage.getBoardCategoryByIds(shuffleBoard.id, category.id);
-        if (!boardCategory) {
-          boardCategory = await storage.createBoardCategory({
-            boardId: shuffleBoard.id,
-            categoryId: category.id,
-          });
+      // Build set of board IDs the user can access:
+      // - Global boards (isGlobal=true) are accessible to ALL authenticated admins
+      // - Personal boards (isGlobal=false) only accessible to owner (and super_admin)
+      const allBoards = await storage.getBoards("system", "super_admin");
+      const accessibleBoardIds = new Set<number>();
+      for (const b of allBoards) {
+        if (b.isGlobal) {
+          accessibleBoardIds.add(b.id);
+        } else if (b.userId === userId || userRole === "super_admin") {
+          accessibleBoardIds.add(b.id);
         }
+      }
+      
+      // Link selected categories and copy questions
+      for (let i = 0; i < result.categories.length; i++) {
+        const category = result.categories[i];
+        const boardCategory = await storage.createBoardCategory({
+          boardId: shuffleBoard.id,
+          categoryId: category.id,
+          position: i,
+        });
         
-        // Copy questions from the category's existing board_category to the shuffle board's board_category
+        // Copy questions from source board_category the user can access
         const existingBoardCats = await storage.getBoardCategoriesByCategoryId(category.id);
-        const sourceBC = existingBoardCats.find(bc => bc.boardId !== shuffleBoard!.id);
+        const sourceBC = existingBoardCats.find(bc => 
+          bc.boardId !== shuffleBoard!.id && accessibleBoardIds.has(bc.boardId)
+        );
         if (sourceBC) {
           const sourceQuestions = await storage.getQuestionsByBoardCategory(sourceBC.id);
-          // Check if questions already exist for this board category
-          const existingQuestions = await storage.getQuestionsByBoardCategory(boardCategory.id);
-          if (existingQuestions.length === 0) {
-            for (const q of sourceQuestions) {
-              await storage.createQuestion({
-                boardCategoryId: boardCategory.id,
-                question: q.question,
-                options: q.options,
-                correctAnswer: q.correctAnswer,
-                points: q.points,
-              });
-            }
+          for (const q of sourceQuestions) {
+            await storage.createQuestion({
+              boardCategoryId: boardCategory.id,
+              question: q.question,
+              options: q.options,
+              correctAnswer: q.correctAnswer,
+              points: q.points,
+            });
           }
         }
       }
