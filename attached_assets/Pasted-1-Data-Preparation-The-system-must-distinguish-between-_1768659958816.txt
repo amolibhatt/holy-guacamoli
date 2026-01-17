@@ -1,0 +1,17 @@
+1. Data Preparation
+The system must distinguish between Global Categories (which belong to a specific Theme Group like A, B, C...) and Personal Categories (which are ungrouped/untagged and belong to a specific Tenant).
+The system must maintain a PlayedHistory list for the current session to track Category IDs that have already appeared.
+2. The Selection Priority (The "Fill-to-5" Logic)
+When a board is generated, the system must fill exactly 5 slots using this order of operations:
+Step A (User Content First): Search the user’s Personal Pool for categories not in PlayedHistory. Randomly select up to 5 of these to fill the slots.
+Step B (Gap Detection): Calculate how many slots remain empty (5 minus the number of personal categories selected).
+Step C (Diverse Global Filling): If slots remain, the system must pull from the Global Pool. It must identify the unique Theme Groups available (e.g., A, B, C...) and select categories from different groups to fill the remaining slots.
+Priority Rule: It should avoid picking a second category from the same Theme Group until at least one category from every other available Theme Group has been included on the board.
+Step D (Overflow): If the user has more than 5 eligible Personal Categories, the system must randomly select 5 and save the rest for the next shuffle.
+3. Session Memory & Reset Logic
+Universal Tracking: Every category assigned to a slot (regardless of source) is added to the PlayedHistory.
+Exhaustion Check: Before starting a shuffle, if the Total Available Pool (Global + authorized Personal) minus the PlayedHistory is less than 5, the system must clear the PlayedHistory for that session.
+Loop Continuity: This ensures the board is never empty and the variety is maximized based on the total content currently live in the database.
+4. Data Validation (The Guardrails)
+Point Integrity: Within a single category, the system must ensure point values are unique. If a category is selected that contains duplicate point values for different questions, the system must randomly select only one question per point tier for that specific game instance.
+Readiness State: Only categories marked with a "Live" or "Active" status in the database are eligible for the shuffle pool.
