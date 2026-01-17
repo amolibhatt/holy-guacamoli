@@ -18,10 +18,11 @@ interface FlipCardProps {
   boardCategoryId: number;
   onSelect: (question: Question) => void;
   delay: number;
+  isShuffleBoard?: boolean;
 }
 
 
-function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect, delay }: FlipCardProps) {
+function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect, delay, isShuffleBoard }: FlipCardProps) {
   const [isFlipping, setIsFlipping] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const hasQuestion = !!question;
@@ -68,8 +69,12 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
           ${!hasQuestion 
             ? 'bg-muted text-muted-foreground/30 cursor-not-allowed border border-border' 
             : isCompleted 
-              ? 'completed-cell text-primary/50 cursor-not-allowed border border-primary/20' 
-              : 'bg-card text-primary cursor-pointer border-2 border-primary/50 shadow-lg shadow-primary/20 hover:shadow-xl hover:border-primary/70'
+              ? isShuffleBoard
+                ? 'bg-gradient-to-br from-primary/20 to-secondary/20 text-primary/50 cursor-not-allowed border border-primary/30'
+                : 'completed-cell text-primary/50 cursor-not-allowed border border-primary/20' 
+              : isShuffleBoard
+                ? 'bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10 text-primary cursor-pointer border-2 border-primary/50 shadow-lg shadow-primary/25 hover:shadow-xl hover:border-primary hover:from-primary/20 hover:to-secondary/15'
+                : 'bg-card text-primary cursor-pointer border-2 border-primary/50 shadow-lg shadow-primary/20 hover:shadow-xl hover:border-primary/70'
           }
         `}
         onClick={handleClick}
@@ -118,9 +123,10 @@ interface CategoryColumnProps {
   boardCategory: BoardCategoryWithCategory;
   onSelectQuestion: (question: Question) => void;
   pointValues?: number[];
+  isShuffleBoard?: boolean;
 }
 
-export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }: CategoryColumnProps) {
+export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues, isShuffleBoard }: CategoryColumnProps) {
   const { data: questions, isLoading } = useQuestionsByBoardCategory(boardCategory.id);
   const { completedQuestions } = useScore();
   
@@ -145,7 +151,9 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }:
         className={`text-white px-2 sm:px-3 text-center rounded-t-xl sm:rounded-t-2xl h-[70px] sm:h-[90px] lg:h-[100px] flex items-center justify-center relative overflow-hidden transition-all ${
           allCompleted 
             ? 'gradient-gold' 
-            : 'gradient-header'
+            : isShuffleBoard 
+              ? 'bg-gradient-to-br from-primary via-secondary to-primary'
+              : 'gradient-header'
         }`}
         role="heading"
         aria-level={2}
@@ -196,6 +204,7 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }:
               boardCategoryId={boardCategory.id}
               onSelect={onSelectQuestion}
               delay={idx * 0.03}
+              isShuffleBoard={isShuffleBoard}
             />
           );
         })}
