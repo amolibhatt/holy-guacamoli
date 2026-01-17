@@ -1082,55 +1082,6 @@ export default function Admin() {
                             className="h-8 text-sm"
                             data-testid="input-category-rule"
                           />
-                          <div className="flex gap-2 items-center">
-                            <input
-                              type="file"
-                              ref={categoryImageInputRef}
-                              className="hidden"
-                              accept="image/*"
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  await uploadCategoryImage(file);
-                                }
-                              }}
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="h-8 gap-1"
-                              onClick={() => categoryImageInputRef.current?.click()}
-                              disabled={isUploadingCategoryImage}
-                              data-testid="button-upload-category-image"
-                            >
-                              {isUploadingCategoryImage ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <Upload className="w-4 h-4" />
-                              )}
-                              {newCategoryImageUrl ? "Change Image" : "Add Image"}
-                            </Button>
-                            {newCategoryImageUrl && (
-                              <div className="flex items-center gap-2">
-                                <img 
-                                  src={newCategoryImageUrl} 
-                                  alt="Category preview" 
-                                  className="h-8 w-8 rounded object-cover border"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => setNewCategoryImageUrl("")}
-                                  data-testid="button-clear-category-image"
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            )}
-                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
