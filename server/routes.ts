@@ -815,13 +815,8 @@ export async function registerRoutes(
   // Get Live category stats for shuffle modal
   app.get("/api/buzzkill/shuffle-stats", isAuthenticated, async (req, res) => {
     try {
-      const user = (req as any).user;
-      const userId = user?.id;
-      const userRole = user?.role || "admin";
-      
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
+      const userId = req.session.userId!;
+      const userRole = req.session.userRole || "admin";
       
       // Use optimized SQL query for counting Live categories
       const stats = await storage.getShuffleLiveCounts(userId, userRole);
@@ -841,9 +836,8 @@ export async function registerRoutes(
       if (!validModes.includes(mode)) {
         return res.status(400).json({ message: `Invalid mode. Must be one of: ${validModes.join(", ")}` });
       }
-      const user = (req as any).user;
-      const userId = user?.id || "shuffle-host";
-      const userRole = user?.role || "admin";
+      const userId = req.session.userId!;
+      const userRole = req.session.userRole || "admin";
       
       // Create a unique session per user for shuffle play
       const sessionCode = `SHUFFLE-${userId}`;
