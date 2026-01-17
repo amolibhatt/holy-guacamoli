@@ -757,19 +757,28 @@ export async function registerRoutes(
   // Generate a shuffle board and return board ID for direct play
   app.post("/api/buzzkill/shuffle-board", isAuthenticated, async (req, res) => {
     try {
-      // First, create or get a session for shuffle play
-      const userId = (req as any).user?.id || "shuffle-host";
-      let session = await storage.getSessionByRoomCode("SHUFFLE");
+      const { mode = "system" } = req.body || {};
+      const user = (req as any).user;
+      const userId = user?.id || "shuffle-host";
+      const userRole = user?.role || "admin";
+      
+      // Create a unique session per user for shuffle play
+      const sessionCode = `SHUFFLE-${userId}`;
+      let session = await storage.getSessionByRoomCode(sessionCode);
       if (!session) {
         session = await storage.createSession({
-          code: "SHUFFLE",
+          code: sessionCode,
           hostId: userId,
           playedCategoryIds: [],
         });
       }
 
-      // Generate the dynamic board
-      const result = await generateDynamicBoard(session.id);
+      // Generate the dynamic board with mode and user context
+      const result = await generateDynamicBoard(session.id, { 
+        mode, 
+        userId, 
+        userRole 
+      });
       
       if (result.error) {
         return res.status(400).json({ message: result.error });
