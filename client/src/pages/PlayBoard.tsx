@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useParams, Link } from "wouter";
-import { Loader2, Settings, Maximize2, Minimize2, Sun, Moon, Home } from "lucide-react";
+import { useParams, Link, useLocation } from "wouter";
+import { Loader2, Settings, Maximize2, Minimize2, Sun, Moon, Home, Shuffle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { AppHeader } from "@/components/AppHeader";
@@ -15,19 +15,64 @@ import { VictoryScreen } from "@/components/VictoryScreen";
 import { BuzzerPanel, BuzzerPanelHandle, BuzzEvent } from "@/components/BuzzerPanel";
 import { useScore } from "@/components/ScoreContext";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import type { Question, Board, BoardCategoryWithCount } from "@shared/schema";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function PlayBoard() {
   const { boardId } = useParams<{ boardId: string }>();
+  const [, setLocation] = useLocation();
   const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const { gameEnded, resetGameEnd, markQuestionCompleted } = useScore();
   
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
+  const [isShuffling, setIsShuffling] = useState(false);
   const buzzerRef = useRef<BuzzerPanelHandle>(null);
-  const [buzzQueue, setBuzzQueue] = useState<BuzzEvent[]>([]);
+  const [buzzQueue, setBuzzQueue] = useState<BuzzEvent[]>();
+
+  const handleNextShuffle = async () => {
+    setIsShuffling(true);
+    try {
+      const res = await fetch("/api/buzzkill/shuffle-board", {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: "Failed to generate" }));
+        toast({
+          title: "Cannot Generate Board",
+          description: errorData.message || "Failed to generate next shuffle board",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const result = await res.json();
+      
+      if (result.wasReset) {
+        toast({
+          title: "All Categories Played!",
+          description: "Starting fresh with all categories available again.",
+        });
+      }
+      
+      setShowVictory(false);
+      resetGameEnd();
+      setLocation(`/board/${result.boardId}`);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to generate board. Check your connection.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsShuffling(false);
+    }
+  };
 
   const { data: board, isLoading: isLoadingBoard } = useQuery<Board>({
     queryKey: ['/api/boards', boardId],
@@ -179,16 +224,35 @@ export default function PlayBoard() {
         showAdminButton={true}
         adminHref="/admin?game=buzzkill"
         rightContent={
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={toggleFullscreen}
-            className="hidden sm:flex text-muted-foreground hover:text-foreground"
-            data-testid="button-fullscreen"
-            aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-          >
-            {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
-          </Button>
+          <div className="flex items-center gap-2">
+            {board.name === "Shuffle Play" && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleNextShuffle}
+                disabled={isShuffling}
+                className="gap-2 bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/30 hover:border-primary"
+                data-testid="button-next-shuffle"
+              >
+                {isShuffling ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Shuffle className="w-4 h-4" />
+                )}
+                <span className="hidden sm:inline">Next Board</span>
+              </Button>
+            )}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={toggleFullscreen}
+              className="hidden sm:flex text-muted-foreground hover:text-foreground"
+              data-testid="button-fullscreen"
+              aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+            >
+              {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+            </Button>
+          </div>
         }
       />
 
@@ -284,10 +348,15 @@ export default function PlayBoard() {
 
       <AnimatePresence>
         {showVictory && (
-          <VictoryScreen onClose={() => {
-            setShowVictory(false);
-            resetGameEnd();
-          }} />
+          <VictoryScreen 
+            onClose={() => {
+              setShowVictory(false);
+              resetGameEnd();
+            }}
+            isShuffleBoard={board?.name === "Shuffle Play"}
+            onNextShuffle={handleNextShuffle}
+            isShuffling={isShuffling}
+          />
         )}
       </AnimatePresence>
     </div>
