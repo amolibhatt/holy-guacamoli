@@ -30,8 +30,10 @@ export interface ContentStats {
   totalQuestions: number;
 }
 
+export type ShuffleMode = "starter" | "personal" | "meld";
+
 export interface ShuffleOptions {
-  includePersonal: boolean;
+  mode: ShuffleMode;
   userId: string;
   userRole: string;
 }
@@ -48,9 +50,9 @@ async function isCategoryLive(categoryId: number): Promise<boolean> {
 
 export async function generateDynamicBoard(
   sessionId: number, 
-  options: ShuffleOptions = { includePersonal: false, userId: "shuffle-host", userRole: "admin" }
+  options: ShuffleOptions = { mode: "starter", userId: "shuffle-host", userRole: "admin" }
 ): Promise<DynamicBoardResult> {
-  const { includePersonal, userId, userRole } = options;
+  const { mode, userId, userRole } = options;
   
   const session = await storage.getSession(sessionId);
   if (!session) {
@@ -63,28 +65,34 @@ export async function generateDynamicBoard(
 
   // Get all boards to determine which categories are global vs personal
   const allBoards = await storage.getBoards("system", "super_admin");
-  const globalBoardIds = allBoards.filter(b => b.isGlobal).map(b => b.id);
+  const globalBoardIds = allBoards.filter(b => b.isGlobal && !b.name.startsWith("Shuffle Play")).map(b => b.id);
   
   // For super admin, see all non-global boards; for others, only their own
   const personalBoardIds = userRole === "super_admin"
-    ? allBoards.filter(b => !b.isGlobal && b.userId).map(b => b.id)
-    : allBoards.filter(b => b.userId === userId && !b.isGlobal).map(b => b.id);
+    ? allBoards.filter(b => !b.isGlobal && b.userId && !b.name.startsWith("Shuffle Play")).map(b => b.id)
+    : allBoards.filter(b => b.userId === userId && !b.isGlobal && !b.name.startsWith("Shuffle Play")).map(b => b.id);
   
-  // Collect all Live categories from global boards
+  // Collect Live categories based on mode
   const liveCategories: Category[] = [];
   const seenCategoryIds = new Set<number>();
   
+  // Determine which pools to include based on mode
+  const includeGlobal = mode === "starter" || mode === "meld";
+  const includePersonal = mode === "personal" || mode === "meld";
+  
   // Add global categories
-  for (const boardId of globalBoardIds) {
-    const boardCats = await storage.getBoardCategories(boardId);
-    for (const bc of boardCats) {
-      if (seenCategoryIds.has(bc.categoryId)) continue;
-      const category = await storage.getCategory(bc.categoryId);
-      if (!category || !category.isActive) continue;
-      
-      if (await isCategoryLive(bc.categoryId)) {
-        liveCategories.push(category);
-        seenCategoryIds.add(bc.categoryId);
+  if (includeGlobal) {
+    for (const boardId of globalBoardIds) {
+      const boardCats = await storage.getBoardCategories(boardId);
+      for (const bc of boardCats) {
+        if (seenCategoryIds.has(bc.categoryId)) continue;
+        const category = await storage.getCategory(bc.categoryId);
+        if (!category || !category.isActive) continue;
+        
+        if (await isCategoryLive(bc.categoryId)) {
+          liveCategories.push(category);
+          seenCategoryIds.add(bc.categoryId);
+        }
       }
     }
   }
@@ -106,12 +114,17 @@ export async function generateDynamicBoard(
     }
   }
   
+  const modeDescriptions: Record<string, string> = {
+    starter: "Starter Packs",
+    personal: "My Categories",
+    meld: "Meld (all sources)"
+  };
+  
   if (liveCategories.length < 5) {
-    const poolDesc = includePersonal ? "global + personal" : "global";
     return {
       categories: [],
       wasReset: false,
-      error: `Need at least 5 Live categories to shuffle. Found ${liveCategories.length} in the ${poolDesc} pool. A category is Live when it has exactly 5 questions (10, 20, 30, 40, 50 points).`,
+      error: `Need at least 5 Live categories to shuffle. Found ${liveCategories.length} in ${modeDescriptions[mode]}. A category is Live when it has questions at 10, 20, 30, 40, and 50 points.`,
     };
   }
 

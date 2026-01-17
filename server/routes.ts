@@ -777,7 +777,12 @@ export async function registerRoutes(
   // Generate a shuffle board and return board ID for direct play
   app.post("/api/buzzkill/shuffle-board", isAuthenticated, async (req, res) => {
     try {
-      const { includePersonal = false } = req.body || {};
+      // Accept mode: "starter" (global only), "personal" (user's only), "meld" (both)
+      const { mode = "starter" } = req.body || {};
+      const validModes = ["starter", "personal", "meld"];
+      if (!validModes.includes(mode)) {
+        return res.status(400).json({ message: `Invalid mode. Must be one of: ${validModes.join(", ")}` });
+      }
       const user = (req as any).user;
       const userId = user?.id || "shuffle-host";
       const userRole = user?.role || "admin";
@@ -795,7 +800,7 @@ export async function registerRoutes(
 
       // Generate the dynamic board with user context
       const result = await generateDynamicBoard(session.id, { 
-        includePersonal, 
+        mode, 
         userId, 
         userRole 
       });
