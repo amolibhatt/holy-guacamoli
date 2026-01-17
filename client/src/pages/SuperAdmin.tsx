@@ -83,6 +83,7 @@ export default function SuperAdmin() {
   const [editingPackId, setEditingPackId] = useState<number | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [showAllPromotableBoards, setShowAllPromotableBoards] = useState(false);
+  const [demotePackId, setDemotePackId] = useState<number | null>(null);
 
   const { data: stats, isLoading: isLoadingStats } = useQuery<PlatformStats>({
     queryKey: ['/api/super-admin/stats'],
@@ -135,6 +136,7 @@ export default function SuperAdmin() {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
       toast({ title: wasAdded ? "Promoted to Starter Pack" : "Removed from Starter Packs" });
       setShowAllPromotableBoards(false);
+      setDemotePackId(null);
     },
     onError: () => {
       toast({ title: "Couldn't update board", description: "Please try again.", variant: "destructive" });
@@ -149,6 +151,7 @@ export default function SuperAdmin() {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/users'] });
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
       toast({ title: "User deleted successfully" });
+      setDeleteUserId(null);
     },
     onError: () => {
       toast({ title: "Couldn't delete user", description: "Please try again.", variant: "destructive" });
@@ -163,6 +166,7 @@ export default function SuperAdmin() {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
       toast({ title: "Board deleted successfully" });
+      setDeleteBoardId(null);
     },
     onError: () => {
       toast({ title: "Couldn't delete board", description: "Please try again.", variant: "destructive" });
@@ -484,13 +488,31 @@ export default function SuperAdmin() {
                                                   )}
                                                 </div>
                                                 <div className="text-sm text-muted-foreground mb-2">{board.description || 'No description'}</div>
-                                                <div className="flex gap-4 text-xs">
-                                                  <span className={categoryProgress >= 5 ? 'text-green-500' : 'text-amber-500'}>
-                                                    {categoryProgress}/5 categories
-                                                  </span>
-                                                  <span className={questionProgress >= 25 ? 'text-green-500' : 'text-amber-500'}>
-                                                    {questionProgress}/25 questions
-                                                  </span>
+                                                <div className="space-y-2 mt-3">
+                                                  <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-muted-foreground w-20 shrink-0">Categories</span>
+                                                    <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                                                      <div 
+                                                        className={`h-full rounded-full transition-all ${board.categoryCount >= 5 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                                                        style={{ width: `${Math.min((board.categoryCount / 5) * 100, 100)}%` }}
+                                                      />
+                                                    </div>
+                                                    <span className={`text-xs font-medium min-w-[32px] text-right ${board.categoryCount >= 5 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                                                      {board.categoryCount}/5
+                                                    </span>
+                                                  </div>
+                                                  <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-muted-foreground w-20 shrink-0">Questions</span>
+                                                    <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                                                      <div 
+                                                        className={`h-full rounded-full transition-all ${board.questionCount >= 25 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                                                        style={{ width: `${Math.min((board.questionCount / 25) * 100, 100)}%` }}
+                                                      />
+                                                    </div>
+                                                    <span className={`text-xs font-medium min-w-[32px] text-right ${board.questionCount >= 25 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                                                      {board.questionCount}/25
+                                                    </span>
+                                                  </div>
                                                 </div>
                                               </div>
                                               <div className="flex gap-2">
@@ -513,8 +535,7 @@ export default function SuperAdmin() {
                                                 <Button
                                                   variant="ghost"
                                                   size="sm"
-                                                  onClick={() => toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: false })}
-                                                  disabled={toggleGlobalBoardMutation.isPending}
+                                                  onClick={() => setDemotePackId(board.id)}
                                                   data-testid={`button-demote-pack-${board.id}`}
                                                 >
                                                   Demote
@@ -555,13 +576,15 @@ export default function SuperAdmin() {
                                                               ) : categoryQuestions.length === 0 ? (
                                                                 <p className="text-xs text-muted-foreground py-2">No questions</p>
                                                               ) : (
-                                                                categoryQuestions.map((q) => (
-                                                                  <div key={q.id} className="flex items-center justify-between p-2 bg-background rounded text-xs">
-                                                                    <div className="flex items-center gap-2">
-                                                                      <Badge variant="outline" className="text-xs">{q.points}</Badge>
-                                                                      <span className="truncate max-w-[250px]">{q.question}</span>
+                                                                categoryQuestions.map((q, idx) => (
+                                                                  <div key={q.id} className={`p-3 bg-background rounded text-xs ${idx > 0 ? 'border-t border-border/50' : ''}`}>
+                                                                    <div className="flex items-start gap-2 mb-1">
+                                                                      <Badge variant="outline" className="text-xs shrink-0 font-semibold">{q.points}pt</Badge>
+                                                                      <span className="break-words font-medium">{q.question}</span>
                                                                     </div>
-                                                                    <span className="text-muted-foreground truncate max-w-[100px]">{q.correctAnswer}</span>
+                                                                    <div className="text-muted-foreground ml-[52px] break-words">
+                                                                      {q.correctAnswer}
+                                                                    </div>
                                                                   </div>
                                                                 ))
                                                               )}
@@ -735,18 +758,19 @@ export default function SuperAdmin() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
+            <AlertDialogCancel disabled={deleteUserMutation.isPending}>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={deleteUserMutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
                 if (deleteUserId) {
                   deleteUserMutation.mutate(deleteUserId);
-                  setDeleteUserId(null);
                 }
               }}
             >
-              Delete
-            </AlertDialogAction>
+              {deleteUserMutation.isPending ? 'Deleting...' : 'Delete'}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -760,18 +784,44 @@ export default function SuperAdmin() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
+            <AlertDialogCancel disabled={deleteBoardMutation.isPending}>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={deleteBoardMutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
                 if (deleteBoardId) {
                   deleteBoardMutation.mutate(deleteBoardId);
-                  setDeleteBoardId(null);
                 }
               }}
             >
-              Delete
-            </AlertDialogAction>
+              {deleteBoardMutation.isPending ? 'Deleting...' : 'Delete'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!demotePackId} onOpenChange={() => setDemotePackId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Starter Pack</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove this board from Starter Packs. Users will no longer be able to access it in Shuffle Play. You can promote it again later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={toggleGlobalBoardMutation.isPending}>Cancel</AlertDialogCancel>
+            <Button
+              disabled={toggleGlobalBoardMutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (demotePackId) {
+                  toggleGlobalBoardMutation.mutate({ boardId: demotePackId, isGlobal: false });
+                }
+              }}
+            >
+              {toggleGlobalBoardMutation.isPending ? 'Removing...' : 'Remove'}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -783,11 +833,14 @@ export default function SuperAdmin() {
           </DialogHeader>
           <div className="space-y-2 mt-4">
             {allBoards.filter((b: any) => !b.isGlobal).map((board: any) => (
-              <div key={board.id} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50">
-                <div>
-                  <div className="font-medium">{board.name}</div>
+              <div key={board.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border hover:bg-muted/50">
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium truncate">{board.name}</div>
                   <div className="text-xs text-muted-foreground">
                     {board.categoryCount} categories, {board.questionCount} questions
+                  </div>
+                  <div className="text-xs text-muted-foreground/70 truncate">
+                    by {board.ownerName || board.ownerEmail}
                   </div>
                 </div>
                 <Button
