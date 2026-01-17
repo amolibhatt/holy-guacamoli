@@ -295,7 +295,8 @@ export default function PlayBoard() {
                     boardCategory={boardCategory}
                     onSelectQuestion={handleSelectQuestion}
                     pointValues={pointValues}
-                                      />
+                    isShuffleBoard={isShuffleBoard}
+                  />
                 </motion.div>
               ))}
             </div>
