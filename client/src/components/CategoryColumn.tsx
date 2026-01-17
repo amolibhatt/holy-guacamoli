@@ -71,7 +71,7 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
             : isCompleted 
               ? 'completed-cell text-primary/50 cursor-not-allowed border border-primary/20' 
               : isShuffleBoard
-                ? 'bg-card text-foreground cursor-pointer border-2 border-primary/40 shadow-md shadow-primary/10 hover:shadow-lg hover:shadow-primary/20 hover:border-primary'
+                ? 'bg-card text-primary cursor-pointer border-2 border-primary/40 shadow-md shadow-primary/10 hover:shadow-lg hover:shadow-primary/20 hover:border-primary'
                 : 'bg-card text-primary cursor-pointer border-2 border-primary/50 shadow-lg shadow-primary/20 hover:shadow-xl hover:border-primary/70'
           }
         `}
