@@ -169,32 +169,15 @@ export function AnimatedLogo({
       transition={{ duration: 0.5 }}
     >
       <motion.div 
-        className={`${config.container} relative rounded-2xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 flex items-center justify-center shadow-xl overflow-visible`}
+        className={`${config.container} relative flex items-center justify-center`}
         animate={{ 
           rotate: [0, -3, 3, -3, 0],
-          scale: [1, 1.02, 1]
+          y: [0, -4, 0]
         }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         whileHover={{ scale: 1.08 }}
       >
-        <motion.div 
-          className="absolute inset-0 rounded-2xl blur-xl opacity-50"
-          style={{ background: "linear-gradient(135deg, #8B5CF6, #D946EF, #F59E0B)" }}
-          animate={{ opacity: [0.4, 0.6, 0.4] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        />
-        <AvocadoIcon className={`${config.icon} drop-shadow-lg relative z-10`} animate showParticles={false} />
-        
-        <motion.div 
-          className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-400"
-          animate={{ scale: [1, 1.3, 1], opacity: [0.8, 1, 0.8] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        />
-        <motion.div 
-          className="absolute -bottom-1 -left-1 w-2 h-2 rounded-full bg-fuchsia-400"
-          animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
-          transition={{ duration: 1.8, repeat: Infinity, delay: 0.3 }}
-        />
+        <AvocadoIcon className={`${config.icon} drop-shadow-lg`} />
       </motion.div>
 
       {showText && (
