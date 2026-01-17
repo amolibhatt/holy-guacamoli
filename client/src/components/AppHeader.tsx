@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { ArrowLeft, Settings, Shield, LogOut, HelpCircle } from "lucide-react";
+import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 
 interface AppHeaderProps {
@@ -53,9 +54,13 @@ export function AppHeader({
               </Button>
             </Link>
           )}
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 flex items-center justify-center shadow-lg">
-            <AvocadoIcon className="w-6 h-6" />
-          </div>
+          <motion.div 
+            className="w-10 h-10 flex items-center justify-center"
+            animate={{ rotate: [0, -3, 3, -3, 0], y: [0, -2, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <AvocadoIcon className="w-8 h-8 drop-shadow-md" />
+          </motion.div>
           <div className="flex flex-col">
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)' }}>
               <span className="text-foreground">Holy </span>
