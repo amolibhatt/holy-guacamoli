@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Grid3X3, ArrowRight, Users, Shuffle, FolderPlus } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation } from "wouter";
 import type { Board } from "@shared/schema";
 import { motion } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
 
 interface PresetBoard extends Board {
   categoryCount: number;
@@ -22,6 +24,8 @@ interface CustomBoard extends Board {
 
 export default function HostGridOfGrudges() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [isShuffling, setIsShuffling] = useState(false);
 
   const { data: presetBoards = [], isLoading: isLoadingPresets } = useQuery<PresetBoard[]>({
     queryKey: ['/api/buzzkill/preset-boards'],
@@ -33,8 +37,44 @@ export default function HostGridOfGrudges() {
 
   const isLoading = isLoadingPresets || isLoadingBoards;
 
-  const handleDailySmash = () => {
-    setLocation('/buzzkill/daily-smash');
+  const handleDailySmash = async () => {
+    setIsShuffling(true);
+    try {
+      const res = await fetch("/api/buzzkill/shuffle-board", {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: "Failed to generate" }));
+        toast({
+          title: "Cannot Generate Board",
+          description: errorData.message || "Failed to generate shuffle board",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const result = await res.json();
+      
+      if (result.wasReset) {
+        toast({
+          title: "Categories Reset!",
+          description: result.message,
+        });
+      }
+      
+      // Navigate directly to the board
+      setLocation(`/board/${result.boardId}`);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to generate board. Check your connection.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsShuffling(false);
+    }
   };
 
   return (
@@ -57,11 +97,12 @@ export default function HostGridOfGrudges() {
             <div className="space-y-8">
               <motion.button
                 onClick={handleDailySmash}
+                disabled={isShuffling}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                whileHover={{ scale: 1.01, y: -2 }}
-                whileTap={{ scale: 0.99 }}
-                className="w-full relative flex flex-col p-8 bg-gradient-to-br from-primary/20 via-secondary/15 to-accent/20 border-2 border-primary/40 rounded-2xl text-left transition-all hover:border-primary hover:shadow-2xl hover:shadow-primary/20 group overflow-hidden"
+                whileHover={{ scale: isShuffling ? 1 : 1.01, y: isShuffling ? 0 : -2 }}
+                whileTap={{ scale: isShuffling ? 1 : 0.99 }}
+                className={`w-full relative flex flex-col p-8 bg-gradient-to-br from-primary/20 via-secondary/15 to-accent/20 border-2 border-primary/40 rounded-2xl text-left transition-all hover:border-primary hover:shadow-2xl hover:shadow-primary/20 group overflow-hidden ${isShuffling ? 'opacity-80 cursor-wait' : ''}`}
                 data-testid="button-daily-smash"
               >
                 <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-primary/20 to-transparent rounded-bl-full" />
@@ -69,17 +110,20 @@ export default function HostGridOfGrudges() {
                 
                 <div className="flex items-start justify-between gap-3 mb-4 relative z-10">
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/30">
-                    <Shuffle className="w-8 h-8 text-white" />
+                    {isShuffling ? (
+                      <Loader2 className="w-8 h-8 text-white animate-spin" />
+                    ) : (
+                      <Shuffle className="w-8 h-8 text-white" />
+                    )}
                   </div>
                   <ArrowRight className="w-6 h-6 text-primary group-hover:translate-x-2 transition-transform" />
                 </div>
                 
                 <h3 className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors mb-2 relative z-10">
-                  Shuffle Play
+                  {isShuffling ? "Shuffling..." : "Shuffle Play"}
                 </h3>
                 <p className="text-muted-foreground relative z-10 max-w-lg">
-                  A balanced mix of 5 categories - one from each group. 
-                  Fresh picks every game, never repeating until all are played!
+                  {isShuffling ? "Generating your unique board..." : "A balanced mix of 5 categories - one from each group. Fresh picks every game, never repeating until all are played!"}
                 </p>
                 
                 <div className="mt-6 flex items-center gap-4 text-sm relative z-10">

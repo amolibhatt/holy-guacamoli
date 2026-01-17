@@ -98,6 +98,12 @@ export interface IStorage {
   getQuestionCountForCategory(categoryId: number): Promise<number>;
   getContentStats(): Promise<{ totalBoards: number; totalCategories: number; activeCategories: number; readyToPlay: number; totalQuestions: number }>;
   
+  // Shuffle Board helpers
+  getBoardByName(name: string): Promise<Board | undefined>;
+  clearBoardCategories(boardId: number): Promise<void>;
+  getBoardCategoriesByCategoryId(categoryId: number): Promise<BoardCategory[]>;
+  getSessionByRoomCode(roomCode: string): Promise<GameSession | undefined>;
+  
   // Game Types
   getGameTypes(): Promise<GameType[]>;
   getEnabledGameTypes(forHost: boolean): Promise<GameType[]>;
@@ -915,6 +921,28 @@ export class DatabaseStorage implements IStorage {
       readyToPlay: readyCount,
       totalQuestions: questionCount?.count ?? 0,
     };
+  }
+
+  async getBoardByName(name: string): Promise<Board | undefined> {
+    const [board] = await db.select().from(boards).where(eq(boards.name, name));
+    return board;
+  }
+
+  async clearBoardCategories(boardId: number): Promise<void> {
+    const bcs = await db.select().from(boardCategories).where(eq(boardCategories.boardId, boardId));
+    for (const bc of bcs) {
+      await db.delete(questions).where(eq(questions.boardCategoryId, bc.id));
+    }
+    await db.delete(boardCategories).where(eq(boardCategories.boardId, boardId));
+  }
+
+  async getBoardCategoriesByCategoryId(categoryId: number): Promise<BoardCategory[]> {
+    return await db.select().from(boardCategories).where(eq(boardCategories.categoryId, categoryId));
+  }
+
+  async getSessionByRoomCode(roomCode: string): Promise<GameSession | undefined> {
+    const [session] = await db.select().from(gameSessions).where(eq(gameSessions.code, roomCode));
+    return session;
   }
 
   // === SUPER ADMIN METHODS ===
