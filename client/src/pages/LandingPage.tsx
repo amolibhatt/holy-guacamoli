@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AvocadoIcon } from "@/components/AvocadoIcon";
+import { AnimatedLogo } from "@/components/AvocadoIcon";
 import { motion } from "framer-motion";
 import { Sparkles, Trophy, Loader2, Zap, Smartphone, Volume2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -52,24 +52,9 @@ export default function LandingPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <motion.div 
-            className="w-20 h-20 mx-auto lg:mx-0 mb-4 rounded-2xl bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center border border-white/20 shadow-xl"
-            animate={{ 
-              rotate: [0, -5, 5, -5, 0],
-              scale: [1, 1.05, 1]
-            }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            data-testid="icon-logo"
-          >
-            <AvocadoIcon className="w-12 h-12 drop-shadow-lg" />
-          </motion.div>
-          
-          <h1 className="text-3xl lg:text-4xl font-black text-foreground mb-1 text-glow" data-testid="text-title">
-            Holy GuacAmoli!
-          </h1>
-          <p className="text-primary text-sm uppercase tracking-widest mb-4 font-semibold" data-testid="text-tagline">
-            Dip into the facts!
-          </p>
+          <div className="flex justify-center lg:justify-start mb-6" data-testid="icon-logo">
+            <AnimatedLogo size="xl" showText />
+          </div>
           
           <p className="text-muted-foreground mb-6" data-testid="text-description">
             The ultimate party game platform. Host trivia nights, quiz games, and competitions with friends buzzing in from their phones!
