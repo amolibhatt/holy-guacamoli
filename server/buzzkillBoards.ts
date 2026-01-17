@@ -131,91 +131,114 @@ export async function generateDynamicBoard(
   let playedCategoryIds = (session.playedCategoryIds as number[]) || [];
   const shuffleArray = <T>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
   
-  // Group ALL live categories by source group (before filtering by played)
-  const allBySourceGroup: Map<string, Category[]> = new Map();
-  const allUngrouped: Category[] = [];
+  // Separate PERSONAL categories (no sourceGroup) from GLOBAL categories (with sourceGroup A-E)
+  const personalPool: Category[] = [];
+  const globalPool: Category[] = [];
+  const globalByGroup: Map<string, Category[]> = new Map();
   
   for (const cat of liveCategories) {
-    const group = cat.sourceGroup;
-    if (group && SOURCE_GROUPS.includes(group as any)) {
-      if (!allBySourceGroup.has(group)) {
-        allBySourceGroup.set(group, []);
+    if (cat.sourceGroup && SOURCE_GROUPS.includes(cat.sourceGroup as any)) {
+      globalPool.push(cat);
+      if (!globalByGroup.has(cat.sourceGroup)) {
+        globalByGroup.set(cat.sourceGroup, []);
       }
-      allBySourceGroup.get(group)!.push(cat);
+      globalByGroup.get(cat.sourceGroup)!.push(cat);
     } else {
-      allUngrouped.push(cat);
+      personalPool.push(cat);
     }
   }
   
-  // Select one category from each source group, resetting played per-group if exhausted
-  const selectedCategories: Category[] = [];
-  const resetGroups: string[] = [];
+  // EXHAUSTION CHECK: Reset history if (total pool - played) < 5
+  const totalPool = liveCategories.length;
+  const availableCount = liveCategories.filter(c => !playedCategoryIds.includes(c.id)).length;
   let wasReset = false;
   
-  for (const group of SOURCE_GROUPS) {
-    const allGroupCats = allBySourceGroup.get(group) || [];
-    if (allGroupCats.length === 0) continue;
-    
-    // Filter to unplayed categories in this group
-    let availableInGroup = allGroupCats.filter(cat => !playedCategoryIds.includes(cat.id));
-    
-    // If group is exhausted, reset just this group's tracking
-    if (availableInGroup.length === 0) {
-      // Remove this group's categories from played list
-      const groupCatIds = new Set(allGroupCats.map(c => c.id));
-      playedCategoryIds = playedCategoryIds.filter(id => !groupCatIds.has(id));
-      availableInGroup = allGroupCats;
-      resetGroups.push(group);
-    }
-    
-    // Pick one random category from this group
-    const shuffled = shuffleArray(availableInGroup);
-    selectedCategories.push(shuffled[0]);
-    
+  if (availableCount < 5) {
+    playedCategoryIds = [];
+    wasReset = true;
+  }
+  
+  const selectedCategories: Category[] = [];
+  const selectedIds = new Set<number>();
+  
+  // STEP A: PERSONAL CONTENT FIRST
+  // Select up to 5 unplayed categories from the user's personal pool
+  const availablePersonal = shuffleArray(
+    personalPool.filter(c => !playedCategoryIds.includes(c.id))
+  );
+  
+  for (const cat of availablePersonal) {
     if (selectedCategories.length >= 5) break;
+    selectedCategories.push(cat);
+    selectedIds.add(cat.id);
   }
   
-  // If we don't have 5 yet (not enough source groups with categories), fill from ungrouped
-  if (selectedCategories.length < 5) {
-    const availableUngrouped = allUngrouped.filter(
-      cat => !playedCategoryIds.includes(cat.id) && !selectedCategories.some(s => s.id === cat.id)
-    );
-    
-    // Reset ungrouped if exhausted
-    let ungroupedToUse = availableUngrouped;
-    if (ungroupedToUse.length === 0 && allUngrouped.length > 0) {
-      const ungroupedIds = new Set(allUngrouped.map(c => c.id));
-      playedCategoryIds = playedCategoryIds.filter(id => !ungroupedIds.has(id));
-      ungroupedToUse = allUngrouped.filter(cat => !selectedCategories.some(s => s.id === cat.id));
-      wasReset = true;
-    }
-    
-    const shuffledUngrouped = shuffleArray(ungroupedToUse);
-    for (const cat of shuffledUngrouped) {
-      if (selectedCategories.length >= 5) break;
-      selectedCategories.push(cat);
-    }
-  }
+  // STEP B: GAP DETECTION
+  const remainingSlots = 5 - selectedCategories.length;
   
-  // If still not enough, pick more from groups that have extras
-  if (selectedCategories.length < 5) {
-    for (const group of SOURCE_GROUPS) {
-      const allGroupCats = allBySourceGroup.get(group) || [];
-      const availableInGroup = allGroupCats.filter(
-        cat => !playedCategoryIds.includes(cat.id) && !selectedCategories.some(s => s.id === cat.id)
+  // STEP C: DIVERSE GLOBAL FILLING
+  // If slots remain, pull from Global pool with diversity rule
+  if (remainingSlots > 0) {
+    const availableGlobalByGroup: Map<string, Category[]> = new Map();
+    
+    // Filter global categories to unplayed and not already selected
+    const groupEntries = Array.from(globalByGroup.entries());
+    for (const entry of groupEntries) {
+      const [group, cats] = entry;
+      const available = cats.filter(
+        (c: Category) => !playedCategoryIds.includes(c.id) && !selectedIds.has(c.id)
       );
-      
-      for (const cat of shuffleArray(availableInGroup)) {
-        if (selectedCategories.length >= 5) break;
-        selectedCategories.push(cat);
+      if (available.length > 0) {
+        availableGlobalByGroup.set(group, shuffleArray(available));
       }
-      if (selectedCategories.length >= 5) break;
+    }
+    
+    // DIVERSITY RULE: Pick one from each theme group before repeating
+    const groupsWithContent = Array.from(availableGlobalByGroup.keys());
+    let pickedFromGroup = new Set<string>();
+    
+    // Round-robin through groups until we have 5 or exhaust all
+    while (selectedCategories.length < 5) {
+      let addedThisRound = false;
+      
+      for (const group of shuffleArray(groupsWithContent)) {
+        if (selectedCategories.length >= 5) break;
+        
+        // Check if we should pick from this group (diversity rule)
+        // Only skip if we've picked from this group and haven't cycled through all groups yet
+        const allGroupsPicked = pickedFromGroup.size >= groupsWithContent.length;
+        if (pickedFromGroup.has(group) && !allGroupsPicked) {
+          continue;
+        }
+        
+        const groupCats = availableGlobalByGroup.get(group);
+        if (groupCats && groupCats.length > 0) {
+          const cat = groupCats.shift()!;
+          selectedCategories.push(cat);
+          selectedIds.add(cat.id);
+          pickedFromGroup.add(group);
+          addedThisRound = true;
+          
+          // Remove empty groups
+          if (groupCats.length === 0) {
+            availableGlobalByGroup.delete(group);
+          }
+        }
+      }
+      
+      // Reset cycle if we've gone through all groups
+      if (pickedFromGroup.size >= groupsWithContent.length) {
+        pickedFromGroup = new Set<string>();
+      }
+      
+      // Break if no categories were added (all exhausted)
+      if (!addedThisRound) break;
     }
   }
   
-  wasReset = wasReset || resetGroups.length > 0;
+  // STEP D: OVERFLOW - handled by only selecting up to 5 in each step
   
-  // Track played categories
+  // Track all selected categories in PlayedHistory
   for (const cat of selectedCategories) {
     if (!playedCategoryIds.includes(cat.id)) {
       playedCategoryIds.push(cat.id);
@@ -227,11 +250,8 @@ export async function generateDynamicBoard(
   return {
     categories: selectedCategories,
     wasReset,
-    resetGroups: resetGroups.length > 0 ? resetGroups : undefined,
     message: wasReset 
-      ? resetGroups.length > 0 
-        ? `Groups ${resetGroups.join(', ')} reset - all categories played!` 
-        : "Categories reset - starting fresh!"
+      ? "All categories played! Starting fresh."
       : undefined,
   };
 }
