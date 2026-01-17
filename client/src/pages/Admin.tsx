@@ -1076,13 +1076,6 @@ export default function Admin() {
                             </Button>
                           </div>
                           <Input
-                            placeholder="Short description (shown as tooltip)"
-                            value={newCategoryDescription}
-                            onChange={(e) => setNewCategoryDescription(e.target.value)}
-                            className="h-8 text-sm"
-                            data-testid="input-category-description"
-                          />
-                          <Input
                             placeholder="Rule (e.g., 'Reverse spelling for 2nd word')"
                             value={newCategoryRule}
                             onChange={(e) => setNewCategoryRule(e.target.value)}
