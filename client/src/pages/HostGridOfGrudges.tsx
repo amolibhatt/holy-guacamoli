@@ -206,9 +206,9 @@ export default function HostGridOfGrudges() {
                   My Boards
                 </h2>
                 
-                {customBoards.length > 0 ? (
+                {customBoards.filter(b => b.name !== "Shuffle Play").length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                    {customBoards.map((board, index) => {
+                    {customBoards.filter(b => b.name !== "Shuffle Play").map((board, index) => {
                       const gradients = [
                         { bg: 'from-violet-500/20 via-purple-500/15 to-fuchsia-500/20', border: 'border-violet-500/30 hover:border-violet-400/60', accent: 'from-violet-500/15', text: 'group-hover:text-violet-600' },
                         { bg: 'from-fuchsia-500/20 via-pink-500/15 to-rose-500/20', border: 'border-fuchsia-500/30 hover:border-fuchsia-400/60', accent: 'from-fuchsia-500/15', text: 'group-hover:text-fuchsia-600' },
