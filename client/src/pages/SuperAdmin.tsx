@@ -69,7 +69,9 @@ export default function SuperAdmin() {
   const { toast } = useToast();
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [deleteBoardId, setDeleteBoardId] = useState<number | null>(null);
-  const [gamesSubtab, setGamesSubtab] = useState<'types' | 'boards' | 'master-bank'>('types');
+  
+  // Game management state - which game is selected for management
+  const [selectedGameSlug, setSelectedGameSlug] = useState<string | null>(null);
   
   // Starter Pack editing state
   const [editingPackId, setEditingPackId] = useState<number | null>(null);
@@ -298,75 +300,44 @@ export default function SuperAdmin() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <div className="flex gap-2 mb-6 flex-wrap">
-                <Button 
-                  variant={gamesSubtab === 'types' ? 'default' : 'outline'} 
+              {/* Game selector header */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-foreground">Games</h2>
+                <Button
+                  variant="outline"
                   size="sm"
-                  onClick={() => setGamesSubtab('types')}
-                  className="gap-2"
-                  data-testid="button-subtab-types"
+                  onClick={() => seedDatabaseMutation.mutate()}
+                  disabled={seedDatabaseMutation.isPending}
+                  data-testid="button-sync-games"
                 >
-                  <Gamepad2 className="w-4 h-4" />
-                  Game Types
-                </Button>
-                <Button 
-                  variant={gamesSubtab === 'boards' ? 'default' : 'outline'} 
-                  size="sm"
-                  onClick={() => setGamesSubtab('boards')}
-                  className="gap-2"
-                  data-testid="button-subtab-boards"
-                >
-                  <Grid3X3 className="w-4 h-4" />
-                  Boards
-                </Button>
-                <Button 
-                  variant={gamesSubtab === 'master-bank' ? 'default' : 'outline'} 
-                  size="sm"
-                  onClick={() => setGamesSubtab('master-bank')}
-                  className="gap-2"
-                  data-testid="button-subtab-master-bank"
-                >
-                  <Library className="w-4 h-4" />
-                  Master Bank
+                  <RefreshCw className={`w-4 h-4 mr-2 ${seedDatabaseMutation.isPending ? 'animate-spin' : ''}`} />
+                  Sync Games
                 </Button>
               </div>
 
-              {gamesSubtab === 'types' && (
-                <>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-foreground">Game Manager</h2>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => seedDatabaseMutation.mutate()}
-                        disabled={seedDatabaseMutation.isPending}
-                        data-testid="button-sync-games"
-                      >
-                        <RefreshCw className={`w-4 h-4 mr-2 ${seedDatabaseMutation.isPending ? 'animate-spin' : ''}`} />
-                        Sync Games
-                      </Button>
-                      <Badge variant="secondary">{gameTypes.length} games</Badge>
-                    </div>
-                  </div>
-
-                  <p className="text-muted-foreground mb-6">
-                    Control game status on homepage and visibility to hosts/players. "Coming Soon" games appear grayed out on the homepage. Click "Sync Games" to add any missing game types.
-                  </p>
-
-                  {isLoadingGameTypes ? (
-                    <div className="space-y-3">
-                      {[1, 2].map((i) => (
-                        <Skeleton key={i} className="h-32 w-full" />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {gameTypes.map((gameType) => (
-                        <Card key={gameType.id} className="hover-elevate">
-                          <CardContent className="p-6">
-                            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                              <div className="flex items-start gap-4">
+              {isLoadingGameTypes ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-32 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {gameTypes.map((gameType) => {
+                    const isSelected = selectedGameSlug === gameType.slug;
+                    const starterPacks = allBoards.filter((b: any) => b.isGlobal);
+                    const completePacks = starterPacks.filter((b: any) => b.categoryCount >= 5 && b.questionCount >= 25);
+                    
+                    return (
+                      <Card key={gameType.id} className={`transition-all ${isSelected ? 'border-primary' : ''}`}>
+                        <CardContent className="p-0">
+                          {/* Game header - always visible */}
+                          <div 
+                            className="p-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                            onClick={() => setSelectedGameSlug(isSelected ? null : gameType.slug)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
                                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                                   gameType.slug === 'buzzkill' 
                                     ? 'bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-500' 
@@ -384,25 +355,39 @@ export default function SuperAdmin() {
                                 </div>
                                 <div>
                                   <div className="flex items-center gap-2">
-                                    <h3 className="font-semibold text-lg text-foreground">
-                                      {gameType.displayName}
-                                    </h3>
+                                    <h3 className="font-semibold text-lg text-foreground">{gameType.displayName}</h3>
                                     {(gameType as any).status === 'coming_soon' && (
                                       <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
                                     )}
                                     {(gameType as any).status === 'hidden' && (
                                       <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>
                                     )}
+                                    {(gameType as any).status === 'active' && (
+                                      <Badge className="bg-green-500/20 text-green-600 border-green-500/30 text-xs">Active</Badge>
+                                    )}
                                   </div>
-                                  <p className="text-sm text-muted-foreground mt-1">
-                                    {gameType.description || 'No description'}
-                                  </p>
+                                  <p className="text-sm text-muted-foreground">{gameType.description || 'No description'}</p>
                                 </div>
                               </div>
-                              
-                              <div className="flex flex-col gap-4 min-w-[200px]">
-                                <div className="flex items-center justify-between gap-4">
-                                  <span className="text-sm text-muted-foreground">Homepage Status</span>
+                              <div className="flex items-center gap-4">
+                                {gameType.slug === 'buzzkill' && (
+                                  <div className="text-right text-sm">
+                                    <div className="font-medium">{completePacks.length}/{starterPacks.length} Starter Packs Live</div>
+                                    <div className="text-muted-foreground">{starterPacks.reduce((acc: number, b: any) => acc + b.questionCount, 0)} total questions</div>
+                                  </div>
+                                )}
+                                <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform ${isSelected ? 'rotate-90' : ''}`} />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Expanded game management */}
+                          {isSelected && (
+                            <div className="border-t border-border p-4 bg-muted/20">
+                              {/* Game settings row */}
+                              <div className="flex flex-wrap gap-6 mb-6 pb-4 border-b border-border">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm text-muted-foreground">Status:</span>
                                   <Select
                                     value={(gameType as any).status || 'active'}
                                     onValueChange={(value: GameStatus) => {
@@ -422,8 +407,8 @@ export default function SuperAdmin() {
                                     </SelectContent>
                                   </Select>
                                 </div>
-                                <div className="flex items-center justify-between gap-4">
-                                  <span className="text-sm text-muted-foreground">Show to Hosts</span>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm text-muted-foreground">Show to Hosts:</span>
                                   <Switch
                                     checked={gameType.hostEnabled}
                                     onCheckedChange={(checked) => {
@@ -435,8 +420,8 @@ export default function SuperAdmin() {
                                     data-testid={`switch-host-${gameType.slug}`}
                                   />
                                 </div>
-                                <div className="flex items-center justify-between gap-4">
-                                  <span className="text-sm text-muted-foreground">Show to Players</span>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm text-muted-foreground">Show to Players:</span>
                                   <Switch
                                     checked={gameType.playerEnabled}
                                     onCheckedChange={(checked) => {
@@ -449,352 +434,205 @@ export default function SuperAdmin() {
                                   />
                                 </div>
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                      {gameTypes.length === 0 && (
-                        <Card>
-                          <CardContent className="p-8 text-center text-muted-foreground">
-                            No games configured yet.
-                          </CardContent>
-                        </Card>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {gamesSubtab === 'master-bank' && (
-                <>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-foreground">Starter Packs</h2>
-                  </div>
-
-                  <p className="text-muted-foreground mb-6">
-                    Starter Packs are global boards available to all users in Shuffle Play. Each pack needs 5 categories with 5 questions each to be "Live".
-                  </p>
-
-                  {isLoadingBoards ? (
-                    <div className="space-y-3">
-                      {[1, 2, 3].map((i) => (
-                        <Skeleton key={i} className="h-24 w-full" />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {/* Summary Cards */}
-                      <div className="grid grid-cols-3 gap-4 mb-6">
-                        <Card>
-                          <CardContent className="p-4 text-center">
-                            <div className="text-3xl font-bold text-primary">{allBoards.filter((b: any) => b.isGlobal).length}</div>
-                            <div className="text-sm text-muted-foreground">Total Packs</div>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="p-4 text-center">
-                            <div className="text-3xl font-bold text-green-500">
-                              {allBoards.filter((b: any) => b.isGlobal && b.categoryCount >= 5 && b.questionCount >= 25).length}
-                            </div>
-                            <div className="text-sm text-muted-foreground">Complete (Live)</div>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="p-4 text-center">
-                            <div className="text-3xl font-bold text-amber-500">
-                              {allBoards.filter((b: any) => b.isGlobal && (b.categoryCount < 5 || b.questionCount < 25)).length}
-                            </div>
-                            <div className="text-sm text-muted-foreground">Incomplete</div>
-                          </CardContent>
-                        </Card>
-                      </div>
-
-                      {/* Starter Packs List */}
-                      <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                          <Globe className="w-5 h-5 text-primary" />
-                          Your Starter Packs
-                        </h3>
-                        {allBoards.filter((b: any) => b.isGlobal).length === 0 ? (
-                          <Card>
-                            <CardContent className="p-6 text-center text-muted-foreground">
-                              No Starter Packs yet. Create boards and mark them as global below.
-                            </CardContent>
-                          </Card>
-                        ) : (
-                          <div className="space-y-3">
-                            {allBoards.filter((b: any) => b.isGlobal).map((board: any) => {
-                              const isComplete = board.categoryCount >= 5 && board.questionCount >= 25;
-                              const categoryProgress = Math.min(board.categoryCount, 5);
-                              const questionProgress = Math.min(board.questionCount, 25);
-                              const isEditing = editingPackId === board.id;
                               
-                              return (
-                                <Card key={board.id} className={`border-2 ${isComplete ? 'border-green-500/30' : 'border-amber-500/30'}`}>
-                                  <CardContent className="p-4">
-                                    <div className="flex items-start justify-between gap-4">
-                                      <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-2">
-                                          <span className="font-semibold text-lg text-foreground">{board.name}</span>
-                                          {isComplete ? (
-                                            <Badge className="bg-green-500/20 text-green-600 border-green-500/30">Live</Badge>
-                                          ) : (
-                                            <Badge variant="outline" className="text-amber-600 border-amber-500/50">Incomplete</Badge>
-                                          )}
-                                        </div>
-                                        <div className="text-sm text-muted-foreground mb-3">{board.description || 'No description'}</div>
-                                        
-                                        {/* Progress bars */}
-                                        <div className="grid grid-cols-2 gap-4">
-                                          <div>
-                                            <div className="flex justify-between text-xs mb-1">
-                                              <span className="text-muted-foreground">Categories</span>
-                                              <span className={categoryProgress >= 5 ? 'text-green-500' : 'text-amber-500'}>{categoryProgress}/5</span>
-                                            </div>
-                                            <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                              <div 
-                                                className={`h-full rounded-full ${categoryProgress >= 5 ? 'bg-green-500' : 'bg-amber-500'}`}
-                                                style={{ width: `${(categoryProgress / 5) * 100}%` }}
-                                              />
-                                            </div>
-                                          </div>
-                                          <div>
-                                            <div className="flex justify-between text-xs mb-1">
-                                              <span className="text-muted-foreground">Questions</span>
-                                              <span className={questionProgress >= 25 ? 'text-green-500' : 'text-amber-500'}>{questionProgress}/25</span>
-                                            </div>
-                                            <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                              <div 
-                                                className={`h-full rounded-full ${questionProgress >= 25 ? 'bg-green-500' : 'bg-amber-500'}`}
-                                                style={{ width: `${(questionProgress / 25) * 100}%` }}
-                                              />
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                      <div className="flex flex-col gap-2">
-                                        <Button 
-                                          variant={isEditing ? "secondary" : "default"} 
-                                          size="sm" 
-                                          onClick={() => {
-                                            if (isEditing) {
-                                              setEditingPackId(null);
-                                              setSelectedCategoryId(null);
-                                            } else {
-                                              setEditingPackId(board.id);
-                                              setSelectedCategoryId(null);
-                                            }
-                                          }}
-                                          data-testid={`button-edit-pack-${board.id}`}
-                                        >
-                                          {isEditing ? 'Close' : 'View Content'}
-                                          <ChevronRight className={`w-4 h-4 ml-1 transition-transform ${isEditing ? 'rotate-90' : ''}`} />
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: false })}
-                                          data-testid={`button-remove-global-${board.id}`}
-                                        >
-                                          Make Private
-                                        </Button>
-                                      </div>
+                              {/* Game-specific content */}
+                              {gameType.slug === 'buzzkill' && (
+                                <div>
+                                  <div className="flex items-center justify-between mb-4">
+                                    <h4 className="font-semibold text-foreground flex items-center gap-2">
+                                      <Globe className="w-4 h-4 text-primary" />
+                                      Starter Packs
+                                    </h4>
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="secondary">{starterPacks.length} packs</Badge>
+                                      <Badge className="bg-green-500/20 text-green-600">{completePacks.length} live</Badge>
                                     </div>
-                                    
-                                    {/* Expanded editing view */}
-                                    {isEditing && (
-                                      <div className="mt-4 pt-4 border-t border-border">
-                                        <div className="flex items-center justify-between mb-3">
-                                          <h4 className="font-medium text-foreground">Categories in this pack</h4>
-                                        </div>
+                                  </div>
+                                  
+                                  <p className="text-sm text-muted-foreground mb-4">
+                                    Each Starter Pack needs 5 categories with 5 questions each (25 total) to be "Live" and available in Shuffle Play.
+                                  </p>
+                                  
+                                  {starterPacks.length === 0 ? (
+                                    <div className="text-center py-6 text-muted-foreground bg-muted/30 rounded-lg">
+                                      No Starter Packs yet. Use the Admin panel to create boards, then promote them here.
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-3">
+                                      {starterPacks.map((board: any) => {
+                                        const isComplete = board.categoryCount >= 5 && board.questionCount >= 25;
+                                        const categoryProgress = Math.min(board.categoryCount, 5);
+                                        const questionProgress = Math.min(board.questionCount, 25);
+                                        const isEditingThisPack = editingPackId === board.id;
                                         
-                                        {loadingPackCategories ? (
-                                          <div className="space-y-2">
-                                            <Skeleton className="h-10 w-full" />
-                                            <Skeleton className="h-10 w-full" />
-                                          </div>
-                                        ) : packCategories.length === 0 ? (
-                                          <p className="text-sm text-muted-foreground py-4 text-center">
-                                            No categories yet. Use the Admin panel to add content, then make the board a Starter Pack.
-                                          </p>
-                                        ) : (
-                                          <div className="space-y-2">
-                                            {packCategories.map((bc) => {
-                                              const questionCount = bc.questionCount || 0;
-                                              const isSelected = selectedCategoryId === bc.id;
-                                              const hasAllQuestions = questionCount >= 5;
-                                              
-                                              return (
-                                                <div key={bc.id}>
-                                                  <div 
-                                                    className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-                                                      isSelected ? 'bg-primary/10 border border-primary/30' : 'bg-muted/50 hover:bg-muted'
-                                                    }`}
-                                                    onClick={() => setSelectedCategoryId(isSelected ? null : bc.id)}
-                                                  >
-                                                    <div className="flex items-center gap-2">
-                                                      <ChevronRight className={`w-4 h-4 transition-transform ${isSelected ? 'rotate-90' : ''}`} />
-                                                      <span className="font-medium">{bc.category.name}</span>
-                                                    </div>
-                                                    <Badge variant={hasAllQuestions ? "default" : "outline"} className={hasAllQuestions ? 'bg-green-500/20 text-green-600' : ''}>
-                                                      {questionCount}/5 questions
-                                                    </Badge>
-                                                  </div>
-                                                  
-                                                  {/* Show questions when category is selected */}
-                                                  {isSelected && (
-                                                    <div className="ml-6 mt-2 space-y-1">
-                                                      {loadingQuestions ? (
-                                                        <Skeleton className="h-8 w-full" />
-                                                      ) : categoryQuestions.length === 0 ? (
-                                                        <p className="text-sm text-muted-foreground py-2">No questions yet</p>
-                                                      ) : (
-                                                        categoryQuestions.map((q) => (
-                                                          <div key={q.id} className="flex items-center justify-between p-2 bg-background rounded text-sm">
-                                                            <div className="flex items-center gap-2">
-                                                              <Badge variant="outline" className="text-xs">{q.points} pts</Badge>
-                                                              <span className="truncate max-w-[300px]">{q.question}</span>
-                                                            </div>
-                                                            <span className="text-muted-foreground text-xs truncate max-w-[150px]">
-                                                              {q.correctAnswer}
-                                                            </span>
-                                                          </div>
-                                                        ))
-                                                      )}
-                                                    </div>
+                                        return (
+                                          <div key={board.id} className={`p-4 rounded-lg border ${isComplete ? 'border-green-500/30 bg-green-500/5' : 'border-amber-500/30 bg-amber-500/5'}`}>
+                                            <div className="flex items-start justify-between gap-4">
+                                              <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                  <span className="font-medium">{board.name}</span>
+                                                  {isComplete ? (
+                                                    <Badge className="bg-green-500/20 text-green-600 text-xs">Live</Badge>
+                                                  ) : (
+                                                    <Badge variant="outline" className="text-amber-600 text-xs">Incomplete</Badge>
                                                   )}
                                                 </div>
-                                              );
-                                            })}
+                                                <div className="text-sm text-muted-foreground mb-2">{board.description || 'No description'}</div>
+                                                <div className="flex gap-4 text-xs">
+                                                  <span className={categoryProgress >= 5 ? 'text-green-500' : 'text-amber-500'}>
+                                                    {categoryProgress}/5 categories
+                                                  </span>
+                                                  <span className={questionProgress >= 25 ? 'text-green-500' : 'text-amber-500'}>
+                                                    {questionProgress}/25 questions
+                                                  </span>
+                                                </div>
+                                              </div>
+                                              <div className="flex gap-2">
+                                                <Button
+                                                  variant={isEditingThisPack ? "secondary" : "outline"}
+                                                  size="sm"
+                                                  onClick={() => {
+                                                    if (isEditingThisPack) {
+                                                      setEditingPackId(null);
+                                                      setSelectedCategoryId(null);
+                                                    } else {
+                                                      setEditingPackId(board.id);
+                                                      setSelectedCategoryId(null);
+                                                    }
+                                                  }}
+                                                  data-testid={`button-view-pack-${board.id}`}
+                                                >
+                                                  {isEditingThisPack ? 'Hide' : 'View'}
+                                                </Button>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  onClick={() => toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: false })}
+                                                  data-testid={`button-demote-pack-${board.id}`}
+                                                >
+                                                  Demote
+                                                </Button>
+                                              </div>
+                                            </div>
+                                            
+                                            {/* Expanded pack content */}
+                                            {isEditingThisPack && (
+                                              <div className="mt-4 pt-4 border-t border-border/50">
+                                                {loadingPackCategories ? (
+                                                  <Skeleton className="h-20 w-full" />
+                                                ) : packCategories.length === 0 ? (
+                                                  <p className="text-sm text-muted-foreground text-center py-4">No categories in this pack</p>
+                                                ) : (
+                                                  <div className="space-y-2">
+                                                    {packCategories.map((bc) => {
+                                                      const qCount = bc.questionCount || 0;
+                                                      const isSelectedCat = selectedCategoryId === bc.id;
+                                                      return (
+                                                        <div key={bc.id}>
+                                                          <div 
+                                                            className={`flex items-center justify-between p-2 rounded cursor-pointer ${isSelectedCat ? 'bg-primary/10' : 'hover:bg-muted/50'}`}
+                                                            onClick={() => setSelectedCategoryId(isSelectedCat ? null : bc.id)}
+                                                          >
+                                                            <div className="flex items-center gap-2">
+                                                              <ChevronRight className={`w-4 h-4 transition-transform ${isSelectedCat ? 'rotate-90' : ''}`} />
+                                                              <span className="font-medium text-sm">{bc.category.name}</span>
+                                                            </div>
+                                                            <Badge variant={qCount >= 5 ? "default" : "outline"} className={`text-xs ${qCount >= 5 ? 'bg-green-500/20 text-green-600' : ''}`}>
+                                                              {qCount}/5
+                                                            </Badge>
+                                                          </div>
+                                                          {isSelectedCat && (
+                                                            <div className="ml-6 mt-1 space-y-1">
+                                                              {loadingQuestions ? (
+                                                                <Skeleton className="h-6 w-full" />
+                                                              ) : categoryQuestions.length === 0 ? (
+                                                                <p className="text-xs text-muted-foreground py-2">No questions</p>
+                                                              ) : (
+                                                                categoryQuestions.map((q) => (
+                                                                  <div key={q.id} className="flex items-center justify-between p-2 bg-background rounded text-xs">
+                                                                    <div className="flex items-center gap-2">
+                                                                      <Badge variant="outline" className="text-xs">{q.points}</Badge>
+                                                                      <span className="truncate max-w-[250px]">{q.question}</span>
+                                                                    </div>
+                                                                    <span className="text-muted-foreground truncate max-w-[100px]">{q.correctAnswer}</span>
+                                                                  </div>
+                                                                ))
+                                                              )}
+                                                            </div>
+                                                          )}
+                                                        </div>
+                                                      );
+                                                    })}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )}
                                           </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Promote private boards section */}
+                                  {allBoards.filter((b: any) => !b.isGlobal).length > 0 && (
+                                    <div className="mt-6 pt-4 border-t border-border">
+                                      <h5 className="font-medium text-sm text-foreground mb-2 flex items-center gap-2">
+                                        <Lock className="w-4 h-4" />
+                                        Promote to Starter Pack
+                                      </h5>
+                                      <p className="text-xs text-muted-foreground mb-3">Select a private board to make it available to all users.</p>
+                                      <div className="flex flex-wrap gap-2">
+                                        {allBoards.filter((b: any) => !b.isGlobal).slice(0, 5).map((board: any) => (
+                                          <Button
+                                            key={board.id}
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: true })}
+                                            data-testid={`button-promote-${board.id}`}
+                                          >
+                                            <Plus className="w-3 h-3 mr-1" />
+                                            {board.name}
+                                          </Button>
+                                        ))}
+                                        {allBoards.filter((b: any) => !b.isGlobal).length > 5 && (
+                                          <span className="text-xs text-muted-foreground self-center">+{allBoards.filter((b: any) => !b.isGlobal).length - 5} more</span>
                                         )}
                                       </div>
-                                    )}
-                                  </CardContent>
-                                </Card>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Private boards section */}
-                      {allBoards.filter((b: any) => !b.isGlobal).length > 0 && (
-                        <div>
-                          <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                            <Lock className="w-5 h-5 text-muted-foreground" />
-                            Private Boards
-                          </h3>
-                          <p className="text-sm text-muted-foreground mb-3">Make a private board global to turn it into a Starter Pack.</p>
-                          <div className="space-y-2">
-                            {allBoards.filter((b: any) => !b.isGlobal).map((board: any) => (
-                              <Card key={board.id} className="hover-elevate">
-                                <CardContent className="p-4">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                                        <Grid3X3 className="w-5 h-5 text-muted-foreground" />
-                                      </div>
-                                      <div>
-                                        <div className="font-medium text-foreground">{board.name}</div>
-                                        <div className="text-sm text-muted-foreground">
-                                          by {board.ownerName || board.ownerEmail} - {board.categoryCount} categories, {board.questionCount} questions
-                                        </div>
-                                      </div>
                                     </div>
-                                    <Button
-                                      variant="default"
-                                      size="sm"
-                                      onClick={() => toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: true })}
-                                      data-testid={`button-add-global-${board.id}`}
-                                    >
-                                      Make Starter Pack
-                                    </Button>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {gamesSubtab === 'boards' && (
-                <>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-foreground">Board Moderation</h2>
-                    <Badge variant="secondary">{allBoards.length} boards</Badge>
-                  </div>
-
-                  {isLoadingBoards ? (
-                    <div className="space-y-3">
-                      {[1, 2, 3].map((i) => (
-                        <Skeleton key={i} className="h-20 w-full" />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {allBoards.map((board) => (
-                        <Card key={board.id} className="hover-elevate">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                                  <Grid3X3 className="w-5 h-5 text-primary" />
+                                  )}
                                 </div>
-                                <div>
-                                  <div className="font-medium text-foreground">{board.name}</div>
-                                  <div className="text-sm text-muted-foreground">
-                                    by {board.ownerName || board.ownerEmail}
-                                  </div>
+                              )}
+                              
+                              {gameType.slug === 'sequence_squeeze' && (
+                                <div className="text-center py-6 text-muted-foreground">
+                                  Sequence Squeeze content is managed per-game session. No global content to configure.
                                 </div>
-                              </div>
-                              <div className="flex items-center gap-4">
-                                <div className="text-right text-sm">
-                                  <div className="text-foreground">{board.categoryCount} categories</div>
-                                  <div className="text-muted-foreground">{board.questionCount} questions</div>
+                              )}
+                              
+                              {gameType.slug === 'double_dip' && (
+                                <div className="text-center py-6 text-muted-foreground">
+                                  Double Dip uses AI-generated questions. No manual content management needed.
                                 </div>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                      <MoreHorizontal className="w-4 h-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => setLocation(`/board/${board.id}`)}>
-                                      <Eye className="w-4 h-4 mr-2" />
-                                      View Board
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      className="text-destructive"
-                                      onClick={() => setDeleteBoardId(board.id)}
-                                    >
-                                      <Trash2 className="w-4 h-4 mr-2" />
-                                      Delete Board
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
+                              )}
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                      {allBoards.length === 0 && (
-                        <Card>
-                          <CardContent className="p-8 text-center text-muted-foreground">
-                            No boards have been created yet.
-                          </CardContent>
-                        </Card>
-                      )}
-                    </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                  
+                  {gameTypes.length === 0 && (
+                    <Card>
+                      <CardContent className="p-8 text-center text-muted-foreground">
+                        No games found. Click "Sync Games" to add them.
+                      </CardContent>
+                    </Card>
                   )}
-                </>
+                </div>
               )}
             </motion.div>
           </TabsContent>
+
 
           <TabsContent value="users" className="space-y-4">
             <motion.div
