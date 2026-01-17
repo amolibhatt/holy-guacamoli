@@ -144,6 +144,13 @@ export default function Admin() {
       setNewPoints(availablePoints[0]);
     }
   }, [availablePoints, newPoints]);
+
+  // Auto-select first category when board categories load
+  useEffect(() => {
+    if (boardCategories.length > 0 && !selectedBoardCategoryId) {
+      setSelectedBoardCategoryId(boardCategories[0].id);
+    }
+  }, [boardCategories, selectedBoardCategoryId]);
   
   // Show loading while checking auth
   if (isAuthLoading || !isAuthenticated) {
