@@ -67,13 +67,15 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
           w-full h-full flex items-center justify-center rounded-xl font-black text-xl sm:text-2xl lg:text-3xl transition-all relative overflow-hidden
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background
           ${!hasQuestion 
-            ? 'bg-muted text-muted-foreground/30 cursor-not-allowed border border-border' 
+            ? isShuffleBoard
+              ? 'bg-background/50 text-muted-foreground/20 cursor-not-allowed border border-primary/10'
+              : 'bg-muted text-muted-foreground/30 cursor-not-allowed border border-border' 
             : isCompleted 
               ? isShuffleBoard
-                ? 'bg-primary/20 text-primary/50 cursor-not-allowed border border-primary/40'
+                ? 'bg-gradient-to-br from-primary/30 to-secondary/30 text-white/60 cursor-not-allowed border border-primary/30'
                 : 'completed-cell text-primary/50 cursor-not-allowed border border-primary/20' 
               : isShuffleBoard
-                ? 'bg-primary/20 text-primary cursor-pointer border-2 border-primary/40 shadow-lg shadow-primary/30 hover:shadow-xl hover:border-primary hover:bg-primary/30'
+                ? 'bg-gradient-to-br from-primary/20 via-secondary/15 to-accent/20 text-white cursor-pointer border-2 border-primary/40 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/40 hover:border-primary/70 hover:from-primary/30 hover:via-secondary/25 hover:to-accent/30'
                 : 'bg-card text-primary cursor-pointer border-2 border-primary/50 shadow-lg shadow-primary/20 hover:shadow-xl hover:border-primary/70'
           }
         `}
@@ -146,13 +148,13 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues, i
   const allCompleted = totalQuestions > 0 && completedCount === totalQuestions;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className={`flex flex-col h-full ${isShuffleBoard ? 'p-1 bg-gradient-to-b from-primary/10 via-transparent to-secondary/10 rounded-2xl' : ''}`}>
       <div 
         className={`text-white px-2 sm:px-3 text-center rounded-t-xl sm:rounded-t-2xl h-[70px] sm:h-[90px] lg:h-[100px] flex items-center justify-center relative overflow-hidden transition-all ${
           allCompleted 
             ? 'gradient-gold' 
             : isShuffleBoard 
-              ? 'bg-gradient-to-br from-primary to-secondary shadow-lg shadow-primary/30'
+              ? 'bg-gradient-to-br from-primary via-secondary to-primary shadow-lg shadow-primary/30'
               : 'gradient-header'
         }`}
         role="heading"
