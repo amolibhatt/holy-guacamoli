@@ -57,13 +57,6 @@ export default function HostGridOfGrudges() {
       
       const result = await res.json();
       
-      if (result.wasReset) {
-        toast({
-          title: "Categories Reset!",
-          description: result.message,
-        });
-      }
-      
       // Navigate directly to the board
       setLocation(`/board/${result.boardId}`);
     } catch (err) {

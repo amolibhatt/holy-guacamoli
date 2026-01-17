@@ -53,13 +53,6 @@ export default function PlayBoard() {
       
       const result = await res.json();
       
-      if (result.wasReset) {
-        toast({
-          title: "All Categories Played!",
-          description: "Starting fresh with all categories available again.",
-        });
-      }
-      
       setShowVictory(false);
       resetGameEnd();
       setLocation(`/board/${result.boardId}`);
@@ -217,14 +210,7 @@ export default function PlayBoard() {
   const isShuffleBoard = board?.name === "Shuffle Play";
 
   return (
-    <div className={`min-h-screen flex flex-col overflow-hidden ${isShuffleBoard ? 'bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10' : 'bg-background'}`}>
-      {isShuffleBoard && (
-        <>
-          <div className="fixed top-0 right-0 w-96 h-96 bg-gradient-to-bl from-primary/15 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="fixed bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-secondary/15 to-transparent rounded-tr-full pointer-events-none" />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-accent/5 to-transparent rounded-full pointer-events-none" />
-        </>
-      )}
+    <div className="min-h-screen flex flex-col overflow-hidden bg-background">
       <AppHeader
         title="Buzzkill"
         subtitle={isShuffleBoard ? "Shuffle Play" : board.name}
