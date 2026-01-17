@@ -1673,7 +1673,7 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid import data" });
       }
       
-      const user = (req as any).user;
+      const userId = req.session.userId!;
       let boardsCreated = 0;
       let boardsSkipped = 0;
       let categoriesCreated = 0;
@@ -1699,7 +1699,7 @@ export async function registerRoutes(
           name: pack.boardName,
           description: pack.boardDescription || '',
           pointValues: pack.pointValues || [10, 20, 30, 40, 50],
-          userId: user.id,
+          userId: userId,
         });
         
         // Mark as global
