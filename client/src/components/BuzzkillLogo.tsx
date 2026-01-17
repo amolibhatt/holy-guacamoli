@@ -1,129 +1,243 @@
 import { motion } from "framer-motion";
 
 interface BuzzkillLogoProps {
-  size?: "sm" | "md" | "lg";
-  themed?: boolean;
+  size?: "sm" | "md" | "lg" | "xl";
   animate?: boolean;
   className?: string;
+  showText?: boolean;
 }
-
-const defaultColors = {
-  gradient1: "#8B5CF6",
-  gradient2: "#7C3AED",
-  gradient3: "#EC4899",
-  accent: "#FBBF24",
-};
 
 export function BuzzkillLogo({ 
   size = "md", 
-  themed = false,
   animate = true,
-  className = "" 
+  className = "",
+  showText = false
 }: BuzzkillLogoProps) {
-  const colors = defaultColors;
-  
   const sizeClasses = {
-    sm: "w-8 h-8",
-    md: "w-12 h-12", 
-    lg: "w-16 h-16"
+    sm: "w-10 h-10",
+    md: "w-14 h-14", 
+    lg: "w-20 h-20",
+    xl: "w-28 h-28"
   };
 
-  const skinColors = themed 
-    ? { start: colors.gradient1, end: colors.gradient2 }
-    : { start: "#8B5CF6", end: "#7C3AED" };
-  
-  const hatColors = themed
-    ? { start: colors.gradient1, middle: colors.accent, end: colors.gradient3 }
-    : { start: "#EC4899", middle: "#FBBF24", end: "#8B5CF6" };
-  
-  const cheekColor = themed ? colors.accent : "#EC4899";
-  const glowColor = themed ? colors.gradient1 : "#8B5CF6";
+  const textSizes = {
+    sm: "text-lg",
+    md: "text-2xl",
+    lg: "text-4xl",
+    xl: "text-5xl"
+  };
 
   const logoContent = (
-    <>
-      <div 
-        className="absolute inset-0 rounded-full blur-xl opacity-30 scale-110" 
-        style={{ backgroundColor: glowColor }}
+    <div className="relative">
+      <motion.div 
+        className="absolute inset-0 rounded-full blur-2xl opacity-40 scale-125" 
+        style={{ background: "linear-gradient(135deg, #8B5CF6 0%, #D946EF 50%, #F59E0B 100%)" }}
+        animate={animate ? { 
+          scale: [1.2, 1.4, 1.2],
+          opacity: [0.3, 0.5, 0.3]
+        } : {}}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       />
-      <svg viewBox="0 0 64 72" className={`${sizeClasses[size]} relative z-10 drop-shadow-lg ${className}`}>
+      
+      <svg viewBox="0 0 64 80" className={`${sizeClasses[size]} relative z-10 drop-shadow-lg ${className}`}>
         <defs>
-          <linearGradient id={`avoSkin-${themed ? 'themed' : 'universal'}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={skinColors.start} />
-            <stop offset="100%" stopColor={skinColors.end} />
+          <linearGradient id="avoSkinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#8B5CF6" />
+            <stop offset="50%" stopColor="#A855F7" />
+            <stop offset="100%" stopColor="#7C3AED" />
           </linearGradient>
-          <linearGradient id={`avoPit-${themed ? 'themed' : 'universal'}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="avoPitGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#D4A574" />
             <stop offset="100%" stopColor="#8B5A2B" />
           </linearGradient>
-          <linearGradient id={`partyHat-${themed ? 'themed' : 'universal'}`} x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor={hatColors.start} />
-            <stop offset="50%" stopColor={hatColors.middle} />
-            <stop offset="100%" stopColor={hatColors.end} />
+          <linearGradient id="partyHatGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#EC4899" />
+            <stop offset="35%" stopColor="#D946EF" />
+            <stop offset="65%" stopColor="#8B5CF6" />
+            <stop offset="100%" stopColor="#FBBF24" />
           </linearGradient>
+          <linearGradient id="pompomGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FDE68A" />
+            <stop offset="100%" stopColor="#F59E0B" />
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
         </defs>
         
         <path 
-          d="M32 18 C18 18 8 32 8 50 C8 68 18 72 32 72 C46 72 56 68 56 50 C56 32 46 18 32 18Z" 
-          fill={`url(#avoSkin-${themed ? 'themed' : 'universal'})`} 
+          d="M32 24 C16 24 6 40 6 58 C6 76 18 80 32 80 C46 80 58 76 58 58 C58 40 48 24 32 24Z" 
+          fill="url(#avoSkinGrad)"
+          filter="url(#glow)"
         />
-        <ellipse cx="32" cy="52" rx="18" ry="17" fill="#FFF8E1" />
-        <circle cx="32" cy="56" r="10" fill={`url(#avoPit-${themed ? 'themed' : 'universal'})`} />
-        <ellipse cx="28" cy="53" rx="3.5" ry="4" fill="#E8C9A0" opacity="0.4" />
         
-        <circle cx="24" cy="44" r="4" fill="#1A1A2E" />
-        <circle cx="40" cy="44" r="4" fill="#1A1A2E" />
-        <circle cx="25.5" cy="42.5" r="1.5" fill="white" />
-        <circle cx="41.5" cy="42.5" r="1.5" fill="white" />
+        <ellipse cx="32" cy="58" rx="18" ry="17" fill="#FFF8E1" />
+        <circle cx="32" cy="62" r="10" fill="url(#avoPitGrad)" />
+        <ellipse cx="28" cy="59" rx="3" ry="3.5" fill="#E8C9A0" opacity="0.5" />
         
-        <path d="M24 52 Q32 60 40 52" stroke="#1A1A2E" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+        <motion.g
+          animate={animate ? { y: [0, -1, 0] } : {}}
+          transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 2 }}
+        >
+          <circle cx="24" cy="48" r="4.5" fill="#1A1A2E" />
+          <circle cx="40" cy="48" r="4.5" fill="#1A1A2E" />
+          <circle cx="25.5" cy="46" r="2" fill="white" />
+          <circle cx="41.5" cy="46" r="2" fill="white" />
+        </motion.g>
         
-        <circle cx="18" cy="50" r="4" fill={cheekColor} opacity="0.5" />
-        <circle cx="46" cy="50" r="4" fill={cheekColor} opacity="0.5" />
+        <motion.path 
+          d="M24 56 Q32 64 40 56" 
+          stroke="#1A1A2E" 
+          strokeWidth="2.5" 
+          strokeLinecap="round" 
+          fill="none"
+          animate={animate ? { d: ["M24 56 Q32 64 40 56", "M24 56 Q32 66 40 56", "M24 56 Q32 64 40 56"] } : {}}
+          transition={{ duration: 2, repeat: Infinity }}
+        />
         
-        <path d="M20 18 L32 0 L44 18" fill={`url(#partyHat-${themed ? 'themed' : 'universal'})`} />
-        <circle cx="32" cy="0" r="4" fill="#FBBF24" />
-        <circle cx="32" cy="0" r="2" fill={cheekColor} />
+        <motion.circle 
+          cx="17" cy="54" r="4.5" fill="#EC4899" opacity="0.5"
+          animate={animate ? { opacity: [0.4, 0.6, 0.4] } : {}}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        />
+        <motion.circle 
+          cx="47" cy="54" r="4.5" fill="#EC4899" opacity="0.5"
+          animate={animate ? { opacity: [0.4, 0.6, 0.4] } : {}}
+          transition={{ duration: 1.5, repeat: Infinity, delay: 0.3 }}
+        />
         
-        <line x1="26" y1="10" x2="26" y2="15" stroke="white" strokeWidth="2" opacity="0.8" />
-        <line x1="32" y1="6" x2="32" y2="12" stroke="white" strokeWidth="2" opacity="0.8" />
-        <line x1="38" y1="10" x2="38" y2="15" stroke="white" strokeWidth="2" opacity="0.8" />
+        <motion.g
+          animate={animate ? { rotate: [-3, 3, -3], y: [0, -1, 0] } : {}}
+          transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+          style={{ transformOrigin: "32px 24px" }}
+        >
+          <path d="M18 24 L32 2 L46 24" fill="url(#partyHatGrad)" />
+          <line x1="22" y1="20" x2="22" y2="12" stroke="white" strokeWidth="2.5" opacity="0.6" strokeLinecap="round" />
+          <line x1="32" y1="18" x2="32" y2="8" stroke="white" strokeWidth="2.5" opacity="0.6" strokeLinecap="round" />
+          <line x1="42" y1="20" x2="42" y2="12" stroke="white" strokeWidth="2.5" opacity="0.6" strokeLinecap="round" />
+          
+          <motion.circle 
+            cx="32" cy="2" r="5" 
+            fill="url(#pompomGrad)"
+            animate={animate ? { scale: [1, 1.15, 1] } : {}}
+            transition={{ duration: 0.8, repeat: Infinity }}
+          />
+        </motion.g>
       </svg>
       
-      {!themed && (
-        <>
-          <motion.div 
-            className="absolute -top-1 -left-2 w-2 h-2 rounded-full bg-pink-500"
-            animate={animate ? { y: [0, -8, 0], opacity: [0.6, 1, 0.6], rotate: [0, 180, 360] } : {}}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
-          <motion.div 
-            className="absolute -top-2 -right-1 w-1.5 h-1.5 rounded-full bg-violet-500"
-            animate={animate ? { y: [0, -6, 0], opacity: [0.5, 1, 0.5] } : {}}
-            transition={{ duration: 1.8, repeat: Infinity, delay: 0.3 }}
-          />
-          <motion.div 
-            className="absolute top-1 -right-3 w-2 h-2 rounded-full bg-amber-400"
-            animate={animate ? { y: [0, -5, 0], rotate: [0, -180, -360] } : {}}
-            transition={{ duration: 2.2, repeat: Infinity, delay: 0.6 }}
-          />
-        </>
-      )}
-    </>
+      <motion.div 
+        className="absolute -top-2 -left-3 w-2.5 h-2.5 rounded-full"
+        style={{ background: "linear-gradient(135deg, #EC4899, #D946EF)" }}
+        animate={animate ? { 
+          y: [0, -12, 0], 
+          x: [0, -4, 0],
+          opacity: [0.8, 1, 0.8], 
+          rotate: [0, 180, 360],
+          scale: [1, 1.2, 1]
+        } : {}}
+        transition={{ duration: 2.5, repeat: Infinity }}
+      />
+      <motion.div 
+        className="absolute -top-3 right-0 w-2 h-2 rounded-full"
+        style={{ background: "linear-gradient(135deg, #8B5CF6, #A855F7)" }}
+        animate={animate ? { 
+          y: [0, -10, 0], 
+          x: [0, 4, 0],
+          opacity: [0.6, 1, 0.6] 
+        } : {}}
+        transition={{ duration: 2, repeat: Infinity, delay: 0.4 }}
+      />
+      <motion.div 
+        className="absolute top-2 -right-4 w-2.5 h-2.5 rounded-full"
+        style={{ background: "linear-gradient(135deg, #FBBF24, #F59E0B)" }}
+        animate={animate ? { 
+          y: [0, -8, 0], 
+          rotate: [0, -180, -360],
+          scale: [1, 1.3, 1]
+        } : {}}
+        transition={{ duration: 2.8, repeat: Infinity, delay: 0.8 }}
+      />
+      <motion.div 
+        className="absolute bottom-4 -left-2 w-1.5 h-1.5 rounded-full bg-fuchsia-400"
+        animate={animate ? { 
+          y: [0, -6, 0], 
+          opacity: [0.5, 1, 0.5]
+        } : {}}
+        transition={{ duration: 1.8, repeat: Infinity, delay: 1.2 }}
+      />
+      <motion.div 
+        className="absolute bottom-6 -right-2 w-1.5 h-1.5 rounded-full bg-violet-400"
+        animate={animate ? { 
+          y: [0, -5, 0], 
+          opacity: [0.5, 1, 0.5]
+        } : {}}
+        transition={{ duration: 2.2, repeat: Infinity, delay: 0.6 }}
+      />
+    </div>
+  );
+
+  const textContent = showText && (
+    <motion.div 
+      className="flex flex-col items-start"
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: 0.3, duration: 0.5 }}
+    >
+      <motion.h1 
+        className={`${textSizes[size]} font-black tracking-tight leading-none`}
+        animate={animate ? { 
+          textShadow: [
+            "0 0 20px rgba(139, 92, 246, 0.3)",
+            "0 0 35px rgba(217, 70, 239, 0.5)",
+            "0 0 20px rgba(139, 92, 246, 0.3)"
+          ]
+        } : {}}
+        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
+          Buzz
+        </span>
+        <motion.span 
+          className="bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 bg-clip-text text-transparent"
+          animate={animate ? { opacity: [1, 0.85, 1] } : {}}
+          transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+        >
+          kill
+        </motion.span>
+      </motion.h1>
+      <motion.p 
+        className="text-xs text-muted-foreground mt-0.5 tracking-wide"
+        animate={animate ? { opacity: [0.6, 1, 0.6] } : {}}
+        transition={{ duration: 3, repeat: Infinity }}
+      >
+        Party Quiz Game
+      </motion.p>
+    </motion.div>
   );
 
   if (animate) {
     return (
       <motion.div 
-        className="relative"
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.95 }}
-        animate={{ y: [0, -3, 0] }}
+        className="relative flex items-center gap-3"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.98 }}
+        animate={{ y: [0, -4, 0] }}
         transition={{ y: { duration: 3, repeat: Infinity, ease: "easeInOut" } }}
       >
         {logoContent}
+        {textContent}
       </motion.div>
     );
   }
 
-  return <div className="relative">{logoContent}</div>;
+  return (
+    <div className="relative flex items-center gap-3">
+      {logoContent}
+      {textContent}
+    </div>
+  );
 }

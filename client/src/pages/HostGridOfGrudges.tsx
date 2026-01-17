@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Grid3X3, ArrowRight, Users, Shuffle, FolderPlus } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
+import { BuzzkillLogo } from "@/components/BuzzkillLogo";
 import { useLocation } from "wouter";
 import type { Board } from "@shared/schema";
 import { motion } from "framer-motion";
@@ -49,6 +50,15 @@ export default function HostGridOfGrudges() {
 
       <main className="flex-1 p-6 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
+          <motion.div 
+            className="flex justify-center mb-8"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <BuzzkillLogo size="xl" showText animate />
+          </motion.div>
+          
           {isLoading ? (
             <div className="flex justify-center py-16">
               <Loader2 className="w-10 h-10 animate-spin text-primary" />
