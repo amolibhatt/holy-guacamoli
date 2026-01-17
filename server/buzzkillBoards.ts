@@ -72,13 +72,32 @@ export async function generateDynamicBoard(
     ? allBoards.filter(b => !b.isGlobal && b.userId && !b.name.startsWith("Shuffle Play")).map(b => b.id)
     : allBoards.filter(b => b.userId === userId && !b.isGlobal && !b.name.startsWith("Shuffle Play")).map(b => b.id);
   
-  // Collect Live categories based on mode
+  // Collect Live categories based on mode, tracking source (personal vs global)
   const liveCategories: Category[] = [];
   const seenCategoryIds = new Set<number>();
+  const personalCategoryIds = new Set<number>(); // Track which categories came from personal boards
   
   // Determine which pools to include based on mode
   const includeGlobal = mode === "starter" || mode === "meld";
   const includePersonal = mode === "personal" || mode === "meld";
+  
+  // Add personal categories FIRST (they get priority in the algorithm)
+  if (includePersonal) {
+    for (const boardId of personalBoardIds) {
+      const boardCats = await storage.getBoardCategories(boardId);
+      for (const bc of boardCats) {
+        if (seenCategoryIds.has(bc.categoryId)) continue;
+        const category = await storage.getCategory(bc.categoryId);
+        if (!category || !category.isActive) continue;
+        
+        if (await isCategoryLive(bc.categoryId)) {
+          liveCategories.push(category);
+          seenCategoryIds.add(bc.categoryId);
+          personalCategoryIds.add(bc.categoryId); // Mark as personal
+        }
+      }
+    }
+  }
   
   // Add global categories
   if (includeGlobal) {
@@ -92,23 +111,7 @@ export async function generateDynamicBoard(
         if (await isCategoryLive(bc.categoryId)) {
           liveCategories.push(category);
           seenCategoryIds.add(bc.categoryId);
-        }
-      }
-    }
-  }
-  
-  // Add personal categories if requested
-  if (includePersonal) {
-    for (const boardId of personalBoardIds) {
-      const boardCats = await storage.getBoardCategories(boardId);
-      for (const bc of boardCats) {
-        if (seenCategoryIds.has(bc.categoryId)) continue;
-        const category = await storage.getCategory(bc.categoryId);
-        if (!category || !category.isActive) continue;
-        
-        if (await isCategoryLive(bc.categoryId)) {
-          liveCategories.push(category);
-          seenCategoryIds.add(bc.categoryId);
+          // NOT marked as personal - these are global
         }
       }
     }
@@ -131,25 +134,29 @@ export async function generateDynamicBoard(
   let playedCategoryIds = (session.playedCategoryIds as number[]) || [];
   const shuffleArray = <T>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
   
-  // Separate PERSONAL categories (no sourceGroup) from GLOBAL categories (with sourceGroup A-E)
+  // Separate PERSONAL categories (from personal boards) from GLOBAL categories (from global boards)
+  // Personal categories are identified by personalCategoryIds set (based on board ownership)
+  // Global categories are grouped by sourceGroup (A-E) for diverse selection
   const personalPool: Category[] = [];
   const globalPool: Category[] = [];
   const globalByGroup: Map<string, Category[]> = new Map();
   
   for (const cat of liveCategories) {
-    if (cat.sourceGroup && SOURCE_GROUPS.includes(cat.sourceGroup as any)) {
-      globalPool.push(cat);
-      if (!globalByGroup.has(cat.sourceGroup)) {
-        globalByGroup.set(cat.sourceGroup, []);
-      }
-      globalByGroup.get(cat.sourceGroup)!.push(cat);
-    } else {
+    if (personalCategoryIds.has(cat.id)) {
+      // Category from a personal board - prioritized first
       personalPool.push(cat);
+    } else {
+      // Category from a global board - use sourceGroup for diversity
+      globalPool.push(cat);
+      const group = cat.sourceGroup || "ungrouped";
+      if (!globalByGroup.has(group)) {
+        globalByGroup.set(group, []);
+      }
+      globalByGroup.get(group)!.push(cat);
     }
   }
   
   // EXHAUSTION CHECK: Reset history if (total pool - played) < 5
-  const totalPool = liveCategories.length;
   const availableCount = liveCategories.filter(c => !playedCategoryIds.includes(c.id)).length;
   let wasReset = false;
   
@@ -194,20 +201,22 @@ export async function generateDynamicBoard(
     }
     
     // DIVERSITY RULE: Pick one from each theme group before repeating
-    const groupsWithContent = Array.from(availableGlobalByGroup.keys());
     let pickedFromGroup = new Set<string>();
     
     // Round-robin through groups until we have 5 or exhaust all
-    while (selectedCategories.length < 5) {
+    while (selectedCategories.length < 5 && availableGlobalByGroup.size > 0) {
+      // Recompute available groups each iteration
+      const currentGroups = Array.from(availableGlobalByGroup.keys());
+      if (currentGroups.length === 0) break;
+      
       let addedThisRound = false;
       
-      for (const group of shuffleArray(groupsWithContent)) {
+      for (const group of shuffleArray(currentGroups)) {
         if (selectedCategories.length >= 5) break;
         
-        // Check if we should pick from this group (diversity rule)
-        // Only skip if we've picked from this group and haven't cycled through all groups yet
-        const allGroupsPicked = pickedFromGroup.size >= groupsWithContent.length;
-        if (pickedFromGroup.has(group) && !allGroupsPicked) {
+        // Diversity rule: skip group if we've picked from it this cycle AND other groups exist
+        const otherGroupsExist = currentGroups.some(g => g !== group && !pickedFromGroup.has(g));
+        if (pickedFromGroup.has(group) && otherGroupsExist) {
           continue;
         }
         
@@ -219,19 +228,20 @@ export async function generateDynamicBoard(
           pickedFromGroup.add(group);
           addedThisRound = true;
           
-          // Remove empty groups
+          // Remove empty groups from the map
           if (groupCats.length === 0) {
             availableGlobalByGroup.delete(group);
           }
         }
       }
       
-      // Reset cycle if we've gone through all groups
-      if (pickedFromGroup.size >= groupsWithContent.length) {
+      // Reset cycle when all current groups have been picked from
+      const allCurrentGroupsPicked = currentGroups.every(g => pickedFromGroup.has(g));
+      if (allCurrentGroupsPicked) {
         pickedFromGroup = new Set<string>();
       }
       
-      // Break if no categories were added (all exhausted)
+      // Break if no categories were added (shouldn't happen, but safety check)
       if (!addedThisRound) break;
     }
   }
