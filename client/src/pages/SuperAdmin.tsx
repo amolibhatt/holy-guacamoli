@@ -1,13 +1,13 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { 
   Users, Grid3X3, BarChart3, Shield, ArrowLeft,
-  UserCheck, UserX, Trash2, Eye, MoreHorizontal,
-  TrendingUp, Gamepad2, Clock, Activity, Heart, Grid2X2,
-  Library, Globe, Lock, Building, ListOrdered, RefreshCw,
-  ChevronRight, Plus, Pencil, Check, X, FileUp, Loader2
+  Trash2, MoreHorizontal,
+  TrendingUp, Gamepad2, Clock, Activity, Heart,
+  Globe, Lock, ListOrdered, RefreshCw,
+  ChevronRight, Plus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +30,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { GameStatus, BoardVisibility } from "@shared/schema";
@@ -76,8 +82,7 @@ export default function SuperAdmin() {
   // Starter Pack editing state
   const [editingPackId, setEditingPackId] = useState<number | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const excelImportRef = useRef<HTMLInputElement>(null);
-  const [isImporting, setIsImporting] = useState(false);
+  const [showAllPromotableBoards, setShowAllPromotableBoards] = useState(false);
 
   const { data: stats, isLoading: isLoadingStats } = useQuery<PlatformStats>({
     queryKey: ['/api/super-admin/stats'],
@@ -595,7 +600,14 @@ export default function SuperAdmin() {
                                           </Button>
                                         ))}
                                         {allBoards.filter((b: any) => !b.isGlobal).length > 5 && (
-                                          <span className="text-xs text-muted-foreground self-center">+{allBoards.filter((b: any) => !b.isGlobal).length - 5} more</span>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setShowAllPromotableBoards(true)}
+                                            data-testid="button-show-all-promotable"
+                                          >
+                                            +{allBoards.filter((b: any) => !b.isGlobal).length - 5} more
+                                          </Button>
                                         )}
                                       </div>
                                     </div>
@@ -760,6 +772,40 @@ export default function SuperAdmin() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={showAllPromotableBoards} onOpenChange={setShowAllPromotableBoards}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Promote to Starter Pack</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 mt-4">
+            {allBoards.filter((b: any) => !b.isGlobal).map((board: any) => (
+              <div key={board.id} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50">
+                <div>
+                  <div className="font-medium">{board.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {board.categoryCount} categories, {board.questionCount} questions
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: true });
+                    setShowAllPromotableBoards(false);
+                  }}
+                  data-testid={`button-promote-dialog-${board.id}`}
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  Promote
+                </Button>
+              </div>
+            ))}
+            {allBoards.filter((b: any) => !b.isGlobal).length === 0 && (
+              <p className="text-center text-muted-foreground py-4">No boards available to promote</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
