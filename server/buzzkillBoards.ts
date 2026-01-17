@@ -31,16 +31,26 @@ export interface ContentStats {
 }
 
 export interface ShuffleOptions {
-  mode: "system" | "meld" | "personal";
+  includePersonal: boolean;
   userId: string;
   userRole: string;
 }
 
+// Check if a category is "Live" - has at least one question per tier (10, 20, 30, 40, 50)
+async function isCategoryLive(categoryId: number): Promise<boolean> {
+  const qs = await storage.getQuestionsForCategory(categoryId);
+  if (qs.length < 5) return false;
+  
+  const requiredPoints = [10, 20, 30, 40, 50];
+  const pointsSet = new Set(qs.map((q: { points: number }) => q.points));
+  return requiredPoints.every(p => pointsSet.has(p));
+}
+
 export async function generateDynamicBoard(
   sessionId: number, 
-  options: ShuffleOptions = { mode: "system", userId: "shuffle-host", userRole: "admin" }
+  options: ShuffleOptions = { includePersonal: false, userId: "shuffle-host", userRole: "admin" }
 ): Promise<DynamicBoardResult> {
-  const { mode, userId, userRole } = options;
+  const { includePersonal, userId, userRole } = options;
   
   const session = await storage.getSession(sessionId);
   if (!session) {
@@ -51,178 +61,80 @@ export async function generateDynamicBoard(
     };
   }
 
-  // Get all categories grouped by source group (A-E)
-  const categoriesByGroup = await storage.getCategoriesBySourceGroup();
-  
-  // Get boards to determine which categories are global vs personal
-  // Use super_admin to get all boards for filtering
+  // Get all boards to determine which categories are global vs personal
   const allBoards = await storage.getBoards("system", "super_admin");
   const globalBoardIds = allBoards.filter(b => b.isGlobal).map(b => b.id);
-  const userBoardIds = allBoards.filter(b => b.userId === userId && !b.isGlobal).map(b => b.id);
   
-  // Build sets of global and personal category IDs by checking each board's categories
-  const globalCategoryIds = new Set<number>();
-  const personalCategoryIds = new Set<number>();
+  // For super admin, see all non-global boards; for others, only their own
+  const personalBoardIds = userRole === "super_admin"
+    ? allBoards.filter(b => !b.isGlobal && b.userId).map(b => b.id)
+    : allBoards.filter(b => b.userId === userId && !b.isGlobal).map(b => b.id);
   
-  for (const board of allBoards) {
-    const boardCats = await storage.getBoardCategories(board.id);
+  // Collect all Live categories from global boards
+  const liveCategories: Category[] = [];
+  const seenCategoryIds = new Set<number>();
+  
+  // Add global categories
+  for (const boardId of globalBoardIds) {
+    const boardCats = await storage.getBoardCategories(boardId);
     for (const bc of boardCats) {
-      if (globalBoardIds.includes(board.id)) {
-        globalCategoryIds.add(bc.categoryId);
-      }
-      if (userBoardIds.includes(board.id)) {
-        personalCategoryIds.add(bc.categoryId);
+      if (seenCategoryIds.has(bc.categoryId)) continue;
+      const category = await storage.getCategory(bc.categoryId);
+      if (!category || !category.isActive) continue;
+      
+      if (await isCategoryLive(bc.categoryId)) {
+        liveCategories.push(category);
+        seenCategoryIds.add(bc.categoryId);
       }
     }
   }
   
-  // Super admin can see all personal categories
-  if (userRole === "super_admin") {
-    const allPersonalBoardIds = allBoards.filter(b => !b.isGlobal && b.userId).map(b => b.id);
-    for (const board of allBoards) {
-      if (allPersonalBoardIds.includes(board.id)) {
-        const boardCats = await storage.getBoardCategories(board.id);
-        for (const bc of boardCats) {
-          personalCategoryIds.add(bc.categoryId);
+  // Add personal categories if requested
+  if (includePersonal) {
+    for (const boardId of personalBoardIds) {
+      const boardCats = await storage.getBoardCategories(boardId);
+      for (const bc of boardCats) {
+        if (seenCategoryIds.has(bc.categoryId)) continue;
+        const category = await storage.getCategory(bc.categoryId);
+        if (!category || !category.isActive) continue;
+        
+        if (await isCategoryLive(bc.categoryId)) {
+          liveCategories.push(category);
+          seenCategoryIds.add(bc.categoryId);
         }
       }
     }
   }
   
-  // Filter to only active categories with questions based on mode
-  const activeGroupedCategories = new Map<string, Category[]>();
-  for (const group of SOURCE_GROUPS) {
-    const groupCats = categoriesByGroup.get(group) || [];
-    const activeCats: Category[] = [];
-    for (const cat of groupCats) {
-      if (!cat.isActive) continue;
-      
-      const questionCount = await storage.getQuestionCountForCategory(cat.id);
-      if (questionCount === 0) continue;
-      
-      // Apply mode filter
-      const isGlobal = globalCategoryIds.has(cat.id);
-      const isPersonal = personalCategoryIds.has(cat.id);
-      
-      if (mode === "system" && isGlobal) {
-        activeCats.push(cat);
-      } else if (mode === "personal" && isPersonal) {
-        activeCats.push(cat);
-      } else if (mode === "meld" && (isGlobal || isPersonal)) {
-        activeCats.push(cat);
-      }
-    }
-    if (activeCats.length > 0) {
-      activeGroupedCategories.set(group, activeCats);
-    }
-  }
-  
-  if (activeGroupedCategories.size === 0) {
-    const modeDesc = mode === "system" ? "global" : mode === "personal" ? "personal" : "global or personal";
+  if (liveCategories.length < 5) {
+    const poolDesc = includePersonal ? "global + personal" : "global";
     return {
       categories: [],
       wasReset: false,
-      error: `No active ${modeDesc} categories with questions found.`,
+      error: `Need at least 5 Live categories to shuffle. Found ${liveCategories.length} in the ${poolDesc} pool. A category is Live when it has exactly 5 questions (10, 20, 30, 40, 50 points).`,
     };
   }
 
   let playedCategoryIds = (session.playedCategoryIds as number[]) || [];
-  const selectedCategories: Category[] = [];
-
-  // For meld mode, we want 3 global + 2 personal
-  // For other modes, pick 1 from each group
-  if (mode === "meld") {
-    // Collect all available global and personal categories
-    const globalCats: Category[] = [];
-    const personalCats: Category[] = [];
-    
-    const groups = Array.from(activeGroupedCategories.values());
-    for (const cats of groups) {
-      for (const cat of cats) {
-        if (!playedCategoryIds.includes(cat.id)) {
-          if (globalCategoryIds.has(cat.id)) {
-            globalCats.push(cat);
-          } else if (personalCategoryIds.has(cat.id)) {
-            personalCats.push(cat);
-          }
-        }
-      }
-    }
-    
-    // Dedupe categories first
-    let uniqueGlobal = globalCats.filter((cat, idx, arr) => arr.findIndex(c => c.id === cat.id) === idx);
-    let uniquePersonal = personalCats.filter((cat, idx, arr) => arr.findIndex(c => c.id === cat.id) === idx);
-    
-    // Reset if needed
-    if (uniqueGlobal.length < 3 || uniquePersonal.length < 2) {
-      playedCategoryIds = [];
-      const allGlobal: Category[] = [];
-      const allPersonal: Category[] = [];
-      for (const cats of groups) {
-        for (const cat of cats) {
-          if (globalCategoryIds.has(cat.id)) {
-            allGlobal.push(cat);
-          } else if (personalCategoryIds.has(cat.id)) {
-            allPersonal.push(cat);
-          }
-        }
-      }
-      uniqueGlobal = allGlobal.filter((cat, idx, arr) => arr.findIndex(c => c.id === cat.id) === idx);
-      uniquePersonal = allPersonal.filter((cat, idx, arr) => arr.findIndex(c => c.id === cat.id) === idx);
-    }
-    
-    // Validate we have enough categories after reset
-    if (uniqueGlobal.length < 3 || uniquePersonal.length < 2) {
-      return {
-        categories: [],
-        wasReset: false,
-        error: `Meld mode requires at least 3 global categories (have ${uniqueGlobal.length}) and 2 personal categories (have ${uniquePersonal.length}).`,
-      };
-    }
-    
-    // Shuffle and pick
-    const shuffleArray = <T>(arr: T[]): T[] => arr.sort(() => Math.random() - 0.5);
-    const pickedGlobal = shuffleArray(uniqueGlobal).slice(0, 3);
-    const pickedPersonal = shuffleArray(uniquePersonal).slice(0, 2);
-    
-    selectedCategories.push(...pickedGlobal, ...pickedPersonal);
-    for (const cat of selectedCategories) {
-      playedCategoryIds.push(cat.id);
-    }
-  } else {
-    // Standard mode: pick 1 from each source group
-    for (const group of SOURCE_GROUPS) {
-      const groupCategories = activeGroupedCategories.get(group);
-      if (!groupCategories || groupCategories.length === 0) continue;
-
-      // Filter out already-played categories
-      let availableCategories = groupCategories.filter(
-        cat => !playedCategoryIds.includes(cat.id)
-      );
-
-      // If all categories in this group have been played, reset the group
-      if (availableCategories.length === 0) {
-        const groupCategoryIds = groupCategories.map(c => c.id);
-        playedCategoryIds = playedCategoryIds.filter(id => !groupCategoryIds.includes(id));
-        availableCategories = groupCategories;
-      }
-
-      // Randomly select one category from available
-      if (availableCategories.length > 0) {
-        const randomIndex = Math.floor(Math.random() * availableCategories.length);
-        const selectedCategory = availableCategories[randomIndex];
-        selectedCategories.push(selectedCategory);
-        playedCategoryIds.push(selectedCategory.id);
-      }
-    }
+  
+  // Filter out already-played categories
+  let availableCategories = liveCategories.filter(
+    cat => !playedCategoryIds.includes(cat.id)
+  );
+  
+  // Reset if not enough available
+  if (availableCategories.length < 5) {
+    playedCategoryIds = [];
+    availableCategories = liveCategories;
   }
-
-  if (selectedCategories.length === 0) {
-    return {
-      categories: [],
-      wasReset: false,
-      error: "Could not select any categories. Make sure categories have source groups assigned.",
-    };
+  
+  // Shuffle and pick 5
+  const shuffleArray = <T>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
+  const selectedCategories = shuffleArray(availableCategories).slice(0, 5);
+  
+  // Track played categories
+  for (const cat of selectedCategories) {
+    playedCategoryIds.push(cat.id);
   }
 
   await storage.updateSessionPlayedCategories(sessionId, playedCategoryIds);

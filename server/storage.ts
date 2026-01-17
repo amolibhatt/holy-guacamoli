@@ -96,6 +96,7 @@ export interface IStorage {
   resetSessionPlayedCategories(sessionId: number): Promise<GameSession | undefined>;
   getActiveCategoriesByBoard(): Promise<Map<number, { board: Board; categories: Category[] }>>;
   getQuestionCountForCategory(categoryId: number): Promise<number>;
+  getQuestionsForCategory(categoryId: number): Promise<{ points: number }[]>;
   getContentStats(): Promise<{ totalBoards: number; totalCategories: number; activeCategories: number; readyToPlay: number; totalQuestions: number }>;
   
   // Shuffle Board helpers
@@ -892,6 +893,21 @@ export class DatabaseStorage implements IStorage {
       .where(inArray(questions.boardCategoryId, bcIds));
     
     return result?.count ?? 0;
+  }
+
+  async getQuestionsForCategory(categoryId: number): Promise<{ points: number }[]> {
+    const boardCats = await db.select({ id: boardCategories.id })
+      .from(boardCategories)
+      .where(eq(boardCategories.categoryId, categoryId));
+    
+    if (boardCats.length === 0) return [];
+    
+    const bcIds = boardCats.map(bc => bc.id);
+    const qs = await db.select({ points: questions.points })
+      .from(questions)
+      .where(inArray(questions.boardCategoryId, bcIds));
+    
+    return qs;
   }
 
   async getContentStats(): Promise<{ totalBoards: number; totalCategories: number; activeCategories: number; readyToPlay: number; totalQuestions: number }> {
