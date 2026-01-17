@@ -6,6 +6,7 @@ import { useLocation } from "wouter";
 import type { Board } from "@shared/schema";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -30,20 +31,24 @@ interface CustomBoard extends Board {
 export default function HostGridOfGrudges() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
   const [isShuffling, setIsShuffling] = useState(false);
   const [showShuffleOptions, setShowShuffleOptions] = useState(false);
   const [shuffleMode, setShuffleMode] = useState<ShuffleMode>("starter");
 
   const { data: presetBoards = [], isLoading: isLoadingPresets } = useQuery<PresetBoard[]>({
     queryKey: ['/api/buzzkill/preset-boards'],
+    enabled: isAuthenticated,
   });
 
   const { data: customBoards = [], isLoading: isLoadingBoards } = useQuery<CustomBoard[]>({
     queryKey: ['/api/buzzkill/custom-boards'],
+    enabled: isAuthenticated,
   });
 
   const { data: shuffleStats, isLoading: isLoadingStats } = useQuery<{ globalLiveCount: number; personalLiveCount: number }>({
     queryKey: ['/api/buzzkill/shuffle-stats'],
+    enabled: isAuthenticated,
   });
   
   const isLoading = isLoadingPresets || isLoadingBoards;
