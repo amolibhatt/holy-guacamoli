@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Trophy, Star, Crown, Sparkles, Share2, Copy, Check } from "lucide-react";
+import { Trophy, Star, Crown, Sparkles, Share2, Copy, Check, Shuffle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useScore, Contestant } from "./ScoreContext";
 import confetti from "canvas-confetti";
@@ -9,9 +9,12 @@ import { useToast } from "@/hooks/use-toast";
 
 interface VictoryScreenProps {
   onClose: () => void;
+  onNextShuffle?: () => Promise<void>;
+  isShuffleBoard?: boolean;
+  isShuffling?: boolean;
 }
 
-export function VictoryScreen({ onClose }: VictoryScreenProps) {
+export function VictoryScreen({ onClose, onNextShuffle, isShuffleBoard, isShuffling }: VictoryScreenProps) {
   const { contestants, resetGame, resetGameEnd } = useScore();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
@@ -223,14 +226,30 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
           transition={{ delay: 1 }}
           className="flex flex-col items-center gap-4"
         >
-          <div className="flex justify-center gap-3">
+          <div className="flex justify-center gap-3 flex-wrap">
+            {isShuffleBoard && onNextShuffle && (
+              <Button
+                size="lg"
+                onClick={onNextShuffle}
+                disabled={isShuffling}
+                className="gradient-header text-white font-bold glow-primary gap-2"
+                data-testid="button-next-shuffle-victory"
+              >
+                {isShuffling ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Shuffle className="w-5 h-5" />
+                )}
+                Next Board
+              </Button>
+            )}
             <Button
               size="lg"
               onClick={handlePlayAgain}
-              className="gradient-header text-white font-bold glow-primary"
+              className={isShuffleBoard ? "bg-white/20 text-white hover:bg-white/30 font-bold" : "gradient-header text-white font-bold glow-primary"}
               data-testid="button-play-again"
             >
-              Play Again
+              Replay Same Board
             </Button>
             <Button
               size="lg"
