@@ -70,10 +70,10 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
             ? 'bg-muted text-muted-foreground/30 cursor-not-allowed border border-border' 
             : isCompleted 
               ? isShuffleBoard
-                ? 'bg-gradient-to-br from-primary/20 to-secondary/20 text-primary/50 cursor-not-allowed border border-primary/30'
+                ? 'bg-primary/20 text-primary/50 cursor-not-allowed border border-primary/40'
                 : 'completed-cell text-primary/50 cursor-not-allowed border border-primary/20' 
               : isShuffleBoard
-                ? 'bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10 text-primary cursor-pointer border-2 border-primary/50 shadow-lg shadow-primary/25 hover:shadow-xl hover:border-primary hover:from-primary/20 hover:to-secondary/15'
+                ? 'bg-primary/20 text-primary cursor-pointer border-2 border-primary/40 shadow-lg shadow-primary/30 hover:shadow-xl hover:border-primary hover:bg-primary/30'
                 : 'bg-card text-primary cursor-pointer border-2 border-primary/50 shadow-lg shadow-primary/20 hover:shadow-xl hover:border-primary/70'
           }
         `}
@@ -152,7 +152,7 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues, i
           allCompleted 
             ? 'gradient-gold' 
             : isShuffleBoard 
-              ? 'bg-gradient-to-br from-primary via-secondary to-primary'
+              ? 'bg-gradient-to-br from-primary to-secondary shadow-lg shadow-primary/30'
               : 'gradient-header'
         }`}
         role="heading"
