@@ -30,7 +30,18 @@ export interface ContentStats {
   totalQuestions: number;
 }
 
-export async function generateDynamicBoard(sessionId: number): Promise<DynamicBoardResult> {
+export interface ShuffleOptions {
+  mode: "system" | "meld" | "personal";
+  userId: string;
+  userRole: string;
+}
+
+export async function generateDynamicBoard(
+  sessionId: number, 
+  options: ShuffleOptions = { mode: "system", userId: "shuffle-host", userRole: "admin" }
+): Promise<DynamicBoardResult> {
+  const { mode, userId, userRole } = options;
+  
   const session = await storage.getSession(sessionId);
   if (!session) {
     return {
@@ -43,17 +54,62 @@ export async function generateDynamicBoard(sessionId: number): Promise<DynamicBo
   // Get all categories grouped by source group (A-E)
   const categoriesByGroup = await storage.getCategoriesBySourceGroup();
   
-  // Filter to only active categories with questions
+  // Get boards to determine which categories are global vs personal
+  // Use super_admin to get all boards for filtering
+  const allBoards = await storage.getBoards("system", "super_admin");
+  const globalBoardIds = allBoards.filter(b => b.isGlobal).map(b => b.id);
+  const userBoardIds = allBoards.filter(b => b.userId === userId && !b.isGlobal).map(b => b.id);
+  
+  // Build sets of global and personal category IDs by checking each board's categories
+  const globalCategoryIds = new Set<number>();
+  const personalCategoryIds = new Set<number>();
+  
+  for (const board of allBoards) {
+    const boardCats = await storage.getBoardCategories(board.id);
+    for (const bc of boardCats) {
+      if (globalBoardIds.includes(board.id)) {
+        globalCategoryIds.add(bc.categoryId);
+      }
+      if (userBoardIds.includes(board.id)) {
+        personalCategoryIds.add(bc.categoryId);
+      }
+    }
+  }
+  
+  // Super admin can see all personal categories
+  if (userRole === "super_admin") {
+    const allPersonalBoardIds = allBoards.filter(b => !b.isGlobal && b.userId).map(b => b.id);
+    for (const board of allBoards) {
+      if (allPersonalBoardIds.includes(board.id)) {
+        const boardCats = await storage.getBoardCategories(board.id);
+        for (const bc of boardCats) {
+          personalCategoryIds.add(bc.categoryId);
+        }
+      }
+    }
+  }
+  
+  // Filter to only active categories with questions based on mode
   const activeGroupedCategories = new Map<string, Category[]>();
   for (const group of SOURCE_GROUPS) {
     const groupCats = categoriesByGroup.get(group) || [];
     const activeCats: Category[] = [];
     for (const cat of groupCats) {
-      if (cat.isActive) {
-        const questionCount = await storage.getQuestionCountForCategory(cat.id);
-        if (questionCount > 0) {
-          activeCats.push(cat);
-        }
+      if (!cat.isActive) continue;
+      
+      const questionCount = await storage.getQuestionCountForCategory(cat.id);
+      if (questionCount === 0) continue;
+      
+      // Apply mode filter
+      const isGlobal = globalCategoryIds.has(cat.id);
+      const isPersonal = personalCategoryIds.has(cat.id);
+      
+      if (mode === "system" && isGlobal) {
+        activeCats.push(cat);
+      } else if (mode === "personal" && isPersonal) {
+        activeCats.push(cat);
+      } else if (mode === "meld" && (isGlobal || isPersonal)) {
+        activeCats.push(cat);
       }
     }
     if (activeCats.length > 0) {
@@ -62,41 +118,102 @@ export async function generateDynamicBoard(sessionId: number): Promise<DynamicBo
   }
   
   if (activeGroupedCategories.size === 0) {
+    const modeDesc = mode === "system" ? "global" : mode === "personal" ? "personal" : "global or personal";
     return {
       categories: [],
       wasReset: false,
-      error: "No active categories with questions found. Please add categories to source groups in the admin panel.",
+      error: `No active ${modeDesc} categories with questions found.`,
     };
   }
 
   let playedCategoryIds = (session.playedCategoryIds as number[]) || [];
-  const resetGroups: string[] = [];
   const selectedCategories: Category[] = [];
 
-  // Pick 1 category from each source group (A-E)
-  for (const group of SOURCE_GROUPS) {
-    const groupCategories = activeGroupedCategories.get(group);
-    if (!groupCategories || groupCategories.length === 0) continue;
-
-    // Filter out already-played categories
-    let availableCategories = groupCategories.filter(
-      cat => !playedCategoryIds.includes(cat.id)
-    );
-
-    // If all categories in this group have been played, reset the group
-    if (availableCategories.length === 0) {
-      const groupCategoryIds = groupCategories.map(c => c.id);
-      playedCategoryIds = playedCategoryIds.filter(id => !groupCategoryIds.includes(id));
-      resetGroups.push(`Group ${group}`);
-      availableCategories = groupCategories;
+  // For meld mode, we want 3 global + 2 personal
+  // For other modes, pick 1 from each group
+  if (mode === "meld") {
+    // Collect all available global and personal categories
+    const globalCats: Category[] = [];
+    const personalCats: Category[] = [];
+    
+    const groups = Array.from(activeGroupedCategories.values());
+    for (const cats of groups) {
+      for (const cat of cats) {
+        if (!playedCategoryIds.includes(cat.id)) {
+          if (globalCategoryIds.has(cat.id)) {
+            globalCats.push(cat);
+          } else if (personalCategoryIds.has(cat.id)) {
+            personalCats.push(cat);
+          }
+        }
+      }
     }
+    
+    // Dedupe categories first
+    let uniqueGlobal = globalCats.filter((cat, idx, arr) => arr.findIndex(c => c.id === cat.id) === idx);
+    let uniquePersonal = personalCats.filter((cat, idx, arr) => arr.findIndex(c => c.id === cat.id) === idx);
+    
+    // Reset if needed
+    if (uniqueGlobal.length < 3 || uniquePersonal.length < 2) {
+      playedCategoryIds = [];
+      const allGlobal: Category[] = [];
+      const allPersonal: Category[] = [];
+      for (const cats of groups) {
+        for (const cat of cats) {
+          if (globalCategoryIds.has(cat.id)) {
+            allGlobal.push(cat);
+          } else if (personalCategoryIds.has(cat.id)) {
+            allPersonal.push(cat);
+          }
+        }
+      }
+      uniqueGlobal = allGlobal.filter((cat, idx, arr) => arr.findIndex(c => c.id === cat.id) === idx);
+      uniquePersonal = allPersonal.filter((cat, idx, arr) => arr.findIndex(c => c.id === cat.id) === idx);
+    }
+    
+    // Validate we have enough categories after reset
+    if (uniqueGlobal.length < 3 || uniquePersonal.length < 2) {
+      return {
+        categories: [],
+        wasReset: false,
+        error: `Meld mode requires at least 3 global categories (have ${uniqueGlobal.length}) and 2 personal categories (have ${uniquePersonal.length}).`,
+      };
+    }
+    
+    // Shuffle and pick
+    const shuffleArray = <T>(arr: T[]): T[] => arr.sort(() => Math.random() - 0.5);
+    const pickedGlobal = shuffleArray(uniqueGlobal).slice(0, 3);
+    const pickedPersonal = shuffleArray(uniquePersonal).slice(0, 2);
+    
+    selectedCategories.push(...pickedGlobal, ...pickedPersonal);
+    for (const cat of selectedCategories) {
+      playedCategoryIds.push(cat.id);
+    }
+  } else {
+    // Standard mode: pick 1 from each source group
+    for (const group of SOURCE_GROUPS) {
+      const groupCategories = activeGroupedCategories.get(group);
+      if (!groupCategories || groupCategories.length === 0) continue;
 
-    // Randomly select one category from available
-    if (availableCategories.length > 0) {
-      const randomIndex = Math.floor(Math.random() * availableCategories.length);
-      const selectedCategory = availableCategories[randomIndex];
-      selectedCategories.push(selectedCategory);
-      playedCategoryIds.push(selectedCategory.id);
+      // Filter out already-played categories
+      let availableCategories = groupCategories.filter(
+        cat => !playedCategoryIds.includes(cat.id)
+      );
+
+      // If all categories in this group have been played, reset the group
+      if (availableCategories.length === 0) {
+        const groupCategoryIds = groupCategories.map(c => c.id);
+        playedCategoryIds = playedCategoryIds.filter(id => !groupCategoryIds.includes(id));
+        availableCategories = groupCategories;
+      }
+
+      // Randomly select one category from available
+      if (availableCategories.length > 0) {
+        const randomIndex = Math.floor(Math.random() * availableCategories.length);
+        const selectedCategory = availableCategories[randomIndex];
+        selectedCategories.push(selectedCategory);
+        playedCategoryIds.push(selectedCategory.id);
+      }
     }
   }
 
@@ -112,11 +229,7 @@ export async function generateDynamicBoard(sessionId: number): Promise<DynamicBo
 
   return {
     categories: selectedCategories,
-    wasReset: resetGroups.length > 0,
-    resetGroups: resetGroups.length > 0 ? resetGroups : undefined,
-    message: resetGroups.length > 0 
-      ? `Categories reset for: ${resetGroups.join(", ")}` 
-      : undefined,
+    wasReset: false,
   };
 }
 
