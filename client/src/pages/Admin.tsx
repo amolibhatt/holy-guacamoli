@@ -1127,26 +1127,6 @@ export default function Admin() {
                       </Tabs>
                     )}
 
-                    {unlinkedCategories.length > 0 && boardCategories.length < 5 && (
-                      <div className="pt-2 mt-2 border-t border-border">
-                        <p className="text-[10px] text-muted-foreground mb-1">Quick add existing:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {unlinkedCategories.slice(0, 4).map(cat => (
-                            <Button
-                              key={cat.id}
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 text-[10px] px-2"
-                              onClick={() => linkCategoryMutation.mutate({ boardId: selectedBoardId!, categoryId: cat.id })}
-                              data-testid={`button-quick-link-${cat.id}`}
-                            >
-                              <Plus className="w-2.5 h-2.5 mr-0.5" /> {cat.name}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
                   </div>
 
                   <CardContent className="p-5 flex-1 overflow-y-auto flex flex-col">
