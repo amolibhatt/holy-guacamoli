@@ -439,20 +439,6 @@ export default function SuperAdmin() {
                                     data-testid={`switch-host-${gameType.slug}`}
                                   />
                                 </div>
-                                <div className="flex items-center gap-3">
-                                  <span className="text-sm text-muted-foreground">Show to Players:</span>
-                                  <Switch
-                                    checked={gameType.playerEnabled}
-                                    onCheckedChange={(checked) => {
-                                      updateGameTypeMutation.mutate({
-                                        id: gameType.id,
-                                        data: { playerEnabled: checked }
-                                      });
-                                    }}
-                                    disabled={updateGameTypeMutation.isPending}
-                                    data-testid={`switch-player-${gameType.slug}`}
-                                  />
-                                </div>
                               </div>
                               
                               {/* Game-specific content */}
