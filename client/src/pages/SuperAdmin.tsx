@@ -133,7 +133,8 @@ export default function SuperAdmin() {
     },
     onSuccess: (wasAdded) => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
-      toast({ title: wasAdded ? "Added to Master Bank" : "Removed from Master Bank" });
+      toast({ title: wasAdded ? "Promoted to Starter Pack" : "Removed from Starter Packs" });
+      setShowAllPromotableBoards(false);
     },
     onError: () => {
       toast({ title: "Couldn't update board", description: "Please try again.", variant: "destructive" });
@@ -253,7 +254,7 @@ export default function SuperAdmin() {
             >
               <h2 className="text-2xl font-bold text-foreground mb-4">Platform Overview</h2>
               
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <StatCard
                   title="Total Users"
                   value={stats?.totalUsers ?? 0}
@@ -513,6 +514,7 @@ export default function SuperAdmin() {
                                                   variant="ghost"
                                                   size="sm"
                                                   onClick={() => toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: false })}
+                                                  disabled={toggleGlobalBoardMutation.isPending}
                                                   data-testid={`button-demote-pack-${board.id}`}
                                                 >
                                                   Demote
@@ -593,6 +595,7 @@ export default function SuperAdmin() {
                                             variant="outline"
                                             size="sm"
                                             onClick={() => toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: true })}
+                                            disabled={toggleGlobalBoardMutation.isPending}
                                             data-testid={`button-promote-${board.id}`}
                                           >
                                             <Plus className="w-3 h-3 mr-1" />
@@ -791,12 +794,12 @@ export default function SuperAdmin() {
                   size="sm"
                   onClick={() => {
                     toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: true });
-                    setShowAllPromotableBoards(false);
                   }}
+                  disabled={toggleGlobalBoardMutation.isPending}
                   data-testid={`button-promote-dialog-${board.id}`}
                 >
                   <Plus className="w-3 h-3 mr-1" />
-                  Promote
+                  {toggleGlobalBoardMutation.isPending ? 'Promoting...' : 'Promote'}
                 </Button>
               </div>
             ))}
