@@ -151,6 +151,13 @@ export default function Admin() {
       setSelectedBoardCategoryId(boardCategories[0].id);
     }
   }, [boardCategories, selectedBoardCategoryId]);
+
+  // Auto-open question form when category has no questions
+  useEffect(() => {
+    if (questions.length === 0 && selectedBoardCategoryId && !loadingQuestions) {
+      setQuestionFormOpen(true);
+    }
+  }, [questions, selectedBoardCategoryId, loadingQuestions]);
   
   // Show loading while checking auth
   if (isAuthLoading || !isAuthenticated) {
@@ -1424,26 +1431,9 @@ export default function Admin() {
                         </AnimatePresence>
                       )}
                       {questions.length === 0 && !loadingQuestions && (
-                        <motion.div 
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="text-center py-12 px-6 bg-gradient-to-b from-muted/30 to-transparent rounded-xl border border-dashed border-border"
-                        >
-                          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                            <Sparkles className="w-8 h-8 text-primary" />
-                          </div>
-                          <h3 className="text-lg font-semibold text-foreground mb-2">Create Your First Question</h3>
-                          <p className="text-muted-foreground max-w-sm mx-auto mb-4">
-                            This category needs 5 questions. Click the button above to add your first one!
-                          </p>
-                          <Button 
-                            variant="default" 
-                            onClick={() => setQuestionFormOpen(true)}
-                            className="gap-2"
-                          >
-                            <Plus className="w-4 h-4" /> Add Question
-                          </Button>
-                        </motion.div>
+                        <p className="text-center text-muted-foreground text-sm py-4">
+                          No questions yet. Use the form above to add questions.
+                        </p>
                       )}
                     </div>
                   </div>
