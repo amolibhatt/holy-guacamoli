@@ -1567,6 +1567,147 @@ export async function registerRoutes(
     }
   });
 
+  // Export Starter Packs - returns all global boards with their categories and questions
+  app.get("/api/super-admin/starter-packs/export", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const boards = await storage.getGlobalBoards();
+      const exportData = [];
+      
+      for (const board of boards) {
+        const boardCategories = await storage.getBoardCategories(board.id);
+        const categoriesWithQuestions = [];
+        
+        for (const bc of boardCategories) {
+          const questions = await storage.getQuestionsByBoardCategory(bc.id);
+          categoriesWithQuestions.push({
+            categoryName: bc.category.name,
+            categoryDescription: bc.category.description || '',
+            categoryRule: bc.category.rule || '',
+            categoryImageUrl: bc.category.imageUrl || '',
+            questions: questions.map(q => ({
+              question: q.question,
+              correctAnswer: q.correctAnswer,
+              points: q.points,
+              options: q.options,
+            }))
+          });
+        }
+        
+        exportData.push({
+          boardName: board.name,
+          boardDescription: board.description,
+          pointValues: board.pointValues,
+          colorCode: board.colorCode,
+          categories: categoriesWithQuestions
+        });
+      }
+      
+      res.json({ 
+        exportedAt: new Date().toISOString(),
+        starterPacks: exportData 
+      });
+    } catch (err) {
+      console.error("Error exporting starter packs:", err);
+      res.status(500).json({ message: "Failed to export starter packs" });
+    }
+  });
+
+  // Import Starter Packs - creates boards, categories, and questions from export data
+  // Deduplicates categories by name to avoid bloat
+  app.post("/api/super-admin/starter-packs/import", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const { starterPacks } = req.body;
+      if (!starterPacks || !Array.isArray(starterPacks)) {
+        return res.status(400).json({ message: "Invalid import data" });
+      }
+      
+      const user = (req as any).user;
+      let boardsCreated = 0;
+      let boardsSkipped = 0;
+      let categoriesCreated = 0;
+      let categoriesReused = 0;
+      let questionsCreated = 0;
+      
+      // Get all existing categories for deduplication
+      const existingCategories = await storage.getCategories();
+      const categoryNameMap = new Map(existingCategories.map(c => [c.name.toLowerCase(), c]));
+      
+      for (const pack of starterPacks) {
+        // Check if board with same name already exists
+        const existingBoards = await storage.getGlobalBoards();
+        const exists = existingBoards.some(b => b.name === pack.boardName);
+        if (exists) {
+          console.log(`Skipping existing board: ${pack.boardName}`);
+          boardsSkipped++;
+          continue;
+        }
+        
+        // Create the board
+        const board = await storage.createBoard({
+          name: pack.boardName,
+          description: pack.boardDescription || '',
+          pointValues: pack.pointValues || [10, 20, 30, 40, 50],
+          userId: user.id,
+        });
+        
+        // Mark as global
+        await storage.setGlobalBoard(board.id, true);
+        boardsCreated++;
+        
+        // Create categories and questions
+        for (const cat of pack.categories || []) {
+          // Look up category by name (case-insensitive)
+          let category = categoryNameMap.get(cat.categoryName.toLowerCase());
+          
+          if (category) {
+            categoriesReused++;
+          } else {
+            // Create new category
+            category = await storage.createCategory({
+              name: cat.categoryName,
+              description: cat.categoryDescription || '',
+              rule: cat.categoryRule || '',
+              imageUrl: cat.categoryImageUrl || '',
+            });
+            categoriesCreated++;
+            // Add to map for future lookups
+            categoryNameMap.set(cat.categoryName.toLowerCase(), category);
+          }
+          
+          // Link category to board
+          const boardCategory = await storage.createBoardCategory({
+            boardId: board.id,
+            categoryId: category.id,
+          });
+          
+          // Create questions for this board-category pair
+          for (const q of cat.questions || []) {
+            await storage.createQuestion({
+              boardCategoryId: boardCategory.id,
+              question: q.question,
+              correctAnswer: q.correctAnswer,
+              points: q.points,
+              options: q.options || [],
+            });
+            questionsCreated++;
+          }
+        }
+      }
+      
+      res.json({ 
+        message: "Import completed",
+        boardsCreated,
+        boardsSkipped,
+        categoriesCreated,
+        categoriesReused,
+        questionsCreated
+      });
+    } catch (err) {
+      console.error("Error importing starter packs:", err);
+      res.status(500).json({ message: "Failed to import starter packs" });
+    }
+  });
+
   // Game Types (public - for hosts and players)
   app.get("/api/game-types", async (req, res) => {
     try {

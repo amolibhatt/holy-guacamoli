@@ -7,7 +7,7 @@ import {
   Trash2, MoreHorizontal,
   TrendingUp, Gamepad2, Clock, Activity, Heart,
   Globe, Lock, ListOrdered, RefreshCw,
-  ChevronRight, Plus
+  ChevronRight, Plus, Download, Pencil
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -469,9 +469,43 @@ export default function SuperAdmin() {
                                     </div>
                                   </div>
                                   
-                                  <p className="text-sm text-muted-foreground mb-4">
-                                    Each Starter Pack needs 5 categories with 5 questions each (25 total) to be "Live" and available in Shuffle Play.
-                                  </p>
+                                  <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                                    <p className="text-sm text-muted-foreground">
+                                      Each Starter Pack needs 5 categories with 5 questions each (25 total) to be "Live".
+                                    </p>
+                                    <div className="flex gap-2">
+                                      <Link href="/admin">
+                                        <Button variant="outline" size="sm" data-testid="button-edit-packs">
+                                          <Pencil className="w-3 h-3 mr-1" />
+                                          Edit in Admin
+                                        </Button>
+                                      </Link>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={async () => {
+                                          try {
+                                            const res = await fetch('/api/super-admin/starter-packs/export');
+                                            const data = await res.json();
+                                            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                                            const url = URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = `starter-packs-${new Date().toISOString().split('T')[0]}.json`;
+                                            a.click();
+                                            URL.revokeObjectURL(url);
+                                            toast({ title: "Export downloaded" });
+                                          } catch {
+                                            toast({ title: "Export failed", variant: "destructive" });
+                                          }
+                                        }}
+                                        data-testid="button-export-packs"
+                                      >
+                                        <Download className="w-3 h-3 mr-1" />
+                                        Export for Production
+                                      </Button>
+                                    </div>
+                                  </div>
                                   
                                   {starterPacks.length === 0 ? (
                                     <div className="text-center py-6 text-muted-foreground bg-muted/30 rounded-lg">

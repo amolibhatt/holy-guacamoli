@@ -93,8 +93,14 @@ export default function Admin() {
     enabled: isAuthenticated,
   });
 
-  // Filter out global boards (Starter Packs) - those are managed in Super Admin only
-  const boards = allBoards.filter(b => !b.isGlobal);
+  // Super Admins can see and edit all boards including Starter Packs
+  // Regular users only see their own boards (non-global)
+  const isSuperAdmin = user?.role === 'super_admin';
+  const boards = isSuperAdmin ? allBoards : allBoards.filter(b => !b.isGlobal);
+  
+  // Separate boards for display
+  const myBoards = allBoards.filter(b => !b.isGlobal);
+  const starterPacks = allBoards.filter(b => b.isGlobal);
 
   type BoardSummary = { id: number; name: string; categoryCount: number; categories: { id: number; name: string; questionCount: number; remaining: number }[] };
   const { data: allBoardSummaries = [] } = useQuery<BoardSummary[]>({
