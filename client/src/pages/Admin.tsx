@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -13,10 +13,10 @@ import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, ArrowRight, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, Upload, FileText, Eye, Download, FileUp, MoreVertical, Globe } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, ArrowRight, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, Upload, FileText, Eye, Download, FileUp, MoreVertical } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link, useLocation, useSearch } from "wouter";
+import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import MDEditor from '@uiw/react-md-editor';
 import { useAuth } from "@/hooks/use-auth";
@@ -31,14 +31,6 @@ export default function Admin() {
   const { toast } = useToast();
   const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
-  const searchString = useSearch();
-  
-  // Parse URL params to get board ID if linked from Super Admin
-  const urlBoardId = useMemo(() => {
-    const params = new URLSearchParams(searchString);
-    const boardParam = params.get('board');
-    return boardParam ? parseInt(boardParam, 10) : null;
-  }, [searchString]);
   
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
   const [selectedBoardCategoryId, setSelectedBoardCategoryId] = useState<number | null>(null);
@@ -101,11 +93,8 @@ export default function Admin() {
     enabled: isAuthenticated,
   });
 
-  // Filter out global boards (Starter Packs) UNLESS linked from Super Admin via URL param
-  const boards = allBoards.filter(b => !b.isGlobal || b.id === urlBoardId);
-  
-  // Check if we're editing a global board from Super Admin
-  const editingGlobalBoard = urlBoardId ? allBoards.find(b => b.id === urlBoardId && b.isGlobal) : null;
+  // Filter out global boards (Starter Packs) - those are managed in Super Admin only
+  const boards = allBoards.filter(b => !b.isGlobal);
 
   type BoardSummary = { id: number; name: string; categoryCount: number; categories: { id: number; name: string; questionCount: number; remaining: number }[] };
   const { data: allBoardSummaries = [] } = useQuery<BoardSummary[]>({
@@ -147,17 +136,12 @@ export default function Admin() {
     }
   }, [isAuthLoading, isAuthenticated, setLocation]);
 
-  // Auto-select board when boards load - prioritize URL param if present
+  // Auto-select first board when boards load
   useEffect(() => {
     if (boards.length > 0 && selectedBoardId === null) {
-      // If linked from Super Admin with a specific board, select that
-      if (urlBoardId && boards.some(b => b.id === urlBoardId)) {
-        setSelectedBoardId(urlBoardId);
-      } else {
-        setSelectedBoardId(boards[0].id);
-      }
+      setSelectedBoardId(boards[0].id);
     }
-  }, [boards, selectedBoardId, urlBoardId]);
+  }, [boards, selectedBoardId]);
 
   useEffect(() => {
     if (availablePoints.length > 0 && !availablePoints.includes(newPoints)) {
@@ -671,24 +655,6 @@ export default function Admin() {
       />
 
       <main className="max-w-[1600px] mx-auto p-6" role="main" aria-label="Admin panel content">
-        {/* Global board banner when editing from Super Admin */}
-        {editingGlobalBoard && (
-          <div className="mb-4 p-3 bg-primary/10 border border-primary/30 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Globe className="w-5 h-5 text-primary" />
-              <span className="text-sm font-medium">
-                Editing Starter Pack: <strong>{editingGlobalBoard.name}</strong>
-              </span>
-            </div>
-            <Link href="/super-admin">
-              <Button variant="outline" size="sm" data-testid="button-back-to-super-admin">
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                Back to Super Admin
-              </Button>
-            </Link>
-          </div>
-        )}
-        
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-120px)]">
           <div className="lg:col-span-3 overflow-y-auto">
             <Card className="bg-card border-border shadow-sm">
