@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { BuzzkillLogo } from "@/components/BuzzkillLogo";
+import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { ArrowLeft, Settings, Shield, LogOut, HelpCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -53,13 +53,13 @@ export function AppHeader({
               </Button>
             </Link>
           )}
-          <BuzzkillLogo size="md" themed={themed} />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 flex items-center justify-center shadow-lg">
+            <AvocadoIcon className="w-6 h-6" />
+          </div>
           <div className="flex flex-col">
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)' }}>
               <span className="text-foreground">Holy </span>
-              <span className="text-violet-500">Guac</span>
-              <span className="text-foreground">Amoli</span>
-              <span className="text-pink-500">!</span>
+              <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-amber-500 bg-clip-text text-transparent">GuacAmoli!</span>
             </h1>
             {(title || subtitle) && (
               <span className="text-xs text-muted-foreground tracking-wide">{title}{subtitle ? ` - ${subtitle}` : ''}</span>
