@@ -447,110 +447,171 @@ export default function SuperAdmin() {
               {gamesSubtab === 'master-bank' && (
                 <>
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-foreground">Master Bank</h2>
-                    <Badge variant="secondary">
-                      {allBoards.filter((b: any) => b.isGlobal).length} global boards
-                    </Badge>
+                    <h2 className="text-2xl font-bold text-foreground">Starter Packs</h2>
                   </div>
 
                   <p className="text-muted-foreground mb-6">
-                    Global boards in the Master Bank can be cloned by all admins/hosts. Mark any board as global to add it to the shared library.
+                    Starter Packs are global boards available to all users in Shuffle Play. Each pack needs 5 categories with 5 questions each to be "Live".
                   </p>
 
                   {isLoadingBoards ? (
                     <div className="space-y-3">
                       {[1, 2, 3].map((i) => (
-                        <Skeleton key={i} className="h-20 w-full" />
+                        <Skeleton key={i} className="h-24 w-full" />
                       ))}
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
+                      {/* Summary Cards */}
+                      <div className="grid grid-cols-3 gap-4 mb-6">
+                        <Card>
+                          <CardContent className="p-4 text-center">
+                            <div className="text-3xl font-bold text-primary">{allBoards.filter((b: any) => b.isGlobal).length}</div>
+                            <div className="text-sm text-muted-foreground">Total Packs</div>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4 text-center">
+                            <div className="text-3xl font-bold text-green-500">
+                              {allBoards.filter((b: any) => b.isGlobal && b.categoryCount >= 5 && b.questionCount >= 25).length}
+                            </div>
+                            <div className="text-sm text-muted-foreground">Complete (Live)</div>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4 text-center">
+                            <div className="text-3xl font-bold text-amber-500">
+                              {allBoards.filter((b: any) => b.isGlobal && (b.categoryCount < 5 || b.questionCount < 25)).length}
+                            </div>
+                            <div className="text-sm text-muted-foreground">Incomplete</div>
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      {/* Starter Packs List */}
                       <div className="mb-6">
                         <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
                           <Globe className="w-5 h-5 text-primary" />
-                          Global Boards
+                          Your Starter Packs
                         </h3>
                         {allBoards.filter((b: any) => b.isGlobal).length === 0 ? (
                           <Card>
                             <CardContent className="p-6 text-center text-muted-foreground">
-                              No global boards yet. Mark boards as global below to add them to the Master Bank.
+                              No Starter Packs yet. Create boards and mark them as global below.
                             </CardContent>
                           </Card>
                         ) : (
+                          <div className="space-y-3">
+                            {allBoards.filter((b: any) => b.isGlobal).map((board: any) => {
+                              const isComplete = board.categoryCount >= 5 && board.questionCount >= 25;
+                              const categoryProgress = Math.min(board.categoryCount, 5);
+                              const questionProgress = Math.min(board.questionCount, 25);
+                              return (
+                                <Card key={board.id} className={`border-2 ${isComplete ? 'border-green-500/30' : 'border-amber-500/30'}`}>
+                                  <CardContent className="p-4">
+                                    <div className="flex items-start justify-between gap-4">
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <span className="font-semibold text-lg text-foreground">{board.name}</span>
+                                          {isComplete ? (
+                                            <Badge className="bg-green-500/20 text-green-600 border-green-500/30">Live</Badge>
+                                          ) : (
+                                            <Badge variant="outline" className="text-amber-600 border-amber-500/50">Incomplete</Badge>
+                                          )}
+                                        </div>
+                                        <div className="text-sm text-muted-foreground mb-3">{board.description || 'No description'}</div>
+                                        
+                                        {/* Progress bars */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                          <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                              <span className="text-muted-foreground">Categories</span>
+                                              <span className={categoryProgress >= 5 ? 'text-green-500' : 'text-amber-500'}>{categoryProgress}/5</span>
+                                            </div>
+                                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                              <div 
+                                                className={`h-full rounded-full ${categoryProgress >= 5 ? 'bg-green-500' : 'bg-amber-500'}`}
+                                                style={{ width: `${(categoryProgress / 5) * 100}%` }}
+                                              />
+                                            </div>
+                                          </div>
+                                          <div>
+                                            <div className="flex justify-between text-xs mb-1">
+                                              <span className="text-muted-foreground">Questions</span>
+                                              <span className={questionProgress >= 25 ? 'text-green-500' : 'text-amber-500'}>{questionProgress}/25</span>
+                                            </div>
+                                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                              <div 
+                                                className={`h-full rounded-full ${questionProgress >= 25 ? 'bg-green-500' : 'bg-amber-500'}`}
+                                                style={{ width: `${(questionProgress / 25) * 100}%` }}
+                                              />
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="flex flex-col gap-2">
+                                        <Link href={`/admin?board=${board.id}`}>
+                                          <Button variant="default" size="sm" data-testid={`button-edit-pack-${board.id}`}>
+                                            Edit Content
+                                          </Button>
+                                        </Link>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: false })}
+                                          data-testid={`button-remove-global-${board.id}`}
+                                        >
+                                          Make Private
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Private boards section */}
+                      {allBoards.filter((b: any) => !b.isGlobal).length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                            <Lock className="w-5 h-5 text-muted-foreground" />
+                            Private Boards
+                          </h3>
+                          <p className="text-sm text-muted-foreground mb-3">Make a private board global to turn it into a Starter Pack.</p>
                           <div className="space-y-2">
-                            {allBoards.filter((b: any) => b.isGlobal).map((board: any) => (
-                              <Card key={board.id} className="hover-elevate border-primary/30">
+                            {allBoards.filter((b: any) => !b.isGlobal).map((board: any) => (
+                              <Card key={board.id} className="hover-elevate">
                                 <CardContent className="p-4">
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                      <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                                        <Globe className="w-5 h-5 text-primary" />
+                                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                                        <Grid3X3 className="w-5 h-5 text-muted-foreground" />
                                       </div>
                                       <div>
                                         <div className="font-medium text-foreground">{board.name}</div>
                                         <div className="text-sm text-muted-foreground">
-                                          {board.categoryCount} categories, {board.questionCount} questions
+                                          by {board.ownerName || board.ownerEmail} - {board.categoryCount} categories, {board.questionCount} questions
                                         </div>
                                       </div>
                                     </div>
                                     <Button
-                                      variant="outline"
+                                      variant="default"
                                       size="sm"
-                                      onClick={() => toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: false })}
-                                      data-testid={`button-remove-global-${board.id}`}
+                                      onClick={() => toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: true })}
+                                      data-testid={`button-add-global-${board.id}`}
                                     >
-                                      Remove from Bank
+                                      Make Starter Pack
                                     </Button>
                                   </div>
                                 </CardContent>
                               </Card>
                             ))}
                           </div>
-                        )}
-                      </div>
-
-                      <div>
-                        <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                          <Lock className="w-5 h-5 text-muted-foreground" />
-                          Private Boards (Add to Master Bank)
-                        </h3>
-                        <div className="space-y-2">
-                          {allBoards.filter((b: any) => !b.isGlobal).map((board: any) => (
-                            <Card key={board.id} className="hover-elevate">
-                              <CardContent className="p-4">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                                      <Grid3X3 className="w-5 h-5 text-muted-foreground" />
-                                    </div>
-                                    <div>
-                                      <div className="font-medium text-foreground">{board.name}</div>
-                                      <div className="text-sm text-muted-foreground">
-                                        by {board.ownerName || board.ownerEmail} - {board.categoryCount} categories
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <Button
-                                    variant="default"
-                                    size="sm"
-                                    onClick={() => toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: true })}
-                                    data-testid={`button-add-global-${board.id}`}
-                                  >
-                                    Add to Bank
-                                  </Button>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
-                          {allBoards.filter((b: any) => !b.isGlobal).length === 0 && (
-                            <Card>
-                              <CardContent className="p-6 text-center text-muted-foreground">
-                                All boards are in the Master Bank.
-                              </CardContent>
-                            </Card>
-                          )}
                         </div>
-                      </div>
+                      )}
                     </div>
                   )}
                 </>
