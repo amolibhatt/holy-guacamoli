@@ -44,11 +44,8 @@ export default function HostGridOfGrudges() {
   const hasPersonalBoards = customBoards.some(b => b.name !== "Shuffle Play");
 
   const handleShuffleClick = () => {
-    if (hasPersonalBoards) {
-      setShowShuffleOptions(true);
-    } else {
-      generateShuffleBoard("system");
-    }
+    // Always show options so users can see what's available
+    setShowShuffleOptions(true);
   };
 
   const generateShuffleBoard = async (mode: ShuffleMode) => {
