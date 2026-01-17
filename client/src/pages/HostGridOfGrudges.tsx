@@ -41,8 +41,14 @@ export default function HostGridOfGrudges() {
     queryKey: ['/api/buzzkill/custom-boards'],
   });
 
+  const { data: shuffleStats } = useQuery<{ globalLiveCount: number; personalLiveCount: number }>({
+    queryKey: ['/api/buzzkill/shuffle-stats'],
+  });
+
   const isLoading = isLoadingPresets || isLoadingBoards;
-  const hasPersonalBoards = customBoards.some(b => b.name !== "Shuffle Play");
+  const hasPersonalBoards = customBoards.some(b => !b.name.startsWith("Shuffle Play"));
+  const hasPersonalLiveCategories = (shuffleStats?.personalLiveCount ?? 0) > 0;
+  const totalLiveCategories = (shuffleStats?.globalLiveCount ?? 0) + (includePersonal ? (shuffleStats?.personalLiveCount ?? 0) : 0);
 
   const handleShuffleClick = () => {
     // Always show options so users can see what's available
@@ -284,24 +290,33 @@ export default function HostGridOfGrudges() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            <p className="text-sm text-muted-foreground">
-              We'll pick 5 random Live categories from the global bank to create your game board.
-            </p>
+            <div className="p-3 rounded-lg bg-muted/50 border">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Live categories in pool:</span>
+                <span className="font-bold text-primary">{totalLiveCategories}</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {shuffleStats?.globalLiveCount ?? 0} global{includePersonal && shuffleStats?.personalLiveCount ? ` + ${shuffleStats.personalLiveCount} personal` : ''}
+              </p>
+            </div>
             
             {hasPersonalBoards && (
-              <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+              <div className={`flex items-center justify-between p-4 rounded-lg border ${hasPersonalLiveCategories ? 'bg-muted/30' : 'bg-muted/10 opacity-60'}`}>
                 <div className="space-y-0.5">
-                  <Label htmlFor="include-personal" className="font-medium cursor-pointer">
+                  <Label htmlFor="include-personal" className={`font-medium ${hasPersonalLiveCategories ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
                     Include my personal categories
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Mix your categories into the shuffle pool
+                    {hasPersonalLiveCategories 
+                      ? `${shuffleStats?.personalLiveCount} Live categories available`
+                      : 'No Live personal categories yet'}
                   </p>
                 </div>
                 <Switch
                   id="include-personal"
                   checked={includePersonal}
                   onCheckedChange={setIncludePersonal}
+                  disabled={!hasPersonalLiveCategories}
                   data-testid="switch-include-personal"
                 />
               </div>
@@ -311,10 +326,11 @@ export default function HostGridOfGrudges() {
               className="w-full"
               size="lg"
               onClick={generateShuffleBoard}
+              disabled={totalLiveCategories < 5}
               data-testid="button-shuffle-go"
             >
               <Shuffle className="w-4 h-4 mr-2" />
-              Generate Board
+              {totalLiveCategories < 5 ? `Need ${5 - totalLiveCategories} more Live categories` : 'Generate Board'}
             </Button>
           </div>
         </DialogContent>
