@@ -754,6 +754,88 @@ export async function registerRoutes(
     }
   });
 
+  // Generate a shuffle board and return board ID for direct play
+  app.post("/api/buzzkill/shuffle-board", isAuthenticated, async (req, res) => {
+    try {
+      // First, create or get a session for shuffle play
+      const userId = (req as any).user?.id || "shuffle-host";
+      let session = await storage.getSessionByRoomCode("SHUFFLE");
+      if (!session) {
+        session = await storage.createSession({
+          code: "SHUFFLE",
+          hostId: userId,
+          playedCategoryIds: [],
+        });
+      }
+
+      // Generate the dynamic board
+      const result = await generateDynamicBoard(session.id);
+      
+      if (result.error) {
+        return res.status(400).json({ message: result.error });
+      }
+
+      if (result.categories.length === 0) {
+        return res.status(400).json({ message: "No categories available for shuffle" });
+      }
+
+      // Find or create the shuffle board
+      let shuffleBoard = await storage.getBoardByName("Shuffle Play");
+      if (!shuffleBoard) {
+        shuffleBoard = await storage.createBoard({
+          name: "Shuffle Play",
+          description: "Auto-generated shuffle board",
+          pointValues: [10, 20, 30, 40, 50],
+          userId: userId,
+        });
+      }
+
+      // Clear existing board categories and add the new shuffled ones
+      await storage.clearBoardCategories(shuffleBoard.id);
+      
+      for (const category of result.categories) {
+        // Link category to shuffle board
+        let boardCategory = await storage.getBoardCategoryByIds(shuffleBoard.id, category.id);
+        if (!boardCategory) {
+          boardCategory = await storage.createBoardCategory({
+            boardId: shuffleBoard.id,
+            categoryId: category.id,
+          });
+        }
+        
+        // Copy questions from the category's existing board_category to the shuffle board's board_category
+        const existingBoardCats = await storage.getBoardCategoriesByCategoryId(category.id);
+        const sourceBC = existingBoardCats.find(bc => bc.boardId !== shuffleBoard!.id);
+        if (sourceBC) {
+          const sourceQuestions = await storage.getQuestionsByBoardCategory(sourceBC.id);
+          // Check if questions already exist for this board category
+          const existingQuestions = await storage.getQuestionsByBoardCategory(boardCategory.id);
+          if (existingQuestions.length === 0) {
+            for (const q of sourceQuestions) {
+              await storage.createQuestion({
+                boardCategoryId: boardCategory.id,
+                question: q.question,
+                options: q.options,
+                correctAnswer: q.correctAnswer,
+                points: q.points,
+              });
+            }
+          }
+        }
+      }
+
+      res.json({ 
+        boardId: shuffleBoard.id, 
+        categories: result.categories,
+        wasReset: result.wasReset,
+        message: result.message 
+      });
+    } catch (err) {
+      console.error("Error generating shuffle board:", err);
+      res.status(500).json({ message: "Failed to generate shuffle board" });
+    }
+  });
+
   // Get played category status for a session
   app.get("/api/buzzkill/session/:sessionId/played", isAuthenticated, async (req, res) => {
     try {
