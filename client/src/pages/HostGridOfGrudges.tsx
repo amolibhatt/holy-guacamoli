@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ArrowRight, Users, Shuffle, FolderPlus, Globe, User, Blend } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, Users, Shuffle, FolderPlus } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation } from "wouter";
 import type { Board } from "@shared/schema";
@@ -8,6 +8,8 @@ import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface PresetBoard extends Board {
   categoryCount: number;
@@ -24,13 +26,12 @@ interface CustomBoard extends Board {
 }
 
 
-type ShuffleMode = "system" | "meld" | "personal";
-
 export default function HostGridOfGrudges() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isShuffling, setIsShuffling] = useState(false);
   const [showShuffleOptions, setShowShuffleOptions] = useState(false);
+  const [includePersonal, setIncludePersonal] = useState(false);
 
   const { data: presetBoards = [], isLoading: isLoadingPresets } = useQuery<PresetBoard[]>({
     queryKey: ['/api/buzzkill/preset-boards'],
@@ -48,7 +49,7 @@ export default function HostGridOfGrudges() {
     setShowShuffleOptions(true);
   };
 
-  const generateShuffleBoard = async (mode: ShuffleMode) => {
+  const generateShuffleBoard = async () => {
     setShowShuffleOptions(false);
     setIsShuffling(true);
     try {
@@ -56,7 +57,7 @@ export default function HostGridOfGrudges() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ mode }),
+        body: JSON.stringify({ includePersonal }),
       });
       
       if (!res.ok) {
@@ -279,57 +280,41 @@ export default function HostGridOfGrudges() {
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               <Shuffle className="w-5 h-5 text-primary" />
-              Shuffle Options
+              Shuffle Play
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 pt-2">
+          <div className="space-y-4 pt-2">
             <p className="text-sm text-muted-foreground">
-              Choose which categories to include in your shuffle:
+              We'll pick 5 random Live categories from the global bank to create your game board.
             </p>
             
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-3 h-auto py-4 px-4 text-left"
-              onClick={() => generateShuffleBoard("system")}
-              data-testid="button-shuffle-system"
-            >
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
-                <Globe className="w-5 h-5 text-white" />
+            {hasPersonalBoards && (
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+                <div className="space-y-0.5">
+                  <Label htmlFor="include-personal" className="font-medium cursor-pointer">
+                    Include my personal categories
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Mix your categories into the shuffle pool
+                  </p>
+                </div>
+                <Switch
+                  id="include-personal"
+                  checked={includePersonal}
+                  onCheckedChange={setIncludePersonal}
+                  data-testid="switch-include-personal"
+                />
               </div>
-              <div>
-                <div className="font-semibold">System Only</div>
-                <div className="text-xs text-muted-foreground">5 categories from the global master bank</div>
-              </div>
-            </Button>
+            )}
 
             <Button
-              variant="outline"
-              className="w-full justify-start gap-3 h-auto py-4 px-4 text-left"
-              onClick={() => generateShuffleBoard("meld")}
-              data-testid="button-shuffle-meld"
+              className="w-full"
+              size="lg"
+              onClick={generateShuffleBoard}
+              data-testid="button-shuffle-go"
             >
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-secondary to-accent flex items-center justify-center flex-shrink-0">
-                <Blend className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <div className="font-semibold">The Meld</div>
-                <div className="text-xs text-muted-foreground">Mix of 3 global + 2 personal categories</div>
-              </div>
-            </Button>
-
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-3 h-auto py-4 px-4 text-left"
-              onClick={() => generateShuffleBoard("personal")}
-              data-testid="button-shuffle-personal"
-            >
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0">
-                <User className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <div className="font-semibold">Personal Only</div>
-                <div className="text-xs text-muted-foreground">5 categories from your own creations</div>
-              </div>
+              <Shuffle className="w-4 h-4 mr-2" />
+              Generate Board
             </Button>
           </div>
         </DialogContent>
