@@ -319,7 +319,7 @@ export default function HostGridOfGrudges() {
                     ? "border-primary bg-primary/10 ring-2 ring-primary/20"
                     : canUseStarter
                     ? "hover-elevate"
-                    : "opacity-50 cursor-not-allowed"
+                    : "opacity-60"
                 )}
                 data-testid="option-starter"
               >
@@ -330,11 +330,23 @@ export default function HostGridOfGrudges() {
                   <div className="flex-1">
                     <div className="font-semibold">Starter Packs</div>
                     <div className="text-xs text-muted-foreground">
-                      {globalLive} Live categories from curated boards
+                      {canUseStarter 
+                        ? `${globalLive} curated categories ready to play`
+                        : "Our handcrafted question packs"}
                     </div>
                   </div>
                   {!canUseStarter && (
-                    <span className="text-xs text-destructive">Need 5+</span>
+                    <div className="flex gap-1" title={`${globalLive}/5 categories`}>
+                      {[...Array(5)].map((_, i) => (
+                        <div 
+                          key={i} 
+                          className={cn(
+                            "w-2 h-2 rounded-full",
+                            i < globalLive ? "bg-amber-500" : "bg-muted-foreground/30"
+                          )} 
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
               </button>
@@ -349,7 +361,7 @@ export default function HostGridOfGrudges() {
                     ? "border-primary bg-primary/10 ring-2 ring-primary/20"
                     : canUsePersonal
                     ? "hover-elevate"
-                    : "opacity-50 cursor-not-allowed"
+                    : "opacity-60"
                 )}
                 data-testid="option-personal"
               >
@@ -360,11 +372,23 @@ export default function HostGridOfGrudges() {
                   <div className="flex-1">
                     <div className="font-semibold">My Categories</div>
                     <div className="text-xs text-muted-foreground">
-                      {personalLive} Live categories from your boards
+                      {canUsePersonal 
+                        ? `${personalLive} of your categories ready to play`
+                        : "Categories you've created"}
                     </div>
                   </div>
                   {!canUsePersonal && (
-                    <span className="text-xs text-destructive">Need 5+</span>
+                    <div className="flex gap-1" title={`${personalLive}/5 categories`}>
+                      {[...Array(5)].map((_, i) => (
+                        <div 
+                          key={i} 
+                          className={cn(
+                            "w-2 h-2 rounded-full",
+                            i < personalLive ? "bg-blue-500" : "bg-muted-foreground/30"
+                          )} 
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
               </button>
@@ -379,7 +403,7 @@ export default function HostGridOfGrudges() {
                     ? "border-primary bg-primary/10 ring-2 ring-primary/20"
                     : canUseMeld
                     ? "hover-elevate"
-                    : "opacity-50 cursor-not-allowed"
+                    : "opacity-60"
                 )}
                 data-testid="option-meld"
               >
@@ -390,11 +414,23 @@ export default function HostGridOfGrudges() {
                   <div className="flex-1">
                     <div className="font-semibold">Meld</div>
                     <div className="text-xs text-muted-foreground">
-                      {globalLive + personalLive} Live categories from all sources
+                      {canUseMeld 
+                        ? `Mix of ${globalLive} curated + ${personalLive} yours`
+                        : "Blend curated packs with your creations"}
                     </div>
                   </div>
                   {!canUseMeld && (
-                    <span className="text-xs text-destructive">Need 5+</span>
+                    <div className="flex gap-1" title={`${globalLive + personalLive}/5 categories`}>
+                      {[...Array(5)].map((_, i) => (
+                        <div 
+                          key={i} 
+                          className={cn(
+                            "w-2 h-2 rounded-full",
+                            i < (globalLive + personalLive) ? "bg-purple-500" : "bg-muted-foreground/30"
+                          )} 
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
               </button>
