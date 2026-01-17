@@ -88,16 +88,20 @@ export default function Admin() {
   const excelImportInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
 
-  const { data: boards = [], isLoading: loadingBoards } = useQuery<Board[]>({
+  const { data: allBoards = [], isLoading: loadingBoards } = useQuery<Board[]>({
     queryKey: ['/api/boards'],
     enabled: isAuthenticated,
   });
 
+  // Filter out global boards (Starter Packs) - those are managed in Super Admin
+  const boards = allBoards.filter(b => !b.isGlobal);
+
   type BoardSummary = { id: number; name: string; categoryCount: number; categories: { id: number; name: string; questionCount: number; remaining: number }[] };
-  const { data: boardSummaries = [] } = useQuery<BoardSummary[]>({
+  const { data: allBoardSummaries = [] } = useQuery<BoardSummary[]>({
     queryKey: ['/api/boards/summary'],
     enabled: isAuthenticated,
   });
+  const boardSummaries = allBoardSummaries.filter(bs => boards.some(b => b.id === bs.id));
 
   const { data: allCategories = [] } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
