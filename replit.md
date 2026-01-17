@@ -45,11 +45,14 @@ Preferred communication style: Simple, everyday language.
 10. **Sync-Stakes (Weekly Stakes)**: Couples can set weekly stakes with curated rewards/penalties. First completer each day earns 1 point; bonus point for 85%+ compatibility. Atomic SQL prevents race conditions. Weekly winner revealed on Sundays.
 
 ### Recent Changes (January 2026)
+- **Strict Category Validation**: Categories can only go LIVE (isActive=true) when they have exactly 5 questions with unique points {10,20,30,40,50}. Point collisions are rejected with clear error messages during creation/import.
+- **Personal-First Shuffle Play**: Shuffle algorithm now prioritizes Personal categories (from user's boards) before filling with Global categories (from Starter Packs). Global categories use Source Groups (A-E) for diverse selection.
+- **Diversity Rule**: When filling from Global pool, picks one category from each Theme Group (A-E) before repeating. Single remaining groups can fill multiple slots.
+- **Session Memory Reset**: PlayedHistory resets when (total pool - played) < 5, ensuring continuous variety.
 - **Source Group Assignment**: Categories can now be assigned to Source Groups (A-E) when created. Admin panel shows group badges on category tabs.
-- **Balanced Shuffle Play**: generateDynamicBoard now picks one category from each source group (A-E) for balanced variety. Groups reset independently when exhausted.
 - **Enhanced Mobile Buzzer**: Larger buzzer button (320px), double pulsing rings, improved touch responsiveness with touch-manipulation CSS.
 - **Starter Pack Export/Import**: Super Admins can export Starter Packs as JSON and import them in production with category deduplication.
-- **Smart Category Management**: Buzzkill now supports 5 Source Groups (A-E) with balanced shuffle. "Shuffle Play" generates a mixed board with 1 category from each group, tracking played categories per session and resetting after all are exhausted. "Starter Packs" are pre-made themed boards. "My Boards" shows user-created boards.
+- **Smart Category Management**: Buzzkill supports "Shuffle Play" (mixed board with personal-first priority), "Starter Packs" (pre-made themed boards), and "My Boards" (user-created boards).
 - **React Error Boundary**: App-level error boundary catches render crashes and displays recovery UI with reload/try-again options
 - **Global Error Handlers**: Server-side uncaughtException/unhandledRejection handlers with graceful shutdown
 - **WebSocket Error Handling**: Added error handlers to prevent connection crashes from taking down the server
