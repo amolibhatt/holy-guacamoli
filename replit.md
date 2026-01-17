@@ -45,6 +45,10 @@ Preferred communication style: Simple, everyday language.
 10. **Sync-Stakes (Weekly Stakes)**: Couples can set weekly stakes with curated rewards/penalties. First completer each day earns 1 point; bonus point for 85%+ compatibility. Atomic SQL prevents race conditions. Weekly winner revealed on Sundays.
 
 ### Recent Changes (January 2026)
+- **Source Group Assignment**: Categories can now be assigned to Source Groups (A-E) when created. Admin panel shows group badges on category tabs.
+- **Balanced Shuffle Play**: generateDynamicBoard now picks one category from each source group (A-E) for balanced variety. Groups reset independently when exhausted.
+- **Enhanced Mobile Buzzer**: Larger buzzer button (320px), double pulsing rings, improved touch responsiveness with touch-manipulation CSS.
+- **Starter Pack Export/Import**: Super Admins can export Starter Packs as JSON and import them in production with category deduplication.
 - **Smart Category Management**: Buzzkill now supports 5 Source Groups (A-E) with balanced shuffle. "Shuffle Play" generates a mixed board with 1 category from each group, tracking played categories per session and resetting after all are exhausted. "Starter Packs" are pre-made themed boards. "My Boards" shows user-created boards.
 - **React Error Boundary**: App-level error boundary catches render crashes and displays recovery UI with reload/try-again options
 - **Global Error Handlers**: Server-side uncaughtException/unhandledRejection handlers with graceful shutdown
