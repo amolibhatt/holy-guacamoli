@@ -1171,9 +1171,6 @@ export default function Admin() {
                             <Button size="icon" variant="ghost" onClick={() => { setEditingCategoryId(selectedBc.category.id); setEditCategoryName(selectedBc.category.name); setEditCategoryDescription(selectedBc.category.description || ''); setEditCategoryRule(selectedBc.category.rule || ''); }} className="h-7 w-7 text-muted-foreground" data-testid={`button-edit-category-${selectedBc.category.id}`} title="Edit">
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
-                            <Button size="icon" variant="ghost" onClick={() => unlinkCategoryMutation.mutate(selectedBc.id)} className="h-7 w-7 text-muted-foreground" data-testid={`button-unlink-${selectedBc.id}`} title="Unlink">
-                              <Unlink className="w-3.5 h-3.5" />
-                            </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" data-testid={`button-delete-category-${selectedBc.category.id}`} title="Delete">
