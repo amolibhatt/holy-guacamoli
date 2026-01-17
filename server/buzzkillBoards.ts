@@ -129,32 +129,110 @@ export async function generateDynamicBoard(
   }
 
   let playedCategoryIds = (session.playedCategoryIds as number[]) || [];
+  const shuffleArray = <T>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
   
-  // Filter out already-played categories
-  let availableCategories = liveCategories.filter(
-    cat => !playedCategoryIds.includes(cat.id)
-  );
+  // Group ALL live categories by source group (before filtering by played)
+  const allBySourceGroup: Map<string, Category[]> = new Map();
+  const allUngrouped: Category[] = [];
   
-  // Reset if not enough available
-  if (availableCategories.length < 5) {
-    playedCategoryIds = [];
-    availableCategories = liveCategories;
+  for (const cat of liveCategories) {
+    const group = cat.sourceGroup;
+    if (group && SOURCE_GROUPS.includes(group as any)) {
+      if (!allBySourceGroup.has(group)) {
+        allBySourceGroup.set(group, []);
+      }
+      allBySourceGroup.get(group)!.push(cat);
+    } else {
+      allUngrouped.push(cat);
+    }
   }
   
-  // Shuffle and pick 5
-  const shuffleArray = <T>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
-  const selectedCategories = shuffleArray(availableCategories).slice(0, 5);
+  // Select one category from each source group, resetting played per-group if exhausted
+  const selectedCategories: Category[] = [];
+  const resetGroups: string[] = [];
+  let wasReset = false;
+  
+  for (const group of SOURCE_GROUPS) {
+    const allGroupCats = allBySourceGroup.get(group) || [];
+    if (allGroupCats.length === 0) continue;
+    
+    // Filter to unplayed categories in this group
+    let availableInGroup = allGroupCats.filter(cat => !playedCategoryIds.includes(cat.id));
+    
+    // If group is exhausted, reset just this group's tracking
+    if (availableInGroup.length === 0) {
+      // Remove this group's categories from played list
+      const groupCatIds = new Set(allGroupCats.map(c => c.id));
+      playedCategoryIds = playedCategoryIds.filter(id => !groupCatIds.has(id));
+      availableInGroup = allGroupCats;
+      resetGroups.push(group);
+    }
+    
+    // Pick one random category from this group
+    const shuffled = shuffleArray(availableInGroup);
+    selectedCategories.push(shuffled[0]);
+    
+    if (selectedCategories.length >= 5) break;
+  }
+  
+  // If we don't have 5 yet (not enough source groups with categories), fill from ungrouped
+  if (selectedCategories.length < 5) {
+    const availableUngrouped = allUngrouped.filter(
+      cat => !playedCategoryIds.includes(cat.id) && !selectedCategories.some(s => s.id === cat.id)
+    );
+    
+    // Reset ungrouped if exhausted
+    let ungroupedToUse = availableUngrouped;
+    if (ungroupedToUse.length === 0 && allUngrouped.length > 0) {
+      const ungroupedIds = new Set(allUngrouped.map(c => c.id));
+      playedCategoryIds = playedCategoryIds.filter(id => !ungroupedIds.has(id));
+      ungroupedToUse = allUngrouped.filter(cat => !selectedCategories.some(s => s.id === cat.id));
+      wasReset = true;
+    }
+    
+    const shuffledUngrouped = shuffleArray(ungroupedToUse);
+    for (const cat of shuffledUngrouped) {
+      if (selectedCategories.length >= 5) break;
+      selectedCategories.push(cat);
+    }
+  }
+  
+  // If still not enough, pick more from groups that have extras
+  if (selectedCategories.length < 5) {
+    for (const group of SOURCE_GROUPS) {
+      const allGroupCats = allBySourceGroup.get(group) || [];
+      const availableInGroup = allGroupCats.filter(
+        cat => !playedCategoryIds.includes(cat.id) && !selectedCategories.some(s => s.id === cat.id)
+      );
+      
+      for (const cat of shuffleArray(availableInGroup)) {
+        if (selectedCategories.length >= 5) break;
+        selectedCategories.push(cat);
+      }
+      if (selectedCategories.length >= 5) break;
+    }
+  }
+  
+  wasReset = wasReset || resetGroups.length > 0;
   
   // Track played categories
   for (const cat of selectedCategories) {
-    playedCategoryIds.push(cat.id);
+    if (!playedCategoryIds.includes(cat.id)) {
+      playedCategoryIds.push(cat.id);
+    }
   }
 
   await storage.updateSessionPlayedCategories(sessionId, playedCategoryIds);
 
   return {
     categories: selectedCategories,
-    wasReset: false,
+    wasReset,
+    resetGroups: resetGroups.length > 0 ? resetGroups : undefined,
+    message: wasReset 
+      ? resetGroups.length > 0 
+        ? `Groups ${resetGroups.join(', ')} reset - all categories played!` 
+        : "Categories reset - starting fresh!"
+      : undefined,
   };
 }
 

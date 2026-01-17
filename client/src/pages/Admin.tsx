@@ -71,6 +71,7 @@ export default function Admin() {
   const [editCategoryRule, setEditCategoryRule] = useState("");
   const [newCategoryDescription, setNewCategoryDescription] = useState("");
   const [newCategoryRule, setNewCategoryRule] = useState("");
+  const [newCategorySourceGroup, setNewCategorySourceGroup] = useState<string>("");
   const [questionFormOpen, setQuestionFormOpen] = useState(false);
   const [draggedQuestionId, setDraggedQuestionId] = useState<number | null>(null);
   const [draggedBoardId, setDraggedBoardId] = useState<number | null>(null);
@@ -244,8 +245,8 @@ export default function Admin() {
   });
 
   const createAndLinkCategoryMutation = useMutation({
-    mutationFn: async (data: { name: string; description: string; rule?: string; imageUrl?: string; boardId: number }) => {
-      const res = await apiRequest('POST', `/api/boards/${data.boardId}/categories/create-and-link`, { name: data.name, description: data.description, rule: data.rule, imageUrl: data.imageUrl });
+    mutationFn: async (data: { name: string; description: string; rule?: string; imageUrl?: string; sourceGroup?: string; boardId: number }) => {
+      const res = await apiRequest('POST', `/api/boards/${data.boardId}/categories/create-and-link`, { name: data.name, description: data.description, rule: data.rule, imageUrl: data.imageUrl, sourceGroup: data.sourceGroup });
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to create category");
@@ -260,6 +261,7 @@ export default function Admin() {
       setNewCategoryName("");
       setNewCategoryDescription("");
       setNewCategoryRule("");
+      setNewCategorySourceGroup("");
       setShowNewCategoryForm(false);
       toast({ title: "Category created and linked!" });
     },
@@ -1083,12 +1085,25 @@ export default function Admin() {
                               className="flex-1 h-8 text-sm"
                               data-testid="input-category-name"
                             />
+                            <Select value={newCategorySourceGroup} onValueChange={setNewCategorySourceGroup}>
+                              <SelectTrigger className="w-20 h-8 text-sm" data-testid="select-source-group">
+                                <SelectValue placeholder="Group" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="A">A</SelectItem>
+                                <SelectItem value="B">B</SelectItem>
+                                <SelectItem value="C">C</SelectItem>
+                                <SelectItem value="D">D</SelectItem>
+                                <SelectItem value="E">E</SelectItem>
+                              </SelectContent>
+                            </Select>
                             <Button
                               onClick={() => createAndLinkCategoryMutation.mutate({ 
                                 name: newCategoryName.trim(), 
                                 description: newCategoryDescription.trim(), 
                                 rule: newCategoryRule.trim() || undefined,
                                 imageUrl: newCategoryImageUrl || undefined,
+                                sourceGroup: newCategorySourceGroup || undefined,
                                 boardId: selectedBoardId! 
                               })}
                               disabled={!newCategoryName.trim() || boardCategories.length >= 5 || isUploadingCategoryImage}
@@ -1134,6 +1149,11 @@ export default function Admin() {
                               className="bg-transparent rounded-none border-b-2 border-transparent px-0 pb-2 pt-1 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5"
                               data-testid={`category-tab-${bc.id}`}
                             >
+                              {bc.category.sourceGroup && (
+                                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 font-bold">
+                                  {bc.category.sourceGroup}
+                                </Badge>
+                              )}
                               <span>{bc.category.name}</span>
                               {(bc.questionCount ?? 0) >= 5 && (
                                 <CheckCircle className="w-3 h-3" />

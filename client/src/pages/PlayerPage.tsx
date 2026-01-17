@@ -678,30 +678,36 @@ export default function PlayerPage() {
               key="buzzer"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="text-center"
+              className="text-center flex flex-col items-center justify-center"
             >
               <motion.button
-                whileTap={{ scale: 0.9 }}
+                whileTap={{ scale: 0.85 }}
                 whileHover={{ scale: 1.02 }}
                 onClick={handleBuzz}
-                className="w-72 h-72 rounded-full gradient-header flex flex-col items-center justify-center shadow-2xl active:shadow-lg transition-all focus:outline-none focus:ring-4 focus:ring-primary/50 relative overflow-visible"
+                className="w-80 h-80 sm:w-72 sm:h-72 rounded-full gradient-header flex flex-col items-center justify-center shadow-2xl active:shadow-lg transition-all focus:outline-none focus:ring-4 focus:ring-primary/50 relative overflow-visible touch-manipulation"
+                style={{ WebkitTapHighlightColor: 'transparent', minWidth: '280px', minHeight: '280px' }}
                 data-testid="button-buzz"
                 aria-label="Buzz in - tap to answer"
                 role="button"
               >
                 <motion.div
-                  animate={{ scale: [1, 1.3, 1] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                  className="absolute inset-0 rounded-full bg-primary/20 -z-10"
+                  animate={{ scale: [1, 1.4, 1] }}
+                  transition={{ duration: 1.2, repeat: Infinity }}
+                  className="absolute inset-0 rounded-full bg-primary/30 -z-10"
                 />
-                <Zap className="w-24 h-24 text-white mb-2" aria-hidden="true" />
-                <span className="text-white text-xl font-black tracking-wide">BUZZ!</span>
+                <motion.div
+                  animate={{ scale: [1.1, 1.5, 1.1] }}
+                  transition={{ duration: 1.2, repeat: Infinity, delay: 0.3 }}
+                  className="absolute inset-0 rounded-full bg-primary/15 -z-20"
+                />
+                <Zap className="w-28 h-28 text-white mb-2" aria-hidden="true" />
+                <span className="text-white text-2xl font-black tracking-wide">BUZZ!</span>
               </motion.button>
               <motion.p 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="text-primary font-medium mt-6 text-lg"
+                className="text-primary font-bold mt-6 text-xl"
               >
                 Tap fast to answer first!
               </motion.p>
