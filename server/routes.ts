@@ -13,6 +13,50 @@ import { registerObjectStorageRoutes } from "./replit_integrations/object_storag
 import { generateDynamicBoard, getPlayedCategoryStatus, getContentStats, getActiveCategoriesForTenant } from "./buzzkillBoards";
 import { SOURCE_GROUPS, type SourceGroup, type Question } from "@shared/schema";
 
+// Required point values for a category to go LIVE
+const REQUIRED_POINTS = [10, 20, 30, 40, 50] as const;
+
+// Validate if a category can be set to LIVE (isActive = true)
+// Returns { valid: true } or { valid: false, error: string }
+async function validateCategoryForLive(categoryId: number): Promise<{ valid: boolean; error?: string }> {
+  const questions = await storage.getQuestionsForCategory(categoryId);
+  
+  if (questions.length !== 5) {
+    return { 
+      valid: false, 
+      error: `Category needs exactly 5 questions (has ${questions.length})` 
+    };
+  }
+  
+  const pointsSet = new Set(questions.map(q => q.points));
+  
+  // Check for duplicates
+  if (pointsSet.size !== 5) {
+    const pointCounts: Record<number, number> = {};
+    questions.forEach(q => {
+      pointCounts[q.points] = (pointCounts[q.points] || 0) + 1;
+    });
+    const duplicates = Object.entries(pointCounts)
+      .filter(([_, count]) => count > 1)
+      .map(([points]) => points);
+    return {
+      valid: false,
+      error: `Point Collision: Category has multiple ${duplicates.join(', ')}-point questions`
+    };
+  }
+  
+  // Check all required points are present
+  const missingPoints = REQUIRED_POINTS.filter(p => !pointsSet.has(p));
+  if (missingPoints.length > 0) {
+    return {
+      valid: false,
+      error: `Missing questions for points: ${missingPoints.join(', ')}`
+    };
+  }
+  
+  return { valid: true };
+}
+
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -391,13 +435,27 @@ export async function registerRoutes(
       if (role !== 'super_admin') {
         return res.status(403).json({ message: "Only Super Admins can update categories" });
       }
-      const { name, description, rule, imageUrl, isActive } = req.body;
-      const category = await storage.updateCategory(Number(req.params.id), {
+      const categoryId = Number(req.params.id);
+      const { name, description, rule, imageUrl, isActive, sourceGroup } = req.body;
+      
+      // If trying to set isActive = true, validate the category first
+      if (isActive === true) {
+        const validation = await validateCategoryForLive(categoryId);
+        if (!validation.valid) {
+          return res.status(400).json({ 
+            message: validation.error,
+            validationError: true 
+          });
+        }
+      }
+      
+      const category = await storage.updateCategory(categoryId, {
         name,
         description,
         rule,
         imageUrl,
         isActive,
+        sourceGroup,
       });
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
