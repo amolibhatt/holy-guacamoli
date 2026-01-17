@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ArrowRight, Users, Shuffle, FolderPlus } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, Users, Shuffle, FolderPlus, Sparkles, User, Blend } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation } from "wouter";
 import type { Board } from "@shared/schema";
@@ -8,8 +8,9 @@ import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+
+type ShuffleMode = "starter" | "personal" | "meld";
 
 interface PresetBoard extends Board {
   categoryCount: number;
@@ -31,7 +32,7 @@ export default function HostGridOfGrudges() {
   const { toast } = useToast();
   const [isShuffling, setIsShuffling] = useState(false);
   const [showShuffleOptions, setShowShuffleOptions] = useState(false);
-  const [includePersonal, setIncludePersonal] = useState(false);
+  const [shuffleMode, setShuffleMode] = useState<ShuffleMode>("starter");
 
   const { data: presetBoards = [], isLoading: isLoadingPresets } = useQuery<PresetBoard[]>({
     queryKey: ['/api/buzzkill/preset-boards'],
@@ -41,17 +42,32 @@ export default function HostGridOfGrudges() {
     queryKey: ['/api/buzzkill/custom-boards'],
   });
 
-  const { data: shuffleStats } = useQuery<{ globalLiveCount: number; personalLiveCount: number }>({
+  const { data: shuffleStats, isLoading: isLoadingStats } = useQuery<{ globalLiveCount: number; personalLiveCount: number }>({
     queryKey: ['/api/buzzkill/shuffle-stats'],
   });
-
+  
   const isLoading = isLoadingPresets || isLoadingBoards;
-  const hasPersonalBoards = customBoards.some(b => !b.name.startsWith("Shuffle Play"));
-  const hasPersonalLiveCategories = (shuffleStats?.personalLiveCount ?? 0) > 0;
-  const totalLiveCategories = (shuffleStats?.globalLiveCount ?? 0) + (includePersonal ? (shuffleStats?.personalLiveCount ?? 0) : 0);
+  const globalLive = shuffleStats?.globalLiveCount ?? 0;
+  const personalLive = shuffleStats?.personalLiveCount ?? 0;
+  const statsLoaded = !isLoadingStats && shuffleStats !== undefined;
+  
+  const canUseStarter = globalLive >= 5;
+  const canUsePersonal = personalLive >= 5;
+  const canUseMeld = (globalLive + personalLive) >= 5;
+  
+  const getLiveCategoryCount = (mode: ShuffleMode): number => {
+    switch (mode) {
+      case "starter": return globalLive;
+      case "personal": return personalLive;
+      case "meld": return globalLive + personalLive;
+    }
+  };
 
   const handleShuffleClick = () => {
-    // Always show options so users can see what's available
+    // Reset to first available mode when opening
+    if (canUseStarter) setShuffleMode("starter");
+    else if (canUseMeld) setShuffleMode("meld");
+    else if (canUsePersonal) setShuffleMode("personal");
     setShowShuffleOptions(true);
   };
 
@@ -63,7 +79,7 @@ export default function HostGridOfGrudges() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ includePersonal }),
+        body: JSON.stringify({ mode: shuffleMode }),
       });
       
       if (!res.ok) {
@@ -77,8 +93,6 @@ export default function HostGridOfGrudges() {
       }
       
       const result = await res.json();
-      
-      // Navigate directly to the board
       setLocation(`/board/${result.boardId}`);
     } catch (err) {
       toast({
@@ -289,48 +303,112 @@ export default function HostGridOfGrudges() {
               Shuffle Play
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="p-3 rounded-lg bg-muted/50 border">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Live categories in pool:</span>
-                <span className="font-bold text-primary">{totalLiveCategories}</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {shuffleStats?.globalLiveCount ?? 0} global{includePersonal && shuffleStats?.personalLiveCount ? ` + ${shuffleStats.personalLiveCount} personal` : ''}
-              </p>
-            </div>
+          <div className="space-y-3 pt-2">
+            <p className="text-sm text-muted-foreground">
+              Pick 5 random Live categories to create your game board.
+            </p>
             
-            {hasPersonalBoards && (
-              <div className={`flex items-center justify-between p-4 rounded-lg border ${hasPersonalLiveCategories ? 'bg-muted/30' : 'bg-muted/10 opacity-60'}`}>
-                <div className="space-y-0.5">
-                  <Label htmlFor="include-personal" className={`font-medium ${hasPersonalLiveCategories ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
-                    Include my personal categories
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    {hasPersonalLiveCategories 
-                      ? `${shuffleStats?.personalLiveCount} Live categories available`
-                      : 'No Live personal categories yet'}
-                  </p>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => canUseStarter && setShuffleMode("starter")}
+                disabled={!canUseStarter}
+                className={cn(
+                  "w-full p-4 rounded-lg border text-left transition-all",
+                  shuffleMode === "starter" && canUseStarter
+                    ? "border-primary bg-primary/10 ring-2 ring-primary/20"
+                    : canUseStarter
+                    ? "hover-elevate"
+                    : "opacity-50 cursor-not-allowed"
+                )}
+                data-testid="option-starter"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-amber-500/20">
+                    <Sparkles className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold">Starter Packs</div>
+                    <div className="text-xs text-muted-foreground">
+                      {globalLive} Live categories from curated boards
+                    </div>
+                  </div>
+                  {!canUseStarter && (
+                    <span className="text-xs text-destructive">Need 5+</span>
+                  )}
                 </div>
-                <Switch
-                  id="include-personal"
-                  checked={includePersonal}
-                  onCheckedChange={setIncludePersonal}
-                  disabled={!hasPersonalLiveCategories}
-                  data-testid="switch-include-personal"
-                />
-              </div>
-            )}
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => canUsePersonal && setShuffleMode("personal")}
+                disabled={!canUsePersonal}
+                className={cn(
+                  "w-full p-4 rounded-lg border text-left transition-all",
+                  shuffleMode === "personal" && canUsePersonal
+                    ? "border-primary bg-primary/10 ring-2 ring-primary/20"
+                    : canUsePersonal
+                    ? "hover-elevate"
+                    : "opacity-50 cursor-not-allowed"
+                )}
+                data-testid="option-personal"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-500/20">
+                    <User className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold">My Categories</div>
+                    <div className="text-xs text-muted-foreground">
+                      {personalLive} Live categories from your boards
+                    </div>
+                  </div>
+                  {!canUsePersonal && (
+                    <span className="text-xs text-destructive">Need 5+</span>
+                  )}
+                </div>
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => canUseMeld && setShuffleMode("meld")}
+                disabled={!canUseMeld}
+                className={cn(
+                  "w-full p-4 rounded-lg border text-left transition-all",
+                  shuffleMode === "meld" && canUseMeld
+                    ? "border-primary bg-primary/10 ring-2 ring-primary/20"
+                    : canUseMeld
+                    ? "hover-elevate"
+                    : "opacity-50 cursor-not-allowed"
+                )}
+                data-testid="option-meld"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-500/20">
+                    <Blend className="w-5 h-5 text-purple-500" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold">Meld</div>
+                    <div className="text-xs text-muted-foreground">
+                      {globalLive + personalLive} Live categories from all sources
+                    </div>
+                  </div>
+                  {!canUseMeld && (
+                    <span className="text-xs text-destructive">Need 5+</span>
+                  )}
+                </div>
+              </button>
+            </div>
 
             <Button
               className="w-full"
               size="lg"
               onClick={generateShuffleBoard}
-              disabled={totalLiveCategories < 5}
+              disabled={!statsLoaded || getLiveCategoryCount(shuffleMode) < 5}
               data-testid="button-shuffle-go"
             >
               <Shuffle className="w-4 h-4 mr-2" />
-              {totalLiveCategories < 5 ? `Need ${5 - totalLiveCategories} more Live categories` : 'Generate Board'}
+              {!statsLoaded ? "Loading..." : "Generate Board"}
             </Button>
           </div>
         </DialogContent>
