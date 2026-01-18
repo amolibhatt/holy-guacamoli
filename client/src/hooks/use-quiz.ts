@@ -78,14 +78,14 @@ export function useCategory(id: number) {
   });
 }
 
-// GET /api/board-categories/:boardCategoryId/questions
-export function useQuestionsByBoardCategory(boardCategoryId: number) {
+// GET /api/categories/:categoryId/questions
+export function useQuestionsByCategory(categoryId: number) {
   const { isAuthenticated } = useAuth();
   return useQuery<Question[]>({
-    queryKey: ["/api/board-categories", boardCategoryId, "questions"],
-    enabled: !!boardCategoryId && isAuthenticated,
+    queryKey: ["/api/categories", categoryId, "questions"],
+    enabled: !!categoryId && isAuthenticated,
     queryFn: async () => {
-      const res = await fetch(`/api/board-categories/${boardCategoryId}/questions`, { credentials: "include" });
+      const res = await fetch(`/api/categories/${categoryId}/questions`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch questions");
       return res.json();
     },

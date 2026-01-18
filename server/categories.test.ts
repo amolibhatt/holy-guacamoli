@@ -188,7 +188,7 @@ describe("Categories Management", () => {
 
       for (const pts of [10, 20, 30, 40, 50]) {
         const [q] = await db.insert(questions).values({
-          boardCategoryId: bc.id,
+          categoryId: bc.id,
           question: `Question for ${pts} points`,
           options: ["A", "B", "C", "D"],
           correctAnswer: "A",
@@ -197,7 +197,7 @@ describe("Categories Management", () => {
         cleanupIds.questions.push(q.id);
       }
 
-      const qs = await db.select().from(questions).where(eq(questions.boardCategoryId, bc.id));
+      const qs = await db.select().from(questions).where(eq(questions.categoryId, bc.id));
       expect(qs.length).toBe(5);
     });
 
@@ -225,7 +225,7 @@ describe("Categories Management", () => {
       cleanupIds.boardCategories.push(bc.id);
 
       const [q] = await db.insert(questions).values({
-        boardCategoryId: bc.id,
+        categoryId: bc.id,
         question: "Valid question",
         options: ["A", "B", "C", "D"],
         correctAnswer: "A",

@@ -47,10 +47,10 @@ describe("Buzzkill Shuffle Algorithm", () => {
     return bc;
   }
 
-  async function addValidQuestions(boardCategoryId: number) {
+  async function addValidQuestions(categoryId: number) {
     for (const pts of [10, 20, 30, 40, 50]) {
       const [q] = await db.insert(questions).values({
-        boardCategoryId,
+        categoryId,
         question: `Test Q ${pts}`,
         options: ["A", "B", "C", "D"],
         correctAnswer: "A",
@@ -227,7 +227,7 @@ describe("Buzzkill Shuffle Algorithm", () => {
       const invalidBc = await linkCategoryToBoard(board.id, invalidCat.id);
       for (const pts of [10, 20, 30]) {
         const [q] = await db.insert(questions).values({
-          boardCategoryId: invalidBc.id,
+          categoryId: invalidBc.id,
           question: `Q${pts}`,
           options: ["A", "B", "C", "D"],
           correctAnswer: "A",
@@ -256,7 +256,7 @@ describe("Buzzkill Shuffle Algorithm", () => {
       const dupeBc = await linkCategoryToBoard(board.id, dupeCat.id);
       for (const pts of [10, 20, 20, 40, 50]) {
         const [q] = await db.insert(questions).values({
-          boardCategoryId: dupeBc.id,
+          categoryId: dupeBc.id,
           question: `Q${pts}`,
           options: ["A", "B", "C", "D"],
           correctAnswer: "A",

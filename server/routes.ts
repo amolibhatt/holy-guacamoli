@@ -480,41 +480,35 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
-  // Helper to verify board-category ownership
-  async function verifyBoardCategoryOwnership(boardCategoryId: number, userId: string, role?: string) {
-    const bc = await storage.getBoardCategory(boardCategoryId);
-    if (!bc) return null;
-    const board = await storage.getBoard(bc.boardId, userId, role);
-    if (!board) return null;
-    return bc;
+  // Helper to verify category exists (categories are global, no ownership check needed for read)
+  async function verifyCategoryExists(categoryId: number) {
+    return await storage.getCategory(categoryId);
   }
 
-  // Questions (by board-category) - protected
-  app.get("/api/board-categories/:boardCategoryId/questions", isAuthenticated, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const bc = await verifyBoardCategoryOwnership(Number(req.params.boardCategoryId), userId, role);
-    if (!bc) {
-      return res.status(404).json({ message: "Board category not found" });
+  // Questions (by category) - protected
+  app.get("/api/categories/:categoryId/questions", isAuthenticated, async (req, res) => {
+    const categoryId = Number(req.params.categoryId);
+    const category = await verifyCategoryExists(categoryId);
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
     }
-    const questions = await storage.getQuestionsByBoardCategory(Number(req.params.boardCategoryId));
+    const questions = await storage.getQuestionsByCategory(categoryId);
     res.json(questions);
   });
 
   app.post(api.questions.create.path, isAuthenticated, async (req, res) => {
     try {
-      const userId = req.session.userId!;
       const role = req.session.userRole;
       // Only Super Admins can create questions
       if (role !== 'super_admin') {
         return res.status(403).json({ message: "Only Super Admins can create questions" });
       }
       const data = api.questions.create.input.parse(req.body);
-      const bc = await verifyBoardCategoryOwnership(data.boardCategoryId, userId, role);
-      if (!bc) {
-        return res.status(404).json({ message: "Board category not found" });
+      const category = await verifyCategoryExists(data.categoryId);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
       }
-      const existingQuestions = await storage.getQuestionsByBoardCategory(data.boardCategoryId);
+      const existingQuestions = await storage.getQuestionsByCategory(data.categoryId);
       if (existingQuestions.length >= 5) {
         return res.status(400).json({ message: "Category already has 5 questions (maximum)" });
       }
@@ -536,7 +530,6 @@ export async function registerRoutes(
 
   app.put(api.questions.update.path, isAuthenticated, async (req, res) => {
     try {
-      const userId = req.session.userId!;
       const role = req.session.userRole;
       // Only Super Admins can update questions
       if (role !== 'super_admin') {
@@ -547,12 +540,12 @@ export async function registerRoutes(
       if (!existingQuestion) {
         return res.status(404).json({ message: 'Question not found' });
       }
-      const bc = await verifyBoardCategoryOwnership(existingQuestion.boardCategoryId, userId, role);
-      if (!bc) {
-        return res.status(404).json({ message: "Board category not found" });
+      const category = await verifyCategoryExists(existingQuestion.categoryId);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
       }
       if (data.points !== undefined && data.points !== existingQuestion.points) {
-        const siblingQuestions = await storage.getQuestionsByBoardCategory(existingQuestion.boardCategoryId);
+        const siblingQuestions = await storage.getQuestionsByCategory(existingQuestion.categoryId);
         if (siblingQuestions.some(q => q.id !== existingQuestion.id && q.points === data.points)) {
           return res.status(400).json({ message: `A ${data.points}-point question already exists in this category` });
         }
@@ -571,7 +564,6 @@ export async function registerRoutes(
   });
 
   app.delete(api.questions.delete.path, isAuthenticated, async (req, res) => {
-    const userId = req.session.userId!;
     const role = req.session.userRole;
     // Only Super Admins can delete questions
     if (role !== 'super_admin') {
@@ -581,9 +573,9 @@ export async function registerRoutes(
     if (!existingQuestion) {
       return res.status(404).json({ message: 'Question not found' });
     }
-    const bc = await verifyBoardCategoryOwnership(existingQuestion.boardCategoryId, userId, role);
-    if (!bc) {
-      return res.status(404).json({ message: "Board category not found" });
+    const category = await verifyCategoryExists(existingQuestion.categoryId);
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
     }
     const deleted = await storage.deleteQuestion(Number(req.params.id));
     if (!deleted) {
@@ -597,23 +589,21 @@ export async function registerRoutes(
   const MAX_QUESTION_LENGTH = 1000;
   const MAX_ANSWER_LENGTH = 500;
   
-  app.post("/api/board-categories/:boardCategoryId/questions/bulk", isAuthenticated, async (req, res) => {
+  app.post("/api/categories/:categoryId/questions/bulk", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.session.userId!;
       const role = req.session.userRole;
       // Only Super Admins can bulk import questions
       if (role !== 'super_admin') {
         return res.status(403).json({ message: "Only Super Admins can bulk import questions" });
       }
-      const boardCategoryId = Number(req.params.boardCategoryId);
-      const bc = await verifyBoardCategoryOwnership(boardCategoryId, userId, role);
-      if (!bc) {
-        return res.status(404).json({ message: "Board category not found" });
+      const categoryId = Number(req.params.categoryId);
+      const category = await verifyCategoryExists(categoryId);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
       }
 
-      // Get board-specific point values
-      const board = await storage.getBoard(bc.boardId, userId, role);
-      const validPointValues = board?.pointValues || [10, 20, 30, 40, 50];
+      // Standard point values for categories
+      const validPointValues = [10, 20, 30, 40, 50];
 
       const { questions } = req.body as { questions: Array<{ question: string; correctAnswer: string; points: number }> };
       if (!Array.isArray(questions) || questions.length === 0) {
@@ -624,7 +614,7 @@ export async function registerRoutes(
         return res.status(400).json({ message: `Maximum ${MAX_BULK_IMPORT} questions per import` });
       }
 
-      const existingQuestions = await storage.getQuestionsByBoardCategory(boardCategoryId);
+      const existingQuestions = await storage.getQuestionsByCategory(categoryId);
       const existingPoints = new Set(existingQuestions.map(q => q.points));
       const results: { success: number; errors: string[] } = { success: 0, errors: [] };
 
@@ -647,20 +637,20 @@ export async function registerRoutes(
           continue;
         }
         if (!validPointValues.includes(points)) {
-          results.errors.push(`Line ${i + 1}: Invalid point value (board uses: ${validPointValues.join(', ')})`);
+          results.errors.push(`Line ${i + 1}: Invalid point value (must be: ${validPointValues.join(', ')})`);
           continue;
         }
         if (existingPoints.has(points)) {
           results.errors.push(`Line ${i + 1}: ${points}-point question already exists`);
           continue;
         }
-        if (existingQuestions.length + results.success >= validPointValues.length) {
-          results.errors.push(`Line ${i + 1}: Category already has ${validPointValues.length} questions (maximum for this board)`);
+        if (existingQuestions.length + results.success >= 5) {
+          results.errors.push(`Line ${i + 1}: Category already has 5 questions (maximum)`);
           continue;
         }
         try {
           await storage.createQuestion({
-            boardCategoryId,
+            categoryId,
             question: questionText,
             options: [],
             correctAnswer: answerText,
@@ -691,9 +681,9 @@ export async function registerRoutes(
         return res.status(404).json({ message: 'Question not found' });
       }
       
-      const bc = await verifyBoardCategoryOwnership(question.boardCategoryId, userId, role);
-      if (!bc) {
-        return res.status(404).json({ message: "Board category not found" });
+      const category = await verifyCategoryExists(question.categoryId);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
       }
 
       const isCorrect = question.correctAnswer === answer;
@@ -1492,13 +1482,13 @@ export async function registerRoutes(
         const categoriesWithQuestions = [];
         
         for (const bc of boardCategories) {
-          const questions = await storage.getQuestionsByBoardCategory(bc.id);
+          const questions = await storage.getQuestionsByCategory(bc.categoryId);
           categoriesWithQuestions.push({
             categoryName: bc.category.name,
             categoryDescription: bc.category.description || '',
             categoryRule: bc.category.rule || '',
             categoryImageUrl: bc.category.imageUrl || '',
-            questions: questions.map(q => ({
+            questions: questions.map((q: Question) => ({
               question: q.question,
               correctAnswer: q.correctAnswer,
               points: q.points,
@@ -1610,10 +1600,10 @@ export async function registerRoutes(
             categoryId: category.id,
           });
           
-          // Create questions for this board-category pair
+          // Create questions for this category
           for (const q of cat.questions || []) {
             await storage.createQuestion({
-              boardCategoryId: boardCategory.id,
+              categoryId: category.id,
               question: q.question,
               correctAnswer: q.correctAnswer,
               points: q.points,
@@ -2912,11 +2902,10 @@ export async function registerRoutes(
           
           // Link category to board
           const bcKey = `${boardId}-${categoryInfo.id}`;
-          let boardCategoryId = boardCategoryMap.get(bcKey);
-          if (!boardCategoryId) {
+          if (!boardCategoryMap.has(bcKey)) {
             const existingBC = await storage.getBoardCategoryByIds(boardId, categoryInfo.id);
             if (existingBC) {
-              boardCategoryId = existingBC.id;
+              boardCategoryMap.set(bcKey, existingBC.id);
             } else {
               const boardCats = await storage.getBoardCategories(boardId);
               if (boardCats.length >= 5) {
@@ -2928,21 +2917,20 @@ export async function registerRoutes(
                 categoryId: categoryInfo.id,
                 position: boardCats.length,
               });
-              boardCategoryId = newBC.id;
+              boardCategoryMap.set(bcKey, newBC.id);
               results.categoriesLinked++;
             }
-            boardCategoryMap.set(bcKey, boardCategoryId);
           }
           
-          // Create question if we have one
+          // Create question if we have one (questions belong to categories directly)
           if (question) {
             if (!answer) {
               results.flagged.push({ row: rowNum, issue: "Missing answer for question", data: rowData });
               continue;
             }
             
-            // Check if question already exists for this board-category
-            const existingQuestions = await storage.getQuestionsByBoardCategory(boardCategoryId);
+            // Check if question already exists for this category
+            const existingQuestions = await storage.getQuestionsByCategory(categoryInfo.id);
             const duplicate = existingQuestions.find((q: Question) => 
               q.question.toLowerCase() === question.toLowerCase()
             );
@@ -2972,7 +2960,7 @@ export async function registerRoutes(
             }
             
             await storage.createQuestion({
-              boardCategoryId,
+              categoryId: categoryInfo.id,
               question,
               options,
               correctAnswer,

@@ -85,7 +85,7 @@ describe("Contract Testing - API Schema Validation", () => {
       if (qs.length > 0) {
         const q = qs[0];
         expect(q.id).toBeDefined();
-        expect(q.boardCategoryId).toBeDefined();
+        expect(q.categoryId).toBeDefined();
         expect(typeof q.question).toBe("string");
         expect(typeof q.points).toBe("number");
       }

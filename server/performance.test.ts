@@ -62,7 +62,7 @@ describe("Performance Tests", () => {
       for (const bc of bcs) {
         await db.select()
           .from(questions)
-          .where(eq(questions.boardCategoryId, bc.id));
+          .where(eq(questions.categoryId, bc.id));
       }
       
       const duration = performance.now() - start;

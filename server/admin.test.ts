@@ -86,7 +86,7 @@ describe("Admin Panel", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          boardCategoryId: 1,
+          categoryId: 1,
           question: "Test?",
           correctAnswer: "Yes",
           points: 10
@@ -343,7 +343,7 @@ describe("Admin Data Operations", () => {
       cleanupIds.boardCategories.push(bc.id);
 
       const [q] = await db.insert(questions).values({
-        boardCategoryId: bc.id,
+        categoryId: bc.id,
         question: "What is the capital of France?",
         options: ["Paris", "London", "Berlin", "Madrid"],
         correctAnswer: "Paris",
@@ -381,7 +381,7 @@ describe("Admin Data Operations", () => {
       cleanupIds.boardCategories.push(bc.id);
 
       const [q] = await db.insert(questions).values({
-        boardCategoryId: bc.id,
+        categoryId: bc.id,
         question: "Original question?",
         options: ["A", "B"],
         correctAnswer: "A",
@@ -470,7 +470,7 @@ describe("Admin Panel Regression Tests", () => {
         const bcs = await db.select().from(boardCategories).where(eq(boardCategories.categoryId, cat.id));
         if (bcs.length === 0) continue;
         
-        const qs = await db.select().from(questions).where(eq(questions.boardCategoryId, bcs[0].id));
+        const qs = await db.select().from(questions).where(eq(questions.categoryId, bcs[0].id));
         
         if (qs.length < 5) {
           expect(cat.isActive).toBe(false);
@@ -490,7 +490,7 @@ describe("Admin Panel Regression Tests", () => {
         const bcs = await db.select().from(boardCategories).where(eq(boardCategories.categoryId, cat.id));
         if (bcs.length === 0) continue;
         
-        const qs = await db.select().from(questions).where(eq(questions.boardCategoryId, bcs[0].id));
+        const qs = await db.select().from(questions).where(eq(questions.categoryId, bcs[0].id));
         if (qs.length !== 5) continue;
         
         const pointsSet = new Set(qs.map(q => q.points));

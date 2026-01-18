@@ -57,16 +57,16 @@ export default function GridOfGrudges() {
 
   const pointValues = selectedBoard?.pointValues || [100, 200, 300, 400, 500];
 
-  const getQuestion = (boardCategoryId: number, points: number) => {
-    return allQuestions.find(q => q.boardCategoryId === boardCategoryId && q.points === points);
+  const getQuestion = (categoryId: number, points: number) => {
+    return allQuestions.find(q => q.categoryId === categoryId && q.points === points);
   };
 
   const isQuestionCompleted = (questionId: number) => {
     return completedQuestions.includes(questionId);
   };
 
-  const handleCellClick = (boardCategoryId: number, points: number) => {
-    const question = getQuestion(boardCategoryId, points);
+  const handleCellClick = (categoryId: number, points: number) => {
+    const question = getQuestion(categoryId, points);
     if (question && !isQuestionCompleted(question.id)) {
       setSelectedQuestion(question);
       setShowAnswer(false);

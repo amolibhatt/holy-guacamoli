@@ -248,7 +248,7 @@ export const boardCategories = pgTable("board_categories", {
 
 export const questions = pgTable("questions", {
   id: serial("id").primaryKey(),
-  boardCategoryId: integer("board_category_id").notNull(),
+  categoryId: integer("category_id").notNull(),
   question: text("question").notNull(),
   options: jsonb("options").$type<string[]>().notNull(),
   correctAnswer: text("correct_answer").notNull(),
@@ -507,9 +507,10 @@ export const boardsRelations = relations(boards, ({ many }) => ({
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
   boardCategories: many(boardCategories),
+  questions: many(questions),
 }));
 
-export const boardCategoriesRelations = relations(boardCategories, ({ one, many }) => ({
+export const boardCategoriesRelations = relations(boardCategories, ({ one }) => ({
   board: one(boards, {
     fields: [boardCategories.boardId],
     references: [boards.id],
@@ -518,13 +519,12 @@ export const boardCategoriesRelations = relations(boardCategories, ({ one, many 
     fields: [boardCategories.categoryId],
     references: [categories.id],
   }),
-  questions: many(questions),
 }));
 
 export const questionsRelations = relations(questions, ({ one }) => ({
-  boardCategory: one(boardCategories, {
-    fields: [questions.boardCategoryId],
-    references: [boardCategories.id],
+  category: one(categories, {
+    fields: [questions.categoryId],
+    references: [categories.id],
   }),
 }));
 
