@@ -1,0 +1,50 @@
+2026-01-18T13:24:25.779860604Z ../dist/public/assets/GridOfGrudges-lc7IrY0n.js         5.80 kB │ gzip:   2.14 kB
+2026-01-18T13:24:25.779866944Z ../dist/public/assets/HeadsUpGame-DTQGQw9t.js           6.80 kB │ gzip:   2.05 kB
+2026-01-18T13:24:25.779892364Z ../dist/public/assets/Storyboard-CZpZ7Jtq.js            7.88 kB │ gzip:   2.19 kB
+2026-01-18T13:24:25.779895685Z ../dist/public/assets/BuzzerPanel-k80Qm33N.js           9.00 kB │ gzip:   2.98 kB
+2026-01-18T13:24:25.779901305Z ../dist/public/assets/HostGridOfGrudges-CPPYCzQK.js    12.95 kB │ gzip:   3.38 kB
+2026-01-18T13:24:25.779903985Z ../dist/public/assets/ContentDashboard-LLPgOL2B.js     15.33 kB │ gzip:   3.71 kB
+2026-01-18T13:24:25.779951886Z ../dist/public/assets/SequencePlayer-BuXa6jcQ.js       17.00 kB │ gzip:   4.79 kB
+2026-01-18T13:24:25.779963526Z ../dist/public/assets/index-VT2OvpTj.js                17.04 kB │ gzip:   6.37 kB
+2026-01-18T13:24:25.779967046Z ../dist/public/assets/dropdown-menu-3K16AcH1.js        20.62 kB │ gzip:   6.01 kB
+2026-01-18T13:24:25.779969666Z ../dist/public/assets/GamesAdmin-Bd7vJ_tJ.js           21.15 kB │ gzip:   4.44 kB
+2026-01-18T13:24:25.779995777Z ../dist/public/assets/SuperAdmin-hi7CWTV_.js           23.60 kB │ gzip:   6.20 kB
+2026-01-18T13:24:25.780000497Z ../dist/public/assets/SequenceSqueeze-CxAz-Qi4.js      24.84 kB │ gzip:   6.74 kB
+2026-01-18T13:24:25.780006097Z ../dist/public/assets/alert-dialog-CL0CNmif.js         25.99 kB │ gzip:   8.83 kB
+2026-01-18T13:24:25.780007997Z ../dist/public/assets/RelationshipHub-pwNwfATJ.js      37.99 kB │ gzip:   8.97 kB
+2026-01-18T13:24:25.780011677Z ../dist/public/assets/PlayBoard-BeWX9-fg.js            40.82 kB │ gzip:  12.10 kB
+2026-01-18T13:24:25.780013477Z ../dist/public/assets/index-Cu_vGXzw.js               157.13 kB │ gzip:  47.65 kB
+2026-01-18T13:24:25.780048038Z ../dist/public/assets/index-DeceJwtl.js               635.24 kB │ gzip: 197.61 kB
+2026-01-18T13:24:25.780050527Z ../dist/public/assets/Admin-erVjz57s.js               977.05 kB │ gzip: 335.60 kB
+2026-01-18T13:24:25.78021073Z 
+2026-01-18T13:24:25.780221301Z (!) Some chunks are larger than 500 kB after minification. Consider:
+2026-01-18T13:24:25.780223801Z - Using dynamic import() to code-split the application
+2026-01-18T13:24:25.780226361Z - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+2026-01-18T13:24:25.780228171Z - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+2026-01-18T13:24:25.780501516Z ✓ built in 7.88s
+2026-01-18T13:24:25.780641079Z building server...
+2026-01-18T13:24:26.151185047Z 
+2026-01-18T13:24:26.151206987Z   dist/index.cjs  2.6mb ⚠️
+2026-01-18T13:24:26.151209797Z 
+2026-01-18T13:24:26.151212437Z ⚡ Done in 356ms
+2026-01-18T13:24:49.082357202Z ==> Uploading build...
+2026-01-18T13:25:05.095352348Z ==> Uploaded in 7.5s. Compression took 8.5s
+2026-01-18T13:25:05.140839703Z ==> Build successful 🎉
+2026-01-18T13:25:22.366785555Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-01-18T13:25:22.704595172Z ==> Deploying...
+2026-01-18T13:31:53.55452055Z ==> No open ports detected, continuing to scan...
+2026-01-18T13:31:53.955462503Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+2026-01-18T13:31:58.768980127Z ==> Running 'npm start'
+2026-01-18T13:31:59.958201072Z 
+2026-01-18T13:31:59.958219043Z > rest-express@1.0.0 start
+2026-01-18T13:31:59.958224413Z > NODE_ENV=production node dist/index.cjs
+2026-01-18T13:31:59.958227103Z 
+2026-01-18T13:32:04.37751019Z Checked 6 boards for color assignment
+2026-01-18T13:32:04.557206142Z 1:32:04 PM [express] serving on port 10000
+2026-01-18T13:32:15.062326289Z ==> Your service is live 🎉
+2026-01-18T13:32:15.255374384Z ==> 
+2026-01-18T13:32:15.451023579Z ==> ///////////////////////////////////////////////////////////
+2026-01-18T13:32:15.646554104Z ==> 
+2026-01-18T13:32:15.842644279Z ==> Available at your primary URL https://holy-guacamoli.onrender.com
+2026-01-18T13:32:16.037677403Z ==> 
+2026-01-18T13:32:16.240696528Z ==> ///////////////////////////////////////////////////////////
