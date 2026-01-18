@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ArrowRight, FolderPlus } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, FolderPlus, LogIn } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import type { Board } from "@shared/schema";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
 
 interface PresetBoard extends Board {
   categoryCount: number;
@@ -49,7 +50,21 @@ export default function HostGridOfGrudges() {
 
       <main className="flex-1 p-6 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
-          {isLoading ? (
+          {!isAuthenticated ? (
+            <div className="flex flex-col items-center justify-center py-16 space-y-4">
+              <LogIn className="w-12 h-12 text-muted-foreground" />
+              <h2 className="text-xl font-semibold text-foreground">Sign in to play</h2>
+              <p className="text-muted-foreground text-center max-w-md">
+                Log in to access Starter Packs and your custom game boards.
+              </p>
+              <Link href="/login">
+                <Button size="lg" data-testid="button-login">
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Sign In
+                </Button>
+              </Link>
+            </div>
+          ) : isLoading ? (
             <div className="flex justify-center py-16">
               <Loader2 className="w-10 h-10 animate-spin text-primary" />
             </div>
