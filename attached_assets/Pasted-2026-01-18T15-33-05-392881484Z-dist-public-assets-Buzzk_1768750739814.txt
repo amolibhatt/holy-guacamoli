@@ -1,0 +1,50 @@
+2026-01-18T15:33:05.392881484Z ../dist/public/assets/BuzzkillDailySmash-6glGY3ic.js    4.94 kB │ gzip:   2.06 kB
+2026-01-18T15:33:05.392884514Z ../dist/public/assets/Vault-D7pP1Knc.js                 5.78 kB │ gzip:   1.86 kB
+2026-01-18T15:33:05.392886624Z ../dist/public/assets/GridOfGrudges-lc7IrY0n.js         5.80 kB │ gzip:   2.14 kB
+2026-01-18T15:33:05.392891254Z ../dist/public/assets/HeadsUpGame-DTQGQw9t.js           6.80 kB │ gzip:   2.05 kB
+2026-01-18T15:33:05.392920875Z ../dist/public/assets/Storyboard-CZpZ7Jtq.js            7.88 kB │ gzip:   2.19 kB
+2026-01-18T15:33:05.392924655Z ../dist/public/assets/BuzzerPanel-k80Qm33N.js           9.00 kB │ gzip:   2.98 kB
+2026-01-18T15:33:05.392927405Z ../dist/public/assets/HostGridOfGrudges-CPPYCzQK.js    12.95 kB │ gzip:   3.38 kB
+2026-01-18T15:33:05.392934195Z ../dist/public/assets/ContentDashboard-LLPgOL2B.js     15.33 kB │ gzip:   3.71 kB
+2026-01-18T15:33:05.392937325Z ../dist/public/assets/SequencePlayer-BuXa6jcQ.js       17.00 kB │ gzip:   4.79 kB
+2026-01-18T15:33:05.392956095Z ../dist/public/assets/index-VT2OvpTj.js                17.04 kB │ gzip:   6.37 kB
+2026-01-18T15:33:05.392963046Z ../dist/public/assets/dropdown-menu-3K16AcH1.js        20.62 kB │ gzip:   6.01 kB
+2026-01-18T15:33:05.392966946Z ../dist/public/assets/GamesAdmin-Bd7vJ_tJ.js           21.15 kB │ gzip:   4.44 kB
+2026-01-18T15:33:05.393008016Z ../dist/public/assets/SuperAdmin-hi7CWTV_.js           23.60 kB │ gzip:   6.20 kB
+2026-01-18T15:33:05.393012047Z ../dist/public/assets/SequenceSqueeze-CxAz-Qi4.js      24.84 kB │ gzip:   6.74 kB
+2026-01-18T15:33:05.393014787Z ../dist/public/assets/alert-dialog-CL0CNmif.js         25.99 kB │ gzip:   8.83 kB
+2026-01-18T15:33:05.393017287Z ../dist/public/assets/RelationshipHub-pwNwfATJ.js      37.99 kB │ gzip:   8.97 kB
+2026-01-18T15:33:05.393023917Z ../dist/public/assets/PlayBoard-BeWX9-fg.js            40.82 kB │ gzip:  12.10 kB
+2026-01-18T15:33:05.393026927Z ../dist/public/assets/index-Cu_vGXzw.js               157.13 kB │ gzip:  47.65 kB
+2026-01-18T15:33:05.393036037Z ../dist/public/assets/index-DeceJwtl.js               635.24 kB │ gzip: 197.61 kB
+2026-01-18T15:33:05.393041017Z ../dist/public/assets/Admin-erVjz57s.js               977.05 kB │ gzip: 335.60 kB
+2026-01-18T15:33:05.39320566Z 
+2026-01-18T15:33:05.393213731Z (!) Some chunks are larger than 500 kB after minification. Consider:
+2026-01-18T15:33:05.39321736Z - Using dynamic import() to code-split the application
+2026-01-18T15:33:05.39322074Z - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+2026-01-18T15:33:05.393224021Z - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+2026-01-18T15:33:05.393451825Z ✓ built in 7.55s
+2026-01-18T15:33:05.393566097Z building server...
+2026-01-18T15:33:05.814043472Z 
+2026-01-18T15:33:05.814097073Z   dist/index.cjs  2.6mb ⚠️
+2026-01-18T15:33:05.814103953Z 
+2026-01-18T15:33:05.814108723Z ⚡ Done in 408ms
+2026-01-18T15:33:22.582962386Z ==> Uploading build...
+2026-01-18T15:33:35.916802017Z ==> Uploaded in 7.5s. Compression took 5.8s
+2026-01-18T15:33:35.959853631Z ==> Build successful 🎉
+2026-01-18T15:34:04.836367303Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-01-18T15:34:05.003534886Z ==> Deploying...
+2026-01-18T15:34:33.977176427Z ==> Running 'npm start'
+2026-01-18T15:34:35.082840709Z 
+2026-01-18T15:34:35.08286258Z > rest-express@1.0.0 start
+2026-01-18T15:34:35.08286769Z > NODE_ENV=production node dist/index.cjs
+2026-01-18T15:34:35.08286997Z 
+2026-01-18T15:34:39.594221616Z Checked 6 boards for color assignment
+2026-01-18T15:34:39.785122468Z 3:34:39 PM [express] serving on port 10000
+2026-01-18T15:34:40.695573603Z ==> Your service is live 🎉
+2026-01-18T15:34:40.887553777Z ==> 
+2026-01-18T15:34:41.081845331Z ==> ///////////////////////////////////////////////////////////
+2026-01-18T15:34:41.285222624Z ==> 
+2026-01-18T15:34:41.473742948Z ==> Available at your primary URL https://holy-guacamoli.onrender.com
+2026-01-18T15:34:41.913006612Z ==> 
+2026-01-18T15:34:42.101484296Z ==> ///////////////////////////////////////////////////////////
