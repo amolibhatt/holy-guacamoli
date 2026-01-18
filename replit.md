@@ -26,18 +26,18 @@ Preferred communication style: Simple, everyday language.
 - **Storage Layer**: DatabaseStorage class implementing IStorage interface for data access
 
 ### Data Model
-- **Boards**: id, name, description, pointValues (JSONB array of numbers)
-- **Categories**: id, name, description, imageUrl (global templates that can be reused across boards)
-- **BoardCategories**: id, boardId, categoryId (junction table linking categories to boards - same category can be on multiple boards)
-- **Questions**: id, boardCategoryId, question, options (JSONB array), correctAnswer, points (questions belong to a specific board-category pair, auto-sorted by points)
+- **Boards**: id, name, description, pointValues (fixed at [10,20,30,40,50])
+- **Categories**: id, name, description, imageUrl, sourceGroup (A-E for organization)
+- **BoardCategories**: id, boardId, categoryId (junction table linking categories to boards, max 5 per board)
+- **Questions**: id, categoryId, question, options (JSONB array), correctAnswer, points (questions belong directly to categories, exactly 5 per category with unique points {10,20,30,40,50})
 - Relations defined with Drizzle ORM relations
 
 ### Key Design Decisions
 1. **Shared Types**: Schema and route definitions in `/shared` folder are used by both frontend and backend, ensuring type safety across the stack
 2. **Host Mode**: The app is designed for a host to control the game - questions reveal answers to the host, who then awards/deducts points to contestants
 3. **Contestant System**: Managed via React Context (ScoreContext) with add/remove contestants, award/deduct points, and track completed questions
-4. **Reusable Categories**: Categories are global templates. The same category (e.g., "Anagrammed Countries") can be linked to multiple boards, with each board having its own unique set of questions for that category.
-5. **Multiple Boards**: Supports multiple game boards, each with its own set of linked categories and custom point values (e.g., Board 1: 10-50 pts, Board 2: 60-100 pts). Questions are automatically ordered by point value.
+4. **Simplified Category Model**: 1 Category = 1 set of 5 Questions. Categories have exactly 5 questions with unique point values {10,20,30,40,50}. Questions belong directly to categories via categoryId.
+5. **Simple Flat Board List**: Boards are displayed in a simple flat list without grouping. Each board can link up to 5 categories.
 6. **Multiplayer Buzzer System**: WebSocket-based real-time buzzer where players join via QR code on their phones (/play route). Buzzers auto-unlock when questions open and auto-lock when closed.
 7. **Animations**: 3D flip card animations for question cells, particle effects for milestones and category completion
 8. **Portable Email/Password Auth**: Host authentication uses bcrypt for password hashing and express-session with PostgreSQL store. No external OAuth dependencies - works on any platform.
@@ -45,14 +45,11 @@ Preferred communication style: Simple, everyday language.
 10. **Sync-Stakes (Weekly Stakes)**: Couples can set weekly stakes with curated rewards/penalties. First completer each day earns 1 point; bonus point for 85%+ compatibility. Atomic SQL prevents race conditions. Weekly winner revealed on Sundays.
 
 ### Recent Changes (January 2026)
-- **Strict Category Validation**: Categories can only go LIVE (isActive=true) when they have exactly 5 questions with unique points {10,20,30,40,50}. Point collisions are rejected with clear error messages during creation/import.
-- **Personal-First Shuffle Play**: Shuffle algorithm now prioritizes Personal categories (from user's boards) before filling with Global categories (from Starter Packs). Global categories use Source Groups (A-E) for diverse selection.
-- **Diversity Rule**: When filling from Global pool, picks one category from each Theme Group (A-E) before repeating. Single remaining groups can fill multiple slots.
-- **Session Memory Reset**: PlayedHistory resets when (total pool - played) < 5, ensuring continuous variety.
-- **Source Group Assignment**: Categories can now be assigned to Source Groups (A-E) when created. Admin panel shows group badges on category tabs.
+- **Simplified Architecture**: Questions now belong directly to categories via categoryId (not boardCategoryId). Each category has exactly 5 questions with unique points {10,20,30,40,50}.
+- **Flat Board List**: Removed Shuffle Play, Starter Packs, and My Boards grouping. All boards display in a simple flat list.
+- **Strict Category Validation**: Categories require exactly 5 questions with unique points {10,20,30,40,50}. Point collisions are rejected with clear error messages.
+- **Source Group Assignment**: Categories can be assigned to Source Groups (A-E) for organization. Admin panel shows group badges on category tabs.
 - **Enhanced Mobile Buzzer**: Larger buzzer button (320px), double pulsing rings, improved touch responsiveness with touch-manipulation CSS.
-- **Starter Pack Export/Import**: Super Admins can export Starter Packs as JSON and import them in production with category deduplication.
-- **Smart Category Management**: Buzzkill supports "Shuffle Play" (mixed board with personal-first priority), "Starter Packs" (pre-made themed boards), and "My Boards" (user-created boards).
 - **React Error Boundary**: App-level error boundary catches render crashes and displays recovery UI with reload/try-again options
 - **Global Error Handlers**: Server-side uncaughtException/unhandledRejection handlers with graceful shutdown
 - **WebSocket Error Handling**: Added error handlers to prevent connection crashes from taking down the server
