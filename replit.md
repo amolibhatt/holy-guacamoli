@@ -27,7 +27,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Data Model
 - **Boards**: id, name, description, pointValues (fixed at [10,20,30,40,50])
-- **Categories**: id, name, description, imageUrl, sourceGroup (A-E for organization)
+- **Categories**: id, name, description, imageUrl
 - **BoardCategories**: id, boardId, categoryId (junction table linking categories to boards, max 5 per board)
 - **Questions**: id, categoryId, question, options (JSONB array), correctAnswer, points (questions belong directly to categories, exactly 5 per category with unique points {10,20,30,40,50})
 - Relations defined with Drizzle ORM relations
@@ -48,7 +48,7 @@ Preferred communication style: Simple, everyday language.
 - **Simplified Architecture**: Questions now belong directly to categories via categoryId (not boardCategoryId). Each category has exactly 5 questions with unique points {10,20,30,40,50}.
 - **Flat Board List**: Removed Shuffle Play, Starter Packs, and My Boards grouping. All boards display in a simple flat list.
 - **Strict Category Validation**: Categories require exactly 5 questions with unique points {10,20,30,40,50}. Point collisions are rejected with clear error messages.
-- **Source Group Assignment**: Categories can be assigned to Source Groups (A-E) for organization. Admin panel shows group badges on category tabs.
+- **Removed Source Groups**: Source Group feature (A-E) was removed to simplify the admin interface.
 - **Enhanced Mobile Buzzer**: Larger buzzer button (320px), double pulsing rings, improved touch responsiveness with touch-manipulation CSS.
 - **React Error Boundary**: App-level error boundary catches render crashes and displays recovery UI with reload/try-again options
 - **Global Error Handlers**: Server-side uncaughtException/unhandledRejection handlers with graceful shutdown
