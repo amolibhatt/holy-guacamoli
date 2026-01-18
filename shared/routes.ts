@@ -82,9 +82,9 @@ export const api = {
     },
   },
   questions: {
-    listByBoardCategory: {
+    listByCategory: {
       method: 'GET' as const,
-      path: '/api/board-categories/:boardCategoryId/questions',
+      path: '/api/categories/:categoryId/questions',
       responses: {
         200: z.array(z.custom<typeof questions.$inferSelect>()),
         404: errorSchemas.notFound,
@@ -110,7 +110,7 @@ export const api = {
     update: {
       method: 'PUT' as const,
       path: '/api/questions/:id',
-      input: insertQuestionSchema.partial().omit({ boardCategoryId: true }),
+      input: insertQuestionSchema.partial().omit({ categoryId: true }),
       responses: {
         200: z.custom<typeof questions.$inferSelect>(),
         400: errorSchemas.validation,
@@ -154,5 +154,5 @@ export function buildUrl(path: string, params?: Record<string, string | number>)
 // TYPE HELPERS
 // ============================================
 export type CategoryListResponse = z.infer<typeof api.categories.list.responses[200]>;
-export type QuestionListResponse = z.infer<typeof api.questions.listByBoardCategory.responses[200]>;
+export type QuestionListResponse = z.infer<typeof api.questions.listByCategory.responses[200]>;
 export type VerifyAnswerResponse = z.infer<typeof api.questions.verifyAnswer.responses[200]>;

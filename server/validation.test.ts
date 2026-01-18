@@ -112,7 +112,7 @@ describe("Input Validation", () => {
       cleanupIds.boardCategories.push(bc.id);
 
       const [q] = await db.insert(questions).values({
-        boardCategoryId: bc.id,
+        categoryId: bc.id,
         question: "What is the answer?",
         options: ["Option A", "Option B", "Option C", "Option D"],
         correctAnswer: "Option A",
@@ -147,7 +147,7 @@ describe("Input Validation", () => {
       cleanupIds.boardCategories.push(bc.id);
 
       const [q] = await db.insert(questions).values({
-        boardCategoryId: bc.id,
+        categoryId: bc.id,
         question: "Free response question",
         options: [],
         correctAnswer: "Any answer",

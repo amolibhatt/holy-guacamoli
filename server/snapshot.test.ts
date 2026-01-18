@@ -72,7 +72,7 @@ describe("Snapshot Tests - API Response Structures", () => {
         const q = qs[0];
         
         expect(q).toHaveProperty("id");
-        expect(q).toHaveProperty("boardCategoryId");
+        expect(q).toHaveProperty("categoryId");
         expect(q).toHaveProperty("question");
         expect(q).toHaveProperty("points");
         
@@ -160,7 +160,7 @@ describe("Snapshot Tests - API Response Structures", () => {
       
       if (bc.length > 0) {
         const qs = await db.select().from(questions)
-          .where(eq(questions.boardCategoryId, bc[0].id));
+          .where(eq(questions.categoryId, bc[0].id));
         
         for (const q of qs) {
           expect(typeof q.points).toBe("number");

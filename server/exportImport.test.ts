@@ -28,7 +28,7 @@ describe("Export/Import Format Validation", () => {
       
       if (bc.length > 0) {
         const qs = await db.select().from(questions)
-          .where(eq(questions.boardCategoryId, bc[0].id));
+          .where(eq(questions.categoryId, bc[0].id));
         
         for (const q of qs) {
           expect(q.question).toBeDefined();

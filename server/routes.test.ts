@@ -105,7 +105,7 @@ describe("Category Validation Rules", () => {
       const bcs = await db.select().from(boardCategories).where(eq(boardCategories.categoryId, cat.id));
       if (bcs.length === 0) continue;
       
-      const qs = await db.select().from(questions).where(eq(questions.boardCategoryId, bcs[0].id));
+      const qs = await db.select().from(questions).where(eq(questions.categoryId, bcs[0].id));
       
       if (qs.length === 5) {
         totalWith5Questions++;

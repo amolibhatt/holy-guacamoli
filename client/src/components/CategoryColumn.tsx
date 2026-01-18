@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuestionsByBoardCategory } from "@/hooks/use-quiz";
+import { useQuestionsByCategory } from "@/hooks/use-quiz";
 import { useScore } from "@/components/ScoreContext";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,13 +15,13 @@ interface FlipCardProps {
   scoreValue: number;
   question: Question | undefined;
   isCompleted: boolean;
-  boardCategoryId: number;
+  categoryId: number;
   onSelect: (question: Question) => void;
   delay: number;
 }
 
 
-function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect, delay }: FlipCardProps) {
+function FlipCard({ scoreValue, question, isCompleted, categoryId, onSelect, delay }: FlipCardProps) {
   const [isFlipping, setIsFlipping] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const hasQuestion = !!question;
@@ -74,7 +74,7 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
         `}
         onClick={handleClick}
         disabled={!hasQuestion || isCompleted}
-        data-testid={`cell-${boardCategoryId}-${scoreValue}`}
+        data-testid={`cell-${categoryId}-${scoreValue}`}
         style={{ backfaceVisibility: "hidden" }}
         aria-label={isCompleted ? `${scoreValue} points - completed` : hasQuestion ? `${scoreValue} points - click to reveal question` : `${scoreValue} points - no question`}
       >
@@ -121,12 +121,12 @@ interface CategoryColumnProps {
 }
 
 export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }: CategoryColumnProps) {
-  const { data: questions, isLoading } = useQuestionsByBoardCategory(boardCategory.id);
+  const { data: questions, isLoading } = useQuestionsByCategory(boardCategory.categoryId);
   const { completedQuestions } = useScore();
   
   const scoreValues = pointValues || DEFAULT_SCORE_VALUES;
   
-  const questionsByPoints = (questions || []).reduce((acc, q) => {
+  const questionsByPoints = (questions || []).reduce((acc: Record<number, Question>, q: Question) => {
     acc[q.points] = q;
     return acc;
   }, {} as Record<number, Question>);
@@ -193,7 +193,7 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }:
               scoreValue={scoreValue}
               question={question}
               isCompleted={isCompleted}
-              boardCategoryId={boardCategory.id}
+              categoryId={boardCategory.categoryId}
               onSelect={onSelectQuestion}
               delay={idx * 0.03}
             />

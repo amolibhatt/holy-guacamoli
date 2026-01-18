@@ -23,7 +23,7 @@ export interface IStorage {
   updateBoardCategoryPosition(id: number, position: number): Promise<BoardCategory | undefined>;
   deleteBoardCategory(id: number): Promise<boolean>;
   
-  getQuestionsByBoardCategory(boardCategoryId: number): Promise<Question[]>;
+  getQuestionsByCategory(categoryId: number): Promise<Question[]>;
   getQuestion(id: number): Promise<Question | undefined>;
   createQuestion(question: InsertQuestion): Promise<Question>;
   updateQuestion(id: number, data: Partial<InsertQuestion>): Promise<Question | undefined>;
@@ -208,10 +208,7 @@ export class DatabaseStorage implements IStorage {
   async deleteBoard(id: number, userId: string, role?: string): Promise<boolean> {
     const board = await this.getBoard(id, userId, role);
     if (!board) return false;
-    const bcs = await db.select().from(boardCategories).where(eq(boardCategories.boardId, id));
-    for (const bc of bcs) {
-      await db.delete(questions).where(eq(questions.boardCategoryId, bc.id));
-    }
+    // Remove board-category links (questions belong to categories, not boards)
     await db.delete(boardCategories).where(eq(boardCategories.boardId, id));
     if (role === 'super_admin') {
       const result = await db.delete(boards).where(eq(boards.id, id)).returning();
@@ -241,10 +238,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCategory(id: number): Promise<boolean> {
-    const bcs = await db.select().from(boardCategories).where(eq(boardCategories.categoryId, id));
-    for (const bc of bcs) {
-      await db.delete(questions).where(eq(questions.boardCategoryId, bc.id));
-    }
+    // Delete questions that belong to this category
+    await db.delete(questions).where(eq(questions.categoryId, id));
+    // Remove board-category links
     await db.delete(boardCategories).where(eq(boardCategories.categoryId, id));
     const result = await db.delete(categories).where(eq(categories.id, id)).returning();
     return result.length > 0;
@@ -266,17 +262,18 @@ export class DatabaseStorage implements IStorage {
     
     if (result.length === 0) return [];
     
-    const bcIds = result.map(r => r.id);
+    // Count questions by categoryId (questions now belong to categories directly)
+    const categoryIds = result.map(r => r.categoryId);
     const counts = await db
       .select({ 
-        boardCategoryId: questions.boardCategoryId, 
+        categoryId: questions.categoryId, 
         count: count() 
       })
       .from(questions)
-      .where(inArray(questions.boardCategoryId, bcIds))
-      .groupBy(questions.boardCategoryId);
+      .where(inArray(questions.categoryId, categoryIds))
+      .groupBy(questions.categoryId);
     
-    const countMap = new Map(counts.map(c => [c.boardCategoryId, c.count]));
+    const countMap = new Map(counts.map(c => [c.categoryId, c.count]));
     
     return result.map(r => ({
       id: r.id,
@@ -284,7 +281,7 @@ export class DatabaseStorage implements IStorage {
       categoryId: r.categoryId,
       position: r.position,
       category: r.category,
-      questionCount: countMap.get(r.id) || 0,
+      questionCount: countMap.get(r.categoryId) || 0,
     }));
   }
 
@@ -317,14 +314,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteBoardCategory(id: number): Promise<boolean> {
-    await db.delete(questions).where(eq(questions.boardCategoryId, id));
+    // Just remove the link, questions belong to categories not board-categories
     const result = await db.delete(boardCategories).where(eq(boardCategories.id, id)).returning();
     return result.length > 0;
   }
 
-  async getQuestionsByBoardCategory(boardCategoryId: number): Promise<Question[]> {
+  async getQuestionsByCategory(categoryId: number): Promise<Question[]> {
     return await db.select().from(questions)
-      .where(eq(questions.boardCategoryId, boardCategoryId))
+      .where(eq(questions.categoryId, categoryId))
       .orderBy(asc(questions.points));
   }
 
@@ -356,7 +353,7 @@ export class DatabaseStorage implements IStorage {
     const result: BoardCategoryWithQuestions[] = [];
     
     for (const bc of bcs) {
-      const qs = await this.getQuestionsByBoardCategory(bc.id);
+      const qs = await this.getQuestionsByCategory(bc.categoryId);
       result.push({
         ...bc,
         questions: qs,
@@ -882,33 +879,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getQuestionCountForCategory(categoryId: number): Promise<number> {
-    const boardCats = await db.select({ id: boardCategories.id })
-      .from(boardCategories)
-      .where(eq(boardCategories.categoryId, categoryId));
-    
-    if (boardCats.length === 0) return 0;
-    
-    const bcIds = boardCats.map(bc => bc.id);
     const [result] = await db.select({ count: count() })
       .from(questions)
-      .where(inArray(questions.boardCategoryId, bcIds));
+      .where(eq(questions.categoryId, categoryId));
     
     return result?.count ?? 0;
   }
 
   async getQuestionsForCategory(categoryId: number): Promise<{ points: number }[]> {
-    const boardCats = await db.select({ id: boardCategories.id })
-      .from(boardCategories)
-      .where(eq(boardCategories.categoryId, categoryId));
-    
-    if (boardCats.length === 0) return [];
-    
-    const bcIds = boardCats.map(bc => bc.id);
-    const qs = await db.select({ points: questions.points })
+    return await db.select({ points: questions.points })
       .from(questions)
-      .where(inArray(questions.boardCategoryId, bcIds));
-    
-    return qs;
+      .where(eq(questions.categoryId, categoryId));
   }
 
   async getContentStats(): Promise<{ totalBoards: number; totalCategories: number; activeCategories: number; readyToPlay: number; totalQuestions: number }> {
@@ -946,10 +927,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async clearBoardCategories(boardId: number): Promise<void> {
-    const bcs = await db.select().from(boardCategories).where(eq(boardCategories.boardId, boardId));
-    for (const bc of bcs) {
-      await db.delete(questions).where(eq(questions.boardCategoryId, bc.id));
-    }
+    // Just remove the links, questions belong to categories not board-categories
     await db.delete(boardCategories).where(eq(boardCategories.boardId, boardId));
   }
 
@@ -1068,14 +1046,14 @@ export class DatabaseStorage implements IStorage {
       
       let questionCount = 0;
       if (boardIds.length > 0) {
-        const boardCats = await db.select({ id: boardCategories.id })
+        const boardCats = await db.select({ categoryId: boardCategories.categoryId })
           .from(boardCategories)
           .where(inArray(boardCategories.boardId, boardIds));
-        const bcIds = boardCats.map(bc => bc.id);
-        if (bcIds.length > 0) {
+        const categoryIds = Array.from(new Set(boardCats.map(bc => bc.categoryId)));
+        if (categoryIds.length > 0) {
           const [qCount] = await db.select({ count: count() })
             .from(questions)
-            .where(inArray(questions.boardCategoryId, bcIds));
+            .where(inArray(questions.categoryId, categoryIds));
           questionCount = qCount?.count ?? 0;
         }
       }
@@ -1132,16 +1110,16 @@ export class DatabaseStorage implements IStorage {
         .from(boardCategories)
         .where(eq(boardCategories.boardId, board.id));
       
-      const boardCats = await db.select({ id: boardCategories.id })
+      const boardCats = await db.select({ categoryId: boardCategories.categoryId })
         .from(boardCategories)
         .where(eq(boardCategories.boardId, board.id));
-      const bcIds = boardCats.map(bc => bc.id);
+      const categoryIds = Array.from(new Set(boardCats.map(bc => bc.categoryId)));
       
       let questionCount = 0;
-      if (bcIds.length > 0) {
+      if (categoryIds.length > 0) {
         const [qCount] = await db.select({ count: count() })
           .from(questions)
-          .where(inArray(questions.boardCategoryId, bcIds));
+          .where(inArray(questions.categoryId, categoryIds));
         questionCount = qCount?.count ?? 0;
       }
 
@@ -1163,20 +1141,8 @@ export class DatabaseStorage implements IStorage {
       .set({ currentBoardId: null })
       .where(eq(gameSessions.currentBoardId, boardId));
     
-    const boardCats = await db.select({ id: boardCategories.id })
-      .from(boardCategories)
-      .where(eq(boardCategories.boardId, boardId));
-    
-    // Delete completed question records that reference questions from this board
-    for (const bc of boardCats) {
-      const bcQuestions = await db.select({ id: questions.id })
-        .from(questions)
-        .where(eq(questions.boardCategoryId, bc.id));
-      for (const q of bcQuestions) {
-        await db.delete(sessionCompletedQuestions).where(eq(sessionCompletedQuestions.questionId, q.id));
-      }
-      await db.delete(questions).where(eq(questions.boardCategoryId, bc.id));
-    }
+    // Note: We don't delete questions here since they belong to categories, not boards
+    // Questions are deleted when their category is deleted
     
     await db.delete(boardCategories).where(eq(boardCategories.boardId, boardId));
     await db.delete(gameBoards).where(eq(gameBoards.boardId, boardId));
@@ -1632,7 +1598,7 @@ async function seedPresetBoards() {
       // Insert questions for this category
       for (const q of catData.questions) {
         await db.insert(questions).values({
-          boardCategoryId: bc.id,
+          categoryId: cat.id,
           question: q.question,
           options: [q.answer],
           correctAnswer: q.answer,

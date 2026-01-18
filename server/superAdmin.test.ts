@@ -185,7 +185,7 @@ describe("Super Admin Data Integrity", () => {
         for (const bc of bcs) {
           const qs = await db.select()
             .from(questions)
-            .where(eq(questions.boardCategoryId, bc.id));
+            .where(eq(questions.categoryId, bc.id));
           
           expect(qs.length).toBeGreaterThanOrEqual(0);
         }

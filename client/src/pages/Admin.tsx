@@ -127,10 +127,11 @@ export default function Admin() {
   const unlinkedCategories = allCategories.filter(c => !linkedCategoryIds.includes(c.id));
 
   const selectedBoardCategory = boardCategories.find(bc => bc.id === selectedBoardCategoryId);
+  const selectedCategoryId = selectedBoardCategory?.categoryId;
 
   const { data: questions = [], isLoading: loadingQuestions } = useQuery<Question[]>({
-    queryKey: ['/api/board-categories', selectedBoardCategoryId, 'questions'],
-    enabled: !!selectedBoardCategoryId && isAuthenticated,
+    queryKey: ['/api/categories', selectedCategoryId, 'questions'],
+    enabled: !!selectedCategoryId && isAuthenticated,
   });
 
   const usedPoints = questions.map(q => q.points);
@@ -347,11 +348,11 @@ export default function Admin() {
   };
 
   const createQuestionMutation = useMutation({
-    mutationFn: async (data: { boardCategoryId: number; question: string; options: string[]; correctAnswer: string; points: number }) => {
+    mutationFn: async (data: { categoryId: number; question: string; options: string[]; correctAnswer: string; points: number }) => {
       return apiRequest('POST', '/api/questions', data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/board-categories', selectedBoardCategoryId, 'questions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/categories', selectedCategoryId, 'questions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       setNewQuestion("");
@@ -369,7 +370,7 @@ export default function Admin() {
       return apiRequest('PUT', `/api/questions/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/board-categories', selectedBoardCategoryId, 'questions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/categories', selectedCategoryId, 'questions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       setEditingQuestionId(null);
       toast({ title: "Question updated!" });
@@ -381,7 +382,7 @@ export default function Admin() {
       return apiRequest('DELETE', `/api/questions/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/board-categories', selectedBoardCategoryId, 'questions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/categories', selectedCategoryId, 'questions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       toast({ title: "Question deleted" });
@@ -389,12 +390,12 @@ export default function Admin() {
   });
 
   const bulkImportMutation = useMutation({
-    mutationFn: async (data: { boardCategoryId: number; questions: Array<{ question: string; correctAnswer: string; points: number }> }) => {
-      const res = await apiRequest('POST', `/api/board-categories/${data.boardCategoryId}/questions/bulk`, { questions: data.questions });
+    mutationFn: async (data: { categoryId: number; questions: Array<{ question: string; correctAnswer: string; points: number }> }) => {
+      const res = await apiRequest('POST', `/api/categories/${data.categoryId}/questions/bulk`, { questions: data.questions });
       return res.json();
     },
     onSuccess: (data: { success: number; errors: string[] }) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/board-categories', selectedBoardCategoryId, 'questions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/categories', selectedCategoryId, 'questions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedBoardId, 'categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
       setBulkImportText("");
@@ -457,9 +458,9 @@ export default function Admin() {
   };
 
   const handleCreateQuestion = () => {
-    if (!selectedBoardCategoryId || !newQuestion.trim() || !newCorrectAnswer.trim() || questions.length >= 5) return;
+    if (!selectedCategoryId || !newQuestion.trim() || !newCorrectAnswer.trim() || questions.length >= 5) return;
     createQuestionMutation.mutate({
-      boardCategoryId: selectedBoardCategoryId,
+      categoryId: selectedCategoryId,
       question: newQuestion.trim(),
       options: [],
       correctAnswer: newCorrectAnswer.trim(),

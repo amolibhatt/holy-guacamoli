@@ -66,11 +66,11 @@ describe("Database Integrity Tests", () => {
       expect(orphanedBCs.length).toBe(0);
     });
 
-    it("questions should reference valid boardCategories", async () => {
+    it("questions should reference valid categories", async () => {
       const orphanedQs = await db.select()
         .from(questions)
-        .leftJoin(boardCategories, eq(questions.boardCategoryId, boardCategories.id))
-        .where(sql`${boardCategories.id} IS NULL`);
+        .leftJoin(categories, eq(questions.categoryId, categories.id))
+        .where(sql`${categories.id} IS NULL`);
       
       expect(orphanedQs.length).toBe(0);
     });
@@ -199,7 +199,7 @@ describe("Database Integrity Tests", () => {
       cleanupIds.boardCategories.push(bc.id);
 
       const [q] = await db.insert(questions).values({
-        boardCategoryId: bc.id,
+        categoryId: bc.id,
         question: "Test?",
         options: ["Yes", "No"],
         correctAnswer: "Yes",

@@ -99,12 +99,12 @@ describe("Regression Tests", () => {
       }
     });
 
-    it("no orphaned questions (missing boardCategory)", async () => {
+    it("no orphaned questions (missing category)", async () => {
       const allQuestions = await db.select().from(questions);
-      const bcIds = new Set((await db.select({ id: boardCategories.id }).from(boardCategories)).map(bc => bc.id));
+      const catIds = new Set((await db.select({ id: categories.id }).from(categories)).map(c => c.id));
       
       for (const q of allQuestions) {
-        expect(bcIds.has(q.boardCategoryId)).toBe(true);
+        expect(catIds.has(q.categoryId)).toBe(true);
       }
     });
 
