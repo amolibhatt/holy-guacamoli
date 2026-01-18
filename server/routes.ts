@@ -1684,6 +1684,22 @@ export async function registerRoutes(
       const existingCategories = await storage.getCategories();
       const categoryNameMap = new Map(existingCategories.map(c => [c.name.toLowerCase(), c]));
       
+      // First pass: update ALL categories with missing rules (regardless of board status)
+      let categoriesUpdated = 0;
+      for (const pack of starterPacks) {
+        for (const cat of pack.categories || []) {
+          let category = categoryNameMap.get(cat.categoryName.toLowerCase());
+          if (category && (!category.rule && cat.categoryRule)) {
+            await storage.updateCategory(category.id, {
+              rule: cat.categoryRule,
+              description: category.description || cat.categoryDescription || '',
+              imageUrl: category.imageUrl || cat.categoryImageUrl || '',
+            });
+            categoriesUpdated++;
+          }
+        }
+      }
+      
       for (const pack of starterPacks) {
         // Check if board with same name already exists
         const existingBoards = await storage.getGlobalBoards();
@@ -1712,15 +1728,6 @@ export async function registerRoutes(
           let category = categoryNameMap.get(cat.categoryName.toLowerCase());
           
           if (category) {
-            // Update existing category with rule/description if missing
-            if ((!category.rule && cat.categoryRule) || (!category.description && cat.categoryDescription)) {
-              category = await storage.updateCategory(category.id, {
-                rule: category.rule || cat.categoryRule || '',
-                description: category.description || cat.categoryDescription || '',
-                imageUrl: category.imageUrl || cat.categoryImageUrl || '',
-              }) || category;
-              categoryNameMap.set(cat.categoryName.toLowerCase(), category);
-            }
             categoriesReused++;
           } else {
             // Create new category
@@ -1761,6 +1768,7 @@ export async function registerRoutes(
         boardsSkipped,
         categoriesCreated,
         categoriesReused,
+        categoriesUpdated,
         questionsCreated
       });
     } catch (err) {
