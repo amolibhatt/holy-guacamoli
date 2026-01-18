@@ -1777,6 +1777,41 @@ export async function registerRoutes(
     }
   });
 
+  // Update category rules from import data (for fixing missing rules)
+  app.post("/api/super-admin/categories/update-rules", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const { starterPacks } = req.body;
+      if (!starterPacks || !Array.isArray(starterPacks)) {
+        return res.status(400).json({ message: "Invalid data - need starterPacks array" });
+      }
+      
+      const allCategories = await storage.getCategories();
+      const categoryNameMap = new Map(allCategories.map(c => [c.name.toLowerCase(), c]));
+      
+      let updated = 0;
+      let skipped = 0;
+      
+      for (const pack of starterPacks) {
+        for (const cat of pack.categories || []) {
+          const existing = categoryNameMap.get(cat.categoryName.toLowerCase());
+          if (existing && cat.categoryRule) {
+            await storage.updateCategory(existing.id, {
+              rule: cat.categoryRule,
+            });
+            updated++;
+          } else {
+            skipped++;
+          }
+        }
+      }
+      
+      res.json({ message: "Rules updated", updated, skipped });
+    } catch (err) {
+      console.error("Error updating rules:", err);
+      res.status(500).json({ message: "Failed to update rules" });
+    }
+  });
+
   // Game Types (public - for hosts and players)
   app.get("/api/game-types", async (req, res) => {
     try {
