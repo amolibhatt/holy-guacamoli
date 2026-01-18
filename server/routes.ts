@@ -1712,6 +1712,15 @@ export async function registerRoutes(
           let category = categoryNameMap.get(cat.categoryName.toLowerCase());
           
           if (category) {
+            // Update existing category with rule/description if missing
+            if ((!category.rule && cat.categoryRule) || (!category.description && cat.categoryDescription)) {
+              category = await storage.updateCategory(category.id, {
+                rule: category.rule || cat.categoryRule || '',
+                description: category.description || cat.categoryDescription || '',
+                imageUrl: category.imageUrl || cat.categoryImageUrl || '',
+              }) || category;
+              categoryNameMap.set(cat.categoryName.toLowerCase(), category);
+            }
             categoriesReused++;
           } else {
             // Create new category
