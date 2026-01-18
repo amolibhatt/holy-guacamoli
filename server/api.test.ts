@@ -59,8 +59,8 @@ describe("API Response Format", () => {
     expect(data).toHaveProperty("message");
   });
 
-  it("shuffle-stats returns proper auth error", async () => {
-    const res = await fetch(`${BASE_URL}/api/buzzkill/shuffle-stats`);
+  it("boards returns proper auth error", async () => {
+    const res = await fetch(`${BASE_URL}/api/boards`);
     expect(res.status).toBe(401);
     const data = await res.json();
     expect(data).toHaveProperty("message");
@@ -69,7 +69,7 @@ describe("API Response Format", () => {
 
 describe("CORS and Headers", () => {
   it("should include proper content-type on protected endpoints", async () => {
-    const res = await fetch(`${BASE_URL}/api/buzzkill/shuffle-stats`);
+    const res = await fetch(`${BASE_URL}/api/boards`);
     const contentType = res.headers.get("content-type");
     expect(contentType).toContain("application/json");
   });
@@ -82,21 +82,7 @@ describe("Health Checks", () => {
   });
 });
 
-describe("Shuffle Endpoints", () => {
-  it("GET /api/buzzkill/shuffle-stats requires auth", async () => {
-    const res = await fetch(`${BASE_URL}/api/buzzkill/shuffle-stats`);
-    expect(res.status).toBe(401);
-  });
-
-  it("POST /api/buzzkill/shuffle-board requires auth", async () => {
-    const res = await fetch(`${BASE_URL}/api/buzzkill/shuffle-board`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode: "starter" }),
-    });
-    expect(res.status).toBe(401);
-  });
-
+describe("Protected Endpoints", () => {
   it("GET /api/buzzkill/custom-boards requires auth", async () => {
     const res = await fetch(`${BASE_URL}/api/buzzkill/custom-boards`);
     expect(res.status).toBe(401);

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link, useLocation } from "wouter";
-import { Loader2, Settings, Maximize2, Minimize2, Sun, Moon, Home, Shuffle } from "lucide-react";
+import { Loader2, Settings, Maximize2, Minimize2, Sun, Moon, Home } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { AppHeader } from "@/components/AppHeader";
@@ -29,43 +29,8 @@ export default function PlayBoard() {
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
-  const [isShuffling, setIsShuffling] = useState(false);
   const buzzerRef = useRef<BuzzerPanelHandle>(null);
   const [buzzQueue, setBuzzQueue] = useState<BuzzEvent[]>();
-
-  const handleNextShuffle = async () => {
-    setIsShuffling(true);
-    try {
-      const res = await fetch("/api/buzzkill/shuffle-board", {
-        method: "POST",
-        credentials: "include",
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ message: "Failed to generate" }));
-        toast({
-          title: "Cannot Generate Board",
-          description: errorData.message || "Failed to generate next shuffle board",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      const result = await res.json();
-      
-      setShowVictory(false);
-      resetGameEnd();
-      setLocation(`/board/${result.boardId}`);
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to generate board. Check your connection.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsShuffling(false);
-    }
-  };
 
   const { data: board, isLoading: isLoadingBoard } = useQuery<Board>({
     queryKey: ['/api/boards', boardId],
@@ -207,36 +172,17 @@ export default function PlayBoard() {
     );
   }
 
-  const isShuffleBoard = board?.name === "Shuffle Play";
-
   return (
     <div className="min-h-screen flex flex-col overflow-hidden bg-background">
       <AppHeader
         title="Buzzkill"
-        subtitle={isShuffleBoard ? "Shuffle Play" : board.name}
+        subtitle={board.name}
         backHref="/host/buzzkill"
         themed={true}
         showAdminButton={true}
         adminHref="/admin?game=buzzkill"
         rightContent={
           <div className="flex items-center gap-2">
-            {board.name === "Shuffle Play" && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleNextShuffle}
-                disabled={isShuffling}
-                className="gap-2 bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/30 hover:border-primary"
-                data-testid="button-next-shuffle"
-              >
-                {isShuffling ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Shuffle className="w-4 h-4" />
-                )}
-                <span className="hidden sm:inline">Next Board</span>
-              </Button>
-            )}
             <Button 
               variant="ghost" 
               size="icon" 
@@ -281,7 +227,6 @@ export default function PlayBoard() {
                     boardCategory={boardCategory}
                     onSelectQuestion={handleSelectQuestion}
                     pointValues={pointValues}
-                    isShuffleBoard={isShuffleBoard}
                   />
                 </motion.div>
               ))}
@@ -349,9 +294,6 @@ export default function PlayBoard() {
               setShowVictory(false);
               resetGameEnd();
             }}
-            isShuffleBoard={board?.name === "Shuffle Play"}
-            onNextShuffle={handleNextShuffle}
-            isShuffling={isShuffling}
           />
         )}
       </AnimatePresence>

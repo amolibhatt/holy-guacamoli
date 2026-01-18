@@ -158,20 +158,6 @@ describe("Super Admin Data Integrity", () => {
       }
     });
 
-    it("source group distribution should be balanced for shuffle", async () => {
-      const activeCats = await db.select()
-        .from(categories)
-        .where(eq(categories.isActive, true));
-      
-      const groupCounts: Record<string, number> = {};
-      for (const cat of activeCats) {
-        const group = cat.sourceGroup || "none";
-        groupCounts[group] = (groupCounts[group] || 0) + 1;
-      }
-      
-      const nonEmptyGroups = Object.keys(groupCounts).length;
-      expect(nonEmptyGroups).toBeGreaterThanOrEqual(1);
-    });
   });
 
   describe("Starter Pack Structure", () => {
@@ -271,7 +257,6 @@ describe("Admin/Super Admin Role Separation", () => {
       const adminEndpoints = [
         "/api/boards",
         "/api/categories",
-        "/api/buzzkill/shuffle-stats",
       ];
 
       for (const path of adminEndpoints) {

@@ -18,11 +18,10 @@ interface FlipCardProps {
   boardCategoryId: number;
   onSelect: (question: Question) => void;
   delay: number;
-  isShuffleBoard?: boolean;
 }
 
 
-function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect, delay, isShuffleBoard }: FlipCardProps) {
+function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect, delay }: FlipCardProps) {
   const [isFlipping, setIsFlipping] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const hasQuestion = !!question;
@@ -70,9 +69,7 @@ function FlipCard({ scoreValue, question, isCompleted, boardCategoryId, onSelect
             ? 'bg-muted text-muted-foreground/30 cursor-not-allowed border border-border' 
             : isCompleted 
               ? 'completed-cell text-primary/50 cursor-not-allowed border border-primary/20' 
-              : isShuffleBoard
-                ? 'bg-card text-primary cursor-pointer border-2 border-primary/40 shadow-md shadow-primary/10 hover:shadow-lg hover:shadow-primary/20 hover:border-primary'
-                : 'bg-card text-primary cursor-pointer border-2 border-primary/50 shadow-lg shadow-primary/20 hover:shadow-xl hover:border-primary/70'
+              : 'bg-card text-primary cursor-pointer border-2 border-primary/50 shadow-lg shadow-primary/20 hover:shadow-xl hover:border-primary/70'
           }
         `}
         onClick={handleClick}
@@ -121,10 +118,9 @@ interface CategoryColumnProps {
   boardCategory: BoardCategoryWithCategory;
   onSelectQuestion: (question: Question) => void;
   pointValues?: number[];
-  isShuffleBoard?: boolean;
 }
 
-export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues, isShuffleBoard }: CategoryColumnProps) {
+export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }: CategoryColumnProps) {
   const { data: questions, isLoading } = useQuestionsByBoardCategory(boardCategory.id);
   const { completedQuestions } = useScore();
   
@@ -149,9 +145,7 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues, i
         className={`text-white px-2 sm:px-3 text-center rounded-t-xl sm:rounded-t-2xl h-[70px] sm:h-[90px] lg:h-[100px] flex items-center justify-center relative overflow-hidden transition-all ${
           allCompleted 
             ? 'gradient-gold' 
-            : isShuffleBoard 
-              ? 'bg-gradient-to-br from-primary to-secondary'
-              : 'gradient-header'
+            : 'gradient-header'
         }`}
         role="heading"
         aria-level={2}
@@ -202,7 +196,6 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues, i
               boardCategoryId={boardCategory.id}
               onSelect={onSelectQuestion}
               delay={idx * 0.03}
-              isShuffleBoard={isShuffleBoard}
             />
           );
         })}
