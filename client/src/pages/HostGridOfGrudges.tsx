@@ -1,17 +1,10 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ArrowRight, Users, Shuffle, FolderPlus, Sparkles, User, Blend } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, FolderPlus } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation } from "wouter";
 import type { Board } from "@shared/schema";
 import { motion } from "framer-motion";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-
-type ShuffleMode = "starter" | "personal" | "meld";
 
 interface PresetBoard extends Board {
   categoryCount: number;
@@ -30,11 +23,7 @@ interface CustomBoard extends Board {
 
 export default function HostGridOfGrudges() {
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
   const { isAuthenticated } = useAuth();
-  const [isShuffling, setIsShuffling] = useState(false);
-  const [showShuffleOptions, setShowShuffleOptions] = useState(false);
-  const [shuffleMode, setShuffleMode] = useState<ShuffleMode>("starter");
 
   const { data: presetBoards = [], isLoading: isLoadingPresets } = useQuery<PresetBoard[]>({
     queryKey: ['/api/buzzkill/preset-boards'],
@@ -46,69 +35,7 @@ export default function HostGridOfGrudges() {
     enabled: isAuthenticated,
   });
 
-  const { data: shuffleStats, isLoading: isLoadingStats } = useQuery<{ globalLiveCount: number; personalLiveCount: number }>({
-    queryKey: ['/api/buzzkill/shuffle-stats'],
-    enabled: isAuthenticated,
-  });
-  
   const isLoading = isLoadingPresets || isLoadingBoards;
-  const globalLive = shuffleStats?.globalLiveCount ?? 0;
-  const personalLive = shuffleStats?.personalLiveCount ?? 0;
-  const statsLoaded = !isLoadingStats && shuffleStats !== undefined;
-  
-  const canUseStarter = globalLive >= 5;
-  const canUsePersonal = personalLive >= 5;
-  const canUseMeld = (globalLive + personalLive) >= 5;
-  
-  const getLiveCategoryCount = (mode: ShuffleMode): number => {
-    switch (mode) {
-      case "starter": return globalLive;
-      case "personal": return personalLive;
-      case "meld": return globalLive + personalLive;
-    }
-  };
-
-  const handleShuffleClick = () => {
-    // Reset to first available mode when opening
-    if (canUseStarter) setShuffleMode("starter");
-    else if (canUseMeld) setShuffleMode("meld");
-    else if (canUsePersonal) setShuffleMode("personal");
-    setShowShuffleOptions(true);
-  };
-
-  const generateShuffleBoard = async () => {
-    setShowShuffleOptions(false);
-    setIsShuffling(true);
-    try {
-      const res = await fetch("/api/buzzkill/shuffle-board", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ mode: shuffleMode }),
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ message: "Failed to generate" }));
-        toast({
-          title: "Cannot Generate Board",
-          description: errorData.message || "Failed to generate shuffle board",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      const result = await res.json();
-      setLocation(`/board/${result.boardId}`);
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to generate board. Check your connection.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsShuffling(false);
-    }
-  };
 
   return (
     <div className="min-h-screen gradient-game grid-bg flex flex-col">
@@ -128,49 +55,6 @@ export default function HostGridOfGrudges() {
             </div>
           ) : (
             <div className="space-y-8">
-              <motion.button
-                onClick={handleShuffleClick}
-                disabled={isShuffling}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileHover={{ scale: isShuffling ? 1 : 1.01, y: isShuffling ? 0 : -2 }}
-                whileTap={{ scale: isShuffling ? 1 : 0.99 }}
-                className={`w-full relative flex flex-col p-8 bg-gradient-to-br from-primary/20 via-secondary/15 to-accent/20 border-2 border-primary/40 rounded-2xl text-left transition-all hover:border-primary hover:shadow-2xl hover:shadow-primary/20 group overflow-hidden ${isShuffling ? 'opacity-80 cursor-wait' : ''}`}
-                data-testid="button-daily-smash"
-              >
-                <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-primary/20 to-transparent rounded-bl-full" />
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-secondary/20 to-transparent rounded-tr-full" />
-                
-                <div className="flex items-start justify-between gap-3 mb-4 relative z-10">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/30">
-                    {isShuffling ? (
-                      <Loader2 className="w-8 h-8 text-white animate-spin" />
-                    ) : (
-                      <Shuffle className="w-8 h-8 text-white" />
-                    )}
-                  </div>
-                  <ArrowRight className="w-6 h-6 text-primary group-hover:translate-x-2 transition-transform" />
-                </div>
-                
-                <h3 className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors mb-2 relative z-10">
-                  {isShuffling ? "Shuffling..." : "Shuffle Play"}
-                </h3>
-                <p className="text-muted-foreground relative z-10 max-w-lg">
-                  {isShuffling ? "Generating your unique board..." : "A balanced mix of 5 categories - one from each group. Fresh picks every game, never repeating until all are played!"}
-                </p>
-                
-                <div className="mt-6 flex items-center gap-4 text-sm relative z-10">
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/50 border border-border">
-                    <Grid3X3 className="w-4 h-4 text-primary" />
-                    <span className="font-medium">5 Categories</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/50 border border-border">
-                    <Users className="w-4 h-4 text-primary" />
-                    <span className="font-medium">Multiplayer</span>
-                  </div>
-                </div>
-              </motion.button>
-
               {presetBoards.length > 0 && (
                 <div className="space-y-3">
                   <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 px-1">
@@ -299,161 +183,6 @@ export default function HostGridOfGrudges() {
           Made with love for Amoli's Birthday
         </p>
       </footer>
-
-      <Dialog open={showShuffleOptions} onOpenChange={setShowShuffleOptions}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              <Shuffle className="w-5 h-5 text-primary" />
-              Shuffle Play
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 pt-2">
-            <p className="text-sm text-muted-foreground">
-              Pick 5 random Live categories to create your game board.
-            </p>
-            
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => canUseStarter && setShuffleMode("starter")}
-                disabled={!canUseStarter}
-                className={cn(
-                  "w-full p-4 rounded-lg border text-left transition-all",
-                  shuffleMode === "starter" && canUseStarter
-                    ? "border-primary bg-primary/10 ring-2 ring-primary/20"
-                    : canUseStarter
-                    ? "hover-elevate"
-                    : "opacity-60"
-                )}
-                data-testid="option-starter"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-amber-500/20">
-                    <Sparkles className="w-5 h-5 text-amber-500" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold">Starter Packs</div>
-                    <div className="text-xs text-muted-foreground">
-                      {canUseStarter 
-                        ? `${globalLive} curated categories ready to play`
-                        : "Our handcrafted question packs"}
-                    </div>
-                  </div>
-                  {!canUseStarter && (
-                    <div className="flex gap-1" title={`${globalLive}/5 categories`}>
-                      {[...Array(5)].map((_, i) => (
-                        <div 
-                          key={i} 
-                          className={cn(
-                            "w-2 h-2 rounded-full",
-                            i < globalLive ? "bg-amber-500" : "bg-muted-foreground/30"
-                          )} 
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => canUsePersonal && setShuffleMode("personal")}
-                disabled={!canUsePersonal}
-                className={cn(
-                  "w-full p-4 rounded-lg border text-left transition-all",
-                  shuffleMode === "personal" && canUsePersonal
-                    ? "border-primary bg-primary/10 ring-2 ring-primary/20"
-                    : canUsePersonal
-                    ? "hover-elevate"
-                    : "opacity-60"
-                )}
-                data-testid="option-personal"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-500/20">
-                    <User className="w-5 h-5 text-blue-500" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold">My Categories</div>
-                    <div className="text-xs text-muted-foreground">
-                      {canUsePersonal 
-                        ? `${personalLive} of your categories ready to play`
-                        : "Categories you've created"}
-                    </div>
-                  </div>
-                  {!canUsePersonal && (
-                    <div className="flex gap-1" title={`${personalLive}/5 categories`}>
-                      {[...Array(5)].map((_, i) => (
-                        <div 
-                          key={i} 
-                          className={cn(
-                            "w-2 h-2 rounded-full",
-                            i < personalLive ? "bg-blue-500" : "bg-muted-foreground/30"
-                          )} 
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => canUseMeld && setShuffleMode("meld")}
-                disabled={!canUseMeld}
-                className={cn(
-                  "w-full p-4 rounded-lg border text-left transition-all",
-                  shuffleMode === "meld" && canUseMeld
-                    ? "border-primary bg-primary/10 ring-2 ring-primary/20"
-                    : canUseMeld
-                    ? "hover-elevate"
-                    : "opacity-60"
-                )}
-                data-testid="option-meld"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-purple-500/20">
-                    <Blend className="w-5 h-5 text-purple-500" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold">Meld</div>
-                    <div className="text-xs text-muted-foreground">
-                      {canUseMeld 
-                        ? `Mix of ${globalLive} curated + ${personalLive} yours`
-                        : "Blend curated packs with your creations"}
-                    </div>
-                  </div>
-                  {!canUseMeld && (
-                    <div className="flex gap-1" title={`${globalLive + personalLive}/5 categories`}>
-                      {[...Array(5)].map((_, i) => (
-                        <div 
-                          key={i} 
-                          className={cn(
-                            "w-2 h-2 rounded-full",
-                            i < (globalLive + personalLive) ? "bg-purple-500" : "bg-muted-foreground/30"
-                          )} 
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </button>
-            </div>
-
-            <Button
-              className="w-full"
-              size="lg"
-              onClick={generateShuffleBoard}
-              disabled={!statsLoaded || getLiveCategoryCount(shuffleMode) < 5}
-              data-testid="button-shuffle-go"
-            >
-              <Shuffle className="w-4 h-4 mr-2" />
-              {!statsLoaded ? "Loading..." : "Generate Board"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
