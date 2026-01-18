@@ -734,7 +734,7 @@ export default function Admin() {
                               const categoryCount = summary?.categoryCount || 0;
                               const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
                               const maxQuestions = 25;
-                              const progressPercent = Math.round((totalQuestions / maxQuestions) * 100);
+                              const progressPercent = Math.min(100, Math.round((totalQuestions / maxQuestions) * 100));
                               const isComplete = categoryCount >= 5 && totalQuestions >= maxQuestions;
                               const isEditing = editingBoardId === board.id;
                               const isDragging = draggedBoardId === board.id;
