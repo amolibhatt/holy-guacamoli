@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ArrowRight, FolderPlus, LogIn } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, LogIn } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation, Link } from "wouter";
 import type { Board } from "@shared/schema";
@@ -7,36 +7,23 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 
-interface PresetBoard extends Board {
+interface BoardWithStatus extends Board {
   categoryCount: number;
   totalQuestions: number;
   isComplete: boolean;
   isPlayable: boolean;
 }
-
-interface CustomBoard extends Board {
-  categoryCount: number;
-  totalQuestions: number;
-  isComplete: boolean;
-  isPlayable: boolean;
-}
-
 
 export default function HostGridOfGrudges() {
   const [, setLocation] = useLocation();
   const { isAuthenticated } = useAuth();
 
-  const { data: presetBoards = [], isLoading: isLoadingPresets } = useQuery<PresetBoard[]>({
-    queryKey: ['/api/buzzkill/preset-boards'],
+  const { data: boards = [], isLoading } = useQuery<BoardWithStatus[]>({
+    queryKey: ['/api/buzzkill/boards'],
     enabled: isAuthenticated,
   });
 
-  const { data: customBoards = [], isLoading: isLoadingBoards } = useQuery<CustomBoard[]>({
-    queryKey: ['/api/buzzkill/custom-boards'],
-    enabled: isAuthenticated,
-  });
-
-  const isLoading = isLoadingPresets || isLoadingBoards;
+  const playableBoards = boards.filter(b => b.isPlayable);
 
   return (
     <div className="min-h-screen gradient-game grid-bg flex flex-col">
@@ -55,7 +42,7 @@ export default function HostGridOfGrudges() {
               <LogIn className="w-12 h-12 text-muted-foreground" />
               <h2 className="text-xl font-semibold text-foreground">Sign in to play</h2>
               <p className="text-muted-foreground text-center max-w-md">
-                Log in to access Starter Packs and your custom game boards.
+                Log in to access game boards.
               </p>
               <Link href="/login">
                 <Button size="lg" data-testid="button-login">
@@ -68,126 +55,58 @@ export default function HostGridOfGrudges() {
             <div className="flex justify-center py-16">
               <Loader2 className="w-10 h-10 animate-spin text-primary" />
             </div>
-          ) : (
-            <div className="space-y-8">
-              {presetBoards.length > 0 && (
-                <div className="space-y-3">
-                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 px-1">
-                    <Grid3X3 className="w-5 h-5 text-muted-foreground" />
-                    Starter Packs
-                  </h2>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                    {presetBoards.map((board, index) => {
-                      const gradients = [
-                        { bg: 'from-violet-500/20 via-purple-500/15 to-fuchsia-500/20', border: 'border-violet-500/30 hover:border-violet-400/60', accent: 'from-violet-500/15', text: 'group-hover:text-violet-600' },
-                        { bg: 'from-fuchsia-500/20 via-pink-500/15 to-rose-500/20', border: 'border-fuchsia-500/30 hover:border-fuchsia-400/60', accent: 'from-fuchsia-500/15', text: 'group-hover:text-fuchsia-600' },
-                        { bg: 'from-amber-500/20 via-orange-500/15 to-yellow-500/20', border: 'border-amber-500/30 hover:border-amber-400/60', accent: 'from-amber-500/15', text: 'group-hover:text-amber-600' },
-                        { bg: 'from-teal-500/20 via-cyan-500/15 to-sky-500/20', border: 'border-teal-500/30 hover:border-teal-400/60', accent: 'from-teal-500/15', text: 'group-hover:text-teal-600' },
-                        { bg: 'from-sky-500/20 via-blue-500/15 to-indigo-500/20', border: 'border-sky-500/30 hover:border-sky-400/60', accent: 'from-sky-500/15', text: 'group-hover:text-sky-600' },
-                      ];
-                      const style = gradients[index % gradients.length];
-                      return (
-                        <motion.button
-                          key={board.id}
-                          onClick={() => setLocation(`/board/${board.id}`)}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          whileHover={{ scale: 1.02, y: -2 }}
-                          whileTap={{ scale: 0.98 }}
-                          disabled={!board.isPlayable}
-                          className={`relative flex flex-col p-4 bg-gradient-to-br ${style.bg} rounded-xl text-left transition-all border ${style.border} group overflow-hidden ${
-                            board.isPlayable 
-                              ? "cursor-pointer hover:shadow-lg" 
-                              : "opacity-50 cursor-not-allowed"
-                          }`}
-                          data-testid={`button-preset-${board.id}`}
-                        >
-                          <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl ${style.accent} to-transparent rounded-bl-full`} />
-                          <div className="flex items-center justify-between mb-3 relative z-10">
-                            <div className={`text-lg font-bold text-foreground ${style.text} transition-colors`}>
-                              {board.name}
-                            </div>
-                            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
-                          </div>
-                          
-                          <div className="text-xs text-muted-foreground relative z-10">
-                            {board.description}
-                          </div>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-3">
-                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 px-1">
-                  <FolderPlus className="w-5 h-5 text-cyan-500" />
-                  My Boards
-                </h2>
-                
-                {customBoards.filter(b => b.name !== "Shuffle Play").length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                    {customBoards.filter(b => b.name !== "Shuffle Play").map((board, index) => {
-                      const gradients = [
-                        { bg: 'from-violet-500/20 via-purple-500/15 to-fuchsia-500/20', border: 'border-violet-500/30 hover:border-violet-400/60', accent: 'from-violet-500/15', text: 'group-hover:text-violet-600' },
-                        { bg: 'from-fuchsia-500/20 via-pink-500/15 to-rose-500/20', border: 'border-fuchsia-500/30 hover:border-fuchsia-400/60', accent: 'from-fuchsia-500/15', text: 'group-hover:text-fuchsia-600' },
-                        { bg: 'from-amber-500/20 via-orange-500/15 to-yellow-500/20', border: 'border-amber-500/30 hover:border-amber-400/60', accent: 'from-amber-500/15', text: 'group-hover:text-amber-600' },
-                        { bg: 'from-teal-500/20 via-cyan-500/15 to-sky-500/20', border: 'border-teal-500/30 hover:border-teal-400/60', accent: 'from-teal-500/15', text: 'group-hover:text-teal-600' },
-                        { bg: 'from-sky-500/20 via-blue-500/15 to-indigo-500/20', border: 'border-sky-500/30 hover:border-sky-400/60', accent: 'from-sky-500/15', text: 'group-hover:text-sky-600' },
-                      ];
-                      const style = gradients[index % gradients.length];
-                      return (
-                        <motion.button
-                          key={board.id}
-                          onClick={() => setLocation(`/board/${board.id}`)}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          whileHover={{ scale: 1.02, y: -2 }}
-                          whileTap={{ scale: 0.98 }}
-                          disabled={!board.isPlayable}
-                          className={`relative flex flex-col p-4 bg-gradient-to-br ${style.bg} rounded-xl text-left transition-all border ${style.border} group overflow-hidden ${
-                            board.isPlayable 
-                              ? "cursor-pointer hover:shadow-lg" 
-                              : "opacity-50 cursor-not-allowed"
-                          }`}
-                          data-testid={`button-board-${board.id}`}
-                        >
-                          <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl ${style.accent} to-transparent rounded-bl-full`} />
-                          <div className="flex items-center justify-between mb-3 relative z-10">
-                            <div className={`text-lg font-bold text-foreground ${style.text} transition-colors`}>
-                              {board.name}
-                            </div>
-                            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
-                          </div>
-                          
-                          <div className="text-xs text-muted-foreground relative z-10">
-                            {board.categoryCount} categories, {board.totalQuestions} questions
-                          </div>
-                          
-                          {!board.isComplete && board.isPlayable && (
-                            <div className="mt-2 text-[10px] text-amber-500 relative z-10">
-                              Incomplete board
-                            </div>
-                          )}
-                          {!board.isPlayable && (
-                            <div className="mt-2 text-[10px] text-muted-foreground relative z-10">
-                              Add categories first
-                            </div>
-                          )}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-sm text-muted-foreground px-1">
-                    Boards you create in Admin will appear here.
-                  </div>
-                )}
+          ) : playableBoards.length > 0 ? (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 px-1">
+                <Grid3X3 className="w-5 h-5 text-muted-foreground" />
+                Game Boards
+              </h2>
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                {playableBoards.map((board, index) => {
+                  const gradients = [
+                    { bg: 'from-violet-500/20 via-purple-500/15 to-fuchsia-500/20', border: 'border-violet-500/30 hover:border-violet-400/60', accent: 'from-violet-500/15', text: 'group-hover:text-violet-600' },
+                    { bg: 'from-fuchsia-500/20 via-pink-500/15 to-rose-500/20', border: 'border-fuchsia-500/30 hover:border-fuchsia-400/60', accent: 'from-fuchsia-500/15', text: 'group-hover:text-fuchsia-600' },
+                    { bg: 'from-amber-500/20 via-orange-500/15 to-yellow-500/20', border: 'border-amber-500/30 hover:border-amber-400/60', accent: 'from-amber-500/15', text: 'group-hover:text-amber-600' },
+                    { bg: 'from-teal-500/20 via-cyan-500/15 to-sky-500/20', border: 'border-teal-500/30 hover:border-teal-400/60', accent: 'from-teal-500/15', text: 'group-hover:text-teal-600' },
+                    { bg: 'from-sky-500/20 via-blue-500/15 to-indigo-500/20', border: 'border-sky-500/30 hover:border-sky-400/60', accent: 'from-sky-500/15', text: 'group-hover:text-sky-600' },
+                  ];
+                  const style = gradients[index % gradients.length];
+                  return (
+                    <motion.button
+                      key={board.id}
+                      onClick={() => setLocation(`/board/${board.id}`)}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
+                      className={`relative flex flex-col p-4 bg-gradient-to-br ${style.bg} rounded-xl text-left transition-all border ${style.border} group overflow-hidden cursor-pointer hover:shadow-lg`}
+                      data-testid={`button-board-${board.id}`}
+                    >
+                      <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl ${style.accent} to-transparent rounded-bl-full`} />
+                      <div className="flex items-center justify-between mb-3 relative z-10">
+                        <div className={`text-lg font-bold text-foreground ${style.text} transition-colors`}>
+                          {board.name}
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+                      </div>
+                      
+                      <div className="text-xs text-muted-foreground relative z-10">
+                        {board.description || `${board.categoryCount} categories`}
+                      </div>
+                    </motion.button>
+                  );
+                })}
               </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 space-y-4">
+              <Grid3X3 className="w-12 h-12 text-muted-foreground" />
+              <h2 className="text-xl font-semibold text-foreground">No boards available</h2>
+              <p className="text-muted-foreground text-center max-w-md">
+                Ask an admin to set up game boards.
+              </p>
             </div>
           )}
         </div>
