@@ -1000,7 +1000,7 @@ export default function Admin() {
                         onValueChange={(val) => setSelectedBoardCategoryId(val ? Number(val) : null)}
                         className="w-full"
                       >
-                        <TabsList className="h-auto bg-transparent p-0 gap-6 border-b border-border rounded-none w-full justify-start">
+                        <TabsList className="h-auto bg-transparent p-0 gap-6 border-b border-border rounded-none w-full justify-start overflow-x-auto flex-nowrap">
                           {boardCategories.map((bc) => (
                             <TabsTrigger 
                               key={bc.id}
