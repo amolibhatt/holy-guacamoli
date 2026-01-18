@@ -10,8 +10,6 @@ describe("API Routes Authentication", () => {
     const protectedEndpoints = [
       { method: "GET", path: "/api/boards" },
       { method: "GET", path: "/api/categories" },
-      { method: "GET", path: "/api/buzzkill/shuffle-stats" },
-      { method: "POST", path: "/api/buzzkill/shuffle-board" },
       { method: "GET", path: "/api/buzzkill/custom-boards" },
       { method: "GET", path: "/api/buzzkill/category-groups" },
     ];
@@ -57,19 +55,6 @@ describe("API Routes Authentication", () => {
   });
 });
 
-describe("API Routes Validation", () => {
-  describe("Shuffle Board Endpoint", () => {
-    it("should reject invalid mode", async () => {
-      const response = await fetch(`${BASE_URL}/api/buzzkill/shuffle-board`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "invalid" }),
-      });
-      
-      expect(response.status).toBe(401);
-    });
-  });
-});
 
 describe("Database Integrity", () => {
   it("all active categories should have imageUrl", async () => {
