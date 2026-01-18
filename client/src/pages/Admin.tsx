@@ -727,19 +727,9 @@ export default function Admin() {
                     </div>
                   ) : (
                     <>
-                      {/* My Boards Section */}
-                      <Collapsible open={myBoardsOpen} onOpenChange={setMyBoardsOpen}>
-                        <CollapsibleTrigger asChild>
-                          <button className="flex items-center gap-2 mb-2 px-1 w-full hover:opacity-80 transition-opacity">
-                            <Grid3X3 className="w-3 h-3 text-primary" />
-                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">My Boards</span>
-                            <span className="text-xs text-muted-foreground">({boards.filter(b => !b.isGlobal).length})</span>
-                            <ChevronDown className={`w-3 h-3 text-muted-foreground ml-auto transition-transform ${myBoardsOpen ? '' : '-rotate-90'}`} />
-                          </button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <div className="space-y-2">
-                            {boards.filter(b => !b.isGlobal).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)).map((board, idx, arr) => {
+                      {/* All Boards */}
+                      <div className="space-y-2">
+                        {boards.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)).map((board, idx, arr) => {
                               const summary = boardSummaries.find(s => s.id === board.id);
                               const categoryCount = summary?.categoryCount || 0;
                               const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
@@ -887,139 +877,7 @@ export default function Admin() {
                                 </div>
                               );
                             })}
-                            {boards.filter(b => !b.isGlobal).length === 0 && (
-                              <p className="text-xs text-muted-foreground text-center py-2">No boards yet. Click + to create one!</p>
-                            )}
-                          </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-
-                      {/* Starter Packs Section */}
-                      {boards.filter(b => b.isGlobal).length > 0 && (
-                        <Collapsible open={starterPacksOpen} onOpenChange={setStarterPacksOpen}>
-                          <CollapsibleTrigger asChild>
-                            <button className="flex items-center gap-2 mb-2 px-1 w-full hover:opacity-80 transition-opacity">
-                              <Sparkles className="w-3 h-3 text-amber-500" />
-                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Starter Packs</span>
-                              <span className="text-xs text-muted-foreground">({boards.filter(b => b.isGlobal).length})</span>
-                              <ChevronDown className={`w-3 h-3 text-muted-foreground ml-auto transition-transform ${starterPacksOpen ? '' : '-rotate-90'}`} />
-                            </button>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                          <div className="space-y-2">
-                            {boards.filter(b => b.isGlobal).map(board => {
-                    const summary = boardSummaries.find(s => s.id === board.id);
-                    const categoryCount = summary?.categoryCount || 0;
-                    const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
-                    const maxQuestions = categoryCount * 5;
-                    const categoryProgress = (categoryCount / 5) * 100;
-                    const questionProgress = maxQuestions > 0 ? (totalQuestions / maxQuestions) * 100 : 0;
-                    const isComplete = categoryCount >= 5 && totalQuestions >= maxQuestions && maxQuestions > 0;
-                    const isIncomplete = categoryCount < 5 || totalQuestions < maxQuestions;
-                    const isEditing = editingBoardId === board.id;
-                    const colorConfig = getBoardColorConfig(board.colorCode);
-                    return (
-                      <div
-                        key={board.id}
-                        className={`p-3 rounded-lg cursor-pointer transition-all bg-gradient-to-br ${
-                          selectedBoardId === board.id
-                            ? `${colorConfig.card} border-2 border-primary`
-                            : `${colorConfig.card} border hover:opacity-80`
-                        }`}
-                        onClick={() => { 
-                          if (!isEditing) { 
-                            setSelectedBoardId(board.id); 
-                            setSelectedBoardCategoryId(null); 
-                          } 
-                        }}
-                        data-testid={`board-item-${board.id}`}
-                      >
-                        {isEditing ? (
-                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                            <Input
-                              value={editBoardName}
-                              onChange={(e) => setEditBoardName(e.target.value)}
-                              className="h-7 text-sm"
-                              autoFocus
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && editBoardName.trim()) {
-                                  updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() });
-                                }
-                                if (e.key === 'Escape') {
-                                  setEditingBoardId(null);
-                                }
-                              }}
-                              data-testid={`input-edit-board-${board.id}`}
-                            />
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => {
-                                if (editBoardName.trim()) {
-                                  updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() });
-                                }
-                              }}
-                              className="h-7 w-7 text-primary shrink-0"
-                              data-testid={`button-save-board-${board.id}`}
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => setEditingBoardId(null)}
-                              className="h-7 w-7 text-muted-foreground shrink-0"
-                              data-testid={`button-cancel-edit-board-${board.id}`}
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-start gap-3">
-                            <div className="min-w-0 flex-1">
-                              <div className={`font-bold text-base leading-tight ${colorConfig.cardTitle}`}>{board.name}</div>
-                              {board.description && (
-                                <div className={`text-xs mt-0.5 ${colorConfig.cardSub}`}>{board.description}</div>
-                              )}
-                              <div className="flex items-center gap-2 mt-2">
-                                <div className="flex-1 h-1.5 bg-white/40 rounded-full overflow-hidden">
-                                  <div 
-                                    className={`h-full transition-all ${isComplete ? 'bg-emerald-500' : colorConfig.progress}`}
-                                    style={{ width: `${Math.min((totalQuestions / 25) * 100, 100)}%` }}
-                                  />
-                                </div>
-                                <span className={`text-[10px] font-medium ${colorConfig.cardSub}`}>
-                                  {Math.round((totalQuestions / 25) * 100)}%
-                                </span>
-                              </div>
-                            </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                <Button size="icon" variant="ghost" className={`h-7 w-7 ${colorConfig.cardIcon} hover:bg-white/30`} data-testid={`button-board-menu-${board.id}`}>
-                                  <MoreVertical className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-40">
-                                <DropdownMenuItem onClick={() => window.open(`/board/${board.id}`, '_blank')} data-testid={`menu-preview-${board.id}`}>
-                                  <Eye className="w-4 h-4 mr-2" /> Preview
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => { setEditingBoardId(board.id); setEditBoardName(board.name); }} data-testid={`menu-rename-${board.id}`}>
-                                  <Pencil className="w-4 h-4 mr-2" /> Rename
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => deleteBoardMutation.mutate(board.id)} className="text-destructive focus:text-destructive" data-testid={`menu-delete-${board.id}`}>
-                                  <Trash2 className="w-4 h-4 mr-2" /> Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        )}
-                              </div>
-                            );
-                          })}
-                          </div>
-                          </CollapsibleContent>
-                        </Collapsible>
-                      )}
+                      </div>
 
                       {boards.length === 0 && (
                         <div className="text-center py-6 px-3">
