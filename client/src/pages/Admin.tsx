@@ -25,7 +25,7 @@ import type { Category, Question, Board, BoardCategoryWithCount } from "@shared/
 import { useUpload } from "@/hooks/use-upload";
 import { getBoardColorConfig } from "@/lib/boardColors";
 
-const ALL_POINT_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+const FIXED_POINT_VALUES = [10, 20, 30, 40, 50];
 
 export default function Admin() {
   const { toast } = useToast();
@@ -76,8 +76,6 @@ export default function Admin() {
   const [draggedQuestionId, setDraggedQuestionId] = useState<number | null>(null);
   const [draggedBoardId, setDraggedBoardId] = useState<number | null>(null);
   const [dragOverBoardId, setDragOverBoardId] = useState<number | null>(null);
-  const [myBoardsOpen, setMyBoardsOpen] = useState(true);
-  const [starterPacksOpen, setStarterPacksOpen] = useState(true);
   const [bulkEditMode, setBulkEditMode] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [bulkImportText, setBulkImportText] = useState("");
@@ -94,14 +92,9 @@ export default function Admin() {
     enabled: isAuthenticated,
   });
 
-  // Super Admins can see and edit all boards including Starter Packs
-  // Regular users only see their own boards (non-global)
+  // All users see all boards in a simple flat list
   const isSuperAdmin = user?.role === 'super_admin';
-  const boards = isSuperAdmin ? allBoards : allBoards.filter(b => !b.isGlobal);
-  
-  // Separate boards for display
-  const myBoards = allBoards.filter(b => !b.isGlobal);
-  const starterPacks = allBoards.filter(b => b.isGlobal);
+  const boards = allBoards;
 
   type BoardSummary = { id: number; name: string; categoryCount: number; categories: { id: number; name: string; questionCount: number; remaining: number }[] };
   const { data: allBoardSummaries = [] } = useQuery<BoardSummary[]>({
@@ -116,7 +109,7 @@ export default function Admin() {
   });
 
   const selectedBoard = boards.find(b => b.id === selectedBoardId);
-  const currentPointValues = selectedBoard?.pointValues || ALL_POINT_VALUES;
+  const currentPointValues = FIXED_POINT_VALUES;
 
   const { data: boardCategories = [], isLoading: loadingBoardCategories } = useQuery<BoardCategoryWithCount[]>({
     queryKey: ['/api/boards', selectedBoardId, 'categories'],
