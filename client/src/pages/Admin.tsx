@@ -62,10 +62,12 @@ export default function Admin() {
   const [newQuestion, setNewQuestion] = useState("");
   const [newCorrectAnswer, setNewCorrectAnswer] = useState("");
   const [newPoints, setNewPoints] = useState<number>(10);
+  const [newImageUrl, setNewImageUrl] = useState("");
 
   const [editQuestion, setEditQuestion] = useState("");
   const [editCorrectAnswer, setEditCorrectAnswer] = useState("");
   const [editPoints, setEditPoints] = useState<number>(10);
+  const [editImageUrl, setEditImageUrl] = useState("");
 
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [editCategoryName, setEditCategoryName] = useState("");
@@ -341,7 +343,7 @@ export default function Admin() {
   };
 
   const createQuestionMutation = useMutation({
-    mutationFn: async (data: { categoryId: number; question: string; options: string[]; correctAnswer: string; points: number }) => {
+    mutationFn: async (data: { categoryId: number; question: string; options: string[]; correctAnswer: string; points: number; imageUrl?: string }) => {
       return apiRequest('POST', '/api/questions', data);
     },
     onSuccess: () => {
@@ -351,6 +353,7 @@ export default function Admin() {
       setNewQuestion("");
       setNewCorrectAnswer("");
       setNewPoints(currentPointValues[0] || 10);
+      setNewImageUrl("");
       toast({ title: "Question added!" });
     },
     onError: () => {
@@ -359,7 +362,7 @@ export default function Admin() {
   });
 
   const updateQuestionMutation = useMutation({
-    mutationFn: async ({ id, ...data }: { id: number; question?: string; correctAnswer?: string; points?: number }) => {
+    mutationFn: async ({ id, ...data }: { id: number; question?: string; correctAnswer?: string; points?: number; imageUrl?: string }) => {
       return apiRequest('PUT', `/api/questions/${id}`, data);
     },
     onSuccess: () => {
@@ -383,7 +386,7 @@ export default function Admin() {
   });
 
   const bulkImportMutation = useMutation({
-    mutationFn: async (data: { categoryId: number; questions: Array<{ question: string; correctAnswer: string; points: number }> }) => {
+    mutationFn: async (data: { categoryId: number; questions: Array<{ question: string; correctAnswer: string; points: number; imageUrl?: string }> }) => {
       const res = await apiRequest('POST', `/api/categories/${data.categoryId}/questions/bulk`, { questions: data.questions });
       return res.json();
     },
@@ -409,15 +412,20 @@ export default function Admin() {
     },
   });
 
-  const parseBulkImport = (text: string): Array<{ question: string; correctAnswer: string; points: number }> => {
+  const parseBulkImport = (text: string): Array<{ question: string; correctAnswer: string; points: number; imageUrl?: string }> => {
     const lines = text.split('\n').filter(l => l.trim());
-    const questions: Array<{ question: string; correctAnswer: string; points: number }> = [];
+    const questions: Array<{ question: string; correctAnswer: string; points: number; imageUrl?: string }> = [];
     for (const line of lines) {
       const parts = line.split('|').map(p => p.trim());
       if (parts.length >= 3) {
         const points = parseInt(parts[0], 10);
         if (!isNaN(points) && parts[1] && parts[2]) {
-          questions.push({ points, question: parts[1], correctAnswer: parts[2] });
+          questions.push({ 
+            points, 
+            question: parts[1], 
+            correctAnswer: parts[2],
+            imageUrl: parts[3] || undefined,
+          });
         }
       }
     }
@@ -458,6 +466,7 @@ export default function Admin() {
       options: [],
       correctAnswer: newCorrectAnswer.trim(),
       points: newPoints,
+      imageUrl: newImageUrl.trim() || undefined,
     });
   };
 
@@ -466,6 +475,7 @@ export default function Admin() {
     setEditQuestion(q.question);
     setEditCorrectAnswer(q.correctAnswer);
     setEditPoints(q.points);
+    setEditImageUrl(q.imageUrl || "");
   };
 
   const [importResult, setImportResult] = useState<{
@@ -1328,6 +1338,24 @@ export default function Admin() {
                             </div>
                           </div>
 
+                          <div className="flex gap-3 items-center">
+                            <Input
+                              placeholder="Image URL (optional)"
+                              value={newImageUrl}
+                              onChange={(e) => setNewImageUrl(e.target.value)}
+                              className="flex-1"
+                              data-testid="input-image-url"
+                            />
+                            {newImageUrl && (
+                              <img 
+                                src={newImageUrl} 
+                                alt="Preview" 
+                                className="h-10 w-10 object-cover rounded border"
+                                onError={(e) => (e.target as HTMLImageElement).style.display = 'none'}
+                              />
+                            )}
+                          </div>
+
                           <div className="flex gap-3">
                             <Input
                               placeholder="Correct answer"
@@ -1384,6 +1412,22 @@ export default function Admin() {
                                   <input ref={editImageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], true)} />
                                   <input ref={editAudioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], true)} />
                                   <MDEditor value={editQuestion} onChange={(val) => setEditQuestion(val || "")} preview="edit" height={100} />
+                                  <div className="flex gap-2 items-center">
+                                    <Input 
+                                      value={editImageUrl} 
+                                      onChange={(e) => setEditImageUrl(e.target.value)} 
+                                      placeholder="Image URL (optional)" 
+                                      className="flex-1" 
+                                    />
+                                    {editImageUrl && (
+                                      <img 
+                                        src={editImageUrl} 
+                                        alt="Preview" 
+                                        className="h-10 w-10 object-cover rounded border"
+                                        onError={(e) => (e.target as HTMLImageElement).style.display = 'none'}
+                                      />
+                                    )}
+                                  </div>
                                   <div className="flex gap-2">
                                     <Input value={editCorrectAnswer} onChange={(e) => setEditCorrectAnswer(e.target.value)} placeholder="Answer" className="flex-1" />
                                     <Select value={String(editPoints)} onValueChange={(v) => setEditPoints(Number(v))}>
@@ -1397,7 +1441,7 @@ export default function Admin() {
                                   </div>
                                   <div className="flex gap-2">
                                     <Button size="sm" variant="ghost" onClick={() => setEditingQuestionId(null)}>Cancel</Button>
-                                    <Button size="sm" onClick={() => updateQuestionMutation.mutate({ id: q.id, question: editQuestion, correctAnswer: editCorrectAnswer, points: editPoints })}>
+                                    <Button size="sm" onClick={() => updateQuestionMutation.mutate({ id: q.id, question: editQuestion, correctAnswer: editCorrectAnswer, points: editPoints, imageUrl: editImageUrl.trim() || undefined })}>
                                       Save
                                     </Button>
                                   </div>
@@ -1426,9 +1470,21 @@ export default function Admin() {
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
                                       <span className="px-2 py-0.5 text-xs font-bold bg-primary/20 text-primary rounded">{q.points} pts</span>
+                                      {q.imageUrl && (
+                                        <span className="px-2 py-0.5 text-xs bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded flex items-center gap-1">
+                                          <Image className="w-3 h-3" /> Image
+                                        </span>
+                                      )}
                                     </div>
                                     <p className="text-sm text-foreground">{q.question.replace(/!\[.*?\]\(.*?\)/g, '[image]').replace(/<audio.*?<\/audio>/g, '[audio]')}</p>
                                     <p className="text-xs text-primary mt-1">Answer: {q.correctAnswer}</p>
+                                    {q.imageUrl && (
+                                      <img 
+                                        src={q.imageUrl} 
+                                        alt="Question" 
+                                        className="mt-2 max-h-20 rounded border object-contain"
+                                      />
+                                    )}
                                   </div>
                                   <div className="flex items-center gap-1 shrink-0">
                                     <Button size="icon" variant="ghost" onClick={() => startEditingQuestion(q)} className="h-8 w-8 text-muted-foreground hover:text-primary">

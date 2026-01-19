@@ -315,6 +315,21 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
       </div>
 
       <div className="p-4">
+        {question.imageUrl && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1 }}
+            className="flex justify-center mb-4"
+          >
+            <img 
+              src={question.imageUrl} 
+              alt="Question" 
+              className="max-w-full max-h-64 rounded-xl shadow-lg object-contain"
+            />
+          </motion.div>
+        )}
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
