@@ -103,9 +103,9 @@ export default function HostGridOfGrudges() {
           ) : (
             <div className="flex flex-col items-center justify-center py-16 space-y-4">
               <Grid3X3 className="w-12 h-12 text-muted-foreground" />
-              <h2 className="text-xl font-semibold text-foreground">No boards available</h2>
+              <h2 className="text-xl font-semibold text-foreground">No game boards yet</h2>
               <p className="text-muted-foreground text-center max-w-md">
-                Ask an admin to set up game boards.
+                Head to the Admin panel to create your first board and add some trivia categories!
               </p>
             </div>
           )}
