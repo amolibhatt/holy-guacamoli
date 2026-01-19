@@ -71,6 +71,8 @@ Preferred communication style: Simple, everyday language.
 - **Analytics Improvements**: Server-side validation, 10% log sampling, event batching
 - **AI Fallback**: Rate-limit detection, empty answer handling with 30% scoring
 - **Game Slug Rename**: Renamed "grid_of_grudges" slug to "buzzkill" with auto-migration on startup that preserves FK relationships
+- **Drag-and-Drop Category Reordering**: Categories can be reordered within a board by dragging category tabs
+- **Auto-Save Drafts**: Work-in-progress questions are saved to localStorage per category, cleared on successful save or when all fields are empty
 
 ### Known Security Notes
 - **Express v4 Vulnerabilities**: npm audit shows 3 HIGH severity vulnerabilities in express/qs/body-parser. Express v5 upgrade was attempted but reverted due to breaking changes in path-to-regexp (route syntax like `:param(*)` no longer works). Will revisit when upstream compatibility improves.
