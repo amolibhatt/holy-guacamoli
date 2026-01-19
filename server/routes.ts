@@ -605,7 +605,7 @@ export async function registerRoutes(
       // Standard point values for categories
       const validPointValues = [10, 20, 30, 40, 50];
 
-      const { questions } = req.body as { questions: Array<{ question: string; correctAnswer: string; points: number }> };
+      const { questions } = req.body as { questions: Array<{ question: string; correctAnswer: string; points: number; imageUrl?: string }> };
       if (!Array.isArray(questions) || questions.length === 0) {
         return res.status(400).json({ message: "No questions provided" });
       }
@@ -655,6 +655,7 @@ export async function registerRoutes(
             options: [],
             correctAnswer: answerText,
             points,
+            imageUrl: typeof q.imageUrl === 'string' && q.imageUrl.trim() ? q.imageUrl.trim() : undefined,
           });
           existingPoints.add(points);
           results.success++;
