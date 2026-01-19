@@ -113,7 +113,7 @@ function SessionCard({ session }: { session: GameSessionWithDetails }) {
           </div>
           <div className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            Room: {session.code}
+            Room: {session.code.length > 10 ? session.code.slice(0, 10) + "..." : session.code}
           </div>
         </div>
       </CardContent>
