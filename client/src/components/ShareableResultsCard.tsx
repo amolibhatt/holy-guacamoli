@@ -47,15 +47,69 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
 
+    const confettiColors = [
+      "#FFD700", "#FF6B6B", "#4ADEBC", "#C44AF5", "#FF8C00", 
+      "#00CED1", "#FF69B4", "#7B68EE", "#32CD32", "#FF4500"
+    ];
+    
+    for (let i = 0; i < 150; i++) {
+      const x = Math.random() * width;
+      const y = Math.random() * height;
+      const size = Math.random() * 12 + 4;
+      const color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+      const opacity = Math.random() * 0.7 + 0.3;
+      const rotation = Math.random() * Math.PI * 2;
+      
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+      ctx.globalAlpha = opacity;
+      
+      const shapeType = Math.floor(Math.random() * 4);
+      ctx.fillStyle = color;
+      
+      if (shapeType === 0) {
+        ctx.fillRect(-size/2, -size/4, size, size/2);
+      } else if (shapeType === 1) {
+        ctx.beginPath();
+        ctx.arc(0, 0, size/2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (shapeType === 2) {
+        ctx.beginPath();
+        ctx.moveTo(0, -size/2);
+        ctx.lineTo(size/2, size/2);
+        ctx.lineTo(-size/2, size/2);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        ctx.beginPath();
+        const spikes = 5;
+        const outerRadius = size/2;
+        const innerRadius = size/4;
+        let rot = Math.PI / 2 * 3;
+        const step = Math.PI / spikes;
+        ctx.moveTo(0, -outerRadius);
+        for (let j = 0; j < spikes; j++) {
+          ctx.lineTo(Math.cos(rot) * outerRadius, -Math.sin(rot) * outerRadius);
+          rot += step;
+          ctx.lineTo(Math.cos(rot) * innerRadius, -Math.sin(rot) * innerRadius);
+          rot += step;
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
     ctx.save();
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 80; i++) {
       const x = Math.random() * width;
       const y = Math.random() * height;
       const size = Math.random() * 3 + 1;
-      const opacity = Math.random() * 0.5 + 0.2;
+      const opacity = Math.random() * 0.6 + 0.3;
       ctx.beginPath();
       ctx.arc(x, y, size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255, 215, 0, ${opacity})`;
+      ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
       ctx.fill();
     }
     ctx.restore();
@@ -98,12 +152,16 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
     ctx.font = "bold 72px system-ui, -apple-system, sans-serif";
     ctx.textAlign = "center";
     ctx.fillStyle = "#FFD700";
-    ctx.fillText("🥑 HOLY GUACAMOLI! 🥑", width / 2, 120);
+    ctx.fillText("HOLY GUACAMOLI!", width / 2, 100);
     ctx.restore();
 
-    ctx.font = "600 36px system-ui, -apple-system, sans-serif";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-    ctx.fillText("GAME RESULTS", width / 2, 180);
+    ctx.font = "italic 600 42px system-ui, -apple-system, sans-serif";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    ctx.fillText("Who knows you best?", width / 2, 160);
+
+    ctx.font = "500 28px system-ui, -apple-system, sans-serif";
+    ctx.fillStyle = "rgba(255, 215, 0, 0.7)";
+    ctx.fillText("GAME RESULTS", width / 2, 210);
 
     const podiumBaseY = 750;
     const podiumWidth = 220;
@@ -134,6 +192,42 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
     drawPodium(width/2, 280, 1, "#FFD700", "#B8860B");
     drawPodium(width/2 + 260, 140, 3, "#CD7F32", "#8B4513");
 
+    const getMedalEmoji = (place: number) => {
+      if (place === 1) return "🥇";
+      if (place === 2) return "🥈";
+      if (place === 3) return "🥉";
+      return "";
+    };
+
+    const drawBurstRays = (cx: number, cy: number, radius: number) => {
+      const numRays = 24;
+      ctx.save();
+      for (let i = 0; i < numRays; i++) {
+        const angle = (i / numRays) * Math.PI * 2;
+        const innerRadius = radius * 0.3;
+        const outerRadius = radius * (0.8 + Math.random() * 0.4);
+        
+        const gradient = ctx.createLinearGradient(
+          cx + Math.cos(angle) * innerRadius,
+          cy + Math.sin(angle) * innerRadius,
+          cx + Math.cos(angle) * outerRadius,
+          cy + Math.sin(angle) * outerRadius
+        );
+        gradient.addColorStop(0, "rgba(255, 215, 0, 0.8)");
+        gradient.addColorStop(0.5, "rgba(255, 140, 0, 0.4)");
+        gradient.addColorStop(1, "rgba(255, 100, 0, 0)");
+        
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(angle - 0.08) * innerRadius, cy + Math.sin(angle - 0.08) * innerRadius);
+        ctx.lineTo(cx + Math.cos(angle) * outerRadius, cy + Math.sin(angle) * outerRadius);
+        ctx.lineTo(cx + Math.cos(angle + 0.08) * innerRadius, cy + Math.sin(angle + 0.08) * innerRadius);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
+      }
+      ctx.restore();
+    };
+
     const drawPlayer = (contestant: Contestant | undefined, x: number, y: number, place: number, originalIndex: number) => {
       if (!contestant) return;
 
@@ -141,18 +235,20 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
       const avatarY = y - avatarSize - 40;
 
       if (place === 1) {
+        drawBurstRays(x, avatarY, 200);
+        
         ctx.save();
-        ctx.shadowColor = "rgba(255, 215, 0, 0.8)";
-        ctx.shadowBlur = 40;
+        ctx.shadowColor = "rgba(255, 215, 0, 0.9)";
+        ctx.shadowBlur = 60;
         ctx.beginPath();
-        ctx.arc(x, avatarY, avatarSize/2 + 15, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255, 215, 0, 0.3)";
+        ctx.arc(x, avatarY, avatarSize/2 + 25, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255, 215, 0, 0.4)";
         ctx.fill();
         ctx.restore();
 
-        ctx.font = "80px system-ui";
+        ctx.font = "90px system-ui";
         ctx.textAlign = "center";
-        ctx.fillText("👑", x, avatarY - avatarSize/2 - 20);
+        ctx.fillText("👑", x, avatarY - avatarSize/2 - 25);
       }
 
       ctx.save();
@@ -179,14 +275,18 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
       const displayName = contestant.name.length > 10 ? contestant.name.slice(0, 10) + "..." : contestant.name;
       ctx.fillText(displayName, x, avatarY + avatarSize/2 + 40);
 
+      ctx.font = `${place === 1 ? 50 : 38}px system-ui`;
+      ctx.textAlign = "center";
+      ctx.fillText(getMedalEmoji(place), x, avatarY + avatarSize/2 + 85);
+
       ctx.save();
       if (place === 1) {
         ctx.shadowColor = "rgba(255, 215, 0, 0.8)";
         ctx.shadowBlur = 20;
       }
-      ctx.font = `bold ${place === 1 ? 56 : 42}px system-ui`;
+      ctx.font = `bold ${place === 1 ? 48 : 36}px system-ui`;
       ctx.fillStyle = place === 1 ? "#FFD700" : place === 2 ? "#E0E0E0" : "#CD9B5A";
-      ctx.fillText(`${contestant.score} pts`, x, avatarY + avatarSize/2 + 90);
+      ctx.fillText(`${contestant.score} pts`, x, avatarY + avatarSize/2 + 130);
       ctx.restore();
     };
 
