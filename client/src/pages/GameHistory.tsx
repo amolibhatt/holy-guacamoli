@@ -1,10 +1,9 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Users, Calendar, Trophy, Clock, LayoutGrid, Tag, ChevronDown, ChevronUp, Gamepad2 } from "lucide-react";
+import { ArrowLeft, Users, Calendar, Trophy, LayoutGrid, Gamepad2 } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
@@ -28,12 +27,10 @@ function getAvatar(avatarId: string) {
 function SessionCard({ session }: { session: GameSessionWithDetails }) {
   const sortedPlayers = [...session.players].sort((a, b) => b.score - a.score);
   const winner = sortedPlayers[0];
-  const totalPlayers = session.players.length;
   const isCompleted = session.state === "ended";
-  const hasPlayers = totalPlayers > 0;
   
   return (
-    <Card className={`hover-elevate transition-all ${!hasPlayers ? "opacity-60" : ""}`}>
+    <Card className="hover-elevate transition-all">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
@@ -50,14 +47,14 @@ function SessionCard({ session }: { session: GameSessionWithDetails }) {
           </div>
           <Badge 
             variant={isCompleted ? "secondary" : "default"}
-            className={`shrink-0 ${isCompleted && hasPlayers ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/30" : ""}`}
+            className={`shrink-0 ${isCompleted ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/30" : ""}`}
           >
-            {isCompleted ? (hasPlayers ? "Completed" : "Ended") : session.state}
+            {isCompleted ? "Completed" : session.state}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {hasPlayers && winner && (
+        {winner && (
           <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/20">
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-500/20">
               <Trophy className="w-5 h-5 text-amber-500" />
@@ -75,7 +72,7 @@ function SessionCard({ session }: { session: GameSessionWithDetails }) {
           </div>
         )}
 
-        {hasPlayers && sortedPlayers.length > 1 && (
+        {sortedPlayers.length > 1 && (
           <div className="space-y-1.5">
             {sortedPlayers.slice(1).map((player, idx) => (
               <div 
@@ -92,12 +89,6 @@ function SessionCard({ session }: { session: GameSessionWithDetails }) {
                 </Badge>
               </div>
             ))}
-          </div>
-        )}
-
-        {!hasPlayers && (
-          <div className="text-center py-2 text-muted-foreground">
-            <p className="text-sm">No players joined</p>
           </div>
         )}
 
@@ -148,8 +139,7 @@ function LoadingSkeleton() {
 }
 
 export default function GameHistory() {
-  const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
-  const [showEmpty, setShowEmpty] = useState(false);
+  const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
 
   const { data: sessions, isLoading } = useQuery<GameSessionWithDetails[]>({
     queryKey: ["/api/host/sessions"],
@@ -162,7 +152,6 @@ export default function GameHistory() {
   });
 
   const gamesWithPlayers = sessions?.filter(s => s.players.length > 0) || [];
-  const emptyGames = sessions?.filter(s => s.players.length === 0) || [];
   const completedGames = gamesWithPlayers.filter(s => s.state === "ended");
 
   if (isAuthLoading) {
@@ -257,66 +246,10 @@ export default function GameHistory() {
         {isLoading ? (
           <LoadingSkeleton />
         ) : gamesWithPlayers.length > 0 ? (
-          <>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {gamesWithPlayers.map(session => (
-                <SessionCard key={session.id} session={session} />
-              ))}
-            </div>
-            
-            {emptyGames.length > 0 && (
-              <div className="pt-4 border-t">
-                <Button 
-                  variant="ghost" 
-                  className="w-full text-muted-foreground"
-                  onClick={() => setShowEmpty(!showEmpty)}
-                  data-testid="button-toggle-empty"
-                >
-                  {showEmpty ? <ChevronUp className="w-4 h-4 mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
-                  {emptyGames.length} empty session{emptyGames.length !== 1 ? "s" : ""} (no players joined)
-                </Button>
-                {showEmpty && (
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
-                    {emptyGames.map(session => (
-                      <SessionCard key={session.id} session={session} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        ) : emptyGames.length > 0 ? (
-          <div className="space-y-6">
-            <Card>
-              <CardContent className="py-8 text-center">
-                <Gamepad2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-                <h3 className="text-lg font-medium mb-2">No games with players yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Your sessions are ready - just waiting for players to join!
-                </p>
-                <Link href="/">
-                  <Button data-testid="button-start-game">Start a Game</Button>
-                </Link>
-              </CardContent>
-            </Card>
-            <div className="border-t pt-4">
-              <Button 
-                variant="ghost" 
-                className="w-full text-muted-foreground justify-center"
-                onClick={() => setShowEmpty(!showEmpty)}
-                data-testid="button-toggle-empty-alt"
-              >
-                {showEmpty ? <ChevronUp className="w-4 h-4 mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
-                {emptyGames.length} empty session{emptyGames.length !== 1 ? "s" : ""}
-              </Button>
-              {showEmpty && (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
-                  {emptyGames.map(session => (
-                    <SessionCard key={session.id} session={session} />
-                  ))}
-                </div>
-              )}
-            </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {gamesWithPlayers.map(session => (
+              <SessionCard key={session.id} session={session} />
+            ))}
           </div>
         ) : (
           <Card>
