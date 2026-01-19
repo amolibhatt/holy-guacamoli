@@ -286,7 +286,7 @@ export default function GameHistory() {
             )}
           </>
         ) : emptyGames.length > 0 ? (
-          <>
+          <div className="space-y-6">
             <Card>
               <CardContent className="py-8 text-center">
                 <Gamepad2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
@@ -299,10 +299,10 @@ export default function GameHistory() {
                 </Link>
               </CardContent>
             </Card>
-            <div className="pt-4">
+            <div className="border-t pt-4">
               <Button 
                 variant="ghost" 
-                className="w-full text-muted-foreground"
+                className="w-full text-muted-foreground justify-center"
                 onClick={() => setShowEmpty(!showEmpty)}
                 data-testid="button-toggle-empty-alt"
               >
@@ -317,7 +317,7 @@ export default function GameHistory() {
                 </div>
               )}
             </div>
-          </>
+          </div>
         ) : (
           <Card>
             <CardContent className="py-12 text-center">
