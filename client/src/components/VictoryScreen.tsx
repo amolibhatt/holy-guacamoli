@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Crown, Sparkles, Share2, Copy, Check } from "lucide-react";
-import { SiX, SiFacebook, SiWhatsapp } from "react-icons/si";
+import { SiX, SiFacebook, SiWhatsapp, SiInstagram } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { useScore } from "./ScoreContext";
 import confetti from "canvas-confetti";
@@ -173,6 +173,21 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
     const text = encodeURIComponent(generateShareMessage());
     window.open(`https://wa.me/?text=${text}`, '_blank');
     soundManager.play('click', 0.3);
+  };
+
+  const handleShareInstagram = async () => {
+    soundManager.play('click', 0.3);
+    const instagramWindow = window.open('https://instagram.com', '_blank');
+    try {
+      await navigator.clipboard.writeText(generateShareMessage());
+      toast({ title: "Results copied! Paste in your Instagram post." });
+    } catch {
+      if (instagramWindow) {
+        toast({ title: "Instagram opened - copy results manually" });
+      } else {
+        toast({ title: "Popup blocked - please allow popups", variant: "destructive" });
+      }
+    }
   };
 
   useEffect(() => {
@@ -548,6 +563,15 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
                   data-testid="button-share-whatsapp"
                 >
                   <SiWhatsapp className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={handleShareInstagram}
+                  className="text-white/70 hover:text-white hover:bg-white/10"
+                  data-testid="button-share-instagram"
+                >
+                  <SiInstagram className="w-4 h-4" />
                 </Button>
               </div>
             </motion.div>
