@@ -1,0 +1,124 @@
+2026-01-19T17:51:53.217836463Z ==> Downloading cache...
+2026-01-19T17:51:53.276413351Z ==> Cloning from https://github.com/amolibhatt/holy-guacamoli
+2026-01-19T17:51:54.900218603Z ==> Checking out commit 2bbbccb4e75abe730c5fcd7f8abfdd1e88642c1e in branch main
+2026-01-19T17:52:05.684041464Z ==> Downloaded 230MB in 1s. Extraction took 10s.
+2026-01-19T17:52:19.837193532Z ==> Using Node.js version 22.16.0 (default)
+2026-01-19T17:52:19.863416174Z ==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+2026-01-19T17:52:20.016685818Z ==> Running build command 'npm install --include=dev && npm run db:push && npm run build'...
+2026-01-19T17:52:21.933888262Z 
+2026-01-19T17:52:21.933916402Z up to date, audited 849 packages in 2s
+2026-01-19T17:52:21.933921522Z 
+2026-01-19T17:52:21.934036835Z 229 packages are looking for funding
+2026-01-19T17:52:21.934063045Z   run `npm fund` for details
+2026-01-19T17:52:21.944875998Z 
+2026-01-19T17:52:21.944897868Z 4 high severity vulnerabilities
+2026-01-19T17:52:21.944900559Z 
+2026-01-19T17:52:21.944903728Z To address issues that do not require attention, run:
+2026-01-19T17:52:21.944906139Z   npm audit fix
+2026-01-19T17:52:21.944908379Z 
+2026-01-19T17:52:21.944910739Z Some issues need review, and may require choosing
+2026-01-19T17:52:21.944914069Z a different dependency.
+2026-01-19T17:52:21.944916359Z 
+2026-01-19T17:52:21.944918679Z Run `npm audit` for details.
+2026-01-19T17:52:22.199651636Z 
+2026-01-19T17:52:22.199669326Z > rest-express@1.0.0 db:push
+2026-01-19T17:52:22.199672866Z > drizzle-kit push
+2026-01-19T17:52:22.199675416Z 
+2026-01-19T17:52:22.365489916Z No config path provided, using default 'drizzle.config.ts'
+2026-01-19T17:52:22.365862023Z Reading config file '/opt/render/project/src/drizzle.config.ts'
+2026-01-19T17:52:23.125419817Z Using 'pg' driver for database querying
+2026-01-19T17:52:23.365652692Z [⣷] Pulling schema from database...
+2026-01-19T17:52:23.48767606Z [⣯] Pulling schema from database...
+2026-01-19T17:52:23.615172662Z [⣟] Pulling schema from database...
+2026-01-19T17:52:23.743485738Z [⡿] Pulling schema from database...
+2026-01-19T17:52:23.871683462Z [⢿] Pulling schema from database...
+2026-01-19T17:52:23.99956434Z [⣻] Pulling schema from database...
+2026-01-19T17:52:24.127709783Z [⣽] Pulling schema from database...
+2026-01-19T17:52:24.25548513Z [⣷] Pulling schema from database...
+2026-01-19T17:52:24.383821606Z [⣯] Pulling schema from database...
+2026-01-19T17:52:24.51251287Z [⣟] Pulling schema from database...
+2026-01-19T17:52:24.639878488Z [⡿] Pulling schema from database...
+2026-01-19T17:52:24.767903069Z [⢿] Pulling schema from database...
+2026-01-19T17:52:24.856844247Z [✓] Pulling schema from database...
+2026-01-19T17:52:24.896346968Z 
+2026-01-19T17:52:24.896359078Z Is category_id column in questions table created or renamed from another column?
+2026-01-19T17:52:24.896363508Z ❯ + category_id                     create column
+2026-01-19T17:52:35.028742853Z   ~ board_category_id › category_id rename column
+2026-01-19T17:52:35.028779174Z > rest-express@1.0.0 build
+2026-01-19T17:52:35.028788344Z > tsx script/build.ts
+2026-01-19T17:52:35.028792034Z 
+2026-01-19T17:52:35.910521149Z building client...
+2026-01-19T17:52:36.131591575Z vite v7.3.0 building client environment for production...
+2026-01-19T17:52:36.83305907Z transforming...
+2026-01-19T17:52:44.413160492Z ✓ 3068 modules transformed.
+2026-01-19T17:52:44.925867467Z rendering chunks...
+2026-01-19T17:52:45.496847704Z computing gzip size...
+2026-01-19T17:52:45.541232507Z ../dist/public/index.html                                 2.94 kB │ gzip:   1.11 kB
+2026-01-19T17:52:45.542130933Z 
+2026-01-19T17:52:45.552509378Z ../dist/public/assets/Admin-8cl7b6eX.css                 34.01 kB │ gzip:   6.03 kB
+2026-01-19T17:52:45.552525008Z ../dist/public/assets/index-B2hySQae.css                158.06 kB │ gzip:  22.46 kB
+2026-01-19T17:52:45.552535259Z (!) Some chunks are larger than 500 kB after minification. Consider:
+2026-01-19T17:52:45.552542079Z - Using dynamic import() to code-split the application
+2026-01-19T17:52:45.552547369Z - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+2026-01-19T17:52:45.552552019Z - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+2026-01-19T17:52:45.552562789Z ../dist/public/assets/check-BEGU8sSC.js                   0.12 kB │ gzip:   0.13 kB
+2026-01-19T17:52:45.552569039Z ../dist/public/assets/chevron-left-BrLzSBb-.js            0.13 kB │ gzip:   0.14 kB
+2026-01-19T17:52:45.552573479Z ../dist/public/assets/play-PT_iJx2J.js                    0.13 kB │ gzip:   0.14 kB
+2026-01-19T17:52:45.552577669Z ../dist/public/assets/rotate-ccw-BGFOH7eC.js              0.20 kB │ gzip:   0.18 kB
+2026-01-19T17:52:45.552581769Z ../dist/public/assets/trending-up-B0eivj3R.js             0.20 kB │ gzip:   0.18 kB
+2026-01-19T17:52:45.55258594Z ../dist/public/assets/copy-fWTYxyf_.js                    0.23 kB │ gzip:   0.20 kB
+2026-01-19T17:52:45.55259006Z ../dist/public/assets/timer-2LhwVMzj.js                   0.24 kB │ gzip:   0.18 kB
+2026-01-19T17:52:45.55259373Z ../dist/public/assets/eye-BeI1n_rQ.js                     0.25 kB │ gzip:   0.19 kB
+2026-01-19T17:52:45.55259745Z ../dist/public/assets/calendar-D4GjZzbD.js                0.25 kB │ gzip:   0.20 kB
+2026-01-19T17:52:45.55260149Z ../dist/public/assets/trash-2-CMYuQlgx.js                 0.35 kB │ gzip:   0.24 kB
+2026-01-19T17:52:45.55262987Z ../dist/public/assets/crown-CDJV4ooi.js                   0.36 kB │ gzip:   0.25 kB
+2026-01-19T17:52:45.55263405Z ../dist/public/assets/layers-BlZ-HOC0.js                  0.36 kB │ gzip:   0.23 kB
+2026-01-19T17:52:45.552637821Z ../dist/public/assets/medal-B9FUqRJ0.js                   0.43 kB │ gzip:   0.28 kB
+2026-01-19T17:52:45.55264171Z ../dist/public/assets/textarea-7coSMtGn.js                0.50 kB │ gzip:   0.32 kB
+2026-01-19T17:52:45.552646171Z ../dist/public/assets/flame-B9Y7W3Q9.js                   0.50 kB │ gzip:   0.32 kB
+2026-01-19T17:52:45.552650271Z ../dist/public/assets/gamepad-2-Cm642zMe.js               0.62 kB │ gzip:   0.38 kB
+2026-01-19T17:52:45.552654351Z ../dist/public/assets/badge-B-n6TGyl.js                   0.73 kB │ gzip:   0.40 kB
+2026-01-19T17:52:45.552658291Z ../dist/public/assets/use-quiz-D-cpM3aq.js                1.53 kB │ gzip:   0.66 kB
+2026-01-19T17:52:45.552662151Z ../dist/public/assets/progress-uNU_fjGx.js                1.90 kB │ gzip:   0.94 kB
+2026-01-19T17:52:45.552665941Z ../dist/public/assets/CategoryPage-CyVN7euO.js            1.94 kB │ gzip:   0.80 kB
+2026-01-19T17:52:45.552669601Z ../dist/public/assets/switch-C-A9gG-H.js                  2.58 kB │ gzip:   1.32 kB
+2026-01-19T17:52:45.552673211Z ../dist/public/assets/BuzzkillThemed-vJCMhj7E.js          3.05 kB │ gzip:   1.32 kB
+2026-01-19T17:52:45.552676771Z ../dist/public/assets/BuzzkillDailySmash-DqtAnjnB.js      5.23 kB │ gzip:   2.22 kB
+2026-01-19T17:52:45.552693971Z ../dist/public/assets/HostGridOfGrudges-Cq0GKAkw.js       5.23 kB │ gzip:   1.92 kB
+2026-01-19T17:52:45.552696922Z ../dist/public/assets/Vault-DfkGhcCn.js                   5.78 kB │ gzip:   1.86 kB
+2026-01-19T17:52:45.552699742Z ../dist/public/assets/GridOfGrudges-BTDcdUUt.js           5.79 kB │ gzip:   2.14 kB
+2026-01-19T17:52:45.552702472Z ../dist/public/assets/HeadsUpGame-DtwVe6OV.js             6.80 kB │ gzip:   2.05 kB
+2026-01-19T17:52:45.552705102Z ../dist/public/assets/GameHistory-BLneponL.js             7.15 kB │ gzip:   2.06 kB
+2026-01-19T17:52:45.552707472Z ../dist/public/assets/Storyboard-Cl_HsbCK.js              7.87 kB │ gzip:   2.19 kB
+2026-01-19T17:52:45.552709862Z ../dist/public/assets/BuzzerPanel-Bo_OswRf.js             9.00 kB │ gzip:   2.98 kB
+2026-01-19T17:52:45.552712442Z ../dist/public/assets/ContentDashboard-Bjg_7-Op.js       15.33 kB │ gzip:   3.71 kB
+2026-01-19T17:52:45.552715502Z ../dist/public/assets/SequencePlayer-bhc-8VHA.js         17.00 kB │ gzip:   4.79 kB
+2026-01-19T17:52:45.552718052Z ../dist/public/assets/index-ClsalBEe.js                  17.04 kB │ gzip:   6.37 kB
+2026-01-19T17:52:45.552720732Z ../dist/public/assets/dropdown-menu-DsMwWsh1.js          20.62 kB │ gzip:   6.01 kB
+2026-01-19T17:52:45.552723652Z ../dist/public/assets/GamesAdmin-DAPojkf1.js             21.15 kB │ gzip:   4.44 kB
+2026-01-19T17:52:45.552726482Z ../dist/public/assets/SuperAdmin-DpfQoN7T.js             23.08 kB │ gzip:   5.93 kB
+2026-01-19T17:52:45.552729212Z ../dist/public/assets/SequenceSqueeze-D1NS8B90.js        24.84 kB │ gzip:   6.74 kB
+2026-01-19T17:52:45.552731872Z ../dist/public/assets/alert-dialog-B3V2nUMD.js           25.99 kB │ gzip:   8.82 kB
+2026-01-19T17:52:45.552734562Z ../dist/public/assets/RelationshipHub-xPX5Gsyw.js        37.99 kB │ gzip:   8.97 kB
+2026-01-19T17:52:45.552737482Z ../dist/public/assets/PlayBoard-B3d_MBP6.js              77.65 kB │ gzip:  25.73 kB
+2026-01-19T17:52:45.552740303Z ../dist/public/assets/index-BBC9eofw.js                 157.13 kB │ gzip:  47.65 kB
+2026-01-19T17:52:45.552742852Z ../dist/public/assets/index-JjvwIux0.js                 635.33 kB │ gzip: 197.62 kB
+2026-01-19T17:52:45.552745863Z ../dist/public/assets/Admin-Cc27EPrL.js               1,272.32 kB │ gzip: 431.72 kB
+2026-01-19T17:52:45.552749352Z ✓ built in 9.26s
+2026-01-19T17:52:45.552752143Z building server...
+2026-01-19T17:52:45.937753333Z 
+2026-01-19T17:52:45.937775413Z   dist/index.cjs  2.6mb ⚠️
+2026-01-19T17:52:45.937777613Z 
+2026-01-19T17:52:45.937780953Z ⚡ Done in 382ms
+2026-01-19T17:52:46.821091888Z ==> Uploading build...
+2026-01-19T17:52:56.613551899Z ==> Uploaded in 5.4s. Compression took 4.4s
+2026-01-19T17:52:56.697770608Z ==> Build successful 🎉
+2026-01-19T17:53:05.191902424Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-01-19T17:53:05.358615538Z ==> Deploying...
+2026-01-19T17:53:41.647217034Z ==> Your service is live 🎉
+2026-01-19T17:53:42.427730985Z ==> 
+2026-01-19T17:53:42.62579Z ==> ///////////////////////////////////////////////////////////
+2026-01-19T17:53:42.825402755Z ==> 
+2026-01-19T17:53:43.01421979Z ==> Available at your primary URL https://holy-guacamoli.onrender.com
+2026-01-19T17:53:43.751274284Z ==> 
+2026-01-19T17:53:44.559930423Z ==> ///////////////////////////////////////////////////////////
