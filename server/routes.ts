@@ -1319,7 +1319,7 @@ export async function registerRoutes(
   app.get("/api/host/sessions", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const sessions = await storage.getHostSessions(userId);
+      const sessions = await storage.getHostSessionsWithDetails(userId);
       res.json(sessions);
     } catch (err) {
       console.error("Error getting host sessions:", err);

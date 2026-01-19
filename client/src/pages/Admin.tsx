@@ -13,7 +13,7 @@ import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, ArrowRight, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, Upload, FileText, Eye, Download, FileUp, MoreVertical, FileDown } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, ArrowRight, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, Upload, FileText, Eye, Download, FileUp, MoreVertical, FileDown, History } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -737,6 +737,22 @@ export default function Admin() {
         backHref="/"
         rightContent={
           <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/admin/history">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 gap-1.5"
+                    data-testid="button-game-history"
+                  >
+                    <History className="w-4 h-4" />
+                    <span className="hidden sm:inline">History</span>
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>View game history</TooltipContent>
+            </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

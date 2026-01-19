@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion } from "@shared/schema";
+import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameSessionWithDetails, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion } from "@shared/schema";
 import { users } from "@shared/models/auth";
 import { eq, and, asc, count, inArray, desc, sql, gte } from "drizzle-orm";
 
@@ -73,6 +73,7 @@ export interface IStorage {
   updateSession(id: number, data: Partial<InsertGameSession>): Promise<GameSession | undefined>;
   deleteSession(id: number): Promise<boolean>;
   getHostSessions(hostId: string): Promise<GameSessionWithPlayers[]>;
+  getHostSessionsWithDetails(hostId: string): Promise<GameSessionWithDetails[]>;
   getHostAnalytics(hostId: string): Promise<{ totalSessions: number; totalPlayers: number; activeSessions: number }>;
   
   // Session Players
@@ -685,6 +686,75 @@ export class DatabaseStorage implements IStorage {
     for (const session of sessions) {
       const players = await this.getSessionPlayers(session.id);
       result.push({ ...session, players });
+    }
+    return result;
+  }
+
+  async getHostSessionsWithDetails(hostId: string): Promise<GameSessionWithDetails[]> {
+    const sessions = await db.select().from(gameSessions)
+      .where(eq(gameSessions.hostId, hostId))
+      .orderBy(desc(gameSessions.createdAt))
+      .limit(100);
+    
+    const result: GameSessionWithDetails[] = [];
+    for (const session of sessions) {
+      const players = await this.getSessionPlayers(session.id);
+      
+      let boardName: string | undefined;
+      
+      // Try currentBoardId first
+      if (session.currentBoardId) {
+        const board = await db.select().from(boards).where(eq(boards.id, session.currentBoardId)).limit(1);
+        boardName = board[0]?.name;
+      }
+      
+      // Try to get board from gameId via gameBoards junction table
+      if (!boardName && session.gameId) {
+        const gameBoardRows = await db.select({ boardId: gameBoards.boardId })
+          .from(gameBoards)
+          .where(eq(gameBoards.gameId, session.gameId))
+          .limit(1);
+        if (gameBoardRows[0]?.boardId) {
+          const board = await db.select().from(boards).where(eq(boards.id, gameBoardRows[0].boardId)).limit(1);
+          boardName = board[0]?.name;
+        }
+      }
+      
+      // Get played categories
+      let playedCategories: { id: number; name: string }[] = [];
+      const categoryIds = session.playedCategoryIds || [];
+      if (categoryIds.length > 0) {
+        const cats = await db.select({ id: categories.id, name: categories.name })
+          .from(categories)
+          .where(inArray(categories.id, categoryIds));
+        playedCategories = cats;
+        
+        // If no board name yet, try to find board from played categories
+        if (!boardName && categoryIds.length > 0) {
+          const boardCat = await db.select({ boardId: boardCategories.boardId })
+            .from(boardCategories)
+            .where(inArray(boardCategories.categoryId, categoryIds))
+            .limit(1);
+          if (boardCat[0]?.boardId) {
+            const board = await db.select().from(boards).where(eq(boards.id, boardCat[0].boardId)).limit(1);
+            boardName = board[0]?.name;
+          }
+        }
+      }
+      
+      // Last resort: use game mode as indicator
+      if (!boardName && session.currentMode) {
+        boardName = session.currentMode === "board" ? "Buzzkill" : 
+                   session.currentMode === "sequence" ? "Sequence Squeeze" : 
+                   session.currentMode;
+      }
+      
+      result.push({ 
+        ...session, 
+        players,
+        boardName,
+        playedCategories
+      });
     }
     return result;
   }

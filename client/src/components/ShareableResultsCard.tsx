@@ -348,7 +348,7 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
     ctx.fillText(date, width/2, height - 40);
 
     // Generate QR code and draw it
-    const gameUrl = window.location.origin;
+    const gameUrl = "https://holy-guacamoli.onrender.com/";
     QRCode.toDataURL(gameUrl, {
       width: 140,
       margin: 1,
