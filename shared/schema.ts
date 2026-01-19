@@ -253,6 +253,7 @@ export const questions = pgTable("questions", {
   options: jsonb("options").$type<string[]>().notNull(),
   correctAnswer: text("correct_answer").notNull(),
   points: integer("points").notNull(),
+  imageUrl: text("image_url"),
 });
 
 export const passwordResetTokens = pgTable("password_reset_tokens", {
