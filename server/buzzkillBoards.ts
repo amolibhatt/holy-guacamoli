@@ -308,12 +308,12 @@ export async function getCategoryWithQuestionsForBoard(
   const boardCategory = await storage.getBoardCategoryByIds(boardId, categoryId);
   if (!boardCategory) return null;
   
-  const questions = await storage.getQuestionsByBoardCategory(boardCategory.id);
+  const questions = await storage.getQuestionsByCategory(categoryId);
   
   return {
     categoryId: category.id,
     categoryName: category.name,
-    questions: questions.map(q => ({
+    questions: questions.map((q: { id: number; question: string; options: string[]; correctAnswer: string; points: number }) => ({
       id: q.id,
       question: q.question,
       options: q.options,
@@ -366,4 +366,13 @@ function shuffleArray<T>(array: T[]): T[] {
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
+}
+
+// Wrapper for generating a mashed board (used by WebSocket handler)
+export async function generateMashedBoard(sessionId: number): Promise<DynamicBoardResult> {
+  return generateDynamicBoard(sessionId, { 
+    mode: "meld", 
+    userId: "system", 
+    userRole: "super_admin" 
+  });
 }
