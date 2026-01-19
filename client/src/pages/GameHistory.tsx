@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Users, Calendar, Trophy, Clock, LayoutGrid, Tag } from "lucide-react";
+import { ArrowLeft, Users, Calendar, Trophy, Clock, LayoutGrid, Tag, ChevronDown, ChevronUp, Gamepad2 } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
@@ -28,94 +29,94 @@ function SessionCard({ session }: { session: GameSessionWithDetails }) {
   const sortedPlayers = [...session.players].sort((a, b) => b.score - a.score);
   const winner = sortedPlayers[0];
   const totalPlayers = session.players.length;
+  const isCompleted = session.state === "ended";
+  const hasPlayers = totalPlayers > 0;
   
   return (
-    <Card className="hover-elevate transition-all">
+    <Card className={`hover-elevate transition-all ${!hasPlayers ? "opacity-60" : ""}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg truncate">
-              {session.boardName || "Unknown Board"}
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Gamepad2 className="w-4 h-4 text-primary shrink-0" />
+              <CardTitle className="text-lg truncate">
+                {session.boardName || "Quick Game"}
+              </CardTitle>
+            </div>
             <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
               <Calendar className="w-3.5 h-3.5" />
               <span>{formatDate(session.createdAt)}</span>
             </div>
           </div>
           <Badge 
-            variant={session.state === "ended" ? "secondary" : "default"}
-            className="shrink-0"
+            variant={isCompleted ? "secondary" : "default"}
+            className={`shrink-0 ${isCompleted && hasPlayers ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/30" : ""}`}
           >
-            {session.state === "ended" ? "Completed" : session.state}
+            {isCompleted ? (hasPlayers ? "Completed" : "Ended") : session.state}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {session.playedCategories && session.playedCategories.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Tag className="w-3.5 h-3.5" />
-              Categories Played
+        {hasPlayers && winner && (
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/20">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-500/20">
+              <Trophy className="w-5 h-5 text-amber-500" />
             </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-muted-foreground">Winner</p>
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{getAvatar(winner.avatar)}</span>
+                <span className="font-semibold truncate">{winner.name}</span>
+              </div>
+            </div>
+            <Badge className="bg-amber-500 text-white">
+              {winner.score} pts
+            </Badge>
+          </div>
+        )}
+
+        {hasPlayers && sortedPlayers.length > 1 && (
+          <div className="space-y-1.5">
+            {sortedPlayers.slice(1).map((player, idx) => (
+              <div 
+                key={player.id} 
+                className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground w-4">{idx + 2}.</span>
+                  <span className="text-lg">{getAvatar(player.avatar)}</span>
+                  <span className="font-medium truncate">{player.name}</span>
+                </div>
+                <Badge variant="secondary">
+                  {player.score} pts
+                </Badge>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!hasPlayers && (
+          <div className="text-center py-2 text-muted-foreground">
+            <p className="text-sm">No players joined</p>
+          </div>
+        )}
+
+        {session.playedCategories && session.playedCategories.length > 0 && (
+          <div className="pt-2 border-t">
             <div className="flex flex-wrap gap-1.5">
-              {session.playedCategories.map(cat => (
+              {session.playedCategories.slice(0, 3).map(cat => (
                 <Badge key={cat.id} variant="outline" className="text-xs">
                   {cat.name}
                 </Badge>
               ))}
+              {session.playedCategories.length > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{session.playedCategories.length - 3} more
+                </Badge>
+              )}
             </div>
           </div>
         )}
-
-        {totalPlayers > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Users className="w-3.5 h-3.5" />
-              Players ({totalPlayers})
-            </div>
-            <div className="space-y-1.5">
-              {sortedPlayers.map((player, idx) => (
-                <div 
-                  key={player.id} 
-                  className={`flex items-center justify-between p-2 rounded-lg ${
-                    idx === 0 && session.state === "ended" 
-                      ? "bg-amber-500/10 border border-amber-500/30" 
-                      : "bg-muted/50"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{getAvatar(player.avatar)}</span>
-                    <span className="font-medium">{player.name}</span>
-                    {idx === 0 && session.state === "ended" && (
-                      <Trophy className="w-4 h-4 text-amber-500" />
-                    )}
-                  </div>
-                  <Badge variant={idx === 0 && session.state === "ended" ? "default" : "secondary"}>
-                    {player.score} pts
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {totalPlayers === 0 && (
-          <div className="text-center py-4 text-muted-foreground">
-            <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No players joined this session</p>
-          </div>
-        )}
-
-        <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t">
-          <div className="flex items-center gap-1">
-            <LayoutGrid className="w-3 h-3" />
-            Mode: {session.currentMode || "board"}
-          </div>
-          <div className="flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            Room: {session.code.length > 10 ? session.code.slice(0, 10) + "..." : session.code}
-          </div>
-        </div>
       </CardContent>
     </Card>
   );
@@ -134,15 +135,8 @@ function LoadingSkeleton() {
             <Skeleton className="h-4 w-24 mt-2" />
           </CardHeader>
           <CardContent className="space-y-4">
+            <Skeleton className="h-16 w-full" />
             <div className="space-y-2">
-              <Skeleton className="h-4 w-24" />
-              <div className="flex gap-1">
-                <Skeleton className="h-5 w-16" />
-                <Skeleton className="h-5 w-20" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-20" />
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
             </div>
@@ -155,6 +149,7 @@ function LoadingSkeleton() {
 
 export default function GameHistory() {
   const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
+  const [showEmpty, setShowEmpty] = useState(false);
 
   const { data: sessions, isLoading } = useQuery<GameSessionWithDetails[]>({
     queryKey: ["/api/host/sessions"],
@@ -165,6 +160,10 @@ export default function GameHistory() {
     queryKey: ["/api/host/analytics"],
     enabled: isAuthenticated,
   });
+
+  const gamesWithPlayers = sessions?.filter(s => s.players.length > 0) || [];
+  const emptyGames = sessions?.filter(s => s.players.length === 0) || [];
+  const completedGames = gamesWithPlayers.filter(s => s.state === "ended");
 
   if (isAuthLoading) {
     return (
@@ -213,58 +212,112 @@ export default function GameHistory() {
           </div>
         </div>
 
-        {analytics && (
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card>
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <LayoutGrid className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{analytics.totalSessions}</p>
-                    <p className="text-sm text-muted-foreground">Total Games</p>
-                  </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Trophy className="w-5 h-5 text-primary" />
                 </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-500/10">
-                    <Users className="w-5 h-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{analytics.totalPlayers}</p>
-                    <p className="text-sm text-muted-foreground">Total Players</p>
-                  </div>
+                <div>
+                  <p className="text-2xl font-bold">{completedGames.length}</p>
+                  <p className="text-sm text-muted-foreground">Games Completed</p>
                 </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-emerald-500/10">
-                    <Clock className="w-5 h-5 text-emerald-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{analytics.activeSessions}</p>
-                    <p className="text-sm text-muted-foreground">Active Now</p>
-                  </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-blue-500/10">
+                  <Users className="w-5 h-5 text-blue-500" />
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                <div>
+                  <p className="text-2xl font-bold">{analytics?.totalPlayers || 0}</p>
+                  <p className="text-sm text-muted-foreground">Total Players</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-emerald-500/10">
+                  <Gamepad2 className="w-5 h-5 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{gamesWithPlayers.length}</p>
+                  <p className="text-sm text-muted-foreground">Games Played</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {isLoading ? (
           <LoadingSkeleton />
-        ) : sessions && sessions.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {sessions.map(session => (
-              <SessionCard key={session.id} session={session} />
-            ))}
-          </div>
+        ) : gamesWithPlayers.length > 0 ? (
+          <>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {gamesWithPlayers.map(session => (
+                <SessionCard key={session.id} session={session} />
+              ))}
+            </div>
+            
+            {emptyGames.length > 0 && (
+              <div className="pt-4 border-t">
+                <Button 
+                  variant="ghost" 
+                  className="w-full text-muted-foreground"
+                  onClick={() => setShowEmpty(!showEmpty)}
+                  data-testid="button-toggle-empty"
+                >
+                  {showEmpty ? <ChevronUp className="w-4 h-4 mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
+                  {emptyGames.length} empty session{emptyGames.length !== 1 ? "s" : ""} (no players joined)
+                </Button>
+                {showEmpty && (
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
+                    {emptyGames.map(session => (
+                      <SessionCard key={session.id} session={session} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        ) : emptyGames.length > 0 ? (
+          <>
+            <Card>
+              <CardContent className="py-8 text-center">
+                <Gamepad2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+                <h3 className="text-lg font-medium mb-2">No games with players yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Your sessions are ready - just waiting for players to join!
+                </p>
+                <Link href="/">
+                  <Button data-testid="button-start-game">Start a Game</Button>
+                </Link>
+              </CardContent>
+            </Card>
+            <div className="pt-4">
+              <Button 
+                variant="ghost" 
+                className="w-full text-muted-foreground"
+                onClick={() => setShowEmpty(!showEmpty)}
+                data-testid="button-toggle-empty-alt"
+              >
+                {showEmpty ? <ChevronUp className="w-4 h-4 mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
+                {emptyGames.length} empty session{emptyGames.length !== 1 ? "s" : ""}
+              </Button>
+              {showEmpty && (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
+                  {emptyGames.map(session => (
+                    <SessionCard key={session.id} session={session} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
         ) : (
           <Card>
             <CardContent className="py-12 text-center">
