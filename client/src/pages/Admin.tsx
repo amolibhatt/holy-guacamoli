@@ -296,6 +296,9 @@ export default function Admin() {
       }
       toast({ title: "Board deleted" });
     },
+    onError: (error: Error) => {
+      toast({ title: "Cannot delete board", description: error.message, variant: "destructive" });
+    },
   });
 
   const updateBoardMutation = useMutation({
