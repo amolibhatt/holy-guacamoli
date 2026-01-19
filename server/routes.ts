@@ -2825,6 +2825,7 @@ export async function registerRoutes(
         const optC = getField(['Option C', 'option_c', 'C']);
         const optD = getField(['Option D', 'option_d', 'D']);
         const points = Number(getField(['Points', 'points', 'Point', 'point'])) || 10;
+        const imageUrl = getField(['Image URL', 'image_url', 'ImageUrl', 'Image']);
         
         // Track flagged data for manual fixes
         const rowData: Record<string, string> = {};
@@ -2966,6 +2967,7 @@ export async function registerRoutes(
               options,
               correctAnswer,
               points,
+              imageUrl: imageUrl || undefined,
             });
             results.questionsCreated++;
           } else if (!question && answer) {
