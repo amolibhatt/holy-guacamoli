@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Crown, Sparkles, Share2, Copy, Check } from "lucide-react";
-import { SiX, SiFacebook, SiWhatsapp, SiInstagram } from "react-icons/si";
+import { Trophy, Crown, Sparkles, Share2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useScore } from "./ScoreContext";
 import confetti from "canvas-confetti";
 import { soundManager } from "@/lib/sounds";
-import { useToast } from "@/hooks/use-toast";
+import { ShareableResultsCard } from "./ShareableResultsCard";
 
 interface VictoryScreenProps {
   onClose: () => void;
@@ -95,9 +94,8 @@ function fireworksBurst(timerRefs: { current: ReturnType<typeof setTimeout>[] })
 
 export function VictoryScreen({ onClose }: VictoryScreenProps) {
   const { contestants, resetGame, resetGameEnd } = useScore();
-  const { toast } = useToast();
-  const [copied, setCopied] = useState(false);
   const [revealPhase, setRevealPhase] = useState(0);
+  const [showShareCard, setShowShareCard] = useState(false);
 
   const sortedContestants = [...contestants].sort((a, b) => b.score - a.score);
   const winner = sortedContestants[0];
@@ -110,85 +108,7 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
   const secondScore = useCountUp(runnerUp?.score || 0, 1500, 3000);
   const winnerScore = useCountUp(winner?.score || 0, 2000, 6000);
 
-  const generateResultsText = () => {
-    const date = new Date().toLocaleDateString();
-    let text = `Holy GuacAmoli! Game Results - ${date}\n\n`;
-    text += "Final Standings:\n";
-    sortedContestants.forEach((c, i) => {
-      const position = i === 0 ? "1st" : i === 1 ? "2nd" : i === 2 ? "3rd" : `${i + 1}th`;
-      const emoji = getPlayerEmoji(contestants.findIndex(x => x.name === c.name));
-      text += `${position} Place ${emoji} ${c.name}: ${c.score} points\n`;
-    });
-    return text;
-  };
 
-  const handleCopyResults = async () => {
-    try {
-      await navigator.clipboard.writeText(generateResultsText());
-      setCopied(true);
-      toast({ title: "Results copied to clipboard!" });
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast({ title: "Failed to copy", variant: "destructive" });
-    }
-  };
-
-  const handleShareResults = async () => {
-    const text = generateResultsText();
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "Holy GuacAmoli! Results", text });
-      } catch (err) {
-        if (err instanceof Error && err.name !== "AbortError") {
-          handleCopyResults();
-        }
-      }
-    } else {
-      handleCopyResults();
-    }
-  };
-
-  const generateShareMessage = () => {
-    if (!winner) return "";
-    const topThree = sortedContestants.slice(0, 3).map((c, i) => {
-      const medal = i === 0 ? "1st" : i === 1 ? "2nd" : "3rd";
-      return `${medal}: ${c.name} (${c.score}pts)`;
-    }).join(" | ");
-    return `Just played Holy GuacAmoli! ${topThree}`;
-  };
-
-  const handleShareTwitter = () => {
-    const text = encodeURIComponent(generateShareMessage());
-    window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'width=550,height=420');
-    soundManager.play('click', 0.3);
-  };
-
-  const handleShareFacebook = () => {
-    const text = encodeURIComponent(generateShareMessage());
-    window.open(`https://www.facebook.com/sharer/sharer.php?quote=${text}`, '_blank', 'width=550,height=420');
-    soundManager.play('click', 0.3);
-  };
-
-  const handleShareWhatsApp = () => {
-    const text = encodeURIComponent(generateShareMessage());
-    window.open(`https://wa.me/?text=${text}`, '_blank');
-    soundManager.play('click', 0.3);
-  };
-
-  const handleShareInstagram = async () => {
-    soundManager.play('click', 0.3);
-    const instagramWindow = window.open('https://instagram.com', '_blank');
-    try {
-      await navigator.clipboard.writeText(generateShareMessage());
-      toast({ title: "Results copied! Paste in your Instagram post." });
-    } catch {
-      if (instagramWindow) {
-        toast({ title: "Instagram opened - copy results manually" });
-      } else {
-        toast({ title: "Popup blocked - please allow popups", variant: "destructive" });
-      }
-    }
-  };
 
   useEffect(() => {
     // Phase 0: Initial (0ms)
@@ -490,7 +410,7 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
 
         {/* Actions */}
         <AnimatePresence>
-          {revealPhase >= 4 && (
+          {revealPhase >= 4 && !showShareCard && (
             <motion.div
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -498,6 +418,15 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
               className="flex flex-col items-center gap-4"
             >
               <div className="flex justify-center gap-3 flex-wrap">
+                <Button
+                  size="lg"
+                  onClick={() => setShowShareCard(true)}
+                  className="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white font-bold shadow-lg hover:shadow-xl"
+                  data-testid="button-create-share-image"
+                >
+                  <Share2 className="w-5 h-5 mr-2" />
+                  Share Results
+                </Button>
                 <Button
                   size="lg"
                   onClick={handlePlayAgain}
@@ -516,64 +445,52 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
                   Close
                 </Button>
               </div>
-              <div className="flex gap-2 flex-wrap justify-center">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleCopyResults}
-                  className="text-white/70 hover:text-white hover:bg-white/10 gap-2"
-                  data-testid="button-copy-results"
-                >
-                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  {copied ? "Copied!" : "Copy"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleShareResults}
-                  className="text-white/70 hover:text-white hover:bg-white/10 gap-2"
-                  data-testid="button-share-results"
-                >
-                  <Share2 className="w-4 h-4" />
-                  Share
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={handleShareTwitter}
-                  className="text-white/70 hover:text-white hover:bg-white/10"
-                  data-testid="button-share-twitter"
-                >
-                  <SiX className="w-4 h-4" />
-                </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Share Card Modal */}
+        <AnimatePresence>
+          {showShareCard && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+              onClick={() => setShowShareCard(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                className="relative"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={handleShareFacebook}
-                  className="text-white/70 hover:text-white hover:bg-white/10"
-                  data-testid="button-share-facebook"
+                  onClick={() => setShowShareCard(false)}
+                  className="absolute -top-12 right-0 text-white/70 hover:text-white hover:bg-white/10"
+                  data-testid="button-close-share-modal"
+                  aria-label="Close share modal"
                 >
-                  <SiFacebook className="w-4 h-4" />
+                  <X className="w-5 h-5" />
                 </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={handleShareWhatsApp}
-                  className="text-white/70 hover:text-white hover:bg-white/10"
-                  data-testid="button-share-whatsapp"
-                >
-                  <SiWhatsapp className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={handleShareInstagram}
-                  className="text-white/70 hover:text-white hover:bg-white/10"
-                  data-testid="button-share-instagram"
-                >
-                  <SiInstagram className="w-4 h-4" />
-                </Button>
-              </div>
+                <ShareableResultsCard 
+                  contestants={contestants} 
+                  onClose={() => setShowShareCard(false)} 
+                />
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowShareCard(false)}
+                    className="text-white/70 hover:text-white"
+                    data-testid="button-back-to-results"
+                  >
+                    Back to Results
+                  </Button>
+                </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
