@@ -86,6 +86,7 @@ export default function Admin() {
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [bulkImportText, setBulkImportText] = useState("");
   const [bulkPreviewMode, setBulkPreviewMode] = useState(false);
+  const [expandedBoardIds, setExpandedBoardIds] = useState<Set<number>>(new Set());
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
   const editImageInputRef = useRef<HTMLInputElement>(null);
@@ -149,6 +150,13 @@ export default function Admin() {
       setSelectedBoardId(boards[0].id);
     }
   }, [boards, selectedBoardId]);
+
+  // Auto-expand selected board in sidebar
+  useEffect(() => {
+    if (selectedBoardId) {
+      setExpandedBoardIds(prev => new Set([...prev, selectedBoardId]));
+    }
+  }, [selectedBoardId]);
 
   useEffect(() => {
     if (availablePoints.length > 0 && !availablePoints.includes(newPoints)) {
@@ -858,152 +866,191 @@ export default function Admin() {
                                 setDragOverBoardId(null);
                               };
                               
+                              const isExpanded = expandedBoardIds.has(board.id);
+                              const toggleExpand = (e: React.MouseEvent) => {
+                                e.stopPropagation();
+                                setExpandedBoardIds(prev => {
+                                  const next = new Set(prev);
+                                  if (next.has(board.id)) next.delete(board.id);
+                                  else next.add(board.id);
+                                  return next;
+                                });
+                              };
+                              
                               return (
-                                <div
-                                  key={board.id}
-                                  draggable={!isEditing}
-                                  onDragStart={handleDragStart}
-                                  onDragOver={handleDragOver}
-                                  onDragLeave={handleDragLeave}
-                                  onDrop={handleDrop}
-                                  onDragEnd={handleDragEnd}
-                                  className={`p-3 rounded-lg cursor-pointer transition-all ${
-                                    selectedBoardId === board.id
-                                      ? 'bg-primary/20 border-2 border-primary'
-                                      : isDragOver
-                                        ? 'bg-primary/10 border-2 border-dashed border-primary'
-                                        : 'bg-muted/20 border border-border hover:bg-muted/30'
-                                  } ${isDragging ? 'opacity-50' : ''}`}
-                                  onClick={() => { 
-                                    if (!isEditing) { 
-                                      setSelectedBoardId(board.id); 
-                                      setSelectedBoardCategoryId(null); 
-                                    } 
-                                  }}
-                                  data-testid={`board-item-${board.id}`}
-                                >
-                                  {isEditing ? (
-                                    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
-                                      {editBoardName !== '' && (
-                                        <div className="flex items-center gap-1">
-                                          <Input
-                                            value={editBoardName}
-                                            onChange={(e) => setEditBoardName(e.target.value)}
-                                            placeholder="Board name"
-                                            className="h-7 text-sm"
-                                            autoFocus
-                                            onKeyDown={(e) => {
-                                              if (e.key === 'Enter' && editBoardName.trim()) {
-                                                updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() });
-                                              }
-                                              if (e.key === 'Escape') {
-                                                setEditingBoardId(null);
-                                                setEditBoardName('');
-                                              }
-                                            }}
-                                            data-testid={`input-edit-board-${board.id}`}
-                                          />
-                                          <Button size="icon" variant="ghost" onClick={() => { if (editBoardName.trim()) updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() }); }} className="h-7 w-7 text-primary shrink-0" data-testid={`button-save-board-${board.id}`}>
-                                            <Check className="w-3.5 h-3.5" />
-                                          </Button>
-                                          <Button size="icon" variant="ghost" onClick={() => { setEditingBoardId(null); setEditBoardName(''); }} className="h-7 w-7 text-muted-foreground shrink-0" data-testid={`button-cancel-edit-board-${board.id}`}>
-                                            <X className="w-3.5 h-3.5" />
-                                          </Button>
-                                        </div>
-                                      )}
-                                      {editBoardDescription !== undefined && editBoardName === '' && (
-                                        <div className="flex items-start gap-1">
-                                          <Input
-                                            value={editBoardDescription}
-                                            onChange={(e) => setEditBoardDescription(e.target.value)}
-                                            placeholder="Board description (optional)"
-                                            className="h-7 text-sm flex-1"
-                                            autoFocus
-                                            onKeyDown={(e) => {
-                                              if (e.key === 'Enter') {
-                                                updateBoardMutation.mutate({ id: board.id, description: editBoardDescription.trim() });
-                                                setEditingBoardId(null);
-                                                setEditBoardDescription('');
-                                              }
-                                              if (e.key === 'Escape') {
-                                                setEditingBoardId(null);
-                                                setEditBoardDescription('');
-                                              }
-                                            }}
-                                            data-testid={`input-edit-board-desc-${board.id}`}
-                                          />
-                                          <Button size="icon" variant="ghost" onClick={() => { updateBoardMutation.mutate({ id: board.id, description: editBoardDescription.trim() }); setEditingBoardId(null); setEditBoardDescription(''); }} className="h-7 w-7 text-primary shrink-0" data-testid={`button-save-board-desc-${board.id}`}>
-                                            <Check className="w-3.5 h-3.5" />
-                                          </Button>
-                                          <Button size="icon" variant="ghost" onClick={() => { setEditingBoardId(null); setEditBoardDescription(''); }} className="h-7 w-7 text-muted-foreground shrink-0" data-testid={`button-cancel-edit-board-desc-${board.id}`}>
-                                            <X className="w-3.5 h-3.5" />
-                                          </Button>
-                                        </div>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-start gap-2">
-                                      <GripVertical className="w-4 h-4 text-muted-foreground/40 mt-0.5 cursor-grab shrink-0" />
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <div className="w-10 h-10 rounded bg-muted/50 border border-border grid grid-cols-5 grid-rows-5 gap-px p-0.5 shrink-0">
-                                            {Array.from({ length: 25 }).map((_, i) => {
-                                              const catIdx = Math.floor(i / 5);
-                                              const cat = summary?.categories[catIdx];
-                                              const hasCat = catIdx < categoryCount;
-                                              const hasQ = cat && i % 5 < cat.questionCount;
-                                              return (
-                                                <div key={i} className={`rounded-sm ${hasQ ? 'bg-primary' : hasCat ? 'bg-primary/30' : 'bg-muted-foreground/10'}`} />
-                                              );
-                                            })}
-                                          </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="right" className="text-xs">
-                                          5x5 grid: {categoryCount} categories, {totalQuestions} questions
-                                        </TooltipContent>
-                                      </Tooltip>
-                                      <div className="min-w-0 flex-1">
-                                        <div className="font-bold text-foreground truncate">{board.name}</div>
-                                        <div className="flex items-center gap-2 mt-1.5">
-                                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                                            <div 
-                                              className={`h-full transition-all ${isComplete ? 'bg-emerald-500' : 'bg-primary'}`}
-                                              style={{ width: `${Math.min(progressPercent, 100)}%` }}
+                                <div key={board.id} className="space-y-1">
+                                  {/* Board Header */}
+                                  <div
+                                    draggable={!isEditing}
+                                    onDragStart={handleDragStart}
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={handleDrop}
+                                    onDragEnd={handleDragEnd}
+                                    className={`p-2 rounded-lg cursor-pointer transition-all ${
+                                      selectedBoardId === board.id && !selectedBoardCategoryId
+                                        ? 'bg-primary/20 border-2 border-primary'
+                                        : selectedBoardId === board.id
+                                          ? 'bg-primary/10 border border-primary/50'
+                                          : isDragOver
+                                            ? 'bg-primary/10 border-2 border-dashed border-primary'
+                                            : 'bg-muted/20 border border-border hover:bg-muted/30'
+                                    } ${isDragging ? 'opacity-50' : ''}`}
+                                    onClick={() => { 
+                                      if (!isEditing) { 
+                                        setSelectedBoardId(board.id); 
+                                        setSelectedBoardCategoryId(null); 
+                                      } 
+                                    }}
+                                    data-testid={`board-item-${board.id}`}
+                                  >
+                                    {isEditing ? (
+                                      <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                                        {editBoardName !== '' && (
+                                          <div className="flex items-center gap-1">
+                                            <Input
+                                              value={editBoardName}
+                                              onChange={(e) => setEditBoardName(e.target.value)}
+                                              placeholder="Board name"
+                                              className="h-7 text-sm"
+                                              autoFocus
+                                              onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && editBoardName.trim()) {
+                                                  updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() });
+                                                }
+                                                if (e.key === 'Escape') {
+                                                  setEditingBoardId(null);
+                                                  setEditBoardName('');
+                                                }
+                                              }}
+                                              data-testid={`input-edit-board-${board.id}`}
                                             />
+                                            <Button size="icon" variant="ghost" onClick={() => { if (editBoardName.trim()) updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() }); }} className="h-7 w-7 text-primary shrink-0" data-testid={`button-save-board-${board.id}`}>
+                                              <Check className="w-3.5 h-3.5" />
+                                            </Button>
+                                            <Button size="icon" variant="ghost" onClick={() => { setEditingBoardId(null); setEditBoardName(''); }} className="h-7 w-7 text-muted-foreground shrink-0" data-testid={`button-cancel-edit-board-${board.id}`}>
+                                              <X className="w-3.5 h-3.5" />
+                                            </Button>
                                           </div>
-                                          <span className={`text-[10px] font-medium ${isComplete ? 'text-emerald-600' : 'text-muted-foreground'}`}>
-                                            {progressPercent}%
-                                          </span>
-                                        </div>
+                                        )}
+                                        {editBoardDescription !== undefined && editBoardName === '' && (
+                                          <div className="flex items-start gap-1">
+                                            <Input
+                                              value={editBoardDescription}
+                                              onChange={(e) => setEditBoardDescription(e.target.value)}
+                                              placeholder="Board description (optional)"
+                                              className="h-7 text-sm flex-1"
+                                              autoFocus
+                                              onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                  updateBoardMutation.mutate({ id: board.id, description: editBoardDescription.trim() });
+                                                  setEditingBoardId(null);
+                                                  setEditBoardDescription('');
+                                                }
+                                                if (e.key === 'Escape') {
+                                                  setEditingBoardId(null);
+                                                  setEditBoardDescription('');
+                                                }
+                                              }}
+                                              data-testid={`input-edit-board-desc-${board.id}`}
+                                            />
+                                            <Button size="icon" variant="ghost" onClick={() => { updateBoardMutation.mutate({ id: board.id, description: editBoardDescription.trim() }); setEditingBoardId(null); setEditBoardDescription(''); }} className="h-7 w-7 text-primary shrink-0" data-testid={`button-save-board-desc-${board.id}`}>
+                                              <Check className="w-3.5 h-3.5" />
+                                            </Button>
+                                            <Button size="icon" variant="ghost" onClick={() => { setEditingBoardId(null); setEditBoardDescription(''); }} className="h-7 w-7 text-muted-foreground shrink-0" data-testid={`button-cancel-edit-board-desc-${board.id}`}>
+                                              <X className="w-3.5 h-3.5" />
+                                            </Button>
+                                          </div>
+                                        )}
                                       </div>
-                                      <DropdownMenu>
-                                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                          <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground" data-testid={`button-board-menu-${board.id}`}>
-                                            <MoreVertical className="w-4 h-4" />
-                                          </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-44">
-                                          <DropdownMenuItem onClick={() => window.open(`/board/${board.id}`, '_blank')} data-testid={`menu-preview-${board.id}`}>
-                                            <Eye className="w-4 h-4 mr-2" /> Preview
-                                          </DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => { setEditingBoardId(board.id); setEditBoardName(board.name); }} data-testid={`menu-rename-${board.id}`}>
-                                            <Pencil className="w-4 h-4 mr-2" /> Rename
-                                          </DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => { setEditingBoardId(board.id); setEditBoardName(''); setEditBoardDescription(board.description || ''); }} data-testid={`menu-edit-desc-${board.id}`}>
-                                            <FileText className="w-4 h-4 mr-2" /> Edit Description
-                                          </DropdownMenuItem>
-                                          <DropdownMenuItem 
-                                            onSelect={(e) => {
-                                              e.preventDefault();
-                                              setTimeout(() => setDeleteBoardConfirmId(board.id), 0);
-                                            }} 
-                                            className="text-destructive focus:text-destructive" 
-                                            data-testid={`menu-delete-${board.id}`}
+                                    ) : (
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          onClick={toggleExpand}
+                                          className="p-0.5 hover:bg-muted/50 rounded shrink-0"
+                                          data-testid={`button-expand-${board.id}`}
+                                        >
+                                          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
+                                        </button>
+                                        <GripVertical className="w-3 h-3 text-muted-foreground/40 cursor-grab shrink-0" />
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-sm text-foreground truncate">{board.name}</span>
+                                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${isComplete ? 'bg-emerald-500/20 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
+                                              {totalQuestions}/25
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                            <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-foreground" data-testid={`button-board-menu-${board.id}`}>
+                                              <MoreVertical className="w-3.5 h-3.5" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end" className="w-44">
+                                            <DropdownMenuItem onClick={() => window.open(`/board/${board.id}`, '_blank')} data-testid={`menu-preview-${board.id}`}>
+                                              <Eye className="w-4 h-4 mr-2" /> Preview
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => { setEditingBoardId(board.id); setEditBoardName(board.name); }} data-testid={`menu-rename-${board.id}`}>
+                                              <Pencil className="w-4 h-4 mr-2" /> Rename
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => { setEditingBoardId(board.id); setEditBoardName(''); setEditBoardDescription(board.description || ''); }} data-testid={`menu-edit-desc-${board.id}`}>
+                                              <FileText className="w-4 h-4 mr-2" /> Edit Description
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem 
+                                              onSelect={(e) => {
+                                                e.preventDefault();
+                                                setTimeout(() => setDeleteBoardConfirmId(board.id), 0);
+                                              }} 
+                                              className="text-destructive focus:text-destructive" 
+                                              data-testid={`menu-delete-${board.id}`}
+                                            >
+                                              <Trash2 className="w-4 h-4 mr-2" /> Delete
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Nested Categories */}
+                                  {isExpanded && summary?.categories && (
+                                    <div className="ml-6 pl-2 border-l-2 border-border/50 space-y-0.5">
+                                      {summary.categories.map(cat => {
+                                        const isSelected = selectedBoardId === board.id && 
+                                          boardCategories.find(bc => bc.categoryId === cat.id)?.id === selectedBoardCategoryId;
+                                        const catComplete = cat.questionCount >= 5;
+                                        return (
+                                          <button
+                                            key={cat.id}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedBoardId(board.id);
+                                              const bc = boardCategories.find(bc => bc.categoryId === cat.id) || 
+                                                allBoardSummaries.find(bs => bs.id === board.id)?.categories.find(c => c.id === cat.id);
+                                              if (bc) {
+                                                // Find boardCategoryId for this category in this board
+                                                const matchingBc = boardCategories.find(b => b.categoryId === cat.id);
+                                                if (matchingBc) setSelectedBoardCategoryId(matchingBc.id);
+                                              }
+                                            }}
+                                            className={`w-full text-left px-2 py-1.5 rounded text-xs flex items-center gap-2 transition-colors ${
+                                              isSelected 
+                                                ? 'bg-primary/20 text-primary font-medium' 
+                                                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                                            }`}
+                                            data-testid={`sidebar-category-${cat.id}`}
                                           >
-                                            <Trash2 className="w-4 h-4 mr-2" /> Delete
-                                          </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                      </DropdownMenu>
+                                            <span className="truncate flex-1">{cat.name}</span>
+                                            <span className={`text-[10px] px-1 py-0.5 rounded ${catComplete ? 'bg-emerald-500/20 text-emerald-600' : 'bg-muted'}`}>
+                                              {cat.questionCount}/5
+                                            </span>
+                                          </button>
+                                        );
+                                      })}
+                                      {summary.categories.length === 0 && (
+                                        <p className="text-[10px] text-muted-foreground/70 py-1 px-2">No categories yet</p>
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -1080,6 +1127,49 @@ export default function Admin() {
 
           <div className="lg:col-span-9 overflow-hidden">
             <Card className="bg-card border-border shadow-sm h-full flex flex-col">
+              {/* Breadcrumb Navigation */}
+              <div className="border-b border-border px-4 py-2 bg-muted/10 flex items-center gap-2 text-sm">
+                <button 
+                  onClick={() => { setSelectedBoardId(null); setSelectedBoardCategoryId(null); }}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid="breadcrumb-boards"
+                >
+                  Boards
+                </button>
+                {selectedBoard && (
+                  <>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
+                    <button 
+                      onClick={() => setSelectedBoardCategoryId(null)}
+                      className={`font-medium transition-colors ${selectedBoardCategoryId ? 'text-muted-foreground hover:text-foreground' : 'text-primary'}`}
+                      data-testid="breadcrumb-board"
+                    >
+                      {selectedBoard.name}
+                    </button>
+                    {(() => {
+                      const summary = boardSummaries.find(s => s.id === selectedBoardId);
+                      const totalQ = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
+                      return (
+                        <Badge variant="secondary" className="text-xs ml-1">
+                          {boardCategories.length}/5 categories · {totalQ}/25 questions
+                        </Badge>
+                      );
+                    })()}
+                  </>
+                )}
+                {selectedBoardCategory && (
+                  <>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
+                    <span className="font-medium text-primary" data-testid="breadcrumb-category">
+                      {selectedBoardCategory.category.name}
+                    </span>
+                    <Badge variant={questions.length >= 5 ? "default" : "secondary"} className="text-xs ml-1">
+                      {questions.length}/5 questions
+                    </Badge>
+                  </>
+                )}
+              </div>
+
               {!selectedBoardId ? (
                 <div className="flex-1 flex items-center justify-center">
                   <div className="text-center p-12">
@@ -1177,61 +1267,10 @@ export default function Admin() {
                       )}
                     </AnimatePresence>
 
-                    {loadingBoardCategories ? (
-                      <div className="flex gap-4 border-b border-border pb-2 overflow-x-auto">
-                        {[1, 2, 3, 4, 5].map(i => (
-                          <Skeleton key={i} className="h-8 w-24 rounded shrink-0" />
-                        ))}
-                      </div>
-                    ) : boardCategories.length === 0 ? (
-                      <p className="text-center text-muted-foreground text-xs py-3">
-                        No categories yet. Click + to add one!
+                    {boardCategories.length === 0 && !loadingBoardCategories && (
+                      <p className="text-center text-muted-foreground text-xs py-2">
+                        No categories yet. Add one to get started!
                       </p>
-                    ) : (
-                      <Tabs 
-                        value={selectedBoardCategoryId?.toString() || ''} 
-                        onValueChange={(val) => setSelectedBoardCategoryId(val ? Number(val) : null)}
-                        className="w-full"
-                      >
-                        <TabsList className="h-auto bg-transparent p-0 gap-2 border-b border-border rounded-none w-full justify-start overflow-x-auto flex-nowrap">
-                          {boardCategories.map((bc, idx) => (
-                            <TabsTrigger 
-                              key={bc.id}
-                              value={bc.id.toString()} 
-                              draggable
-                              onDragStart={() => setDraggedCategoryId(bc.id)}
-                              onDragEnd={() => { setDraggedCategoryId(null); setDragOverCategoryId(null); }}
-                              onDragOver={(e) => { e.preventDefault(); setDragOverCategoryId(bc.id); }}
-                              onDragLeave={() => setDragOverCategoryId(null)}
-                              onDrop={() => {
-                                if (draggedCategoryId && draggedCategoryId !== bc.id && selectedBoardId) {
-                                  const draggedIdx = boardCategories.findIndex(c => c.id === draggedCategoryId);
-                                  const dropIdx = idx;
-                                  if (draggedIdx !== -1) {
-                                    const newOrder = [...boardCategories];
-                                    const [dragged] = newOrder.splice(draggedIdx, 1);
-                                    newOrder.splice(dropIdx, 0, dragged);
-                                    reorderCategoriesMutation.mutate({ 
-                                      boardId: selectedBoardId, 
-                                      orderedIds: newOrder.map(c => c.id) 
-                                    });
-                                  }
-                                }
-                                setDraggedCategoryId(null);
-                                setDragOverCategoryId(null);
-                              }}
-                              className={`bg-transparent rounded-none border-b-2 border-transparent px-2 pb-2 pt-1 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 cursor-grab active:cursor-grabbing transition-all ${draggedCategoryId === bc.id ? 'opacity-50' : ''} ${dragOverCategoryId === bc.id && draggedCategoryId !== bc.id ? 'border-l-2 border-l-primary' : ''}`}
-                              data-testid={`category-tab-${bc.id}`}
-                            >
-                              <GripVertical className="w-3 h-3 text-muted-foreground/50" />
-                              <span>{bc.category.name}</span>
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${(bc.questionCount ?? 0) >= 5 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                                {bc.questionCount ?? 0}/5
-                              </span>
-                            </TabsTrigger>
-                          ))}
-                        </TabsList>
-                      </Tabs>
                     )}
 
                   </div>
@@ -1244,7 +1283,11 @@ export default function Admin() {
                             <HelpCircle className="w-8 h-8 text-muted-foreground/50" />
                           </div>
                           <h3 className="text-lg font-semibold text-foreground mb-2">Select a Category</h3>
-                          <p className="text-muted-foreground max-w-sm">Click on one of the category tabs above to view and manage its questions</p>
+                          <p className="text-muted-foreground max-w-sm">
+                            {boardCategories.length > 0 
+                              ? "Click on a category in the sidebar to view and manage its questions"
+                              : "Add a category first, then click it to add questions"}
+                          </p>
                         </div>
                       </div>
                     ) : (
