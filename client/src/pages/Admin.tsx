@@ -13,7 +13,8 @@ import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, ArrowRight, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, Upload, FileText, Eye, Download, FileUp, MoreVertical } from "lucide-react";
+import { Plus, Trash2, FolderPlus, HelpCircle, ArrowLeft, ArrowRight, Loader2, Pencil, X, Check, Image, Music, Grid3X3, Link2, Unlink, ChevronRight, ArrowUp, ArrowDown, CheckCircle, ChevronDown, GripVertical, Sparkles, Upload, FileText, Eye, Download, FileUp, MoreVertical, FileDown } from "lucide-react";
+import * as XLSX from 'xlsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useLocation } from "wouter";
@@ -534,6 +535,25 @@ export default function Admin() {
     window.location.href = '/api/export/excel';
   };
 
+  const downloadSampleTemplate = () => {
+    const sampleData = [
+      { Board: "Sample Board", Category: "Sample Category", Rule: "Answer in reverse", Question: "What is 2+2?", Answer: "Four", Points: 10, "Image URL": "" },
+      { Board: "Sample Board", Category: "Sample Category", Rule: "", Question: "Capital of France?", Answer: "Paris", Points: 20, "Image URL": "" },
+      { Board: "Sample Board", Category: "Sample Category", Rule: "", Question: "What animal is shown?", Answer: "Cat", Points: 30, "Image URL": "https://example.com/cat.jpg" },
+      { Board: "Sample Board", Category: "Sample Category", Rule: "", Question: "Largest planet in our solar system?", Answer: "Jupiter", Points: 40, "Image URL": "" },
+      { Board: "Sample Board", Category: "Sample Category", Rule: "", Question: "Who wrote Romeo and Juliet?", Answer: "Shakespeare", Points: 50, "Image URL": "" },
+      { Board: "Sample Board", Category: "Another Category", Rule: "Sing your answer", Question: "Name this song", Answer: "Happy Birthday", Points: 10, "Image URL": "" },
+      { Board: "Sample Board", Category: "Another Category", Rule: "", Question: "Who painted the Mona Lisa?", Answer: "Leonardo da Vinci", Points: 20, "Image URL": "" },
+      { Board: "Sample Board", Category: "Another Category", Rule: "", Question: "What year did WW2 end?", Answer: "1945", Points: 30, "Image URL": "" },
+      { Board: "Sample Board", Category: "Another Category", Rule: "", Question: "Chemical symbol for gold?", Answer: "Au", Points: 40, "Image URL": "" },
+      { Board: "Sample Board", Category: "Another Category", Rule: "", Question: "Fastest land animal?", Answer: "Cheetah", Points: 50, "Image URL": "" },
+    ];
+    const ws = XLSX.utils.json_to_sheet(sampleData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Questions");
+    XLSX.writeFile(wb, "buzzkill_import_template.xlsx");
+  };
+
   return (
     <div className="min-h-screen bg-muted/30">
       <input
@@ -640,6 +660,21 @@ export default function Admin() {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Import from Excel</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={downloadSampleTemplate}
+                  className="h-8 gap-1.5"
+                  data-testid="button-download-template"
+                >
+                  <FileDown className="w-4 h-4" />
+                  <span className="hidden sm:inline">Template</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Download sample import template</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
