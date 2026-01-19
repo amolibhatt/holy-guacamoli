@@ -169,10 +169,18 @@ export function registerAuthRoutes(app: Express): void {
       }
 
       recordLoginAttempt(ip, true);
+      
+      // Auto-upgrade owner to super_admin if not already
+      let currentRole = user.role;
+      if (email === 'amoli.bhatt@gmail.com' && user.role !== 'super_admin') {
+        await db.update(users).set({ role: 'super_admin' }).where(eq(users.id, user.id));
+        currentRole = 'super_admin';
+      }
+      
       req.session.userId = user.id;
-      req.session.userRole = user.role;
+      req.session.userRole = currentRole;
 
-      res.json(sanitizeUser(user));
+      res.json(sanitizeUser({ ...user, role: currentRole }));
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });
