@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Star, Crown, Sparkles, Share2, Copy, Check, Medal } from "lucide-react";
+import { Trophy, Crown, Sparkles, Share2, Copy, Check } from "lucide-react";
+import { SiX, SiFacebook, SiWhatsapp } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { useScore } from "./ScoreContext";
 import confetti from "canvas-confetti";
@@ -145,6 +146,33 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
     } else {
       handleCopyResults();
     }
+  };
+
+  const generateShareMessage = () => {
+    if (!winner) return "";
+    const topThree = sortedContestants.slice(0, 3).map((c, i) => {
+      const medal = i === 0 ? "1st" : i === 1 ? "2nd" : "3rd";
+      return `${medal}: ${c.name} (${c.score}pts)`;
+    }).join(" | ");
+    return `Just played Holy GuacAmoli! ${topThree}`;
+  };
+
+  const handleShareTwitter = () => {
+    const text = encodeURIComponent(generateShareMessage());
+    window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'width=550,height=420');
+    soundManager.play('click', 0.3);
+  };
+
+  const handleShareFacebook = () => {
+    const text = encodeURIComponent(generateShareMessage());
+    window.open(`https://www.facebook.com/sharer/sharer.php?quote=${text}`, '_blank', 'width=550,height=420');
+    soundManager.play('click', 0.3);
+  };
+
+  const handleShareWhatsApp = () => {
+    const text = encodeURIComponent(generateShareMessage());
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+    soundManager.play('click', 0.3);
   };
 
   useEffect(() => {
@@ -473,7 +501,7 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
                   Close
                 </Button>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap justify-center">
                 <Button
                   size="sm"
                   variant="ghost"
@@ -482,7 +510,7 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
                   data-testid="button-copy-results"
                 >
                   {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  {copied ? "Copied!" : "Copy Results"}
+                  {copied ? "Copied!" : "Copy"}
                 </Button>
                 <Button
                   size="sm"
@@ -493,6 +521,33 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
                 >
                   <Share2 className="w-4 h-4" />
                   Share
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={handleShareTwitter}
+                  className="text-white/70 hover:text-white hover:bg-white/10"
+                  data-testid="button-share-twitter"
+                >
+                  <SiX className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={handleShareFacebook}
+                  className="text-white/70 hover:text-white hover:bg-white/10"
+                  data-testid="button-share-facebook"
+                >
+                  <SiFacebook className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={handleShareWhatsApp}
+                  className="text-white/70 hover:text-white hover:bg-white/10"
+                  data-testid="button-share-whatsapp"
+                >
+                  <SiWhatsapp className="w-4 h-4" />
                 </Button>
               </div>
             </motion.div>
