@@ -615,6 +615,11 @@ export type GameWithDecks = Game & { decks: HeadsUpDeck[] };
 export type HeadsUpDeckWithCards = HeadsUpDeck & { cards: HeadsUpCard[] };
 export type HeadsUpDeckWithCardCount = HeadsUpDeck & { cardCount: number };
 export type GameSessionWithPlayers = GameSession & { players: SessionPlayer[] };
+export type GameSessionWithDetails = GameSession & { 
+  players: SessionPlayer[]; 
+  boardName?: string;
+  playedCategories?: { id: number; name: string }[];
+};
 export type GameSessionFull = GameSession & { 
   players: SessionPlayer[]; 
   completedQuestions: number[];

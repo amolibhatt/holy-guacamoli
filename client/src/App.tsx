@@ -30,6 +30,7 @@ const Storyboard = lazy(() => import("@/pages/Storyboard"));
 const BuzzkillDailySmash = lazy(() => import("@/pages/BuzzkillDailySmash"));
 const BuzzkillThemed = lazy(() => import("@/pages/BuzzkillThemed"));
 const ContentDashboard = lazy(() => import("@/pages/ContentDashboard"));
+const GameHistory = lazy(() => import("@/pages/GameHistory"));
 
 function PageLoader() {
   return (
@@ -59,6 +60,7 @@ function Router() {
         <Route path="/admin/games" component={GamesAdmin} />
         <Route path="/admin/super" component={SuperAdmin} />
         <Route path="/admin/content" component={ContentDashboard} />
+        <Route path="/admin/history" component={GameHistory} />
         <Route path="/games" component={GamesAdmin} />
         <Route path="/board/:boardId" component={PlayBoard} />
         <Route path="/play/:code?" component={PlayerPage} />
