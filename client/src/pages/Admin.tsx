@@ -80,6 +80,8 @@ export default function Admin() {
   const [draggedQuestionId, setDraggedQuestionId] = useState<number | null>(null);
   const [draggedBoardId, setDraggedBoardId] = useState<number | null>(null);
   const [dragOverBoardId, setDragOverBoardId] = useState<number | null>(null);
+  const [draggedCategoryId, setDraggedCategoryId] = useState<number | null>(null);
+  const [dragOverCategoryId, setDragOverCategoryId] = useState<number | null>(null);
   const [bulkEditMode, setBulkEditMode] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [bulkImportText, setBulkImportText] = useState("");
@@ -167,6 +169,52 @@ export default function Admin() {
       setQuestionFormOpen(true);
     }
   }, [questions, selectedBoardCategoryId, loadingQuestions]);
+
+  // Auto-save draft to localStorage when form values change
+  useEffect(() => {
+    if (!selectedCategoryId) return;
+    const draft = { question: newQuestion, answer: newCorrectAnswer, points: newPoints, imageUrl: newImageUrl };
+    const hasContent = draft.question || draft.answer || draft.imageUrl;
+    if (hasContent) {
+      localStorage.setItem(`buzzkill_draft_${selectedCategoryId}`, JSON.stringify(draft));
+    } else {
+      // Remove draft when all fields are empty
+      localStorage.removeItem(`buzzkill_draft_${selectedCategoryId}`);
+    }
+  }, [selectedCategoryId, newQuestion, newCorrectAnswer, newPoints, newImageUrl]);
+
+  // Load draft from localStorage when switching categories
+  useEffect(() => {
+    if (!selectedCategoryId) return;
+    const savedDraft = localStorage.getItem(`buzzkill_draft_${selectedCategoryId}`);
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        // Always set fields (even empty) to avoid cross-category bleed
+        setNewQuestion(draft.question || "");
+        setNewCorrectAnswer(draft.answer || "");
+        if (draft.points && availablePoints.includes(draft.points)) {
+          setNewPoints(draft.points);
+        }
+        setNewImageUrl(draft.imageUrl || "");
+      } catch (e) {
+        // Invalid draft, clear form
+        setNewQuestion("");
+        setNewCorrectAnswer("");
+        setNewImageUrl("");
+      }
+    } else {
+      // Clear form when switching to a category with no draft
+      setNewQuestion("");
+      setNewCorrectAnswer("");
+      setNewImageUrl("");
+    }
+  }, [selectedCategoryId]);
+
+  // Clear draft after successful question creation
+  const clearDraft = (categoryId: number) => {
+    localStorage.removeItem(`buzzkill_draft_${categoryId}`);
+  };
   
   // Show loading while checking auth
   if (isAuthLoading || !isAuthenticated) {
@@ -355,6 +403,7 @@ export default function Admin() {
       setNewCorrectAnswer("");
       setNewPoints(currentPointValues[0] || 10);
       setNewImageUrl("");
+      if (selectedCategoryId) clearDraft(selectedCategoryId);
       toast({ title: "Question added!" });
     },
     onError: () => {
@@ -1144,14 +1193,37 @@ export default function Admin() {
                         onValueChange={(val) => setSelectedBoardCategoryId(val ? Number(val) : null)}
                         className="w-full"
                       >
-                        <TabsList className="h-auto bg-transparent p-0 gap-6 border-b border-border rounded-none w-full justify-start overflow-x-auto flex-nowrap">
-                          {boardCategories.map((bc) => (
+                        <TabsList className="h-auto bg-transparent p-0 gap-2 border-b border-border rounded-none w-full justify-start overflow-x-auto flex-nowrap">
+                          {boardCategories.map((bc, idx) => (
                             <TabsTrigger 
                               key={bc.id}
                               value={bc.id.toString()} 
-                              className="bg-transparent rounded-none border-b-2 border-transparent px-0 pb-2 pt-1 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5"
+                              draggable
+                              onDragStart={() => setDraggedCategoryId(bc.id)}
+                              onDragEnd={() => { setDraggedCategoryId(null); setDragOverCategoryId(null); }}
+                              onDragOver={(e) => { e.preventDefault(); setDragOverCategoryId(bc.id); }}
+                              onDragLeave={() => setDragOverCategoryId(null)}
+                              onDrop={() => {
+                                if (draggedCategoryId && draggedCategoryId !== bc.id && selectedBoardId) {
+                                  const draggedIdx = boardCategories.findIndex(c => c.id === draggedCategoryId);
+                                  const dropIdx = idx;
+                                  if (draggedIdx !== -1) {
+                                    const newOrder = [...boardCategories];
+                                    const [dragged] = newOrder.splice(draggedIdx, 1);
+                                    newOrder.splice(dropIdx, 0, dragged);
+                                    reorderCategoriesMutation.mutate({ 
+                                      boardId: selectedBoardId, 
+                                      orderedIds: newOrder.map(c => c.id) 
+                                    });
+                                  }
+                                }
+                                setDraggedCategoryId(null);
+                                setDragOverCategoryId(null);
+                              }}
+                              className={`bg-transparent rounded-none border-b-2 border-transparent px-2 pb-2 pt-1 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 cursor-grab active:cursor-grabbing transition-all ${draggedCategoryId === bc.id ? 'opacity-50' : ''} ${dragOverCategoryId === bc.id && draggedCategoryId !== bc.id ? 'border-l-2 border-l-primary' : ''}`}
                               data-testid={`category-tab-${bc.id}`}
                             >
+                              <GripVertical className="w-3 h-3 text-muted-foreground/50" />
                               <span>{bc.category.name}</span>
                               <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${(bc.questionCount ?? 0) >= 5 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
                                 {bc.questionCount ?? 0}/5
