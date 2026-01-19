@@ -279,9 +279,9 @@ export async function registerRoutes(
       if (!categoryId) {
         return res.status(400).json({ message: "categoryId is required" });
       }
-      const existing = await storage.getBoardCategoryByIds(boardId, categoryId);
-      if (existing) {
-        return res.status(400).json({ message: "Category already linked to this board" });
+      const existingLinks = await storage.getBoardCategoriesByCategoryId(categoryId);
+      if (existingLinks.length > 0) {
+        return res.status(400).json({ message: "Category is already linked to another board" });
       }
       const currentCategories = await storage.getBoardCategories(boardId);
       if (currentCategories.length >= 5) {
