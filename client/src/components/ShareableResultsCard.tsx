@@ -4,6 +4,7 @@ import { Download, Share2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { soundManager } from "@/lib/sounds";
+import * as QRCode from "qrcode";
 
 interface Contestant {
   name: string;
@@ -346,9 +347,52 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
     ctx.textAlign = "center";
     ctx.fillText(date, width/2, height - 40);
 
-    const dataUrl = canvas.toDataURL("image/png");
-    setImageUrl(dataUrl);
-    setIsGenerating(false);
+    // Generate QR code and draw it
+    const gameUrl = window.location.origin;
+    QRCode.toDataURL(gameUrl, {
+      width: 140,
+      margin: 1,
+      color: {
+        dark: "#1a0533",
+        light: "#FFFFFF"
+      }
+    }).then((qrDataUrl) => {
+      const qrImage = new Image();
+      qrImage.onload = () => {
+        const qrSize = 120;
+        const qrX = width - qrSize - 40;
+        const qrY = height - qrSize - 60;
+        
+        // Draw white rounded background for QR
+        ctx.save();
+        ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
+        ctx.shadowBlur = 15;
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.roundRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20, 12);
+        ctx.fill();
+        ctx.restore();
+        
+        // Draw QR code
+        ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
+        
+        // Draw "Scan to play!" text below QR
+        ctx.font = "bold 18px system-ui";
+        ctx.fillStyle = "#FFFFFF";
+        ctx.textAlign = "center";
+        ctx.fillText("Scan to play!", qrX + qrSize/2, qrY + qrSize + 35);
+        
+        const dataUrl = canvas.toDataURL("image/png");
+        setImageUrl(dataUrl);
+        setIsGenerating(false);
+      };
+      qrImage.src = qrDataUrl;
+    }).catch(() => {
+      // If QR generation fails, still show the image without QR
+      const dataUrl = canvas.toDataURL("image/png");
+      setImageUrl(dataUrl);
+      setIsGenerating(false);
+    });
   }, [contestants]);
 
   const handleDownload = () => {
