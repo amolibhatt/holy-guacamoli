@@ -115,8 +115,8 @@ export default function Admin() {
     enabled: !!selectedBoardId && isAuthenticated,
   });
 
-  const linkedCategoryIds = boardCategories.map(bc => bc.categoryId);
-  const unlinkedCategories = allCategories.filter(c => !linkedCategoryIds.includes(c.id));
+  const allLinkedCategoryIds = allBoardSummaries.flatMap(bs => bs.categories.map(c => c.id));
+  const unlinkedCategories = allCategories.filter(c => !allLinkedCategoryIds.includes(c.id));
 
   const selectedBoardCategory = boardCategories.find(bc => bc.id === selectedBoardCategoryId);
   const selectedCategoryId = selectedBoardCategory?.categoryId;
