@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ArrowRight, LogIn } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, LogIn, Sparkles, PartyPopper, Zap } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation, Link } from "wouter";
 import type { Board } from "@shared/schema";
@@ -101,13 +101,52 @@ export default function HostGridOfGrudges() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-16 space-y-4">
-              <Grid3X3 className="w-12 h-12 text-muted-foreground" />
-              <h2 className="text-xl font-semibold text-foreground">The stage is set, but where are the questions?</h2>
-              <p className="text-muted-foreground text-center max-w-md">
-                Create a board in the Admin panel to get this party started!
-              </p>
-            </div>
+            <motion.div 
+              className="flex flex-col items-center justify-center py-16 space-y-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="relative">
+                <motion.div
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <PartyPopper className="w-16 h-16 text-primary" />
+                </motion.div>
+                <motion.div
+                  className="absolute -top-2 -right-2"
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.7, 1, 0.7] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  <Sparkles className="w-6 h-6 text-yellow-500" />
+                </motion.div>
+                <motion.div
+                  className="absolute -bottom-1 -left-2"
+                  animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1.2, repeat: Infinity, delay: 0.3 }}
+                >
+                  <Zap className="w-5 h-5 text-orange-500" />
+                </motion.div>
+              </div>
+              
+              <div className="text-center space-y-2">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                  Ready to quiz?
+                </h2>
+                <p className="text-muted-foreground text-center max-w-sm">
+                  No boards yet! Create one in Admin to start the fun.
+                </p>
+              </div>
+              
+              <Link href="/admin">
+                <Button size="lg" className="gap-2 group">
+                  <Sparkles className="w-4 h-4" />
+                  Create Your First Board
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </Link>
+            </motion.div>
           )}
         </div>
       </main>
