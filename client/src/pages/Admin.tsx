@@ -56,6 +56,8 @@ export default function Admin() {
 
   const [editingBoardId, setEditingBoardId] = useState<number | null>(null);
   const [editBoardName, setEditBoardName] = useState("");
+  const [editBoardDescription, setEditBoardDescription] = useState("");
+  const [deleteBoardConfirmId, setDeleteBoardConfirmId] = useState<number | null>(null);
 
   const [newQuestion, setNewQuestion] = useState("");
   const [newCorrectAnswer, setNewCorrectAnswer] = useState("");
@@ -203,8 +205,8 @@ export default function Admin() {
   });
 
   const updateBoardMutation = useMutation({
-    mutationFn: async ({ id, name, theme, isGlobal, sortOrder }: { id: number; name?: string; theme?: string; isGlobal?: boolean; sortOrder?: number }) => {
-      return apiRequest('PUT', `/api/boards/${id}`, { name, theme, isGlobal, sortOrder });
+    mutationFn: async ({ id, name, description, theme, isGlobal, sortOrder }: { id: number; name?: string; description?: string; theme?: string; isGlobal?: boolean; sortOrder?: number }) => {
+      return apiRequest('PUT', `/api/boards/${id}`, { name, description, theme, isGlobal, sortOrder });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
@@ -787,28 +789,63 @@ export default function Admin() {
                                   data-testid={`board-item-${board.id}`}
                                 >
                                   {isEditing ? (
-                                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                                      <Input
-                                        value={editBoardName}
-                                        onChange={(e) => setEditBoardName(e.target.value)}
-                                        className="h-7 text-sm"
-                                        autoFocus
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter' && editBoardName.trim()) {
-                                            updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() });
-                                          }
-                                          if (e.key === 'Escape') {
-                                            setEditingBoardId(null);
-                                          }
-                                        }}
-                                        data-testid={`input-edit-board-${board.id}`}
-                                      />
-                                      <Button size="icon" variant="ghost" onClick={() => { if (editBoardName.trim()) updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() }); }} className="h-7 w-7 text-primary shrink-0" data-testid={`button-save-board-${board.id}`}>
-                                        <Check className="w-3.5 h-3.5" />
-                                      </Button>
-                                      <Button size="icon" variant="ghost" onClick={() => setEditingBoardId(null)} className="h-7 w-7 text-muted-foreground shrink-0" data-testid={`button-cancel-edit-board-${board.id}`}>
-                                        <X className="w-3.5 h-3.5" />
-                                      </Button>
+                                    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                                      {editBoardName !== '' && (
+                                        <div className="flex items-center gap-1">
+                                          <Input
+                                            value={editBoardName}
+                                            onChange={(e) => setEditBoardName(e.target.value)}
+                                            placeholder="Board name"
+                                            className="h-7 text-sm"
+                                            autoFocus
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter' && editBoardName.trim()) {
+                                                updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() });
+                                              }
+                                              if (e.key === 'Escape') {
+                                                setEditingBoardId(null);
+                                                setEditBoardName('');
+                                              }
+                                            }}
+                                            data-testid={`input-edit-board-${board.id}`}
+                                          />
+                                          <Button size="icon" variant="ghost" onClick={() => { if (editBoardName.trim()) updateBoardMutation.mutate({ id: board.id, name: editBoardName.trim() }); }} className="h-7 w-7 text-primary shrink-0" data-testid={`button-save-board-${board.id}`}>
+                                            <Check className="w-3.5 h-3.5" />
+                                          </Button>
+                                          <Button size="icon" variant="ghost" onClick={() => { setEditingBoardId(null); setEditBoardName(''); }} className="h-7 w-7 text-muted-foreground shrink-0" data-testid={`button-cancel-edit-board-${board.id}`}>
+                                            <X className="w-3.5 h-3.5" />
+                                          </Button>
+                                        </div>
+                                      )}
+                                      {editBoardDescription !== undefined && editBoardName === '' && (
+                                        <div className="flex items-start gap-1">
+                                          <Input
+                                            value={editBoardDescription}
+                                            onChange={(e) => setEditBoardDescription(e.target.value)}
+                                            placeholder="Board description (optional)"
+                                            className="h-7 text-sm flex-1"
+                                            autoFocus
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter') {
+                                                updateBoardMutation.mutate({ id: board.id, description: editBoardDescription.trim() });
+                                                setEditingBoardId(null);
+                                                setEditBoardDescription('');
+                                              }
+                                              if (e.key === 'Escape') {
+                                                setEditingBoardId(null);
+                                                setEditBoardDescription('');
+                                              }
+                                            }}
+                                            data-testid={`input-edit-board-desc-${board.id}`}
+                                          />
+                                          <Button size="icon" variant="ghost" onClick={() => { updateBoardMutation.mutate({ id: board.id, description: editBoardDescription.trim() }); setEditingBoardId(null); setEditBoardDescription(''); }} className="h-7 w-7 text-primary shrink-0" data-testid={`button-save-board-desc-${board.id}`}>
+                                            <Check className="w-3.5 h-3.5" />
+                                          </Button>
+                                          <Button size="icon" variant="ghost" onClick={() => { setEditingBoardId(null); setEditBoardDescription(''); }} className="h-7 w-7 text-muted-foreground shrink-0" data-testid={`button-cancel-edit-board-desc-${board.id}`}>
+                                            <X className="w-3.5 h-3.5" />
+                                          </Button>
+                                        </div>
+                                      )}
                                     </div>
                                   ) : (
                                     <div className="flex items-start gap-2">
@@ -851,14 +888,24 @@ export default function Admin() {
                                             <MoreVertical className="w-4 h-4" />
                                           </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-40">
+                                        <DropdownMenuContent align="end" className="w-44">
                                           <DropdownMenuItem onClick={() => window.open(`/board/${board.id}`, '_blank')} data-testid={`menu-preview-${board.id}`}>
                                             <Eye className="w-4 h-4 mr-2" /> Preview
                                           </DropdownMenuItem>
                                           <DropdownMenuItem onClick={() => { setEditingBoardId(board.id); setEditBoardName(board.name); }} data-testid={`menu-rename-${board.id}`}>
                                             <Pencil className="w-4 h-4 mr-2" /> Rename
                                           </DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => deleteBoardMutation.mutate(board.id)} className="text-destructive focus:text-destructive" data-testid={`menu-delete-${board.id}`}>
+                                          <DropdownMenuItem onClick={() => { setEditingBoardId(board.id); setEditBoardName(''); setEditBoardDescription(board.description || ''); }} data-testid={`menu-edit-desc-${board.id}`}>
+                                            <FileText className="w-4 h-4 mr-2" /> Edit Description
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem 
+                                            onSelect={(e) => {
+                                              e.preventDefault();
+                                              setTimeout(() => setDeleteBoardConfirmId(board.id), 0);
+                                            }} 
+                                            className="text-destructive focus:text-destructive" 
+                                            data-testid={`menu-delete-${board.id}`}
+                                          >
                                             <Trash2 className="w-4 h-4 mr-2" /> Delete
                                           </DropdownMenuItem>
                                         </DropdownMenuContent>
@@ -1111,6 +1158,20 @@ export default function Admin() {
                               <ArrowRight className="w-3.5 h-3.5" />
                             </Button>
                             <div className="w-px h-4 bg-border mx-1" />
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost" 
+                                  className="h-7 w-7 text-muted-foreground" 
+                                  onClick={() => window.open(`/board/${selectedBoardId}`, '_blank')}
+                                  data-testid={`button-preview-category-${selectedBc.category.id}`}
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Preview board</TooltipContent>
+                            </Tooltip>
                             <Button size="icon" variant="ghost" onClick={() => { setEditingCategoryId(selectedBc.category.id); setEditCategoryName(selectedBc.category.name); setEditCategoryDescription(selectedBc.category.description || ''); setEditCategoryRule(selectedBc.category.rule || ''); }} className="h-7 w-7 text-muted-foreground" data-testid={`button-edit-category-${selectedBc.category.id}`} title="Edit">
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
@@ -1398,6 +1459,32 @@ export default function Admin() {
           </div>
         </div>
       </main>
+
+      <AlertDialog open={deleteBoardConfirmId !== null} onOpenChange={(open) => !open && setDeleteBoardConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Board?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this board and unlink all its categories. The categories and their questions will not be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-board">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteBoardConfirmId) {
+                  deleteBoardMutation.mutate(deleteBoardConfirmId);
+                  setDeleteBoardConfirmId(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete-board"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
