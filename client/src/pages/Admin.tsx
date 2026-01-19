@@ -28,6 +28,34 @@ import { getBoardColorConfig } from "@/lib/boardColors";
 
 const FIXED_POINT_VALUES = [10, 20, 30, 40, 50];
 
+function ProgressBar({ value, max, size = "sm", showLabel = false }: { value: number; max: number; size?: "sm" | "md"; showLabel?: boolean }) {
+  const percent = Math.min(100, Math.round((value / max) * 100));
+  const isComplete = value >= max;
+  const barHeight = size === "sm" ? "h-1.5" : "h-2";
+  
+  return (
+    <div className="flex items-center gap-2">
+      <div className={`flex-1 ${barHeight} bg-muted rounded-full overflow-hidden`}>
+        <div 
+          className={`h-full transition-all duration-300 ${isComplete ? 'bg-emerald-500' : percent > 50 ? 'bg-blue-500' : 'bg-amber-500'}`}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+      {showLabel && (
+        <span className={`text-[10px] font-medium ${isComplete ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+          {value}/{max}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function getStatusColor(value: number, max: number): string {
+  if (value >= max) return 'bg-emerald-500/10 border-emerald-500/30';
+  if (value > 0) return 'bg-blue-500/5 border-blue-500/20';
+  return 'bg-muted/20 border-border';
+}
+
 export default function Admin() {
   const { toast } = useToast();
   const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
@@ -87,6 +115,9 @@ export default function Admin() {
   const [bulkImportText, setBulkImportText] = useState("");
   const [bulkPreviewMode, setBulkPreviewMode] = useState(false);
   const [expandedBoardIds, setExpandedBoardIds] = useState<Set<number>>(new Set());
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [quickAddQuestion, setQuickAddQuestion] = useState("");
+  const [quickAddAnswer, setQuickAddAnswer] = useState("");
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
   const editImageInputRef = useRef<HTMLInputElement>(null);
@@ -154,7 +185,11 @@ export default function Admin() {
   // Auto-expand selected board in sidebar
   useEffect(() => {
     if (selectedBoardId) {
-      setExpandedBoardIds(prev => new Set([...prev, selectedBoardId]));
+      setExpandedBoardIds(prev => {
+        const next = new Set(Array.from(prev));
+        next.add(selectedBoardId);
+        return next;
+      });
     }
   }, [selectedBoardId]);
 
@@ -760,23 +795,38 @@ export default function Admin() {
 
       <main className="max-w-[1600px] mx-auto p-6" role="main" aria-label="Admin panel content">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-120px)]">
-          <div className="lg:col-span-3 overflow-y-auto">
-            <Card className="bg-card border-border shadow-sm">
-              <CardHeader className="py-4 px-4 border-b border-border bg-muted/30">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-foreground text-sm font-semibold uppercase tracking-wide">
-                    <Grid3X3 className="w-4 h-4 text-primary" />
-                    Game Boards
-                  </CardTitle>
-                  <Button
-                    size="icon"
-                    variant={showNewBoardForm ? "secondary" : "default"}
-                    onClick={() => setShowNewBoardForm(!showNewBoardForm)}
-                    className="h-8 w-8"
-                    data-testid="button-toggle-board-form"
-                  >
-                    {showNewBoardForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                  </Button>
+          <div className={`overflow-y-auto transition-all duration-300 ${sidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'}`}>
+            <Card className="bg-card border-border shadow-sm h-full">
+              <CardHeader className="py-3 px-3 border-b border-border bg-muted/30">
+                <div className="flex items-center justify-between gap-2">
+                  {!sidebarCollapsed && (
+                    <CardTitle className="flex items-center gap-2 text-foreground text-sm font-semibold uppercase tracking-wide">
+                      <Grid3X3 className="w-4 h-4 text-primary" />
+                      Boards
+                    </CardTitle>
+                  )}
+                  <div className="flex items-center gap-1 ml-auto">
+                    {!sidebarCollapsed && (
+                      <Button
+                        size="icon"
+                        variant={showNewBoardForm ? "secondary" : "default"}
+                        onClick={() => setShowNewBoardForm(!showNewBoardForm)}
+                        className="h-7 w-7"
+                        data-testid="button-toggle-board-form"
+                      >
+                        {showNewBoardForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                      </Button>
+                    )}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                      className="h-7 w-7"
+                      data-testid="button-toggle-sidebar"
+                    >
+                      {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="p-3 space-y-3">
@@ -877,6 +927,8 @@ export default function Admin() {
                                 });
                               };
                               
+                              const statusBg = getStatusColor(totalQuestions, maxQuestions);
+                              
                               return (
                                 <div key={board.id} className="space-y-1">
                                   {/* Board Header */}
@@ -887,14 +939,14 @@ export default function Admin() {
                                     onDragLeave={handleDragLeave}
                                     onDrop={handleDrop}
                                     onDragEnd={handleDragEnd}
-                                    className={`p-2 rounded-lg cursor-pointer transition-all ${
+                                    className={`p-2 rounded-lg cursor-pointer transition-all border ${
                                       selectedBoardId === board.id && !selectedBoardCategoryId
                                         ? 'bg-primary/20 border-2 border-primary'
                                         : selectedBoardId === board.id
-                                          ? 'bg-primary/10 border border-primary/50'
+                                          ? 'bg-primary/10 border-primary/50'
                                           : isDragOver
                                             ? 'bg-primary/10 border-2 border-dashed border-primary'
-                                            : 'bg-muted/20 border border-border hover:bg-muted/30'
+                                            : statusBg + ' hover:border-primary/30'
                                     } ${isDragging ? 'opacity-50' : ''}`}
                                     onClick={() => { 
                                       if (!isEditing) { 
@@ -964,57 +1016,80 @@ export default function Admin() {
                                         )}
                                       </div>
                                     ) : (
-                                      <div className="flex items-center gap-2">
-                                        <button
-                                          onClick={toggleExpand}
-                                          className="p-0.5 hover:bg-muted/50 rounded shrink-0"
-                                          data-testid={`button-expand-${board.id}`}
-                                        >
-                                          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
-                                        </button>
-                                        <GripVertical className="w-3 h-3 text-muted-foreground/40 cursor-grab shrink-0" />
-                                        <div className="min-w-0 flex-1">
-                                          <div className="flex items-center gap-2">
-                                            <span className="font-semibold text-sm text-foreground truncate">{board.name}</span>
-                                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${isComplete ? 'bg-emerald-500/20 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
-                                              {totalQuestions}/25
-                                            </span>
-                                          </div>
-                                        </div>
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                            <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-foreground" data-testid={`button-board-menu-${board.id}`}>
-                                              <MoreVertical className="w-3.5 h-3.5" />
-                                            </Button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end" className="w-44">
-                                            <DropdownMenuItem onClick={() => window.open(`/board/${board.id}`, '_blank')} data-testid={`menu-preview-${board.id}`}>
-                                              <Eye className="w-4 h-4 mr-2" /> Preview
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => { setEditingBoardId(board.id); setEditBoardName(board.name); }} data-testid={`menu-rename-${board.id}`}>
-                                              <Pencil className="w-4 h-4 mr-2" /> Rename
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => { setEditingBoardId(board.id); setEditBoardName(''); setEditBoardDescription(board.description || ''); }} data-testid={`menu-edit-desc-${board.id}`}>
-                                              <FileText className="w-4 h-4 mr-2" /> Edit Description
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem 
-                                              onSelect={(e) => {
-                                                e.preventDefault();
-                                                setTimeout(() => setDeleteBoardConfirmId(board.id), 0);
-                                              }} 
-                                              className="text-destructive focus:text-destructive" 
-                                              data-testid={`menu-delete-${board.id}`}
-                                            >
-                                              <Trash2 className="w-4 h-4 mr-2" /> Delete
-                                            </DropdownMenuItem>
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
+                                      <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-2'}`}>
+                                        {!sidebarCollapsed && (
+                                          <button
+                                            onClick={toggleExpand}
+                                            className="p-0.5 hover:bg-muted/50 rounded shrink-0"
+                                            data-testid={`button-expand-${board.id}`}
+                                          >
+                                            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
+                                          </button>
+                                        )}
+                                        {!sidebarCollapsed && <GripVertical className="w-3 h-3 text-muted-foreground/40 cursor-grab shrink-0" />}
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <div className="min-w-0 flex-1">
+                                              <div className="flex items-center gap-2">
+                                                <span className={`font-semibold text-foreground ${sidebarCollapsed ? 'text-xs text-center w-full' : 'text-sm truncate'}`}>
+                                                  {sidebarCollapsed ? (board.name.slice(0, 2).toUpperCase() || board.name.charAt(0).toUpperCase() || '#') : board.name}
+                                                </span>
+                                                {!sidebarCollapsed && (
+                                                  <span className={`text-[10px] shrink-0 ${isComplete ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                                                    {categoryCount}/5
+                                                  </span>
+                                                )}
+                                              </div>
+                                              {!sidebarCollapsed && (
+                                                <div className="mt-1">
+                                                  <ProgressBar value={totalQuestions} max={25} size="sm" />
+                                                </div>
+                                              )}
+                                            </div>
+                                          </TooltipTrigger>
+                                          {sidebarCollapsed && (
+                                            <TooltipContent side="right">
+                                              <p>{board.name}</p>
+                                              <p className="text-xs text-muted-foreground">{totalQuestions}/25 questions</p>
+                                            </TooltipContent>
+                                          )}
+                                        </Tooltip>
+                                        {!sidebarCollapsed && (
+                                          <DropdownMenu>
+                                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                              <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-foreground" data-testid={`button-board-menu-${board.id}`}>
+                                                <MoreVertical className="w-3.5 h-3.5" />
+                                              </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-44">
+                                              <DropdownMenuItem onClick={() => window.open(`/board/${board.id}`, '_blank')} data-testid={`menu-preview-${board.id}`}>
+                                                <Eye className="w-4 h-4 mr-2" /> Preview
+                                              </DropdownMenuItem>
+                                              <DropdownMenuItem onClick={() => { setEditingBoardId(board.id); setEditBoardName(board.name); }} data-testid={`menu-rename-${board.id}`}>
+                                                <Pencil className="w-4 h-4 mr-2" /> Rename
+                                              </DropdownMenuItem>
+                                              <DropdownMenuItem onClick={() => { setEditingBoardId(board.id); setEditBoardName(''); setEditBoardDescription(board.description || ''); }} data-testid={`menu-edit-desc-${board.id}`}>
+                                                <FileText className="w-4 h-4 mr-2" /> Edit Description
+                                              </DropdownMenuItem>
+                                              <DropdownMenuItem 
+                                                onSelect={(e) => {
+                                                  e.preventDefault();
+                                                  setTimeout(() => setDeleteBoardConfirmId(board.id), 0);
+                                                }} 
+                                                className="text-destructive focus:text-destructive" 
+                                                data-testid={`menu-delete-${board.id}`}
+                                              >
+                                                <Trash2 className="w-4 h-4 mr-2" /> Delete
+                                              </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                          </DropdownMenu>
+                                        )}
                                       </div>
                                     )}
                                   </div>
                                   
-                                  {/* Nested Categories */}
-                                  {isExpanded && summary?.categories && (
+                                  {/* Nested Categories - only show when sidebar expanded */}
+                                  {!sidebarCollapsed && isExpanded && summary?.categories && (
                                     <div className="ml-6 pl-2 border-l-2 border-border/50 space-y-0.5">
                                       {summary.categories.map(cat => {
                                         const isSelected = selectedBoardId === board.id && 
@@ -1042,9 +1117,9 @@ export default function Admin() {
                                             data-testid={`sidebar-category-${cat.id}`}
                                           >
                                             <span className="truncate flex-1">{cat.name}</span>
-                                            <span className={`text-[10px] px-1 py-0.5 rounded ${catComplete ? 'bg-emerald-500/20 text-emerald-600' : 'bg-muted'}`}>
-                                              {cat.questionCount}/5
-                                            </span>
+                                            <div className="w-12 shrink-0">
+                                              <ProgressBar value={cat.questionCount} max={5} size="sm" />
+                                            </div>
                                           </button>
                                         );
                                       })}
@@ -1125,7 +1200,7 @@ export default function Admin() {
             </Card>
           </div>
 
-          <div className="lg:col-span-9 overflow-hidden">
+          <div className={`overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:col-span-11' : 'lg:col-span-9'}`}>
             <Card className="bg-card border-border shadow-sm h-full flex flex-col">
               {/* Breadcrumb Navigation */}
               <div className="border-b border-border px-4 py-2 bg-muted/10 flex items-center gap-2 text-sm">
@@ -1150,9 +1225,12 @@ export default function Admin() {
                       const summary = boardSummaries.find(s => s.id === selectedBoardId);
                       const totalQ = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
                       return (
-                        <Badge variant="secondary" className="text-xs ml-1">
-                          {boardCategories.length}/5 categories · {totalQ}/25 questions
-                        </Badge>
+                        <div className="flex items-center gap-2 ml-1">
+                          <div className="w-16">
+                            <ProgressBar value={totalQ} max={25} size="sm" />
+                          </div>
+                          <span className="text-xs text-muted-foreground">{totalQ}/25</span>
+                        </div>
                       );
                     })()}
                   </>
@@ -1163,21 +1241,112 @@ export default function Admin() {
                     <span className="font-medium text-primary" data-testid="breadcrumb-category">
                       {selectedBoardCategory.category.name}
                     </span>
-                    <Badge variant={questions.length >= 5 ? "default" : "secondary"} className="text-xs ml-1">
-                      {questions.length}/5 questions
-                    </Badge>
+                    <div className="flex items-center gap-2 ml-1">
+                      <div className="w-12">
+                        <ProgressBar value={questions.length} max={5} size="sm" />
+                      </div>
+                      <span className="text-xs text-muted-foreground">{questions.length}/5</span>
+                    </div>
                   </>
                 )}
               </div>
 
               {!selectedBoardId ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center p-12">
-                    <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                      <Grid3X3 className="w-10 h-10 text-muted-foreground/50" />
+                /* Progress Dashboard - shows when no board selected */
+                <div className="flex-1 overflow-y-auto p-6">
+                  <div className="max-w-3xl mx-auto space-y-6">
+                    <div className="text-center mb-8">
+                      <h2 className="text-xl font-semibold text-foreground mb-2">Progress Dashboard</h2>
+                      <p className="text-muted-foreground">Overview of all your game boards</p>
                     </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">No Board Selected</h3>
-                    <p className="text-muted-foreground max-w-sm">Select a game board from the sidebar to start managing categories and questions</p>
+                    
+                    {boards.length === 0 ? (
+                      <div className="text-center py-12 border-2 border-dashed border-border rounded-xl">
+                        <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-foreground mb-2">No boards yet</h3>
+                        <p className="text-muted-foreground mb-4">Create your first game board to get started</p>
+                        <Button onClick={() => setShowNewBoardForm(true)} data-testid="button-create-first-board">
+                          <Plus className="w-4 h-4 mr-2" /> Create Board
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Summary stats */}
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="p-4 rounded-xl bg-muted/30 border border-border">
+                            <div className="text-2xl font-bold text-foreground">{boards.length}</div>
+                            <div className="text-sm text-muted-foreground">Total Boards</div>
+                          </div>
+                          <div className="p-4 rounded-xl bg-muted/30 border border-border">
+                            <div className="text-2xl font-bold text-foreground">
+                              {boardSummaries.reduce((sum, b) => sum + b.categoryCount, 0)}
+                            </div>
+                            <div className="text-sm text-muted-foreground">Total Categories</div>
+                          </div>
+                          <div className="p-4 rounded-xl bg-muted/30 border border-border">
+                            <div className="text-2xl font-bold text-foreground">
+                              {boardSummaries.reduce((sum, b) => sum + b.categories.reduce((s, c) => s + c.questionCount, 0), 0)}
+                            </div>
+                            <div className="text-sm text-muted-foreground">Total Questions</div>
+                          </div>
+                        </div>
+
+                        {/* Next actions */}
+                        {(() => {
+                          const incompleteBoards = boardSummaries.filter(b => {
+                            const totalQ = b.categories.reduce((sum, c) => sum + c.questionCount, 0);
+                            return totalQ < 25;
+                          });
+                          const incompleteCats = boardSummaries.flatMap(b => 
+                            b.categories.filter(c => c.questionCount < 5).map(c => ({ ...c, boardName: b.name, boardId: b.id }))
+                          );
+                          
+                          if (incompleteBoards.length === 0) {
+                            return (
+                              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center">
+                                <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                                <p className="text-emerald-700 dark:text-emerald-400 font-medium">All boards complete!</p>
+                              </div>
+                            );
+                          }
+                          
+                          return (
+                            <div className="space-y-3">
+                              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                <Sparkles className="w-4 h-4 text-amber-500" />
+                                Next Actions
+                              </h3>
+                              <div className="space-y-2">
+                                {incompleteCats.slice(0, 5).map(cat => (
+                                  <button
+                                    key={`${cat.boardId}-${cat.id}`}
+                                    onClick={() => {
+                                      setSelectedBoardId(cat.boardId);
+                                      // Find the boardCategoryId
+                                      const bc = allBoardSummaries.find(bs => bs.id === cat.boardId)?.categories.find(c => c.id === cat.id);
+                                      if (bc) {
+                                        // Will be set when boardCategories loads
+                                      }
+                                    }}
+                                    className="w-full flex items-center justify-between p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 hover:bg-amber-500/10 transition-colors text-left"
+                                    data-testid={`action-category-${cat.id}`}
+                                  >
+                                    <div>
+                                      <span className="text-sm font-medium text-foreground">{cat.name}</span>
+                                      <span className="text-xs text-muted-foreground ml-2">in {cat.boardName}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs text-amber-600 dark:text-amber-400">Needs {5 - cat.questionCount} more</span>
+                                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -1283,11 +1452,19 @@ export default function Admin() {
                             <HelpCircle className="w-8 h-8 text-muted-foreground/50" />
                           </div>
                           <h3 className="text-lg font-semibold text-foreground mb-2">Select a Category</h3>
-                          <p className="text-muted-foreground max-w-sm">
+                          <p className="text-muted-foreground max-w-sm mb-4">
                             {boardCategories.length > 0 
                               ? "Click on a category in the sidebar to view and manage its questions"
                               : "Add a category first, then click it to add questions"}
                           </p>
+                          {boardCategories.length === 0 && boardCategories.length < 5 && (
+                            <Button 
+                              onClick={() => setShowNewCategoryForm(true)}
+                              data-testid="button-add-category-empty"
+                            >
+                              <Plus className="w-4 h-4 mr-2" /> Add Category
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -1651,9 +1828,94 @@ export default function Admin() {
                         </AnimatePresence>
                       )}
                       {questions.length === 0 && !loadingQuestions && (
-                        <p className="text-center text-muted-foreground text-sm py-4">
-                          No questions yet. Use the form above to add questions.
-                        </p>
+                        <div className="text-center py-8 border-2 border-dashed border-border rounded-xl">
+                          <HelpCircle className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                          <p className="text-muted-foreground mb-3">No questions yet</p>
+                          <Button 
+                            variant="outline" 
+                            onClick={() => setQuestionFormOpen(true)}
+                            data-testid="button-add-first-question"
+                          >
+                            <Plus className="w-4 h-4 mr-2" /> Add First Question
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {/* Quick-add inline form */}
+                      {questions.length > 0 && questions.length < 5 && availablePoints.length > 0 && (
+                        <div className="mt-4 p-3 bg-muted/20 rounded-lg border border-dashed border-border">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              placeholder="Quick add: Type question..."
+                              value={quickAddQuestion}
+                              onChange={(e) => setQuickAddQuestion(e.target.value)}
+                              className="flex-1 h-9 text-sm"
+                              disabled={createQuestionMutation.isPending}
+                              data-testid="input-quick-question"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && quickAddQuestion.trim() && quickAddAnswer.trim() && !createQuestionMutation.isPending) {
+                                  const pointsToUse = availablePoints[0];
+                                  createQuestionMutation.mutate({
+                                    categoryId: selectedCategoryId!,
+                                    question: quickAddQuestion.trim(),
+                                    correctAnswer: quickAddAnswer.trim(),
+                                    points: pointsToUse,
+                                    options: [],
+                                  });
+                                  setQuickAddQuestion("");
+                                  setQuickAddAnswer("");
+                                }
+                              }}
+                            />
+                            <Input
+                              placeholder="Answer"
+                              value={quickAddAnswer}
+                              onChange={(e) => setQuickAddAnswer(e.target.value)}
+                              className="w-32 h-9 text-sm"
+                              disabled={createQuestionMutation.isPending}
+                              data-testid="input-quick-answer"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && quickAddQuestion.trim() && quickAddAnswer.trim() && !createQuestionMutation.isPending) {
+                                  const pointsToUse = availablePoints[0];
+                                  createQuestionMutation.mutate({
+                                    categoryId: selectedCategoryId!,
+                                    question: quickAddQuestion.trim(),
+                                    correctAnswer: quickAddAnswer.trim(),
+                                    points: pointsToUse,
+                                    options: [],
+                                  });
+                                  setQuickAddQuestion("");
+                                  setQuickAddAnswer("");
+                                }
+                              }}
+                            />
+                            <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded whitespace-nowrap">
+                              {availablePoints[0]} pts
+                            </span>
+                            <Button
+                              size="sm"
+                              disabled={!quickAddQuestion.trim() || !quickAddAnswer.trim() || createQuestionMutation.isPending}
+                              onClick={() => {
+                                const pointsToUse = availablePoints[0];
+                                createQuestionMutation.mutate({
+                                  categoryId: selectedCategoryId!,
+                                  question: quickAddQuestion.trim(),
+                                  correctAnswer: quickAddAnswer.trim(),
+                                  points: pointsToUse,
+                                  options: [],
+                                });
+                                setQuickAddQuestion("");
+                                setQuickAddAnswer("");
+                              }}
+                              data-testid="button-quick-add"
+                            >
+                              {createQuestionMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                            </Button>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-1.5">
+                            Press Enter to add · Uses next available points ({availablePoints[0]})
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>
