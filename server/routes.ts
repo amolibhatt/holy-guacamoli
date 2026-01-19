@@ -399,6 +399,23 @@ export async function registerRoutes(
     res.json(categories);
   });
 
+  // Categories with question counts - for admin panel progress display
+  app.get("/api/categories/with-counts", isAuthenticated, async (req, res) => {
+    try {
+      const categories = await storage.getCategories();
+      const result = await Promise.all(
+        categories.map(async (cat) => {
+          const questions = await storage.getQuestionsByCategory(cat.id);
+          return { ...cat, questionCount: questions.length };
+        })
+      );
+      res.json(result);
+    } catch (err) {
+      console.error("Error fetching categories with counts:", err);
+      res.status(500).json({ message: "Failed to fetch categories" });
+    }
+  });
+
   app.get(api.categories.get.path, isAuthenticated, async (req, res) => {
     const category = await storage.getCategory(Number(req.params.id));
     if (!category) {
