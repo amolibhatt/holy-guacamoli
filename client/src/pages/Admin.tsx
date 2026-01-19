@@ -877,6 +877,59 @@ export default function Admin() {
                           <p className="text-muted-foreground/70 text-xs">Click + above to create your first game board</p>
                         </div>
                       )}
+
+                      {unlinkedCategories.length > 0 && (
+                        <Collapsible className="mt-4 pt-4 border-t border-border">
+                          <CollapsibleTrigger className="flex items-center gap-2 w-full text-left px-2 py-1.5 hover:bg-muted/50 rounded-md text-sm text-muted-foreground">
+                            <ChevronRight className="w-4 h-4 transition-transform data-[state=open]:rotate-90" />
+                            <FolderPlus className="w-4 h-4" />
+                            <span>Unlinked Categories</span>
+                            <Badge variant="secondary" className="ml-auto text-xs">{unlinkedCategories.length}</Badge>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="mt-2 space-y-1 px-2">
+                            {unlinkedCategories.map(cat => (
+                              <div 
+                                key={cat.id} 
+                                className="flex items-center justify-between p-2 rounded-md bg-muted/30 text-sm"
+                              >
+                                <span className="truncate flex-1">{cat.name}</span>
+                                <div className="flex gap-1">
+                                  {selectedBoardId && boardCategories.length < 5 && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button 
+                                          size="icon" 
+                                          variant="ghost" 
+                                          className="h-6 w-6"
+                                          onClick={() => linkCategoryMutation.mutate({ boardId: selectedBoardId, categoryId: cat.id })}
+                                          data-testid={`button-link-orphan-${cat.id}`}
+                                        >
+                                          <Link2 className="w-3 h-3" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Link to current board</TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button 
+                                        size="icon" 
+                                        variant="ghost" 
+                                        className="h-6 w-6 text-destructive hover:text-destructive"
+                                        onClick={() => deleteCategoryMutation.mutate(cat.id)}
+                                        data-testid={`button-delete-orphan-${cat.id}`}
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Delete permanently</TooltipContent>
+                                  </Tooltip>
+                                </div>
+                              </div>
+                            ))}
+                          </CollapsibleContent>
+                        </Collapsible>
+                      )}
                     </>
                   )}
                 </div>
@@ -958,6 +1011,27 @@ export default function Admin() {
                             className="h-8 text-sm"
                             data-testid="input-category-rule"
                           />
+                          {unlinkedCategories.length > 0 && (
+                            <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">Or link existing:</span>
+                              <Select onValueChange={(catId) => {
+                                if (catId && selectedBoardId) {
+                                  linkCategoryMutation.mutate({ boardId: selectedBoardId, categoryId: Number(catId) });
+                                }
+                              }}>
+                                <SelectTrigger className="h-7 text-xs flex-1" data-testid="select-link-existing-category">
+                                  <SelectValue placeholder="Choose category..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {unlinkedCategories.map(cat => (
+                                    <SelectItem key={cat.id} value={cat.id.toString()}>
+                                      {cat.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -987,9 +1061,9 @@ export default function Admin() {
                               data-testid={`category-tab-${bc.id}`}
                             >
                               <span>{bc.category.name}</span>
-                              {(bc.questionCount ?? 0) >= 5 && (
-                                <CheckCircle className="w-3 h-3" />
-                              )}
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${(bc.questionCount ?? 0) >= 5 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                                {bc.questionCount ?? 0}/5
+                              </span>
                             </TabsTrigger>
                           ))}
                         </TabsList>
@@ -1040,9 +1114,26 @@ export default function Admin() {
                             <Button size="icon" variant="ghost" onClick={() => { setEditingCategoryId(selectedBc.category.id); setEditCategoryName(selectedBc.category.name); setEditCategoryDescription(selectedBc.category.description || ''); setEditCategoryRule(selectedBc.category.rule || ''); }} className="h-7 w-7 text-muted-foreground" data-testid={`button-edit-category-${selectedBc.category.id}`} title="Edit">
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost" 
+                                  className="h-7 w-7 text-muted-foreground hover:text-orange-500" 
+                                  onClick={() => {
+                                    setSelectedBoardCategoryId(null);
+                                    unlinkCategoryMutation.mutate(selectedBc.id);
+                                  }}
+                                  data-testid={`button-unlink-category-${selectedBc.id}`}
+                                >
+                                  <Unlink className="w-3.5 h-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Remove from board (keeps category)</TooltipContent>
+                            </Tooltip>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" data-testid={`button-delete-category-${selectedBc.category.id}`} title="Delete">
+                                <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" data-testid={`button-delete-category-${selectedBc.category.id}`} title="Delete permanently">
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
                               </AlertDialogTrigger>
@@ -1050,7 +1141,7 @@ export default function Admin() {
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Delete "{selectedBc.category.name}"?</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    This will permanently delete this category and all its questions.
+                                    This will permanently delete this category and all its questions. To just remove it from this board, use the unlink button instead.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -1062,7 +1153,7 @@ export default function Admin() {
                                       deleteCategoryMutation.mutate(selectedBc.category.id);
                                     }}
                                   >
-                                    Delete
+                                    Delete Permanently
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
