@@ -115,10 +115,10 @@ export default function Admin() {
       setShowNewGameForm(false);
       const newGame = await response.json();
       setSelectedGameId(newGame.id);
-      toast({ title: "Game created!" });
+      toast({ title: "Grid created!" });
     },
     onError: (error: Error) => {
-      toast({ title: "Couldn't create game", description: error.message, variant: "destructive" });
+      toast({ title: "Couldn't create grid", description: error.message, variant: "destructive" });
     },
   });
   
@@ -132,7 +132,7 @@ export default function Admin() {
         setSelectedGameId(null);
         setSelectedTopicId(null);
       }
-      toast({ title: "Game deleted" });
+      toast({ title: "Grid deleted" });
     },
     onError: (error: Error) => {
       toast({ title: "Couldn't delete", description: error.message, variant: "destructive" });
@@ -617,8 +617,8 @@ export default function Admin() {
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold">My Games</h1>
-            <p className="text-muted-foreground text-sm">{games.length} games</p>
+            <h1 className="text-2xl font-bold">My Grids</h1>
+            <p className="text-muted-foreground text-sm">{games.length} {games.length === 1 ? 'grid' : 'grids'}</p>
           </div>
           <div className="flex gap-2">
             <Link href="/admin/history">
@@ -627,7 +627,7 @@ export default function Admin() {
               </Button>
             </Link>
             <Button onClick={() => setShowNewGameForm(true)} data-testid="button-new-game">
-              <Plus className="w-4 h-4 mr-2" /> New Game
+              <Plus className="w-4 h-4 mr-2" /> New Grid
             </Button>
           </div>
         </div>
@@ -644,7 +644,7 @@ export default function Admin() {
                 <CardContent className="pt-4">
                   <div className="flex items-center gap-2">
                     <Input
-                      placeholder="Game name (e.g., Amoli's Birthday Trivia)"
+                      placeholder="Grid name (e.g., Amoli's Birthday Trivia)"
                       value={newGameName}
                       onChange={(e) => setNewGameName(e.target.value)}
                       autoFocus
@@ -681,10 +681,10 @@ export default function Admin() {
           <Card>
             <CardContent className="py-12 text-center">
               <Gamepad2 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-              <h3 className="font-medium mb-2">No games yet</h3>
-              <p className="text-muted-foreground text-sm mb-4">Create your first trivia game</p>
+              <h3 className="font-medium mb-2">No grids yet</h3>
+              <p className="text-muted-foreground text-sm mb-4">Create your first trivia grid</p>
               <Button onClick={() => setShowNewGameForm(true)} data-testid="button-create-first-game">
-                <Plus className="w-4 h-4 mr-2" /> Create Game
+                <Plus className="w-4 h-4 mr-2" /> Create Grid
               </Button>
             </CardContent>
           </Card>
@@ -725,9 +725,9 @@ export default function Admin() {
       <AlertDialog open={deleteGameConfirmId !== null} onOpenChange={(open) => !open && setDeleteGameConfirmId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this game?</AlertDialogTitle>
+            <AlertDialogTitle>Delete this grid?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will delete the game. Topics and questions will still exist.
+              This will delete the grid. Topics and questions will still exist.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
