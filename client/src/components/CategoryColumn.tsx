@@ -179,26 +179,30 @@ export function CategoryColumn({ boardCategory, onSelectQuestion, pointValues }:
       </div>
       
       <div className="flex flex-col gap-2 mt-2 flex-1">
-        {scoreValues.map((scoreValue, idx) => {
-          const question = questionsByPoints[scoreValue];
-          const isCompleted = question ? completedQuestions.includes(question.id) : false;
+        {isLoading ? (
+          scoreValues.slice(0, 5).map((scoreValue) => (
+            <Skeleton key={scoreValue} className="flex-1 min-h-[48px] rounded-lg bg-muted" />
+          ))
+        ) : (
+          scoreValues
+            .filter((scoreValue) => questionsByPoints[scoreValue])
+            .map((scoreValue, idx) => {
+              const question = questionsByPoints[scoreValue]!;
+              const isCompleted = completedQuestions.includes(question.id);
 
-          if (isLoading) {
-            return <Skeleton key={scoreValue} className="flex-1 min-h-[48px] rounded-lg bg-muted" />;
-          }
-
-          return (
-            <FlipCard
-              key={scoreValue}
-              scoreValue={scoreValue}
-              question={question}
-              isCompleted={isCompleted}
-              categoryId={boardCategory.categoryId}
-              onSelect={onSelectQuestion}
-              delay={idx * 0.03}
-            />
-          );
-        })}
+              return (
+                <FlipCard
+                  key={scoreValue}
+                  scoreValue={scoreValue}
+                  question={question}
+                  isCompleted={isCompleted}
+                  categoryId={boardCategory.categoryId}
+                  onSelect={onSelectQuestion}
+                  delay={idx * 0.03}
+                />
+              );
+            })
+        )}
       </div>
     </div>
   );
