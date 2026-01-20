@@ -135,8 +135,12 @@ export default function Admin() {
   
   const createTopicMutation = useMutation({
     mutationFn: async (data: { name: string; gameId: number }) => {
-      // First create the category
-      const catResponse = await apiRequest('POST', '/api/categories', { name: data.name, description: '' });
+      // First create the category with all required fields
+      const catResponse = await apiRequest('POST', '/api/categories', { 
+        name: data.name, 
+        description: '', 
+        imageUrl: '' 
+      });
       const category = await catResponse.json();
       // Then link it to the game
       await apiRequest('POST', `/api/boards/${data.gameId}/categories`, { categoryId: category.id, position: gameTopics.length });
