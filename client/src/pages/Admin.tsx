@@ -70,6 +70,12 @@ export default function Admin() {
     enabled: isAuthenticated,
   });
   
+  type BoardSummary = { id: number; name: string; categoryCount: number; categories: { id: number; name: string; questionCount: number }[] };
+  const { data: boardSummaries = [] } = useQuery<BoardSummary[]>({
+    queryKey: ['/api/boards/summary'],
+    enabled: isAuthenticated,
+  });
+  
   const { data: allCategories = [] } = useQuery<CategoryWithCount[]>({
     queryKey: ['/api/categories/with-counts'],
     enabled: isAuthenticated,
@@ -622,7 +628,7 @@ export default function Admin() {
           </div>
           <div className="flex gap-2">
             <Link href="/admin/history">
-              <Button variant="outline" size="sm" data-testid="button-history">
+              <Button variant="outline" data-testid="button-history">
                 <History className="w-4 h-4 mr-2" /> History
               </Button>
             </Link>
@@ -713,7 +719,16 @@ export default function Admin() {
                       <Trash2 className="w-3 h-3" />
                     </Button>
                   </div>
-                  <p className="text-sm text-muted-foreground">Click to edit topics and questions</p>
+                  {(() => {
+                    const summary = boardSummaries.find(s => s.id === game.id);
+                    const categoryCount = summary?.categoryCount || 0;
+                    const questionCount = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
+                    return (
+                      <p className="text-sm text-muted-foreground">
+                        {categoryCount} {categoryCount === 1 ? 'category' : 'categories'} · {questionCount} {questionCount === 1 ? 'question' : 'questions'}
+                      </p>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             ))}
