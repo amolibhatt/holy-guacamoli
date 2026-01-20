@@ -54,22 +54,24 @@ export function AppHeader({
               </Button>
             </Link>
           )}
-          <motion.div 
-            className="w-10 h-10 flex items-center justify-center"
-            animate={{ rotate: [0, -3, 3, -3, 0], y: [0, -2, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <AvocadoIcon className="w-8 h-8 drop-shadow-md" />
-          </motion.div>
-          <div className="flex flex-col">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)' }}>
-              <span className="text-foreground">Holy </span>
-              <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-amber-500 bg-clip-text text-transparent">GuacAmoli!</span>
-            </h1>
-            {(title || subtitle) && (
-              <span className="text-xs text-muted-foreground tracking-wide">{title}{subtitle ? ` - ${subtitle}` : ''}</span>
-            )}
-          </div>
+          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+            <motion.div 
+              className="w-10 h-10 flex items-center justify-center"
+              animate={{ rotate: [0, -3, 3, -3, 0], y: [0, -2, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <AvocadoIcon className="w-8 h-8 drop-shadow-md" />
+            </motion.div>
+            <div className="flex flex-col">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)' }}>
+                <span className="text-foreground">Holy </span>
+                <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-amber-500 bg-clip-text text-transparent">GuacAmoli!</span>
+              </h1>
+              {(title || subtitle) && (
+                <span className="text-xs text-muted-foreground tracking-wide">{title}{subtitle ? ` - ${subtitle}` : ''}</span>
+              )}
+            </div>
+          </Link>
         </div>
 
         <div className="flex items-center gap-1">
