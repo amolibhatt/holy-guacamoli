@@ -165,10 +165,10 @@ export default function Admin() {
       setNewTopicDescription("");
       setShowNewTopicForm(false);
       setSelectedTopicId(category.id);
-      toast({ title: "Topic added!" });
+      toast({ title: "Category added!" });
     },
     onError: (error: Error) => {
-      toast({ title: "Couldn't add topic", description: error.message, variant: "destructive" });
+      toast({ title: "Couldn't add category", description: error.message, variant: "destructive" });
     },
   });
   
@@ -180,7 +180,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedGameId, 'categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/categories/with-counts'] });
       setEditingTopicId(null);
-      toast({ title: "Topic updated" });
+      toast({ title: "Category updated" });
     },
     onError: (error: Error) => {
       toast({ title: "Couldn't update", description: error.message, variant: "destructive" });
@@ -196,7 +196,7 @@ export default function Admin() {
       if (selectedTopicId === deleteTopicConfirmId) {
         setSelectedTopicId(gameTopics.length > 1 ? gameTopics[0].categoryId : null);
       }
-      toast({ title: "Topic removed" });
+      toast({ title: "Category removed" });
     },
   });
   
@@ -276,7 +276,7 @@ export default function Admin() {
     );
   }
 
-  // Game detail view - single page with topics and questions
+  // Game detail view - single page with categories and questions
   if (selectedGameId && selectedGame) {
     return (
       <div className="min-h-screen bg-background" data-testid="page-admin-game">
@@ -293,7 +293,7 @@ export default function Admin() {
                 {selectedGame.name}
               </h1>
               <div className="flex items-center gap-4 mt-1">
-                <span className="text-sm text-muted-foreground">{gameTopics.length}/5 topics</span>
+                <span className="text-sm text-muted-foreground">{gameTopics.length}/5 categories</span>
                 <span className="text-sm text-muted-foreground">{totalQuestions}/{maxQuestions} questions</span>
               </div>
             </div>
@@ -309,7 +309,7 @@ export default function Admin() {
             <ProgressBar value={totalQuestions} max={maxQuestions || 25} showLabel />
           </div>
           
-          {/* Topics as tabs */}
+          {/* Categories as tabs */}
           <div className="flex items-center gap-2 mb-4 flex-wrap">
             {loadingTopics ? (
               <Skeleton className="h-10 w-32" />
@@ -327,7 +327,7 @@ export default function Admin() {
                       className="gap-2"
                       data-testid={`tab-topic-${topic.categoryId}`}
                     >
-                      {topic.category?.name || "Topic"}
+                      {topic.category?.name || "Category"}
                       {isComplete && <CheckCircle className="w-3 h-3" />}
                       {!isComplete && <Badge variant="secondary" className="text-xs">{topic.questionCount || 0}/5</Badge>}
                     </Button>
@@ -338,7 +338,7 @@ export default function Admin() {
                     <Card className="p-3 w-full max-w-md">
                       <div className="space-y-2">
                         <Input
-                          placeholder="Topic name (e.g., Movies)"
+                          placeholder="Category name (e.g., Movies)"
                           value={newTopicName}
                           onChange={(e) => setNewTopicName(e.target.value)}
                           autoFocus
@@ -357,7 +357,7 @@ export default function Admin() {
                             disabled={!newTopicName.trim() || createTopicMutation.isPending}
                           >
                             {createTopicMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                            Add Topic
+                            Add Category
                           </Button>
                           <Button size="sm" variant="ghost" onClick={() => { setShowNewTopicForm(false); setNewTopicName(""); setNewTopicDescription(""); }}>
                             Cancel
@@ -367,7 +367,7 @@ export default function Admin() {
                     </Card>
                   ) : (
                     <Button variant="ghost" size="sm" onClick={() => setShowNewTopicForm(true)} data-testid="button-add-topic">
-                      <Plus className="w-4 h-4 mr-1" /> Add Topic
+                      <Plus className="w-4 h-4 mr-1" /> Add Category
                     </Button>
                   )
                 )}
@@ -375,7 +375,7 @@ export default function Admin() {
             )}
           </div>
           
-          {/* Questions for selected topic */}
+          {/* Questions for selected category */}
           {selectedTopicId ? (
             <Card>
               <CardContent className="p-6">
@@ -567,7 +567,7 @@ export default function Admin() {
                       {availablePoints.length === 0 && (
                         <div className="text-center py-4">
                           <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
-                          <p className="text-emerald-600 font-medium">Topic complete!</p>
+                          <p className="text-emerald-600 font-medium">Category complete!</p>
                         </div>
                       )}
                     </>
@@ -578,22 +578,22 @@ export default function Admin() {
           ) : gameTopics.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground mb-4">Add your first topic to get started</p>
+                <p className="text-muted-foreground mb-4">Add your first category to get started</p>
                 <Button onClick={() => setShowNewTopicForm(true)} data-testid="button-add-first-topic">
-                  <Plus className="w-4 h-4 mr-2" /> Add Topic
+                  <Plus className="w-4 h-4 mr-2" /> Add Category
                 </Button>
               </CardContent>
             </Card>
           ) : null}
         </div>
 
-        {/* Delete Topic Confirmation */}
+        {/* Delete Category Confirmation */}
         <AlertDialog open={deleteTopicConfirmId !== null} onOpenChange={(open) => !open && setDeleteTopicConfirmId(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Remove this topic?</AlertDialogTitle>
+              <AlertDialogTitle>Remove this category?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will remove the topic from this game. The questions will still exist.
+                This will remove the category from this grid. The questions will still exist.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -723,10 +723,22 @@ export default function Admin() {
                     const summary = boardSummaries.find(s => s.id === game.id);
                     const categoryCount = summary?.categoryCount || 0;
                     const questionCount = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
+                    const isPlayable = questionCount >= 1;
                     return (
-                      <p className="text-sm text-muted-foreground">
-                        {categoryCount} {categoryCount === 1 ? 'category' : 'categories'} · {questionCount} {questionCount === 1 ? 'question' : 'questions'}
-                      </p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm text-muted-foreground">
+                          {categoryCount} {categoryCount === 1 ? 'category' : 'categories'} · {questionCount} {questionCount === 1 ? 'question' : 'questions'}
+                        </p>
+                        {isPlayable ? (
+                          <Badge variant="default" className="text-xs shrink-0">
+                            <Play className="w-3 h-3 mr-1" /> Ready
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs shrink-0">
+                            Incomplete
+                          </Badge>
+                        )}
+                      </div>
                     );
                   })()}
                 </CardContent>
@@ -742,7 +754,7 @@ export default function Admin() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this grid?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will delete the grid. Topics and questions will still exist.
+              This will delete the grid. Categories and questions will still exist.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
