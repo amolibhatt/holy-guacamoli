@@ -46,14 +46,20 @@ export default function Admin() {
   const [newGameName, setNewGameName] = useState("");
   const [showNewGameForm, setShowNewGameForm] = useState(false);
   const [newTopicName, setNewTopicName] = useState("");
+  const [newTopicDescription, setNewTopicDescription] = useState("");
   const [showNewTopicForm, setShowNewTopicForm] = useState(false);
+  
+  const [editingTopicId, setEditingTopicId] = useState<number | null>(null);
+  const [editTopicDescription, setEditTopicDescription] = useState("");
   
   const [editingQuestionId, setEditingQuestionId] = useState<number | null>(null);
   const [editQuestion, setEditQuestion] = useState("");
   const [editAnswer, setEditAnswer] = useState("");
+  const [editImageUrl, setEditImageUrl] = useState("");
   
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
+  const [newImageUrl, setNewImageUrl] = useState("");
   
   const [deleteGameConfirmId, setDeleteGameConfirmId] = useState<number | null>(null);
   const [deleteTopicConfirmId, setDeleteTopicConfirmId] = useState<number | null>(null);
@@ -134,11 +140,11 @@ export default function Admin() {
   });
   
   const createTopicMutation = useMutation({
-    mutationFn: async (data: { name: string; gameId: number }) => {
+    mutationFn: async (data: { name: string; description: string; gameId: number }) => {
       // First create the category with all required fields
       const catResponse = await apiRequest('POST', '/api/categories', { 
         name: data.name, 
-        description: '', 
+        description: data.description, 
         imageUrl: '' 
       });
       const category = await catResponse.json();
@@ -150,12 +156,28 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedGameId, 'categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/categories/with-counts'] });
       setNewTopicName("");
+      setNewTopicDescription("");
       setShowNewTopicForm(false);
       setSelectedTopicId(category.id);
       toast({ title: "Topic added!" });
     },
     onError: (error: Error) => {
       toast({ title: "Couldn't add topic", description: error.message, variant: "destructive" });
+    },
+  });
+  
+  const updateTopicMutation = useMutation({
+    mutationFn: async ({ id, description }: { id: number; description: string }) => {
+      return apiRequest('PUT', `/api/categories/${id}`, { description });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedGameId, 'categories'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/categories/with-counts'] });
+      setEditingTopicId(null);
+      toast({ title: "Topic updated" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Couldn't update", description: error.message, variant: "destructive" });
     },
   });
   
@@ -173,8 +195,8 @@ export default function Admin() {
   });
   
   const createQuestionMutation = useMutation({
-    mutationFn: async (data: { categoryId: number; question: string; correctAnswer: string; points: number }) => {
-      return apiRequest('POST', '/api/questions', { ...data, options: [] });
+    mutationFn: async (data: { categoryId: number; question: string; correctAnswer: string; points: number; imageUrl?: string }) => {
+      return apiRequest('POST', '/api/questions', { ...data, options: [], imageUrl: data.imageUrl || null });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories', selectedTopicId, 'questions'] });
@@ -182,6 +204,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['/api/categories/with-counts'] });
       setNewQuestion("");
       setNewAnswer("");
+      setNewImageUrl("");
       toast({ title: "Question added!" });
     },
     onError: (error: Error) => {
@@ -190,14 +213,15 @@ export default function Admin() {
   });
   
   const updateQuestionMutation = useMutation({
-    mutationFn: async ({ id, question, correctAnswer }: { id: number; question: string; correctAnswer: string }) => {
-      return apiRequest('PUT', `/api/questions/${id}`, { question, correctAnswer, options: [] });
+    mutationFn: async ({ id, question, correctAnswer, imageUrl }: { id: number; question: string; correctAnswer: string; imageUrl?: string }) => {
+      return apiRequest('PUT', `/api/questions/${id}`, { question, correctAnswer, options: [], imageUrl: imageUrl || null });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories', selectedTopicId, 'questions'] });
       setEditingQuestionId(null);
       setEditQuestion("");
       setEditAnswer("");
+      setEditImageUrl("");
       toast({ title: "Question updated" });
     },
     onError: (error: Error) => {
@@ -305,32 +329,36 @@ export default function Admin() {
                 })}
                 {gameTopics.length < 5 && (
                   showNewTopicForm ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        placeholder="Topic name"
-                        value={newTopicName}
-                        onChange={(e) => setNewTopicName(e.target.value)}
-                        className="w-40 h-9"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && newTopicName.trim() && selectedGameId) {
-                            createTopicMutation.mutate({ name: newTopicName.trim(), gameId: selectedGameId });
-                          }
-                          if (e.key === 'Escape') setShowNewTopicForm(false);
-                        }}
-                        data-testid="input-topic-name"
-                      />
-                      <Button 
-                        size="sm"
-                        onClick={() => createTopicMutation.mutate({ name: newTopicName.trim(), gameId: selectedGameId })}
-                        disabled={!newTopicName.trim() || createTopicMutation.isPending}
-                      >
-                        {createTopicMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setShowNewTopicForm(false)}>
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    <Card className="p-3 w-full max-w-md">
+                      <div className="space-y-2">
+                        <Input
+                          placeholder="Topic name (e.g., Movies)"
+                          value={newTopicName}
+                          onChange={(e) => setNewTopicName(e.target.value)}
+                          autoFocus
+                          data-testid="input-topic-name"
+                        />
+                        <Input
+                          placeholder="Rule for players (e.g., Name the movie from the quote)"
+                          value={newTopicDescription}
+                          onChange={(e) => setNewTopicDescription(e.target.value)}
+                          data-testid="input-topic-description"
+                        />
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm"
+                            onClick={() => createTopicMutation.mutate({ name: newTopicName.trim(), description: newTopicDescription.trim(), gameId: selectedGameId! })}
+                            disabled={!newTopicName.trim() || createTopicMutation.isPending}
+                          >
+                            {createTopicMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                            Add Topic
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => { setShowNewTopicForm(false); setNewTopicName(""); setNewTopicDescription(""); }}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
                   ) : (
                     <Button variant="ghost" size="sm" onClick={() => setShowNewTopicForm(true)} data-testid="button-add-topic">
                       <Plus className="w-4 h-4 mr-1" /> Add Topic
@@ -345,19 +373,56 @@ export default function Admin() {
           {selectedTopicId ? (
             <Card>
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-semibold">{selectedTopicCategory?.name || "Questions"}</h2>
+                <div className="flex items-start justify-between mb-4 gap-4">
+                  <div className="flex-1">
+                    <h2 className="font-semibold">{selectedTopicCategory?.name || "Questions"}</h2>
+                    {editingTopicId === selectedTopicId ? (
+                      <div className="flex items-center gap-2 mt-2">
+                        <Input
+                          value={editTopicDescription}
+                          onChange={(e) => setEditTopicDescription(e.target.value)}
+                          placeholder="Rule for players..."
+                          className="flex-1"
+                          autoFocus
+                        />
+                        <Button 
+                          size="sm"
+                          onClick={() => updateTopicMutation.mutate({ id: selectedTopicId, description: editTopicDescription })}
+                          disabled={updateTopicMutation.isPending}
+                        >
+                          {updateTopicMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingTopicId(null)}>Cancel</Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 mt-1">
+                        {selectedTopicCategory?.description ? (
+                          <p className="text-sm text-muted-foreground">{selectedTopicCategory.description}</p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">No rule set</p>
+                        )}
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-6 px-2"
+                          onClick={() => { setEditingTopicId(selectedTopicId); setEditTopicDescription(selectedTopicCategory?.description || ""); }}
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                   <Button 
                     size="sm" 
                     variant="ghost" 
-                    className="text-muted-foreground hover:text-destructive"
+                    className="text-muted-foreground hover:text-destructive shrink-0"
                     onClick={() => {
                       const topicToDelete = gameTopics.find(t => t.categoryId === selectedTopicId);
                       if (topicToDelete) setDeleteTopicConfirmId(topicToDelete.id);
                     }}
                     data-testid="button-delete-topic"
                   >
-                    <Trash2 className="w-4 h-4 mr-1" /> Remove Topic
+                    <Trash2 className="w-4 h-4 mr-1" /> Remove
                   </Button>
                 </div>
                 
@@ -388,15 +453,20 @@ export default function Admin() {
                                     onChange={(e) => setEditAnswer(e.target.value)}
                                     placeholder="Answer"
                                   />
+                                  <Input
+                                    value={editImageUrl}
+                                    onChange={(e) => setEditImageUrl(e.target.value)}
+                                    placeholder="Image URL (optional)"
+                                  />
                                   <div className="flex gap-2">
                                     <Button 
                                       size="sm"
-                                      onClick={() => updateQuestionMutation.mutate({ id: question.id, question: editQuestion.trim(), correctAnswer: editAnswer.trim() })}
+                                      onClick={() => updateQuestionMutation.mutate({ id: question.id, question: editQuestion.trim(), correctAnswer: editAnswer.trim(), imageUrl: editImageUrl.trim() })}
                                       disabled={!editQuestion.trim() || !editAnswer.trim() || updateQuestionMutation.isPending}
                                     >
                                       {updateQuestionMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
                                     </Button>
-                                    <Button size="sm" variant="ghost" onClick={() => { setEditingQuestionId(null); setEditQuestion(""); setEditAnswer(""); }}>
+                                    <Button size="sm" variant="ghost" onClick={() => { setEditingQuestionId(null); setEditQuestion(""); setEditAnswer(""); setEditImageUrl(""); }}>
                                       Cancel
                                     </Button>
                                   </div>
@@ -406,13 +476,16 @@ export default function Admin() {
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm">{question.question}</p>
                                     <p className="text-xs text-primary mt-1">{question.correctAnswer}</p>
+                                    {question.imageUrl && (
+                                      <img src={question.imageUrl} alt="" className="mt-2 max-h-20 rounded border" />
+                                    )}
                                   </div>
                                   <div className="flex gap-1 shrink-0">
                                     <Button 
                                       size="icon" 
                                       variant="ghost"
                                       className="h-8 w-8"
-                                      onClick={() => { setEditingQuestionId(question.id); setEditQuestion(question.question); setEditAnswer(question.correctAnswer); }}
+                                      onClick={() => { setEditingQuestionId(question.id); setEditQuestion(question.question); setEditAnswer(question.correctAnswer); setEditImageUrl(question.imageUrl || ""); }}
                                       data-testid={`button-edit-question-${question.id}`}
                                     >
                                       <Pencil className="w-3 h-3" />
@@ -451,16 +524,12 @@ export default function Admin() {
                                   value={newAnswer}
                                   onChange={(e) => setNewAnswer(e.target.value)}
                                   data-testid="input-answer"
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && newQuestion.trim() && newAnswer.trim()) {
-                                      createQuestionMutation.mutate({
-                                        categoryId: selectedTopicId,
-                                        question: newQuestion.trim(),
-                                        correctAnswer: newAnswer.trim(),
-                                        points,
-                                      });
-                                    }
-                                  }}
+                                />
+                                <Input
+                                  placeholder="Image URL (optional)"
+                                  value={newImageUrl}
+                                  onChange={(e) => setNewImageUrl(e.target.value)}
+                                  data-testid="input-image-url"
                                 />
                                 <Button
                                   size="sm"
@@ -471,6 +540,7 @@ export default function Admin() {
                                         question: newQuestion.trim(),
                                         correctAnswer: newAnswer.trim(),
                                         points,
+                                        imageUrl: newImageUrl.trim() || undefined,
                                       });
                                     }
                                   }}
