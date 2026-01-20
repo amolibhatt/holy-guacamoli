@@ -843,6 +843,38 @@ export async function registerRoutes(
     }
   });
 
+  // Get all playable boards for Buzzkill game selection (authenticated)
+  app.get("/api/buzzkill/boards", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const allBoards = await storage.getBoards(userId, role);
+      
+      const summaries = await storage.getBoardSummaries(userId, role);
+      const boardsWithStatus = allBoards.map(board => {
+        const summary = summaries.find(s => s.id === board.id);
+        const categoryCount = summary?.categoryCount || 0;
+        const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
+        const maxQuestions = categoryCount * 5;
+        const isComplete = categoryCount >= 5 && totalQuestions >= maxQuestions && maxQuestions > 0;
+        const isPlayable = categoryCount >= 1 && totalQuestions >= 1;
+        
+        return {
+          ...board,
+          categoryCount,
+          totalQuestions,
+          isComplete,
+          isPlayable,
+        };
+      });
+      
+      res.json(boardsWithStatus);
+    } catch (error) {
+      console.error("Error fetching buzzkill boards:", error);
+      res.status(500).json({ message: "Failed to fetch boards" });
+    }
+  });
+
   // Get custom boards for Buzzkill game selection (authenticated - returns only user's non-global boards)
   app.get("/api/buzzkill/custom-boards", isAuthenticated, async (req, res) => {
     try {
