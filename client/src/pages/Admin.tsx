@@ -292,7 +292,7 @@ export default function Admin() {
               </div>
             </div>
             <Link href={`/board/${selectedGameId}`}>
-              <Button data-testid="button-play-game">
+              <Button data-testid="button-play-game" disabled={totalQuestions < 1}>
                 <Play className="w-4 h-4 mr-2" /> Play
               </Button>
             </Link>
