@@ -131,12 +131,12 @@ export default function SuperAdmin() {
     },
     onSuccess: (wasAdded) => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
-      toast({ title: wasAdded ? "Promoted to Starter Pack" : "Removed from Starter Packs" });
+      toast({ title: wasAdded ? "Promoted to Global Grid" : "Removed from Global Grids" });
       setShowAllPromotableBoards(false);
       setDemotePackId(null);
     },
     onError: () => {
-      toast({ title: "Couldn't update board", description: "Please try again.", variant: "destructive" });
+      toast({ title: "Couldn't update grid", description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -162,11 +162,11 @@ export default function SuperAdmin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
-      toast({ title: "Board deleted successfully" });
+      toast({ title: "Grid deleted successfully" });
       setDeleteBoardId(null);
     },
     onError: () => {
-      toast({ title: "Couldn't delete board", description: "Please try again.", variant: "destructive" });
+      toast({ title: "Couldn't delete grid", description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -264,7 +264,7 @@ export default function SuperAdmin() {
                   isLoading={isLoadingStats}
                 />
                 <StatCard
-                  title="Total Boards"
+                  title="Total Grids"
                   value={stats?.totalBoards ?? 0}
                   icon={Grid3X3}
                   color="from-green-500 to-emerald-500"
@@ -389,7 +389,7 @@ export default function SuperAdmin() {
                               <div className="flex items-center gap-4">
                                 {gameType.slug === 'buzzkill' && (
                                   <div className="text-right text-sm">
-                                    <div className="font-medium">{completePacks.length}/{starterPacks.length} Starter Packs Live</div>
+                                    <div className="font-medium">{completePacks.length}/{starterPacks.length} Global Grids Live</div>
                                     <div className="text-muted-foreground">{starterPacks.reduce((acc: number, b: any) => acc + b.questionCount, 0)} total questions</div>
                                   </div>
                                 )}
@@ -447,17 +447,17 @@ export default function SuperAdmin() {
                                   <div className="flex items-center justify-between mb-4">
                                     <h4 className="font-semibold text-foreground flex items-center gap-2">
                                       <Globe className="w-4 h-4 text-primary" />
-                                      Starter Packs
+                                      Global Grids
                                     </h4>
                                     <div className="flex items-center gap-2">
-                                      <Badge variant="secondary">{starterPacks.length} packs</Badge>
+                                      <Badge variant="secondary">{starterPacks.length} grids</Badge>
                                       <Badge className="bg-green-500/20 text-green-600">{completePacks.length} live</Badge>
                                     </div>
                                   </div>
                                   
                                   <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                                     <p className="text-sm text-muted-foreground">
-                                      Each Starter Pack needs 5 categories with 5 questions each (25 total) to be "Live".
+                                      Each Global Grid needs 5 categories with 5 questions each (25 total) to be "Live".
                                     </p>
                                     <div className="flex gap-2">
                                       <Link href="/admin">
@@ -495,7 +495,7 @@ export default function SuperAdmin() {
                                   
                                   {starterPacks.length === 0 ? (
                                     <div className="text-center py-6 text-muted-foreground bg-muted/30 rounded-lg">
-                                      No Starter Packs yet. Use the Admin panel to create boards, then promote them here.
+                                      No Global Grids yet. Use the Admin panel to create grids, then promote them here.
                                     </div>
                                   ) : (
                                     <div className="space-y-3">
@@ -645,9 +645,9 @@ export default function SuperAdmin() {
                                     <div className="mt-6 pt-4 border-t border-border">
                                       <h5 className="font-medium text-sm text-foreground mb-2 flex items-center gap-2">
                                         <Lock className="w-4 h-4" />
-                                        Promote to Starter Pack
+                                        Promote to Global Grid
                                       </h5>
-                                      <p className="text-xs text-muted-foreground mb-3">Select a private board to make it available to all users.</p>
+                                      <p className="text-xs text-muted-foreground mb-3">Select a private grid to make it available to all users.</p>
                                       <div className="flex flex-wrap gap-2">
                                         {allBoards.filter((b: any) => !b.isGlobal).slice(0, 5).map((board: any) => (
                                           <Button
@@ -759,7 +759,7 @@ export default function SuperAdmin() {
                           </div>
                           <div className="flex items-center gap-4">
                             <div className="text-right text-sm">
-                              <div className="text-foreground">{u.boardCount} boards</div>
+                              <div className="text-foreground">{u.boardCount} grids</div>
                               <div className="text-muted-foreground">{u.questionCount} questions</div>
                             </div>
                             {u.role !== 'super_admin' && (
@@ -798,7 +798,7 @@ export default function SuperAdmin() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete User</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the user and all their boards, categories, and questions. This action cannot be undone.
+              This will permanently delete the user and all their grids, categories, and questions. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -822,9 +822,9 @@ export default function SuperAdmin() {
       <AlertDialog open={!!deleteBoardId} onOpenChange={(open) => !deleteBoardMutation.isPending && !open && setDeleteBoardId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Board</AlertDialogTitle>
+            <AlertDialogTitle>Delete Grid</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the board and all its categories and questions. This action cannot be undone.
+              This will permanently delete the grid and all its categories and questions. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -848,9 +848,9 @@ export default function SuperAdmin() {
       <AlertDialog open={!!demotePackId} onOpenChange={(open) => !toggleGlobalBoardMutation.isPending && !open && setDemotePackId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Starter Pack</AlertDialogTitle>
+            <AlertDialogTitle>Remove Global Grid</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove this board from Starter Packs. Users will no longer be able to access it in Shuffle Play. You can promote it again later.
+              This will remove this grid from Global Grids. You can promote it again later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -873,7 +873,7 @@ export default function SuperAdmin() {
       <Dialog open={showAllPromotableBoards} onOpenChange={(open) => !toggleGlobalBoardMutation.isPending && setShowAllPromotableBoards(open)}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Promote to Starter Pack</DialogTitle>
+            <DialogTitle>Promote to Global Grid</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 mt-4">
             {allBoards.filter((b: any) => !b.isGlobal).map((board: any) => (
@@ -901,7 +901,7 @@ export default function SuperAdmin() {
               </div>
             ))}
             {allBoards.filter((b: any) => !b.isGlobal).length === 0 && (
-              <p className="text-center text-muted-foreground py-4">No boards available to promote</p>
+              <p className="text-center text-muted-foreground py-4">No grids available to promote</p>
             )}
           </div>
         </DialogContent>
