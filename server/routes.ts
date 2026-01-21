@@ -365,16 +365,20 @@ export async function registerRoutes(
     }
   });
 
-  // Global categories (templates) - protected
+  // Categories owned by user (via their boards) - protected
   app.get(api.categories.list.path, isAuthenticated, async (req, res) => {
-    const categories = await storage.getCategories();
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const categories = await storage.getCategoriesForUser(userId, role);
     res.json(categories);
   });
 
   // Categories with question counts - for admin panel progress display
   app.get("/api/categories/with-counts", isAuthenticated, async (req, res) => {
     try {
-      const categories = await storage.getCategories();
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const categories = await storage.getCategoriesForUser(userId, role);
       const result = await Promise.all(
         categories.map(async (cat) => {
           const questions = await storage.getQuestionsByCategory(cat.id);
@@ -389,15 +393,32 @@ export async function registerRoutes(
   });
 
   app.get(api.categories.get.path, isAuthenticated, async (req, res) => {
-    const category = await storage.getCategory(Number(req.params.id));
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const categoryId = Number(req.params.id);
+    
+    // Verify ownership
+    const hasAccess = await verifyCategoryOwnership(categoryId, userId, role);
+    if (!hasAccess) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+    
+    const category = await storage.getCategory(categoryId);
     if (!category) {
       return res.status(404).json({ message: 'Category not found' });
     }
     res.json(category);
   });
 
+  // Standalone category creation - restricted to super_admin only (regular users use create-and-link)
   app.post(api.categories.create.path, isAuthenticated, async (req, res) => {
     try {
+      const role = req.session.userRole;
+      // Only super_admin can create standalone (orphan) categories
+      if (role !== 'super_admin') {
+        return res.status(403).json({ message: "Use the board's create-and-link endpoint to create categories" });
+      }
+      
       const data = api.categories.create.input.parse(req.body);
       const category = await storage.createCategory(data);
       res.status(201).json(category);
@@ -507,9 +528,18 @@ export async function registerRoutes(
     return verifyCategoryOwnership(question.categoryId, userId, role);
   }
 
-  // Questions (by category) - protected
+  // Questions (by category) - protected with ownership check
   app.get("/api/categories/:categoryId/questions", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
     const categoryId = Number(req.params.categoryId);
+    
+    // Verify ownership
+    const hasAccess = await verifyCategoryOwnership(categoryId, userId, role);
+    if (!hasAccess) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    
     const category = await verifyCategoryExists(categoryId);
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
@@ -762,8 +792,13 @@ export async function registerRoutes(
   // === SMART CATEGORY MANAGEMENT (Buzzkill) ===
   
   // Get all categories grouped by source group
+  // Get all categories grouped by source - super admin only
   app.get("/api/buzzkill/category-groups", isAuthenticated, async (req, res) => {
     try {
+      const role = req.session.userRole;
+      if (role !== 'super_admin') {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
       const grouped = await storage.getCategoriesBySourceGroup();
       const result: Record<string, any[]> = {};
       grouped.forEach((cats, group) => {

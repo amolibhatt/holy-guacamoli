@@ -11,6 +11,7 @@ export interface IStorage {
   deleteBoard(id: number, userId: string, role?: string): Promise<boolean>;
   
   getCategories(): Promise<Category[]>;
+  getCategoriesForUser(userId: string, role?: string): Promise<Category[]>;
   getCategory(id: number): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
   updateCategory(id: number, data: Partial<InsertCategory>): Promise<Category | undefined>;
@@ -221,6 +222,33 @@ export class DatabaseStorage implements IStorage {
 
   async getCategories(): Promise<Category[]> {
     return await db.select().from(categories);
+  }
+
+  // Get categories that belong to boards owned by the user (or all for super_admin)
+  async getCategoriesForUser(userId: string, role?: string): Promise<Category[]> {
+    if (role === 'super_admin') {
+      return await db.select().from(categories);
+    }
+    
+    // Get all boards owned by the user
+    const userBoards = await db.select({ id: boards.id }).from(boards).where(eq(boards.userId, userId));
+    if (userBoards.length === 0) {
+      return [];
+    }
+    
+    // Get all category IDs linked to user's boards
+    const boardIds = userBoards.map(b => b.id);
+    const linkedCategories = await db
+      .select({ categoryId: boardCategories.categoryId })
+      .from(boardCategories)
+      .where(inArray(boardCategories.boardId, boardIds));
+    
+    if (linkedCategories.length === 0) {
+      return [];
+    }
+    
+    const categoryIds = linkedCategories.map(lc => lc.categoryId);
+    return await db.select().from(categories).where(inArray(categories.id, categoryIds));
   }
 
   async getCategory(id: number): Promise<Category | undefined> {
