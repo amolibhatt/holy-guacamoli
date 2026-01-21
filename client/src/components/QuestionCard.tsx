@@ -317,8 +317,8 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
               setShowAnswer(!showAnswer);
             }}
             className={showAnswer 
-              ? "bg-white text-gray-900 hover:bg-gray-100 border-2 border-gray-300 font-bold shadow-md" 
-              : "bg-primary text-primary-foreground font-bold shadow-lg hover:bg-primary/90 border-2 border-primary"
+              ? "bg-amber-500 text-white hover:bg-amber-600 border-2 border-amber-400 font-bold shadow-md" 
+              : "bg-emerald-500 text-white hover:bg-emerald-600 border-2 border-emerald-400 font-bold shadow-lg"
             }
             data-testid="button-toggle-answer"
           >
