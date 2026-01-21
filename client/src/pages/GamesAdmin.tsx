@@ -22,6 +22,7 @@ const MODE_LABELS: Record<GameMode, string> = {
   heads_up: "Heads Up",
   board: "Buzzkill",
   sequence: "Sequence Squeeze",
+  double_dip: "Double Dip",
 };
 
 const MODE_ICONS: Record<GameMode, typeof Grid3X3> = {
@@ -29,6 +30,7 @@ const MODE_ICONS: Record<GameMode, typeof Grid3X3> = {
   heads_up: Smartphone,
   board: Grid3X3,
   sequence: ListOrdered,
+  double_dip: Grid3X3,
 };
 
 export default function GamesAdmin() {
