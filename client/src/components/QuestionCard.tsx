@@ -285,7 +285,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
             className="border-background/40 text-background bg-background/20 hover:bg-background/30 dark:border-white/40 dark:text-white dark:bg-transparent dark:hover:bg-white/20"
           >
             <Timer className="w-4 h-4 mr-2" />
-            7s
+            10s
           </Button>
           {timer !== null && (
             <motion.div 
