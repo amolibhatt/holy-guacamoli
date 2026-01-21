@@ -109,7 +109,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
         setShowAnswer(!showAnswer);
       }
       if (e.key === 't' || e.key === 'T') {
-        if (!isTimerRunning) startTimer(30);
+        if (!isTimerRunning) startTimer(10);
         else stopTimer();
       }
     };
@@ -121,13 +121,27 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
     let interval: NodeJS.Timeout;
     if (isTimerRunning && timer !== null && timer > 0) {
       interval = setInterval(() => {
-        setTimer(t => (t !== null && t > 0) ? t - 1 : 0);
+        setTimer(t => {
+          if (t !== null && t > 0) {
+            const newValue = t - 1;
+            if (newValue <= 3 && newValue > 0) {
+              soundManager.play('tick', 0.6);
+            }
+            if (newValue === 0) {
+              soundManager.play('wrong', 0.7);
+              setIsTimerRunning(false);
+            }
+            return newValue;
+          }
+          return 0;
+        });
       }, 1000);
     }
     return () => clearInterval(interval);
   }, [isTimerRunning, timer]);
 
   const startTimer = (seconds: number) => {
+    soundManager.play('click', 0.5);
     setTimer(seconds);
     setIsTimerRunning(true);
   };
@@ -266,7 +280,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
         <div className="flex items-center gap-3 relative z-10">
           <Button
             variant="outline"
-            onClick={() => startTimer(7)}
+            onClick={() => startTimer(10)}
             disabled={isTimerRunning}
             className="border-background/40 text-background bg-background/20 hover:bg-background/30 dark:border-white/40 dark:text-white dark:bg-transparent dark:hover:bg-white/20"
           >
