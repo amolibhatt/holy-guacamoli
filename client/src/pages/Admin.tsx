@@ -50,6 +50,7 @@ export default function Admin() {
   const [showNewTopicForm, setShowNewTopicForm] = useState(false);
   
   const [editingTopicId, setEditingTopicId] = useState<number | null>(null);
+  const [editTopicName, setEditTopicName] = useState("");
   const [editTopicDescription, setEditTopicDescription] = useState("");
   
   const [editingQuestionId, setEditingQuestionId] = useState<number | null>(null);
@@ -191,8 +192,8 @@ export default function Admin() {
   });
   
   const updateTopicMutation = useMutation({
-    mutationFn: async ({ id, description }: { id: number; description: string }) => {
-      return apiRequest('PUT', `/api/categories/${id}`, { description });
+    mutationFn: async ({ id, name, description }: { id: number; name?: string; description?: string }) => {
+      return apiRequest('PUT', `/api/categories/${id}`, { name, description });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedGameId, 'categories'] });
@@ -399,41 +400,55 @@ export default function Admin() {
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4 gap-4">
                   <div className="flex-1">
-                    <h2 className="font-semibold">{selectedTopicCategory?.name || "Questions"}</h2>
                     {editingTopicId === selectedTopicId ? (
-                      <div className="flex items-center gap-2 mt-2">
+                      <div className="space-y-2">
+                        <Input
+                          value={editTopicName}
+                          onChange={(e) => setEditTopicName(e.target.value)}
+                          placeholder="Category name"
+                          className="font-semibold"
+                          autoFocus
+                          data-testid="input-edit-topic-name"
+                        />
                         <Input
                           value={editTopicDescription}
                           onChange={(e) => setEditTopicDescription(e.target.value)}
-                          placeholder="Rule for players..."
-                          className="flex-1"
-                          autoFocus
+                          placeholder="Rule for players (optional)"
+                          data-testid="input-edit-topic-description"
                         />
-                        <Button 
-                          size="sm"
-                          onClick={() => updateTopicMutation.mutate({ id: selectedTopicId, description: editTopicDescription })}
-                          disabled={updateTopicMutation.isPending}
-                        >
-                          {updateTopicMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setEditingTopicId(null)}>Cancel</Button>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            size="sm"
+                            onClick={() => updateTopicMutation.mutate({ id: selectedTopicId, name: editTopicName.trim(), description: editTopicDescription })}
+                            disabled={!editTopicName.trim() || updateTopicMutation.isPending}
+                          >
+                            {updateTopicMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => setEditingTopicId(null)}>Cancel</Button>
+                        </div>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 mt-1">
-                        {selectedTopicCategory?.description ? (
-                          <p className="text-sm text-muted-foreground">{selectedTopicCategory.description}</p>
-                        ) : (
-                          <p className="text-sm text-muted-foreground italic">No rule set</p>
+                      <>
+                        <div className="flex items-center gap-2">
+                          <h2 className="font-semibold">{selectedTopicCategory?.name || "Questions"}</h2>
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="h-6 w-6"
+                            onClick={() => { 
+                              setEditingTopicId(selectedTopicId); 
+                              setEditTopicName(selectedTopicCategory?.name || ""); 
+                              setEditTopicDescription(selectedTopicCategory?.description || ""); 
+                            }}
+                            data-testid="button-edit-topic"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                        </div>
+                        {selectedTopicCategory?.description && (
+                          <p className="text-sm text-muted-foreground mt-1">{selectedTopicCategory.description}</p>
                         )}
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-6 px-2"
-                          onClick={() => { setEditingTopicId(selectedTopicId); setEditTopicDescription(selectedTopicCategory?.description || ""); }}
-                        >
-                          <Pencil className="w-3 h-3" />
-                        </Button>
-                      </div>
+                      </>
                     )}
                   </div>
                   <Button 
