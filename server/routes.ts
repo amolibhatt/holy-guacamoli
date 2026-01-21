@@ -749,6 +749,12 @@ export async function registerRoutes(
         return res.status(404).json({ message: 'Question not found' });
       }
       
+      // Verify ownership - only allow hosts to verify answers for their own questions
+      const hasAccess = await verifyCategoryOwnership(question.categoryId, userId, role);
+      if (!hasAccess) {
+        return res.status(404).json({ message: 'Question not found' });
+      }
+      
       const category = await verifyCategoryExists(question.categoryId);
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
@@ -836,20 +842,35 @@ export async function registerRoutes(
     }
   });
 
-  // Get active categories for tenant view (only active categories visible)
+  // Get active categories for gameplay - only show global boards or boards owned by user
   app.get("/api/buzzkill/active-categories", isAuthenticated, async (req, res) => {
     try {
-      const categories = await getActiveCategoriesForTenant();
-      res.json({ categories });
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const allCategories = await getActiveCategoriesForTenant();
+      
+      // Filter to only show categories from:
+      // 1. Global boards (isGlobal = true)
+      // 2. Boards owned by this user
+      // 3. All boards if super_admin
+      const filteredCategories = role === 'super_admin' 
+        ? allCategories
+        : allCategories.filter(cat => cat.board.isGlobal || cat.board.userId === userId);
+      
+      res.json({ categories: filteredCategories });
     } catch (err) {
       console.error("Error getting active categories:", err);
       res.status(500).json({ message: "Failed to get active categories" });
     }
   });
 
-  // Get content stats for admin dashboard
+  // Get content stats for admin dashboard - super admin only (shows global stats)
   app.get("/api/buzzkill/content-stats", isAuthenticated, async (req, res) => {
     try {
+      const role = req.session.userRole;
+      if (role !== 'super_admin') {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
       const stats = await getContentStats();
       res.json(stats);
     } catch (err) {
@@ -858,10 +879,22 @@ export async function registerRoutes(
     }
   });
 
-  // Get played category status for a session
+  // Get played category status for a session - verify session ownership
   app.get("/api/buzzkill/session/:sessionId/played", isAuthenticated, async (req, res) => {
     try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
       const sessionId = Number(req.params.sessionId);
+      
+      // Verify session ownership
+      const session = await storage.getSession(sessionId);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      if (session.hostId !== userId && role !== 'super_admin') {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
       const status = await getPlayedCategoryStatus(sessionId);
       res.json(status);
     } catch (err) {
@@ -870,10 +903,22 @@ export async function registerRoutes(
     }
   });
 
-  // Reset played categories for a session
+  // Reset played categories for a session - verify session ownership
   app.post("/api/buzzkill/session/:sessionId/reset-played", isAuthenticated, async (req, res) => {
     try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
       const sessionId = Number(req.params.sessionId);
+      
+      // Verify session ownership
+      const session = await storage.getSession(sessionId);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      if (session.hostId !== userId && role !== 'super_admin') {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
       await storage.resetSessionPlayedCategories(sessionId);
       res.json({ success: true, message: "Played categories reset" });
     } catch (err) {
@@ -883,8 +928,13 @@ export async function registerRoutes(
   });
 
   // Get themed categories by group (public for gameplay)
+  // Get themed categories - super admin only (exposes all categories by source group)
   app.get("/api/buzzkill/themed/:group", isAuthenticated, async (req, res) => {
     try {
+      const role = req.session.userRole;
+      if (role !== 'super_admin') {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
       const group = req.params.group.toUpperCase() as typeof SOURCE_GROUPS[number];
       if (!SOURCE_GROUPS.includes(group)) {
         return res.status(400).json({ message: "Invalid group. Must be A, B, C, D, or E" });
