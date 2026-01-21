@@ -233,10 +233,14 @@ export default function SuperAdmin() {
 
       <main className="p-6 max-w-7xl mx-auto">
         <Tabs defaultValue="analytics" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-lg">
+          <TabsList className="grid w-full grid-cols-4 max-w-xl">
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger value="grids" className="gap-2">
+              <Grid3X3 className="w-4 h-4" />
+              <span className="hidden sm:inline">All Grids</span>
             </TabsTrigger>
             <TabsTrigger value="games" className="gap-2">
               <Gamepad2 className="w-4 h-4" />
@@ -299,6 +303,77 @@ export default function SuperAdmin() {
                   isLoading={isLoadingStats}
                 />
               </div>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="grids" className="space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-foreground">All Grids</h2>
+                <Badge variant="secondary">{allBoards.length} grids</Badge>
+              </div>
+
+              {isLoadingBoards ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-20 w-full" />
+                  ))}
+                </div>
+              ) : allBoards.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    No grids found. Users can create grids from the Admin panel.
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {allBoards.map((board: any) => {
+                    const isComplete = board.categoryCount >= 5 && board.questionCount >= 25;
+                    return (
+                      <Card key={board.id} className="hover-elevate">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium truncate">{board.name}</span>
+                                {isComplete ? (
+                                  <Badge className="bg-green-500/20 text-green-600 text-xs">Complete</Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-amber-600 text-xs">
+                                    {board.categoryCount}/5 categories, {board.questionCount}/25 questions
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                Owner: {board.ownerEmail || 'Unknown'}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Link href={`/admin?game=${board.id}`}>
+                                <Button variant="outline" size="sm">
+                                  <Pencil className="w-3 h-3 mr-1" />
+                                  Edit
+                                </Button>
+                              </Link>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDeleteBoardId(board.id)}
+                                data-testid={`button-delete-grid-${board.id}`}
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
             </motion.div>
           </TabsContent>
 
