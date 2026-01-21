@@ -10,5 +10,15 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Check if we need SSL (production databases usually require it)
+const connectionString = process.env.DATABASE_URL;
+const needsSSL = connectionString.includes('render.com') || 
+                 connectionString.includes('neon.tech') || 
+                 connectionString.includes('supabase') ||
+                 process.env.NODE_ENV === 'production';
+
+export const pool = new Pool({ 
+  connectionString,
+  ssl: needsSSL ? { rejectUnauthorized: false } : false,
+});
 export const db = drizzle(pool, { schema });
