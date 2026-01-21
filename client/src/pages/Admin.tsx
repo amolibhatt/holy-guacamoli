@@ -64,6 +64,9 @@ export default function Admin() {
   const [deleteGameConfirmId, setDeleteGameConfirmId] = useState<number | null>(null);
   const [deleteTopicConfirmId, setDeleteTopicConfirmId] = useState<number | null>(null);
   
+  const [editingGameId, setEditingGameId] = useState<number | null>(null);
+  const [editGameName, setEditGameName] = useState("");
+  
   // Data fetching
   const { data: games = [], isLoading: loadingGames } = useQuery<Board[]>({
     queryKey: ['/api/boards'],
@@ -142,6 +145,21 @@ export default function Admin() {
     },
     onError: (error: Error) => {
       toast({ title: "Couldn't delete", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateGameMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: number; name: string }) => {
+      return apiRequest('PUT', `/api/boards/${id}`, { name });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boards/summary'] });
+      setEditingGameId(null);
+      toast({ title: "Grid renamed!" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Couldn't rename", description: error.message, variant: "destructive" });
     },
   });
   
@@ -705,19 +723,78 @@ export default function Admin() {
               >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Gamepad2 className="w-5 h-5 text-primary shrink-0" />
-                      <h3 className="font-semibold truncate">{game.name}</h3>
-                    </div>
-                    <Button 
-                      size="icon" 
-                      variant="ghost" 
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
-                      onClick={(e) => { e.stopPropagation(); setDeleteGameConfirmId(game.id); }}
-                      data-testid={`button-delete-game-${game.id}`}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
+                    {editingGameId === game.id ? (
+                      <div className="flex items-center gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
+                        <Input
+                          value={editGameName}
+                          onChange={(e) => setEditGameName(e.target.value)}
+                          className="h-8"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && editGameName.trim()) {
+                              updateGameMutation.mutate({ id: game.id, name: editGameName.trim() });
+                            } else if (e.key === 'Escape') {
+                              setEditingGameId(null);
+                            }
+                          }}
+                          data-testid={`input-edit-game-${game.id}`}
+                        />
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 shrink-0"
+                          onClick={() => {
+                            if (editGameName.trim()) {
+                              updateGameMutation.mutate({ id: game.id, name: editGameName.trim() });
+                            }
+                          }}
+                          disabled={!editGameName.trim() || updateGameMutation.isPending}
+                          data-testid={`button-save-game-${game.id}`}
+                        >
+                          <Check className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 shrink-0"
+                          onClick={() => setEditingGameId(null)}
+                          data-testid={`button-cancel-edit-game-${game.id}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Gamepad2 className="w-5 h-5 text-primary shrink-0" />
+                          <h3 className="font-semibold truncate">{game.name}</h3>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="h-7 w-7 text-muted-foreground"
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              setEditingGameId(game.id); 
+                              setEditGameName(game.name); 
+                            }}
+                            data-testid={`button-edit-game-${game.id}`}
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                            onClick={(e) => { e.stopPropagation(); setDeleteGameConfirmId(game.id); }}
+                            data-testid={`button-delete-game-${game.id}`}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
                   {(() => {
                     const summary = boardSummaries.find(s => s.id === game.id);
