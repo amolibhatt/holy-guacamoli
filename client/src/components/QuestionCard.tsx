@@ -303,7 +303,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
               setShowAnswer(!showAnswer);
             }}
             className={showAnswer 
-              ? "bg-background/90 text-foreground hover:bg-background border-2 border-border font-bold" 
+              ? "bg-white text-gray-900 hover:bg-gray-100 border-2 border-gray-300 font-bold shadow-md" 
               : "bg-primary text-primary-foreground font-bold shadow-lg hover:bg-primary/90 border-2 border-primary"
             }
             data-testid="button-toggle-answer"
