@@ -1,0 +1,50 @@
+2026-01-21T11:41:22.991233956Z   severity: 'ERROR',
+2026-01-21T11:41:22.991236576Z   code: '42703',
+2026-01-21T11:41:22.991239146Z   detail: undefined,
+2026-01-21T11:41:22.991241806Z   hint: undefined,
+2026-01-21T11:41:22.991244236Z   position: '8',
+2026-01-21T11:41:22.991248346Z   internalPosition: undefined,
+2026-01-21T11:41:22.991250926Z   internalQuery: undefined,
+2026-01-21T11:41:22.991253616Z   where: undefined,
+2026-01-21T11:41:22.991256637Z   schema: undefined,
+2026-01-21T11:41:22.991259466Z   table: undefined,
+2026-01-21T11:41:22.991262206Z   column: undefined,
+2026-01-21T11:41:22.991264847Z   dataType: undefined,
+2026-01-21T11:41:22.991267367Z   constraint: undefined,
+2026-01-21T11:41:22.991269737Z   file: 'parse_relation.c',
+2026-01-21T11:41:22.991272507Z   line: '3716',
+2026-01-21T11:41:22.991275297Z   routine: 'errorMissingColumn'
+2026-01-21T11:41:22.991277977Z }
+2026-01-21T11:41:23.078469691Z 11:41:23 AM [express] GET /api/boards/summary 500 in 2280ms :: {"message":"Failed to fetch board summaries"}
+2026-01-21T11:41:26.91733313Z [FATAL] Unhandled Rejection: error: column "category_id" does not exist
+2026-01-21T11:41:26.91735304Z     at /opt/render/project/src/dist/index.cjs:64:13356
+2026-01-21T11:41:26.91735628Z     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-01-21T11:41:26.91735935Z     at async /opt/render/project/src/dist/index.cjs:70:38429
+2026-01-21T11:41:26.91736182Z     at async ZE.getBoardCategories (/opt/render/project/src/dist/index.cjs:70:125711)
+2026-01-21T11:41:26.91736441Z     at async /opt/render/project/src/dist/index.cjs:351:10845 {
+2026-01-21T11:41:26.91736707Z   length: 110,
+2026-01-21T11:41:26.91737008Z   severity: 'ERROR',
+2026-01-21T11:41:26.91737278Z   code: '42703',
+2026-01-21T11:41:26.91737557Z   detail: undefined,
+2026-01-21T11:41:26.91737791Z   hint: undefined,
+2026-01-21T11:41:26.91738022Z   position: '8',
+2026-01-21T11:41:26.917383011Z   internalPosition: undefined,
+2026-01-21T11:41:26.917385931Z   internalQuery: undefined,
+2026-01-21T11:41:26.91738876Z   where: undefined,
+2026-01-21T11:41:26.917391201Z   schema: undefined,
+2026-01-21T11:41:26.917393921Z   table: undefined,
+2026-01-21T11:41:26.917396491Z   column: undefined,
+2026-01-21T11:41:26.917399051Z   dataType: undefined,
+2026-01-21T11:41:26.917401641Z   constraint: undefined,
+2026-01-21T11:41:26.917403971Z   file: 'parse_relation.c',
+2026-01-21T11:41:26.917406361Z   line: '3716',
+2026-01-21T11:41:26.917408721Z   routine: 'errorMissingColumn'
+2026-01-21T11:41:26.917411371Z }
+2026-01-21T11:41:31.918957685Z [FATAL] Forcing exit after timeout
+2026-01-21T11:41:39.776354483Z ==> Running 'npm start'
+2026-01-21T11:41:40.87588055Z 
+2026-01-21T11:41:40.875909161Z > rest-express@1.0.0 start
+2026-01-21T11:41:40.875914201Z > NODE_ENV=production node dist/index.cjs
+2026-01-21T11:41:40.875916731Z 
+2026-01-21T11:41:45.382289144Z Checked 2 boards for color assignment
+2026-01-21T11:41:45.568060293Z 11:41:45 AM [express] serving on port 10000
