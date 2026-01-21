@@ -181,10 +181,6 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      // Only Super Admins can create boards
-      if (role !== 'super_admin') {
-        return res.status(403).json({ message: "Only Super Admins can create boards" });
-      }
       const { name, description, pointValues } = req.body;
       if (!name) {
         return res.status(400).json({ message: "Name is required" });
@@ -212,10 +208,6 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      // Only Super Admins can update boards
-      if (role !== 'super_admin') {
-        return res.status(403).json({ message: "Only Super Admins can update boards" });
-      }
       const { name, description, pointValues, theme, isGlobal, sortOrder } = req.body;
       const board = await storage.updateBoard(Number(req.params.id), {
         name,
@@ -238,10 +230,6 @@ export async function registerRoutes(
   app.delete("/api/boards/:id", isAuthenticated, async (req, res) => {
     const userId = req.session.userId!;
     const role = req.session.userRole;
-    // Only Super Admins can delete boards
-    if (role !== 'super_admin') {
-      return res.status(403).json({ message: "Only Super Admins can delete boards" });
-    }
     const deleted = await storage.deleteBoard(Number(req.params.id), userId, role);
     if (!deleted) {
       return res.status(404).json({ message: "Board not found" });
@@ -266,10 +254,6 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      // Only Super Admins can link categories to boards
-      if (role !== 'super_admin') {
-        return res.status(403).json({ message: "Only Super Admins can link categories to boards" });
-      }
       const boardId = Number(req.params.boardId);
       const board = await storage.getBoard(boardId, userId, role);
       if (!board) {
@@ -301,10 +285,6 @@ export async function registerRoutes(
   app.delete("/api/board-categories/:id", isAuthenticated, async (req, res) => {
     const userId = req.session.userId!;
     const role = req.session.userRole;
-    // Only Super Admins can unlink categories from boards
-    if (role !== 'super_admin') {
-      return res.status(403).json({ message: "Only Super Admins can unlink categories from boards" });
-    }
     const bc = await storage.getBoardCategory(Number(req.params.id));
     if (!bc) {
       return res.status(404).json({ message: "Board category link not found" });
@@ -324,10 +304,6 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      // Only Super Admins can reorder categories
-      if (role !== 'super_admin') {
-        return res.status(403).json({ message: "Only Super Admins can reorder categories" });
-      }
       const boardId = Number(req.params.boardId);
       const board = await storage.getBoard(boardId, userId, role);
       if (!board) {
@@ -357,10 +333,6 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      // Only Super Admins can create and link categories
-      if (role !== 'super_admin') {
-        return res.status(403).json({ message: "Only Super Admins can create and link categories" });
-      }
       const boardId = Number(req.params.boardId);
       const board = await storage.getBoard(boardId, userId, role);
       if (!board) {
@@ -426,11 +398,6 @@ export async function registerRoutes(
 
   app.post(api.categories.create.path, isAuthenticated, async (req, res) => {
     try {
-      const role = req.session.userRole;
-      // Only Super Admins can create categories
-      if (role !== 'super_admin') {
-        return res.status(403).json({ message: "Only Super Admins can create categories" });
-      }
       const data = api.categories.create.input.parse(req.body);
       const category = await storage.createCategory(data);
       res.status(201).json(category);
@@ -447,12 +414,16 @@ export async function registerRoutes(
 
   app.put("/api/categories/:id", isAuthenticated, async (req, res) => {
     try {
+      const userId = req.session.userId!;
       const role = req.session.userRole;
-      // Only Super Admins can update categories
-      if (role !== 'super_admin') {
-        return res.status(403).json({ message: "Only Super Admins can update categories" });
-      }
       const categoryId = Number(req.params.id);
+      
+      // Verify ownership
+      const hasAccess = await verifyCategoryOwnership(categoryId, userId, role);
+      if (!hasAccess) {
+        return res.status(403).json({ message: "You don't have permission to edit this category" });
+      }
+      
       const { name, description, rule, imageUrl, isActive, sourceGroup } = req.body;
       
       // If trying to set isActive = true, validate the category first
@@ -485,12 +456,17 @@ export async function registerRoutes(
   });
 
   app.delete(api.categories.delete.path, isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
     const role = req.session.userRole;
-    // Only Super Admins can delete categories
-    if (role !== 'super_admin') {
-      return res.status(403).json({ message: "Only Super Admins can delete categories" });
+    const categoryId = Number(req.params.id);
+    
+    // Verify ownership
+    const hasAccess = await verifyCategoryOwnership(categoryId, userId, role);
+    if (!hasAccess) {
+      return res.status(403).json({ message: "You don't have permission to delete this category" });
     }
-    const deleted = await storage.deleteCategory(Number(req.params.id));
+    
+    const deleted = await storage.deleteCategory(categoryId);
     if (!deleted) {
       return res.status(404).json({ message: 'Category not found' });
     }
@@ -500,6 +476,35 @@ export async function registerRoutes(
   // Helper to verify category exists (categories are global, no ownership check needed for read)
   async function verifyCategoryExists(categoryId: number) {
     return await storage.getCategory(categoryId);
+  }
+
+  // Helper to verify user has access to a category (owns the board it belongs to, or is super_admin)
+  async function verifyCategoryOwnership(categoryId: number, userId: string, role?: string): Promise<boolean> {
+    if (role === 'super_admin') return true;
+    
+    // Find all boards this category is linked to
+    const boardCategoryLinks = await storage.getBoardCategoriesByCategoryId(categoryId);
+    if (boardCategoryLinks.length === 0) {
+      // Orphan category - only super_admin can manage
+      return false;
+    }
+    
+    // Check if user owns any of the linked boards
+    for (const link of boardCategoryLinks) {
+      const board = await storage.getBoard(link.boardId, userId, role);
+      if (board) return true;
+    }
+    return false;
+  }
+
+  // Helper to verify user has access to a question (via category ownership)
+  async function verifyQuestionOwnership(questionId: number, userId: string, role?: string): Promise<boolean> {
+    if (role === 'super_admin') return true;
+    
+    const question = await storage.getQuestion(questionId);
+    if (!question) return false;
+    
+    return verifyCategoryOwnership(question.categoryId, userId, role);
   }
 
   // Questions (by category) - protected
@@ -515,16 +520,20 @@ export async function registerRoutes(
 
   app.post(api.questions.create.path, isAuthenticated, async (req, res) => {
     try {
+      const userId = req.session.userId!;
       const role = req.session.userRole;
-      // Only Super Admins can create questions
-      if (role !== 'super_admin') {
-        return res.status(403).json({ message: "Only Super Admins can create questions" });
-      }
       const data = api.questions.create.input.parse(req.body);
       const category = await verifyCategoryExists(data.categoryId);
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
       }
+      
+      // Verify ownership
+      const hasAccess = await verifyCategoryOwnership(data.categoryId, userId, role);
+      if (!hasAccess) {
+        return res.status(403).json({ message: "You don't have permission to add questions to this category" });
+      }
+      
       const existingQuestions = await storage.getQuestionsByCategory(data.categoryId);
       if (existingQuestions.length >= 5) {
         return res.status(400).json({ message: "Category already has 5 questions (maximum)" });
@@ -547,16 +556,20 @@ export async function registerRoutes(
 
   app.put(api.questions.update.path, isAuthenticated, async (req, res) => {
     try {
+      const userId = req.session.userId!;
       const role = req.session.userRole;
-      // Only Super Admins can update questions
-      if (role !== 'super_admin') {
-        return res.status(403).json({ message: "Only Super Admins can update questions" });
-      }
       const data = api.questions.update.input.parse(req.body);
       const existingQuestion = await storage.getQuestion(Number(req.params.id));
       if (!existingQuestion) {
         return res.status(404).json({ message: 'Question not found' });
       }
+      
+      // Verify ownership
+      const hasAccess = await verifyCategoryOwnership(existingQuestion.categoryId, userId, role);
+      if (!hasAccess) {
+        return res.status(403).json({ message: "You don't have permission to edit this question" });
+      }
+      
       const category = await verifyCategoryExists(existingQuestion.categoryId);
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
@@ -581,15 +594,19 @@ export async function registerRoutes(
   });
 
   app.delete(api.questions.delete.path, isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
     const role = req.session.userRole;
-    // Only Super Admins can delete questions
-    if (role !== 'super_admin') {
-      return res.status(403).json({ message: "Only Super Admins can delete questions" });
-    }
     const existingQuestion = await storage.getQuestion(Number(req.params.id));
     if (!existingQuestion) {
       return res.status(404).json({ message: 'Question not found' });
     }
+    
+    // Verify ownership
+    const hasAccess = await verifyCategoryOwnership(existingQuestion.categoryId, userId, role);
+    if (!hasAccess) {
+      return res.status(403).json({ message: "You don't have permission to delete this question" });
+    }
+    
     const category = await verifyCategoryExists(existingQuestion.categoryId);
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
@@ -608,15 +625,18 @@ export async function registerRoutes(
   
   app.post("/api/categories/:categoryId/questions/bulk", isAuthenticated, async (req, res) => {
     try {
+      const userId = req.session.userId!;
       const role = req.session.userRole;
-      // Only Super Admins can bulk import questions
-      if (role !== 'super_admin') {
-        return res.status(403).json({ message: "Only Super Admins can bulk import questions" });
-      }
       const categoryId = Number(req.params.categoryId);
       const category = await verifyCategoryExists(categoryId);
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
+      }
+      
+      // Verify ownership
+      const hasAccess = await verifyCategoryOwnership(categoryId, userId, role);
+      if (!hasAccess) {
+        return res.status(403).json({ message: "You don't have permission to import questions to this category" });
       }
 
       // Standard point values for categories
