@@ -42,7 +42,7 @@ export default function HostGridOfGrudges() {
               <LogIn className="w-12 h-12 text-muted-foreground" />
               <h2 className="text-xl font-semibold text-foreground">Sign in to play</h2>
               <p className="text-muted-foreground text-center max-w-md">
-                Log in to access game boards.
+                Log in to access game grids.
               </p>
               <Link href="/login">
                 <Button size="lg" data-testid="button-login">
@@ -59,7 +59,7 @@ export default function HostGridOfGrudges() {
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 px-1">
                 <Grid3X3 className="w-5 h-5 text-muted-foreground" />
-                Game Boards
+                Game Grids
               </h2>
               
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -135,14 +135,14 @@ export default function HostGridOfGrudges() {
                   Ready to quiz?
                 </h2>
                 <p className="text-muted-foreground text-center max-w-sm">
-                  No boards yet! Create one in Admin to start the fun.
+                  No grids yet! Create one in Admin to start the fun.
                 </p>
               </div>
               
               <Link href="/admin">
                 <Button size="lg" className="gap-2 group">
                   <Sparkles className="w-4 h-4" />
-                  Create Your First Board
+                  Create Your First Grid
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
