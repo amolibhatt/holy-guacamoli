@@ -10,20 +10,5 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Production database connection with SSL and better pool settings
-const isProduction = process.env.NODE_ENV === 'production';
-
-export const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL,
-  ssl: isProduction ? { rejectUnauthorized: false } : false,
-  max: 10,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-});
-
-// Handle pool errors gracefully
-pool.on('error', (err) => {
-  console.error('Unexpected database pool error:', err);
-});
-
+export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle(pool, { schema });
