@@ -27,6 +27,7 @@ export default function PlayBoard() {
   const { gameEnded, resetGameEnd, markQuestionCompleted } = useScore();
   
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<BoardCategoryWithCount | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
   const buzzerRef = useRef<BuzzerPanelHandle>(null);
@@ -99,11 +100,15 @@ export default function PlayBoard() {
 
   const handleSelectQuestion = (question: Question) => {
     setSelectedQuestion(question);
+    // Find the category that contains this question
+    const category = categories.find(c => c.categoryId === question.categoryId);
+    setSelectedCategory(category || null);
     buzzerRef.current?.unlock();
   };
 
   const handleCloseQuestion = () => {
     setSelectedQuestion(null);
+    setSelectedCategory(null);
     buzzerRef.current?.lock();
   };
 
@@ -262,7 +267,7 @@ export default function PlayBoard() {
       <AnimatePresence>
         {selectedQuestion && (
           <Dialog open={true} onOpenChange={(open) => !open && handleCloseQuestion()}>
-            <DialogContent className="max-w-3xl p-0 overflow-hidden border-border bg-card backdrop-blur-xl" aria-describedby={undefined}>
+            <DialogContent className="max-w-3xl p-0 overflow-hidden border-border bg-card backdrop-blur-xl [&>button:last-child]:hidden" aria-describedby={undefined}>
               <VisuallyHidden>
                 <DialogTitle>Question</DialogTitle>
               </VisuallyHidden>
@@ -280,6 +285,8 @@ export default function PlayBoard() {
                   onAwardPoints={(playerId, points) => buzzerRef.current?.updateScore(playerId, points)}
                   onDeductPoints={(playerId, points) => buzzerRef.current?.updateScore(playerId, points)}
                   onCompleteQuestion={(questionId, playerId, points) => buzzerRef.current?.completeQuestion(questionId, playerId, points)}
+                  categoryName={selectedCategory?.category?.name}
+                  categoryDescription={selectedCategory?.category?.description}
                 />
               </motion.div>
             </DialogContent>

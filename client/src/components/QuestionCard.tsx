@@ -28,6 +28,8 @@ interface QuestionCardProps {
   onAwardPoints?: (contestantId: string, points: number) => void;
   onDeductPoints?: (contestantId: string, points: number) => void;
   onCompleteQuestion?: (questionId: number, playerId?: string, points?: number) => void;
+  categoryName?: string;
+  categoryDescription?: string;
 }
 
 function AudioPlayer({ src }: { src: string }) {
@@ -90,7 +92,7 @@ function QuestionContent({ content }: { content: string }) {
   );
 }
 
-export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], onAwardPoints, onDeductPoints, onCompleteQuestion }: QuestionCardProps) {
+export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], onAwardPoints, onDeductPoints, onCompleteQuestion, categoryName, categoryDescription }: QuestionCardProps) {
   const [showAnswer, setShowAnswer] = useState(false);
   const [timer, setTimer] = useState<number | null>(null);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -267,16 +269,23 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
         )}
       </AnimatePresence>
 
-      <div className="gradient-header px-4 py-3 flex items-center justify-between gap-3">
-        <motion.div 
-          className="flex items-center gap-3"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <span className="text-4xl font-black text-white drop-shadow-lg">{question.points}</span>
-          <span className="text-lg font-medium text-white/80">pts</span>
-        </motion.div>
+      <div className="gradient-header px-4 py-3">
+        {(categoryName || categoryDescription) && (
+          <div className="mb-2 text-center">
+            {categoryName && <div className="text-white font-bold text-lg">{categoryName}</div>}
+            {categoryDescription && <div className="text-white/70 text-sm">{categoryDescription}</div>}
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-3">
+          <motion.div 
+            className="flex items-center gap-3"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <span className="text-4xl font-black text-white drop-shadow-lg">{question.points}</span>
+            <span className="text-lg font-medium text-white/80">pts</span>
+          </motion.div>
         <div className="flex items-center gap-3 relative z-10">
           <Button
             variant="outline"
@@ -325,6 +334,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
             {showAnswer ? <EyeOff className="w-5 h-5 mr-2" /> : <Eye className="w-5 h-5 mr-2" />}
             {showAnswer ? "Hide" : "Reveal"}
           </Button>
+        </div>
         </div>
       </div>
 
