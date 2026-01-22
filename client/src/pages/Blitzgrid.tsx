@@ -68,6 +68,7 @@ export default function Blitzgrid() {
   const [wsConnected, setWsConnected] = useState(false);
   const [buzzerLocked, setBuzzerLocked] = useState(true);
   const [buzzQueue, setBuzzQueue] = useState<Array<{ playerId: string; name: string; position: number; time: number }>>([]);
+  const [isJudging, setIsJudging] = useState(false);
   const [lastJoinedPlayer, setLastJoinedPlayer] = useState<{ name: string; avatar?: string } | null>(null);
   const joinNotificationTimer = useRef<NodeJS.Timeout | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -266,7 +267,21 @@ export default function Blitzgrid() {
           case 'room:joined':
             setRoomCode(data.code);
             if (data.players) {
-              setPlayers(data.players);
+              setPlayers(data.players.map((p: any) => ({ 
+                ...p, 
+                connected: p.connected ?? p.isConnected ?? true 
+              })));
+            }
+            if (data.buzzerLocked !== undefined) {
+              setBuzzerLocked(data.buzzerLocked);
+            }
+            if (data.buzzQueue) {
+              setBuzzQueue(data.buzzQueue.map((b: any) => ({
+                playerId: b.playerId,
+                name: b.playerName,
+                position: b.position,
+                time: b.timestamp,
+              })));
             }
             break;
           case 'player:joined':
@@ -321,7 +336,7 @@ export default function Blitzgrid() {
               playerId: data.playerId,
               name: data.playerName,
               position: data.position,
-              timestamp: data.timestamp
+              time: data.timestamp
             }]);
             break;
           case 'buzzer:reset':
@@ -386,6 +401,7 @@ export default function Blitzgrid() {
       wsRef.current.send(JSON.stringify({ type: 'host:unlock' }));
       setBuzzerLocked(false);
       setBuzzQueue([]);
+      setIsJudging(false);
     }
   }, []);
   
@@ -781,34 +797,68 @@ export default function Blitzgrid() {
                             <span className="text-xs text-slate-400">({player?.score || 0} pts)</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <Button
-                              size="sm"
-                              className="bg-red-600 hover:bg-red-500 text-white h-8"
-                              onClick={() => {
-                                lockBuzzer(); // Lock first to prevent race condition
-                                const pts = activeQuestion?.points || 0;
-                                updatePlayerScore(buzz.playerId, -pts);
-                                sendFeedback(buzz.playerId, false, -pts);
-                                handleRevealAnswer();
-                              }}
-                              data-testid={`button-wrong-${buzz.playerId}`}
-                            >
-                              <X className="w-3 h-3 mr-1" /> Wrong
-                            </Button>
-                            <Button
-                              size="sm"
-                              className="bg-emerald-600 hover:bg-emerald-500 text-white h-8"
-                              onClick={() => {
-                                lockBuzzer(); // Lock first to prevent race condition
-                                const pts = activeQuestion?.points || 0;
-                                updatePlayerScore(buzz.playerId, pts);
-                                sendFeedback(buzz.playerId, true, pts);
-                                handleRevealAnswer();
-                              }}
-                              data-testid={`button-correct-${buzz.playerId}`}
-                            >
-                              <Check className="w-3 h-3 mr-1" /> Correct
-                            </Button>
+                            {index === 0 ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  className="bg-red-600 hover:bg-red-500 text-white h-8"
+                                  disabled={isJudging}
+                                  onClick={() => {
+                                    setIsJudging(true);
+                                    lockBuzzer();
+                                    const pts = activeQuestion?.points || 0;
+                                    updatePlayerScore(buzz.playerId, -pts);
+                                    sendFeedback(buzz.playerId, false, -pts);
+                                    handleRevealAnswer();
+                                  }}
+                                  data-testid={`button-wrong-${buzz.playerId}`}
+                                >
+                                  <X className="w-3 h-3 mr-1" /> Wrong
+                                </Button>
+                                {buzzQueue.length > 1 && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-amber-400 border-amber-500 hover:bg-amber-500/20 h-8"
+                                    disabled={isJudging}
+                                    onClick={() => {
+                                      setIsJudging(true);
+                                      const pts = activeQuestion?.points || 0;
+                                      updatePlayerScore(buzz.playerId, -pts);
+                                      sendFeedback(buzz.playerId, false, -pts);
+                                      // Notify server to remove player from queue
+                                      if (wsRef.current?.readyState === WebSocket.OPEN) {
+                                        wsRef.current.send(JSON.stringify({ type: 'host:passPlayer', playerId: buzz.playerId }));
+                                      }
+                                      setBuzzQueue(prev => prev.slice(1).map((b, i) => ({ ...b, position: i + 1 })));
+                                      // Reset judging state after a brief delay since we're not locking
+                                      setTimeout(() => setIsJudging(false), 300);
+                                    }}
+                                    data-testid={`button-pass-${buzz.playerId}`}
+                                  >
+                                    Pass
+                                  </Button>
+                                )}
+                                <Button
+                                  size="sm"
+                                  className="bg-emerald-600 hover:bg-emerald-500 text-white h-8"
+                                  disabled={isJudging}
+                                  onClick={() => {
+                                    setIsJudging(true);
+                                    lockBuzzer();
+                                    const pts = activeQuestion?.points || 0;
+                                    updatePlayerScore(buzz.playerId, pts);
+                                    sendFeedback(buzz.playerId, true, pts);
+                                    handleRevealAnswer();
+                                  }}
+                                  data-testid={`button-correct-${buzz.playerId}`}
+                                >
+                                  <Check className="w-3 h-3 mr-1" /> Correct
+                                </Button>
+                              </>
+                            ) : (
+                              <span className="text-xs text-slate-500">Waiting...</span>
+                            )}
                           </div>
                         </div>
                       );
