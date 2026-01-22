@@ -34,6 +34,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from "@/components/ui/dialog";
 import type { Board, Category, Question } from "@shared/schema";
+import { PLAYER_AVATARS } from "@shared/schema";
 
 interface GridWithStats extends Board {
   categoryCount: number;
@@ -67,6 +68,8 @@ export default function Blitzgrid() {
   const [wsConnected, setWsConnected] = useState(false);
   const [buzzerLocked, setBuzzerLocked] = useState(true);
   const [buzzQueue, setBuzzQueue] = useState<Array<{ playerId: string; name: string; position: number; time: number }>>([]);
+  const [lastJoinedPlayer, setLastJoinedPlayer] = useState<{ name: string; avatar?: string } | null>(null);
+  const joinNotificationTimer = useRef<NodeJS.Timeout | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   
   // Form state
@@ -267,15 +270,37 @@ export default function Blitzgrid() {
             }
             break;
           case 'player:joined':
+            if (data.player) {
+              setPlayers(prev => {
+                const exists = prev.some(p => p.id === data.player.id);
+                if (exists) {
+                  return prev.map(p => p.id === data.player.id ? { ...data.player, connected: true } : p);
+                }
+                return [...prev, { ...data.player, connected: true }];
+              });
+              // Show join notification (clear any existing timer first)
+              if (joinNotificationTimer.current) {
+                clearTimeout(joinNotificationTimer.current);
+              }
+              setLastJoinedPlayer({ name: data.player.name, avatar: data.player.avatar });
+              joinNotificationTimer.current = setTimeout(() => setLastJoinedPlayer(null), 3000);
+            }
+            break;
           case 'player:reconnected':
-            if (data.players) {
-              setPlayers(data.players);
+            if (data.player) {
+              setPlayers(prev => prev.map(p => 
+                p.id === data.player.id ? { ...data.player, connected: true } : p
+              ));
             }
             break;
           case 'player:left':
-          case 'player:disconnected':
             setPlayers(prev => prev.filter(p => p.id !== data.playerId));
-            // Also remove from buzz queue if they were in it
+            setBuzzQueue(prev => prev.filter(b => b.playerId !== data.playerId));
+            break;
+          case 'player:disconnected':
+            setPlayers(prev => prev.map(p => 
+              p.id === data.playerId ? { ...p, connected: false } : p
+            ));
             setBuzzQueue(prev => prev.filter(b => b.playerId !== data.playerId));
             break;
           case 'score:updated':
@@ -380,6 +405,9 @@ export default function Blitzgrid() {
     }
     return () => {
       disconnectWebSocket();
+      if (joinNotificationTimer.current) {
+        clearTimeout(joinNotificationTimer.current);
+      }
     };
   }, [playMode, connectWebSocket, disconnectWebSocket]);
 
@@ -468,11 +496,16 @@ export default function Blitzgrid() {
                   <Badge className="bg-emerald-400 text-black font-mono font-bold px-3 py-1">{roomCode}</Badge>
                 </motion.div>
               )}
-              {players.length > 0 && (
-                <Badge variant="outline" className="border-emerald-500/30 text-emerald-300">
-                  <Users className="w-3.5 h-3.5 mr-1.5" />{players.length}
-                </Badge>
-              )}
+              <motion.div 
+                key={players.length}
+                initial={{ scale: 1.2 }}
+                animate={{ scale: 1 }}
+                className="flex items-center gap-1.5 bg-emerald-500/20 border border-emerald-500/40 rounded-full px-3 py-1"
+              >
+                <Users className="w-4 h-4 text-emerald-400" />
+                <span className="text-emerald-300 font-bold">{players.length}</span>
+                <span className="text-emerald-400/70 text-sm">player{players.length !== 1 ? 's' : ''}</span>
+              </motion.div>
             </div>
             
             <div className="flex gap-2">
@@ -484,6 +517,24 @@ export default function Blitzgrid() {
               </Button>
             </div>
           </motion.div>
+          
+          {/* Join Notification */}
+          <AnimatePresence>
+            {lastJoinedPlayer && (
+              <motion.div
+                initial={{ y: -50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -50, opacity: 0 }}
+                className="absolute top-16 left-1/2 -translate-x-1/2 z-50"
+              >
+                <div className="bg-emerald-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+                  <span className="text-lg">{PLAYER_AVATARS.find(a => a.id === lastJoinedPlayer.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
+                  <span className="font-medium">{lastJoinedPlayer.name} joined!</span>
+                  <UserPlus className="w-4 h-4" />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           
           {/* Game Grid */}
           <div className="flex-1 p-3 md:p-5 overflow-hidden relative">
@@ -574,43 +625,50 @@ export default function Blitzgrid() {
           >
             {players.length > 0 ? (
               <div className="flex items-center justify-center gap-4 md:gap-8 flex-wrap">
-                {[...players].sort((a, b) => b.score - a.score).map((player, idx) => (
-                  <motion.div
-                    key={player.id}
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.4 + idx * 0.05 }}
-                    className="flex items-center gap-3 bg-white/5 rounded-full pl-1 pr-4 py-1 border border-white/10"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${idx === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-black' : idx === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-black' : idx === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-800 text-white' : 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-black'}`}>
-                        {player.name.charAt(0).toUpperCase()}
+                {[...players].sort((a, b) => b.score - a.score).map((player, idx) => {
+                  const avatarEmoji = PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji;
+                  return (
+                    <motion.div
+                      key={player.id}
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.4 + idx * 0.05 }}
+                      className={`flex items-center gap-3 bg-white/5 rounded-full pl-1 pr-4 py-1 border ${player.connected ? 'border-white/10' : 'border-red-500/30 opacity-60'}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="relative">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg ${idx === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-600' : idx === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400' : idx === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-800' : 'bg-gradient-to-br from-emerald-400 to-emerald-600'}`}>
+                            {avatarEmoji}
+                          </div>
+                          {/* Connection status dot */}
+                          <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-900 ${player.connected ? 'bg-green-500' : 'bg-red-500'}`} />
+                        </div>
+                        <span className="text-white font-medium text-sm">{player.name}</span>
                       </div>
-                      <span className="text-white font-medium text-sm">{player.name}</span>
-                    </div>
-                    <span className="text-emerald-400 font-bold text-lg">{player.score}</span>
-                    <div className="flex gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-6 w-6 text-emerald-400 hover:bg-emerald-500/20"
-                        onClick={() => updatePlayerScore(player.id, 10)}
-                        data-testid={`button-add-score-${player.id}`}
-                      >
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-6 w-6 text-red-400 hover:bg-red-500/20"
-                        onClick={() => updatePlayerScore(player.id, -10)}
-                        data-testid={`button-sub-score-${player.id}`}
-                      >
-                        <Minus className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </motion.div>
-                ))}
+                      <span className="text-emerald-400 font-bold text-lg">{player.score}</span>
+                      <div className="flex gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6 text-emerald-400 hover:bg-emerald-500/20"
+                          onClick={() => updatePlayerScore(player.id, 10)}
+                          data-testid={`button-add-score-${player.id}`}
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6 text-red-400 hover:bg-red-500/20"
+                          onClick={() => updatePlayerScore(player.id, -10)}
+                          data-testid={`button-sub-score-${player.id}`}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
             ) : (
               <div className="flex items-center justify-center gap-2 text-white/40 text-sm">
