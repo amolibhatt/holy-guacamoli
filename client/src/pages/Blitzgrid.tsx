@@ -50,8 +50,8 @@ export default function Blitzgrid() {
   const [editGridName, setEditGridName] = useState("");
   const [deleteGridId, setDeleteGridId] = useState<number | null>(null);
   
-  // Question form state
-  const [questionForms, setQuestionForms] = useState<Record<number, { 
+  // Question form state (keyed by "categoryId-points")
+  const [questionForms, setQuestionForms] = useState<Record<string, { 
     question: string; 
     correctAnswer: string; 
     options: string[];
@@ -73,11 +73,6 @@ export default function Blitzgrid() {
     enabled: !!selectedGridId,
   });
 
-  // Fetch all available categories
-  const { data: allCategories = [] } = useQuery<Category[]>({
-    queryKey: ['/api/categories'],
-    enabled: !!selectedGridId,
-  });
 
   // Create grid mutation
   const createGridMutation = useMutation({
@@ -232,158 +227,105 @@ export default function Blitzgrid() {
     );
   }
 
-  // Category detail view
-  if (selectedGridId && selectedCategoryId) {
-    const category = gridCategories.find(c => c.id === selectedCategoryId);
-    const existingPoints = new Set(category?.questions?.map(q => q.points) || []);
-    
-    return (
-      <div className="min-h-screen bg-background" data-testid="page-blitzgrid-category">
-        <AppHeader />
-        <div className="container mx-auto px-4 py-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => setSelectedCategoryId(null)}
-            className="mb-4"
-            data-testid="button-back-to-grid"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Grid
-          </Button>
-          
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold">{category?.name || 'Category'}</h1>
-              <p className="text-muted-foreground text-sm">
-                {category?.questions?.length || 0}/5 questions · Points: {POINT_TIERS.join(', ')}
-              </p>
-            </div>
-            {category?.questions?.length === 5 && (
-              <Badge className="bg-green-500/20 text-green-600">
-                <CheckCircle2 className="w-3 h-3 mr-1" /> Complete
-              </Badge>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            {POINT_TIERS.map(points => {
-              const existingQuestion = category?.questions?.find(q => q.points === points);
-              const formData = questionForms[points];
-              const isEditing = !!formData;
-              
-              return (
-                <Card key={points} className={existingQuestion ? 'border-green-500/30' : ''}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <Badge variant={existingQuestion ? "default" : "outline"} className="text-lg px-3 py-1">
-                        {points} pts
-                      </Badge>
-                      {existingQuestion && !isEditing && (
-                        <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={() => setQuestionForms(prev => ({
-                              ...prev,
-                              [points]: {
-                                question: existingQuestion.question,
-                                correctAnswer: existingQuestion.correctAnswer,
-                                options: existingQuestion.options || [],
-                              }
-                            }))}
-                            data-testid={`button-edit-question-${points}`}
-                          >
-                            <Pencil className="w-3 h-3" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={() => deleteQuestionMutation.mutate(existingQuestion.id)}
-                            disabled={deleteQuestionMutation.isPending}
-                            data-testid={`button-delete-question-${points}`}
-                          >
-                            <Trash2 className="w-3 h-3 text-destructive" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {existingQuestion && !isEditing ? (
-                      <div>
-                        <p className="font-medium mb-2">{existingQuestion.question}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Answer: <span className="text-green-600 font-medium">{existingQuestion.correctAnswer}</span>
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <Input
-                          placeholder="Enter question..."
-                          value={formData?.question || ''}
-                          onChange={(e) => setQuestionForms(prev => ({
-                            ...prev,
-                            [points]: { ...prev[points] || { question: '', correctAnswer: '', options: [] }, question: e.target.value }
-                          }))}
-                          data-testid={`input-question-${points}`}
-                        />
-                        <Input
-                          placeholder="Correct answer..."
-                          value={formData?.correctAnswer || ''}
-                          onChange={(e) => setQuestionForms(prev => ({
-                            ...prev,
-                            [points]: { ...prev[points] || { question: '', correctAnswer: '', options: [] }, correctAnswer: e.target.value }
-                          }))}
-                          data-testid={`input-answer-${points}`}
-                        />
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              if (formData?.question && formData?.correctAnswer && selectedCategoryId) {
-                                saveQuestionMutation.mutate({
-                                  categoryId: selectedCategoryId,
-                                  points,
-                                  question: formData.question,
-                                  correctAnswer: formData.correctAnswer,
-                                  options: formData.options || [],
-                                });
-                              }
-                            }}
-                            disabled={!formData?.question || !formData?.correctAnswer || saveQuestionMutation.isPending}
-                            data-testid={`button-save-question-${points}`}
-                          >
-                            {saveQuestionMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3 mr-1" />}
-                            Save
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setQuestionForms(prev => {
-                              const newForms = { ...prev };
-                              delete newForms[points];
-                              return newForms;
-                            })}
-                            data-testid={`button-cancel-question-${points}`}
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Grid detail view
+  // Grid detail view with inline categories and questions
   if (selectedGridId) {
     const grid = grids.find(g => g.id === selectedGridId);
-    const linkedCategoryIds = new Set(gridCategories.map(c => c.id));
-    const availableCategories = allCategories.filter(c => !linkedCategoryIds.has(c.id));
+    
+    // Helper to render question form for a category
+    const renderQuestionSlot = (category: CategoryWithQuestions, points: number) => {
+      const existingQuestion = category.questions?.find(q => q.points === points);
+      const formKey = `${category.id}-${points}`;
+      const formData = questionForms[formKey];
+      const isEditing = !!formData;
+      
+      if (existingQuestion && !isEditing) {
+        return (
+          <div className="flex items-center justify-between p-2 bg-muted/30 rounded text-sm">
+            <div className="flex-1 min-w-0">
+              <span className="font-medium text-xs text-muted-foreground mr-2">{points}pts:</span>
+              <span className="truncate">{existingQuestion.question}</span>
+            </div>
+            <div className="flex gap-1 shrink-0">
+              <Button 
+                size="icon" 
+                variant="ghost"
+                className="h-6 w-6"
+                onClick={() => setQuestionForms(prev => ({
+                  ...prev,
+                  [formKey]: {
+                    question: existingQuestion.question,
+                    correctAnswer: existingQuestion.correctAnswer,
+                    options: existingQuestion.options || [],
+                  }
+                }))}
+              >
+                <Pencil className="w-3 h-3" />
+              </Button>
+              <Button 
+                size="icon" 
+                variant="ghost"
+                className="h-6 w-6"
+                onClick={() => deleteQuestionMutation.mutate(existingQuestion.id)}
+                disabled={deleteQuestionMutation.isPending}
+              >
+                <Trash2 className="w-3 h-3 text-destructive" />
+              </Button>
+            </div>
+          </div>
+        );
+      }
+      
+      return (
+        <div className="space-y-2 p-2 border border-dashed rounded">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs shrink-0">{points}pts</Badge>
+            <Input
+              placeholder="Question..."
+              className="h-8 text-sm"
+              value={formData?.question || ''}
+              onChange={(e) => setQuestionForms(prev => ({
+                ...prev,
+                [formKey]: { ...prev[formKey] || { question: '', correctAnswer: '', options: [] }, question: e.target.value }
+              }))}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Answer..."
+              className="h-8 text-sm"
+              value={formData?.correctAnswer || ''}
+              onChange={(e) => setQuestionForms(prev => ({
+                ...prev,
+                [formKey]: { ...prev[formKey] || { question: '', correctAnswer: '', options: [] }, correctAnswer: e.target.value }
+              }))}
+            />
+            <Button
+              size="sm"
+              className="h-8 shrink-0"
+              onClick={() => {
+                if (formData?.question && formData?.correctAnswer) {
+                  saveQuestionMutation.mutate({
+                    categoryId: category.id,
+                    points,
+                    question: formData.question,
+                    correctAnswer: formData.correctAnswer,
+                    options: formData.options || [],
+                  });
+                  setQuestionForms(prev => {
+                    const newForms = { ...prev };
+                    delete newForms[formKey];
+                    return newForms;
+                  });
+                }
+              }}
+              disabled={!formData?.question || !formData?.correctAnswer || saveQuestionMutation.isPending}
+            >
+              {saveQuestionMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+            </Button>
+          </div>
+        </div>
+      );
+    };
     
     return (
       <div className="min-h-screen bg-background" data-testid="page-blitzgrid-grid">
@@ -408,7 +350,7 @@ export default function Blitzgrid() {
             <div className="flex items-center gap-2">
               {grid?.isActive ? (
                 <Badge className="bg-green-500/20 text-green-600">
-                  <CheckCircle2 className="w-3 h-3 mr-1" /> Active
+                  <CheckCircle2 className="w-3 h-3 mr-1" /> Ready to Play
                 </Badge>
               ) : (
                 <Badge variant="outline" className="text-amber-600">
@@ -423,79 +365,11 @@ export default function Blitzgrid() {
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 mb-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Categories ({gridCategories.length}/5)</CardTitle>
-                <CardDescription>Each category needs 5 questions to be active</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loadingCategories ? (
-                  <div className="space-y-2">
-                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-12" />)}
-                  </div>
-                ) : gridCategories.length === 0 ? (
-                  <p className="text-muted-foreground text-sm text-center py-4">
-                    No categories yet. Add categories from the right panel.
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {gridCategories.map(category => (
-                      <div 
-                        key={category.id}
-                        className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 cursor-pointer"
-                        onClick={() => setSelectedCategoryId(category.id)}
-                        data-testid={`category-row-${category.id}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1">
-                            <div className="font-medium">{category.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {category.questionCount}/5 questions
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {category.questionCount >= 5 ? (
-                            <Badge className="bg-green-500/20 text-green-600 text-xs">Active</Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-amber-600 text-xs">
-                              {5 - category.questionCount} needed
-                            </Badge>
-                          )}
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeCategoryMutation.mutate({ gridId: selectedGridId, categoryId: category.id });
-                            }}
-                            disabled={removeCategoryMutation.isPending}
-                            data-testid={`button-remove-category-${category.id}`}
-                          >
-                            <Trash2 className="w-3 h-3 text-destructive" />
-                          </Button>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Add Category</CardTitle>
-                <CardDescription>Create a new category for this grid</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {gridCategories.length >= 5 ? (
-                  <p className="text-muted-foreground text-sm text-center py-4">
-                    Maximum 5 categories reached
-                  </p>
-                ) : showNewCategoryForm ? (
+          {/* New Category Form */}
+          {gridCategories.length < 5 && (
+            <Card className="mb-4">
+              <CardContent className="py-3">
+                {showNewCategoryForm ? (
                   <div className="flex items-center gap-2">
                     <Input
                       placeholder="Category name..."
@@ -526,16 +400,100 @@ export default function Blitzgrid() {
                   </div>
                 ) : (
                   <Button
+                    variant="outline"
                     className="w-full"
                     onClick={() => setShowNewCategoryForm(true)}
                     data-testid="button-new-category"
                   >
-                    <Plus className="w-4 h-4 mr-2" /> New Category
+                    <Plus className="w-4 h-4 mr-2" /> Add Category ({gridCategories.length}/5)
                   </Button>
                 )}
               </CardContent>
             </Card>
-          </div>
+          )}
+
+          {/* Categories with inline questions */}
+          {loadingCategories ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-48" />)}
+            </div>
+          ) : gridCategories.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                <h3 className="font-medium mb-2">No categories yet</h3>
+                <p className="text-muted-foreground text-sm">Add your first category above to start building your grid</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {gridCategories.map(category => {
+                const isExpanded = selectedCategoryId === category.id;
+                
+                return (
+                  <Card key={category.id} className={isExpanded ? 'ring-2 ring-primary/20' : ''}>
+                    <CardHeader 
+                      className="cursor-pointer py-3"
+                      onClick={() => setSelectedCategoryId(isExpanded ? null : category.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                          <div>
+                            <CardTitle className="text-base">{category.name}</CardTitle>
+                            <CardDescription className="text-xs">
+                              {category.questionCount}/5 questions
+                            </CardDescription>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {category.questionCount >= 5 ? (
+                            <Badge className="bg-green-500/20 text-green-600 text-xs">Complete</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-amber-600 text-xs">
+                              {5 - category.questionCount} needed
+                            </Badge>
+                          )}
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeCategoryMutation.mutate({ gridId: selectedGridId, categoryId: category.id });
+                            }}
+                            disabled={removeCategoryMutation.isPending}
+                            data-testid={`button-remove-category-${category.id}`}
+                          >
+                            <Trash2 className="w-3 h-3 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <CardContent className="pt-0 space-y-2">
+                            {POINT_TIERS.map(points => (
+                              <div key={points}>
+                                {renderQuestionSlot(category, points)}
+                              </div>
+                            ))}
+                          </CardContent>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     );
