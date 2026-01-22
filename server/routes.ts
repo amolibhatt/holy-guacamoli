@@ -163,6 +163,20 @@ export async function registerRoutes(
     }
   });
 
+  // Debug endpoint to check session state (helps diagnose production issues)
+  app.get("/api/debug/session", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const role = req.session.userRole;
+    const boards = await storage.getBoards(userId, role);
+    res.json({
+      sessionValid: true,
+      userId,
+      role,
+      boardCount: boards.length,
+      boards: boards.map(b => ({ id: b.id, name: b.name }))
+    });
+  });
+
   app.get("/api/room/:code", (req, res) => {
     const info = getRoomInfo(req.params.code.toUpperCase());
     if (!info) {
