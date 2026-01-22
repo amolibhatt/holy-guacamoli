@@ -13,8 +13,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Play, Loader2,
-  AlertCircle, CheckCircle2, Eye, RotateCcw
+  AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { 
   AlertDialog, AlertDialogAction, AlertDialogCancel, 
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter, 
@@ -49,6 +50,7 @@ export default function Blitzgrid() {
   const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set());
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [showQRCode, setShowQRCode] = useState(false);
   
   // Form state
   const [showNewGridForm, setShowNewGridForm] = useState(false);
@@ -273,38 +275,50 @@ export default function Blitzgrid() {
         toast({ title: "Game reset! All questions available again." });
       };
       
+      const joinUrl = `${window.location.origin}/play`;
+      
       return (
-        <div className="min-h-screen bg-gradient-to-b from-purple-900 via-purple-800 to-indigo-900" data-testid="page-blitzgrid-play">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center justify-between mb-6">
+        <div className="min-h-screen bg-slate-900" data-testid="page-blitzgrid-play">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between mb-4">
               <Button 
-                variant="outline" 
+                variant="ghost" 
                 onClick={() => {
                   setPlayMode(false);
                   setSelectedGridId(null);
                 }}
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                className="text-slate-300 hover:text-white hover:bg-slate-800"
                 data-testid="button-exit-play"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" /> Exit Game
+                <ArrowLeft className="w-4 h-4 mr-2" /> Exit
               </Button>
-              <h1 className="text-2xl font-bold text-white">{grid.name}</h1>
-              <Button
-                variant="outline"
-                onClick={resetGame}
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-                data-testid="button-reset-game"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" /> Reset
-              </Button>
+              <h1 className="text-xl font-bold text-white">{grid.name}</h1>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowQRCode(true)}
+                  className="text-slate-300 hover:text-white hover:bg-slate-800"
+                  data-testid="button-show-qr"
+                >
+                  <QrCode className="w-4 h-4 mr-2" /> Join
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={resetGame}
+                  className="text-slate-300 hover:text-white hover:bg-slate-800"
+                  data-testid="button-reset-game"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
             
             {/* Category Headers */}
-            <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, minmax(0, 1fr))` }}>
+            <div className="grid gap-1 mb-1" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, minmax(0, 1fr))` }}>
               {gridCategories.map(category => (
                 <div 
                   key={category.id} 
-                  className="bg-purple-700/50 text-white text-center py-3 px-2 rounded-t-lg font-bold text-sm md:text-base truncate"
+                  className="bg-indigo-600 text-white text-center py-2 px-1 font-semibold text-xs md:text-sm uppercase tracking-wide truncate"
                 >
                   {category.name}
                 </div>
@@ -315,7 +329,7 @@ export default function Blitzgrid() {
             {POINT_TIERS.map(points => (
               <div 
                 key={points} 
-                className="grid gap-2 mb-2" 
+                className="grid gap-1 mb-1" 
                 style={{ gridTemplateColumns: `repeat(${gridCategories.length}, minmax(0, 1fr))` }}
               >
                 {gridCategories.map(category => {
@@ -327,10 +341,10 @@ export default function Blitzgrid() {
                     <motion.button
                       key={cellKey}
                       className={`
-                        aspect-[4/3] rounded-lg font-bold text-2xl md:text-4xl transition-all
+                        aspect-[4/3] font-bold text-xl md:text-3xl transition-all flex items-center justify-center
                         ${isRevealed 
-                          ? 'bg-gray-700/50 text-gray-500 cursor-default' 
-                          : 'bg-gradient-to-b from-blue-500 to-blue-700 text-yellow-300 hover:from-blue-400 hover:to-blue-600 cursor-pointer shadow-lg'
+                          ? 'bg-slate-800 text-slate-700 cursor-default' 
+                          : 'bg-indigo-500 text-amber-300 hover:bg-indigo-400 cursor-pointer'
                         }
                       `}
                       onClick={() => question && !isRevealed && handleCellClick(category.id, points, question)}
@@ -339,7 +353,7 @@ export default function Blitzgrid() {
                       whileTap={!isRevealed ? { scale: 0.98 } : {}}
                       data-testid={`cell-${category.id}-${points}`}
                     >
-                      {isRevealed ? '' : `$${points}`}
+                      {isRevealed ? '' : points}
                     </motion.button>
                   );
                 })}
@@ -347,12 +361,30 @@ export default function Blitzgrid() {
             ))}
           </div>
           
+          {/* QR Code Modal */}
+          <Dialog open={showQRCode} onOpenChange={setShowQRCode}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle className="text-center">Scan to Join</DialogTitle>
+                <DialogDescription className="text-center">
+                  Players can scan this code to join the game
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex justify-center py-6">
+                <div className="bg-white p-4 rounded-lg">
+                  <QRCodeSVG value={joinUrl} size={200} />
+                </div>
+              </div>
+              <p className="text-center text-sm text-muted-foreground">{joinUrl}</p>
+            </DialogContent>
+          </Dialog>
+          
           {/* Question Modal */}
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
-            <DialogContent className="max-w-2xl bg-gradient-to-b from-blue-800 to-blue-900 text-white border-blue-600">
+            <DialogContent className="max-w-2xl bg-slate-800 text-white border-slate-700">
               <DialogHeader>
-                <DialogTitle className="text-yellow-300 text-3xl text-center">
-                  ${activeQuestion?.points}
+                <DialogTitle className="text-amber-400 text-2xl text-center">
+                  {activeQuestion?.points} Points
                 </DialogTitle>
               </DialogHeader>
               <div className="py-8">
@@ -366,10 +398,10 @@ export default function Blitzgrid() {
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-green-600/30 border border-green-500 rounded-lg p-6 text-center"
+                    className="bg-emerald-900/50 border border-emerald-600 rounded-lg p-6 text-center"
                   >
-                    <p className="text-sm text-green-300 mb-2">Answer</p>
-                    <p className="text-2xl font-bold text-green-100">
+                    <p className="text-sm text-emerald-400 mb-2">Answer</p>
+                    <p className="text-2xl font-bold text-emerald-100">
                       {activeQuestion?.correctAnswer}
                     </p>
                   </motion.div>
@@ -380,7 +412,7 @@ export default function Blitzgrid() {
                 {!showAnswer ? (
                   <Button 
                     onClick={handleRevealAnswer}
-                    className="bg-yellow-500 text-black hover:bg-yellow-400"
+                    className="bg-amber-500 text-slate-900 hover:bg-amber-400"
                     data-testid="button-reveal-answer"
                   >
                     <Eye className="w-4 h-4 mr-2" /> Show Answer
@@ -389,7 +421,7 @@ export default function Blitzgrid() {
                   <Button 
                     onClick={handleCloseQuestion}
                     variant="outline"
-                    className="border-white/30 text-white hover:bg-white/10"
+                    className="border-slate-600 text-white hover:bg-slate-700"
                     data-testid="button-close-question"
                   >
                     Continue
