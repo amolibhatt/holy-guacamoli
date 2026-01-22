@@ -4,9 +4,9 @@ import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { 
   Users, BarChart3, Shield, ArrowLeft,
-  Trash2, MoreHorizontal,
+  Trash2, MoreHorizontal, Pencil,
   TrendingUp, Gamepad2, Clock, Activity, Heart,
-  ListOrdered, RefreshCw,
+  ListOrdered, RefreshCw, Grid3X3,
   ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -640,67 +640,6 @@ export default function SuperAdmin() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={!!demotePackId} onOpenChange={(open) => !toggleGlobalBoardMutation.isPending && !open && setDemotePackId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Global Grid</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will remove this grid from Global Grids. You can promote it again later.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={toggleGlobalBoardMutation.isPending}>Cancel</AlertDialogCancel>
-            <Button
-              disabled={toggleGlobalBoardMutation.isPending}
-              onClick={(e) => {
-                e.preventDefault();
-                if (demotePackId) {
-                  toggleGlobalBoardMutation.mutate({ boardId: demotePackId, isGlobal: false });
-                }
-              }}
-            >
-              {toggleGlobalBoardMutation.isPending ? 'Removing...' : 'Remove'}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <Dialog open={showAllPromotableBoards} onOpenChange={(open) => !toggleGlobalBoardMutation.isPending && setShowAllPromotableBoards(open)}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Promote to Global Grid</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2 mt-4">
-            {allBoards.filter((b: any) => !b.isGlobal).map((board: any) => (
-              <div key={board.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border hover:bg-muted/50">
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium truncate">{board.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {board.categoryCount} categories, {board.questionCount} questions
-                  </div>
-                  <div className="text-xs text-muted-foreground/70 truncate">
-                    by {board.ownerName || board.ownerEmail}
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    toggleGlobalBoardMutation.mutate({ boardId: board.id, isGlobal: true });
-                  }}
-                  disabled={toggleGlobalBoardMutation.isPending}
-                  data-testid={`button-promote-dialog-${board.id}`}
-                >
-                  <Plus className="w-3 h-3 mr-1" />
-                  {toggleGlobalBoardMutation.isPending ? 'Promoting...' : 'Promote'}
-                </Button>
-              </div>
-            ))}
-            {allBoards.filter((b: any) => !b.isGlobal).length === 0 && (
-              <p className="text-center text-muted-foreground py-4">No grids available to promote</p>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
