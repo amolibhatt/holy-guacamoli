@@ -429,12 +429,12 @@ export default function Blitzgrid() {
         : `${window.location.origin}/play`;
       
       return (
-        <div className="h-screen overflow-hidden flex flex-col bg-zinc-950" data-testid="page-blitzgrid-play">
+        <div className="h-screen overflow-hidden flex flex-col" style={{ background: 'linear-gradient(180deg, #1a472a 0%, #2d5a35 50%, #1a472a 100%)' }} data-testid="page-blitzgrid-play">
           {/* Minimal Header */}
           <motion.div 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="flex items-center justify-between px-4 py-3 bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800"
+            className="flex items-center justify-between px-4 py-3 bg-black/50 backdrop-blur-md border-b border-white/10"
           >
             <Button 
               variant="ghost" 
@@ -472,10 +472,11 @@ export default function Blitzgrid() {
           
           {/* Game Grid */}
           <div className="flex-1 p-3 md:p-5 overflow-hidden relative">
-            {/* Subtle pitch markings - very faint */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-emerald-500 -translate-x-1/2" />
-              <div className="absolute left-1/2 top-1/2 w-24 h-24 md:w-40 md:h-40 border border-emerald-500 rounded-full -translate-x-1/2 -translate-y-1/2" />
+            {/* Football pitch markings */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30">
+              <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white -translate-x-1/2" />
+              <div className="absolute left-1/2 top-1/2 w-28 h-28 md:w-48 md:h-48 border-2 border-white rounded-full -translate-x-1/2 -translate-y-1/2" />
+              <div className="absolute left-1/2 top-1/2 w-2 h-2 bg-white rounded-full -translate-x-1/2 -translate-y-1/2" />
             </div>
             
             <motion.div 
@@ -492,9 +493,9 @@ export default function Blitzgrid() {
                     initial={{ y: -30, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: idx * 0.08, type: "spring", stiffness: 120 }}
-                    className="bg-zinc-900 py-3 md:py-4 px-2 rounded-lg text-center border border-zinc-800"
+                    className="bg-white/95 py-3 md:py-4 px-2 rounded-lg text-center shadow-lg"
                   >
-                    <span className="text-white font-bold text-xs md:text-sm uppercase tracking-wider">
+                    <span className="text-gray-800 font-bold text-xs md:text-sm uppercase tracking-wider">
                       {category.name}
                     </span>
                   </motion.div>
@@ -517,18 +518,18 @@ export default function Blitzgrid() {
                         animate={{ opacity: 1, rotateX: 0, y: 0 }}
                         transition={{ delay, type: "spring", stiffness: 150, damping: 15 }}
                         className={`
-                          rounded-lg font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-200 relative overflow-hidden
+                          rounded-lg font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-200
                           ${isRevealed 
-                            ? 'bg-zinc-900/50 text-zinc-800 cursor-default border border-zinc-800' 
-                            : 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white cursor-pointer border border-emerald-400/30'
+                            ? 'bg-black/30 text-white/20 cursor-default' 
+                            : 'bg-white text-gray-800 cursor-pointer hover:bg-gray-100'
                           }
                         `}
                         style={!isRevealed ? { 
-                          boxShadow: '0 4px 15px rgba(16, 185, 129, 0.25)' 
+                          boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)' 
                         } : {}}
                         onClick={() => question && !isRevealed && handleCellClick(category.id, points, question)}
                         disabled={isRevealed || !question}
-                        whileHover={!isRevealed ? { scale: 1.04, y: -4, boxShadow: '0 8px 25px rgba(16, 185, 129, 0.4)' } : {}}
+                        whileHover={!isRevealed ? { scale: 1.04, y: -4, boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)' } : {}}
                         whileTap={!isRevealed ? { scale: 0.96 } : {}}
                         data-testid={`cell-${category.id}-${points}`}
                       >
@@ -537,7 +538,6 @@ export default function Blitzgrid() {
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             transition={{ delay: delay + 0.1, type: "spring", stiffness: 200 }}
-                            className="drop-shadow-md"
                           >
                             {points}
                           </motion.span>
