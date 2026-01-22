@@ -279,7 +279,10 @@ export default function Blitzgrid() {
             <div className="flex items-center justify-between mb-6">
               <Button 
                 variant="outline" 
-                onClick={() => setPlayMode(false)}
+                onClick={() => {
+                  setPlayMode(false);
+                  setSelectedGridId(null);
+                }}
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                 data-testid="button-exit-play"
               >
@@ -755,86 +758,24 @@ export default function Blitzgrid() {
             {grids.map(grid => (
               <Card
                 key={grid.id}
-                className="hover-elevate cursor-pointer transition-all"
-                onClick={() => setSelectedGridId(grid.id)}
+                className={`hover-elevate transition-all ${grid.isActive ? 'cursor-pointer' : 'opacity-60'}`}
+                onClick={() => {
+                  if (grid.isActive) {
+                    setSelectedGridId(grid.id);
+                    setPlayMode(true);
+                    setRevealedCells(new Set());
+                    setActiveQuestion(null);
+                    setShowAnswer(false);
+                  } else {
+                    toast({ title: "Grid not ready", description: "This grid needs 5 categories with 5 questions each." });
+                  }
+                }}
                 data-testid={`card-grid-${grid.id}`}
               >
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    {editingGridId === grid.id ? (
-                      <div className="flex items-center gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
-                        <Input
-                          value={editGridName}
-                          onChange={(e) => setEditGridName(e.target.value)}
-                          className="h-8"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && editGridName.trim()) {
-                              updateGridMutation.mutate({ id: grid.id, name: editGridName.trim() });
-                            } else if (e.key === 'Escape') {
-                              setEditingGridId(null);
-                            }
-                          }}
-                          data-testid={`input-edit-grid-${grid.id}`}
-                        />
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 shrink-0"
-                          onClick={() => {
-                            if (editGridName.trim()) {
-                              updateGridMutation.mutate({ id: grid.id, name: editGridName.trim() });
-                            }
-                          }}
-                          disabled={!editGridName.trim() || updateGridMutation.isPending}
-                          data-testid={`button-save-grid-${grid.id}`}
-                        >
-                          <Check className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 shrink-0"
-                          onClick={() => setEditingGridId(null)}
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-2 min-w-0">
-                          <Grid3X3 className="w-5 h-5 text-purple-500 shrink-0" />
-                          <h3 className="font-semibold truncate">{grid.name}</h3>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 text-muted-foreground"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingGridId(grid.id);
-                              setEditGridName(grid.name);
-                            }}
-                            data-testid={`button-edit-grid-${grid.id}`}
-                          >
-                            <Pencil className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteGridId(grid.id);
-                            }}
-                            data-testid={`button-delete-grid-${grid.id}`}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </>
-                    )}
+                  <div className="flex items-center gap-2 min-w-0 mb-3">
+                    <Grid3X3 className="w-5 h-5 text-purple-500 shrink-0" />
+                    <h3 className="font-semibold truncate">{grid.name}</h3>
                   </div>
                   
                   <div className="flex items-center justify-between gap-2">
