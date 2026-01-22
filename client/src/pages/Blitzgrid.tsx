@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Play, Loader2,
-  AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus
+  AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Zap, Lock
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -64,6 +64,8 @@ export default function Blitzgrid() {
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [wsConnected, setWsConnected] = useState(false);
+  const [buzzerLocked, setBuzzerLocked] = useState(true);
+  const [buzzQueue, setBuzzQueue] = useState<Array<{ playerId: string; name: string; position: number; time: number }>>([]);
   const wsRef = useRef<WebSocket | null>(null);
   
   // Form state
@@ -278,6 +280,24 @@ export default function Blitzgrid() {
               p.id === data.playerId ? { ...p, score: data.score } : p
             ));
             break;
+          case 'buzzer:locked':
+            setBuzzerLocked(true);
+            break;
+          case 'buzzer:unlocked':
+            setBuzzerLocked(false);
+            setBuzzQueue([]);
+            break;
+          case 'buzz:received':
+            setBuzzQueue(prev => [...prev, {
+              playerId: data.playerId,
+              name: data.name,
+              position: data.position,
+              time: data.time
+            }]);
+            break;
+          case 'buzzer:reset':
+            setBuzzQueue([]);
+            break;
         }
       } catch (err) {
         console.error('[WS] Message parse error:', err);
@@ -310,6 +330,28 @@ export default function Blitzgrid() {
         playerId,
         delta
       }));
+    }
+  }, []);
+  
+  const unlockBuzzer = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'buzzer:unlock' }));
+      setBuzzerLocked(false);
+      setBuzzQueue([]);
+    }
+  }, []);
+  
+  const lockBuzzer = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'buzzer:lock' }));
+      setBuzzerLocked(true);
+    }
+  }, []);
+  
+  const resetBuzzers = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'buzzer:reset' }));
+      setBuzzQueue([]);
     }
   }, []);
   
@@ -526,18 +568,134 @@ export default function Blitzgrid() {
                   {activeQuestion?.points} Points
                 </DialogTitle>
               </DialogHeader>
-              <div className="py-6">
+              
+              {/* Question */}
+              <div className="py-4">
                 <p className="text-xl md:text-2xl text-center font-medium">
                   {activeQuestion?.question}
                 </p>
               </div>
               
+              {/* Buzzer Controls */}
+              {players.length > 0 && !showAnswer && (
+                <div className="flex justify-center gap-2 py-2">
+                  {buzzerLocked ? (
+                    <Button
+                      onClick={unlockBuzzer}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white"
+                      data-testid="button-unlock-buzzer"
+                    >
+                      <Zap className="w-4 h-4 mr-2" /> Unlock Buzzers
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={lockBuzzer}
+                      variant="outline"
+                      className="border-red-600 text-red-400 hover:bg-red-900/30"
+                      data-testid="button-lock-buzzer"
+                    >
+                      <Lock className="w-4 h-4 mr-2" /> Lock Buzzers
+                    </Button>
+                  )}
+                  {buzzQueue.length > 0 && (
+                    <Button
+                      onClick={resetBuzzers}
+                      variant="ghost"
+                      className="text-slate-400 hover:text-white"
+                      data-testid="button-reset-buzzers"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2" /> Reset
+                    </Button>
+                  )}
+                </div>
+              )}
+              
+              {/* Buzz Queue - players who buzzed in order */}
+              {buzzQueue.length > 0 && !showAnswer && (
+                <div className="bg-indigo-900/50 border border-indigo-600 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Zap className="w-4 h-4 text-indigo-400" />
+                    <span className="text-sm text-indigo-300 font-medium">Buzz Order</span>
+                  </div>
+                  <div className="space-y-2">
+                    {buzzQueue.map((buzz, index) => {
+                      const player = players.find(p => p.id === buzz.playerId);
+                      return (
+                        <div 
+                          key={buzz.playerId}
+                          className={`flex items-center justify-between rounded-lg px-3 py-2 ${
+                            index === 0 ? 'bg-amber-600/30 border border-amber-500' : 'bg-slate-600/50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className={`text-lg font-bold ${index === 0 ? 'text-amber-400' : 'text-slate-500'}`}>
+                              #{index + 1}
+                            </span>
+                            <span className="font-medium text-white">{buzz.name}</span>
+                            <span className="text-xs text-slate-400">({player?.score || 0} pts)</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              className="bg-red-600 hover:bg-red-500 text-white h-8"
+                              onClick={() => {
+                                updatePlayerScore(buzz.playerId, -(activeQuestion?.points || 0));
+                                handleRevealAnswer();
+                              }}
+                              data-testid={`button-wrong-${buzz.playerId}`}
+                            >
+                              <X className="w-3 h-3 mr-1" /> Wrong
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="bg-emerald-600 hover:bg-emerald-500 text-white h-8"
+                              onClick={() => {
+                                updatePlayerScore(buzz.playerId, activeQuestion?.points || 0);
+                                handleRevealAnswer();
+                              }}
+                              data-testid={`button-correct-${buzz.playerId}`}
+                            >
+                              <Check className="w-3 h-3 mr-1" /> Correct
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
+              {/* No players yet prompt */}
+              {players.length === 0 && !showAnswer && (
+                <div className="text-center py-4 text-slate-400">
+                  <Users className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No players have joined yet</p>
+                  <p className="text-xs mt-1">Click "Join" to show QR code</p>
+                </div>
+              )}
+              
+              {/* Waiting for buzzes */}
+              {players.length > 0 && !buzzerLocked && buzzQueue.length === 0 && !showAnswer && (
+                <div className="text-center py-6">
+                  <motion.div
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                    className="inline-block"
+                  >
+                    <Zap className="w-12 h-12 text-amber-400 mx-auto" />
+                  </motion.div>
+                  <p className="text-amber-300 mt-2 font-medium">Waiting for buzzes...</p>
+                  <p className="text-slate-400 text-sm">{players.length} player{players.length !== 1 ? 's' : ''} ready</p>
+                </div>
+              )}
+              
+              {/* Answer Revealed */}
               <AnimatePresence>
                 {showAnswer && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-emerald-900/50 border border-emerald-600 rounded-lg p-4 text-center mb-4"
+                    className="bg-emerald-900/50 border border-emerald-600 rounded-lg p-4 text-center"
                   >
                     <p className="text-sm text-emerald-400 mb-1">Answer</p>
                     <p className="text-xl font-bold text-emerald-100">
@@ -547,14 +705,14 @@ export default function Blitzgrid() {
                 )}
               </AnimatePresence>
               
-              {/* Player List for Scoring */}
+              {/* All Players for Manual Scoring (after answer revealed) */}
               {showAnswer && players.length > 0 && (
-                <div className="bg-slate-700/50 rounded-lg p-4">
+                <div className="bg-slate-700/50 rounded-lg p-4 mt-4">
                   <div className="flex items-center gap-2 mb-3">
                     <Users className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm text-slate-300">Award Points</span>
+                    <span className="text-sm text-slate-300">Manage Points</span>
                   </div>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
                     {players.map(player => (
                       <div 
                         key={player.id}
@@ -568,20 +726,20 @@ export default function Blitzgrid() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/30"
+                            className="h-7 w-7 text-red-400 hover:text-red-300 hover:bg-red-900/30"
                             onClick={() => updatePlayerScore(player.id, -(activeQuestion?.points || 0))}
                             data-testid={`button-deduct-${player.id}`}
                           >
-                            <Minus className="w-4 h-4" />
+                            <Minus className="w-3 h-3" />
                           </Button>
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-900/30"
+                            className="h-7 w-7 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-900/30"
                             onClick={() => updatePlayerScore(player.id, activeQuestion?.points || 0)}
                             data-testid={`button-award-${player.id}`}
                           >
-                            <Plus className="w-4 h-4" />
+                            <Plus className="w-3 h-3" />
                           </Button>
                         </div>
                       </div>
@@ -590,18 +748,13 @@ export default function Blitzgrid() {
                 </div>
               )}
               
-              {showAnswer && players.length === 0 && (
-                <div className="text-center py-4 text-slate-400">
-                  <Users className="w-6 h-6 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No players have joined yet</p>
-                  <p className="text-xs mt-1">Click "Join" to show QR code</p>
-                </div>
-              )}
-              
-              <DialogFooter className="flex gap-2 sm:justify-center">
+              <DialogFooter className="flex gap-2 sm:justify-center mt-4">
                 {!showAnswer ? (
                   <Button 
-                    onClick={handleRevealAnswer}
+                    onClick={() => {
+                      lockBuzzer();
+                      handleRevealAnswer();
+                    }}
                     className="bg-amber-500 text-slate-900 hover:bg-amber-400"
                     data-testid="button-reveal-answer"
                   >
