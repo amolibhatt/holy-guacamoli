@@ -166,16 +166,13 @@ export default function Admin() {
   
   const createTopicMutation = useMutation({
     mutationFn: async (data: { name: string; description: string; gameId: number }) => {
-      // First create the category with all required fields
-      const catResponse = await apiRequest('POST', '/api/categories', { 
+      // Use create-and-link endpoint which handles both creation and linking atomically
+      const response = await apiRequest('POST', `/api/boards/${data.gameId}/categories/create-and-link`, { 
         name: data.name, 
-        description: data.description, 
-        imageUrl: '' 
+        description: data.description
       });
-      const category = await catResponse.json();
-      // Then link it to the game
-      await apiRequest('POST', `/api/boards/${data.gameId}/categories`, { categoryId: category.id, position: gameTopics.length });
-      return category;
+      const result = await response.json();
+      return result.category;
     },
     onSuccess: (category) => {
       queryClient.invalidateQueries({ queryKey: ['/api/boards', selectedGameId, 'categories'] });
