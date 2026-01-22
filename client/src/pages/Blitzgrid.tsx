@@ -70,6 +70,7 @@ export default function Blitzgrid() {
   const [buzzQueue, setBuzzQueue] = useState<Array<{ playerId: string; name: string; position: number; time: number }>>([]);
   const [isJudging, setIsJudging] = useState(false);
   const [lastJoinedPlayer, setLastJoinedPlayer] = useState<{ name: string; avatar?: string } | null>(null);
+  const [lastScoreChange, setLastScoreChange] = useState<{ playerId: string; playerName: string; points: number } | null>(null);
   const joinNotificationTimer = useRef<NodeJS.Timeout | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttempts = useRef(0);
@@ -470,15 +471,30 @@ export default function Blitzgrid() {
     }
   }, [clearStoredSession]);
   
-  const updatePlayerScore = useCallback((playerId: string, points: number) => {
+  const updatePlayerScore = useCallback((playerId: string, points: number, trackForUndo = true) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
         type: 'host:updateScore',
         playerId,
         points
       }));
+      if (trackForUndo) {
+        const player = players.find(p => p.id === playerId);
+        setLastScoreChange({ playerId, playerName: player?.name || 'Player', points });
+      }
     }
-  }, []);
+  }, [players]);
+
+  const undoLastScore = useCallback(() => {
+    if (lastScoreChange) {
+      updatePlayerScore(lastScoreChange.playerId, -lastScoreChange.points, false);
+      toast({
+        title: "Undo successful",
+        description: `Reversed ${lastScoreChange.points > 0 ? '+' : ''}${lastScoreChange.points} for ${lastScoreChange.playerName}`,
+      });
+      setLastScoreChange(null);
+    }
+  }, [lastScoreChange, updatePlayerScore, toast]);
 
   const sendFeedback = useCallback((playerId: string, correct: boolean, points: number) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -527,6 +543,7 @@ export default function Blitzgrid() {
     setBuzzerLocked(true);
     setPlayMode(false);
     setSelectedGridId(null);
+    setLastScoreChange(null);
     toast({ title: "Session ended", description: "All players have been disconnected." });
   }, [clearStoredSession, disconnectWebSocket, toast]);
   
@@ -598,6 +615,7 @@ export default function Blitzgrid() {
         setShowAnswer(false);
         lockBuzzer();
         setIsJudging(false);
+        setLastScoreChange(null);
       };
       
       const resetGame = () => {
@@ -1083,6 +1101,16 @@ export default function Blitzgrid() {
               )}
               
               <DialogFooter className="flex gap-2 sm:justify-center mt-4">
+                {lastScoreChange && (
+                  <Button 
+                    onClick={undoLastScore}
+                    variant="outline"
+                    className="border-amber-500 text-amber-400"
+                    data-testid="button-undo-score"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" /> Undo {lastScoreChange.points > 0 ? '+' : ''}{lastScoreChange.points}
+                  </Button>
+                )}
                 {!showAnswer ? (
                   <Button 
                     onClick={() => {
