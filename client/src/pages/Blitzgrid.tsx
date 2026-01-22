@@ -289,11 +289,7 @@ export default function Blitzgrid() {
             setBuzzQueue([]);
             break;
           case 'buzz:received':
-            // Auto-lock buzzer on first buzz
-            if (data.position === 1) {
-              setBuzzerLocked(true);
-              ws.send(JSON.stringify({ type: 'buzzer:lock' }));
-            }
+            // Collect all buzzes - don't auto-lock
             setBuzzQueue(prev => [...prev, {
               playerId: data.playerId,
               name: data.name,
