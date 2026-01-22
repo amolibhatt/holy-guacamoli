@@ -103,7 +103,7 @@ describe("Buzzkill Shuffle Algorithm", () => {
       for (let i = 0; i < 6; i++) {
         const cat = await createTestCategory(`Test Cat ${i}`, ["A", "B", "C", "D", "E", null][i], true);
         const bc = await linkCategoryToBoard(board.id, cat.id);
-        await addValidQuestions(bc.id);
+        await addValidQuestions(cat.id);
       }
       
       const session = await createSession("TEST1");
@@ -119,7 +119,7 @@ describe("Buzzkill Shuffle Algorithm", () => {
       for (let i = 0; i < 3; i++) {
         const cat = await createTestCategory(`Sparse Cat ${i}`, "A", true);
         const bc = await linkCategoryToBoard(board.id, cat.id);
-        await addValidQuestions(bc.id);
+        await addValidQuestions(cat.id);
       }
       
       const session = await createSession("TEST2");
@@ -134,7 +134,7 @@ describe("Buzzkill Shuffle Algorithm", () => {
       for (let i = 0; i < 6; i++) {
         const cat = await createTestCategory(`Track Cat ${i}`, ["A", "B", "C", "D", "E", null][i], true);
         const bc = await linkCategoryToBoard(board.id, cat.id);
-        await addValidQuestions(bc.id);
+        await addValidQuestions(cat.id);
       }
       
       const session = await createSession("TEST3");
@@ -153,7 +153,7 @@ describe("Buzzkill Shuffle Algorithm", () => {
       for (let i = 0; i < 7; i++) {
         const cat = await createTestCategory(`Reset Cat ${i}`, ["A", "B", "C", "D", "E", null, null][i], true);
         const bc = await linkCategoryToBoard(board.id, cat.id);
-        await addValidQuestions(bc.id);
+        await addValidQuestions(cat.id);
         createdCatIds.push(cat.id);
       }
       
@@ -173,7 +173,7 @@ describe("Buzzkill Shuffle Algorithm", () => {
       for (const group of ["A", "B", "C", "D", "E"]) {
         const cat = await createTestCategory(`Group ${group}`, group, true);
         const bc = await linkCategoryToBoard(board.id, cat.id);
-        await addValidQuestions(bc.id);
+        await addValidQuestions(cat.id);
       }
       
       const session = await createSession("TEST5");
@@ -199,13 +199,13 @@ describe("Buzzkill Shuffle Algorithm", () => {
       for (let i = 0; i < 3; i++) {
         const cat = await createTestCategory(`Global Cat ${i}`, ["A", "B", "C"][i], true);
         const bc = await linkCategoryToBoard(globalBoard.id, cat.id);
-        await addValidQuestions(bc.id);
+        await addValidQuestions(cat.id);
       }
       
       for (let i = 0; i < 3; i++) {
         const cat = await createTestCategory(`Personal Cat ${i}`, ["D", "E", null][i], true);
         const bc = await linkCategoryToBoard(personalBoard.id, cat.id);
-        await addValidQuestions(bc.id);
+        await addValidQuestions(cat.id);
       }
       
       const session = await createSession("TEST6");
@@ -221,13 +221,13 @@ describe("Buzzkill Shuffle Algorithm", () => {
       
       const validCat = await createTestCategory("Valid 5Q", "A", true);
       const validBc = await linkCategoryToBoard(board.id, validCat.id);
-      await addValidQuestions(validBc.id);
+      await addValidQuestions(validCat.id);
       
       const invalidCat = await createTestCategory("Invalid 3Q", "B", true);
       const invalidBc = await linkCategoryToBoard(board.id, invalidCat.id);
       for (const pts of [10, 20, 30]) {
         const [q] = await db.insert(questions).values({
-          categoryId: invalidBc.id,
+          categoryId: invalidCat.id,
           question: `Q${pts}`,
           options: ["A", "B", "C", "D"],
           correctAnswer: "A",
@@ -239,7 +239,7 @@ describe("Buzzkill Shuffle Algorithm", () => {
       for (let i = 0; i < 5; i++) {
         const cat = await createTestCategory(`Extra Cat ${i}`, ["C", "D", "E", null, null][i], true);
         const bc = await linkCategoryToBoard(board.id, cat.id);
-        await addValidQuestions(bc.id);
+        await addValidQuestions(cat.id);
       }
       
       const session = await createSession("TEST7");
@@ -256,7 +256,7 @@ describe("Buzzkill Shuffle Algorithm", () => {
       const dupeBc = await linkCategoryToBoard(board.id, dupeCat.id);
       for (const pts of [10, 20, 20, 40, 50]) {
         const [q] = await db.insert(questions).values({
-          categoryId: dupeBc.id,
+          categoryId: dupeCat.id,
           question: `Q${pts}`,
           options: ["A", "B", "C", "D"],
           correctAnswer: "A",
@@ -268,7 +268,7 @@ describe("Buzzkill Shuffle Algorithm", () => {
       for (let i = 0; i < 6; i++) {
         const cat = await createTestCategory(`Valid Cat ${i}`, ["B", "C", "D", "E", null, null][i], true);
         const bc = await linkCategoryToBoard(board.id, cat.id);
-        await addValidQuestions(bc.id);
+        await addValidQuestions(cat.id);
       }
       
       const session = await createSession("TEST8");
@@ -283,12 +283,12 @@ describe("Buzzkill Shuffle Algorithm", () => {
       
       const inactiveCat = await createTestCategory("Inactive Cat", "A", false);
       const inactiveBc = await linkCategoryToBoard(board.id, inactiveCat.id);
-      await addValidQuestions(inactiveBc.id);
+      await addValidQuestions(inactiveCat.id);
       
       for (let i = 0; i < 6; i++) {
         const cat = await createTestCategory(`Active Cat ${i}`, ["B", "C", "D", "E", null, null][i], true);
         const bc = await linkCategoryToBoard(board.id, cat.id);
-        await addValidQuestions(bc.id);
+        await addValidQuestions(cat.id);
       }
       
       const session = await createSession("TEST9");
@@ -306,7 +306,7 @@ describe("Buzzkill Shuffle Algorithm", () => {
       for (let i = 0; i < 10; i++) {
         const cat = await createTestCategory(`Iso Cat ${i}`, ["A", "B", "C", "D", "E"][i % 5], true);
         const bc = await linkCategoryToBoard(board.id, cat.id);
-        await addValidQuestions(bc.id);
+        await addValidQuestions(cat.id);
       }
       
       const session1 = await createSession("ISO1");
