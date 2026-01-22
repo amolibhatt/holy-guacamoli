@@ -223,7 +223,7 @@ export default function Blitzgrid() {
   if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <AppHeader />
+        <AppHeader showAdminButton adminHref="/admin/games" />
         <div className="container mx-auto px-4 py-8">
           <Skeleton className="h-8 w-48 mb-4" />
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -500,7 +500,7 @@ export default function Blitzgrid() {
     
     return (
       <div className="min-h-screen bg-background" data-testid="page-blitzgrid-grid">
-        <AppHeader />
+        <AppHeader showAdminButton adminHref="/admin/games" />
         <div className="container mx-auto px-4 py-6">
           <Button 
             variant="ghost" 
@@ -682,7 +682,7 @@ export default function Blitzgrid() {
   // Main grid list view
   return (
     <div className="min-h-screen bg-background" data-testid="page-blitzgrid">
-      <AppHeader />
+      <AppHeader showAdminButton adminHref="/admin/games" />
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
