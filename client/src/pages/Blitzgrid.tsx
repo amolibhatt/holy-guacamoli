@@ -9,11 +9,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
+import { useScore } from "@/components/ScoreContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Play, Loader2,
-  AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Zap, Lock
+  AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Zap, Lock, Trophy, ChevronLeft, UserPlus
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -466,74 +467,164 @@ export default function Blitzgrid() {
             </div>
           </motion.div>
           
-          {/* Game Grid - Clean & Modern */}
-          <div className="flex-1 p-3 md:p-6 overflow-hidden">
+          {/* Main Content - Grid + Scoreboard */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* Game Grid - Clean & Modern */}
+            <div className="flex-1 p-3 md:p-4 overflow-hidden">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4 }}
+                className="h-full flex flex-col gap-2"
+              >
+                {/* Category Headers */}
+                <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)` }}>
+                  {gridCategories.map((category, idx) => (
+                    <motion.div 
+                      key={category.id}
+                      initial={{ y: -20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-sm py-3 px-2 rounded-xl text-center border border-white/10"
+                    >
+                      <span className="text-white font-semibold text-xs md:text-sm tracking-wide">
+                        {category.name}
+                      </span>
+                    </motion.div>
+                  ))}
+                </div>
+                
+                {/* Point Grid */}
+                <div className="flex-1 grid gap-2" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)`, gridTemplateRows: 'repeat(5, 1fr)' }}>
+                  {POINT_TIERS.map((points, rowIdx) => (
+                    gridCategories.map((category, colIdx) => {
+                      const question = category.questions?.find(q => q.points === points);
+                      const cellKey = `${category.id}-${points}`;
+                      const isRevealed = revealedCells.has(cellKey);
+                      const delay = (rowIdx * gridCategories.length + colIdx) * 0.02;
+                      
+                      return (
+                        <motion.button
+                          key={cellKey}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay, type: "spring", stiffness: 200 }}
+                          className={`
+                            rounded-xl font-bold text-2xl md:text-4xl flex items-center justify-center transition-all duration-300
+                            ${isRevealed 
+                              ? 'bg-white/5 text-white/20 cursor-default' 
+                              : 'bg-gradient-to-br from-emerald-600 to-emerald-800 text-white cursor-pointer hover:from-emerald-500 hover:to-emerald-700'
+                            }
+                          `}
+                          style={!isRevealed ? { boxShadow: '0 4px 20px rgba(16, 185, 129, 0.3)' } : {}}
+                          onClick={() => question && !isRevealed && handleCellClick(category.id, points, question)}
+                          disabled={isRevealed || !question}
+                          whileHover={!isRevealed ? { scale: 1.03, y: -4 } : {}}
+                          whileTap={!isRevealed ? { scale: 0.97 } : {}}
+                          data-testid={`cell-${category.id}-${points}`}
+                        >
+                          {!isRevealed && (
+                            <motion.span
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: delay + 0.1 }}
+                            >
+                              {points}
+                            </motion.span>
+                          )}
+                        </motion.button>
+                      );
+                    })
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+            
+            {/* Scoreboard Panel */}
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4 }}
-              className="h-full flex flex-col gap-2"
+              initial={{ x: 100, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.3, type: "spring" }}
+              className="w-64 md:w-72 bg-white/5 backdrop-blur-md border-l border-white/10 flex flex-col overflow-hidden"
             >
-              {/* Category Headers */}
-              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)` }}>
-                {gridCategories.map((category, idx) => (
-                  <motion.div 
-                    key={category.id}
-                    initial={{ y: -20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className="bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-sm py-4 px-3 rounded-xl text-center border border-white/10"
-                  >
-                    <span className="text-white font-semibold text-sm md:text-base tracking-wide">
-                      {category.name}
-                    </span>
-                  </motion.div>
-                ))}
+              {/* Scoreboard Header */}
+              <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-emerald-400" />
+                  <span className="text-white font-semibold text-sm">Scoreboard</span>
+                </div>
               </div>
               
-              {/* Point Grid */}
-              <div className="flex-1 grid gap-2" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)`, gridTemplateRows: 'repeat(5, 1fr)' }}>
-                {POINT_TIERS.map((points, rowIdx) => (
-                  gridCategories.map((category, colIdx) => {
-                    const question = category.questions?.find(q => q.points === points);
-                    const cellKey = `${category.id}-${points}`;
-                    const isRevealed = revealedCells.has(cellKey);
-                    const delay = (rowIdx * gridCategories.length + colIdx) * 0.02;
-                    
-                    return (
-                      <motion.button
-                        key={cellKey}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay, type: "spring", stiffness: 200 }}
-                        className={`
-                          rounded-xl font-bold text-2xl md:text-4xl flex items-center justify-center transition-all duration-300
-                          ${isRevealed 
-                            ? 'bg-white/5 text-white/20 cursor-default' 
-                            : 'bg-gradient-to-br from-emerald-600 to-emerald-800 text-white cursor-pointer hover:from-emerald-500 hover:to-emerald-700'
-                          }
-                        `}
-                        style={!isRevealed ? { boxShadow: '0 4px 20px rgba(16, 185, 129, 0.3)' } : {}}
-                        onClick={() => question && !isRevealed && handleCellClick(category.id, points, question)}
-                        disabled={isRevealed || !question}
-                        whileHover={!isRevealed ? { scale: 1.03, y: -4 } : {}}
-                        whileTap={!isRevealed ? { scale: 0.97 } : {}}
-                        data-testid={`cell-${category.id}-${points}`}
-                      >
-                        {!isRevealed && (
-                          <motion.span
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: delay + 0.1 }}
+              {/* Score List */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                {/* Connected Players from WebSocket */}
+                {players.length > 0 ? (
+                  [...players].sort((a, b) => b.score - a.score).map((player, idx) => (
+                    <motion.div
+                      key={player.id}
+                      initial={{ x: 20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.4 + idx * 0.05 }}
+                      className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2 border border-white/10"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-emerald-400 font-bold text-sm w-5">{idx + 1}</span>
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-xs font-bold text-black">
+                          {player.name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-white text-sm font-medium truncate max-w-20">{player.name}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-emerald-400 font-bold">{player.score}</span>
+                        <div className="flex gap-0.5">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6 text-emerald-400 hover:bg-emerald-500/20"
+                            onClick={() => {
+                              if (wsRef.current?.readyState === WebSocket.OPEN) {
+                                wsRef.current.send(JSON.stringify({ type: 'update_score', playerId: player.id, delta: 10 }));
+                              }
+                            }}
+                            data-testid={`button-add-score-${player.id}`}
                           >
-                            {points}
-                          </motion.span>
-                        )}
-                      </motion.button>
-                    );
-                  })
-                ))}
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6 text-red-400 hover:bg-red-500/20"
+                            onClick={() => {
+                              if (wsRef.current?.readyState === WebSocket.OPEN) {
+                                wsRef.current.send(JSON.stringify({ type: 'update_score', playerId: player.id, delta: -10 }));
+                              }
+                            }}
+                            data-testid={`button-sub-score-${player.id}`}
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <Users className="w-8 h-8 text-white/20 mx-auto mb-2" />
+                    <p className="text-white/40 text-sm">No players yet</p>
+                    <p className="text-white/30 text-xs mt-1">Share the room code to invite players</p>
+                  </div>
+                )}
               </div>
+              
+              {/* Quick Stats */}
+              {players.length > 0 && (
+                <div className="px-4 py-3 border-t border-white/10 bg-white/5">
+                  <div className="flex justify-between text-xs text-white/60">
+                    <span>Total Players: {players.length}</span>
+                    <span>Revealed: {revealedCells.size}/{POINT_TIERS.length * gridCategories.length}</span>
+                  </div>
+                </div>
+              )}
             </motion.div>
           </div>
           
