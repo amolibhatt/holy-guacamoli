@@ -684,7 +684,10 @@ export default function Blitzgrid() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={handleRevealAnswer}
+                    onClick={() => {
+                      lockBuzzer();
+                      handleRevealAnswer();
+                    }}
                     className="text-slate-400 hover:text-white"
                     data-testid="button-skip-reveal"
                   >
@@ -725,6 +728,7 @@ export default function Blitzgrid() {
                                 const pts = activeQuestion?.points || 0;
                                 updatePlayerScore(buzz.playerId, -pts);
                                 sendFeedback(buzz.playerId, false, -pts);
+                                lockBuzzer();
                                 handleRevealAnswer();
                               }}
                               data-testid={`button-wrong-${buzz.playerId}`}
@@ -738,6 +742,7 @@ export default function Blitzgrid() {
                                 const pts = activeQuestion?.points || 0;
                                 updatePlayerScore(buzz.playerId, pts);
                                 sendFeedback(buzz.playerId, true, pts);
+                                lockBuzzer();
                                 handleRevealAnswer();
                               }}
                               data-testid={`button-correct-${buzz.playerId}`}
