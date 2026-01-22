@@ -642,7 +642,8 @@ export async function registerRoutes(
           field: err.errors[0].path.join('.'),
         });
       }
-      throw err;
+      console.error("Error creating question:", err);
+      res.status(500).json({ message: "Failed to create question" });
     }
   });
 
