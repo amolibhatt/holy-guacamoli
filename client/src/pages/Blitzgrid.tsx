@@ -425,77 +425,83 @@ export default function Blitzgrid() {
         : `${window.location.origin}/play`;
       
       return (
-        <div className="h-screen overflow-hidden flex flex-col" style={{ background: 'linear-gradient(180deg, #1a472a 0%, #2d5a3f 50%, #1a472a 100%)' }} data-testid="page-blitzgrid-play">
-          {/* Compact Header */}
-          <div className="flex items-center justify-between px-3 py-2 bg-brown-800" style={{ background: 'linear-gradient(90deg, #5d4037 0%, #8d6e63 50%, #5d4037 100%)', borderBottom: '3px solid #ffd700' }}>
+        <div className="h-screen overflow-hidden flex flex-col bg-slate-900" data-testid="page-blitzgrid-play">
+          {/* Header - Stadium Scoreboard Style */}
+          <div className="flex items-center justify-between px-3 py-2" style={{ background: 'linear-gradient(180deg, #1e3a5f 0%, #0d1b2a 100%)', borderBottom: '3px solid #00ff87' }}>
             <Button 
               variant="ghost" 
               size="sm"
               onClick={() => { setPlayMode(false); setSelectedGridId(null); }}
-              className="text-white hover:bg-white/20 h-8"
+              className="text-white/80 hover:bg-white/20 h-8"
               data-testid="button-exit-play"
             >
               <ArrowLeft className="w-4 h-4" />
             </Button>
             
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🏈</span>
-              <h1 className="text-lg font-black text-white uppercase tracking-wide">{grid.name}</h1>
-              {roomCode && <Badge className="bg-yellow-400 text-black font-black">{roomCode}</Badge>}
-              {players.length > 0 && <Badge className="bg-white/90 text-green-900 font-bold"><Users className="w-3 h-3 mr-1" />{players.length}</Badge>}
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">⚽</span>
+              <h1 className="text-xl font-black text-white uppercase tracking-wider">{grid.name}</h1>
+              {roomCode && <Badge className="bg-[#00ff87] text-black font-black px-3">{roomCode}</Badge>}
+              {players.length > 0 && <Badge className="bg-white text-slate-900 font-bold"><Users className="w-3 h-3 mr-1" />{players.length}</Badge>}
             </div>
             
-            <div className="flex gap-1">
-              <Button size="sm" onClick={() => setShowQRCode(true)} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold h-8" data-testid="button-show-qr">
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => setShowQRCode(true)} className="bg-[#00ff87] hover:bg-[#00cc6a] text-black font-bold h-8" data-testid="button-show-qr">
                 <QrCode className="w-4 h-4 mr-1" /> Join
               </Button>
-              <Button size="icon" variant="ghost" onClick={resetGame} className="text-white/80 hover:bg-white/20 h-8 w-8" data-testid="button-reset-game">
+              <Button size="icon" variant="ghost" onClick={resetGame} className="text-white/70 hover:bg-white/20 h-8 w-8" data-testid="button-reset-game">
                 <RotateCcw className="w-4 h-4" />
               </Button>
             </div>
           </div>
           
-          {/* Football Field Game Board - Full Height */}
+          {/* Football Pitch */}
           <div className="flex-1 p-2 md:p-4 overflow-hidden">
             <div className="h-full relative rounded-lg overflow-hidden" style={{ 
-              background: '#3d8b40',
-              boxShadow: 'inset 0 0 60px rgba(0,0,0,0.3)',
+              background: 'linear-gradient(90deg, #2d5a27 0%, #3d7a33 25%, #4a8f3c 50%, #3d7a33 75%, #2d5a27 100%)',
               border: '4px solid white'
             }}>
-              {/* Field Markings */}
+              {/* Pitch Markings */}
               <div className="absolute inset-0 pointer-events-none">
-                {/* Yard lines */}
-                {[20, 40, 60, 80].map(pct => (
-                  <div key={pct} className="absolute h-full w-0.5 bg-white/40" style={{ left: `${pct}%` }} />
-                ))}
-                {/* End zones */}
-                <div className="absolute left-0 top-0 bottom-0 w-3 md:w-6" style={{ background: 'linear-gradient(90deg, #b71c1c, #c62828)' }} />
-                <div className="absolute right-0 top-0 bottom-0 w-3 md:w-6" style={{ background: 'linear-gradient(270deg, #1565c0, #1976d2)' }} />
+                {/* Center line */}
+                <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white/60 -translate-x-1/2" />
+                {/* Center circle */}
+                <div className="absolute left-1/2 top-1/2 w-24 h-24 md:w-32 md:h-32 border-2 border-white/60 rounded-full -translate-x-1/2 -translate-y-1/2" />
+                {/* Goal areas */}
+                <div className="absolute left-0 top-1/2 w-8 md:w-12 h-24 md:h-32 border-2 border-white/60 border-l-0 -translate-y-1/2" />
+                <div className="absolute right-0 top-1/2 w-8 md:w-12 h-24 md:h-32 border-2 border-white/60 border-r-0 -translate-y-1/2" />
+                {/* Corner arcs */}
+                <div className="absolute left-0 top-0 w-4 h-4 border-b-2 border-r-2 border-white/60 rounded-br-full" />
+                <div className="absolute right-0 top-0 w-4 h-4 border-b-2 border-l-2 border-white/60 rounded-bl-full" />
+                <div className="absolute left-0 bottom-0 w-4 h-4 border-t-2 border-r-2 border-white/60 rounded-tr-full" />
+                <div className="absolute right-0 bottom-0 w-4 h-4 border-t-2 border-l-2 border-white/60 rounded-tl-full" />
               </div>
               
-              {/* Game Grid Container */}
-              <div className="relative h-full flex flex-col p-2 md:p-3 gap-1.5">
-                {/* Category Headers */}
-                <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)` }}>
-                  {gridCategories.map(category => (
-                    <div 
-                      key={category.id} 
-                      className="py-2 md:py-3 px-1 rounded-md text-center"
-                      style={{ 
-                        background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)',
-                        border: '2px solid #ffd700',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
-                      }}
-                    >
-                      <span className="text-yellow-400 font-black text-xs md:text-base uppercase tracking-wider drop-shadow-lg">
-                        {category.name}
-                      </span>
-                    </div>
-                  ))}
+              {/* Game Grid */}
+              <div className="relative h-full flex flex-col p-3 md:p-4 gap-2">
+                {/* Category Headers - Like Jersey Backs */}
+                <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)` }}>
+                  {gridCategories.map((category, idx) => {
+                    const colors = ['#e31b23', '#034694', '#6cabdd', '#fbee23', '#da020e']; // Arsenal, Chelsea, City, etc
+                    return (
+                      <div 
+                        key={category.id} 
+                        className="py-3 md:py-4 px-2 rounded-lg text-center relative overflow-hidden"
+                        style={{ 
+                          background: colors[idx % colors.length],
+                          boxShadow: '0 4px 15px rgba(0,0,0,0.4)'
+                        }}
+                      >
+                        <span className="text-white font-black text-sm md:text-lg uppercase tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ textShadow: '2px 2px 0 #000, -1px -1px 0 #000' }}>
+                          {category.name}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
                 
-                {/* Point Cells - Fill Remaining Space */}
-                <div className="flex-1 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)`, gridTemplateRows: 'repeat(5, 1fr)' }}>
+                {/* Point Cells - Like Match Scores */}
+                <div className="flex-1 grid gap-2" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)`, gridTemplateRows: 'repeat(5, 1fr)' }}>
                   {POINT_TIERS.map(points => (
                     gridCategories.map(category => {
                       const question = category.questions?.find(q => q.points === points);
@@ -505,24 +511,23 @@ export default function Blitzgrid() {
                       return (
                         <motion.button
                           key={cellKey}
-                          className="rounded-md font-black text-xl md:text-3xl flex items-center justify-center"
+                          className="rounded-lg font-black text-xl md:text-3xl flex items-center justify-center"
                           style={isRevealed ? {
-                            background: '#1a1a1a',
-                            border: '2px solid #333'
+                            background: 'rgba(0,0,0,0.6)',
+                            border: '2px solid rgba(255,255,255,0.1)'
                           } : {
-                            background: 'linear-gradient(180deg, #8b4513 0%, #5d2e0a 100%)',
-                            border: '2px solid #ffd700',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
-                            color: 'white',
-                            textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
+                            background: 'linear-gradient(180deg, #1e3a5f 0%, #0d1b2a 100%)',
+                            border: '2px solid #00ff87',
+                            boxShadow: '0 4px 15px rgba(0,255,135,0.2)',
+                            color: '#00ff87'
                           }}
                           onClick={() => question && !isRevealed && handleCellClick(category.id, points, question)}
                           disabled={isRevealed || !question}
-                          whileHover={!isRevealed ? { scale: 1.05, boxShadow: '0 6px 20px rgba(255,215,0,0.4)' } : {}}
+                          whileHover={!isRevealed ? { scale: 1.05, boxShadow: '0 6px 25px rgba(0,255,135,0.4)' } : {}}
                           whileTap={!isRevealed ? { scale: 0.95 } : {}}
                           data-testid={`cell-${category.id}-${points}`}
                         >
-                          {!isRevealed && <span className="flex items-center gap-1">🏈 {points}</span>}
+                          {!isRevealed && <span>⚽ {points}</span>}
                         </motion.button>
                       );
                     })
