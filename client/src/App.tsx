@@ -15,21 +15,14 @@ import ResetPassword from "@/pages/ResetPassword";
 
 // Lazy load heavier components to reduce initial bundle size
 const Admin = lazy(() => import("@/pages/Admin"));
-const CategoryPage = lazy(() => import("@/pages/CategoryPage"));
 const GamesAdmin = lazy(() => import("@/pages/GamesAdmin"));
 const HeadsUpGame = lazy(() => import("@/pages/HeadsUpGame"));
-const GridOfGrudges = lazy(() => import("@/pages/GridOfGrudges"));
-const PlayBoard = lazy(() => import("@/pages/PlayBoard"));
 const SuperAdmin = lazy(() => import("@/pages/SuperAdmin"));
 const RelationshipHub = lazy(() => import("@/pages/RelationshipHub"));
-const HostGridOfGrudges = lazy(() => import("@/pages/HostGridOfGrudges"));
 const SequenceSqueeze = lazy(() => import("@/pages/SequenceSqueeze"));
 const SequencePlayer = lazy(() => import("@/pages/SequencePlayer"));
 const Vault = lazy(() => import("@/pages/Vault"));
 const Storyboard = lazy(() => import("@/pages/Storyboard"));
-const BuzzkillDailySmash = lazy(() => import("@/pages/BuzzkillDailySmash"));
-const BuzzkillThemed = lazy(() => import("@/pages/BuzzkillThemed"));
-const ContentDashboard = lazy(() => import("@/pages/ContentDashboard"));
 const GameHistory = lazy(() => import("@/pages/GameHistory"));
 
 function PageLoader() {
@@ -50,24 +43,16 @@ function Router() {
     <Suspense fallback={<PageLoader />}>
       <Switch>
         <Route path="/" component={Home} />
-        <Route path="/host/buzzkill" component={HostGridOfGrudges} />
-        <Route path="/buzzkill" component={HostGridOfGrudges} />
-        <Route path="/buzzkill/daily-smash" component={BuzzkillDailySmash} />
-        <Route path="/buzzkill/themed/:group" component={BuzzkillThemed} />
         <Route path="/host/double-dip" component={RelationshipHub} />
-        <Route path="/category/:id" component={CategoryPage} />
         <Route path="/admin" component={Admin} />
         <Route path="/admin/games" component={GamesAdmin} />
         <Route path="/admin/super" component={SuperAdmin} />
-        <Route path="/admin/content" component={ContentDashboard} />
         <Route path="/admin/history" component={GameHistory} />
         <Route path="/games" component={GamesAdmin} />
-        <Route path="/board/:boardId" component={PlayBoard} />
         <Route path="/play/:code?" component={PlayerPage} />
         <Route path="/forgot-password" component={ForgotPassword} />
         <Route path="/reset-password" component={ResetPassword} />
         <Route path="/heads-up/:gameId" component={HeadsUpGame} />
-        <Route path="/grudges/:gameId" component={GridOfGrudges} />
         <Route path="/couples" component={RelationshipHub} />
         <Route path="/couples/vault" component={Vault} />
         <Route path="/couples/storyboard" component={Storyboard} />
