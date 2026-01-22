@@ -425,9 +425,9 @@ export default function Blitzgrid() {
         : `${window.location.origin}/play`;
       
       return (
-        <div className="min-h-screen bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-950" data-testid="page-blitzgrid-play">
-          {/* Header Bar */}
-          <div className="bg-black/30 border-b border-white/10 backdrop-blur-sm sticky top-0 z-10">
+        <div className="min-h-screen bg-gradient-to-b from-emerald-950 via-green-950 to-emerald-950" data-testid="page-blitzgrid-play">
+          {/* Header Bar - Stadium Style */}
+          <div className="bg-gradient-to-r from-emerald-900 via-green-800 to-emerald-900 border-b-4 border-yellow-500 shadow-lg">
             <div className="container mx-auto px-4 py-3">
               <div className="flex items-center justify-between">
                 <Button 
@@ -437,16 +437,16 @@ export default function Blitzgrid() {
                     setPlayMode(false);
                     setSelectedGridId(null);
                   }}
-                  className="text-white/70 hover:text-white hover:bg-white/10"
+                  className="text-white/80 hover:text-white hover:bg-white/10"
                   data-testid="button-exit-play"
                 >
                   <ArrowLeft className="w-4 h-4 mr-1" /> Exit
                 </Button>
                 
                 <div className="flex items-center gap-3">
-                  <h1 className="text-lg md:text-xl font-bold text-white tracking-tight">{grid.name}</h1>
+                  <h1 className="text-xl md:text-2xl font-black text-white tracking-tight uppercase drop-shadow-lg">{grid.name}</h1>
                   {roomCode && (
-                    <Badge className="bg-amber-500 text-black font-bold text-sm px-3">
+                    <Badge className="bg-yellow-500 text-black font-black text-sm px-3 py-1 shadow-md">
                       {roomCode}
                     </Badge>
                   )}
@@ -454,14 +454,14 @@ export default function Blitzgrid() {
                 
                 <div className="flex items-center gap-2">
                   {players.length > 0 && (
-                    <Badge className="bg-emerald-600 text-white">
+                    <Badge className="bg-white text-emerald-900 font-bold">
                       <Users className="w-3 h-3 mr-1" /> {players.length}
                     </Badge>
                   )}
                   <Button
                     size="sm"
                     onClick={() => setShowQRCode(true)}
-                    className="bg-indigo-600 hover:bg-indigo-500 text-white"
+                    className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold"
                     data-testid="button-show-qr"
                   >
                     <QrCode className="w-4 h-4 mr-1" /> Join
@@ -470,7 +470,7 @@ export default function Blitzgrid() {
                     size="icon"
                     variant="ghost"
                     onClick={resetGame}
-                    className="text-white/60 hover:text-white hover:bg-white/10"
+                    className="text-white/70 hover:text-white hover:bg-white/10"
                     data-testid="button-reset-game"
                   >
                     <RotateCcw className="w-4 h-4" />
@@ -480,54 +480,62 @@ export default function Blitzgrid() {
             </div>
           </div>
           
-          {/* Game Board */}
+          {/* Game Board - Football Field Style */}
           <div className="container mx-auto px-2 md:px-4 py-4 md:py-6">
-            <div className="bg-indigo-900/30 rounded-xl p-2 md:p-3 border border-indigo-500/20 shadow-2xl shadow-indigo-500/10">
-              {/* Category Headers */}
-              <div className="grid gap-1.5 md:gap-2 mb-1.5 md:mb-2" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, minmax(0, 1fr))` }}>
+            {/* Field Lines Background */}
+            <div className="relative bg-gradient-to-b from-green-700 to-green-800 rounded-xl p-3 md:p-4 border-4 border-white/30 shadow-2xl">
+              {/* Yard Lines Effect */}
+              <div className="absolute inset-0 opacity-10">
+                {[...Array(10)].map((_, i) => (
+                  <div key={i} className="absolute w-full h-px bg-white" style={{ top: `${(i + 1) * 10}%` }} />
+                ))}
+              </div>
+              
+              {/* Category Headers - Scoreboard Style */}
+              <div className="grid gap-2 md:gap-3 mb-3" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, minmax(0, 1fr))` }}>
                 {gridCategories.map(category => (
                   <div 
                     key={category.id} 
-                    className="bg-gradient-to-b from-indigo-500 to-indigo-700 text-white text-center py-2.5 md:py-3 px-2 font-bold text-xs md:text-sm uppercase tracking-wider rounded-t-lg shadow-lg border-t border-indigo-400/50"
+                    className="bg-gradient-to-b from-gray-800 to-gray-900 text-center py-4 md:py-5 px-2 rounded-lg shadow-xl border-2 border-yellow-500/50"
                   >
-                    <span className="line-clamp-2">{category.name}</span>
+                    <span className="text-yellow-400 font-black text-sm md:text-lg uppercase tracking-wide drop-shadow-lg block leading-tight">
+                      {category.name}
+                    </span>
                   </div>
                 ))}
               </div>
               
               {/* Question Grid - 5 rows (one per point value) */}
-              <div className="space-y-1.5 md:space-y-2">
+              <div className="space-y-2 md:space-y-3">
                 {POINT_TIERS.map((points, rowIndex) => (
                   <div 
                     key={points} 
-                    className="grid gap-1.5 md:gap-2" 
+                    className="grid gap-2 md:gap-3" 
                     style={{ gridTemplateColumns: `repeat(${gridCategories.length}, minmax(0, 1fr))` }}
                   >
                     {gridCategories.map(category => {
                       const question = category.questions?.find(q => q.points === points);
                       const cellKey = `${category.id}-${points}`;
                       const isRevealed = revealedCells.has(cellKey);
-                      const isLastRow = rowIndex === POINT_TIERS.length - 1;
                       
                       return (
                         <motion.button
                           key={cellKey}
                           className={`
-                            aspect-[4/3] font-bold text-2xl md:text-4xl transition-all flex items-center justify-center
-                            ${isLastRow ? 'rounded-b-lg' : ''}
+                            aspect-[4/3] font-black text-2xl md:text-4xl transition-all flex items-center justify-center rounded-lg
                             ${isRevealed 
-                              ? 'bg-slate-900/80 text-slate-800 cursor-default border border-slate-800' 
-                              : 'bg-gradient-to-b from-indigo-500 to-indigo-700 text-amber-300 hover:from-indigo-400 hover:to-indigo-600 cursor-pointer shadow-lg border-t border-indigo-400/30 hover:shadow-indigo-500/30'
+                              ? 'bg-gray-900/80 text-gray-700 cursor-default border-2 border-gray-700' 
+                              : 'bg-gradient-to-b from-emerald-500 to-emerald-700 text-white hover:from-emerald-400 hover:to-emerald-600 cursor-pointer shadow-lg border-2 border-white/30 hover:border-yellow-400'
                             }
                           `}
                           onClick={() => question && !isRevealed && handleCellClick(category.id, points, question)}
                           disabled={isRevealed || !question}
-                          whileHover={!isRevealed ? { scale: 1.03, y: -2 } : {}}
-                          whileTap={!isRevealed ? { scale: 0.97 } : {}}
+                          whileHover={!isRevealed ? { scale: 1.05, y: -3 } : {}}
+                          whileTap={!isRevealed ? { scale: 0.95 } : {}}
                           data-testid={`cell-${category.id}-${points}`}
                         >
                           {isRevealed ? '' : (
-                            <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{points}</span>
+                            <span className="drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]">{points}</span>
                           )}
                         </motion.button>
                       );
