@@ -425,95 +425,79 @@ export default function Blitzgrid() {
         : `${window.location.origin}/play`;
       
       return (
-        <div className="min-h-screen bg-gradient-to-b from-emerald-950 via-green-950 to-emerald-950" data-testid="page-blitzgrid-play">
-          {/* Header Bar - Stadium Style */}
-          <div className="bg-gradient-to-r from-emerald-900 via-green-800 to-emerald-900 border-b-4 border-yellow-500 shadow-lg">
-            <div className="container mx-auto px-4 py-3">
-              <div className="flex items-center justify-between">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => {
-                    setPlayMode(false);
-                    setSelectedGridId(null);
-                  }}
-                  className="text-white/80 hover:text-white hover:bg-white/10"
-                  data-testid="button-exit-play"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-1" /> Exit
-                </Button>
-                
-                <div className="flex items-center gap-3">
-                  <h1 className="text-xl md:text-2xl font-black text-white tracking-tight uppercase drop-shadow-lg">{grid.name}</h1>
-                  {roomCode && (
-                    <Badge className="bg-yellow-500 text-black font-black text-sm px-3 py-1 shadow-md">
-                      {roomCode}
-                    </Badge>
-                  )}
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  {players.length > 0 && (
-                    <Badge className="bg-white text-emerald-900 font-bold">
-                      <Users className="w-3 h-3 mr-1" /> {players.length}
-                    </Badge>
-                  )}
-                  <Button
-                    size="sm"
-                    onClick={() => setShowQRCode(true)}
-                    className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold"
-                    data-testid="button-show-qr"
-                  >
-                    <QrCode className="w-4 h-4 mr-1" /> Join
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={resetGame}
-                    className="text-white/70 hover:text-white hover:bg-white/10"
-                    data-testid="button-reset-game"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
+        <div className="h-screen overflow-hidden flex flex-col" style={{ background: 'linear-gradient(180deg, #1a472a 0%, #2d5a3f 50%, #1a472a 100%)' }} data-testid="page-blitzgrid-play">
+          {/* Compact Header */}
+          <div className="flex items-center justify-between px-3 py-2 bg-brown-800" style={{ background: 'linear-gradient(90deg, #5d4037 0%, #8d6e63 50%, #5d4037 100%)', borderBottom: '3px solid #ffd700' }}>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => { setPlayMode(false); setSelectedGridId(null); }}
+              className="text-white hover:bg-white/20 h-8"
+              data-testid="button-exit-play"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🏈</span>
+              <h1 className="text-lg font-black text-white uppercase tracking-wide">{grid.name}</h1>
+              {roomCode && <Badge className="bg-yellow-400 text-black font-black">{roomCode}</Badge>}
+              {players.length > 0 && <Badge className="bg-white/90 text-green-900 font-bold"><Users className="w-3 h-3 mr-1" />{players.length}</Badge>}
+            </div>
+            
+            <div className="flex gap-1">
+              <Button size="sm" onClick={() => setShowQRCode(true)} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold h-8" data-testid="button-show-qr">
+                <QrCode className="w-4 h-4 mr-1" /> Join
+              </Button>
+              <Button size="icon" variant="ghost" onClick={resetGame} className="text-white/80 hover:bg-white/20 h-8 w-8" data-testid="button-reset-game">
+                <RotateCcw className="w-4 h-4" />
+              </Button>
             </div>
           </div>
           
-          {/* Game Board - Football Field Style */}
-          <div className="container mx-auto px-2 md:px-4 py-4 md:py-6">
-            {/* Field Lines Background */}
-            <div className="relative bg-gradient-to-b from-green-700 to-green-800 rounded-xl p-3 md:p-4 border-4 border-white/30 shadow-2xl">
-              {/* Yard Lines Effect */}
-              <div className="absolute inset-0 opacity-10">
-                {[...Array(10)].map((_, i) => (
-                  <div key={i} className="absolute w-full h-px bg-white" style={{ top: `${(i + 1) * 10}%` }} />
+          {/* Football Field Game Board - Full Height */}
+          <div className="flex-1 p-2 md:p-4 overflow-hidden">
+            <div className="h-full relative rounded-lg overflow-hidden" style={{ 
+              background: '#3d8b40',
+              boxShadow: 'inset 0 0 60px rgba(0,0,0,0.3)',
+              border: '4px solid white'
+            }}>
+              {/* Field Markings */}
+              <div className="absolute inset-0 pointer-events-none">
+                {/* Yard lines */}
+                {[20, 40, 60, 80].map(pct => (
+                  <div key={pct} className="absolute h-full w-0.5 bg-white/40" style={{ left: `${pct}%` }} />
                 ))}
+                {/* End zones */}
+                <div className="absolute left-0 top-0 bottom-0 w-3 md:w-6" style={{ background: 'linear-gradient(90deg, #b71c1c, #c62828)' }} />
+                <div className="absolute right-0 top-0 bottom-0 w-3 md:w-6" style={{ background: 'linear-gradient(270deg, #1565c0, #1976d2)' }} />
               </div>
               
-              {/* Category Headers - Scoreboard Style */}
-              <div className="grid gap-2 md:gap-3 mb-3" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, minmax(0, 1fr))` }}>
-                {gridCategories.map(category => (
-                  <div 
-                    key={category.id} 
-                    className="bg-gradient-to-b from-gray-800 to-gray-900 text-center py-4 md:py-5 px-2 rounded-lg shadow-xl border-2 border-yellow-500/50"
-                  >
-                    <span className="text-yellow-400 font-black text-sm md:text-lg uppercase tracking-wide drop-shadow-lg block leading-tight">
-                      {category.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Question Grid - 5 rows (one per point value) */}
-              <div className="space-y-2 md:space-y-3">
-                {POINT_TIERS.map((points, rowIndex) => (
-                  <div 
-                    key={points} 
-                    className="grid gap-2 md:gap-3" 
-                    style={{ gridTemplateColumns: `repeat(${gridCategories.length}, minmax(0, 1fr))` }}
-                  >
-                    {gridCategories.map(category => {
+              {/* Game Grid Container */}
+              <div className="relative h-full flex flex-col p-2 md:p-3 gap-1.5">
+                {/* Category Headers */}
+                <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)` }}>
+                  {gridCategories.map(category => (
+                    <div 
+                      key={category.id} 
+                      className="py-2 md:py-3 px-1 rounded-md text-center"
+                      style={{ 
+                        background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)',
+                        border: '2px solid #ffd700',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+                      }}
+                    >
+                      <span className="text-yellow-400 font-black text-xs md:text-base uppercase tracking-wider drop-shadow-lg">
+                        {category.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Point Cells - Fill Remaining Space */}
+                <div className="flex-1 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)`, gridTemplateRows: 'repeat(5, 1fr)' }}>
+                  {POINT_TIERS.map(points => (
+                    gridCategories.map(category => {
                       const question = category.questions?.find(q => q.points === points);
                       const cellKey = `${category.id}-${points}`;
                       const isRevealed = revealedCells.has(cellKey);
@@ -521,27 +505,29 @@ export default function Blitzgrid() {
                       return (
                         <motion.button
                           key={cellKey}
-                          className={`
-                            aspect-[4/3] font-black text-2xl md:text-4xl transition-all flex items-center justify-center rounded-lg
-                            ${isRevealed 
-                              ? 'bg-gray-900/80 text-gray-700 cursor-default border-2 border-gray-700' 
-                              : 'bg-gradient-to-b from-emerald-500 to-emerald-700 text-white hover:from-emerald-400 hover:to-emerald-600 cursor-pointer shadow-lg border-2 border-white/30 hover:border-yellow-400'
-                            }
-                          `}
+                          className="rounded-md font-black text-xl md:text-3xl flex items-center justify-center"
+                          style={isRevealed ? {
+                            background: '#1a1a1a',
+                            border: '2px solid #333'
+                          } : {
+                            background: 'linear-gradient(180deg, #8b4513 0%, #5d2e0a 100%)',
+                            border: '2px solid #ffd700',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+                            color: 'white',
+                            textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
+                          }}
                           onClick={() => question && !isRevealed && handleCellClick(category.id, points, question)}
                           disabled={isRevealed || !question}
-                          whileHover={!isRevealed ? { scale: 1.05, y: -3 } : {}}
+                          whileHover={!isRevealed ? { scale: 1.05, boxShadow: '0 6px 20px rgba(255,215,0,0.4)' } : {}}
                           whileTap={!isRevealed ? { scale: 0.95 } : {}}
                           data-testid={`cell-${category.id}-${points}`}
                         >
-                          {isRevealed ? '' : (
-                            <span className="drop-shadow-[0_3px_6px_rgba(0,0,0,0.6)]">{points}</span>
-                          )}
+                          {!isRevealed && <span className="flex items-center gap-1">🏈 {points}</span>}
                         </motion.button>
                       );
-                    })}
-                  </div>
-                ))}
+                    })
+                  ))}
+                </div>
               </div>
             </div>
           </div>
