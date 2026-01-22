@@ -287,16 +287,24 @@ export async function registerRoutes(
 
   app.post("/api/boards/:boardId/categories", isAuthenticated, async (req, res) => {
     try {
+      const boardId = parseId(req.params.boardId);
+      if (boardId === null) {
+        return res.status(400).json({ message: "Invalid board ID" });
+      }
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const boardId = Number(req.params.boardId);
       const board = await storage.getBoard(boardId, userId, role);
       if (!board) {
         return res.status(404).json({ message: "Board not found" });
       }
       const { categoryId } = req.body;
-      if (!categoryId) {
-        return res.status(400).json({ message: "categoryId is required" });
+      if (!categoryId || typeof categoryId !== 'number') {
+        return res.status(400).json({ message: "categoryId is required and must be a number" });
+      }
+      // Verify category exists
+      const category = await storage.getCategory(categoryId);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
       }
       const existingLinks = await storage.getBoardCategoriesByCategoryId(categoryId);
       if (existingLinks.length > 0) {
@@ -346,9 +354,12 @@ export async function registerRoutes(
 
   app.put("/api/boards/:boardId/categories/reorder", isAuthenticated, async (req, res) => {
     try {
+      const boardId = parseId(req.params.boardId);
+      if (boardId === null) {
+        return res.status(400).json({ message: "Invalid board ID" });
+      }
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const boardId = Number(req.params.boardId);
       const board = await storage.getBoard(boardId, userId, role);
       if (!board) {
         return res.status(404).json({ message: "Board not found" });
@@ -375,9 +386,12 @@ export async function registerRoutes(
 
   app.post("/api/boards/:boardId/categories/create-and-link", isAuthenticated, async (req, res) => {
     try {
+      const boardId = parseId(req.params.boardId);
+      if (boardId === null) {
+        return res.status(400).json({ message: "Invalid board ID" });
+      }
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const boardId = Number(req.params.boardId);
       const board = await storage.getBoard(boardId, userId, role);
       if (!board) {
         return res.status(404).json({ message: "Board not found" });
