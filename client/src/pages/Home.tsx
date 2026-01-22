@@ -183,7 +183,7 @@ export default function Home() {
               </p>
             </motion.div>
           ) : (
-            <div className="flex justify-center mb-12">
+            <div className="flex flex-wrap justify-center gap-6 mb-12">
               {gameTypes.filter(g => GAME_CONFIG[g.slug]).map((game, index) => {
                 const config = GAME_CONFIG[game.slug] || {
                   icon: Grid3X3,
