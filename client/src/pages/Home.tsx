@@ -238,47 +238,6 @@ export default function Home() {
             </div>
           )}
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <div className="flex items-center gap-2 mb-6">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-sm font-medium text-muted-foreground px-3">More Game Modes Coming Soon</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-              <div className="relative flex flex-col items-center gap-3 p-6 bg-card/30 border border-dashed border-border rounded-xl text-center">
-                <div className="absolute top-3 right-3 px-2 py-0.5 bg-muted rounded text-[10px] font-medium text-muted-foreground flex items-center gap-1">
-                  <Lock className="w-3 h-3" />
-                  Soon
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/20 flex items-center justify-center">
-                  <ListOrdered className="w-6 h-6 text-teal-500/60" />
-                </div>
-                <div>
-                  <h4 className="text-base font-semibold text-foreground/60 mb-1">Sequence Squeeze</h4>
-                  <p className="text-muted-foreground/60 text-xs">Put items in the right order to score points</p>
-                </div>
-              </div>
-
-              <div className="relative flex flex-col items-center gap-3 p-6 bg-card/30 border border-dashed border-border rounded-xl text-center">
-                <div className="absolute top-3 right-3 px-2 py-0.5 bg-muted rounded text-[10px] font-medium text-muted-foreground flex items-center gap-1">
-                  <Lock className="w-3 h-3" />
-                  Soon
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-rose-500/20 flex items-center justify-center">
-                  <Heart className="w-6 h-6 text-pink-500/60" />
-                </div>
-                <div>
-                  <h4 className="text-base font-semibold text-foreground/60 mb-1">Double Dip</h4>
-                  <p className="text-muted-foreground/60 text-xs">Couples game to test how well you know each other</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
         </div>
       </main>
       
