@@ -139,6 +139,30 @@ export async function registerRoutes(
   
   setupWebSocket(httpServer);
 
+  // Health check endpoint to verify database connectivity
+  app.get("/api/health", async (_req, res) => {
+    try {
+      // Test database connection by fetching a simple count
+      const testResult = await storage.getBoards('system', 'super_admin');
+      // Also test category table access
+      const categoryTest = await storage.getCategories();
+      res.json({ 
+        status: "ok", 
+        database: "connected",
+        boardCount: testResult.length,
+        categoryCount: categoryTest.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error("Health check failed:", err);
+      res.status(500).json({ 
+        status: "error", 
+        database: "disconnected",
+        error: err instanceof Error ? err.message : "Unknown error"
+      });
+    }
+  });
+
   app.get("/api/room/:code", (req, res) => {
     const info = getRoomInfo(req.params.code.toUpperCase());
     if (!info) {
@@ -386,39 +410,49 @@ export async function registerRoutes(
 
   app.post("/api/boards/:boardId/categories/create-and-link", isAuthenticated, async (req, res) => {
     try {
+      console.log("[create-and-link] Starting - boardId:", req.params.boardId, "body:", JSON.stringify(req.body));
       const boardId = parseId(req.params.boardId);
       if (boardId === null) {
+        console.log("[create-and-link] Invalid board ID");
         return res.status(400).json({ message: "Invalid board ID" });
       }
       const userId = req.session.userId!;
       const role = req.session.userRole;
+      console.log("[create-and-link] userId:", userId, "role:", role);
       const board = await storage.getBoard(boardId, userId, role);
       if (!board) {
+        console.log("[create-and-link] Board not found for boardId:", boardId, "userId:", userId);
         return res.status(404).json({ message: "Board not found" });
       }
+      console.log("[create-and-link] Found board:", board.name);
       const { name, description, rule, sourceGroup } = req.body;
       if (!name || !name.trim()) {
         return res.status(400).json({ message: "Category name is required" });
       }
       const currentCategories = await storage.getBoardCategories(boardId);
+      console.log("[create-and-link] Current category count:", currentCategories.length);
       if (currentCategories.length >= 5) {
         return res.status(400).json({ message: "Board already has 5 categories (maximum)" });
       }
       const category = await storage.createCategory({ name: name.trim(), description: description?.trim() || '', rule: rule?.trim() || null, imageUrl: '', sourceGroup: sourceGroup || null });
+      console.log("[create-and-link] Created category:", category.id, category.name);
       let bc;
       try {
         bc = await storage.createBoardCategory({ boardId, categoryId: category.id });
+        console.log("[create-and-link] Created boardCategory:", bc.id);
       } catch (linkErr) {
+        console.error("[create-and-link] Failed to link category:", linkErr);
         try {
           await storage.deleteCategory(category.id);
         } catch (cleanupErr) {
-          console.error("Failed to cleanup orphan category:", cleanupErr);
+          console.error("[create-and-link] Failed to cleanup orphan category:", cleanupErr);
         }
         throw linkErr;
       }
+      console.log("[create-and-link] Success - returning category and boardCategory");
       res.status(201).json({ category, boardCategory: bc });
     } catch (err) {
-      console.error("Error creating and linking category:", err);
+      console.error("[create-and-link] Error:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to create category";
       res.status(500).json({ message: errorMessage });
     }

@@ -79,7 +79,9 @@ export function getSession() {
 }
 
 export function setupAuth(app: Express) {
-  app.set("trust proxy", 1);
+  // Trust proxy - required for secure cookies behind Render/Heroku load balancers
+  // Use 'true' to trust all proxies, which works more reliably on various hosting platforms
+  app.set("trust proxy", true);
   app.use(getSession());
 }
 
