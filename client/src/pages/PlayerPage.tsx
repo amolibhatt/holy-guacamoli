@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles, Users, ChevronUp, ChevronDown, Volume2, VolumeX } from "lucide-react";
+import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles, Users, ChevronUp, ChevronDown, Volume2, VolumeX, Lock } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { soundManager } from "@/lib/sounds";
@@ -659,19 +659,20 @@ export default function PlayerPage() {
               key="locked"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="text-center"
+              className="text-center flex flex-col items-center justify-center"
               role="status"
               aria-live="polite"
             >
               <motion.div 
-                animate={{ opacity: [0.3, 0.5, 0.3] }}
+                animate={{ scale: [1, 1.02, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="w-56 h-56 rounded-full bg-gradient-to-br from-muted/30 to-muted/10 border-4 border-dashed border-muted-foreground/20 flex items-center justify-center mx-auto"
+                className="w-64 h-64 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 flex flex-col items-center justify-center mx-auto shadow-xl border-4 border-gray-500/50 relative"
               >
-                <Clock className="w-20 h-20 text-muted-foreground/40" />
+                <Lock className="w-20 h-20 text-gray-400 mb-2" />
+                <span className="text-gray-400 text-xl font-bold">LOCKED</span>
               </motion.div>
-              <h2 className="text-2xl font-bold text-muted-foreground mt-6">Get Ready...</h2>
-              <p className="text-muted-foreground mt-2 max-w-xs mx-auto">The host is setting up the next question. Be ready to buzz!</p>
+              <h2 className="text-2xl font-bold text-foreground mt-6">You're In!</h2>
+              <p className="text-muted-foreground mt-2 max-w-xs mx-auto">Buzzer will unlock when the host selects a question</p>
             </motion.div>
           ) : (
             <motion.div
