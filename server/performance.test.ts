@@ -166,10 +166,10 @@ describe("Performance Tests", () => {
   describe("API Response Times", () => {
     const BASE_URL = "http://localhost:5000";
 
-    it("GET /api/admin/categories should respond", async () => {
+    it("GET /api/categories should respond", async () => {
       const start = performance.now();
       
-      await fetch(`${BASE_URL}/api/admin/categories`);
+      await fetch(`${BASE_URL}/api/categories`);
       
       const duration = performance.now() - start;
       expect(duration).toBeLessThan(10000);

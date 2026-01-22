@@ -32,7 +32,7 @@ describe("Accessibility Tests", () => {
 
   describe("API Accessibility", () => {
     it("API should return content", async () => {
-      const res = await fetch(`${BASE_URL}/api/admin/categories`);
+      const res = await fetch(`${BASE_URL}/api/categories`);
       
       const contentType = res.headers.get("content-type");
       expect(contentType !== null || res.status === 401).toBe(true);
@@ -45,7 +45,7 @@ describe("Accessibility Tests", () => {
     });
 
     it("API should handle Accept headers", async () => {
-      const res = await fetch(`${BASE_URL}/api/admin/categories`, {
+      const res = await fetch(`${BASE_URL}/api/categories`, {
         headers: {
           Accept: "application/json",
         },
@@ -57,7 +57,7 @@ describe("Accessibility Tests", () => {
 
   describe("Response Formats", () => {
     it("JSON responses should be valid when returned", async () => {
-      const res = await fetch(`${BASE_URL}/api/admin/categories`);
+      const res = await fetch(`${BASE_URL}/api/categories`);
       const contentType = res.headers.get("content-type") || "";
       
       if (res.status === 200 && contentType.includes("application/json")) {

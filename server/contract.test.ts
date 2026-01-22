@@ -6,8 +6,8 @@ const BASE_URL = "http://localhost:5000";
 
 describe("Contract Testing - API Schema Validation", () => {
   describe("Category API Contract", () => {
-    it("GET /api/admin/categories should return array of categories", async () => {
-      const res = await fetch(`${BASE_URL}/api/admin/categories`);
+    it("GET /api/categories should return array of categories", async () => {
+      const res = await fetch(`${BASE_URL}/api/categories`);
       const contentType = res.headers.get("content-type") || "";
       
       if (res.status === 200 && contentType.includes("application/json")) {
@@ -207,7 +207,7 @@ describe("Contract Testing - API Schema Validation", () => {
 
   describe("Response Headers Contract", () => {
     it("should return proper content-type for JSON responses", async () => {
-      const res = await fetch(`${BASE_URL}/api/admin/categories`);
+      const res = await fetch(`${BASE_URL}/api/categories`);
       const contentType = res.headers.get("content-type") || "";
       
       expect(res.status >= 200).toBe(true);

@@ -24,7 +24,7 @@ describe("Chaos Testing - Failure Scenarios", () => {
       const timeoutId = setTimeout(() => controller.abort(), 100);
       
       try {
-        await fetch("http://localhost:5000/api/admin/categories", {
+        await fetch("http://localhost:5000/api/categories", {
           signal: controller.signal,
         });
       } catch (error: any) {
@@ -40,7 +40,7 @@ describe("Chaos Testing - Failure Scenarios", () => {
       } catch {
       }
       
-      const res = await fetch("http://localhost:5000/api/admin/categories");
+      const res = await fetch("http://localhost:5000/api/categories");
       expect([200, 401]).toContain(res.status);
     });
 

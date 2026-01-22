@@ -48,8 +48,8 @@ describe("API Routes Authentication", () => {
       expect(response.status).toBe(200);
     });
 
-    it("GET /api/admin/categories should be publicly accessible", async () => {
-      const response = await fetch(`${BASE_URL}/api/admin/categories`);
+    it("GET /api/categories should be publicly accessible", async () => {
+      const response = await fetch(`${BASE_URL}/api/categories`);
       expect(response.status).toBe(200);
     });
   });

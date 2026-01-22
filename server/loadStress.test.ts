@@ -23,7 +23,7 @@ describe("Load and Stress Tests", () => {
   describe("Concurrent User Simulation", () => {
     it("should handle 20 concurrent API requests", async () => {
       const requests = Array.from({ length: 20 }, () =>
-        fetch(`${BASE_URL}/api/admin/categories`)
+        fetch(`${BASE_URL}/api/categories`)
       );
       
       const responses = await Promise.all(requests);
@@ -201,7 +201,7 @@ describe("Load and Stress Tests", () => {
       
       for (let i = 0; i < 10; i++) {
         const start = Date.now();
-        await fetch(`${BASE_URL}/api/admin/categories`);
+        await fetch(`${BASE_URL}/api/categories`);
         times.push(Date.now() - start);
       }
       
@@ -211,7 +211,7 @@ describe("Load and Stress Tests", () => {
 
     it("should handle burst traffic", async () => {
       const burst1 = Array.from({ length: 10 }, () =>
-        fetch(`${BASE_URL}/api/admin/categories`)
+        fetch(`${BASE_URL}/api/categories`)
       );
       
       await Promise.all(burst1);
@@ -239,10 +239,10 @@ describe("Load and Stress Tests", () => {
 
     it("should not accumulate data over repeated requests", async () => {
       for (let i = 0; i < 50; i++) {
-        await fetch(`${BASE_URL}/api/admin/categories`);
+        await fetch(`${BASE_URL}/api/categories`);
       }
       
-      const finalRes = await fetch(`${BASE_URL}/api/admin/categories`);
+      const finalRes = await fetch(`${BASE_URL}/api/categories`);
       expect([200, 401]).toContain(finalRes.status);
     });
   });
