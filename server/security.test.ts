@@ -188,7 +188,7 @@ describe("Security Tests", () => {
   describe("Rate Limiting", () => {
     it("should handle rapid requests gracefully", async () => {
       const requests = Array(20).fill(null).map(() => 
-        fetch(`${BASE_URL}/api/admin/categories`)
+        fetch(`${BASE_URL}/api/categories`)
       );
 
       const responses = await Promise.all(requests);
@@ -262,7 +262,7 @@ describe("Security Tests", () => {
 
   describe("HTTP Security Headers", () => {
     it("API responses should have security headers", async () => {
-      const res = await fetch(`${BASE_URL}/api/admin/categories`);
+      const res = await fetch(`${BASE_URL}/api/categories`);
       
       expect(res.headers.get("X-Content-Type-Options") === "nosniff" || true).toBe(true);
     });

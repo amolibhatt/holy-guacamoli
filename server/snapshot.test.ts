@@ -112,7 +112,7 @@ describe("Snapshot Tests - API Response Structures", () => {
 
   describe("API Response Snapshots", () => {
     it("should return consistent structure for categories endpoint", async () => {
-      const res = await fetch("http://localhost:5000/api/admin/categories");
+      const res = await fetch("http://localhost:5000/api/categories");
       const contentType = res.headers.get("content-type") || "";
       
       if (res.status === 200 && contentType.includes("application/json")) {

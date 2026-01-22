@@ -7,8 +7,8 @@ const BASE_URL = "http://localhost:5000";
 
 describe("Admin Panel", () => {
   describe("Admin Endpoints Authentication", () => {
-    it("GET /api/admin/categories should be accessible", async () => {
-      const res = await fetch(`${BASE_URL}/api/admin/categories`);
+    it("GET /api/categories should be accessible", async () => {
+      const res = await fetch(`${BASE_URL}/api/categories`);
       expect([200, 401]).toContain(res.status);
     });
 

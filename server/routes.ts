@@ -423,6 +423,11 @@ export async function registerRoutes(
     }
   });
 
+  // Legacy redirect for backwards compatibility with old endpoint
+  app.get("/api/admin/categories", isAuthenticated, (req, res) => {
+    res.redirect(307, "/api/categories");
+  });
+
   // Categories owned by user (via their boards) - protected
   app.get(api.categories.list.path, isAuthenticated, async (req, res) => {
     const userId = req.session.userId!;

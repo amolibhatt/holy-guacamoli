@@ -256,8 +256,8 @@ describe("Categories Management", () => {
 });
 
 describe("Category API Endpoints", () => {
-  it("GET /api/admin/categories should be accessible", async () => {
-    const res = await fetch(`${BASE_URL}/api/admin/categories`);
+  it("GET /api/categories should be accessible", async () => {
+    const res = await fetch(`${BASE_URL}/api/categories`);
     expect([200, 401]).toContain(res.status);
   });
 

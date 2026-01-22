@@ -298,7 +298,7 @@ describe("Error Recovery Tests", () => {
       const failedRes = await fetch(`${BASE_URL}/api/nonexistent`);
       expect([200, 401, 404]).toContain(failedRes.status);
 
-      const successRes = await fetch(`${BASE_URL}/api/admin/categories`);
+      const successRes = await fetch(`${BASE_URL}/api/categories`);
       expect([200, 401]).toContain(successRes.status);
     });
 
@@ -307,7 +307,7 @@ describe("Error Recovery Tests", () => {
       const timeout = setTimeout(() => controller.abort(), 5000);
 
       try {
-        const res = await fetch(`${BASE_URL}/api/admin/categories`, {
+        const res = await fetch(`${BASE_URL}/api/categories`, {
           signal: controller.signal,
         });
         clearTimeout(timeout);
