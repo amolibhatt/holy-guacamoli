@@ -288,13 +288,13 @@ export default function Blitzgrid() {
             setBuzzerLocked(false);
             setBuzzQueue([]);
             break;
-          case 'buzz:received':
+          case 'player:buzzed':
             // Collect all buzzes - don't auto-lock
             setBuzzQueue(prev => [...prev, {
               playerId: data.playerId,
-              name: data.name,
+              name: data.playerName,
               position: data.position,
-              time: data.time
+              timestamp: data.timestamp
             }]);
             break;
           case 'buzzer:reset':
@@ -325,14 +325,33 @@ export default function Blitzgrid() {
     setPlayers([]);
   }, []);
   
-  const updatePlayerScore = useCallback((playerId: string, delta: number) => {
+  const updatePlayerScore = useCallback((playerId: string, points: number) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
-        type: 'score:update',
+        type: 'host:updateScore',
         playerId,
-        delta
+        points
       }));
     }
+  }, []);
+
+  const sendFeedback = useCallback((playerId: string, correct: boolean, points: number) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'host:feedback',
+        playerId,
+        correct,
+        points
+      }));
+    }
+  }, []);
+
+  const lockBuzzer = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'host:lock' }));
+    }
+    setBuzzerLocked(true);
+    setBuzzQueue([]);
   }, []);
   
   const unlockBuzzer = useCallback(() => {
@@ -340,13 +359,6 @@ export default function Blitzgrid() {
       wsRef.current.send(JSON.stringify({ type: 'host:unlock' }));
       setBuzzerLocked(false);
       setBuzzQueue([]);
-    }
-  }, []);
-  
-  const lockBuzzer = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'host:lock' }));
-      setBuzzerLocked(true);
     }
   }, []);
   
@@ -417,6 +429,7 @@ export default function Blitzgrid() {
       const handleCloseQuestion = () => {
         setActiveQuestion(null);
         setShowAnswer(false);
+        lockBuzzer();
       };
       
       const resetGame = () => {
@@ -579,11 +592,7 @@ export default function Blitzgrid() {
                         size="icon"
                         variant="ghost"
                         className="h-6 w-6 text-emerald-400 hover:bg-emerald-500/20"
-                        onClick={() => {
-                          if (wsRef.current?.readyState === WebSocket.OPEN) {
-                            wsRef.current.send(JSON.stringify({ type: 'update_score', playerId: player.id, delta: 10 }));
-                          }
-                        }}
+                        onClick={() => updatePlayerScore(player.id, 10)}
                         data-testid={`button-add-score-${player.id}`}
                       >
                         <Plus className="w-3 h-3" />
@@ -592,11 +601,7 @@ export default function Blitzgrid() {
                         size="icon"
                         variant="ghost"
                         className="h-6 w-6 text-red-400 hover:bg-red-500/20"
-                        onClick={() => {
-                          if (wsRef.current?.readyState === WebSocket.OPEN) {
-                            wsRef.current.send(JSON.stringify({ type: 'update_score', playerId: player.id, delta: -10 }));
-                          }
-                        }}
+                        onClick={() => updatePlayerScore(player.id, -10)}
                         data-testid={`button-sub-score-${player.id}`}
                       >
                         <Minus className="w-3 h-3" />
@@ -717,7 +722,9 @@ export default function Blitzgrid() {
                               size="sm"
                               className="bg-red-600 hover:bg-red-500 text-white h-8"
                               onClick={() => {
-                                updatePlayerScore(buzz.playerId, -(activeQuestion?.points || 0));
+                                const pts = activeQuestion?.points || 0;
+                                updatePlayerScore(buzz.playerId, -pts);
+                                sendFeedback(buzz.playerId, false, -pts);
                                 handleRevealAnswer();
                               }}
                               data-testid={`button-wrong-${buzz.playerId}`}
@@ -728,7 +735,9 @@ export default function Blitzgrid() {
                               size="sm"
                               className="bg-emerald-600 hover:bg-emerald-500 text-white h-8"
                               onClick={() => {
-                                updatePlayerScore(buzz.playerId, activeQuestion?.points || 0);
+                                const pts = activeQuestion?.points || 0;
+                                updatePlayerScore(buzz.playerId, pts);
+                                sendFeedback(buzz.playerId, true, pts);
                                 handleRevealAnswer();
                               }}
                               data-testid={`button-correct-${buzz.playerId}`}
