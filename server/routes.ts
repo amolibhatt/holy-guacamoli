@@ -3261,6 +3261,54 @@ export async function registerRoutes(
     }
   });
   
+  // Create new category and add to grid
+  app.post("/api/blitzgrid/grids/:id/categories/create", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const gridId = parseId(req.params.id);
+      if (gridId === null) {
+        return res.status(400).json({ message: "Invalid grid ID" });
+      }
+      
+      const { name } = req.body;
+      if (!name || typeof name !== "string" || !name.trim()) {
+        return res.status(400).json({ message: "Category name is required" });
+      }
+      
+      // Verify ownership
+      const board = await storage.getBoard(gridId, userId);
+      if (!board) {
+        return res.status(404).json({ message: "Grid not found" });
+      }
+      
+      // Check category limit
+      const existing = await storage.getBoardCategories(gridId);
+      if (existing.length >= 5) {
+        return res.status(400).json({ message: "Grid already has 5 categories (maximum)" });
+      }
+      
+      // Create the category
+      const category = await storage.createCategory({
+        name: name.trim(),
+        description: "",
+        imageUrl: null,
+      });
+      
+      // Link to grid
+      await storage.createBoardCategory({
+        boardId: gridId,
+        categoryId: category.id,
+        position: existing.length,
+      });
+      
+      res.json(category);
+    } catch (err) {
+      console.error("Error creating category for blitzgrid:", err);
+      res.status(500).json({ message: "Failed to create category" });
+    }
+  });
+  
   // Remove category from grid
   app.delete("/api/blitzgrid/grids/:gridId/categories/:categoryId", isAuthenticated, async (req, res) => {
     try {
