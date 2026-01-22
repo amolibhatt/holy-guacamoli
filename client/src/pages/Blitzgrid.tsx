@@ -56,6 +56,10 @@ export default function Blitzgrid() {
     correctAnswer: string; 
     options: string[];
   }>>({});
+  
+  // New category form state
+  const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
 
   // Fetch all grids for current user
   const { data: grids = [], isLoading: loadingGrids } = useQuery<GridWithStats[]>({
@@ -151,6 +155,23 @@ export default function Blitzgrid() {
     },
     onError: () => {
       toast({ title: "Couldn't remove category", variant: "destructive" });
+    },
+  });
+
+  // Create new category mutation
+  const createCategoryMutation = useMutation({
+    mutationFn: async ({ gridId, name }: { gridId: number; name: string }) => {
+      return apiRequest('POST', `/api/blitzgrid/grids/${gridId}/categories/create`, { name });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
+      setNewCategoryName("");
+      setShowNewCategoryForm(false);
+      toast({ title: "Category created" });
+    },
+    onError: (error: any) => {
+      toast({ title: error?.message || "Couldn't create category", variant: "destructive" });
     },
   });
 
@@ -467,36 +488,50 @@ export default function Blitzgrid() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Add Category</CardTitle>
-                <CardDescription>Select a category to add to this grid</CardDescription>
+                <CardDescription>Create a new category for this grid</CardDescription>
               </CardHeader>
               <CardContent>
                 {gridCategories.length >= 5 ? (
                   <p className="text-muted-foreground text-sm text-center py-4">
                     Maximum 5 categories reached
                   </p>
-                ) : availableCategories.length === 0 ? (
-                  <p className="text-muted-foreground text-sm text-center py-4">
-                    No categories available. Create categories in the Games Admin.
-                  </p>
-                ) : (
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {availableCategories.map(category => (
-                      <Button
-                        key={category.id}
-                        variant="outline"
-                        className="w-full justify-start"
-                        onClick={() => addCategoryMutation.mutate({ 
-                          gridId: selectedGridId, 
-                          categoryId: category.id 
-                        })}
-                        disabled={addCategoryMutation.isPending}
-                        data-testid={`button-add-category-${category.id}`}
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        {category.name}
-                      </Button>
-                    ))}
+                ) : showNewCategoryForm ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="Category name..."
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && newCategoryName.trim()) {
+                          createCategoryMutation.mutate({ gridId: selectedGridId, name: newCategoryName.trim() });
+                        }
+                        if (e.key === 'Escape') {
+                          setShowNewCategoryForm(false);
+                          setNewCategoryName("");
+                        }
+                      }}
+                      data-testid="input-category-name"
+                    />
+                    <Button
+                      onClick={() => createCategoryMutation.mutate({ gridId: selectedGridId, name: newCategoryName.trim() })}
+                      disabled={!newCategoryName.trim() || createCategoryMutation.isPending}
+                      data-testid="button-create-category"
+                    >
+                      {createCategoryMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
+                    </Button>
+                    <Button variant="ghost" onClick={() => { setShowNewCategoryForm(false); setNewCategoryName(""); }}>
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
+                ) : (
+                  <Button
+                    className="w-full"
+                    onClick={() => setShowNewCategoryForm(true)}
+                    data-testid="button-new-category"
+                  >
+                    <Plus className="w-4 h-4 mr-2" /> New Category
+                  </Button>
                 )}
               </CardContent>
             </Card>
