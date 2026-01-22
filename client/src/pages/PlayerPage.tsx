@@ -196,6 +196,8 @@ export default function PlayerPage() {
           break;
         case "buzzer:locked":
           setBuzzerLocked(true);
+          setHasBuzzed(false);
+          setBuzzPosition(null);
           soundManager.play('click', 0.3);
           break;
         case "buzzer:reset":

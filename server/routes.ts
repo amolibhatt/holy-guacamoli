@@ -3677,6 +3677,7 @@ export async function registerRoutes(
               sessionId: room.sessionId,
               players: getPlayersArray(room),
               buzzerLocked: room.buzzerLocked,
+              buzzQueue: room.buzzQueue,
               completedQuestions: Array.from(room.completedQuestions),
             }));
             console.log(`[WebSocket] Host rejoined room ${room.code}`);
@@ -3880,6 +3881,25 @@ export async function registerRoutes(
             room.players.forEach((player) => {
               sendToPlayer(player, { type: 'buzzer:reset' });
             });
+            break;
+          }
+
+          case 'host:passPlayer': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            const { playerId } = message;
+            if (playerId) {
+              room.buzzQueue = room.buzzQueue.filter(b => b.playerId !== playerId);
+              // Notify the passed player to reset their buzz state
+              const player = room.players.get(playerId);
+              if (player) {
+                sendToPlayer(player, { type: 'buzzer:reset' });
+              }
+            }
             break;
           }
 
