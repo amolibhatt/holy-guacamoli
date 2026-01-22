@@ -173,7 +173,7 @@ export default function Home() {
             </motion.div>
           ) : (
             <div className="flex justify-center mb-12">
-              {gameTypes.filter(g => g.slug !== 'buzzkill' && GAME_CONFIG[g.slug]).map((game, index) => {
+              {gameTypes.filter(g => GAME_CONFIG[g.slug]).map((game, index) => {
                 const config = GAME_CONFIG[game.slug] || {
                   icon: Grid3X3,
                   gradient: "from-primary to-secondary",
