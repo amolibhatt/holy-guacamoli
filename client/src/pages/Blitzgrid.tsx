@@ -289,6 +289,11 @@ export default function Blitzgrid() {
             setBuzzQueue([]);
             break;
           case 'buzz:received':
+            // Auto-lock buzzer on first buzz
+            if (data.position === 1) {
+              setBuzzerLocked(true);
+              ws.send(JSON.stringify({ type: 'buzzer:lock' }));
+            }
             setBuzzQueue(prev => [...prev, {
               playerId: data.playerId,
               name: data.name,
@@ -393,6 +398,8 @@ export default function Blitzgrid() {
         if (!revealedCells.has(cellKey)) {
           setActiveQuestion(question);
           setShowAnswer(false);
+          // Auto-unlock buzzers when opening a question
+          unlockBuzzer();
         }
       };
       
@@ -657,37 +664,13 @@ export default function Blitzgrid() {
                 </p>
               </div>
               
-              {/* Buzzer Controls */}
-              {players.length > 0 && !showAnswer && (
-                <div className="flex justify-center gap-2 py-2">
-                  {buzzerLocked ? (
-                    <Button
-                      onClick={unlockBuzzer}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white"
-                      data-testid="button-unlock-buzzer"
-                    >
-                      <Zap className="w-4 h-4 mr-2" /> Unlock Buzzers
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={lockBuzzer}
-                      variant="outline"
-                      className="border-red-600 text-red-400 hover:bg-red-900/30"
-                      data-testid="button-lock-buzzer"
-                    >
-                      <Lock className="w-4 h-4 mr-2" /> Lock Buzzers
-                    </Button>
-                  )}
-                  {buzzQueue.length > 0 && (
-                    <Button
-                      onClick={resetBuzzers}
-                      variant="ghost"
-                      className="text-slate-400 hover:text-white"
-                      data-testid="button-reset-buzzers"
-                    >
-                      <RotateCcw className="w-4 h-4 mr-2" /> Reset
-                    </Button>
-                  )}
+              {/* Buzzer Status */}
+              {players.length > 0 && !showAnswer && buzzQueue.length === 0 && (
+                <div className="flex justify-center py-2">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-emerald-900/50 border border-emerald-600 rounded-full">
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                    <span className="text-emerald-300 text-sm font-medium">Buzzers Active - Waiting for players</span>
+                  </div>
                 </div>
               )}
               
