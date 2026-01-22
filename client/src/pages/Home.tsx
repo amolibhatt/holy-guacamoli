@@ -42,6 +42,7 @@ const GAME_CONFIG: Record<string, {
   route: string;
   playerCount: string;
   accentColor: string;
+  status?: string;
 }> = {
   blitzgrid: {
     icon: Grid3X3,
@@ -60,6 +61,7 @@ const GAME_CONFIG: Record<string, {
     route: "/host/sequence-squeeze",
     playerCount: "Multiplayer",
     accentColor: "#14B8A6",
+    status: "coming_soon",
   },
   double_dip: {
     icon: Heart,
@@ -192,7 +194,7 @@ export default function Home() {
                   playerCount: "Multiplayer",
                 };
                 const Icon = config.icon;
-                const isComingSoon = (game as any).status === 'coming_soon';
+                const isComingSoon = (game as any).status === 'coming_soon' || config.status === 'coming_soon';
 
                 return (
                   <motion.button
