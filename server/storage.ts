@@ -1529,6 +1529,16 @@ export class DatabaseStorage implements IStorage {
   async seedGameTypes(): Promise<void> {
     const requiredGameTypes = [
       {
+        slug: "blitzgrid",
+        displayName: "Blitzgrid",
+        description: "5 categories, 5 questions each. Race the clock to claim the grid!",
+        icon: "grid",
+        status: "active" as const,
+        hostEnabled: true,
+        playerEnabled: true,
+        sortOrder: 1,
+      },
+      {
         slug: "sequence_squeeze",
         displayName: "Sequence Squeeze",
         description: "Race to put 4 options in the correct order! Fastest correct sequence wins.",
@@ -1536,7 +1546,7 @@ export class DatabaseStorage implements IStorage {
         status: "active" as const,
         hostEnabled: true,
         playerEnabled: true,
-        sortOrder: 1,
+        sortOrder: 2,
       },
       {
         slug: "double_dip",
@@ -1546,7 +1556,7 @@ export class DatabaseStorage implements IStorage {
         status: "active" as const,
         hostEnabled: true,
         playerEnabled: true,
-        sortOrder: 2,
+        sortOrder: 3,
       },
     ];
 
@@ -1572,8 +1582,9 @@ export class DatabaseStorage implements IStorage {
 
     // Ensure correct sort order
     console.log("[SEED] Updating game type sort orders...");
-    await db.update(gameTypes).set({ sortOrder: 1 }).where(eq(gameTypes.slug, "sequence_squeeze"));
-    await db.update(gameTypes).set({ sortOrder: 2 }).where(eq(gameTypes.slug, "double_dip"));
+    await db.update(gameTypes).set({ sortOrder: 1 }).where(eq(gameTypes.slug, "blitzgrid"));
+    await db.update(gameTypes).set({ sortOrder: 2 }).where(eq(gameTypes.slug, "sequence_squeeze"));
+    await db.update(gameTypes).set({ sortOrder: 3 }).where(eq(gameTypes.slug, "double_dip"));
     console.log("[SEED] Sort orders updated.");
   }
 

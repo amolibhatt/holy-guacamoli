@@ -3055,6 +3055,352 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== BLITZGRID ROUTES ====================
+  
+  // Get all grids for current user with stats
+  app.get("/api/blitzgrid/grids", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      // Get boards for this user (filter by theme = blitzgrid)
+      const allBoards = await storage.getBoards(userId);
+      const boards = allBoards.filter(b => b.theme === "blitzgrid");
+      
+      // Enhance with category counts and active status
+      const gridsWithStats = await Promise.all(boards.map(async (board: typeof allBoards[number]) => {
+        const boardCategories = await storage.getBoardCategories(board.id);
+        let totalQuestions = 0;
+        let activeCategoryCount = 0;
+        
+        for (const bc of boardCategories) {
+          const questions = await storage.getQuestionsForCategory(bc.categoryId);
+          totalQuestions += questions.length;
+          // A category is active if it has all 5 point tiers (10,20,30,40,50)
+          const pointSet = new Set(questions.map(q => q.points));
+          if (REQUIRED_POINTS.every(p => pointSet.has(p))) {
+            activeCategoryCount++;
+          }
+        }
+        
+        return {
+          ...board,
+          categoryCount: boardCategories.length,
+          questionCount: totalQuestions,
+          isActive: boardCategories.length === 5 && activeCategoryCount === 5,
+        };
+      }));
+      
+      res.json(gridsWithStats);
+    } catch (err) {
+      console.error("Error fetching blitzgrid grids:", err);
+      res.status(500).json({ message: "Failed to fetch grids" });
+    }
+  });
+  
+  // Create a new grid
+  app.post("/api/blitzgrid/grids", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const { name } = req.body;
+      if (!name || typeof name !== "string") {
+        return res.status(400).json({ message: "Grid name is required" });
+      }
+      
+      const board = await storage.createBoard({
+        userId,
+        name: name.trim(),
+        description: "Blitzgrid",
+        pointValues: [10, 20, 30, 40, 50],
+        theme: "blitzgrid",
+        visibility: "private",
+        isGlobal: false,
+        sortOrder: 0,
+      });
+      
+      res.json(board);
+    } catch (err) {
+      console.error("Error creating blitzgrid grid:", err);
+      res.status(500).json({ message: "Failed to create grid" });
+    }
+  });
+  
+  // Update a grid
+  app.patch("/api/blitzgrid/grids/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid grid ID" });
+      }
+      
+      const { name } = req.body;
+      if (!name || typeof name !== "string") {
+        return res.status(400).json({ message: "Grid name is required" });
+      }
+      
+      // Verify ownership
+      const board = await storage.getBoard(id, userId);
+      if (!board) {
+        return res.status(404).json({ message: "Grid not found" });
+      }
+      
+      const updated = await storage.updateBoard(id, { name: name.trim() }, userId);
+      res.json(updated);
+    } catch (err) {
+      console.error("Error updating blitzgrid grid:", err);
+      res.status(500).json({ message: "Failed to update grid" });
+    }
+  });
+  
+  // Delete a grid
+  app.delete("/api/blitzgrid/grids/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid grid ID" });
+      }
+      
+      // Verify ownership
+      const board = await storage.getBoard(id, userId);
+      if (!board) {
+        return res.status(404).json({ message: "Grid not found" });
+      }
+      
+      await storage.deleteBoard(id, userId);
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting blitzgrid grid:", err);
+      res.status(500).json({ message: "Failed to delete grid" });
+    }
+  });
+  
+  // Get categories for a grid with question counts
+  app.get("/api/blitzgrid/grids/:id/categories", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid grid ID" });
+      }
+      
+      // Verify ownership
+      const board = await storage.getBoard(id, userId);
+      if (!board) {
+        return res.status(404).json({ message: "Grid not found" });
+      }
+      
+      const boardCategories = await storage.getBoardCategories(id);
+      
+      // Get full category data with questions
+      const categoriesWithQuestions = await Promise.all(
+        boardCategories.map(async (bc) => {
+          const category = await storage.getCategory(bc.categoryId);
+          const questions = await storage.getQuestionsByCategory(bc.categoryId);
+          return {
+            ...category,
+            questionCount: questions.length,
+            questions,
+          };
+        })
+      );
+      
+      res.json(categoriesWithQuestions.filter(Boolean));
+    } catch (err) {
+      console.error("Error fetching blitzgrid categories:", err);
+      res.status(500).json({ message: "Failed to fetch categories" });
+    }
+  });
+  
+  // Add category to grid
+  app.post("/api/blitzgrid/grids/:id/categories", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const gridId = parseId(req.params.id);
+      if (gridId === null) {
+        return res.status(400).json({ message: "Invalid grid ID" });
+      }
+      
+      const { categoryId } = req.body;
+      if (typeof categoryId !== "number") {
+        return res.status(400).json({ message: "Category ID is required" });
+      }
+      
+      // Verify ownership
+      const board = await storage.getBoard(gridId, userId);
+      if (!board) {
+        return res.status(404).json({ message: "Grid not found" });
+      }
+      
+      // Check category limit
+      const existing = await storage.getBoardCategories(gridId);
+      if (existing.length >= 5) {
+        return res.status(400).json({ message: "Grid already has 5 categories (maximum)" });
+      }
+      
+      // Check if already linked
+      if (existing.some(bc => bc.categoryId === categoryId)) {
+        return res.status(400).json({ message: "Category already linked to this grid" });
+      }
+      
+      const boardCategory = await storage.createBoardCategory({
+        boardId: gridId,
+        categoryId,
+        position: existing.length,
+      });
+      
+      res.json(boardCategory);
+    } catch (err) {
+      console.error("Error adding category to blitzgrid:", err);
+      res.status(500).json({ message: "Failed to add category" });
+    }
+  });
+  
+  // Remove category from grid
+  app.delete("/api/blitzgrid/grids/:gridId/categories/:categoryId", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const gridId = parseId(req.params.gridId);
+      const categoryId = parseId(req.params.categoryId);
+      if (gridId === null || categoryId === null) {
+        return res.status(400).json({ message: "Invalid IDs" });
+      }
+      
+      // Verify ownership
+      const board = await storage.getBoard(gridId, userId);
+      if (!board) {
+        return res.status(404).json({ message: "Grid not found" });
+      }
+      
+      // Find and delete the board-category link
+      const boardCategories = await storage.getBoardCategories(gridId);
+      const bc = boardCategories.find(x => x.categoryId === categoryId);
+      if (!bc) {
+        return res.status(404).json({ message: "Category not linked to this grid" });
+      }
+      
+      await storage.deleteBoardCategory(bc.id);
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error removing category from blitzgrid:", err);
+      res.status(500).json({ message: "Failed to remove category" });
+    }
+  });
+  
+  // Save/update question for a category
+  app.post("/api/blitzgrid/categories/:categoryId/questions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const categoryId = parseId(req.params.categoryId);
+      if (categoryId === null) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+      
+      // Verify user owns a grid that contains this category
+      const boardCategoryLinks = await storage.getBoardCategoriesByCategoryId(categoryId);
+      let hasOwnership = false;
+      for (const bc of boardCategoryLinks) {
+        const board = await storage.getBoard(bc.boardId, userId);
+        if (board && board.theme === "blitzgrid") {
+          hasOwnership = true;
+          break;
+        }
+      }
+      if (!hasOwnership) {
+        return res.status(403).json({ message: "You don't have permission to modify this category" });
+      }
+      
+      const { points, question, correctAnswer, options } = req.body;
+      
+      if (!REQUIRED_POINTS.includes(points)) {
+        return res.status(400).json({ message: "Points must be 10, 20, 30, 40, or 50" });
+      }
+      
+      if (!question || typeof question !== "string") {
+        return res.status(400).json({ message: "Question is required" });
+      }
+      
+      if (!correctAnswer || typeof correctAnswer !== "string") {
+        return res.status(400).json({ message: "Correct answer is required" });
+      }
+      
+      // Check if question already exists for this point tier
+      const existingQuestions = await storage.getQuestionsByCategory(categoryId);
+      const existingQuestion = existingQuestions.find(q => q.points === points);
+      
+      if (existingQuestion) {
+        // Update existing question
+        const updated = await storage.updateQuestion(existingQuestion.id, {
+          question: question.trim(),
+          correctAnswer: correctAnswer.trim(),
+          options: options || [],
+        });
+        return res.json(updated);
+      }
+      
+      // Create new question
+      const newQuestion = await storage.createQuestion({
+        categoryId,
+        question: question.trim(),
+        correctAnswer: correctAnswer.trim(),
+        options: options || [],
+        points,
+      });
+      
+      res.json(newQuestion);
+    } catch (err) {
+      console.error("Error saving blitzgrid question:", err);
+      res.status(500).json({ message: "Failed to save question" });
+    }
+  });
+  
+  // Delete a question
+  app.delete("/api/blitzgrid/questions/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+      
+      // Get the question to find its category
+      const question = await storage.getQuestion(id);
+      if (!question) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      
+      // Verify user owns a grid that contains this category
+      const boardCategoryLinks = await storage.getBoardCategoriesByCategoryId(question.categoryId);
+      let hasOwnership = false;
+      for (const bc of boardCategoryLinks) {
+        const board = await storage.getBoard(bc.boardId, userId);
+        if (board && board.theme === "blitzgrid") {
+          hasOwnership = true;
+          break;
+        }
+      }
+      if (!hasOwnership) {
+        return res.status(403).json({ message: "You don't have permission to delete this question" });
+      }
+      
+      await storage.deleteQuestion(id);
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting blitzgrid question:", err);
+      res.status(500).json({ message: "Failed to delete question" });
+    }
+  });
+
+  // ==================== END BLITZGRID ROUTES ====================
+
   // Analytics endpoint - event collection with validation
   const VALID_EVENT_NAMES = new Set([
     'page_view', 'login', 'logout', 'game_started', 'game_completed',
