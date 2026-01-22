@@ -3898,7 +3898,7 @@ export async function registerRoutes(
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
-            const { playerId } = message;
+            const { playerId } = data;
             if (playerId) {
               room.buzzQueue = room.buzzQueue.filter(b => b.playerId !== playerId);
               // Notify the passed player to reset their buzz state
