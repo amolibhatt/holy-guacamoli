@@ -419,7 +419,8 @@ export async function registerRoutes(
       res.status(201).json({ category, boardCategory: bc });
     } catch (err) {
       console.error("Error creating and linking category:", err);
-      res.status(500).json({ message: "Failed to create category" });
+      const errorMessage = err instanceof Error ? err.message : "Failed to create category";
+      res.status(500).json({ message: errorMessage });
     }
   });
 
