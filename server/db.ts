@@ -20,5 +20,8 @@ const needsSSL = connectionString.includes('render.com') ||
 export const pool = new Pool({ 
   connectionString,
   ssl: needsSSL ? { rejectUnauthorized: false } : false,
+  max: 10, // Limit pool size to prevent exhaustion
+  idleTimeoutMillis: 30000, // Close idle connections after 30s
+  connectionTimeoutMillis: 10000, // Timeout for new connections
 });
 export const db = drizzle(pool, { schema });
