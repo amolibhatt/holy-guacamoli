@@ -3,11 +3,11 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { 
-  Users, Grid3X3, BarChart3, Shield, ArrowLeft,
+  Users, BarChart3, Shield, ArrowLeft,
   Trash2, MoreHorizontal,
   TrendingUp, Gamepad2, Clock, Activity, Heart,
-  Globe, Lock, ListOrdered, RefreshCw,
-  ChevronRight, Plus, Download, Pencil
+  ListOrdered, RefreshCw,
+  ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,7 +43,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
-import type { Board, GameType, BoardCategoryWithCount, Question } from "@shared/schema";
+import type { Board, GameType } from "@shared/schema";
 import type { SafeUser } from "@shared/models/auth";
 
 interface PlatformStats {
@@ -75,12 +75,6 @@ export default function SuperAdmin() {
   
   // Game management state - which game is selected for management
   const [selectedGameSlug, setSelectedGameSlug] = useState<string | null>(null);
-  
-  // Starter Pack editing state
-  const [editingPackId, setEditingPackId] = useState<number | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const [showAllPromotableBoards, setShowAllPromotableBoards] = useState(false);
-  const [demotePackId, setDemotePackId] = useState<number | null>(null);
 
   const { data: stats, isLoading: isLoadingStats } = useQuery<PlatformStats>({
     queryKey: ['/api/super-admin/stats'],
@@ -98,18 +92,6 @@ export default function SuperAdmin() {
     queryKey: ['/api/super-admin/game-types'],
   });
 
-  // Fetch categories for the selected Starter Pack
-  const { data: packCategories = [], isLoading: loadingPackCategories } = useQuery<BoardCategoryWithCount[]>({
-    queryKey: ['/api/boards', editingPackId, 'categories'],
-    enabled: !!editingPackId,
-  });
-
-  // Fetch questions for selected category
-  const { data: categoryQuestions = [], isLoading: loadingQuestions } = useQuery<Question[]>({
-    queryKey: ['/api/board-categories', selectedCategoryId, 'questions'],
-    enabled: !!selectedCategoryId,
-  });
-
   const updateGameTypeMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: { hostEnabled?: boolean; playerEnabled?: boolean; status?: GameStatus } }) => {
       await apiRequest('PATCH', `/api/super-admin/game-types/${id}`, data);
@@ -121,22 +103,6 @@ export default function SuperAdmin() {
     },
     onError: () => {
       toast({ title: "Couldn't update game", description: "Please try again.", variant: "destructive" });
-    },
-  });
-
-  const toggleGlobalBoardMutation = useMutation({
-    mutationFn: async ({ boardId, isGlobal }: { boardId: number; isGlobal: boolean }) => {
-      await apiRequest('PATCH', `/api/super-admin/boards/${boardId}/global`, { isGlobal });
-      return isGlobal;
-    },
-    onSuccess: (wasAdded) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
-      toast({ title: wasAdded ? "Promoted to Global Grid" : "Removed from Global Grids" });
-      setShowAllPromotableBoards(false);
-      setDemotePackId(null);
-    },
-    onError: () => {
-      toast({ title: "Couldn't update grid", description: "Please try again.", variant: "destructive" });
     },
   });
 

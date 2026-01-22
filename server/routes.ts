@@ -2800,12 +2800,12 @@ export async function registerRoutes(
       
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(rows);
-      XLSX.utils.book_append_sheet(wb, ws, "Buzzkill Data");
+      XLSX.utils.book_append_sheet(wb, ws, "Game Data");
       
       const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
       
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', 'attachment; filename=buzzkill-export.xlsx');
+      res.setHeader('Content-Disposition', 'attachment; filename=game-data-export.xlsx');
       res.send(buffer);
     } catch (err) {
       console.error("Error exporting Excel:", err);
