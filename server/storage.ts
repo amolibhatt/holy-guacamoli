@@ -772,8 +772,8 @@ export class DatabaseStorage implements IStorage {
       
       // Last resort: use game mode as indicator
       if (!boardName && session.currentMode) {
-        boardName = session.currentMode === "board" ? "Buzzkill" : 
-                   session.currentMode === "sequence" ? "Sequence Squeeze" : 
+        boardName = session.currentMode === "sequence" ? "Sequence Squeeze" : 
+                   session.currentMode === "double_dip" ? "Double Dip" :
                    session.currentMode;
       }
       
@@ -1529,16 +1529,6 @@ export class DatabaseStorage implements IStorage {
   async seedGameTypes(): Promise<void> {
     const requiredGameTypes = [
       {
-        slug: "buzzkill",
-        displayName: "Buzzkill",
-        description: "Race the clock, decode the clues, and claim the grid.",
-        icon: "grid",
-        status: "active" as const,
-        hostEnabled: true,
-        playerEnabled: true,
-        sortOrder: 1,
-      },
-      {
         slug: "sequence_squeeze",
         displayName: "Sequence Squeeze",
         description: "Race to put 4 options in the correct order! Fastest correct sequence wins.",
@@ -1546,7 +1536,7 @@ export class DatabaseStorage implements IStorage {
         status: "active" as const,
         hostEnabled: true,
         playerEnabled: true,
-        sortOrder: 2,
+        sortOrder: 1,
       },
       {
         slug: "double_dip",
@@ -1556,29 +1546,9 @@ export class DatabaseStorage implements IStorage {
         status: "active" as const,
         hostEnabled: true,
         playerEnabled: true,
-        sortOrder: 3,
+        sortOrder: 2,
       },
     ];
-
-    // Migration: Handle old grid_of_grudges slug
-    // IMPORTANT: We must preserve the old row's ID to maintain foreign key relationships
-    const oldSlug = await db.select().from(gameTypes).where(eq(gameTypes.slug, "grid_of_grudges"));
-    if (oldSlug.length > 0) {
-      const newSlugRecords = await db.select().from(gameTypes).where(eq(gameTypes.slug, "buzzkill"));
-      if (newSlugRecords.length > 0) {
-        // Both exist: Delete the NEW buzzkill row (no FK refs yet), then rename the OLD row
-        console.log("[SEED] Migrating: Removing orphan buzzkill row to preserve old grid_of_grudges FK relationships...");
-        await db.delete(gameTypes).where(eq(gameTypes.slug, "buzzkill"));
-        console.log("[SEED] Migrating: Renaming grid_of_grudges to buzzkill (preserving original ID)...");
-        await db.update(gameTypes).set({ slug: "buzzkill" }).where(eq(gameTypes.slug, "grid_of_grudges"));
-        console.log("[SEED] Migration complete: grid_of_grudges renamed to buzzkill with original ID preserved");
-      } else {
-        // Only old slug exists: simple rename
-        console.log("[SEED] Migrating: Renaming grid_of_grudges to buzzkill...");
-        await db.update(gameTypes).set({ slug: "buzzkill" }).where(eq(gameTypes.slug, "grid_of_grudges"));
-        console.log("[SEED] Migration complete: grid_of_grudges renamed to buzzkill");
-      }
-    }
 
     console.log("[SEED] Checking for missing game types...");
     const existingTypes = await db.select().from(gameTypes);
@@ -1600,11 +1570,10 @@ export class DatabaseStorage implements IStorage {
       console.log(`[SEED] Added ${addedCount} new game type(s).`);
     }
 
-    // Ensure correct sort order: Buzzkill(1), Sequence Squeeze(2), Double Dip(3)
+    // Ensure correct sort order
     console.log("[SEED] Updating game type sort orders...");
-    await db.update(gameTypes).set({ sortOrder: 1 }).where(eq(gameTypes.slug, "buzzkill"));
-    await db.update(gameTypes).set({ sortOrder: 2 }).where(eq(gameTypes.slug, "sequence_squeeze"));
-    await db.update(gameTypes).set({ sortOrder: 3 }).where(eq(gameTypes.slug, "double_dip"));
+    await db.update(gameTypes).set({ sortOrder: 1 }).where(eq(gameTypes.slug, "sequence_squeeze"));
+    await db.update(gameTypes).set({ sortOrder: 2 }).where(eq(gameTypes.slug, "double_dip"));
     console.log("[SEED] Sort orders updated.");
   }
 
