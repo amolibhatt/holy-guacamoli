@@ -11,10 +11,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
 import { useScore } from "@/components/ScoreContext";
 import { motion, AnimatePresence } from "framer-motion";
+import confetti from "canvas-confetti";
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Play, Loader2,
-  AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Zap, Lock, Trophy, ChevronLeft, UserPlus, Power
+  AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Zap, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Sparkles, Medal
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -71,6 +72,9 @@ export default function Blitzgrid() {
   const [isJudging, setIsJudging] = useState(false);
   const [lastJoinedPlayer, setLastJoinedPlayer] = useState<{ name: string; avatar?: string } | null>(null);
   const [lastScoreChange, setLastScoreChange] = useState<{ playerId: string; playerName: string; points: number } | null>(null);
+  const [showGameOver, setShowGameOver] = useState(false);
+  const [gameOverPhase, setGameOverPhase] = useState(0);
+  const gameOverTimers = useRef<NodeJS.Timeout[]>([]);
   const joinNotificationTimer = useRef<NodeJS.Timeout | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttempts = useRef(0);
@@ -547,6 +551,66 @@ export default function Blitzgrid() {
     toast({ title: "Session ended", description: "All players have been disconnected." });
   }, [clearStoredSession, disconnectWebSocket, toast]);
   
+  // Fire celebratory confetti
+  const fireConfetti = useCallback(() => {
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+    
+    // Multiple bursts
+    confetti({ ...defaults, particleCount: 80, origin: { x: randomInRange(0.1, 0.3), y: randomInRange(0.2, 0.4) }, colors: ['#22c55e', '#16a34a', '#FFD700', '#FFA500'] });
+    setTimeout(() => {
+      confetti({ ...defaults, particleCount: 80, origin: { x: randomInRange(0.7, 0.9), y: randomInRange(0.2, 0.4) }, colors: ['#22c55e', '#16a34a', '#FFD700', '#FFA500'] });
+    }, 200);
+    setTimeout(() => {
+      confetti({ ...defaults, particleCount: 120, origin: { x: 0.5, y: 0.3 }, colors: ['#FFD700', '#FFFFFF', '#22c55e', '#4ADEBC'] });
+    }, 400);
+    setTimeout(() => {
+      confetti({ particleCount: 50, spread: 100, origin: { x: 0.5, y: 0.5 }, shapes: ['star'], colors: ['#FFD700', '#FFA500'], scalar: 1.5 });
+    }, 600);
+  }, []);
+  
+  // Start the game over reveal animation
+  const startGameOverReveal = useCallback(() => {
+    const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+    if (sortedPlayers.length === 0) {
+      endSession();
+      return;
+    }
+    
+    // Clear any existing timers
+    gameOverTimers.current.forEach(clearTimeout);
+    gameOverTimers.current = [];
+    
+    setShowGameOver(true);
+    setGameOverPhase(0);
+    
+    // Animate phases: 0 → show 4th+ → 3rd → 2nd → drumroll → winner
+    const phases = sortedPlayers.length >= 4 ? [500, 2000, 3500, 5000, 6500] : 
+                   sortedPlayers.length === 3 ? [500, 2000, 3500, 5000] :
+                   sortedPlayers.length === 2 ? [500, 2000, 3500] :
+                   [500, 2000];
+    
+    phases.forEach((delay, i) => {
+      const timer = setTimeout(() => {
+        setGameOverPhase(i + 1);
+        if (i === phases.length - 1) {
+          fireConfetti();
+        }
+      }, delay);
+      gameOverTimers.current.push(timer);
+    });
+  }, [players, endSession, fireConfetti]);
+  
+  // Close game over and actually end session
+  const closeGameOver = useCallback(() => {
+    // Clear reveal timers
+    gameOverTimers.current.forEach(clearTimeout);
+    gameOverTimers.current = [];
+    setShowGameOver(false);
+    setGameOverPhase(0);
+    endSession();
+  }, [endSession]);
+  
   // Auto-connect when entering play mode
   useEffect(() => {
     if (playMode) {
@@ -562,6 +626,9 @@ export default function Blitzgrid() {
       if (joinNotificationTimer.current) {
         clearTimeout(joinNotificationTimer.current);
       }
+      // Clear game over timers on unmount
+      gameOverTimers.current.forEach(clearTimeout);
+      gameOverTimers.current = [];
     };
   }, [playMode, connectWebSocket, disconnectWebSocket]);
 
@@ -627,8 +694,231 @@ export default function Blitzgrid() {
         ? `${window.location.origin}/play?code=${roomCode}` 
         : `${window.location.origin}/play`;
       
+      // Sort players for podium display
+      const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+      const winner = sortedPlayers[0];
+      const runnerUp = sortedPlayers[1];
+      const thirdPlace = sortedPlayers[2];
+      const restOfPlayers = sortedPlayers.slice(3);
+      
+      // Phase thresholds based on player count
+      const winnerPhase = sortedPlayers.length >= 4 ? 5 : sortedPlayers.length === 3 ? 4 : sortedPlayers.length === 2 ? 3 : 2;
+      const secondPhase = sortedPlayers.length >= 4 ? 4 : sortedPlayers.length === 3 ? 3 : 2;
+      const thirdPhase = sortedPlayers.length >= 4 ? 3 : 2;
+      const restPhase = 2;
+      
       return (
         <div className="h-screen overflow-hidden flex flex-col" style={{ background: 'linear-gradient(180deg, #1a472a 0%, #2d5a35 50%, #1a472a 100%)' }} data-testid="page-blitzgrid-play">
+          
+          {/* Game Over Reveal Overlay */}
+          <AnimatePresence>
+            {showGameOver && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 flex items-center justify-center"
+                style={{ background: 'linear-gradient(180deg, #0f2d1a 0%, #1a472a 50%, #0f2d1a 100%)' }}
+              >
+                <div className="text-center p-4 md:p-8 max-w-4xl w-full mx-4">
+                  {/* Title */}
+                  <motion.div
+                    initial={{ y: -50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="mb-8"
+                  >
+                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">Final Scores</h2>
+                    <div className="flex items-center justify-center gap-2">
+                      <Sparkles className="w-5 h-5 text-yellow-400" />
+                      <span className="text-white/60">Who takes the crown?</span>
+                      <Sparkles className="w-5 h-5 text-yellow-400" />
+                    </div>
+                  </motion.div>
+
+                  {/* 3D Podium */}
+                  <div className="relative flex items-end justify-center gap-2 md:gap-4 mb-8 h-[320px] md:h-[380px]">
+                    {/* 2nd Place - Left */}
+                    <AnimatePresence>
+                      {gameOverPhase >= secondPhase && runnerUp && (
+                        <motion.div
+                          initial={{ y: 100, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ type: "spring", stiffness: 100, damping: 15 }}
+                          className="flex flex-col items-center"
+                        >
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: "spring" }} className="mb-2">
+                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center text-3xl md:text-4xl shadow-lg border-4 border-gray-300 bg-slate-600">
+                              {PLAYER_AVATARS.find(a => a.id === runnerUp.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
+                            </div>
+                            <div className="text-white font-bold text-sm md:text-base mt-1 truncate max-w-[100px]">
+                              {runnerUp.name}
+                            </div>
+                            <motion.div className="text-2xl md:text-3xl font-black text-gray-300">
+                              {runnerUp.score}
+                            </motion.div>
+                          </motion.div>
+                          <div className="w-20 md:w-28 h-24 md:h-32 bg-gradient-to-b from-gray-400 to-gray-600 rounded-t-lg flex items-center justify-center shadow-xl border-t-4 border-gray-300">
+                            <Medal className="w-8 h-8 text-white/80 mr-1" />
+                            <span className="text-4xl md:text-5xl font-black text-white/80">2</span>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* 1st Place - Center (elevated) */}
+                    <AnimatePresence>
+                      {gameOverPhase >= winnerPhase && winner && (
+                        <motion.div
+                          initial={{ y: 150, opacity: 0, scale: 0.5 }}
+                          animate={{ y: 0, opacity: 1, scale: 1 }}
+                          transition={{ type: "spring", stiffness: 80, damping: 12 }}
+                          className="flex flex-col items-center relative z-10"
+                        >
+                          {/* Winner Spotlight Glow */}
+                          <motion.div
+                            className="absolute -inset-8 rounded-full"
+                            animate={{ boxShadow: ["0 0 40px 10px rgba(255, 215, 0, 0.3)", "0 0 60px 20px rgba(255, 215, 0, 0.5)", "0 0 40px 10px rgba(255, 215, 0, 0.3)"] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                          />
+                          
+                          {/* Crown */}
+                          <motion.div initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }}>
+                            <Crown className="w-10 h-10 md:w-12 md:h-12 text-yellow-400 mx-auto drop-shadow-lg" />
+                          </motion.div>
+                          
+                          {/* Player */}
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: "spring" }} className="relative">
+                            <motion.div
+                              className="absolute inset-0 rounded-full border-4 border-yellow-400"
+                              animate={{ scale: [1, 1.3, 1], opacity: [1, 0, 1] }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                            />
+                            <div className="w-20 h-20 md:w-28 md:h-28 rounded-full flex items-center justify-center text-4xl md:text-5xl shadow-2xl border-4 border-yellow-400 relative z-10 bg-emerald-600">
+                              {PLAYER_AVATARS.find(a => a.id === winner.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
+                            </div>
+                          </motion.div>
+                          
+                          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="mt-2">
+                            <div className="text-white font-black text-lg md:text-xl">{winner.name}</div>
+                            <motion.div 
+                              className="text-4xl md:text-5xl font-black text-yellow-400 drop-shadow-lg"
+                              animate={{ scale: [1, 1.05, 1] }}
+                              transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 1 }}
+                            >
+                              {winner.score}
+                            </motion.div>
+                          </motion.div>
+                          
+                          {/* Podium */}
+                          <div className="w-24 md:w-36 h-36 md:h-48 bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-700 rounded-t-lg flex items-center justify-center shadow-2xl border-t-4 border-yellow-300 mt-2">
+                            <div className="flex flex-col items-center">
+                              <Trophy className="w-8 h-8 md:w-10 md:h-10 text-yellow-900 mb-1" />
+                              <span className="text-5xl md:text-6xl font-black text-yellow-900">1</span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* 3rd Place - Right */}
+                    <AnimatePresence>
+                      {gameOverPhase >= thirdPhase && thirdPlace && (
+                        <motion.div
+                          initial={{ y: 100, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ type: "spring", stiffness: 100, damping: 15 }}
+                          className="flex flex-col items-center"
+                        >
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: "spring" }} className="mb-2">
+                            <div className="w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-2xl md:text-3xl shadow-lg border-4 border-amber-600 bg-slate-600">
+                              {PLAYER_AVATARS.find(a => a.id === thirdPlace.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
+                            </div>
+                            <div className="text-white font-bold text-sm md:text-base mt-1 truncate max-w-[100px]">
+                              {thirdPlace.name}
+                            </div>
+                            <motion.div className="text-xl md:text-2xl font-black text-amber-500">
+                              {thirdPlace.score}
+                            </motion.div>
+                          </motion.div>
+                          <div className="w-18 md:w-24 h-16 md:h-20 bg-gradient-to-b from-amber-600 to-amber-800 rounded-t-lg flex items-center justify-center shadow-xl border-t-4 border-amber-500">
+                            <span className="text-3xl md:text-4xl font-black text-white/80">3</span>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Drumroll Phase */}
+                    <AnimatePresence>
+                      {gameOverPhase === winnerPhase - 1 && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                        >
+                          <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.3, repeat: Infinity }} className="text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-yellow-400" />
+                              <Trophy className="w-12 h-12 md:w-16 md:h-16 text-yellow-400" />
+                              <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-yellow-400" />
+                            </div>
+                            <motion.p 
+                              className="text-white text-xl md:text-2xl font-bold mt-2"
+                              animate={{ opacity: [1, 0.5, 1] }}
+                              transition={{ duration: 0.5, repeat: Infinity }}
+                            >
+                              And the winner is...
+                            </motion.p>
+                          </motion.div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Other players (4th place and beyond) */}
+                  {gameOverPhase >= restPhase && restOfPlayers.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex flex-wrap justify-center gap-2 mb-6"
+                    >
+                      {restOfPlayers.map((p, i) => (
+                        <div key={p.id} className="bg-white/10 backdrop-blur px-3 py-2 rounded-lg border border-white/20 flex items-center gap-2">
+                          <span className="text-white/60 font-medium">#{i + 4}</span>
+                          <span className="text-lg">{PLAYER_AVATARS.find(a => a.id === p.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
+                          <span className="text-white/80 font-medium">{p.name}</span>
+                          <span className="text-white/60">{p.score} pts</span>
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+
+                  {/* Exit Button */}
+                  <AnimatePresence>
+                    {gameOverPhase >= winnerPhase && (
+                      <motion.div
+                        initial={{ y: 30, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 1 }}
+                        className="flex justify-center"
+                      >
+                        <Button
+                          size="lg"
+                          onClick={closeGameOver}
+                          className="bg-white text-emerald-900 font-bold shadow-lg"
+                          data-testid="button-exit-game-over"
+                        >
+                          Exit to Menu
+                        </Button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
           {/* Minimal Header */}
           <motion.div 
             initial={{ y: -20, opacity: 0 }}
@@ -687,7 +977,7 @@ export default function Blitzgrid() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={endSession} className="bg-red-600">
+                    <AlertDialogAction onClick={startGameOverReveal} className="bg-red-600">
                       End Session
                     </AlertDialogAction>
                   </AlertDialogFooter>
