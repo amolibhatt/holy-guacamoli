@@ -621,7 +621,7 @@ export default function Blitzgrid() {
               variant="ghost" 
               size="icon"
               onClick={() => { setPlayMode(false); setSelectedGridId(null); }}
-              className="text-white/60 hover:text-white hover:bg-white/10 h-9 w-9"
+              className="text-white/60 h-9 w-9"
               data-testid="button-exit-play"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -647,10 +647,10 @@ export default function Blitzgrid() {
             </div>
             
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => setShowQRCode(true)} className="bg-emerald-400 hover:bg-emerald-300 text-black font-medium h-9" data-testid="button-show-qr">
+              <Button size="sm" onClick={() => setShowQRCode(true)} className="bg-emerald-400 text-black font-medium h-9" data-testid="button-show-qr">
                 <QrCode className="w-4 h-4 mr-1.5" /> Join
               </Button>
-              <Button size="icon" variant="ghost" onClick={resetGame} className="text-white/50 hover:text-white hover:bg-white/10 h-9 w-9" data-testid="button-reset-game">
+              <Button size="icon" variant="ghost" onClick={resetGame} className="text-white/50 h-9 w-9" data-testid="button-reset-game">
                 <RotateCcw className="w-4 h-4" />
               </Button>
               <AlertDialog>
@@ -810,7 +810,7 @@ export default function Blitzgrid() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-6 w-6 text-emerald-400 hover:bg-emerald-500/20"
+                          className="h-6 w-6 text-emerald-400"
                           onClick={() => updatePlayerScore(player.id, 10)}
                           data-testid={`button-add-score-${player.id}`}
                         >
@@ -819,7 +819,7 @@ export default function Blitzgrid() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-6 w-6 text-red-400 hover:bg-red-500/20"
+                          className="h-6 w-6 text-red-400"
                           onClick={() => updatePlayerScore(player.id, -10)}
                           data-testid={`button-sub-score-${player.id}`}
                         >
@@ -908,7 +908,7 @@ export default function Blitzgrid() {
                       lockBuzzer();
                       handleRevealAnswer();
                     }}
-                    className="text-slate-400 hover:text-white"
+                    className="text-slate-400"
                     data-testid="button-skip-reveal"
                   >
                     <Eye className="w-4 h-4 mr-2" /> No one buzzing? Reveal Answer
@@ -1060,7 +1060,7 @@ export default function Blitzgrid() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 text-red-400 hover:text-red-300 hover:bg-red-900/30"
+                            className="h-7 w-7 text-red-400"
                             onClick={() => updatePlayerScore(player.id, -(activeQuestion?.points || 0))}
                             data-testid={`button-deduct-${player.id}`}
                           >
@@ -1069,7 +1069,7 @@ export default function Blitzgrid() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-900/30"
+                            className="h-7 w-7 text-emerald-400"
                             onClick={() => updatePlayerScore(player.id, activeQuestion?.points || 0)}
                             data-testid={`button-award-${player.id}`}
                           >
@@ -1089,7 +1089,7 @@ export default function Blitzgrid() {
                       lockBuzzer();
                       handleRevealAnswer();
                     }}
-                    className="bg-amber-500 text-slate-900 hover:bg-amber-400"
+                    className="bg-amber-500 text-slate-900"
                     data-testid="button-reveal-answer"
                   >
                     <Eye className="w-4 h-4 mr-2" /> Show Answer
@@ -1098,7 +1098,7 @@ export default function Blitzgrid() {
                   <Button 
                     onClick={handleCloseQuestion}
                     variant="outline"
-                    className="border-slate-600 text-white hover:bg-slate-700"
+                    className="border-slate-600 text-white"
                     data-testid="button-close-question"
                   >
                     Continue
