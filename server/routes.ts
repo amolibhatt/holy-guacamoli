@@ -430,10 +430,16 @@ export async function registerRoutes(
 
   // Categories owned by user (via their boards) - protected
   app.get(api.categories.list.path, isAuthenticated, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const categories = await storage.getCategoriesForUser(userId, role);
-    res.json(categories);
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const categories = await storage.getCategoriesForUser(userId, role);
+      res.json(categories);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch categories";
+      res.status(500).json({ message: errorMessage });
+    }
   });
 
   // Categories with question counts - for admin panel progress display
@@ -451,7 +457,8 @@ export async function registerRoutes(
       res.json(result);
     } catch (err) {
       console.error("Error fetching categories with counts:", err);
-      res.status(500).json({ message: "Failed to fetch categories" });
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch categories";
+      res.status(500).json({ message: errorMessage });
     }
   });
 
