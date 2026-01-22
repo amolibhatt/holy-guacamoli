@@ -350,10 +350,12 @@ export default function Blitzgrid() {
     
     ws.onclose = () => {
       setWsConnected(false);
+      setIsJudging(false);
     };
     
     ws.onerror = () => {
       setWsConnected(false);
+      setIsJudging(false);
     };
   }, []);
   
@@ -476,6 +478,7 @@ export default function Blitzgrid() {
         setActiveQuestion(null);
         setShowAnswer(false);
         lockBuzzer();
+        setIsJudging(false);
       };
       
       const resetGame = () => {
