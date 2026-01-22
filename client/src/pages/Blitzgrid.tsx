@@ -337,7 +337,7 @@ export default function Blitzgrid() {
   
   const unlockBuzzer = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'buzzer:unlock' }));
+      wsRef.current.send(JSON.stringify({ type: 'host:unlock' }));
       setBuzzerLocked(false);
       setBuzzQueue([]);
     }
@@ -345,14 +345,14 @@ export default function Blitzgrid() {
   
   const lockBuzzer = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'buzzer:lock' }));
+      wsRef.current.send(JSON.stringify({ type: 'host:lock' }));
       setBuzzerLocked(true);
     }
   }, []);
   
   const resetBuzzers = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'buzzer:reset' }));
+      wsRef.current.send(JSON.stringify({ type: 'host:reset' }));
       setBuzzQueue([]);
     }
   }, []);
