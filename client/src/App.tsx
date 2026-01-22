@@ -14,7 +14,7 @@ import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 
 // Lazy load heavier components to reduce initial bundle size
-const GamesAdmin = lazy(() => import("@/pages/GamesAdmin"));
+const BlitzgridAdmin = lazy(() => import("@/pages/BlitzgridAdmin"));
 const SuperAdmin = lazy(() => import("@/pages/SuperAdmin"));
 const RelationshipHub = lazy(() => import("@/pages/RelationshipHub"));
 const SequenceSqueeze = lazy(() => import("@/pages/SequenceSqueeze"));
@@ -43,10 +43,9 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/host/double-dip" component={RelationshipHub} />
-        <Route path="/admin/games" component={GamesAdmin} />
+        <Route path="/admin/games" component={BlitzgridAdmin} />
         <Route path="/admin/super" component={SuperAdmin} />
         <Route path="/admin/history" component={GameHistory} />
-        <Route path="/games" component={GamesAdmin} />
         <Route path="/play/:code?" component={PlayerPage} />
         <Route path="/forgot-password" component={ForgotPassword} />
         <Route path="/reset-password" component={ResetPassword} />
