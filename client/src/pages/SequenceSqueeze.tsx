@@ -101,11 +101,11 @@ export default function SequenceSqueeze() {
     },
   });
 
-  const connectWebSocket = useCallback((continueFromBuzzkill: boolean = false) => {
+  const connectWebSocket = useCallback((continueFromPrevious: boolean = false) => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const socket = new WebSocket(`${protocol}//${window.location.host}/ws`);
     
-    const existingRoomCode = continueFromBuzzkill ? localStorage.getItem("buzzer-room-code") : null;
+    const existingRoomCode = continueFromPrevious ? localStorage.getItem("buzzer-room-code") : null;
 
     socket.onopen = () => {
       if (existingRoomCode) {
@@ -442,10 +442,10 @@ export default function SequenceSqueeze() {
                       size="lg"
                       className="h-14 px-8 text-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-teal-500/30"
                       onClick={() => connectWebSocket(true)}
-                      data-testid="button-continue-buzzkill"
+                      data-testid="button-continue-previous"
                     >
                       <Play className="w-6 h-6 mr-2" />
-                      Continue from Buzzkill
+                      Continue Previous Session
                     </Button>
                     <p className="text-sm text-muted-foreground">
                       Players and scores will carry over
@@ -523,7 +523,7 @@ export default function SequenceSqueeze() {
                 </div>
                 {leaderboard.length > 0 && leaderboard.some(l => l.score > 0) && (
                   <p className="text-xs text-muted-foreground mt-2">
-                    Scores imported from Buzzkill
+                    Scores imported from previous session
                   </p>
                 )}
               </div>
