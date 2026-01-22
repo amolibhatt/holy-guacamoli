@@ -176,6 +176,23 @@ export async function registerRoutes(
       boards: boards.map(b => ({ id: b.id, name: b.name }))
     });
   });
+  
+  // Public debug endpoint (no auth required) - to verify routing works
+  app.get("/api/debug/ping", async (_req, res) => {
+    try {
+      const categoryCount = (await storage.getCategories()).length;
+      res.json({
+        pong: true,
+        timestamp: new Date().toISOString(),
+        env: process.env.NODE_ENV || 'unknown',
+        categoryCount
+      });
+    } catch (err) {
+      res.status(500).json({ 
+        error: err instanceof Error ? err.message : 'Unknown error'
+      });
+    }
+  });
 
   app.get("/api/room/:code", (req, res) => {
     const info = getRoomInfo(req.params.code.toUpperCase());
@@ -423,30 +440,52 @@ export async function registerRoutes(
   });
 
   app.post("/api/boards/:boardId/categories/create-and-link", isAuthenticated, async (req, res) => {
+    const debugInfo: Record<string, any> = { timestamp: new Date().toISOString() };
     try {
+      debugInfo.step = "parseId";
       const boardId = parseId(req.params.boardId);
+      debugInfo.boardId = boardId;
       if (boardId === null) {
-        return res.status(400).json({ message: "Invalid board ID" });
+        return res.status(400).json({ message: "Invalid board ID", debug: debugInfo });
       }
+      debugInfo.step = "getSession";
       const userId = req.session.userId!;
       const role = req.session.userRole;
+      debugInfo.userId = userId;
+      debugInfo.role = role;
+      
+      debugInfo.step = "getBoard";
       const board = await storage.getBoard(boardId, userId, role);
+      debugInfo.boardFound = !!board;
       if (!board) {
-        return res.status(404).json({ message: "Board not found" });
+        return res.status(404).json({ message: "Board not found", debug: debugInfo });
       }
+      debugInfo.boardName = board.name;
+      
       const { name, description, rule, sourceGroup } = req.body;
+      debugInfo.categoryName = name;
       if (!name || !name.trim()) {
-        return res.status(400).json({ message: "Category name is required" });
+        return res.status(400).json({ message: "Category name is required", debug: debugInfo });
       }
+      
+      debugInfo.step = "getBoardCategories";
       const currentCategories = await storage.getBoardCategories(boardId);
+      debugInfo.currentCategoryCount = currentCategories.length;
       if (currentCategories.length >= 5) {
-        return res.status(400).json({ message: "Board already has 5 categories (maximum)" });
+        return res.status(400).json({ message: "Board already has 5 categories (maximum)", debug: debugInfo });
       }
+      
+      debugInfo.step = "createCategory";
       const category = await storage.createCategory({ name: name.trim(), description: description?.trim() || '', rule: rule?.trim() || null, imageUrl: '', sourceGroup: sourceGroup || null });
+      debugInfo.categoryId = category.id;
+      
+      debugInfo.step = "createBoardCategory";
       let bc;
       try {
         bc = await storage.createBoardCategory({ boardId, categoryId: category.id });
+        debugInfo.boardCategoryId = bc.id;
       } catch (linkErr) {
+        debugInfo.linkError = linkErr instanceof Error ? linkErr.message : String(linkErr);
         try {
           await storage.deleteCategory(category.id);
         } catch (cleanupErr) {
@@ -454,11 +493,16 @@ export async function registerRoutes(
         }
         throw linkErr;
       }
+      
+      debugInfo.step = "success";
+      console.log("Category created successfully:", debugInfo);
       res.status(201).json({ category, boardCategory: bc });
     } catch (err) {
-      console.error("Error creating category:", err);
+      debugInfo.error = err instanceof Error ? err.message : String(err);
+      debugInfo.errorStack = err instanceof Error ? err.stack : undefined;
+      console.error("Error creating category:", debugInfo);
       const errorMessage = err instanceof Error ? err.message : "Failed to create category";
-      res.status(500).json({ message: errorMessage });
+      res.status(500).json({ message: errorMessage, debug: debugInfo });
     }
   });
 
