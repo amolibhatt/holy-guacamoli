@@ -2,7 +2,7 @@
 
 ## Overview
 
-Holy GuacAmoli! is a Jeopardy-style quiz game application designed for live hosting scenarios, created for Amoli's birthday. The app features a game board with categories and point values (10-100), contestant management with score tracking, and an admin panel for managing quiz content. It's built as a full-stack TypeScript application with a React frontend and Express backend.
+Holy GuacAmoli! is a multi-game party platform featuring Sequence Squeeze (multiplayer ordering game) and Double Dip (2-player relationship game). Built for Amoli's birthday. It's built as a full-stack TypeScript application with a React frontend and Express backend.
 
 ## User Preferences
 
@@ -38,7 +38,7 @@ Preferred communication style: Simple, everyday language.
 3. **Contestant System**: Managed via React Context (ScoreContext) with add/remove contestants, award/deduct points, and track completed questions
 4. **Simplified Category Model**: 1 Category = 1 set of 5 Questions. Categories have exactly 5 questions with unique point values {10,20,30,40,50}. Questions belong directly to categories via categoryId.
 5. **Simple Flat Board List**: Boards are displayed in a simple flat list without grouping. Each board can link up to 5 categories.
-6. **Multiplayer Buzzer System**: WebSocket-based real-time buzzer where players join via QR code on their phones (/play route). Buzzers auto-unlock when questions open and auto-lock when closed.
+6. **Multiplayer Game System**: WebSocket-based real-time multiplayer for Sequence Squeeze where players join via room codes.
 7. **Animations**: 3D flip card animations for question cells, particle effects for milestones and category completion
 8. **Portable Email/Password Auth**: Host authentication uses bcrypt for password hashing and express-session with PostgreSQL store. No external OAuth dependencies - works on any platform.
 9. **Relationship Hub**: Double Dip couples game uses a unified tabbed interface (Today/Vault/Journey) with streak tracking, anniversary countdown, progress bars, favorites section, and celebratory confetti.
@@ -53,8 +53,7 @@ Preferred communication style: Simple, everyday language.
 - **React Error Boundary**: App-level error boundary catches render crashes and displays recovery UI with reload/try-again options
 - **Global Error Handlers**: Server-side uncaughtException/unhandledRejection handlers with graceful shutdown
 - **WebSocket Error Handling**: Added error handlers to prevent connection crashes from taking down the server
-- **Unified Party Scoreboard**: Scores now persist to the database (gameSessions/sessionPlayers tables) across all games. Both Buzzkill and Sequence Squeeze share the same session, so scores survive disconnects, mode switches, and reconnections. Players can rejoin and see their accumulated scores instantly.
-- **Cross-Game Mode Switch**: Host can switch from Buzzkill to Sequence Squeeze while keeping the same room and players. Scores carry over seamlessly.
+- **Unified Party Scoreboard**: Scores persist to the database (gameSessions/sessionPlayers tables) so scores survive disconnects and reconnections. Players can rejoin and see their accumulated scores instantly.
 - **Sequence Squeeze Bulk Import**: Pipe-delimited format for bulk question upload with validation
 - **Onboarding Tooltips**: Step-by-step tooltips guide first-time users with analytics tracking (started/completed/skipped)
 - **Tab State Persistence**: RelationshipHub remembers active tab via localStorage
@@ -70,7 +69,7 @@ Preferred communication style: Simple, everyday language.
 - **Bulk Import Validation**: Enhanced with length limits, board-specific point values, max 50 items per import
 - **Analytics Improvements**: Server-side validation, 10% log sampling, event batching
 - **AI Fallback**: Rate-limit detection, empty answer handling with 30% scoring
-- **Game Slug Rename**: Renamed "grid_of_grudges" slug to "buzzkill" with auto-migration on startup that preserves FK relationships
+- **Buzzkill Removed**: Removed entire Buzzkill trivia game mode to focus on Sequence Squeeze and Double Dip
 - **Drag-and-Drop Category Reordering**: Categories can be reordered within a board by dragging category tabs
 - **Auto-Save Drafts**: Work-in-progress questions are saved to localStorage per category, cleared on successful save or when all fields are empty
 - **Improved Admin Navigation**: Hierarchical sidebar shows categories nested under boards (expandable tree), breadcrumb navigation shows current location (Board > Category), clearer completion indicators at each level
@@ -85,8 +84,8 @@ Preferred communication style: Simple, everyday language.
 - **AI Debrief**: Gap analysis when partners have significantly different answers
 
 ### WebSocket Architecture
-- **Server**: `server/gameRoom.ts` manages rooms, players, and buzz events
-- **Host Panel**: `BuzzerPanel.tsx` component in footer for creating rooms and managing buzzers
+- **Server**: WebSocket for real-time multiplayer game communication
+- **Sequence Squeeze**: Players join rooms and participate in ordering challenges in real-time
 - **Player Page**: `/play` route for mobile devices to join and buzz in
 - **Room Codes**: 4-character alphanumeric codes for easy joining
 
