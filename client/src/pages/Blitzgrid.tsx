@@ -13,13 +13,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Play, Loader2,
-  AlertCircle, CheckCircle2
+  AlertCircle, CheckCircle2, Eye, RotateCcw
 } from "lucide-react";
 import { 
   AlertDialog, AlertDialogAction, AlertDialogCancel, 
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter, 
   AlertDialogHeader, AlertDialogTitle 
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
+} from "@/components/ui/dialog";
 import type { Board, Category, Question } from "@shared/schema";
 
 interface GridWithStats extends Board {
@@ -42,6 +45,10 @@ export default function Blitzgrid() {
   // View state
   const [selectedGridId, setSelectedGridId] = useState<number | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [playMode, setPlayMode] = useState(false);
+  const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set());
+  const [activeQuestion, setActiveQuestion] = useState<Question | null>(null);
+  const [showAnswer, setShowAnswer] = useState(false);
   
   // Form state
   const [showNewGridForm, setShowNewGridForm] = useState(false);
@@ -231,6 +238,167 @@ export default function Blitzgrid() {
   if (selectedGridId) {
     const grid = grids.find(g => g.id === selectedGridId);
     
+    // GAMEPLAY MODE
+    if (playMode && grid?.isActive) {
+      const handleCellClick = (categoryId: number, points: number, question: Question) => {
+        const cellKey = `${categoryId}-${points}`;
+        if (!revealedCells.has(cellKey)) {
+          setActiveQuestion(question);
+          setShowAnswer(false);
+        }
+      };
+      
+      const handleRevealAnswer = () => {
+        setShowAnswer(true);
+        if (activeQuestion) {
+          const cat = gridCategories.find(c => c.questions?.some(q => q.id === activeQuestion.id));
+          if (cat) {
+            const cellKey = `${cat.id}-${activeQuestion.points}`;
+            setRevealedCells(prev => {
+              const newSet = new Set(Array.from(prev));
+              newSet.add(cellKey);
+              return newSet;
+            });
+          }
+        }
+      };
+      
+      const handleCloseQuestion = () => {
+        setActiveQuestion(null);
+        setShowAnswer(false);
+      };
+      
+      const resetGame = () => {
+        setRevealedCells(new Set());
+        toast({ title: "Game reset! All questions available again." });
+      };
+      
+      return (
+        <div className="min-h-screen bg-gradient-to-b from-purple-900 via-purple-800 to-indigo-900" data-testid="page-blitzgrid-play">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex items-center justify-between mb-6">
+              <Button 
+                variant="outline" 
+                onClick={() => setPlayMode(false)}
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                data-testid="button-exit-play"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" /> Exit Game
+              </Button>
+              <h1 className="text-2xl font-bold text-white">{grid.name}</h1>
+              <Button
+                variant="outline"
+                onClick={resetGame}
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                data-testid="button-reset-game"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" /> Reset
+              </Button>
+            </div>
+            
+            {/* Category Headers */}
+            <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, minmax(0, 1fr))` }}>
+              {gridCategories.map(category => (
+                <div 
+                  key={category.id} 
+                  className="bg-purple-700/50 text-white text-center py-3 px-2 rounded-t-lg font-bold text-sm md:text-base truncate"
+                >
+                  {category.name}
+                </div>
+              ))}
+            </div>
+            
+            {/* Question Grid - 5 rows (one per point value) */}
+            {POINT_TIERS.map(points => (
+              <div 
+                key={points} 
+                className="grid gap-2 mb-2" 
+                style={{ gridTemplateColumns: `repeat(${gridCategories.length}, minmax(0, 1fr))` }}
+              >
+                {gridCategories.map(category => {
+                  const question = category.questions?.find(q => q.points === points);
+                  const cellKey = `${category.id}-${points}`;
+                  const isRevealed = revealedCells.has(cellKey);
+                  
+                  return (
+                    <motion.button
+                      key={cellKey}
+                      className={`
+                        aspect-[4/3] rounded-lg font-bold text-2xl md:text-4xl transition-all
+                        ${isRevealed 
+                          ? 'bg-gray-700/50 text-gray-500 cursor-default' 
+                          : 'bg-gradient-to-b from-blue-500 to-blue-700 text-yellow-300 hover:from-blue-400 hover:to-blue-600 cursor-pointer shadow-lg'
+                        }
+                      `}
+                      onClick={() => question && !isRevealed && handleCellClick(category.id, points, question)}
+                      disabled={isRevealed || !question}
+                      whileHover={!isRevealed ? { scale: 1.02 } : {}}
+                      whileTap={!isRevealed ? { scale: 0.98 } : {}}
+                      data-testid={`cell-${category.id}-${points}`}
+                    >
+                      {isRevealed ? '' : `$${points}`}
+                    </motion.button>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+          
+          {/* Question Modal */}
+          <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
+            <DialogContent className="max-w-2xl bg-gradient-to-b from-blue-800 to-blue-900 text-white border-blue-600">
+              <DialogHeader>
+                <DialogTitle className="text-yellow-300 text-3xl text-center">
+                  ${activeQuestion?.points}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="py-8">
+                <p className="text-xl md:text-2xl text-center font-medium">
+                  {activeQuestion?.question}
+                </p>
+              </div>
+              
+              <AnimatePresence>
+                {showAnswer && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-green-600/30 border border-green-500 rounded-lg p-6 text-center"
+                  >
+                    <p className="text-sm text-green-300 mb-2">Answer</p>
+                    <p className="text-2xl font-bold text-green-100">
+                      {activeQuestion?.correctAnswer}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              
+              <DialogFooter className="flex gap-2 sm:justify-center">
+                {!showAnswer ? (
+                  <Button 
+                    onClick={handleRevealAnswer}
+                    className="bg-yellow-500 text-black hover:bg-yellow-400"
+                    data-testid="button-reveal-answer"
+                  >
+                    <Eye className="w-4 h-4 mr-2" /> Show Answer
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={handleCloseQuestion}
+                    variant="outline"
+                    className="border-white/30 text-white hover:bg-white/10"
+                    data-testid="button-close-question"
+                  >
+                    Continue
+                  </Button>
+                )}
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      );
+    }
+    
     // Helper to render question form for a category
     const renderQuestionSlot = (category: CategoryWithQuestions, points: number) => {
       const existingQuestion = category.questions?.find(q => q.points === points);
@@ -358,7 +526,16 @@ export default function Blitzgrid() {
                 </Badge>
               )}
               {grid?.isActive && (
-                <Button size="sm" data-testid="button-play-grid">
+                <Button 
+                  size="sm" 
+                  data-testid="button-play-grid"
+                  onClick={() => {
+                    setPlayMode(true);
+                    setRevealedCells(new Set());
+                    setActiveQuestion(null);
+                    setShowAnswer(false);
+                  }}
+                >
                   <Play className="w-4 h-4 mr-2" /> Play
                 </Button>
               )}
