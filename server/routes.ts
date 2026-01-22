@@ -3292,7 +3292,7 @@ export async function registerRoutes(
       const category = await storage.createCategory({
         name: name.trim(),
         description: "",
-        imageUrl: null,
+        imageUrl: "",
       });
       
       // Link to grid
