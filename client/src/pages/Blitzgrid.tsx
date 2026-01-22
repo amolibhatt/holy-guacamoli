@@ -275,6 +275,8 @@ export default function Blitzgrid() {
           case 'player:left':
           case 'player:disconnected':
             setPlayers(prev => prev.filter(p => p.id !== data.playerId));
+            // Also remove from buzz queue if they were in it
+            setBuzzQueue(prev => prev.filter(b => b.playerId !== data.playerId));
             break;
           case 'score:updated':
             setPlayers(prev => prev.map(p => 
@@ -725,10 +727,10 @@ export default function Blitzgrid() {
                               size="sm"
                               className="bg-red-600 hover:bg-red-500 text-white h-8"
                               onClick={() => {
+                                lockBuzzer(); // Lock first to prevent race condition
                                 const pts = activeQuestion?.points || 0;
                                 updatePlayerScore(buzz.playerId, -pts);
                                 sendFeedback(buzz.playerId, false, -pts);
-                                lockBuzzer();
                                 handleRevealAnswer();
                               }}
                               data-testid={`button-wrong-${buzz.playerId}`}
@@ -739,10 +741,10 @@ export default function Blitzgrid() {
                               size="sm"
                               className="bg-emerald-600 hover:bg-emerald-500 text-white h-8"
                               onClick={() => {
+                                lockBuzzer(); // Lock first to prevent race condition
                                 const pts = activeQuestion?.points || 0;
                                 updatePlayerScore(buzz.playerId, pts);
                                 sendFeedback(buzz.playerId, true, pts);
-                                lockBuzzer();
                                 handleRevealAnswer();
                               }}
                               data-testid={`button-correct-${buzz.playerId}`}

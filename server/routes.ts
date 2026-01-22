@@ -3820,6 +3820,8 @@ export async function registerRoutes(
             const player = room.players.get(mapping.playerId!);
             if (player) {
               room.players.delete(mapping.playerId!);
+              // Remove from buzz queue if they were in it
+              room.buzzQueue = room.buzzQueue.filter(b => b.playerId !== mapping.playerId);
               sendToHost(room, { type: 'player:left', playerId: mapping.playerId });
               
               if (room.sessionId) {
@@ -3859,6 +3861,7 @@ export async function registerRoutes(
             if (!room) break;
 
             room.buzzerLocked = true;
+            room.buzzQueue = [];
             room.players.forEach((player) => {
               sendToPlayer(player, { type: 'buzzer:locked' });
             });
@@ -4043,6 +4046,8 @@ export async function registerRoutes(
         const player = room.players.get(mapping.playerId);
         if (player) {
           player.isConnected = false;
+          // Remove from buzz queue if they were in it
+          room.buzzQueue = room.buzzQueue.filter(b => b.playerId !== mapping.playerId);
           sendToHost(room, { type: 'player:disconnected', playerId: mapping.playerId });
           
           if (room.sessionId) {
