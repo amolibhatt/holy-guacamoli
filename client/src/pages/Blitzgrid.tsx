@@ -945,47 +945,35 @@ export default function Blitzgrid() {
                               <>
                                 <Button
                                   size="sm"
-                                  className="bg-red-600 hover:bg-red-500 text-white h-8"
+                                  className="bg-red-600 text-white h-8"
                                   disabled={isJudging}
                                   onClick={() => {
                                     setIsJudging(true);
-                                    lockBuzzer();
                                     const pts = activeQuestion?.points || 0;
                                     updatePlayerScore(buzz.playerId, -pts);
                                     sendFeedback(buzz.playerId, false, -pts);
-                                    handleRevealAnswer();
+                                    // Remove player from queue
+                                    if (wsRef.current?.readyState === WebSocket.OPEN) {
+                                      wsRef.current.send(JSON.stringify({ type: 'host:passPlayer', playerId: buzz.playerId }));
+                                    }
+                                    const remainingQueue = buzzQueue.slice(1);
+                                    if (remainingQueue.length > 0) {
+                                      // More players in queue - let next one answer
+                                      setBuzzQueue(remainingQueue.map((b, i) => ({ ...b, position: i + 1 })));
+                                      setTimeout(() => setIsJudging(false), 300);
+                                    } else {
+                                      // No more players - end round and reveal answer
+                                      lockBuzzer();
+                                      handleRevealAnswer();
+                                    }
                                   }}
                                   data-testid={`button-wrong-${buzz.playerId}`}
                                 >
                                   <X className="w-3 h-3 mr-1" /> Wrong
                                 </Button>
-                                {buzzQueue.length > 1 && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="text-amber-400 border-amber-500 hover:bg-amber-500/20 h-8"
-                                    disabled={isJudging}
-                                    onClick={() => {
-                                      setIsJudging(true);
-                                      const pts = activeQuestion?.points || 0;
-                                      updatePlayerScore(buzz.playerId, -pts);
-                                      sendFeedback(buzz.playerId, false, -pts);
-                                      // Notify server to remove player from queue
-                                      if (wsRef.current?.readyState === WebSocket.OPEN) {
-                                        wsRef.current.send(JSON.stringify({ type: 'host:passPlayer', playerId: buzz.playerId }));
-                                      }
-                                      setBuzzQueue(prev => prev.slice(1).map((b, i) => ({ ...b, position: i + 1 })));
-                                      // Reset judging state after a brief delay since we're not locking
-                                      setTimeout(() => setIsJudging(false), 300);
-                                    }}
-                                    data-testid={`button-pass-${buzz.playerId}`}
-                                  >
-                                    Pass
-                                  </Button>
-                                )}
                                 <Button
                                   size="sm"
-                                  className="bg-emerald-600 hover:bg-emerald-500 text-white h-8"
+                                  className="bg-emerald-600 text-white h-8"
                                   disabled={isJudging}
                                   onClick={() => {
                                     setIsJudging(true);
