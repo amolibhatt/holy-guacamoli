@@ -14,9 +14,7 @@ import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 
 // Lazy load heavier components to reduce initial bundle size
-const Admin = lazy(() => import("@/pages/Admin"));
 const GamesAdmin = lazy(() => import("@/pages/GamesAdmin"));
-const HeadsUpGame = lazy(() => import("@/pages/HeadsUpGame"));
 const SuperAdmin = lazy(() => import("@/pages/SuperAdmin"));
 const RelationshipHub = lazy(() => import("@/pages/RelationshipHub"));
 const SequenceSqueeze = lazy(() => import("@/pages/SequenceSqueeze"));
@@ -44,7 +42,6 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/host/double-dip" component={RelationshipHub} />
-        <Route path="/admin" component={Admin} />
         <Route path="/admin/games" component={GamesAdmin} />
         <Route path="/admin/super" component={SuperAdmin} />
         <Route path="/admin/history" component={GameHistory} />
@@ -52,7 +49,6 @@ function Router() {
         <Route path="/play/:code?" component={PlayerPage} />
         <Route path="/forgot-password" component={ForgotPassword} />
         <Route path="/reset-password" component={ResetPassword} />
-        <Route path="/heads-up/:gameId" component={HeadsUpGame} />
         <Route path="/couples" component={RelationshipHub} />
         <Route path="/couples/vault" component={Vault} />
         <Route path="/couples/storyboard" component={Storyboard} />
