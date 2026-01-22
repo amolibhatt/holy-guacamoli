@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import type { Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
@@ -3490,6 +3491,575 @@ export async function registerRoutes(
       res.status(500).json({ message: "Failed to process analytics" });
     }
   });
+
+  // ==================== WEBSOCKET SERVER ====================
+  interface RoomPlayer {
+    id: string;
+    name: string;
+    avatar: string;
+    score: number;
+    ws: WebSocket;
+    isConnected: boolean;
+  }
+
+  interface Room {
+    code: string;
+    hostId: string;
+    hostWs: WebSocket | null;
+    players: Map<string, RoomPlayer>;
+    buzzerLocked: boolean;
+    buzzQueue: Array<{ playerId: string; playerName: string; playerAvatar?: string; position: number; timestamp: number }>;
+    boardId: number | null;
+    completedQuestions: Set<number>;
+    sessionId: number | null;
+  }
+
+  const rooms = new Map<string, Room>();
+  const wsToRoom = new Map<WebSocket, { roomCode: string; isHost: boolean; playerId?: string }>();
+
+  function generateRoomCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 4; i++) {
+      code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    if (rooms.has(code)) return generateRoomCode();
+    return code;
+  }
+
+  function broadcastToRoom(room: Room, message: object, excludeWs?: WebSocket) {
+    const msg = JSON.stringify(message);
+    if (room.hostWs && room.hostWs !== excludeWs && room.hostWs.readyState === WebSocket.OPEN) {
+      room.hostWs.send(msg);
+    }
+    room.players.forEach((player) => {
+      if (player.ws && player.ws !== excludeWs && player.ws.readyState === WebSocket.OPEN) {
+        player.ws.send(msg);
+      }
+    });
+  }
+
+  function sendToHost(room: Room, message: object) {
+    if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
+      room.hostWs.send(JSON.stringify(message));
+    }
+  }
+
+  function sendToPlayer(player: RoomPlayer, message: object) {
+    if (player.ws && player.ws.readyState === WebSocket.OPEN) {
+      player.ws.send(JSON.stringify(message));
+    }
+  }
+
+  function getPlayersArray(room: Room) {
+    return Array.from(room.players.values()).map(p => ({
+      id: p.id,
+      name: p.name,
+      avatar: p.avatar,
+      score: p.score,
+      isConnected: p.isConnected,
+    }));
+  }
+
+  const wss = new WebSocketServer({ noServer: true });
+
+  httpServer.on('upgrade', (request, socket, head) => {
+    const url = new URL(request.url || '', `http://${request.headers.host}`);
+    if (url.pathname === '/ws') {
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit('connection', ws, request);
+      });
+    } else if (url.pathname === '/vite-hmr') {
+      // Let Vite handle its own HMR upgrades
+    } else {
+      socket.destroy();
+    }
+  });
+
+  wss.on('connection', (ws: WebSocket) => {
+    ws.on('error', (err) => {
+      console.error('[WebSocket] Connection error:', err.message);
+    });
+
+    ws.on('message', async (rawData) => {
+      try {
+        const data = JSON.parse(rawData.toString());
+
+        switch (data.type) {
+          case 'ping':
+            ws.send(JSON.stringify({ type: 'pong' }));
+            break;
+
+          case 'host:create': {
+            const code = generateRoomCode();
+            let sessionId: number | null = null;
+            
+            try {
+              const session = await storage.createSession({
+                code,
+                hostId: data.hostId?.toString() || 'anonymous',
+                state: 'active',
+              });
+              sessionId = session.id;
+            } catch (err) {
+              console.error('[WebSocket] Failed to create game session:', err);
+            }
+
+            const room: Room = {
+              code,
+              hostId: data.hostId?.toString() || 'anonymous',
+              hostWs: ws,
+              players: new Map(),
+              buzzerLocked: true,
+              buzzQueue: [],
+              boardId: null,
+              completedQuestions: new Set(),
+              sessionId,
+            };
+            rooms.set(code, room);
+            wsToRoom.set(ws, { roomCode: code, isHost: true });
+
+            ws.send(JSON.stringify({
+              type: 'room:created',
+              code,
+              sessionId,
+            }));
+            console.log(`[WebSocket] Room ${code} created by host ${data.hostId}`);
+            break;
+          }
+
+          case 'host:join': {
+            const code = data.code?.toUpperCase();
+            let room = rooms.get(code);
+            
+            if (!room) {
+              try {
+                const session = await storage.getSessionByCode(code);
+                if (session && session.state !== 'completed') {
+                  const players = await storage.getSessionPlayers(session.id);
+                  room = {
+                    code: session.code,
+                    hostId: session.hostId,
+                    hostWs: ws,
+                    players: new Map(players.map(p => [p.playerId, {
+                      id: p.playerId,
+                      name: p.name,
+                      avatar: p.avatar,
+                      score: p.score,
+                      ws: null as any,
+                      isConnected: false,
+                    }])),
+                    buzzerLocked: session.buzzerLocked,
+                    buzzQueue: [],
+                    boardId: session.currentBoardId,
+                    completedQuestions: new Set(session.playedCategoryIds || []),
+                    sessionId: session.id,
+                  };
+                  rooms.set(code, room);
+                  console.log(`[WebSocket] Recovered room ${code} from storage`);
+                }
+              } catch (err) {
+                console.error('[WebSocket] Failed to recover session:', err);
+              }
+            }
+            
+            if (!room) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
+              break;
+            }
+
+            room.hostWs = ws;
+            wsToRoom.set(ws, { roomCode: room.code, isHost: true });
+
+            ws.send(JSON.stringify({
+              type: 'room:joined',
+              code: room.code,
+              sessionId: room.sessionId,
+              players: getPlayersArray(room),
+              buzzerLocked: room.buzzerLocked,
+              completedQuestions: Array.from(room.completedQuestions),
+            }));
+            console.log(`[WebSocket] Host rejoined room ${room.code}`);
+            break;
+          }
+
+          case 'player:join': {
+            const room = rooms.get(data.code?.toUpperCase());
+            if (!room) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
+              break;
+            }
+
+            const playerId = data.playerId || crypto.randomUUID();
+            const existingPlayer = room.players.get(playerId);
+            
+            if (existingPlayer) {
+              existingPlayer.ws = ws;
+              existingPlayer.isConnected = true;
+              existingPlayer.name = data.name || existingPlayer.name;
+              existingPlayer.avatar = data.avatar || existingPlayer.avatar;
+              wsToRoom.set(ws, { roomCode: room.code, isHost: false, playerId });
+
+              ws.send(JSON.stringify({
+                type: 'joined',
+                playerId,
+                buzzerLocked: room.buzzerLocked,
+                score: existingPlayer.score,
+              }));
+
+              ws.send(JSON.stringify({
+                type: 'scores:sync',
+                players: getPlayersArray(room),
+              }));
+
+              sendToHost(room, {
+                type: 'player:joined',
+                player: {
+                  id: playerId,
+                  name: existingPlayer.name,
+                  avatar: existingPlayer.avatar,
+                  score: existingPlayer.score,
+                  isConnected: true,
+                },
+              });
+
+              if (room.sessionId) {
+                storage.updatePlayerConnection(room.sessionId, playerId, true).catch(err => {
+                  console.error('[WebSocket] Failed to update player connection:', err);
+                });
+              }
+              console.log(`[WebSocket] Player ${existingPlayer.name} reconnected to room ${room.code}`);
+            } else {
+              const player: RoomPlayer = {
+                id: playerId,
+                name: data.name || 'Player',
+                avatar: data.avatar || 'cat',
+                score: 0,
+                ws,
+                isConnected: true,
+              };
+              room.players.set(playerId, player);
+              wsToRoom.set(ws, { roomCode: room.code, isHost: false, playerId });
+
+              if (room.sessionId) {
+                try {
+                  await storage.addPlayerToSession({
+                    sessionId: room.sessionId,
+                    playerId,
+                    name: player.name,
+                    avatar: player.avatar,
+                  });
+                } catch (err) {
+                  console.error('[WebSocket] Failed to add player to session:', err);
+                }
+              }
+
+              ws.send(JSON.stringify({
+                type: 'joined',
+                playerId,
+                buzzerLocked: room.buzzerLocked,
+                score: 0,
+              }));
+
+              ws.send(JSON.stringify({
+                type: 'scores:sync',
+                players: getPlayersArray(room),
+              }));
+
+              sendToHost(room, {
+                type: 'player:joined',
+                player: {
+                  id: playerId,
+                  name: player.name,
+                  avatar: player.avatar,
+                  score: 0,
+                  isConnected: true,
+                },
+              });
+              console.log(`[WebSocket] Player ${player.name} joined room ${room.code}`);
+            }
+            break;
+          }
+
+          case 'player:buzz': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || mapping.isHost) break;
+
+            const room = rooms.get(mapping.roomCode);
+            if (!room || room.buzzerLocked) break;
+
+            const player = room.players.get(mapping.playerId!);
+            if (!player) break;
+
+            const alreadyBuzzed = room.buzzQueue.some(b => b.playerId === player.id);
+            if (alreadyBuzzed) break;
+
+            const position = room.buzzQueue.length + 1;
+            const buzzEvent = {
+              playerId: player.id,
+              playerName: player.name,
+              playerAvatar: player.avatar,
+              position,
+              timestamp: Date.now(),
+            };
+            room.buzzQueue.push(buzzEvent);
+
+            sendToHost(room, { type: 'player:buzzed', ...buzzEvent });
+            ws.send(JSON.stringify({ type: 'buzz:confirmed', position }));
+            console.log(`[WebSocket] ${player.name} buzzed in position ${position} in room ${room.code}`);
+            break;
+          }
+
+          case 'player:leave': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || mapping.isHost) break;
+
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            const player = room.players.get(mapping.playerId!);
+            if (player) {
+              room.players.delete(mapping.playerId!);
+              sendToHost(room, { type: 'player:left', playerId: mapping.playerId });
+              
+              if (room.sessionId) {
+                storage.updatePlayerConnection(room.sessionId, mapping.playerId!, false).catch(err => {
+                  console.error('[WebSocket] Failed to update player connection:', err);
+                });
+              }
+              console.log(`[WebSocket] Player ${player.name} left room ${room.code}`);
+            }
+
+            wsToRoom.delete(ws);
+            ws.close();
+            break;
+          }
+
+          case 'host:unlock': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.buzzerLocked = false;
+            room.buzzQueue = [];
+            broadcastToRoom(room, { type: 'buzzer:unlocked' }, ws);
+            room.players.forEach((player) => {
+              sendToPlayer(player, { type: 'buzzer:unlocked' });
+            });
+            break;
+          }
+
+          case 'host:lock': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.buzzerLocked = true;
+            room.players.forEach((player) => {
+              sendToPlayer(player, { type: 'buzzer:locked' });
+            });
+            break;
+          }
+
+          case 'host:reset': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.buzzQueue = [];
+            ws.send(JSON.stringify({ type: 'buzzer:reset' }));
+            room.players.forEach((player) => {
+              sendToPlayer(player, { type: 'buzzer:reset' });
+            });
+            break;
+          }
+
+          case 'host:updateScore': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            const player = room.players.get(data.playerId);
+            if (!player) break;
+
+            player.score += data.points;
+
+            if (room.sessionId) {
+              try {
+                await storage.setPlayerScore(room.sessionId, data.playerId, player.score);
+              } catch (err) {
+                console.error('[WebSocket] Failed to update player score:', err);
+              }
+            }
+
+            sendToHost(room, { type: 'score:updated', playerId: data.playerId, score: player.score });
+            sendToPlayer(player, { type: 'score:updated', score: player.score });
+
+            room.players.forEach((p) => {
+              sendToPlayer(p, { type: 'scores:sync', players: getPlayersArray(room) });
+            });
+            break;
+          }
+
+          case 'host:feedback': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            const player = room.players.get(data.playerId);
+            if (!player) break;
+
+            sendToPlayer(player, {
+              type: 'feedback',
+              correct: data.correct,
+              points: data.points,
+            });
+            break;
+          }
+
+          case 'host:completeQuestion': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            if (data.questionId) {
+              room.completedQuestions.add(data.questionId);
+            }
+
+            ws.send(JSON.stringify({ type: 'question:completed', questionId: data.questionId }));
+            break;
+          }
+
+          case 'host:setBoard': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.boardId = data.boardId;
+            
+            if (room.sessionId && data.boardId) {
+              try {
+                await storage.updateSession(room.sessionId, { currentBoardId: data.boardId });
+              } catch (err) {
+                console.error('[WebSocket] Failed to set session board:', err);
+              }
+            }
+
+            ws.send(JSON.stringify({ type: 'board:set', boardId: data.boardId }));
+            break;
+          }
+
+          case 'host:kickPlayer': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            const player = room.players.get(data.playerId);
+            if (player) {
+              sendToPlayer(player, { type: 'kicked' });
+              if (player.ws) {
+                player.ws.close();
+                wsToRoom.delete(player.ws);
+              }
+              room.players.delete(data.playerId);
+              sendToHost(room, { type: 'player:left', playerId: data.playerId });
+              
+              if (room.sessionId) {
+                storage.updatePlayerConnection(room.sessionId, data.playerId, false).catch(err => {
+                  console.error('[WebSocket] Failed to update player connection on kick:', err);
+                });
+              }
+              console.log(`[WebSocket] Host kicked player ${player.name} from room ${room.code}`);
+            }
+            break;
+          }
+
+          case 'host:closeRoom': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.players.forEach((player) => {
+              sendToPlayer(player, { type: 'room:closed', reason: 'Host closed the game' });
+              if (player.ws) {
+                player.ws.close();
+                wsToRoom.delete(player.ws);
+              }
+            });
+
+            if (room.sessionId) {
+              storage.updateSession(room.sessionId, { state: 'completed' }).catch(err => {
+                console.error('[WebSocket] Failed to close session:', err);
+              });
+            }
+
+            rooms.delete(room.code);
+            wsToRoom.delete(ws);
+            ws.send(JSON.stringify({ type: 'room:closed', reason: 'Room closed' }));
+            console.log(`[WebSocket] Host closed room ${room.code}`);
+            break;
+          }
+
+          default:
+            console.warn(`[WebSocket] Unknown message type: ${data.type}`);
+        }
+      } catch (err) {
+        console.error('[WebSocket] Error processing message:', err);
+      }
+    });
+
+    ws.on('close', () => {
+      const mapping = wsToRoom.get(ws);
+      if (!mapping) return;
+
+      const room = rooms.get(mapping.roomCode);
+      if (!room) {
+        wsToRoom.delete(ws);
+        return;
+      }
+
+      if (mapping.isHost) {
+        room.hostWs = null;
+        console.log(`[WebSocket] Host disconnected from room ${room.code}`);
+      } else if (mapping.playerId) {
+        const player = room.players.get(mapping.playerId);
+        if (player) {
+          player.isConnected = false;
+          sendToHost(room, { type: 'player:disconnected', playerId: mapping.playerId });
+          
+          if (room.sessionId) {
+            storage.updatePlayerConnection(room.sessionId, mapping.playerId, false).catch(err => {
+              console.error('[WebSocket] Failed to update player connection:', err);
+            });
+          }
+          console.log(`[WebSocket] Player ${player.name} disconnected from room ${room.code}`);
+        }
+      }
+
+      wsToRoom.delete(ws);
+    });
+  });
+
+  console.log('[WebSocket] Server initialized on /ws');
+  // ==================== END WEBSOCKET SERVER ====================
 
   return httpServer;
 }
