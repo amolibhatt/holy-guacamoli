@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -13,9 +13,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Play, Loader2,
-  AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode
+  AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+
+interface Player {
+  id: string;
+  name: string;
+  avatar?: string;
+  score: number;
+  connected: boolean;
+}
 import { 
   AlertDialog, AlertDialogAction, AlertDialogCancel, 
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter, 
@@ -51,6 +59,12 @@ export default function Blitzgrid() {
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
+  
+  // Multiplayer state
+  const [roomCode, setRoomCode] = useState<string | null>(null);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [wsConnected, setWsConnected] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
   
   // Form state
   const [showNewGridForm, setShowNewGridForm] = useState(false);
@@ -222,6 +236,95 @@ export default function Blitzgrid() {
     },
   });
 
+  // WebSocket connection for multiplayer
+  const connectWebSocket = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+    wsRef.current = ws;
+    
+    ws.onopen = () => {
+      setWsConnected(true);
+      ws.send(JSON.stringify({ type: 'host:create' }));
+    };
+    
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        switch (data.type) {
+          case 'room:created':
+            setRoomCode(data.code);
+            break;
+          case 'room:joined':
+            setRoomCode(data.code);
+            if (data.players) {
+              setPlayers(data.players);
+            }
+            break;
+          case 'player:joined':
+          case 'player:reconnected':
+            if (data.players) {
+              setPlayers(data.players);
+            }
+            break;
+          case 'player:left':
+          case 'player:disconnected':
+            setPlayers(prev => prev.filter(p => p.id !== data.playerId));
+            break;
+          case 'score:updated':
+            setPlayers(prev => prev.map(p => 
+              p.id === data.playerId ? { ...p, score: data.score } : p
+            ));
+            break;
+        }
+      } catch (err) {
+        console.error('[WS] Message parse error:', err);
+      }
+    };
+    
+    ws.onclose = () => {
+      setWsConnected(false);
+    };
+    
+    ws.onerror = () => {
+      setWsConnected(false);
+    };
+  }, []);
+  
+  const disconnectWebSocket = useCallback(() => {
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    setWsConnected(false);
+    setRoomCode(null);
+    setPlayers([]);
+  }, []);
+  
+  const updatePlayerScore = useCallback((playerId: string, delta: number) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'score:update',
+        playerId,
+        delta
+      }));
+    }
+  }, []);
+  
+  // Auto-connect when entering play mode
+  useEffect(() => {
+    if (playMode) {
+      connectWebSocket();
+    } else {
+      disconnectWebSocket();
+    }
+    return () => {
+      disconnectWebSocket();
+    };
+  }, [playMode, connectWebSocket, disconnectWebSocket]);
+
   if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -275,7 +378,9 @@ export default function Blitzgrid() {
         toast({ title: "Game reset! All questions available again." });
       };
       
-      const joinUrl = `${window.location.origin}/play`;
+      const joinUrl = roomCode 
+        ? `${window.location.origin}/play?code=${roomCode}` 
+        : `${window.location.origin}/play`;
       
       return (
         <div className="min-h-screen bg-slate-900" data-testid="page-blitzgrid-play">
@@ -292,7 +397,19 @@ export default function Blitzgrid() {
               >
                 <ArrowLeft className="w-4 h-4 mr-2" /> Exit
               </Button>
-              <h1 className="text-xl font-bold text-white">{grid.name}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold text-white">{grid.name}</h1>
+                {roomCode && (
+                  <Badge className="bg-indigo-600 text-white">
+                    {roomCode}
+                  </Badge>
+                )}
+                {players.length > 0 && (
+                  <Badge variant="outline" className="border-slate-600 text-slate-300">
+                    <Users className="w-3 h-3 mr-1" /> {players.length}
+                  </Badge>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
@@ -365,17 +482,39 @@ export default function Blitzgrid() {
           <Dialog open={showQRCode} onOpenChange={setShowQRCode}>
             <DialogContent className="max-w-sm">
               <DialogHeader>
-                <DialogTitle className="text-center">Scan to Join</DialogTitle>
+                <DialogTitle className="text-center text-2xl">Join the Game</DialogTitle>
                 <DialogDescription className="text-center">
-                  Players can scan this code to join the game
+                  Scan with your phone to join
                 </DialogDescription>
               </DialogHeader>
-              <div className="flex justify-center py-6">
+              
+              {roomCode && (
+                <div className="text-center py-2">
+                  <p className="text-sm text-muted-foreground mb-1">Room Code</p>
+                  <p className="text-4xl font-bold tracking-widest text-primary">{roomCode}</p>
+                </div>
+              )}
+              
+              <div className="flex justify-center py-4">
                 <div className="bg-white p-4 rounded-lg">
-                  <QRCodeSVG value={joinUrl} size={200} />
+                  <QRCodeSVG value={joinUrl} size={180} />
                 </div>
               </div>
-              <p className="text-center text-sm text-muted-foreground">{joinUrl}</p>
+              
+              <p className="text-center text-xs text-muted-foreground break-all">{joinUrl}</p>
+              
+              {players.length > 0 && (
+                <div className="border-t pt-3 mt-2">
+                  <p className="text-sm text-muted-foreground text-center mb-2">
+                    {players.length} player{players.length !== 1 ? 's' : ''} joined
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {players.map(p => (
+                      <Badge key={p.id} variant="secondary">{p.name}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </DialogContent>
           </Dialog>
           
@@ -387,7 +526,7 @@ export default function Blitzgrid() {
                   {activeQuestion?.points} Points
                 </DialogTitle>
               </DialogHeader>
-              <div className="py-8">
+              <div className="py-6">
                 <p className="text-xl md:text-2xl text-center font-medium">
                   {activeQuestion?.question}
                 </p>
@@ -398,15 +537,66 @@ export default function Blitzgrid() {
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-emerald-900/50 border border-emerald-600 rounded-lg p-6 text-center"
+                    className="bg-emerald-900/50 border border-emerald-600 rounded-lg p-4 text-center mb-4"
                   >
-                    <p className="text-sm text-emerald-400 mb-2">Answer</p>
-                    <p className="text-2xl font-bold text-emerald-100">
+                    <p className="text-sm text-emerald-400 mb-1">Answer</p>
+                    <p className="text-xl font-bold text-emerald-100">
                       {activeQuestion?.correctAnswer}
                     </p>
                   </motion.div>
                 )}
               </AnimatePresence>
+              
+              {/* Player List for Scoring */}
+              {showAnswer && players.length > 0 && (
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Users className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm text-slate-300">Award Points</span>
+                  </div>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {players.map(player => (
+                      <div 
+                        key={player.id}
+                        className="flex items-center justify-between bg-slate-600/50 rounded-lg px-3 py-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-white">{player.name}</span>
+                          <span className="text-sm text-slate-400">({player.score} pts)</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/30"
+                            onClick={() => updatePlayerScore(player.id, -(activeQuestion?.points || 0))}
+                            data-testid={`button-deduct-${player.id}`}
+                          >
+                            <Minus className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-900/30"
+                            onClick={() => updatePlayerScore(player.id, activeQuestion?.points || 0)}
+                            data-testid={`button-award-${player.id}`}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {showAnswer && players.length === 0 && (
+                <div className="text-center py-4 text-slate-400">
+                  <Users className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No players have joined yet</p>
+                  <p className="text-xs mt-1">Click "Join" to show QR code</p>
+                </div>
+              )}
               
               <DialogFooter className="flex gap-2 sm:justify-center">
                 {!showAnswer ? (
