@@ -429,12 +429,12 @@ export default function Blitzgrid() {
         : `${window.location.origin}/play`;
       
       return (
-        <div className="h-screen overflow-hidden flex flex-col bg-black" data-testid="page-blitzgrid-play">
-          {/* Minimal Header */}
+        <div className="h-screen overflow-hidden flex flex-col" style={{ background: 'linear-gradient(135deg, #0d1f0d 0%, #1a3a1a 50%, #0d1f0d 100%)' }} data-testid="page-blitzgrid-play">
+          {/* Minimal Header with subtle pitch line */}
           <motion.div 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="flex items-center justify-between px-4 py-3 bg-black/80 backdrop-blur-md border-b border-white/10"
+            className="flex items-center justify-between px-4 py-3 bg-black/40 backdrop-blur-md border-b border-emerald-500/20"
           >
             <Button 
               variant="ghost" 
@@ -450,18 +450,18 @@ export default function Blitzgrid() {
               <h1 className="text-lg font-semibold text-white tracking-tight">{grid.name}</h1>
               {roomCode && (
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.2 }}>
-                  <Badge className="bg-emerald-500 text-black font-mono font-bold px-3 py-1">{roomCode}</Badge>
+                  <Badge className="bg-emerald-400 text-black font-mono font-bold px-3 py-1">{roomCode}</Badge>
                 </motion.div>
               )}
               {players.length > 0 && (
-                <Badge variant="outline" className="border-white/20 text-white/80">
+                <Badge variant="outline" className="border-emerald-500/30 text-emerald-300">
                   <Users className="w-3.5 h-3.5 mr-1.5" />{players.length}
                 </Badge>
               )}
             </div>
             
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => setShowQRCode(true)} className="bg-emerald-500 hover:bg-emerald-400 text-black font-medium h-9" data-testid="button-show-qr">
+              <Button size="sm" onClick={() => setShowQRCode(true)} className="bg-emerald-400 hover:bg-emerald-300 text-black font-medium h-9" data-testid="button-show-qr">
                 <QrCode className="w-4 h-4 mr-1.5" /> Join
               </Button>
               <Button size="icon" variant="ghost" onClick={resetGame} className="text-white/50 hover:text-white hover:bg-white/10 h-9 w-9" data-testid="button-reset-game">
@@ -470,25 +470,31 @@ export default function Blitzgrid() {
             </div>
           </motion.div>
           
-          {/* Game Grid - Clean & Modern */}
-          <div className="flex-1 p-3 md:p-4 overflow-hidden">
+          {/* Game Grid - Football Pitch Style */}
+          <div className="flex-1 p-3 md:p-5 overflow-hidden relative">
+            {/* Subtle pitch markings */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
+              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/40 -translate-x-1/2" />
+              <div className="absolute left-1/2 top-1/2 w-20 h-20 md:w-32 md:h-32 border border-white/40 rounded-full -translate-x-1/2 -translate-y-1/2" />
+            </div>
+            
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4 }}
-              className="h-full flex flex-col gap-2"
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="h-full flex flex-col gap-3 relative z-10"
             >
               {/* Category Headers */}
-              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)` }}>
+              <div className="grid gap-2 md:gap-3" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)` }}>
                 {gridCategories.map((category, idx) => (
                   <motion.div 
                     key={category.id}
-                    initial={{ y: -20, opacity: 0 }}
+                    initial={{ y: -30, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className="bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-sm py-3 px-2 rounded-xl text-center border border-white/10"
+                    transition={{ delay: idx * 0.08, type: "spring", stiffness: 120 }}
+                    className="bg-black/60 backdrop-blur-sm py-3 md:py-4 px-2 rounded-lg text-center border border-emerald-500/30"
                   >
-                    <span className="text-white font-semibold text-xs md:text-sm tracking-wide">
+                    <span className="text-emerald-300 font-bold text-xs md:text-sm uppercase tracking-wider">
                       {category.name}
                     </span>
                   </motion.div>
@@ -496,42 +502,53 @@ export default function Blitzgrid() {
               </div>
               
               {/* Point Grid */}
-              <div className="flex-1 grid gap-2" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)`, gridTemplateRows: 'repeat(5, 1fr)' }}>
+              <div className="flex-1 grid gap-2 md:gap-3" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)`, gridTemplateRows: 'repeat(5, 1fr)' }}>
                 {POINT_TIERS.map((points, rowIdx) => (
                   gridCategories.map((category, colIdx) => {
                     const question = category.questions?.find(q => q.points === points);
                     const cellKey = `${category.id}-${points}`;
                     const isRevealed = revealedCells.has(cellKey);
-                    const delay = (rowIdx * gridCategories.length + colIdx) * 0.02;
+                    const delay = 0.3 + (rowIdx * gridCategories.length + colIdx) * 0.03;
                     
                     return (
                       <motion.button
                         key={cellKey}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay, type: "spring", stiffness: 200 }}
+                        initial={{ opacity: 0, rotateX: -15, y: 20 }}
+                        animate={{ opacity: 1, rotateX: 0, y: 0 }}
+                        transition={{ delay, type: "spring", stiffness: 150, damping: 15 }}
                         className={`
-                          rounded-xl font-bold text-2xl md:text-4xl flex items-center justify-center transition-all duration-300
+                          rounded-lg font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-200 relative overflow-hidden
                           ${isRevealed 
-                            ? 'bg-white/5 text-white/20 cursor-default' 
-                            : 'bg-gradient-to-br from-emerald-600 to-emerald-800 text-white cursor-pointer hover:from-emerald-500 hover:to-emerald-700'
+                            ? 'bg-black/40 text-white/10 cursor-default border border-white/5' 
+                            : 'bg-gradient-to-b from-emerald-500 to-emerald-700 text-white cursor-pointer border border-emerald-400/50'
                           }
                         `}
-                        style={!isRevealed ? { boxShadow: '0 4px 20px rgba(16, 185, 129, 0.3)' } : {}}
+                        style={!isRevealed ? { 
+                          boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)' 
+                        } : {}}
                         onClick={() => question && !isRevealed && handleCellClick(category.id, points, question)}
                         disabled={isRevealed || !question}
-                        whileHover={!isRevealed ? { scale: 1.03, y: -4 } : {}}
-                        whileTap={!isRevealed ? { scale: 0.97 } : {}}
+                        whileHover={!isRevealed ? { scale: 1.05, y: -6, boxShadow: '0 12px 30px rgba(16, 185, 129, 0.5)' } : {}}
+                        whileTap={!isRevealed ? { scale: 0.95 } : {}}
                         data-testid={`cell-${category.id}-${points}`}
                       >
                         {!isRevealed && (
-                          <motion.span
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: delay + 0.1 }}
-                          >
-                            {points}
-                          </motion.span>
+                          <>
+                            <motion.div 
+                              className="absolute inset-0 bg-gradient-to-t from-transparent to-white/10"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: delay + 0.1 }}
+                            />
+                            <motion.span
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ delay: delay + 0.15, type: "spring", stiffness: 200 }}
+                              className="relative z-10 drop-shadow-lg"
+                            >
+                              {points}
+                            </motion.span>
+                          </>
                         )}
                       </motion.button>
                     );
