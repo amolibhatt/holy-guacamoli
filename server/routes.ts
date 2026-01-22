@@ -16,6 +16,16 @@ import { SOURCE_GROUPS, type SourceGroup, type Question } from "@shared/schema";
 // Required point values for a category to go LIVE
 const REQUIRED_POINTS = [10, 20, 30, 40, 50] as const;
 
+// Helper to validate numeric ID from request params
+// Returns the parsed number or null if invalid
+function parseId(value: string): number | null {
+  const id = Number(value);
+  if (isNaN(id) || !Number.isInteger(id) || id < 0) {
+    return null;
+  }
+  return id;
+}
+
 // Validate if a category can be set to LIVE (isActive = true)
 // Returns { valid: true } or { valid: false, error: string }
 async function validateCategoryForLive(categoryId: number): Promise<{ valid: boolean; error?: string }> {
@@ -164,9 +174,13 @@ export async function registerRoutes(
 
   app.get("/api/boards/:id", isAuthenticated, async (req, res) => {
     try {
+      const boardId = parseId(req.params.id);
+      if (boardId === null) {
+        return res.status(400).json({ message: "Invalid board ID" });
+      }
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const board = await storage.getBoard(Number(req.params.id), userId, role);
+      const board = await storage.getBoard(boardId, userId, role);
       if (!board) {
         return res.status(404).json({ message: "Board not found" });
       }
@@ -206,10 +220,14 @@ export async function registerRoutes(
 
   app.put("/api/boards/:id", isAuthenticated, async (req, res) => {
     try {
+      const boardId = parseId(req.params.id);
+      if (boardId === null) {
+        return res.status(400).json({ message: "Invalid board ID" });
+      }
       const userId = req.session.userId!;
       const role = req.session.userRole;
       const { name, description, pointValues, theme, isGlobal, sortOrder } = req.body;
-      const board = await storage.updateBoard(Number(req.params.id), {
+      const board = await storage.updateBoard(boardId, {
         name,
         description,
         pointValues,
@@ -228,26 +246,43 @@ export async function registerRoutes(
   });
 
   app.delete("/api/boards/:id", isAuthenticated, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const deleted = await storage.deleteBoard(Number(req.params.id), userId, role);
-    if (!deleted) {
-      return res.status(404).json({ message: "Board not found" });
+    try {
+      const boardId = parseId(req.params.id);
+      if (boardId === null) {
+        return res.status(400).json({ message: "Invalid board ID" });
+      }
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const deleted = await storage.deleteBoard(boardId, userId, role);
+      if (!deleted) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting board:", err);
+      res.status(500).json({ message: "Failed to delete board" });
     }
-    res.json({ success: true });
   });
 
   // Board categories (junction table) - protected
   app.get("/api/boards/:boardId/categories", isAuthenticated, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const boardId = Number(req.params.boardId);
-    const board = await storage.getBoard(boardId, userId, role);
-    if (!board) {
-      return res.status(404).json({ message: "Board not found" });
+    try {
+      const boardId = parseId(req.params.boardId);
+      if (boardId === null) {
+        return res.status(400).json({ message: "Invalid board ID" });
+      }
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const board = await storage.getBoard(boardId, userId, role);
+      if (!board) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      const boardCategories = await storage.getBoardCategories(boardId);
+      res.json(boardCategories);
+    } catch (err) {
+      console.error("Error fetching board categories:", err);
+      res.status(500).json({ message: "Failed to fetch board categories" });
     }
-    const boardCategories = await storage.getBoardCategories(boardId);
-    res.json(boardCategories);
   });
 
   app.post("/api/boards/:boardId/categories", isAuthenticated, async (req, res) => {
@@ -283,21 +318,30 @@ export async function registerRoutes(
   });
 
   app.delete("/api/board-categories/:id", isAuthenticated, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const bc = await storage.getBoardCategory(Number(req.params.id));
-    if (!bc) {
-      return res.status(404).json({ message: "Board category link not found" });
+    try {
+      const bcId = parseId(req.params.id);
+      if (bcId === null) {
+        return res.status(400).json({ message: "Invalid board-category ID" });
+      }
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const bc = await storage.getBoardCategory(bcId);
+      if (!bc) {
+        return res.status(404).json({ message: "Board category link not found" });
+      }
+      const board = await storage.getBoard(bc.boardId, userId, role);
+      if (!board) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      const deleted = await storage.deleteBoardCategory(bcId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Board category link not found" });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting board-category link:", err);
+      res.status(500).json({ message: "Failed to delete board-category link" });
     }
-    const board = await storage.getBoard(bc.boardId, userId, role);
-    if (!board) {
-      return res.status(404).json({ message: "Board not found" });
-    }
-    const deleted = await storage.deleteBoardCategory(Number(req.params.id));
-    if (!deleted) {
-      return res.status(404).json({ message: "Board category link not found" });
-    }
-    res.json({ success: true });
   });
 
   app.put("/api/boards/:boardId/categories/reorder", isAuthenticated, async (req, res) => {
@@ -393,9 +437,13 @@ export async function registerRoutes(
   });
 
   app.get(api.categories.get.path, isAuthenticated, async (req, res) => {
+    const categoryId = parseId(req.params.id);
+    if (categoryId === null) {
+      return res.status(400).json({ message: 'Invalid category ID' });
+    }
+    
     const userId = req.session.userId!;
     const role = req.session.userRole;
-    const categoryId = Number(req.params.id);
     
     // Verify ownership
     const hasAccess = await verifyCategoryOwnership(categoryId, userId, role);
@@ -586,10 +634,14 @@ export async function registerRoutes(
 
   app.put(api.questions.update.path, isAuthenticated, async (req, res) => {
     try {
+      const questionId = parseId(req.params.id);
+      if (questionId === null) {
+        return res.status(400).json({ message: 'Invalid question ID' });
+      }
       const userId = req.session.userId!;
       const role = req.session.userRole;
       const data = api.questions.update.input.parse(req.body);
-      const existingQuestion = await storage.getQuestion(Number(req.params.id));
+      const existingQuestion = await storage.getQuestion(questionId);
       if (!existingQuestion) {
         return res.status(404).json({ message: 'Question not found' });
       }
@@ -610,7 +662,7 @@ export async function registerRoutes(
           return res.status(400).json({ message: `A ${data.points}-point question already exists in this category` });
         }
       }
-      const question = await storage.updateQuestion(Number(req.params.id), data);
+      const question = await storage.updateQuestion(questionId, data);
       res.json(question!);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -624,9 +676,13 @@ export async function registerRoutes(
   });
 
   app.delete(api.questions.delete.path, isAuthenticated, async (req, res) => {
+    const questionId = parseId(req.params.id);
+    if (questionId === null) {
+      return res.status(400).json({ message: 'Invalid question ID' });
+    }
     const userId = req.session.userId!;
     const role = req.session.userRole;
-    const existingQuestion = await storage.getQuestion(Number(req.params.id));
+    const existingQuestion = await storage.getQuestion(questionId);
     if (!existingQuestion) {
       return res.status(404).json({ message: 'Question not found' });
     }
@@ -641,7 +697,7 @@ export async function registerRoutes(
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }
-    const deleted = await storage.deleteQuestion(Number(req.params.id));
+    const deleted = await storage.deleteQuestion(questionId);
     if (!deleted) {
       return res.status(404).json({ message: 'Question not found' });
     }
