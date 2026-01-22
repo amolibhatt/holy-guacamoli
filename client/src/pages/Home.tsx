@@ -43,15 +43,6 @@ const GAME_CONFIG: Record<string, {
   playerCount: string;
   accentColor: string;
 }> = {
-  buzzkill: {
-    icon: Grid3X3,
-    gradient: "from-violet-500 via-purple-500 to-indigo-500",
-    shadowColor: "shadow-purple-500/30",
-    hoverBorder: "hover:border-purple-400/50 hover:shadow-purple-500/20",
-    route: "/host/buzzkill",
-    playerCount: "Multiplayer",
-    accentColor: "#8B5CF6",
-  },
   double_dip: {
     icon: Heart,
     gradient: "from-rose-400 via-pink-500 to-fuchsia-500",
@@ -182,7 +173,7 @@ export default function Home() {
             </motion.div>
           ) : (
             <div className="flex justify-center mb-12">
-              {gameTypes.filter(g => g.slug === 'buzzkill').map((game, index) => {
+              {gameTypes.filter(g => g.slug !== 'buzzkill' && GAME_CONFIG[g.slug]).map((game, index) => {
                 const config = GAME_CONFIG[game.slug] || {
                   icon: Grid3X3,
                   gradient: "from-primary to-secondary",

@@ -20,7 +20,7 @@ import type { Game, Board, HeadsUpDeck, HeadsUpCard, GameMode } from "@shared/sc
 const MODE_LABELS: Record<GameMode, string> = {
   jeopardy: "Jeopardy (Multi-Board)",
   heads_up: "Heads Up",
-  board: "Buzzkill",
+  board: "Board Game",
   sequence: "Sequence Squeeze",
   double_dip: "Double Dip",
 };
@@ -276,7 +276,7 @@ export default function GamesAdmin() {
           <TabsList className="grid w-full max-w-2xl grid-cols-4">
             <TabsTrigger value="games" className="gap-2" data-testid="tab-games">
               <Grid3X3 className="w-4 h-4" />
-              Buzzkill
+              Games
             </TabsTrigger>
             <TabsTrigger value="decks" className="gap-2" data-testid="tab-decks">
               <Smartphone className="w-4 h-4" />
@@ -330,7 +330,7 @@ export default function GamesAdmin() {
                               <SelectValue placeholder="Select mode" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="board">Buzzkill</SelectItem>
+                              <SelectItem value="board">Board Game</SelectItem>
                               <SelectItem value="jeopardy">Jeopardy (Multi-Board)</SelectItem>
                               <SelectItem value="heads_up">Heads Up</SelectItem>
                             </SelectContent>

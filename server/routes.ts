@@ -7,10 +7,8 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import * as XLSX from "xlsx";
-import { setupWebSocket, getRoomInfo, getOrRestoreSession } from "./gameRoom";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
-import { getPlayedCategoryStatus, getContentStats, getActiveCategoriesForTenant } from "./buzzkillBoards";
 import { SOURCE_GROUPS, type SourceGroup, type Question } from "@shared/schema";
 
 // Required point values for a category to go LIVE
@@ -136,8 +134,6 @@ export async function registerRoutes(
   } catch (err) {
     console.error('Error assigning colors to boards:', err);
   }
-  
-  setupWebSocket(httpServer);
 
   // Health check endpoint to verify database connectivity
   app.get("/api/health", async (_req, res) => {
@@ -192,14 +188,6 @@ export async function registerRoutes(
         error: err instanceof Error ? err.message : 'Unknown error'
       });
     }
-  });
-
-  app.get("/api/room/:code", (req, res) => {
-    const info = getRoomInfo(req.params.code.toUpperCase());
-    if (!info) {
-      return res.status(404).json({ message: "Room not found" });
-    }
-    res.json(info);
   });
 
   // Board routes - protected (hosts only, super_admin sees all)
@@ -962,258 +950,6 @@ export async function registerRoutes(
     }
   });
 
-  // === SMART CATEGORY MANAGEMENT (Buzzkill) ===
-  
-  // Get all categories grouped by source group
-  // Get all categories grouped by source - super admin only
-  app.get("/api/buzzkill/category-groups", isAuthenticated, async (req, res) => {
-    try {
-      const role = req.session.userRole;
-      if (role !== 'super_admin') {
-        return res.status(403).json({ message: "Super admin access required" });
-      }
-      const grouped = await storage.getCategoriesBySourceGroup();
-      const result: Record<string, any[]> = {};
-      grouped.forEach((cats, group) => {
-        result[group] = cats;
-      });
-      res.json({ groups: result, sourceGroups: SOURCE_GROUPS });
-    } catch (err) {
-      console.error("Error getting category groups:", err);
-      res.status(500).json({ message: "Failed to get category groups" });
-    }
-  });
-
-  // Update a category's source group (Super Admin only)
-  app.patch("/api/categories/:id/source-group", isAuthenticated, async (req, res) => {
-    try {
-      const role = req.session.userRole;
-      // Only Super Admins can update category source groups
-      if (role !== 'super_admin') {
-        return res.status(403).json({ message: "Only Super Admins can update category source groups" });
-      }
-      const { sourceGroup } = req.body;
-      if (sourceGroup && !SOURCE_GROUPS.includes(sourceGroup)) {
-        return res.status(400).json({ message: "Invalid source group. Must be A, B, C, D, or E" });
-      }
-      const updated = await storage.updateCategory(Number(req.params.id), { 
-        sourceGroup: sourceGroup || null 
-      });
-      if (!updated) {
-        return res.status(404).json({ message: "Category not found" });
-      }
-      res.json(updated);
-    } catch (err) {
-      console.error("Error updating category source group:", err);
-      res.status(500).json({ message: "Failed to update category" });
-    }
-  });
-
-  // Get active categories for gameplay - only show global boards or boards owned by user
-  app.get("/api/buzzkill/active-categories", isAuthenticated, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const role = req.session.userRole;
-      const allCategories = await getActiveCategoriesForTenant();
-      
-      // Filter to only show categories from:
-      // 1. Global boards (isGlobal = true)
-      // 2. Boards owned by this user
-      // 3. All boards if super_admin
-      const filteredCategories = role === 'super_admin' 
-        ? allCategories
-        : allCategories.filter(cat => cat.board.isGlobal || cat.board.userId === userId);
-      
-      res.json({ categories: filteredCategories });
-    } catch (err) {
-      console.error("Error getting active categories:", err);
-      res.status(500).json({ message: "Failed to get active categories" });
-    }
-  });
-
-  // Get content stats for admin dashboard - super admin only (shows global stats)
-  app.get("/api/buzzkill/content-stats", isAuthenticated, async (req, res) => {
-    try {
-      const role = req.session.userRole;
-      if (role !== 'super_admin') {
-        return res.status(403).json({ message: "Super admin access required" });
-      }
-      const stats = await getContentStats();
-      res.json(stats);
-    } catch (err) {
-      console.error("Error getting content stats:", err);
-      res.status(500).json({ message: "Failed to get content stats" });
-    }
-  });
-
-  // Get played category status for a session - verify session ownership
-  app.get("/api/buzzkill/session/:sessionId/played", isAuthenticated, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const role = req.session.userRole;
-      const sessionId = Number(req.params.sessionId);
-      
-      // Verify session ownership
-      const session = await storage.getSession(sessionId);
-      if (!session) {
-        return res.status(404).json({ message: "Session not found" });
-      }
-      if (session.hostId !== userId && role !== 'super_admin') {
-        return res.status(403).json({ message: "Not authorized" });
-      }
-      
-      const status = await getPlayedCategoryStatus(sessionId);
-      res.json(status);
-    } catch (err) {
-      console.error("Error getting played status:", err);
-      res.status(500).json({ message: "Failed to get played status" });
-    }
-  });
-
-  // Reset played categories for a session - verify session ownership
-  app.post("/api/buzzkill/session/:sessionId/reset-played", isAuthenticated, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const role = req.session.userRole;
-      const sessionId = Number(req.params.sessionId);
-      
-      // Verify session ownership
-      const session = await storage.getSession(sessionId);
-      if (!session) {
-        return res.status(404).json({ message: "Session not found" });
-      }
-      if (session.hostId !== userId && role !== 'super_admin') {
-        return res.status(403).json({ message: "Not authorized" });
-      }
-      
-      await storage.resetSessionPlayedCategories(sessionId);
-      res.json({ success: true, message: "Played categories reset" });
-    } catch (err) {
-      console.error("Error resetting played categories:", err);
-      res.status(500).json({ message: "Failed to reset played categories" });
-    }
-  });
-
-  // Get themed categories by group (public for gameplay)
-  // Get themed categories - super admin only (exposes all categories by source group)
-  app.get("/api/buzzkill/themed/:group", isAuthenticated, async (req, res) => {
-    try {
-      const role = req.session.userRole;
-      if (role !== 'super_admin') {
-        return res.status(403).json({ message: "Super admin access required" });
-      }
-      const group = req.params.group.toUpperCase() as typeof SOURCE_GROUPS[number];
-      if (!SOURCE_GROUPS.includes(group)) {
-        return res.status(400).json({ message: "Invalid group. Must be A, B, C, D, or E" });
-      }
-      const grouped = await storage.getCategoriesBySourceGroup();
-      const categories = grouped.get(group) || [];
-      res.json({ group, categories });
-    } catch (err) {
-      console.error("Error getting themed categories:", err);
-      res.status(500).json({ message: "Failed to get themed categories" });
-    }
-  });
-
-  // Get all playable boards for Buzzkill game selection (authenticated)
-  app.get("/api/buzzkill/boards", isAuthenticated, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const role = req.session.userRole;
-      const allBoards = await storage.getBoards(userId, role);
-      
-      const summaries = await storage.getBoardSummaries(userId, role);
-      const boardsWithStatus = allBoards.map(board => {
-        const summary = summaries.find(s => s.id === board.id);
-        const categoryCount = summary?.categoryCount || 0;
-        const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
-        const maxQuestions = categoryCount * 5;
-        const isComplete = categoryCount >= 5 && totalQuestions >= maxQuestions && maxQuestions > 0;
-        const isPlayable = categoryCount >= 1 && totalQuestions >= 1;
-        
-        return {
-          ...board,
-          categoryCount,
-          totalQuestions,
-          isComplete,
-          isPlayable,
-        };
-      });
-      
-      res.json(boardsWithStatus);
-    } catch (error) {
-      console.error("Error fetching buzzkill boards:", error);
-      res.status(500).json({ message: "Failed to fetch boards" });
-    }
-  });
-
-  // Get custom boards for Buzzkill game selection (authenticated - returns only user's non-global boards)
-  app.get("/api/buzzkill/custom-boards", isAuthenticated, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const role = req.session.userRole;
-      const allBoards = await storage.getBoards(userId, role);
-      const customBoards = allBoards.filter(b => !b.isGlobal);
-      
-      const summaries = await storage.getBoardSummaries(userId, role);
-      const boardsWithStatus = customBoards.map(board => {
-        const summary = summaries.find(s => s.id === board.id);
-        const categoryCount = summary?.categoryCount || 0;
-        const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
-        const maxQuestions = categoryCount * 5;
-        const isComplete = categoryCount >= 5 && totalQuestions >= maxQuestions && maxQuestions > 0;
-        const isPlayable = categoryCount >= 1 && totalQuestions >= 1;
-        
-        return {
-          ...board,
-          categoryCount,
-          totalQuestions,
-          isComplete,
-          isPlayable,
-        };
-      });
-      
-      res.json(boardsWithStatus);
-    } catch (err) {
-      console.error("Error getting custom boards:", err);
-      res.status(500).json({ message: "Failed to get custom boards" });
-    }
-  });
-
-  // Get preset/global boards for Buzzkill game selection (themed boards)
-  app.get("/api/buzzkill/preset-boards", isAuthenticated, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const role = req.session.userRole;
-      const globalBoards = await storage.getGlobalBoards();
-      
-      const summaries = await storage.getBoardSummaries(userId, role);
-      // Sort by ID to maintain Excel order
-      const sortedBoards = [...globalBoards].sort((a, b) => a.id - b.id);
-      const boardsWithStatus = sortedBoards.map(board => {
-        const summary = summaries.find(s => s.id === board.id);
-        const categoryCount = summary?.categoryCount || 0;
-        const totalQuestions = summary?.categories.reduce((sum, c) => sum + c.questionCount, 0) || 0;
-        const maxQuestions = categoryCount * 5;
-        const isComplete = categoryCount >= 5 && totalQuestions >= maxQuestions && maxQuestions > 0;
-        const isPlayable = categoryCount >= 1 && totalQuestions >= 1;
-        
-        return {
-          ...board,
-          categoryCount,
-          totalQuestions,
-          isComplete,
-          isPlayable,
-        };
-      });
-      
-      res.json(boardsWithStatus);
-    } catch (err) {
-      console.error("Error getting preset boards:", err);
-      res.status(500).json({ message: "Failed to get preset boards" });
-    }
-  });
-
   // === GAMES ===
   app.get("/api/games", isAuthenticated, async (req, res) => {
     const userId = req.session.userId!;
@@ -1532,7 +1268,7 @@ export async function registerRoutes(
   // Session API routes
   app.get("/api/session/:code", async (req, res) => {
     try {
-      const session = await getOrRestoreSession(req.params.code);
+      const session = await storage.getSessionByCode(req.params.code.toUpperCase());
       if (!session) {
         return res.status(404).json({ message: "Session not found" });
       }
