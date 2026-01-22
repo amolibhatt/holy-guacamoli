@@ -2,7 +2,7 @@
 
 ## Overview
 
-Holy GuacAmoli! is a multi-game party platform featuring Sequence Squeeze (multiplayer ordering game) and Double Dip (2-player relationship game). Built for Amoli's birthday. It's built as a full-stack TypeScript application with a React frontend and Express backend.
+Holy GuacAmoli! is a multi-game party platform featuring Blitzgrid (5x5 trivia grid game), Sequence Squeeze (multiplayer ordering game), and Double Dip (2-player relationship game). Built for Amoli's birthday. It's built as a full-stack TypeScript application with a React frontend and Express backend.
 
 ## User Preferences
 
@@ -43,6 +43,7 @@ Preferred communication style: Simple, everyday language.
 8. **Portable Email/Password Auth**: Host authentication uses bcrypt for password hashing and express-session with PostgreSQL store. No external OAuth dependencies - works on any platform.
 9. **Relationship Hub**: Double Dip couples game uses a unified tabbed interface (Today/Vault/Journey) with streak tracking, anniversary countdown, progress bars, favorites section, and celebratory confetti.
 10. **Sync-Stakes (Weekly Stakes)**: Couples can set weekly stakes with curated rewards/penalties. First completer each day earns 1 point; bonus point for 85%+ compatibility. Atomic SQL prevents race conditions. Weekly winner revealed on Sundays.
+11. **Blitzgrid Structure**: Grid = Board (up to 5 categories), Category = 5 Questions (unique point tiers 10/20/30/40/50). A Category is "Active" when it has all 5 point tiers filled. A Grid is "Active" when it has 5 Active Categories. Uses theme="blitzgrid" to distinguish from other boards.
 
 ### Recent Changes (January 2026)
 - **Simplified Architecture**: Questions now belong directly to categories via categoryId (not boardCategoryId). Each category has exactly 5 questions with unique points {10,20,30,40,50}.

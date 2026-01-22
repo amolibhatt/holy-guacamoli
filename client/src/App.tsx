@@ -22,6 +22,7 @@ const SequencePlayer = lazy(() => import("@/pages/SequencePlayer"));
 const Vault = lazy(() => import("@/pages/Vault"));
 const Storyboard = lazy(() => import("@/pages/Storyboard"));
 const GameHistory = lazy(() => import("@/pages/GameHistory"));
+const Blitzgrid = lazy(() => import("@/pages/Blitzgrid"));
 
 function PageLoader() {
   return (
@@ -54,6 +55,7 @@ function Router() {
         <Route path="/couples/storyboard" component={Storyboard} />
         <Route path="/host/sequence-squeeze" component={SequenceSqueeze} />
         <Route path="/sequence/:code?" component={SequencePlayer} />
+        <Route path="/host/blitzgrid" component={Blitzgrid} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

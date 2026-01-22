@@ -43,14 +43,14 @@ const GAME_CONFIG: Record<string, {
   playerCount: string;
   accentColor: string;
 }> = {
-  double_dip: {
-    icon: Heart,
-    gradient: "from-rose-400 via-pink-500 to-fuchsia-500",
-    shadowColor: "shadow-pink-500/30",
-    hoverBorder: "hover:border-pink-400/50 hover:shadow-pink-500/20",
-    route: "/host/double-dip",
-    playerCount: "2 Players",
-    accentColor: "#EC4899",
+  blitzgrid: {
+    icon: Grid3X3,
+    gradient: "from-violet-500 via-purple-500 to-indigo-500",
+    shadowColor: "shadow-purple-500/30",
+    hoverBorder: "hover:border-purple-400/50 hover:shadow-purple-500/20",
+    route: "/host/blitzgrid",
+    playerCount: "Multiplayer",
+    accentColor: "#8B5CF6",
   },
   sequence_squeeze: {
     icon: ListOrdered,
@@ -60,6 +60,15 @@ const GAME_CONFIG: Record<string, {
     route: "/host/sequence-squeeze",
     playerCount: "Multiplayer",
     accentColor: "#14B8A6",
+  },
+  double_dip: {
+    icon: Heart,
+    gradient: "from-rose-400 via-pink-500 to-fuchsia-500",
+    shadowColor: "shadow-pink-500/30",
+    hoverBorder: "hover:border-pink-400/50 hover:shadow-pink-500/20",
+    route: "/host/double-dip",
+    playerCount: "2 Players",
+    accentColor: "#EC4899",
   },
 };
 
