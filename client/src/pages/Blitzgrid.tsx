@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Play, Loader2,
-  AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Zap, Lock, Trophy, ChevronLeft, UserPlus
+  AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Zap, Lock, Trophy, ChevronLeft, UserPlus, Power
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -28,7 +28,7 @@ interface Player {
 import { 
   AlertDialog, AlertDialogAction, AlertDialogCancel, 
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter, 
-  AlertDialogHeader, AlertDialogTitle 
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
@@ -72,6 +72,42 @@ export default function Blitzgrid() {
   const [lastJoinedPlayer, setLastJoinedPlayer] = useState<{ name: string; avatar?: string } | null>(null);
   const joinNotificationTimer = useRef<NodeJS.Timeout | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const reconnectAttempts = useRef(0);
+  const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
+  const pingInterval = useRef<NodeJS.Timeout | null>(null);
+  const shouldReconnect = useRef(true);
+  
+  // Persist room session in localStorage
+  const getStoredSession = useCallback(() => {
+    try {
+      const data = localStorage.getItem('blitzgrid-host-session');
+      if (data) {
+        const parsed = JSON.parse(data);
+        // Check if session is less than 4 hours old
+        if (parsed.timestamp && Date.now() - parsed.timestamp < 4 * 60 * 60 * 1000) {
+          return parsed;
+        }
+        localStorage.removeItem('blitzgrid-host-session');
+      }
+    } catch {}
+    return null;
+  }, []);
+  
+  const storeSession = useCallback((code: string, sessionId?: number) => {
+    try {
+      localStorage.setItem('blitzgrid-host-session', JSON.stringify({
+        code,
+        sessionId,
+        timestamp: Date.now(),
+      }));
+    } catch {}
+  }, []);
+  
+  const clearStoredSession = useCallback(() => {
+    try {
+      localStorage.removeItem('blitzgrid-host-session');
+    } catch {}
+  }, []);
   
   // Form state
   const [showNewGridForm, setShowNewGridForm] = useState(false);
@@ -243,9 +279,15 @@ export default function Blitzgrid() {
     },
   });
 
-  // WebSocket connection for multiplayer
+  // WebSocket connection for multiplayer with auto-reconnect
   const connectWebSocket = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    
+    // Clear any pending reconnect
+    if (reconnectTimeout.current) {
+      clearTimeout(reconnectTimeout.current);
+      reconnectTimeout.current = null;
+    }
     
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
@@ -253,7 +295,23 @@ export default function Blitzgrid() {
     
     ws.onopen = () => {
       setWsConnected(true);
-      ws.send(JSON.stringify({ type: 'host:create' }));
+      reconnectAttempts.current = 0;
+      
+      // Check if we have a stored session to rejoin
+      const storedSession = getStoredSession();
+      if (storedSession?.code) {
+        ws.send(JSON.stringify({ type: 'host:join', code: storedSession.code }));
+      } else {
+        ws.send(JSON.stringify({ type: 'host:create' }));
+      }
+      
+      // Start ping interval to keep connection alive
+      if (pingInterval.current) clearInterval(pingInterval.current);
+      pingInterval.current = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'ping' }));
+        }
+      }, 25000); // Ping every 25 seconds
     };
     
     ws.onmessage = (event) => {
@@ -263,9 +321,11 @@ export default function Blitzgrid() {
         switch (data.type) {
           case 'room:created':
             setRoomCode(data.code);
+            storeSession(data.code, data.sessionId);
             break;
           case 'room:joined':
             setRoomCode(data.code);
+            storeSession(data.code, data.sessionId);
             if (data.players) {
               setPlayers(data.players.map((p: any) => ({ 
                 ...p, 
@@ -283,6 +343,16 @@ export default function Blitzgrid() {
                 time: b.timestamp,
               })));
             }
+            break;
+          case 'room:notFound':
+            // Stored session is stale, create new room
+            clearStoredSession();
+            ws.send(JSON.stringify({ type: 'host:create' }));
+            break;
+          case 'room:closed':
+            clearStoredSession();
+            setRoomCode(null);
+            setPlayers([]);
             break;
           case 'player:joined':
             if (data.player) {
@@ -342,6 +412,9 @@ export default function Blitzgrid() {
           case 'buzzer:reset':
             setBuzzQueue([]);
             break;
+          case 'pong':
+            // Heartbeat response received
+            break;
         }
       } catch (err) {
         console.error('[WS] Message parse error:', err);
@@ -351,23 +424,51 @@ export default function Blitzgrid() {
     ws.onclose = () => {
       setWsConnected(false);
       setIsJudging(false);
+      if (pingInterval.current) {
+        clearInterval(pingInterval.current);
+        pingInterval.current = null;
+      }
+      
+      // Auto-reconnect with exponential backoff if we should reconnect
+      if (shouldReconnect.current && reconnectAttempts.current < 10) {
+        const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts.current), 30000);
+        reconnectAttempts.current++;
+        console.log(`[WS] Reconnecting in ${delay}ms (attempt ${reconnectAttempts.current})`);
+        reconnectTimeout.current = setTimeout(() => {
+          connectWebSocket();
+        }, delay);
+      }
     };
     
     ws.onerror = () => {
       setWsConnected(false);
       setIsJudging(false);
     };
-  }, []);
+  }, [getStoredSession, storeSession, clearStoredSession]);
   
-  const disconnectWebSocket = useCallback(() => {
+  const disconnectWebSocket = useCallback((clearSession = false) => {
+    shouldReconnect.current = false;
+    
+    if (reconnectTimeout.current) {
+      clearTimeout(reconnectTimeout.current);
+      reconnectTimeout.current = null;
+    }
+    if (pingInterval.current) {
+      clearInterval(pingInterval.current);
+      pingInterval.current = null;
+    }
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
     }
     setWsConnected(false);
-    setRoomCode(null);
-    setPlayers([]);
-  }, []);
+    
+    if (clearSession) {
+      clearStoredSession();
+      setRoomCode(null);
+      setPlayers([]);
+    }
+  }, [clearStoredSession]);
   
   const updatePlayerScore = useCallback((playerId: string, points: number) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -414,15 +515,33 @@ export default function Blitzgrid() {
     }
   }, []);
   
+  const endSession = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'host:closeRoom' }));
+    }
+    disconnectWebSocket(true);
+    clearStoredSession();
+    setRoomCode(null);
+    setPlayers([]);
+    setBuzzQueue([]);
+    setBuzzerLocked(true);
+    setPlayMode(false);
+    setSelectedGridId(null);
+    toast({ title: "Session ended", description: "All players have been disconnected." });
+  }, [clearStoredSession, disconnectWebSocket, toast]);
+  
   // Auto-connect when entering play mode
   useEffect(() => {
     if (playMode) {
+      shouldReconnect.current = true;
       connectWebSocket();
     } else {
-      disconnectWebSocket();
+      // Don't clear session when leaving play mode - room stays active
+      disconnectWebSocket(false);
     }
     return () => {
-      disconnectWebSocket();
+      // Don't clear session on unmount - allow reconnection on refresh
+      disconnectWebSocket(false);
       if (joinNotificationTimer.current) {
         clearTimeout(joinNotificationTimer.current);
       }
@@ -534,6 +653,28 @@ export default function Blitzgrid() {
               <Button size="icon" variant="ghost" onClick={resetGame} className="text-white/50 hover:text-white hover:bg-white/10 h-9 w-9" data-testid="button-reset-game">
                 <RotateCcw className="w-4 h-4" />
               </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="icon" variant="ghost" className="text-red-400/70 h-9 w-9" data-testid="button-end-session">
+                    <Power className="w-4 h-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>End this game session?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will disconnect all {players.length} player{players.length !== 1 ? 's' : ''} and close the room. 
+                      Players will need to rejoin with a new room code to play again.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={endSession} className="bg-red-600">
+                      End Session
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </motion.div>
           

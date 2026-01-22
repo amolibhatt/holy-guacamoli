@@ -234,6 +234,20 @@ export default function PlayerPage() {
           break;
         case "pong":
           break;
+        case "host:disconnected":
+          // Host temporarily disconnected, show waiting state
+          toast({
+            title: "Host connection lost",
+            description: "Waiting for host to reconnect...",
+          });
+          break;
+        case "host:reconnected":
+          // Host is back
+          toast({
+            title: "Host reconnected",
+            description: "Game continues!",
+          });
+          break;
         case "room:modeChanged":
           if (data.mode === "sequence") {
             if (data.score !== undefined) setScore(data.score);

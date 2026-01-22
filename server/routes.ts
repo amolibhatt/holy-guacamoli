@@ -3664,12 +3664,19 @@ export async function registerRoutes(
             }
             
             if (!room) {
-              ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
+              ws.send(JSON.stringify({ type: 'room:notFound' }));
               break;
             }
 
             room.hostWs = ws;
             wsToRoom.set(ws, { roomCode: room.code, isHost: true });
+            
+            // Notify all connected players that host is back
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                sendToPlayer(player, { type: 'host:reconnected' });
+              }
+            });
 
             ws.send(JSON.stringify({
               type: 'room:joined',
@@ -4061,7 +4068,13 @@ export async function registerRoutes(
 
       if (mapping.isHost) {
         room.hostWs = null;
-        console.log(`[WebSocket] Host disconnected from room ${room.code}`);
+        // Notify players that host temporarily disconnected (will reconnect)
+        room.players.forEach((player) => {
+          if (player.ws && player.isConnected) {
+            sendToPlayer(player, { type: 'host:disconnected' });
+          }
+        });
+        console.log(`[WebSocket] Host disconnected from room ${room.code} (room preserved)`);
       } else if (mapping.playerId) {
         const player = room.players.get(mapping.playerId);
         if (player) {
