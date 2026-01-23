@@ -3498,158 +3498,216 @@ export async function registerRoutes(
       const allBoards = await storage.getBoards(userId);
       const boards = allBoards.filter(b => b.theme === "blitzgrid");
       
-      const exportData = [];
+      const rows: any[] = [];
+      rows.push(["Grid Name", "Grid Description", "Category Name", "Category Description", "Points", "Question", "Answer", "Options", "Image URL", "Audio URL", "Video URL"]);
+      
       for (const board of boards) {
         const boardCategories = await storage.getBoardCategories(board.id);
-        const categories = [];
         
         for (const bc of boardCategories) {
           const category = await storage.getCategory(bc.categoryId);
           if (!category) continue;
           
           const questions = await storage.getQuestionsByCategory(category.id);
-          categories.push({
-            name: category.name,
-            description: category.description || "",
-            questions: questions.map(q => ({
-              points: q.points,
-              question: q.question,
-              correctAnswer: q.correctAnswer,
-              options: q.options || [],
-              imageUrl: q.imageUrl || "",
-              audioUrl: q.audioUrl || "",
-              videoUrl: q.videoUrl || "",
-            }))
-          });
+          for (const q of questions) {
+            rows.push([
+              board.name,
+              board.description || "",
+              category.name,
+              category.description || "",
+              q.points,
+              q.question,
+              q.correctAnswer,
+              Array.isArray(q.options) && q.options.length > 0 ? q.options.join("|") : "",
+              q.imageUrl || "",
+              q.audioUrl || "",
+              q.videoUrl || "",
+            ]);
+          }
         }
-        
-        exportData.push({
-          name: board.name,
-          description: board.description || "",
-          categories
-        });
       }
       
-      res.json({ grids: exportData, exportedAt: new Date().toISOString() });
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Grids");
+      
+      const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+      
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", `attachment; filename="blitzgrid-export-${new Date().toISOString().split('T')[0]}.xlsx"`);
+      res.send(buffer);
     } catch (err) {
       console.error("Error exporting grids:", err);
       res.status(500).json({ message: "Failed to export grids" });
     }
   });
   
-  // Download template for import
+  // Download template for import (Excel format)
   app.get("/api/blitzgrid/template", async (req, res) => {
-    const template = {
-      grids: [
-        {
-          name: "Example Grid Name",
-          description: "Optional grid description",
-          categories: [
-            {
-              name: "Category 1",
-              description: "Optional category description",
-              questions: [
-                { points: 10, question: "Easy question?", correctAnswer: "Answer 1", options: [], imageUrl: "", audioUrl: "", videoUrl: "" },
-                { points: 20, question: "Medium question?", correctAnswer: "Answer 2", options: [], imageUrl: "", audioUrl: "", videoUrl: "" },
-                { points: 30, question: "Harder question?", correctAnswer: "Answer 3", options: [], imageUrl: "", audioUrl: "", videoUrl: "" },
-                { points: 40, question: "Difficult question?", correctAnswer: "Answer 4", options: [], imageUrl: "", audioUrl: "", videoUrl: "" },
-                { points: 50, question: "Hardest question?", correctAnswer: "Answer 5", options: [], imageUrl: "", audioUrl: "", videoUrl: "" },
-              ]
-            }
-          ]
-        }
-      ],
-      instructions: {
-        format: "Each grid must have a name and 1-5 categories. Each category needs a name and exactly 5 questions with unique point values (10, 20, 30, 40, 50).",
-        mediaUrls: "imageUrl, audioUrl, and videoUrl are optional. Leave empty string if not needed.",
-        options: "The options array is for multiple choice questions. Leave as empty array [] for open-ended questions."
-      }
-    };
-    res.json(template);
+    const rows = [
+      ["Grid Name", "Grid Description", "Category Name", "Category Description", "Points", "Question", "Answer", "Options", "Image URL", "Audio URL", "Video URL"],
+      ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 10, "What year was Titanic released?", "1997", "", "", "", ""],
+      ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 20, "Who directed Jaws?", "Steven Spielberg", "", "", "", ""],
+      ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 30, "Which actor played Iron Man?", "Robert Downey Jr.", "Chris Evans|Robert Downey Jr.|Chris Hemsworth|Mark Ruffalo", "", "", ""],
+      ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 40, "What is the highest-grossing film of all time?", "Avatar", "", "", "", ""],
+      ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 50, "Who composed the Star Wars soundtrack?", "John Williams", "", "", "", ""],
+    ];
+    
+    const instructions = [
+      ["INSTRUCTIONS"],
+      [""],
+      ["Each row represents one question. Group questions by Grid Name and Category Name."],
+      ["Each category must have exactly 5 questions with unique point values: 10, 20, 30, 40, 50."],
+      ["Each grid can have 1-5 categories."],
+      [""],
+      ["Options: For multiple choice, separate options with | (pipe). Leave empty for open-ended questions."],
+      ["Media URLs: Image/Audio/Video URLs are optional. Leave empty if not needed."],
+    ];
+    
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const wsInstructions = XLSX.utils.aoa_to_sheet(instructions);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template");
+    XLSX.utils.book_append_sheet(wb, wsInstructions, "Instructions");
+    
+    const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+    
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", 'attachment; filename="blitzgrid-template.xlsx"');
+    res.send(buffer);
   });
   
-  // Import grids from JSON
-  app.post("/api/blitzgrid/import", isAuthenticated, async (req, res) => {
+  // Import grids from Excel file
+  const blitzgridExcelUpload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      const allowedMimes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel',
+      ];
+      if (allowedMimes.includes(file.mimetype) || file.originalname.endsWith('.xlsx') || file.originalname.endsWith('.xls')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only Excel files (.xlsx, .xls) are allowed'));
+      }
+    }
+  });
+  app.post("/api/blitzgrid/import", isAuthenticated, blitzgridExcelUpload.single("file"), async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const { grids } = req.body;
       
-      if (!Array.isArray(grids) || grids.length === 0) {
-        return res.status(400).json({ message: "Invalid format: grids array required" });
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+      const sheetName = workbook.SheetNames.find(n => n.toLowerCase() !== "instructions") || workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const data: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      
+      if (data.length < 2) {
+        return res.status(400).json({ message: "Excel file is empty or has no data rows" });
+      }
+      
+      // Parse rows into grid structure (skip header row)
+      const gridsMap = new Map<string, { description: string; categories: Map<string, { description: string; questions: any[] }> }>();
+      
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        if (!row || row.length < 7 || !row[0]) continue;
+        
+        const [gridName, gridDesc, catName, catDesc, points, question, answer, options, imageUrl, audioUrl, videoUrl] = row;
+        
+        if (!gridName || !catName || !points || !question || !answer) continue;
+        
+        const gridKey = String(gridName).trim();
+        const catKey = String(catName).trim();
+        
+        if (!gridsMap.has(gridKey)) {
+          gridsMap.set(gridKey, { description: gridDesc ? String(gridDesc).trim() : "", categories: new Map() });
+        }
+        
+        const grid = gridsMap.get(gridKey)!;
+        if (!grid.categories.has(catKey)) {
+          grid.categories.set(catKey, { description: catDesc ? String(catDesc).trim() : "", questions: [] });
+        }
+        
+        const category = grid.categories.get(catKey)!;
+        category.questions.push({
+          points: Number(points),
+          question: String(question).trim(),
+          correctAnswer: String(answer).trim(),
+          options: options ? String(options).split("|").map(o => o.trim()).filter(Boolean) : [],
+          imageUrl: imageUrl ? String(imageUrl).trim() : null,
+          audioUrl: audioUrl ? String(audioUrl).trim() : null,
+          videoUrl: videoUrl ? String(videoUrl).trim() : null,
+        });
       }
       
       const results = { imported: 0, errors: [] as string[] };
       
-      for (const grid of grids) {
+      for (const [gridName, gridData] of Array.from(gridsMap.entries())) {
         try {
-          if (!grid.name || typeof grid.name !== "string") {
-            results.errors.push(`Grid missing name`);
+          if (gridData.categories.size === 0 || gridData.categories.size > 5) {
+            results.errors.push(`Grid "${gridName}": must have 1-5 categories`);
             continue;
           }
           
-          if (!Array.isArray(grid.categories) || grid.categories.length === 0 || grid.categories.length > 5) {
-            results.errors.push(`Grid "${grid.name}": must have 1-5 categories`);
-            continue;
+          // Validate all categories before creating
+          let allValid = true;
+          for (const [catName, catData] of Array.from(gridData.categories.entries())) {
+            if (catData.questions.length !== 5) {
+              results.errors.push(`Grid "${gridName}", Category "${catName}": must have exactly 5 questions (found ${catData.questions.length})`);
+              allValid = false;
+            }
+            const pointSet = new Set(catData.questions.map((q: any) => q.points));
+            if (pointSet.size !== 5 || ![10, 20, 30, 40, 50].every(p => pointSet.has(p))) {
+              results.errors.push(`Grid "${gridName}", Category "${catName}": questions must have unique points 10, 20, 30, 40, 50`);
+              allValid = false;
+            }
           }
+          
+          if (!allValid) continue;
           
           // Create the grid (board)
           const board = await storage.createBoard({
-            name: grid.name.trim(),
-            description: grid.description?.trim() || null,
+            name: gridName.trim(),
+            description: gridData.description?.trim() || null,
             userId,
             theme: "blitzgrid",
             pointValues: [10, 20, 30, 40, 50],
           });
           
-          for (const cat of grid.categories) {
-            if (!cat.name || typeof cat.name !== "string") {
-              results.errors.push(`Grid "${grid.name}": category missing name`);
-              continue;
-            }
-            
-            if (!Array.isArray(cat.questions) || cat.questions.length !== 5) {
-              results.errors.push(`Grid "${grid.name}", Category "${cat.name}": must have exactly 5 questions`);
-              continue;
-            }
-            
-            // Validate point values
-            const pointSet = new Set(cat.questions.map((q: any) => q.points));
-            if (pointSet.size !== 5 || ![10, 20, 30, 40, 50].every(p => pointSet.has(p))) {
-              results.errors.push(`Grid "${grid.name}", Category "${cat.name}": questions must have unique points 10, 20, 30, 40, 50`);
-              continue;
-            }
-            
-            // Create category
+          for (const [catName, catData] of Array.from(gridData.categories.entries())) {
             const category = await storage.createCategory({
-              name: cat.name.trim(),
-              description: cat.description?.trim() || "",
+              name: catName.trim(),
+              description: catData.description?.trim() || "",
               imageUrl: "",
             });
             
-            // Link category to board
             await storage.createBoardCategory({
               boardId: board.id,
               categoryId: category.id,
             });
             
-            // Create questions
-            for (const q of cat.questions) {
+            for (const q of catData.questions) {
               await storage.createQuestion({
                 categoryId: category.id,
-                question: q.question?.trim() || "",
-                correctAnswer: q.correctAnswer?.trim() || "",
+                question: q.question,
+                correctAnswer: q.correctAnswer,
                 points: q.points,
-                options: q.options || [],
-                imageUrl: q.imageUrl?.trim() || null,
-                audioUrl: q.audioUrl?.trim() || null,
-                videoUrl: q.videoUrl?.trim() || null,
+                options: q.options,
+                imageUrl: q.imageUrl,
+                audioUrl: q.audioUrl,
+                videoUrl: q.videoUrl,
               });
             }
           }
           
           results.imported++;
         } catch (gridErr) {
-          results.errors.push(`Grid "${grid.name}": ${(gridErr as Error).message}`);
+          results.errors.push(`Grid "${gridName}": ${(gridErr as Error).message}`);
         }
       }
       

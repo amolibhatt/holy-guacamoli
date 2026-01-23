@@ -14,7 +14,7 @@ import {
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Loader2,
   AlertCircle, CheckCircle2, Image, Music, Video,
-  Download, Upload, FileJson
+  Download, Upload, FileSpreadsheet
 } from "lucide-react";
 import { 
   AlertDialog, AlertDialogAction, AlertDialogCancel, 
@@ -199,12 +199,11 @@ export default function BlitzgridAdmin() {
     try {
       const response = await fetch('/api/blitzgrid/export', { credentials: 'include' });
       if (!response.ok) throw new Error('Export failed');
-      const data = await response.json();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `blitzgrid-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `blitzgrid-export-${new Date().toISOString().split('T')[0]}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
       toast({ title: "Grids exported successfully" });
@@ -219,12 +218,11 @@ export default function BlitzgridAdmin() {
     try {
       const response = await fetch('/api/blitzgrid/template');
       if (!response.ok) throw new Error('Template download failed');
-      const data = await response.json();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'blitzgrid-template.json';
+      a.download = 'blitzgrid-template.xlsx';
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -238,10 +236,18 @@ export default function BlitzgridAdmin() {
     
     setIsImporting(true);
     try {
-      const text = await file.text();
-      const data = JSON.parse(text);
+      const formData = new FormData();
+      formData.append('file', file);
       
-      const response = await apiRequest('POST', '/api/blitzgrid/import', data);
+      const response = await fetch('/api/blitzgrid/import', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Import failed');
+      }
       const result = await response.json();
       
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
@@ -614,7 +620,7 @@ export default function BlitzgridAdmin() {
               onClick={handleDownloadTemplate}
               data-testid="button-download-template"
             >
-              <FileJson className="w-4 h-4 mr-2" /> Template
+              <FileSpreadsheet className="w-4 h-4 mr-2" /> Template
             </Button>
             <Button
               variant="outline"
@@ -639,7 +645,7 @@ export default function BlitzgridAdmin() {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".json"
+              accept=".xlsx,.xls"
               onChange={handleImport}
               className="hidden"
             />
