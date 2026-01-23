@@ -15,7 +15,8 @@ import confetti from "canvas-confetti";
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Play, Loader2,
-  AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Zap, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Sparkles, Medal
+  AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Zap, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Sparkles, Medal,
+  Circle, Waves, Sun, Star, TreePine, Flower2
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -49,6 +50,29 @@ interface CategoryWithQuestions extends Category {
 }
 
 const POINT_TIERS = [10, 20, 30, 40, 50];
+
+// Available themes for grids - icons are lucide-react component names
+const GRID_THEMES = [
+  { id: 'football', name: 'Football', iconType: 'circle' as const, background: 'linear-gradient(180deg, #1a472a 0%, #2d5a35 50%, #1a472a 100%)' },
+  { id: 'ocean', name: 'Ocean', iconType: 'waves' as const, background: 'linear-gradient(180deg, #0c4a6e 0%, #075985 50%, #0c4a6e 100%)' },
+  { id: 'sunset', name: 'Sunset', iconType: 'sun' as const, background: 'linear-gradient(180deg, #7c2d12 0%, #c2410c 50%, #7c2d12 100%)' },
+  { id: 'galaxy', name: 'Galaxy', iconType: 'star' as const, background: 'linear-gradient(180deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)' },
+  { id: 'forest', name: 'Forest', iconType: 'trees' as const, background: 'linear-gradient(180deg, #14532d 0%, #166534 50%, #14532d 100%)' },
+  { id: 'cherry', name: 'Cherry', iconType: 'flower' as const, background: 'linear-gradient(180deg, #831843 0%, #be185d 50%, #831843 100%)' },
+] as const;
+
+// Map theme icon types to lucide icons
+const ThemeIcon = ({ type, className }: { type: typeof GRID_THEMES[number]['iconType']; className?: string }) => {
+  switch (type) {
+    case 'circle': return <Circle className={className} />;
+    case 'waves': return <Waves className={className} />;
+    case 'sun': return <Sun className={className} />;
+    case 'star': return <Star className={className} />;
+    case 'trees': return <TreePine className={className} />;
+    case 'flower': return <Flower2 className={className} />;
+    default: return null;
+  }
+};
 
 export default function Blitzgrid() {
   const { toast } = useToast();
@@ -117,6 +141,7 @@ export default function Blitzgrid() {
   // Form state
   const [showNewGridForm, setShowNewGridForm] = useState(false);
   const [newGridName, setNewGridName] = useState("");
+  const [newGridTheme, setNewGridTheme] = useState("football");
   const [editingGridId, setEditingGridId] = useState<number | null>(null);
   const [editGridName, setEditGridName] = useState("");
   const [deleteGridId, setDeleteGridId] = useState<number | null>(null);
@@ -147,12 +172,13 @@ export default function Blitzgrid() {
 
   // Create grid mutation
   const createGridMutation = useMutation({
-    mutationFn: async (name: string) => {
-      return apiRequest('POST', '/api/blitzgrid/grids', { name });
+    mutationFn: async ({ name, theme }: { name: string; theme: string }) => {
+      return apiRequest('POST', '/api/blitzgrid/grids', { name, theme });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
       setNewGridName("");
+      setNewGridTheme("football");
       setShowNewGridForm(false);
       toast({ title: "Grid created" });
     },
@@ -707,8 +733,12 @@ export default function Blitzgrid() {
       const thirdPhase = sortedPlayers.length >= 4 ? 3 : 2;
       const restPhase = 2;
       
+      // Get theme from grid
+      const gridThemeId = grid.theme?.replace('blitzgrid:', '') || 'football';
+      const currentTheme = GRID_THEMES.find(t => t.id === gridThemeId) || GRID_THEMES[0];
+      
       return (
-        <div className="h-screen overflow-hidden flex flex-col" style={{ background: 'linear-gradient(180deg, #1a472a 0%, #2d5a35 50%, #1a472a 100%)' }} data-testid="page-blitzgrid-play">
+        <div className="h-screen overflow-hidden flex flex-col" style={{ background: currentTheme.background }} data-testid="page-blitzgrid-play">
           
           {/* Game Over Reveal Overlay */}
           <AnimatePresence>
@@ -718,7 +748,7 @@ export default function Blitzgrid() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 z-50 flex items-center justify-center"
-                style={{ background: 'linear-gradient(180deg, #0f2d1a 0%, #1a472a 50%, #0f2d1a 100%)' }}
+                style={{ background: currentTheme.background }}
               >
                 <div className="text-center p-4 md:p-8 max-w-4xl w-full mx-4">
                   {/* Title */}
@@ -1748,7 +1778,7 @@ export default function Blitzgrid() {
               className="mb-4"
             >
               <Card>
-                <CardContent className="pt-4">
+                <CardContent className="pt-4 space-y-3">
                   <div className="flex items-center gap-2">
                     <Input
                       placeholder="Grid name..."
@@ -1757,14 +1787,14 @@ export default function Blitzgrid() {
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && newGridName.trim()) {
-                          createGridMutation.mutate(newGridName.trim());
+                          createGridMutation.mutate({ name: newGridName.trim(), theme: newGridTheme });
                         }
                         if (e.key === 'Escape') setShowNewGridForm(false);
                       }}
                       data-testid="input-grid-name"
                     />
                     <Button
-                      onClick={() => createGridMutation.mutate(newGridName.trim())}
+                      onClick={() => createGridMutation.mutate({ name: newGridName.trim(), theme: newGridTheme })}
                       disabled={!newGridName.trim() || createGridMutation.isPending}
                       data-testid="button-create-grid"
                     >
@@ -1773,6 +1803,23 @@ export default function Blitzgrid() {
                     <Button variant="ghost" onClick={() => setShowNewGridForm(false)}>
                       <X className="w-4 h-4" />
                     </Button>
+                  </div>
+                  {/* Theme selector */}
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-sm text-muted-foreground self-center mr-1" data-testid="text-theme-label">Theme:</span>
+                    {GRID_THEMES.map(theme => (
+                      <Button
+                        key={theme.id}
+                        variant={newGridTheme === theme.id ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setNewGridTheme(theme.id)}
+                        className="gap-1"
+                        data-testid={`button-theme-${theme.id}`}
+                      >
+                        <ThemeIcon type={theme.iconType} className="w-4 h-4" />
+                        <span className="hidden sm:inline">{theme.name}</span>
+                      </Button>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
