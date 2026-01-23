@@ -1516,17 +1516,13 @@ export default function Blitzgrid() {
               </div>
             </div>
             
-            {/* Center: Room Code */}
-            <div className="flex items-center gap-3">
+            {/* Right: Room Code + Action Buttons */}
+            <div className="flex items-center gap-2">
               {roomCode && (
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.2 }}>
                   <Badge className="bg-emerald-400 text-black font-mono font-bold px-3 py-1">{roomCode}</Badge>
                 </motion.div>
               )}
-            </div>
-            
-            {/* Right: Action Buttons */}
-            <div className="flex gap-2">
               <Button size="sm" onClick={() => setShowQRCode(true)} className="bg-emerald-400 text-black font-medium h-9" data-testid="button-show-qr">
                 <QrCode className="w-4 h-4 mr-1.5" /> <span className="hidden sm:inline">Join</span>
               </Button>
