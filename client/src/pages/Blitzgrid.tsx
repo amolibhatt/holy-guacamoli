@@ -139,38 +139,24 @@ const ThemeElements = ({ themeId }: { themeId: string }) => {
               transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", times: [0, 0.14, 0.28, 0.42, 0.56, 0.70, 0.85, 1] }}
               style={{ opacity: 0.9 }}
             >
-              {/* Classic soccer ball SVG */}
-              <svg width="55" height="55" viewBox="0 0 100 100" style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))' }}>
+              {/* Fun colorful beach ball style */}
+              <svg width="55" height="55" viewBox="0 0 100 100" style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))' }}>
                 <defs>
-                  <radialGradient id="ballGradient" cx="35%" cy="35%" r="60%">
-                    <stop offset="0%" stopColor="#ffffff"/>
-                    <stop offset="70%" stopColor="#e8e8e8"/>
-                    <stop offset="100%" stopColor="#c0c0c0"/>
-                  </radialGradient>
+                  <clipPath id="ballClip">
+                    <circle cx="50" cy="50" r="46"/>
+                  </clipPath>
                 </defs>
-                {/* Ball base */}
-                <circle cx="50" cy="50" r="48" fill="url(#ballGradient)" stroke="#999" strokeWidth="1"/>
-                {/* Center pentagon */}
-                <polygon points="50,30 62,42 58,58 42,58 38,42" fill="#1a1a1a" stroke="#333" strokeWidth="0.5"/>
-                {/* Top pentagon */}
-                <polygon points="50,8 58,18 50,30 42,18" fill="#1a1a1a" stroke="#333" strokeWidth="0.5"/>
-                {/* Top right */}
-                <polygon points="62,42 78,35 85,50 72,58 58,58" fill="#1a1a1a" stroke="#333" strokeWidth="0.5"/>
-                {/* Top left */}
-                <polygon points="38,42 42,58 28,58 15,50 22,35" fill="#1a1a1a" stroke="#333" strokeWidth="0.5"/>
-                {/* Bottom right */}
-                <polygon points="58,58 72,58 75,75 60,85 50,72" fill="#1a1a1a" stroke="#333" strokeWidth="0.5"/>
-                {/* Bottom left */}
-                <polygon points="42,58 50,72 40,85 25,75 28,58" fill="#1a1a1a" stroke="#333" strokeWidth="0.5"/>
-                {/* White seams/lines */}
-                <line x1="50" y1="30" x2="50" y2="8" stroke="#ddd" strokeWidth="1.5"/>
-                <line x1="62" y1="42" x2="78" y2="35" stroke="#ddd" strokeWidth="1.5"/>
-                <line x1="38" y1="42" x2="22" y2="35" stroke="#ddd" strokeWidth="1.5"/>
-                <line x1="58" y1="58" x2="72" y2="58" stroke="#ddd" strokeWidth="1.5"/>
-                <line x1="42" y1="58" x2="28" y2="58" stroke="#ddd" strokeWidth="1.5"/>
-                <line x1="50" y1="72" x2="50" y2="92" stroke="#ddd" strokeWidth="1.5"/>
-                {/* Highlight shine */}
-                <ellipse cx="35" cy="30" rx="12" ry="8" fill="white" opacity="0.4"/>
+                <circle cx="50" cy="50" r="48" fill="white" stroke="#ddd" strokeWidth="2"/>
+                <g clipPath="url(#ballClip)">
+                  <path d="M50,4 L70,50 L50,96" fill="#ef4444"/>
+                  <path d="M50,4 L30,50 L50,96" fill="#3b82f6"/>
+                  <path d="M50,4 L50,50 L96,50 A46,46 0 0,0 50,4" fill="#fbbf24"/>
+                  <path d="M50,96 L50,50 L96,50 A46,46 0 0,1 50,96" fill="#22c55e"/>
+                  <path d="M50,4 L50,50 L4,50 A46,46 0 0,1 50,4" fill="#a855f7"/>
+                  <path d="M50,96 L50,50 L4,50 A46,46 0 0,0 50,96" fill="#f97316"/>
+                </g>
+                <circle cx="50" cy="50" r="8" fill="white"/>
+                <ellipse cx="35" cy="30" rx="10" ry="6" fill="white" opacity="0.5"/>
               </svg>
             </motion.div>
           );
