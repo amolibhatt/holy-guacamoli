@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
+import { ThemePreview } from "@/components/ThemePreview";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
@@ -503,19 +504,27 @@ export default function BlitzgridAdmin() {
             <span className="text-sm text-muted-foreground" data-testid="text-grid-theme-label">Theme:</span>
             {GRID_THEMES.map(theme => {
               const currentTheme = grid?.theme?.replace('blitzgrid:', '') || 'birthday';
+              const isSelected = currentTheme === theme.id;
               return (
-                <Button
+                <button
                   key={theme.id}
-                  variant={currentTheme === theme.id ? "default" : "outline"}
-                  size="sm"
                   onClick={() => updateGridMutation.mutate({ id: selectedGridId, theme: theme.id })}
                   disabled={updateGridMutation.isPending}
-                  className="gap-1"
+                  className={`relative group flex items-center gap-2 px-2 py-1.5 rounded-lg border-2 transition-all ${
+                    isSelected 
+                      ? 'border-primary bg-primary/10 shadow-md' 
+                      : 'border-transparent hover:border-muted-foreground/30 hover:bg-muted/50'
+                  }`}
                   data-testid={`button-grid-theme-${theme.id}`}
                 >
-                  <ThemeIcon type={theme.iconType} className="w-4 h-4" />
-                  <span className="hidden sm:inline">{theme.name}</span>
-                </Button>
+                  <ThemePreview themeId={theme.id} />
+                  <span className={`text-sm font-medium ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>
+                    {theme.name}
+                  </span>
+                  {isSelected && (
+                    <Check className="w-4 h-4 text-primary" />
+                  )}
+                </button>
               );
             })}
           </div>
@@ -749,19 +758,29 @@ export default function BlitzgridAdmin() {
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm text-muted-foreground" data-testid="text-theme-label">Theme:</span>
-                    {GRID_THEMES.map(theme => (
-                      <Button
-                        key={theme.id}
-                        variant={newGridTheme === theme.id ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setNewGridTheme(theme.id)}
-                        className="gap-1"
-                        data-testid={`button-theme-${theme.id}`}
-                      >
-                        <ThemeIcon type={theme.iconType} className="w-4 h-4" />
-                        <span className="hidden sm:inline">{theme.name}</span>
-                      </Button>
-                    ))}
+                    {GRID_THEMES.map(theme => {
+                      const isSelected = newGridTheme === theme.id;
+                      return (
+                        <button
+                          key={theme.id}
+                          onClick={() => setNewGridTheme(theme.id)}
+                          className={`relative group flex items-center gap-2 px-2 py-1.5 rounded-lg border-2 transition-all ${
+                            isSelected 
+                              ? 'border-primary bg-primary/10 shadow-md' 
+                              : 'border-transparent hover:border-muted-foreground/30 hover:bg-muted/50'
+                          }`}
+                          data-testid={`button-theme-${theme.id}`}
+                        >
+                          <ThemePreview themeId={theme.id} />
+                          <span className={`text-sm font-medium ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>
+                            {theme.name}
+                          </span>
+                          {isSelected && (
+                            <Check className="w-4 h-4 text-primary" />
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>

@@ -13,13 +13,15 @@ import { Logo } from "@/components/Logo";
 import { useScore } from "@/components/ScoreContext";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
+import { playWhoosh, playRevealFlip, playPointsAwarded, playCelebration, playWrongBuzz, soundManager } from "@/lib/sounds";
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Play, Loader2,
   AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Zap, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Sparkles, Medal,
   Circle, Waves, Sun, Star, TreePine, Flower2, Leaf, Bird,
   PartyPopper, Cake, Umbrella, Briefcase, Dog, Cat, Rocket, Music, Palette, Heart, Timer,
-  Target, Flag, Award, Dribbble, Shirt, Footprints, Shell, Fish, Gift, Candy, Coffee, Laptop, Headphones, Mic2, Guitar
+  Target, Flag, Award, Dribbble, Shirt, Footprints, Shell, Fish, Gift, Candy, Coffee, Laptop, Headphones, Mic2, Guitar,
+  Volume2, VolumeX
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -969,6 +971,7 @@ export default function Blitzgrid() {
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(soundManager.isEnabled());
   
   // Category reveal state - reveals categories one by one before gameplay
   const [revealedCategoryCount, setRevealedCategoryCount] = useState(0);
@@ -1464,6 +1467,20 @@ export default function Blitzgrid() {
         const player = players.find(p => p.id === playerId);
         setLastScoreChange({ playerId, playerName: player?.name || 'Player', points });
       }
+      
+      if (points > 0) {
+        playPointsAwarded(points);
+        if (points >= 40) {
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#10b981', '#fbbf24', '#f472b6', '#8b5cf6']
+          });
+        }
+      } else if (points < 0) {
+        playWrongBuzz();
+      }
     }
   }, [players]);
 
@@ -1700,10 +1717,12 @@ export default function Blitzgrid() {
       // Reveal next category
       const revealNextCategory = () => {
         if (revealedCategoryCount < gridCategories.length) {
+          playRevealFlip();
           setRevealedCategoryCount(prev => prev + 1);
           // Check if all categories revealed
           if (revealedCategoryCount + 1 >= gridCategories.length) {
             setCategoryRevealMode(false);
+            playWhoosh();
           }
         }
       };
@@ -1748,7 +1767,7 @@ export default function Blitzgrid() {
       
       return (
         <div 
-          className="h-screen overflow-hidden flex flex-col relative" 
+          className="h-screen overflow-hidden flex flex-col relative touch-manipulation" 
           style={{ background: currentTheme.background }} 
           data-testid="page-blitzgrid-play"
           tabIndex={0}
@@ -2027,6 +2046,18 @@ export default function Blitzgrid() {
               <Button size="sm" onClick={() => setShowQRCode(true)} className="bg-emerald-400 text-black font-medium h-9" data-testid="button-show-qr">
                 <QrCode className="w-4 h-4 mr-1.5" /> <span className="hidden sm:inline">Join</span>
               </Button>
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                onClick={() => {
+                  const newVal = soundManager.toggle();
+                  setSoundEnabled(newVal);
+                }} 
+                className="text-white/50 h-9 w-9" 
+                data-testid="button-toggle-sound"
+              >
+                {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+              </Button>
               <Button size="icon" variant="ghost" onClick={resetGame} className="text-white/50 h-9 w-9" data-testid="button-reset-game">
                 <RotateCcw className="w-4 h-4" />
               </Button>
@@ -2254,7 +2285,7 @@ export default function Blitzgrid() {
                   transition={{ duration: 2, repeat: Infinity }}
                 >
                   <span className="text-sm md:text-base font-medium">
-                    Click or press Space to reveal categories ({revealedCategoryCount}/{gridCategories.length})
+                    Tap anywhere to reveal ({revealedCategoryCount}/{gridCategories.length})
                   </span>
                   <Button
                     size="sm"
