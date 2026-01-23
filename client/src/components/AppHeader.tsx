@@ -76,6 +76,40 @@ export function AppHeader({
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
+              {/* Sparkles around icon */}
+              <motion.span
+                className="absolute -top-1 -right-1 text-yellow-400 z-20"
+                animate={{ 
+                  scale: [0.8, 1.2, 0.8],
+                  rotate: [0, 180, 360],
+                  opacity: [0.4, 1, 0.4]
+                }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Sparkles className="w-3 h-3" />
+              </motion.span>
+              <motion.span
+                className="absolute -bottom-1 -left-1 text-lime-400 z-20"
+                animate={{ 
+                  scale: [0.6, 1, 0.6],
+                  rotate: [360, 180, 0],
+                  opacity: [0.3, 0.9, 0.3]
+                }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+              >
+                <Sparkles className="w-2.5 h-2.5" />
+              </motion.span>
+              <motion.span
+                className="absolute top-1/2 -right-2 text-emerald-300 z-20"
+                animate={{ 
+                  scale: [0.7, 1.1, 0.7],
+                  opacity: [0.5, 1, 0.5],
+                  x: [0, 2, 0]
+                }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+              >
+                <Sparkles className="w-2 h-2" />
+              </motion.span>
               <AvocadoIcon className="w-8 h-8 drop-shadow-lg relative z-10" />
             </motion.div>
             <div className="flex flex-col">
