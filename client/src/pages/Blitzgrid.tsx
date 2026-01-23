@@ -977,6 +977,10 @@ export default function Blitzgrid() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
   
+  // Category reveal state - reveals categories one by one before gameplay
+  const [revealedCategoryCount, setRevealedCategoryCount] = useState(0);
+  const [categoryRevealMode, setCategoryRevealMode] = useState(true);
+  
   // Timer state
   const [timerActive, setTimerActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(10);
@@ -1695,7 +1699,26 @@ export default function Blitzgrid() {
       
       const resetGame = () => {
         setRevealedCells(new Set());
+        setRevealedCategoryCount(0);
+        setCategoryRevealMode(true);
         toast({ title: "Game reset! All questions available again." });
+      };
+      
+      // Reveal next category
+      const revealNextCategory = () => {
+        if (revealedCategoryCount < gridCategories.length) {
+          setRevealedCategoryCount(prev => prev + 1);
+          // Check if all categories revealed
+          if (revealedCategoryCount + 1 >= gridCategories.length) {
+            setCategoryRevealMode(false);
+          }
+        }
+      };
+      
+      // Skip reveal mode and show all
+      const skipReveal = () => {
+        setRevealedCategoryCount(gridCategories.length);
+        setCategoryRevealMode(false);
       };
       
       const joinUrl = roomCode 
@@ -1719,8 +1742,26 @@ export default function Blitzgrid() {
       const gridThemeId = grid.theme?.replace('blitzgrid:', '') || 'birthday';
       const currentTheme = GRID_THEMES.find(t => t.id === gridThemeId) || GRID_THEMES[0];
       
+      // Keyboard handler for reveal mode
+      const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (categoryRevealMode && !activeQuestion && (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight')) {
+          e.preventDefault();
+          revealNextCategory();
+        } else if (categoryRevealMode && e.key === 'Escape') {
+          e.preventDefault();
+          skipReveal();
+        }
+      };
+      
       return (
-        <div className="h-screen overflow-hidden flex flex-col relative" style={{ background: currentTheme.background }} data-testid="page-blitzgrid-play">
+        <div 
+          className="h-screen overflow-hidden flex flex-col relative" 
+          style={{ background: currentTheme.background }} 
+          data-testid="page-blitzgrid-play"
+          tabIndex={0}
+          onKeyDown={handleKeyDown}
+          onClick={() => categoryRevealMode && !activeQuestion && revealNextCategory()}
+        >
           
           {/* Animated theme elements */}
           <ThemeElements themeId={gridThemeId} />
@@ -2087,24 +2128,46 @@ export default function Blitzgrid() {
             >
               {/* Category Headers */}
               <div className="grid gap-2 md:gap-3" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)` }}>
-                {gridCategories.map((category, idx) => (
-                  <motion.div 
-                    key={category.id}
-                    initial={{ y: -30, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: idx * 0.08, type: "spring", stiffness: 120 }}
-                    className="bg-white/95 py-3 md:py-4 px-2 rounded-lg text-center shadow-lg"
-                  >
-                    <span className="text-gray-800 font-bold text-xs md:text-sm uppercase tracking-wider block">
-                      {category.name}
-                    </span>
-                    {category.description && (
-                      <span className="text-gray-500 text-[10px] md:text-xs block mt-0.5 font-normal">
-                        {category.description}
-                      </span>
-                    )}
-                  </motion.div>
-                ))}
+                {gridCategories.map((category, idx) => {
+                  const isRevealed = idx < revealedCategoryCount;
+                  return (
+                    <div key={category.id} className="relative">
+                      <AnimatePresence mode="wait">
+                        {isRevealed ? (
+                          <motion.div 
+                            key={`revealed-${category.id}`}
+                            initial={{ rotateY: 90, opacity: 0 }}
+                            animate={{ rotateY: 0, opacity: 1 }}
+                            exit={{ rotateY: -90, opacity: 0 }}
+                            transition={{ type: "spring", stiffness: 120, damping: 15 }}
+                            className="bg-white/95 py-3 md:py-4 px-2 rounded-lg text-center shadow-lg"
+                            style={{ transformStyle: 'preserve-3d' }}
+                          >
+                            <span className="text-gray-800 font-bold text-xs md:text-sm uppercase tracking-wider block">
+                              {category.name}
+                            </span>
+                            {category.description && (
+                              <span className="text-gray-500 text-[10px] md:text-xs block mt-0.5 font-normal">
+                                {category.description}
+                              </span>
+                            )}
+                          </motion.div>
+                        ) : (
+                          <motion.div 
+                            key={`hidden-${category.id}`}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ rotateY: 90, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="bg-white/20 backdrop-blur-sm py-3 md:py-4 px-2 rounded-lg text-center border border-white/30"
+                          >
+                            <span className="text-white/60 font-bold text-xs md:text-sm uppercase tracking-wider block">?</span>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
               </div>
               
               {/* Point Grid */}
@@ -2113,56 +2176,103 @@ export default function Blitzgrid() {
                   gridCategories.map((category, colIdx) => {
                     const question = category.questions?.find(q => q.points === points);
                     const cellKey = `${category.id}-${points}`;
-                    const isRevealed = revealedCells.has(cellKey);
-                    const delay = 0.3 + (rowIdx * gridCategories.length + colIdx) * 0.03;
+                    const isCellAnswered = revealedCells.has(cellKey);
+                    const isCategoryRevealed = colIdx < revealedCategoryCount;
+                    const delay = 0.1 + rowIdx * 0.05;
                     
                     return (
-                      <motion.button
-                        key={cellKey}
-                        initial={{ opacity: 0, rotateX: -15, y: 20 }}
-                        animate={{ opacity: 1, rotateX: 0, y: 0 }}
-                        transition={{ delay, type: "spring", stiffness: 150, damping: 15 }}
-                        className={`
-                          rounded-lg font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden
-                          ${isRevealed 
-                            ? 'bg-white/10 backdrop-blur-sm cursor-default border border-white/20' 
-                            : 'bg-gradient-to-br from-white via-white to-gray-50 text-gray-800 cursor-pointer hover:from-gray-50 hover:to-white'
-                          }
-                        `}
-                        style={!isRevealed ? { 
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)' 
-                        } : {}}
-                        onClick={() => question && !isRevealed && handleCellClick(category.id, points, question)}
-                        disabled={isRevealed || !question}
-                        whileHover={!isRevealed ? { scale: 1.04, y: -4, boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.1)' } : {}}
-                        whileTap={!isRevealed ? { scale: 0.96 } : {}}
-                        data-testid={`cell-${category.id}-${points}`}
-                      >
-                        {isRevealed ? (
-                          <motion.div
-                            initial={{ scale: 0, rotate: -180 }}
-                            animate={{ scale: 1, rotate: 0 }}
-                            transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                            className="flex items-center justify-center"
-                          >
-                            <Check className="w-8 h-8 md:w-12 md:h-12 text-white/40" strokeWidth={3} />
-                          </motion.div>
-                        ) : (
-                          <motion.span
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ delay: delay + 0.1, type: "spring", stiffness: 200 }}
-                          >
-                            {points}
-                          </motion.span>
-                        )}
-                      </motion.button>
+                      <div key={cellKey} className="relative">
+                        <AnimatePresence mode="wait">
+                          {isCategoryRevealed ? (
+                            <motion.button
+                              key={`cell-${cellKey}`}
+                              initial={{ rotateY: 90, opacity: 0 }}
+                              animate={{ rotateY: 0, opacity: 1 }}
+                              exit={{ rotateY: -90, opacity: 0 }}
+                              transition={{ delay, type: "spring", stiffness: 150, damping: 15 }}
+                              className={`
+                                w-full h-full rounded-lg font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden
+                                ${isCellAnswered 
+                                  ? 'bg-white/10 backdrop-blur-sm cursor-default border border-white/20' 
+                                  : 'bg-gradient-to-br from-white via-white to-gray-50 text-gray-800 cursor-pointer hover:from-gray-50 hover:to-white'
+                                }
+                              `}
+                              style={!isCellAnswered ? { 
+                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)',
+                                transformStyle: 'preserve-3d'
+                              } : { transformStyle: 'preserve-3d' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                question && !isCellAnswered && handleCellClick(category.id, points, question);
+                              }}
+                              disabled={isCellAnswered || !question || categoryRevealMode}
+                              whileHover={!isCellAnswered && !categoryRevealMode ? { scale: 1.04, y: -4, boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.1)' } : {}}
+                              whileTap={!isCellAnswered && !categoryRevealMode ? { scale: 0.96 } : {}}
+                              data-testid={`cell-${category.id}-${points}`}
+                            >
+                              {isCellAnswered ? (
+                                <motion.div
+                                  initial={{ scale: 0, rotate: -180 }}
+                                  animate={{ scale: 1, rotate: 0 }}
+                                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                                  className="flex items-center justify-center"
+                                >
+                                  <Check className="w-8 h-8 md:w-12 md:h-12 text-white/40" strokeWidth={3} />
+                                </motion.div>
+                              ) : (
+                                <span>{points}</span>
+                              )}
+                            </motion.button>
+                          ) : (
+                            <motion.div
+                              key={`hidden-${cellKey}`}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ rotateY: 90, opacity: 0 }}
+                              className="w-full h-full rounded-lg bg-white/10 backdrop-blur-sm border border-white/20"
+                            />
+                          )}
+                        </AnimatePresence>
+                      </div>
                     );
                   })
                 ))}
               </div>
             </motion.div>
           </div>
+          
+          {/* Category Reveal Hint */}
+          <AnimatePresence>
+            {categoryRevealMode && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30"
+              >
+                <motion.div 
+                  className="bg-black/60 backdrop-blur-md px-6 py-3 rounded-full text-white flex items-center gap-3 shadow-lg border border-white/20"
+                  animate={{ scale: [1, 1.02, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <span className="text-sm md:text-base font-medium">
+                    Click or press Space to reveal categories ({revealedCategoryCount}/{gridCategories.length})
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs border-white/30 text-white hover:bg-white/20"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      skipReveal();
+                    }}
+                  >
+                    Skip
+                  </Button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           
           {/* Bottom Scoreboard Bar */}
           <motion.div 
@@ -2725,6 +2835,8 @@ export default function Blitzgrid() {
                   onClick={() => {
                     setPlayMode(true);
                     setRevealedCells(new Set());
+                    setRevealedCategoryCount(0);
+                    setCategoryRevealMode(true);
                     setActiveQuestion(null);
                     setShowAnswer(false);
                   }}
@@ -2894,6 +3006,8 @@ export default function Blitzgrid() {
       setPlayMode(true);
       setGridPickerMode(false);
       setRevealedCells(new Set());
+      setRevealedCategoryCount(0);
+      setCategoryRevealMode(true);
       setActiveQuestion(null);
       setShowAnswer(false);
       
@@ -3104,6 +3218,8 @@ export default function Blitzgrid() {
                       setSelectedGridId(grid.id);
                       setPlayMode(true);
                       setRevealedCells(new Set());
+                      setRevealedCategoryCount(0);
+                      setCategoryRevealMode(true);
                       setActiveQuestion(null);
                       setShowAnswer(false);
                     } else {
