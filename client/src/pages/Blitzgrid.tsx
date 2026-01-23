@@ -1176,7 +1176,7 @@ export default function Blitzgrid() {
   if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <AppHeader showAdminButton adminHref="/admin/games" />
+        <AppHeader title="Blitzgrid" backHref="/" showAdminButton adminHref="/admin/games" />
         <div className="container mx-auto px-4 py-8">
           <Skeleton className="h-8 w-48 mb-4" />
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -2197,24 +2197,20 @@ export default function Blitzgrid() {
     
     return (
       <div className="min-h-screen flex flex-col bg-background" data-testid="page-blitzgrid-grid">
-        <AppHeader showAdminButton adminHref="/admin/games" />
+        <AppHeader 
+          title="Blitzgrid" 
+          subtitle={grid?.name}
+          onBack={() => setSelectedGridId(null)}
+          showAdminButton 
+          adminHref="/admin/games" 
+        />
         <div className="flex-1 flex flex-col container mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4 shrink-0">
-            <div className="flex items-center gap-4">
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => setSelectedGridId(null)}
-                data-testid="button-back-to-grids"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-              <div>
-                <h1 className="text-xl font-bold">{grid?.name || 'Grid'}</h1>
-                <p className="text-muted-foreground text-xs">
-                  {gridCategories.length}/5 categories · {grid?.questionCount || 0}/25 questions
-                </p>
-              </div>
+            <div>
+              <h1 className="text-xl font-bold">{grid?.name || 'Grid'}</h1>
+              <p className="text-muted-foreground text-xs">
+                {gridCategories.length}/5 categories · {grid?.questionCount || 0}/25 questions
+              </p>
             </div>
             <div className="flex items-center gap-2">
               {grid?.isActive ? (
@@ -2511,7 +2507,7 @@ export default function Blitzgrid() {
   // Main grid list view
   return (
     <div className="min-h-screen bg-background" data-testid="page-blitzgrid">
-      <AppHeader showAdminButton adminHref="/admin/games" />
+      <AppHeader title="Blitzgrid" backHref="/" showAdminButton adminHref="/admin/games" />
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
