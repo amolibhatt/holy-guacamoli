@@ -5,8 +5,8 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { db, pool } from "./db";
 import { users, loginSchema, insertUserSchema } from "@shared/models/auth";
-import { passwordResetTokens } from "@shared/schema";
-import { eq, and, isNull, gt } from "drizzle-orm";
+import { passwordResetTokens, boards, boardCategories, categories, questions } from "@shared/schema";
+import { eq, and, isNull, gt, inArray } from "drizzle-orm";
 import type { SafeUser } from "@shared/models/auth";
 import { z } from "zod";
 
@@ -97,6 +97,93 @@ function sanitizeUser(user: typeof users.$inferSelect): SafeUser {
   return safeUser;
 }
 
+// Board colors for new users
+const BOARD_COLORS = [
+  "#6366f1", "#8b5cf6", "#d946ef", "#ec4899", "#f43f5e",
+  "#f97316", "#eab308", "#84cc16", "#22c55e", "#14b8a6",
+  "#06b6d4", "#0ea5e9", "#3b82f6"
+];
+
+async function copyStarterPacksToUser(userId: string): Promise<void> {
+  try {
+    // Get all starter pack boards
+    const starterPacks = await db.select().from(boards).where(eq(boards.isStarterPack, true));
+    
+    if (starterPacks.length === 0) return;
+    
+    // Get existing user boards count for color assignment
+    const existingBoards = await db.select().from(boards).where(eq(boards.userId, userId));
+    let colorIndex = existingBoards.length;
+    
+    for (const starterBoard of starterPacks) {
+      // Create a copy of the board for the new user
+      const [newBoard] = await db.insert(boards).values({
+        userId,
+        name: starterBoard.name,
+        description: starterBoard.description,
+        pointValues: starterBoard.pointValues,
+        theme: starterBoard.theme,
+        visibility: 'private',
+        isGlobal: false,
+        isStarterPack: false,
+        colorCode: BOARD_COLORS[colorIndex % BOARD_COLORS.length],
+        sortOrder: colorIndex,
+      }).returning();
+      
+      colorIndex++;
+      
+      // Get board categories for this starter pack, ordered by position
+      const starterBoardCategories = await db.select()
+        .from(boardCategories)
+        .where(eq(boardCategories.boardId, starterBoard.id));
+      
+      // Sort by position to preserve order
+      starterBoardCategories.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+      
+      for (const bc of starterBoardCategories) {
+        // Get the category
+        const [originalCategory] = await db.select().from(categories).where(eq(categories.id, bc.categoryId));
+        if (!originalCategory) continue;
+        
+        // Create a copy of the category
+        const [newCategory] = await db.insert(categories).values({
+          name: originalCategory.name,
+          description: originalCategory.description,
+          rule: originalCategory.rule,
+          imageUrl: originalCategory.imageUrl,
+          sourceGroup: originalCategory.sourceGroup,
+          isActive: originalCategory.isActive,
+        }).returning();
+        
+        // Link category to new board, preserving the original position
+        await db.insert(boardCategories).values({
+          boardId: newBoard.id,
+          categoryId: newCategory.id,
+          position: bc.position ?? 0,
+        });
+        
+        // Get and copy all questions from the original category
+        const originalQuestions = await db.select().from(questions).where(eq(questions.categoryId, originalCategory.id));
+        
+        for (const q of originalQuestions) {
+          await db.insert(questions).values({
+            categoryId: newCategory.id,
+            question: q.question,
+            options: q.options,
+            correctAnswer: q.correctAnswer,
+            points: q.points,
+          });
+        }
+      }
+    }
+    
+    console.log(`[AUTH] Copied ${starterPacks.length} starter packs to user ${userId}`);
+  } catch (error) {
+    console.error("[AUTH] Failed to copy starter packs:", error);
+    // Non-fatal error - don't block registration
+  }
+}
+
 export function registerAuthRoutes(app: Express): void {
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
@@ -129,6 +216,11 @@ export function registerAuthRoutes(app: Express): void {
 
       req.session.userId = newUser.id;
       req.session.userRole = newUser.role;
+
+      // Copy starter pack grids to new user (non-blocking)
+      copyStarterPacksToUser(newUser.id).catch(err => {
+        console.error("[AUTH] Failed to copy starter packs:", err);
+      });
 
       res.status(201).json(sanitizeUser(newUser));
     } catch (error) {

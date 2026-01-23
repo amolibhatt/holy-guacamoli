@@ -7,7 +7,7 @@ import {
   Trash2, MoreHorizontal, Pencil,
   TrendingUp, Gamepad2, Clock, Activity, Heart,
   ListOrdered, RefreshCw, Grid3X3,
-  ChevronRight
+  ChevronRight, Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -147,6 +147,19 @@ export default function SuperAdmin() {
     },
     onError: () => {
       toast({ title: "Seed failed", description: "Please try again.", variant: "destructive" });
+    },
+  });
+
+  const toggleStarterPackMutation = useMutation({
+    mutationFn: async ({ boardId, isStarterPack }: { boardId: number; isStarterPack: boolean }) => {
+      await apiRequest('PATCH', `/api/super-admin/boards/${boardId}/starter-pack`, { isStarterPack });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
+      toast({ title: "Starter pack status updated" });
+    },
+    onError: () => {
+      toast({ title: "Couldn't update starter pack status", description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -298,12 +311,13 @@ export default function SuperAdmin() {
                 <div className="space-y-3">
                   {allBoards.map((board: any) => {
                     const isComplete = board.categoryCount >= 5 && board.questionCount >= 25;
+                    const isStarterPack = board.isStarterPack ?? false;
                     return (
                       <Card key={board.id} className="hover-elevate">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <span className="font-medium truncate">{board.name}</span>
                                 {isComplete ? (
                                   <Badge className="bg-green-500/20 text-green-600 text-xs">Complete</Badge>
@@ -312,12 +326,32 @@ export default function SuperAdmin() {
                                     {board.categoryCount}/5 categories, {board.questionCount}/25 questions
                                   </Badge>
                                 )}
+                                {isStarterPack && (
+                                  <Badge className="bg-amber-500/20 text-amber-600 text-xs">
+                                    <Star className="w-3 h-3 mr-1" />
+                                    Starter Pack
+                                  </Badge>
+                                )}
                               </div>
                               <div className="text-sm text-muted-foreground">
                                 Owner: {board.ownerEmail || 'Unknown'}
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
+                              <Button
+                                variant={isStarterPack ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => toggleStarterPackMutation.mutate({ 
+                                  boardId: board.id, 
+                                  isStarterPack: !isStarterPack 
+                                })}
+                                disabled={toggleStarterPackMutation.isPending || !isComplete}
+                                title={!isComplete ? "Grid must be complete to be a starter pack" : (isStarterPack ? "Remove from starter packs" : "Add to starter packs")}
+                                data-testid={`button-starter-pack-${board.id}`}
+                              >
+                                <Star className={`w-3 h-3 mr-1 ${isStarterPack ? 'fill-current' : ''}`} />
+                                {isStarterPack ? 'Starter' : 'Promote'}
+                              </Button>
                               <Link href={`/admin?game=${board.id}`}>
                                 <Button variant="outline" size="sm">
                                   <Pencil className="w-3 h-3 mr-1" />

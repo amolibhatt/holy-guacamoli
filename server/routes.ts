@@ -1485,6 +1485,42 @@ export async function registerRoutes(
     }
   });
 
+  // Toggle starter pack status for a grid
+  const starterPackSchema = z.object({
+    isStarterPack: z.boolean(),
+  });
+  
+  app.patch("/api/super-admin/boards/:id/starter-pack", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const parsed = starterPackSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid request body" });
+      }
+      
+      const boardId = Number(req.params.id);
+      const { isStarterPack } = parsed.data;
+      const updated = await storage.setStarterPackBoard(boardId, isStarterPack);
+      if (!updated) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      console.error("Error updating board starter pack status:", err);
+      res.status(500).json({ message: "Failed to update board" });
+    }
+  });
+
+  // Get all blitzgrid grids for super admin
+  app.get("/api/super-admin/grids", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const grids = await storage.getAllBlitzgridsWithOwners();
+      res.json(grids);
+    } catch (err) {
+      console.error("Error getting grids:", err);
+      res.status(500).json({ message: "Failed to get grids" });
+    }
+  });
+
   // Game Types (Super Admin only for management)
   app.get("/api/super-admin/game-types", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
