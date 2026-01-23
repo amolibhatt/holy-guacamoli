@@ -98,6 +98,7 @@ export default function Blitzgrid() {
   const [lastScoreChange, setLastScoreChange] = useState<{ playerId: string; playerName: string; points: number } | null>(null);
   const [showGameOver, setShowGameOver] = useState(false);
   const [gameOverPhase, setGameOverPhase] = useState(0);
+  const [gridPickerMode, setGridPickerMode] = useState(false);
   const gameOverTimers = useRef<NodeJS.Timeout[]>([]);
   const joinNotificationTimer = useRef<NodeJS.Timeout | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -637,13 +638,40 @@ export default function Blitzgrid() {
     endSession();
   }, [endSession]);
   
-  // Auto-connect when entering play mode
+  // Continue to next grid - keep room/players/scores, just reset grid state
+  const continueToNextGrid = useCallback(() => {
+    // Clear reveal timers
+    gameOverTimers.current.forEach(clearTimeout);
+    gameOverTimers.current = [];
+    setShowGameOver(false);
+    setGameOverPhase(0);
+    
+    // Reset grid-specific state but keep room/players/scores
+    setActiveQuestion(null);
+    setShowAnswer(false);
+    setRevealedCells(new Set());
+    setBuzzQueue([]);
+    setBuzzerLocked(true);
+    setIsJudging(false);
+    setSelectedGridId(null);
+    setPlayMode(false);
+    
+    // Enter grid picker mode - room stays open
+    setGridPickerMode(true);
+    
+    // Notify players that host is picking next grid
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'host:pickingNextGrid' }));
+    }
+  }, []);
+  
+  // Auto-connect when entering play mode or grid picker mode (keep room alive)
   useEffect(() => {
-    if (playMode) {
+    if (playMode || gridPickerMode) {
       shouldReconnect.current = true;
       connectWebSocket();
     } else {
-      // Don't clear session when leaving play mode - room stays active
+      // Only disconnect when completely leaving both modes
       disconnectWebSocket(false);
     }
     return () => {
@@ -656,7 +684,7 @@ export default function Blitzgrid() {
       gameOverTimers.current.forEach(clearTimeout);
       gameOverTimers.current = [];
     };
-  }, [playMode, connectWebSocket, disconnectWebSocket]);
+  }, [playMode, gridPickerMode, connectWebSocket, disconnectWebSocket]);
 
   if (isAuthLoading) {
     return (
@@ -939,22 +967,33 @@ export default function Blitzgrid() {
                     </motion.div>
                   )}
 
-                  {/* Exit Button */}
+                  {/* Action Buttons */}
                   <AnimatePresence>
                     {gameOverPhase >= winnerPhase && (
                       <motion.div
                         initial={{ y: 30, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 1 }}
-                        className="flex justify-center"
+                        className="flex flex-col sm:flex-row gap-3 justify-center items-center"
                       >
                         <Button
                           size="lg"
-                          onClick={closeGameOver}
-                          className="bg-white text-emerald-900 font-bold shadow-lg"
-                          data-testid="button-exit-game-over"
+                          onClick={continueToNextGrid}
+                          className="font-bold shadow-lg"
+                          data-testid="button-next-grid"
                         >
-                          Exit to Menu
+                          <Grid3X3 className="w-5 h-5 mr-2" />
+                          Next Grid
+                        </Button>
+                        <Button
+                          size="lg"
+                          variant="outline"
+                          onClick={closeGameOver}
+                          className="font-bold"
+                          data-testid="button-end-session"
+                        >
+                          <Power className="w-5 h-5 mr-2" />
+                          End Session
                         </Button>
                       </motion.div>
                     )}
@@ -1744,6 +1783,114 @@ export default function Blitzgrid() {
                   </Card>
                 );
               })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Grid picker mode - choosing next grid while room stays open
+  if (gridPickerMode) {
+    const startNextGrid = (gridId: number, gridName: string) => {
+      setSelectedGridId(gridId);
+      setPlayMode(true);
+      setGridPickerMode(false);
+      setRevealedCells(new Set());
+      setActiveQuestion(null);
+      setShowAnswer(false);
+      
+      // Notify players that new grid is starting
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: 'host:startNextGrid', boardId: gridId, gridName }));
+      }
+    };
+    
+    const endSessionFromPicker = () => {
+      setGridPickerMode(false);
+      endSession();
+    };
+    
+    return (
+      <div className="min-h-screen bg-background" data-testid="page-blitzgrid-picker">
+        <div className="container mx-auto px-4 py-6">
+          {/* Session Info Banner */}
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-6"
+          >
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-4">
+                {roomCode && (
+                  <div className="flex items-center gap-2">
+                    <Badge className="font-mono font-bold px-3 py-1" data-testid="badge-picker-room-code">{roomCode}</Badge>
+                    <span className="text-primary text-sm font-medium" data-testid="text-picker-room-active">Room Active</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-primary" />
+                  <span className="font-bold text-primary" data-testid="text-picker-player-count">{players.length}</span>
+                  <span className="text-muted-foreground text-sm">player{players.length !== 1 ? 's' : ''} waiting</span>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={endSessionFromPicker} data-testid="button-end-session-picker">
+                <Power className="w-4 h-4 mr-2" /> End Session
+              </Button>
+            </div>
+          </motion.div>
+
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                <Grid3X3 className="w-6 h-6 text-purple-500" />
+                Choose Next Grid
+              </h1>
+              <p className="text-muted-foreground text-sm">Select a grid to continue playing</p>
+            </div>
+          </div>
+
+          {loadingGrids ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-32" />)}
+            </div>
+          ) : grids.filter(g => g.isActive).length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <AlertCircle className="w-12 h-12 text-yellow-500/50 mx-auto mb-4" />
+                <h3 className="font-medium mb-2">No active grids available</h3>
+                <p className="text-muted-foreground text-sm mb-4">All grids need to be completed to be playable</p>
+                <Button variant="outline" onClick={endSessionFromPicker} data-testid="button-end-no-grids">
+                  End Session
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {grids.filter(g => g.isActive).map(grid => (
+                <Card
+                  key={grid.id}
+                  className="hover-elevate cursor-pointer transition-all"
+                  onClick={() => startNextGrid(grid.id, grid.name)}
+                  data-testid={`card-picker-grid-${grid.id}`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 min-w-0 mb-3">
+                      <Grid3X3 className="w-5 h-5 text-purple-500 shrink-0" />
+                      <h3 className="font-semibold truncate" data-testid={`text-picker-grid-name-${grid.id}`}>{grid.name}</h3>
+                    </div>
+                    
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm text-muted-foreground" data-testid={`text-picker-grid-stats-${grid.id}`}>
+                        {grid.categoryCount} categories · {grid.questionCount} questions
+                      </p>
+                      <Badge variant="secondary" className="text-xs shrink-0" data-testid={`badge-picker-grid-play-${grid.id}`}>
+                        <Play className="w-3 h-3 mr-1" /> Play
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
         </div>

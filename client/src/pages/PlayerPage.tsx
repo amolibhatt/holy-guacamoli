@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles, Users, ChevronUp, ChevronDown, Volume2, VolumeX, Lock } from "lucide-react";
+import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles, Users, ChevronUp, ChevronDown, Volume2, VolumeX, Lock, Grid3X3 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { soundManager } from "@/lib/sounds";
@@ -72,6 +72,8 @@ export default function PlayerPage() {
   const [leaderboard, setLeaderboard] = useState<Array<{ id: string; name: string; avatar?: string; score: number }>>([]);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [reconnectCountdown, setReconnectCountdown] = useState<number | null>(null);
+  const [hostPickingGrid, setHostPickingGrid] = useState(false);
+  const [currentGridName, setCurrentGridName] = useState<string | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(soundManager.isEnabled());
   const wsRef = useRef<WebSocket | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -180,10 +182,31 @@ export default function PlayerPage() {
           joinedRef.current = false;
           shouldReconnectRef.current = false;
           setStatus("disconnected");
+          setHostPickingGrid(false);
           toast({
             title: "Game ended",
             description: data.reason || "The game room has been closed.",
             variant: "destructive",
+          });
+          break;
+        case "host:pickingNextGrid":
+          setHostPickingGrid(true);
+          setBuzzerLocked(true);
+          setHasBuzzed(false);
+          setBuzzPosition(null);
+          setFeedback(null);
+          break;
+        case "host:startNextGrid":
+          setHostPickingGrid(false);
+          setCurrentGridName(data.gridName || null);
+          setBuzzerLocked(true);
+          setHasBuzzed(false);
+          setBuzzPosition(null);
+          setFeedback(null);
+          toast({
+            title: "New grid starting!",
+            description: data.gridName ? `Now playing: ${data.gridName}` : "Get ready!",
+            duration: 3000,
           });
           break;
         case "buzzer:unlocked":
@@ -588,7 +611,37 @@ export default function PlayerPage() {
 
       <main className="flex-1 flex items-center justify-center p-4">
         <AnimatePresence mode="wait">
-          {feedback ? (
+          {hostPickingGrid ? (
+            <motion.div
+              key="picking-grid"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="text-center"
+            >
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                className="w-32 h-32 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center mx-auto shadow-2xl mb-6"
+              >
+                <Grid3X3 className="w-16 h-16 text-white" />
+              </motion.div>
+              <h2 className="text-2xl font-bold text-foreground mb-2" data-testid="text-picking-grid-title">Getting Next Grid Ready</h2>
+              <p className="text-muted-foreground" data-testid="text-picking-grid-subtitle">Host is selecting the next round...</p>
+              {currentGridName && (
+                <p className="text-sm text-muted-foreground/60 mt-2" data-testid="text-last-grid-name">Last played: {currentGridName}</p>
+              )}
+              <motion.div
+                className="flex justify-center gap-2 mt-4"
+                animate={{ opacity: [0.3, 1, 0.3] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <div className="w-2 h-2 rounded-full bg-purple-500" />
+                <div className="w-2 h-2 rounded-full bg-purple-500" />
+                <div className="w-2 h-2 rounded-full bg-purple-500" />
+              </motion.div>
+            </motion.div>
+          ) : feedback ? (
             <motion.div
               key="feedback"
               initial={{ scale: 0 }}
@@ -735,9 +788,9 @@ export default function PlayerPage() {
 
       <footer className="p-4 text-center border-t border-border/30 bg-card/40 backdrop-blur" role="status" aria-live="polite" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
         <div className="flex items-center justify-center gap-3">
-          <div className={`w-3 h-3 rounded-full ${buzzerLocked ? "bg-muted-foreground/50" : "bg-green-500 animate-pulse"}`} />
-          <span className={`text-sm font-medium ${buzzerLocked ? "text-muted-foreground" : "text-primary font-bold"}`}>
-            {buzzerLocked ? "Waiting for next question..." : "TAP THE BUZZER!"}
+          <div className={`w-3 h-3 rounded-full ${hostPickingGrid ? "bg-purple-500 animate-pulse" : buzzerLocked ? "bg-muted-foreground/50" : "bg-green-500 animate-pulse"}`} />
+          <span className={`text-sm font-medium ${hostPickingGrid ? "text-purple-500 font-bold" : buzzerLocked ? "text-muted-foreground" : "text-primary font-bold"}`}>
+            {hostPickingGrid ? "Host choosing next grid..." : buzzerLocked ? "Waiting for next question..." : "TAP THE BUZZER!"}
           </span>
         </div>
       </footer>
