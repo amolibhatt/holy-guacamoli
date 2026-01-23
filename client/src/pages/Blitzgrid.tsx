@@ -21,7 +21,7 @@ import {
   Circle, Waves, Sun, Star, TreePine, Flower2, Leaf, Bird,
   PartyPopper, Cake, Umbrella, Briefcase, Dog, Cat, Rocket, Music, Palette, Heart, Timer,
   Target, Flag, Award, Dribbble, Shirt, Footprints, Shell, Fish, Gift, Candy, Coffee, Laptop, Headphones, Mic2, Guitar,
-  Volume2, VolumeX, MoreVertical, Settings, Copy, Link2, Share2
+  Volume2, VolumeX, MoreVertical, Settings, Copy, Link2, Share2, Download, Image, Loader2 as LoaderIcon, Clock
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import html2canvas from "html2canvas";
@@ -1203,6 +1203,10 @@ export default function Blitzgrid() {
   const [showGameOver, setShowGameOver] = useState(false);
   const [gameOverPhase, setGameOverPhase] = useState(0);
   const [gridPickerMode, setGridPickerMode] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
+  const shareCardRef = useRef<HTMLDivElement | null>(null);
   const gameOverTimers = useRef<NodeJS.Timeout[]>([]);
   const joinNotificationTimer = useRef<NodeJS.Timeout | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -2163,47 +2167,9 @@ export default function Blitzgrid() {
                           variant="secondary"
                           className="font-bold gap-2"
                           data-testid="button-share-results"
-                          onClick={async () => {
-                            const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
-                            const topPlayers = sortedPlayers.slice(0, 3);
-                            const scoreText = topPlayers.map((p, i) => 
-                              `${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} ${p.name}: ${p.score} pts`
-                            ).join('\n');
-                            const shareText = `🎮 Blitzgrid Results!\n\n${scoreText}\n\nPlay at Holy GuacAmoli!`;
-                            
-                            try {
-                              if (scoresPanelRef.current) {
-                                const canvas = await html2canvas(scoresPanelRef.current, {
-                                  backgroundColor: null,
-                                  scale: 2,
-                                });
-                                
-                                canvas.toBlob(async (blob) => {
-                                  if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], 'blitzgrid-results.png', { type: 'image/png' })] })) {
-                                    const file = new File([blob], 'blitzgrid-results.png', { type: 'image/png' });
-                                    await navigator.share({
-                                      title: 'Blitzgrid Results',
-                                      text: shareText,
-                                      files: [file],
-                                    });
-                                  } else if (navigator.share) {
-                                    await navigator.share({
-                                      title: 'Blitzgrid Results',
-                                      text: shareText,
-                                    });
-                                  } else {
-                                    const link = document.createElement('a');
-                                    link.download = 'blitzgrid-results.png';
-                                    link.href = canvas.toDataURL();
-                                    link.click();
-                                    toast({ title: "Image saved!", description: "Share it on your favorite platform" });
-                                  }
-                                }, 'image/png');
-                              }
-                            } catch (err) {
-                              const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
-                              window.open(twitterUrl, '_blank');
-                            }
+                          onClick={() => {
+                            setShowShareModal(true);
+                            setShareImageUrl(null);
                           }}
                         >
                           <Share2 className="w-5 h-5" />
@@ -2669,6 +2635,212 @@ export default function Blitzgrid() {
                   </div>
                 </div>
               )}
+            </DialogContent>
+          </Dialog>
+          
+          {/* Share Results Modal */}
+          <Dialog open={showShareModal} onOpenChange={(open) => {
+            setShowShareModal(open);
+            if (!open && shareImageUrl) {
+              URL.revokeObjectURL(shareImageUrl);
+              setShareImageUrl(null);
+            }
+          }}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-center text-xl">Share Results</DialogTitle>
+                <DialogDescription className="text-center">
+                  Share your game results on social media
+                </DialogDescription>
+              </DialogHeader>
+              
+              {/* Shareable Card Preview */}
+              <div className="flex justify-center py-2">
+                <div 
+                  ref={shareCardRef}
+                  className="w-[320px] rounded-xl overflow-hidden shadow-xl"
+                  style={{ 
+                    background: currentTheme.background,
+                    aspectRatio: '9/16'
+                  }}
+                >
+                  {/* Overlay for better text visibility */}
+                  <div 
+                    className="w-full h-full flex flex-col items-center justify-between p-5"
+                    style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.15) 30%, rgba(0,0,0,0.15) 70%, rgba(0,0,0,0.5) 100%)' }}
+                  >
+                    {/* Header with branding */}
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <Grid3X3 className="w-5 h-5 text-white" />
+                        <span className="text-white font-bold text-base">Blitzgrid</span>
+                      </div>
+                      <p className="text-white/80 text-sm font-medium">{grid?.name || 'Game Results'}</p>
+                    </div>
+                    
+                    {/* Scores */}
+                    <div className="flex-1 flex flex-col items-center justify-center gap-3 w-full py-4">
+                      <h3 className="text-white font-bold text-xl mb-3">Final Scores</h3>
+                      {[...players].sort((a, b) => b.score - a.score).slice(0, 5).map((player, idx) => {
+                        return (
+                          <div 
+                            key={player.id}
+                            className={`flex items-center gap-3 px-4 py-2 rounded-lg w-full max-w-[260px] ${
+                              idx === 0 ? 'bg-amber-400/30 border border-amber-400/50' :
+                              idx === 1 ? 'bg-gray-300/30 border border-gray-300/50' :
+                              idx === 2 ? 'bg-amber-600/30 border border-amber-600/50' :
+                              'bg-white/10'
+                            }`}
+                          >
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                              idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-gray-300' : idx === 2 ? 'bg-amber-700' : 'bg-white/20'
+                            }`}>
+                              {idx < 3 ? (
+                                <Trophy className={`w-4 h-4 ${idx === 0 ? 'text-amber-800' : idx === 1 ? 'text-gray-600' : 'text-amber-200'}`} />
+                              ) : (
+                                <span className="text-white text-sm font-bold">{idx + 1}</span>
+                              )}
+                            </div>
+                            <span className="text-white font-medium text-base flex-1 truncate">{player.name}</span>
+                            <span className="text-white font-bold text-base">{player.score} pts</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Footer with timestamp and branding */}
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-1 text-white/60 text-xs mb-2">
+                        <Clock className="w-3 h-3" />
+                        <span>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      </div>
+                      <p className="text-white font-bold text-sm">Holy GuacAmoli!</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-2 pt-2">
+                {/* Generate Image Button (if not generated yet) */}
+                {!shareImageUrl && (
+                  <Button
+                    className="w-full gap-2"
+                    disabled={isGeneratingImage}
+                    onClick={async () => {
+                      if (!shareCardRef.current) return;
+                      setIsGeneratingImage(true);
+                      try {
+                        const canvas = await html2canvas(shareCardRef.current, {
+                          backgroundColor: null,
+                          scale: 2,
+                        });
+                        const dataUrl = canvas.toDataURL('image/png');
+                        setShareImageUrl(dataUrl);
+                        setIsGeneratingImage(false);
+                      } catch (err) {
+                        setIsGeneratingImage(false);
+                        toast({ title: "Error", description: "Couldn't generate image", variant: "destructive" });
+                      }
+                    }}
+                    data-testid="button-generate-image"
+                  >
+                    {isGeneratingImage ? <LoaderIcon className="w-4 h-4 animate-spin" /> : <Image className="w-4 h-4" />}
+                    {isGeneratingImage ? 'Generating...' : 'Generate Image'}
+                  </Button>
+                )}
+                
+                {/* Share/Copy/Download Buttons (after image is generated) */}
+                {shareImageUrl && (
+                  <>
+                    <Button
+                      className="w-full gap-2"
+                      onClick={async () => {
+                        const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+                        const topPlayers = sortedPlayers.slice(0, 3);
+                        const scoreText = topPlayers.map((p, i) => 
+                          `#${i + 1} ${p.name}: ${p.score} pts`
+                        ).join(' | ');
+                        const shareText = `Blitzgrid Results - ${scoreText} - Play at Holy GuacAmoli!`;
+                        
+                        try {
+                          const response = await fetch(shareImageUrl);
+                          const blob = await response.blob();
+                          
+                          if (navigator.canShare && navigator.canShare({ files: [new File([blob], 'blitzgrid-results.png', { type: 'image/png' })] })) {
+                            const file = new File([blob], 'blitzgrid-results.png', { type: 'image/png' });
+                            await navigator.share({
+                              title: 'Blitzgrid Results',
+                              text: shareText,
+                              files: [file],
+                            });
+                          } else if (navigator.share) {
+                            await navigator.share({ title: 'Blitzgrid Results', text: shareText });
+                          } else {
+                            const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+                            window.open(twitterUrl, '_blank');
+                          }
+                        } catch (err) {
+                          const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+                          window.open(twitterUrl, '_blank');
+                        }
+                      }}
+                      data-testid="button-share-image"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Share
+                    </Button>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="flex-1 gap-2"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(shareImageUrl);
+                            const blob = await response.blob();
+                            
+                            if (navigator.clipboard && window.ClipboardItem) {
+                              await navigator.clipboard.write([
+                                new ClipboardItem({ 'image/png': blob })
+                              ]);
+                              toast({ title: "Copied!", description: "Image copied to clipboard" });
+                            } else {
+                              const link = document.createElement('a');
+                              link.download = `blitzgrid-results-${Date.now()}.png`;
+                              link.href = shareImageUrl;
+                              link.click();
+                              toast({ title: "Downloaded!", description: "Copy not supported - image saved instead" });
+                            }
+                          } catch {
+                            toast({ title: "Error", description: "Couldn't copy image", variant: "destructive" });
+                          }
+                        }}
+                        data-testid="button-copy-image"
+                      >
+                        <Copy className="w-4 h-4" />
+                        Copy
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        className="flex-1 gap-2"
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.download = `blitzgrid-${grid?.name?.replace(/\s+/g, '-').toLowerCase() || 'results'}-${Date.now()}.png`;
+                          link.href = shareImageUrl;
+                          link.click();
+                          toast({ title: "Downloaded!", description: "Image saved to your device" });
+                        }}
+                        data-testid="button-download-image"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
             </DialogContent>
           </Dialog>
           
