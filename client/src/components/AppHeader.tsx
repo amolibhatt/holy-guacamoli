@@ -24,7 +24,7 @@ export function AppHeader({
   subtitle,
   backHref,
   showAdminButton = false,
-  adminHref = "/admin",
+  adminHref = "/admin/games",
   showHelpButton = false,
   showLogout = false,
   onHelpClick,

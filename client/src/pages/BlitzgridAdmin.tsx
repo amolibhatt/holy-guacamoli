@@ -271,7 +271,7 @@ export default function BlitzgridAdmin() {
   if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <AppHeader title="Blitzgrid Admin" backHref="/host/blitzgrid" />
+        <AppHeader title="Blitzgrid Admin" backHref="/" />
         <div className="container mx-auto px-4 py-8">
           <Skeleton className="h-8 w-48 mb-4" />
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -438,16 +438,23 @@ export default function BlitzgridAdmin() {
     
     return (
       <div className="min-h-screen bg-background" data-testid="page-blitzgrid-admin-grid">
-        <AppHeader title="Blitzgrid Admin" backHref="/admin/games" />
+        <AppHeader 
+          title="Blitzgrid Admin" 
+          subtitle={grid?.name}
+          backHref="/"
+          rightContent={
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setSelectedGridId(null)}
+              className="text-muted-foreground"
+              data-testid="button-back-to-grids"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" /> All Grids
+            </Button>
+          }
+        />
         <div className="container mx-auto px-4 py-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => setSelectedGridId(null)}
-            className="mb-4"
-            data-testid="button-back-to-grids"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Grids
-          </Button>
           
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -606,7 +613,7 @@ export default function BlitzgridAdmin() {
   // Grid list view
   return (
     <div className="min-h-screen bg-background" data-testid="page-blitzgrid-admin">
-      <AppHeader title="Blitzgrid Admin" backHref="/host/blitzgrid" />
+      <AppHeader title="Blitzgrid Admin" backHref="/" />
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
           <div>
