@@ -21,7 +21,7 @@ import {
   Circle, Waves, Sun, Star, TreePine, Flower2, Leaf, Bird,
   PartyPopper, Cake, Umbrella, Briefcase, Dog, Cat, Rocket, Music, Palette, Heart, Timer,
   Target, Flag, Award, Dribbble, Shirt, Footprints, Shell, Fish, Gift, Candy, Coffee, Laptop, Headphones, Mic2, Guitar,
-  Volume2, VolumeX, MoreVertical, Settings, Copy, Link2
+  Volume2, VolumeX, MoreVertical, Settings, Copy, Link2, Share2
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -2153,27 +2153,58 @@ export default function Blitzgrid() {
                         initial={{ y: 30, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 1 }}
-                        className="flex flex-col sm:flex-row gap-3 justify-center items-center"
+                        className="flex flex-col gap-4 items-center"
                       >
+                        {/* Share Results */}
                         <Button
                           size="lg"
-                          onClick={continueToNextGrid}
-                          className="font-bold shadow-lg"
-                          data-testid="button-next-grid"
+                          variant="secondary"
+                          className="font-bold gap-2"
+                          data-testid="button-share-results"
+                          onClick={() => {
+                            const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+                            const topPlayers = sortedPlayers.slice(0, 3);
+                            const scoreText = topPlayers.map((p, i) => 
+                              `${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} ${p.name}: ${p.score} pts`
+                            ).join('\n');
+                            const shareText = `🎮 Blitzgrid Results!\n\n${scoreText}\n\nPlay at Holy GuacAmoli!`;
+                            
+                            if (navigator.share) {
+                              navigator.share({
+                                title: 'Blitzgrid Results',
+                                text: shareText,
+                              }).catch(() => {});
+                            } else {
+                              const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+                              window.open(twitterUrl, '_blank');
+                            }
+                          }}
                         >
-                          <Grid3X3 className="w-5 h-5 mr-2" />
-                          Next Grid
+                          <Share2 className="w-5 h-5" />
+                          Share Results
                         </Button>
-                        <Button
-                          size="lg"
-                          variant="outline"
-                          onClick={closeGameOver}
-                          className="font-bold"
-                          data-testid="button-end-session"
-                        >
-                          <Power className="w-5 h-5 mr-2" />
-                          End Session
-                        </Button>
+                        
+                        <div className="flex flex-row gap-3">
+                          <Button
+                            size="lg"
+                            onClick={continueToNextGrid}
+                            className="font-bold shadow-lg"
+                            data-testid="button-next-grid"
+                          >
+                            <Grid3X3 className="w-5 h-5 mr-2" />
+                            Next Grid
+                          </Button>
+                          <Button
+                            size="lg"
+                            variant="outline"
+                            onClick={closeGameOver}
+                            className="font-bold"
+                            data-testid="button-end-session"
+                          >
+                            <Power className="w-5 h-5 mr-2" />
+                            End Session
+                          </Button>
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
