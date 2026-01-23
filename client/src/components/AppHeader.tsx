@@ -54,9 +54,9 @@ export function AppHeader({
               </Button>
             </Link>
           )}
-          <Link href="/" className="flex items-center gap-3 group">
+          <Link href="/" className="flex items-center gap-2 group">
             <motion.div 
-              className="w-10 h-10 flex items-center justify-center relative"
+              className="w-9 h-9 flex items-center justify-center relative"
               animate={{ 
                 rotate: [0, -5, 5, -5, 0], 
                 y: [0, -3, 0],
@@ -78,7 +78,7 @@ export function AppHeader({
               />
               {/* Sparkles around icon */}
               <motion.span
-                className="absolute -top-1 -right-1 text-yellow-400 z-20"
+                className="absolute -top-0.5 right-0 text-yellow-400 z-20"
                 animate={{ 
                   scale: [0.8, 1.2, 0.8],
                   rotate: [0, 180, 360],
@@ -86,27 +86,16 @@ export function AppHeader({
                 }}
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
               >
-                <Sparkles className="w-3 h-3" />
+                <Sparkles className="w-2.5 h-2.5" />
               </motion.span>
               <motion.span
-                className="absolute -bottom-1 -left-1 text-lime-400 z-20"
+                className="absolute bottom-0 left-0 text-lime-400 z-20"
                 animate={{ 
                   scale: [0.6, 1, 0.6],
                   rotate: [360, 180, 0],
                   opacity: [0.3, 0.9, 0.3]
                 }}
                 transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
-              >
-                <Sparkles className="w-2.5 h-2.5" />
-              </motion.span>
-              <motion.span
-                className="absolute top-1/2 -right-2 text-emerald-300 z-20"
-                animate={{ 
-                  scale: [0.7, 1.1, 0.7],
-                  opacity: [0.5, 1, 0.5],
-                  x: [0, 2, 0]
-                }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
               >
                 <Sparkles className="w-2 h-2" />
               </motion.span>
@@ -136,24 +125,13 @@ export function AppHeader({
                 >
                   GuacAmoli!
                   <motion.span 
-                    className="absolute -top-1 -right-3 text-yellow-400"
+                    className="absolute -top-0.5 -right-1 text-yellow-400"
                     animate={{ 
                       scale: [1, 1.3, 1],
                       rotate: [0, 15, -15, 0],
                       opacity: [0.7, 1, 0.7]
                     }}
                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  >
-                    <Sparkles className="w-4 h-4" />
-                  </motion.span>
-                  <motion.span 
-                    className="absolute -bottom-0.5 -left-2 text-lime-400"
-                    animate={{ 
-                      scale: [1, 1.2, 1],
-                      rotate: [0, -10, 10, 0],
-                      opacity: [0.5, 1, 0.5]
-                    }}
-                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
                   >
                     <Sparkles className="w-3 h-3" />
                   </motion.span>
