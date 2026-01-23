@@ -450,6 +450,7 @@ export default function Blitzgrid() {
   // New category form state
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryDescription, setNewCategoryDescription] = useState("");
 
   // Fetch all grids for current user
   const { data: grids = [], isLoading: loadingGrids } = useQuery<GridWithStats[]>({
@@ -546,13 +547,14 @@ export default function Blitzgrid() {
 
   // Create new category mutation
   const createCategoryMutation = useMutation({
-    mutationFn: async ({ gridId, name }: { gridId: number; name: string }) => {
-      return apiRequest('POST', `/api/blitzgrid/grids/${gridId}/categories/create`, { name });
+    mutationFn: async ({ gridId, name, description }: { gridId: number; name: string; description?: string }) => {
+      return apiRequest('POST', `/api/blitzgrid/grids/${gridId}/categories/create`, { name, description });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
       setNewCategoryName("");
+      setNewCategoryDescription("");
       setShowNewCategoryForm(false);
       toast({ title: "Category created" });
     },
@@ -1409,9 +1411,14 @@ export default function Blitzgrid() {
                     transition={{ delay: idx * 0.08, type: "spring", stiffness: 120 }}
                     className="bg-white/95 py-3 md:py-4 px-2 rounded-lg text-center shadow-lg"
                   >
-                    <span className="text-gray-800 font-bold text-xs md:text-sm uppercase tracking-wider">
+                    <span className="text-gray-800 font-bold text-xs md:text-sm uppercase tracking-wider block">
                       {category.name}
                     </span>
+                    {category.description && (
+                      <span className="text-gray-500 text-[10px] md:text-xs block mt-0.5 font-normal">
+                        {category.description}
+                      </span>
+                    )}
                   </motion.div>
                 ))}
               </div>
@@ -1984,33 +1991,49 @@ export default function Blitzgrid() {
             <Card className="mb-4 shrink-0">
               <CardContent className="py-3">
                 {showNewCategoryForm ? (
-                  <div className="flex items-center gap-2">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        placeholder="Category name..."
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') {
+                            setShowNewCategoryForm(false);
+                            setNewCategoryName("");
+                            setNewCategoryDescription("");
+                          }
+                        }}
+                        data-testid="input-category-name"
+                      />
+                      <Button
+                        onClick={() => createCategoryMutation.mutate({ gridId: selectedGridId, name: newCategoryName.trim(), description: newCategoryDescription.trim() })}
+                        disabled={!newCategoryName.trim() || createCategoryMutation.isPending}
+                        data-testid="button-create-category"
+                      >
+                        {createCategoryMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
+                      </Button>
+                      <Button variant="ghost" onClick={() => { setShowNewCategoryForm(false); setNewCategoryName(""); setNewCategoryDescription(""); }}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
                     <Input
-                      placeholder="Category name..."
-                      value={newCategoryName}
-                      onChange={(e) => setNewCategoryName(e.target.value)}
-                      autoFocus
+                      placeholder="Description (optional)..."
+                      value={newCategoryDescription}
+                      onChange={(e) => setNewCategoryDescription(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && newCategoryName.trim()) {
-                          createCategoryMutation.mutate({ gridId: selectedGridId, name: newCategoryName.trim() });
+                          createCategoryMutation.mutate({ gridId: selectedGridId, name: newCategoryName.trim(), description: newCategoryDescription.trim() });
                         }
                         if (e.key === 'Escape') {
                           setShowNewCategoryForm(false);
                           setNewCategoryName("");
+                          setNewCategoryDescription("");
                         }
                       }}
-                      data-testid="input-category-name"
+                      data-testid="input-category-description"
                     />
-                    <Button
-                      onClick={() => createCategoryMutation.mutate({ gridId: selectedGridId, name: newCategoryName.trim() })}
-                      disabled={!newCategoryName.trim() || createCategoryMutation.isPending}
-                      data-testid="button-create-category"
-                    >
-                      {createCategoryMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
-                    </Button>
-                    <Button variant="ghost" onClick={() => { setShowNewCategoryForm(false); setNewCategoryName(""); }}>
-                      <X className="w-4 h-4" />
-                    </Button>
                   </div>
                 ) : (
                   <Button
