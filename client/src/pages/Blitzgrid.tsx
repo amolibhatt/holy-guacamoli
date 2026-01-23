@@ -1516,23 +1516,13 @@ export default function Blitzgrid() {
               </div>
             </div>
             
-            {/* Center: Room Code + Player Count */}
+            {/* Center: Room Code */}
             <div className="flex items-center gap-3">
               {roomCode && (
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.2 }}>
                   <Badge className="bg-emerald-400 text-black font-mono font-bold px-3 py-1">{roomCode}</Badge>
                 </motion.div>
               )}
-              <motion.div 
-                key={players.length}
-                initial={{ scale: 1.2 }}
-                animate={{ scale: 1 }}
-                className="flex items-center gap-1.5 bg-emerald-500/20 border border-emerald-500/40 rounded-full px-3 py-1"
-              >
-                <Users className="w-4 h-4 text-emerald-400" />
-                <span className="text-emerald-300 font-bold">{players.length}</span>
-                <span className="text-emerald-400/70 text-sm hidden sm:inline">player{players.length !== 1 ? 's' : ''}</span>
-              </motion.div>
             </div>
             
             {/* Right: Action Buttons */}
