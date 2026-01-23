@@ -441,18 +441,7 @@ export default function BlitzgridAdmin() {
         <AppHeader 
           title="Blitzgrid Admin" 
           subtitle={grid?.name}
-          backHref="/"
-          rightContent={
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setSelectedGridId(null)}
-              className="text-muted-foreground"
-              data-testid="button-back-to-grids"
-            >
-              <ArrowLeft className="w-4 h-4 mr-1" /> All Grids
-            </Button>
-          }
+          onBack={() => setSelectedGridId(null)}
         />
         <div className="container mx-auto px-4 py-6">
           
