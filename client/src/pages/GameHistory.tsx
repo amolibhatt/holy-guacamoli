@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Users, Calendar, Trophy, LayoutGrid, Gamepad2 } from "lucide-react";
+import { Users, Calendar, Trophy, LayoutGrid, Gamepad2 } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
@@ -157,7 +157,7 @@ export default function GameHistory() {
   if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <AppHeader />
+        <AppHeader title="Game History" backHref="/" />
         <div className="container py-8">
           <LoadingSkeleton />
         </div>
@@ -182,22 +182,15 @@ export default function GameHistory() {
 
   return (
     <div className="min-h-screen bg-background" data-testid="page-game-history">
-      <AppHeader />
+      <AppHeader title="Game History" backHref="/" />
       
       <div className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Link href="/admin">
-              <Button variant="ghost" size="icon" data-testid="button-back-admin">
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold">Game History</h1>
-              <p className="text-muted-foreground text-sm">
-                See all your past games, who played, and final scores
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold">Game History</h1>
+            <p className="text-muted-foreground text-sm">
+              See all your past games, who played, and final scores
+            </p>
           </div>
         </div>
 
