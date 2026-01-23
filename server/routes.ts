@@ -3063,9 +3063,9 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId!;
       
-      // Get boards for this user (filter by theme = blitzgrid)
+      // Get boards for this user (filter by theme starting with blitzgrid)
       const allBoards = await storage.getBoards(userId);
-      const boards = allBoards.filter(b => b.theme === "blitzgrid");
+      const boards = allBoards.filter(b => b.theme === "blitzgrid" || b.theme.startsWith("blitzgrid:"));
       
       // Enhance with category counts and active status
       const gridsWithStats = await Promise.all(boards.map(async (board: typeof allBoards[number]) => {
@@ -3103,17 +3103,21 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId!;
       
-      const { name } = req.body;
+      const { name, theme } = req.body;
       if (!name || typeof name !== "string") {
         return res.status(400).json({ message: "Grid name is required" });
       }
+      
+      // Validate theme - prefix with blitzgrid: for storage
+      const validThemes = ['football', 'ocean', 'sunset', 'galaxy', 'forest', 'cherry'];
+      const selectedTheme = validThemes.includes(theme) ? theme : 'football';
       
       const board = await storage.createBoard({
         userId,
         name: name.trim(),
         description: "Blitzgrid",
         pointValues: [10, 20, 30, 40, 50],
-        theme: "blitzgrid",
+        theme: `blitzgrid:${selectedTheme}`,
         visibility: "private",
         isGlobal: false,
         sortOrder: 0,
