@@ -1578,6 +1578,28 @@ export default function Blitzgrid() {
                 <div className="absolute left-0 top-1/2 w-16 md:w-24 h-40 md:h-56 border-4 border-white/80 border-l-0 -translate-y-1/2" />
                 {/* Right penalty box */}
                 <div className="absolute right-0 top-1/2 w-16 md:w-24 h-40 md:h-56 border-4 border-white/80 border-r-0 -translate-y-1/2" />
+                {/* Left goal post */}
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 opacity-70">
+                  <svg width="40" height="120" viewBox="0 0 40 120" className="md:w-[60px] md:h-[180px]">
+                    <rect x="0" y="0" width="6" height="120" fill="white" rx="2"/>
+                    <rect x="34" y="0" width="6" height="120" fill="white" rx="2"/>
+                    <rect x="0" y="0" width="40" height="6" fill="white" rx="2"/>
+                    <rect x="5" y="5" width="30" height="3" fill="white" opacity="0.5"/>
+                    <line x1="5" y1="10" x2="5" y2="115" stroke="white" strokeWidth="1" opacity="0.3"/>
+                    <line x1="35" y1="10" x2="35" y2="115" stroke="white" strokeWidth="1" opacity="0.3"/>
+                  </svg>
+                </div>
+                {/* Right goal post */}
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-70">
+                  <svg width="40" height="120" viewBox="0 0 40 120" className="md:w-[60px] md:h-[180px]">
+                    <rect x="0" y="0" width="6" height="120" fill="white" rx="2"/>
+                    <rect x="34" y="0" width="6" height="120" fill="white" rx="2"/>
+                    <rect x="0" y="0" width="40" height="6" fill="white" rx="2"/>
+                    <rect x="5" y="5" width="30" height="3" fill="white" opacity="0.5"/>
+                    <line x1="5" y1="10" x2="5" y2="115" stroke="white" strokeWidth="1" opacity="0.3"/>
+                    <line x1="35" y1="10" x2="35" y2="115" stroke="white" strokeWidth="1" opacity="0.3"/>
+                  </svg>
+                </div>
               </div>
             )}
             
