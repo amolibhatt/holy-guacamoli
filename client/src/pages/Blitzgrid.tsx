@@ -2350,39 +2350,38 @@ export default function Blitzgrid() {
               transition={{ duration: 0.5, ease: "easeOut" }}
               className="h-full flex flex-col gap-3 relative z-10"
             >
-              {/* Category Headers - Always visible, animate on reveal */}
+              {/* Category Headers - Only revealed categories visible */}
               <div className="grid gap-2 md:gap-3" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)` }}>
                 {gridCategories.map((category, idx) => {
                   const isRevealed = idx < revealedCategoryCount;
                   return (
                     <motion.div 
                       key={category.id} 
-                      initial={{ scale: 1, opacity: 0.7 }}
+                      initial={{ scale: 0.8, opacity: 0, rotateY: -90 }}
                       animate={{ 
-                        scale: isRevealed ? [1, 1.05, 1] : 1,
-                        opacity: isRevealed ? 1 : 0.7,
+                        scale: isRevealed ? 1 : 0.8,
+                        opacity: isRevealed ? 1 : 0,
+                        rotateY: isRevealed ? 0 : -90,
                         boxShadow: isRevealed ? '0 4px 20px rgba(255,255,255,0.3)' : 'none'
                       }}
                       transition={{ 
-                        duration: 0.4, 
+                        duration: 0.5, 
                         ease: "easeOut",
-                        delay: isRevealed ? 0.05 : 0
+                        type: "spring",
+                        stiffness: 100
                       }}
-                      className={`py-3 md:py-4 px-2 rounded-lg text-center transition-colors ${
+                      style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
+                      className={`py-3 md:py-4 px-2 rounded-lg text-center ${
                         isRevealed 
                           ? 'bg-white/95 shadow-lg' 
-                          : 'bg-white/60 backdrop-blur-sm'
+                          : 'bg-transparent'
                       }`}
                     >
-                      <span className={`font-bold text-xs md:text-sm uppercase tracking-wider block ${
-                        isRevealed ? 'text-gray-800' : 'text-gray-600'
-                      }`}>
+                      <span className="font-bold text-xs md:text-sm uppercase tracking-wider block text-gray-800">
                         {category.name}
                       </span>
                       {category.description && (
-                        <span className={`text-[10px] md:text-xs block mt-0.5 font-normal ${
-                          isRevealed ? 'text-gray-500' : 'text-gray-400'
-                        }`}>
+                        <span className="text-[10px] md:text-xs block mt-0.5 font-normal text-gray-500">
                           {category.description}
                         </span>
                       )}
@@ -2391,7 +2390,7 @@ export default function Blitzgrid() {
                 })}
               </div>
               
-              {/* Point Grid - Always visible, enhanced on reveal */}
+              {/* Point Grid - Only revealed categories visible */}
               <div className="flex-1 grid gap-2 md:gap-3" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)`, gridTemplateRows: 'repeat(5, 1fr)' }}>
                 {POINT_TIERS.map((points, rowIdx) => (
                   gridCategories.map((category, colIdx) => {
@@ -2404,19 +2403,26 @@ export default function Blitzgrid() {
                     return (
                       <motion.button
                         key={cellKey}
-                        initial={{ opacity: 0.5 }}
+                        initial={{ opacity: 0, scale: 0.8, rotateY: -90 }}
                         animate={{ 
-                          opacity: isCategoryRevealed ? 1 : 0.5,
-                          scale: isCategoryRevealed && !isCellAnswered ? 1 : 0.98
+                          opacity: isCategoryRevealed ? 1 : 0,
+                          scale: isCategoryRevealed ? 1 : 0.8,
+                          rotateY: isCategoryRevealed ? 0 : -90
                         }}
-                        transition={{ duration: 0.3, delay: isCategoryRevealed ? rowIdx * 0.03 : 0 }}
+                        transition={{ 
+                          duration: 0.4, 
+                          delay: isCategoryRevealed ? rowIdx * 0.05 : 0,
+                          type: "spring",
+                          stiffness: 120
+                        }}
+                        style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
                         className={`
                           w-full h-full rounded-lg font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden
                           ${isCellAnswered 
                             ? 'bg-white/10 backdrop-blur-sm cursor-default border border-white/20' 
                             : isCategoryRevealed
                               ? 'bg-gradient-to-br from-white via-white to-gray-50 text-gray-800 cursor-pointer shadow-lg'
-                              : 'bg-white/40 backdrop-blur-sm text-gray-500 cursor-default'
+                              : 'bg-transparent cursor-default'
                           }
                         `}
                         onClick={(e) => {
