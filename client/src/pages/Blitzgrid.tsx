@@ -123,20 +123,22 @@ const ThemeElements = ({ themeId }: { themeId: string }) => {
     
     switch (themeId) {
       case 'sports': {
-        // Soccer balls floating gently
+        // Soccer balls floating gently - use on-screen positions
         const ballSize = size * 1.3;
+        const onScreenY = 10 + (i * 7) % 70; // 10-80vh range
+        const onScreenX = 5 + (i * 8) % 85; // 5-90vw range
         return (
           <motion.div
             key={i}
             className="absolute pointer-events-none"
-            initial={{ x: `${startX}vw`, y: `${startY}vh` }}
+            initial={{ x: `${onScreenX}vw`, y: `${onScreenY}vh` }}
             animate={{ 
-              x: [`${startX}vw`, `${startX + 6}vw`, `${startX - 4}vw`, `${startX}vw`],
-              y: [`${startY}vh`, `${startY - 10}vh`, `${startY + 4}vh`, `${startY}vh`],
+              x: [`${onScreenX}vw`, `${onScreenX + 6}vw`, `${onScreenX - 4}vw`, `${onScreenX}vw`],
+              y: [`${onScreenY}vh`, `${onScreenY - 8}vh`, `${onScreenY + 5}vh`, `${onScreenY}vh`],
               rotate: [0, 120, 240, 360],
             }}
-            transition={{ duration: duration * 5, delay, repeat: Infinity, ease: "easeInOut" }}
-            style={{ opacity: 0.8 }}
+            transition={{ duration: duration * 4, delay: delay * 0.3, repeat: Infinity, ease: "easeInOut" }}
+            style={{ opacity: 0.75 }}
           >
             {/* Classic soccer ball with proper pentagon pattern */}
             <div 
