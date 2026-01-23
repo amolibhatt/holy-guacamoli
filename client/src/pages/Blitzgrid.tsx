@@ -139,24 +139,17 @@ const ThemeElements = ({ themeId }: { themeId: string }) => {
               transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", times: [0, 0.14, 0.28, 0.42, 0.56, 0.70, 0.85, 1] }}
               style={{ opacity: 0.9 }}
             >
-              {/* Fun colorful beach ball style */}
-              <svg width="55" height="55" viewBox="0 0 100 100" style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))' }}>
+              {/* Simple clean ball */}
+              <svg width="50" height="50" viewBox="0 0 100 100" style={{ filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.4))' }}>
                 <defs>
-                  <clipPath id="ballClip">
-                    <circle cx="50" cy="50" r="46"/>
-                  </clipPath>
+                  <radialGradient id="simpleBallGradient" cx="35%" cy="35%" r="60%">
+                    <stop offset="0%" stopColor="#ffffff"/>
+                    <stop offset="50%" stopColor="#f0f0f0"/>
+                    <stop offset="100%" stopColor="#d0d0d0"/>
+                  </radialGradient>
                 </defs>
-                <circle cx="50" cy="50" r="48" fill="white" stroke="#ddd" strokeWidth="2"/>
-                <g clipPath="url(#ballClip)">
-                  <path d="M50,4 L70,50 L50,96" fill="#ef4444"/>
-                  <path d="M50,4 L30,50 L50,96" fill="#3b82f6"/>
-                  <path d="M50,4 L50,50 L96,50 A46,46 0 0,0 50,4" fill="#fbbf24"/>
-                  <path d="M50,96 L50,50 L96,50 A46,46 0 0,1 50,96" fill="#22c55e"/>
-                  <path d="M50,4 L50,50 L4,50 A46,46 0 0,1 50,4" fill="#a855f7"/>
-                  <path d="M50,96 L50,50 L4,50 A46,46 0 0,0 50,96" fill="#f97316"/>
-                </g>
-                <circle cx="50" cy="50" r="8" fill="white"/>
-                <ellipse cx="35" cy="30" rx="10" ry="6" fill="white" opacity="0.5"/>
+                <circle cx="50" cy="50" r="45" fill="url(#simpleBallGradient)"/>
+                <ellipse cx="38" cy="35" rx="12" ry="8" fill="white" opacity="0.7"/>
               </svg>
             </motion.div>
           );
