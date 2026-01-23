@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Loader2,
-  AlertCircle, CheckCircle2, Image, Music, Video
+  AlertCircle, CheckCircle2, Image, Music, Video,
+  Download, Upload, FileJson
 } from "lucide-react";
 import { 
   AlertDialog, AlertDialogAction, AlertDialogCancel, 
@@ -59,6 +60,9 @@ export default function BlitzgridAdmin() {
   
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: grids = [], isLoading: loadingGrids } = useQuery<GridWithStats[]>({
     queryKey: ['/api/blitzgrid/grids'],
@@ -189,6 +193,74 @@ export default function BlitzgridAdmin() {
       toast({ title: "Couldn't delete question", variant: "destructive" });
     },
   });
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch('/api/blitzgrid/export', { credentials: 'include' });
+      if (!response.ok) throw new Error('Export failed');
+      const data = await response.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `blitzgrid-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Grids exported successfully" });
+    } catch {
+      toast({ title: "Export failed", variant: "destructive" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await fetch('/api/blitzgrid/template');
+      if (!response.ok) throw new Error('Template download failed');
+      const data = await response.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'blitzgrid-template.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({ title: "Template download failed", variant: "destructive" });
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      
+      const response = await apiRequest('POST', '/api/blitzgrid/import', data);
+      const result = await response.json();
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
+      
+      if (result.imported > 0) {
+        toast({ 
+          title: `Imported ${result.imported} grid${result.imported > 1 ? 's' : ''}`,
+          description: result.errors?.length > 0 ? `${result.errors.length} warning(s)` : undefined
+        });
+      } else if (result.errors?.length > 0) {
+        toast({ title: result.errors[0], variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Import failed - check file format", variant: "destructive" });
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   if (isAuthLoading) {
     return (
@@ -530,17 +602,54 @@ export default function BlitzgridAdmin() {
     <div className="min-h-screen bg-background" data-testid="page-blitzgrid-admin">
       <AppHeader title="Blitzgrid Admin" backHref="/host/blitzgrid" />
       <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold">Blitzgrid Grids</h1>
             <p className="text-muted-foreground text-sm">Create and edit your trivia grids</p>
           </div>
-          <Button
-            onClick={() => setShowNewGridForm(true)}
-            data-testid="button-new-grid"
-          >
-            <Plus className="w-4 h-4 mr-2" /> New Grid
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadTemplate}
+              data-testid="button-download-template"
+            >
+              <FileJson className="w-4 h-4 mr-2" /> Template
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              disabled={isExporting || grids.length === 0}
+              data-testid="button-export-grids"
+            >
+              {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+              Export
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isImporting}
+              data-testid="button-import-grids"
+            >
+              {isImporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+              Import
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImport}
+              className="hidden"
+            />
+            <Button
+              onClick={() => setShowNewGridForm(true)}
+              data-testid="button-new-grid"
+            >
+              <Plus className="w-4 h-4 mr-2" /> New Grid
+            </Button>
+          </div>
         </div>
 
         <AnimatePresence>
