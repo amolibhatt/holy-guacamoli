@@ -116,9 +116,10 @@ export default function SequenceSqueeze() {
     };
 
     socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      
-      switch (data.type) {
+      try {
+        const data = JSON.parse(event.data);
+        
+        switch (data.type) {
         case "room:joined":
           socket.send(JSON.stringify({ type: "sequence:host:switchMode" }));
           break;
@@ -241,6 +242,7 @@ export default function SequenceSqueeze() {
           setPlayers(prev => prev.filter(p => p.id !== data.playerId));
           break;
       }
+      } catch { /* ignore parse errors */ }
     };
 
     socket.onclose = () => {
