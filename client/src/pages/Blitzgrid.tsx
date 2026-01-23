@@ -21,7 +21,7 @@ import {
   Circle, Waves, Sun, Star, TreePine, Flower2, Leaf, Bird,
   PartyPopper, Cake, Umbrella, Briefcase, Dog, Cat, Rocket, Music, Palette, Heart, Timer,
   Target, Flag, Award, Dribbble, Shirt, Footprints, Shell, Fish, Gift, Candy, Coffee, Laptop, Headphones, Mic2, Guitar,
-  Volume2, VolumeX, MoreVertical, Settings
+  Volume2, VolumeX, MoreVertical, Settings, Copy, Link2
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -2587,7 +2587,18 @@ export default function Blitzgrid() {
                 </div>
               </div>
               
-              <p className="text-center text-xs text-muted-foreground break-all">{joinUrl}</p>
+              <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2"
+                  onClick={() => {
+                    navigator.clipboard.writeText(joinUrl);
+                    toast({ title: "Link copied!", description: "Share this link with players" });
+                  }}
+                >
+                  <Link2 className="w-4 h-4" />
+                  Copy Join Link
+                </Button>
               
               {players.length > 0 && (
                 <div className="border-t pt-3 mt-2">
