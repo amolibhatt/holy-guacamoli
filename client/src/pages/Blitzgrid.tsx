@@ -1509,7 +1509,10 @@ export default function Blitzgrid() {
             </Button>
             
             <div className="flex items-center gap-4">
-              <h1 className="text-lg font-semibold text-white tracking-tight">{grid.name}</h1>
+              <div className="flex flex-col items-start">
+                <span className="text-xs text-white/50 font-medium tracking-wide">HOLY GUACAMOLI!</span>
+                <h1 className="text-lg font-semibold text-white tracking-tight">{grid.name}</h1>
+              </div>
               {roomCode && (
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.2 }}>
                   <Badge className="bg-emerald-400 text-black font-mono font-bold px-3 py-1">{roomCode}</Badge>
