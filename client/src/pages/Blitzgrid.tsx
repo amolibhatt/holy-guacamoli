@@ -16,7 +16,8 @@ import {
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Play, Loader2,
   AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Zap, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Sparkles, Medal,
-  Circle, Waves, Sun, Star, TreePine, Flower2
+  Circle, Waves, Sun, Star, TreePine, Flower2,
+  PartyPopper, Cake, Umbrella, Briefcase, Dog, Cat, Rocket, Music, Palette, Heart
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -51,27 +52,257 @@ interface CategoryWithQuestions extends Category {
 
 const POINT_TIERS = [10, 20, 30, 40, 50];
 
-// Available themes for grids - icons are lucide-react component names
+// Available themes for grids - fun and interactive!
 const GRID_THEMES = [
-  { id: 'football', name: 'Football', iconType: 'circle' as const, background: 'linear-gradient(180deg, #1a472a 0%, #2d5a35 50%, #1a472a 100%)' },
-  { id: 'ocean', name: 'Ocean', iconType: 'waves' as const, background: 'linear-gradient(180deg, #0c4a6e 0%, #075985 50%, #0c4a6e 100%)' },
-  { id: 'sunset', name: 'Sunset', iconType: 'sun' as const, background: 'linear-gradient(180deg, #7c2d12 0%, #c2410c 50%, #7c2d12 100%)' },
-  { id: 'galaxy', name: 'Galaxy', iconType: 'star' as const, background: 'linear-gradient(180deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)' },
-  { id: 'forest', name: 'Forest', iconType: 'trees' as const, background: 'linear-gradient(180deg, #14532d 0%, #166534 50%, #14532d 100%)' },
-  { id: 'cherry', name: 'Cherry', iconType: 'flower' as const, background: 'linear-gradient(180deg, #831843 0%, #be185d 50%, #831843 100%)' },
+  { id: 'birthday', name: 'Birthday', iconType: 'cake' as const, background: 'linear-gradient(180deg, #ec4899 0%, #f472b6 50%, #ec4899 100%)' },
+  { id: 'beach', name: 'Beach', iconType: 'umbrella' as const, background: 'linear-gradient(180deg, #0891b2 0%, #06b6d4 50%, #0891b2 100%)' },
+  { id: 'office', name: 'Office', iconType: 'briefcase' as const, background: 'linear-gradient(180deg, #374151 0%, #4b5563 50%, #374151 100%)' },
+  { id: 'dogs', name: 'Dogs', iconType: 'dog' as const, background: 'linear-gradient(180deg, #b45309 0%, #d97706 50%, #b45309 100%)' },
+  { id: 'cats', name: 'Cats', iconType: 'cat' as const, background: 'linear-gradient(180deg, #7c3aed 0%, #8b5cf6 50%, #7c3aed 100%)' },
+  { id: 'space', name: 'Space', iconType: 'rocket' as const, background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)' },
+  { id: 'music', name: 'Music', iconType: 'music' as const, background: 'linear-gradient(180deg, #be123c 0%, #e11d48 50%, #be123c 100%)' },
+  { id: 'art', name: 'Art', iconType: 'palette' as const, background: 'linear-gradient(180deg, #0d9488 0%, #14b8a6 50%, #0d9488 100%)' },
 ] as const;
 
+type ThemeIconType = typeof GRID_THEMES[number]['iconType'];
+
 // Map theme icon types to lucide icons
-const ThemeIcon = ({ type, className }: { type: typeof GRID_THEMES[number]['iconType']; className?: string }) => {
+const ThemeIcon = ({ type, className }: { type: ThemeIconType; className?: string }) => {
   switch (type) {
-    case 'circle': return <Circle className={className} />;
-    case 'waves': return <Waves className={className} />;
-    case 'sun': return <Sun className={className} />;
-    case 'star': return <Star className={className} />;
-    case 'trees': return <TreePine className={className} />;
-    case 'flower': return <Flower2 className={className} />;
-    default: return null;
+    case 'cake': return <Cake className={className} />;
+    case 'umbrella': return <Umbrella className={className} />;
+    case 'briefcase': return <Briefcase className={className} />;
+    case 'dog': return <Dog className={className} />;
+    case 'cat': return <Cat className={className} />;
+    case 'rocket': return <Rocket className={className} />;
+    case 'music': return <Music className={className} />;
+    case 'palette': return <Palette className={className} />;
+    default: return <PartyPopper className={className} />;
   }
+};
+
+// Color palettes for themes
+const BALLOON_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899'];
+const ART_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'];
+
+// Pre-generate stable random values for theme elements
+const generateElementData = (count: number) => {
+  const data = [];
+  for (let i = 0; i < count; i++) {
+    data.push({
+      delay: i * 0.5,
+      duration: 8 + (i * 0.7) % 6,
+      startX: (i * 8.3) % 100,
+      startY: 100 + (i * 1.7) % 20,
+      endY: -20 - (i * 0.8) % 10,
+      size: 16 + (i * 1.9) % 20,
+      opacity: 0.15 + (i * 0.02) % 0.25,
+      extraRandom1: (i * 2.3) % 30 - 15,
+      extraRandom2: (i * 1.1) % 20 - 10,
+      extraRandom3: (i * 0.9) % 15,
+    });
+  }
+  return data;
+};
+
+const ELEMENT_DATA = generateElementData(12);
+
+// Animated theme elements that float around the grid
+const ThemeElements = ({ themeId }: { themeId: string }) => {
+  const elements = ELEMENT_DATA.map((data, i) => {
+    const { delay, duration, startX, startY, endY, size, opacity, extraRandom1, extraRandom2, extraRandom3 } = data;
+    
+    switch (themeId) {
+      case 'birthday': {
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none"
+            initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0 }}
+            animate={{ 
+              y: `${endY}vh`,
+              scale: [0, 1, 1, 0],
+              rotate: [-10, 10, -10],
+            }}
+            transition={{ 
+              duration, 
+              delay, 
+              repeat: Infinity, 
+              ease: "linear",
+              rotate: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+            }}
+            style={{ opacity }}
+          >
+            <div 
+              className="rounded-full" 
+              style={{ 
+                width: size, 
+                height: size * 1.2, 
+                background: BALLOON_COLORS[i % BALLOON_COLORS.length],
+                boxShadow: `inset -${size/4}px -${size/4}px ${size/2}px rgba(0,0,0,0.2)`
+              }} 
+            />
+            <div className="w-px h-8 bg-white/30 mx-auto" />
+          </motion.div>
+        );
+      }
+      case 'beach': {
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none text-cyan-200"
+            initial={{ x: `${startX}vw`, y: `${60 + (i % 3) * 15}vh` }}
+            animate={{ 
+              x: [`${startX}vw`, `${startX + 20}vw`, `${startX}vw`],
+              y: [`${60 + (i % 3) * 15}vh`, `${58 + (i % 3) * 15}vh`, `${60 + (i % 3) * 15}vh`],
+            }}
+            transition={{ duration: 4 + i * 0.3, repeat: Infinity, ease: "easeInOut" }}
+            style={{ opacity: opacity * 0.8 }}
+          >
+            <Waves style={{ width: size * 2, height: size }} />
+          </motion.div>
+        );
+      }
+      case 'office': {
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none"
+            initial={{ x: `${startX}vw`, y: `${startY}vh`, rotate: extraRandom1 }}
+            animate={{ 
+              y: `${endY}vh`,
+              rotate: [0, 360],
+              x: [`${startX}vw`, `${startX + extraRandom2}vw`],
+            }}
+            transition={{ duration: duration * 1.5, delay, repeat: Infinity, ease: "linear" }}
+            style={{ opacity: opacity * 0.6 }}
+          >
+            <div 
+              className="bg-white rounded-sm shadow-sm" 
+              style={{ width: size * 0.8, height: size, transform: 'rotate(-5deg)' }} 
+            />
+          </motion.div>
+        );
+      }
+      case 'dogs': {
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none text-amber-200"
+            initial={{ x: `${startX}vw`, y: `${80 + extraRandom3}vh`, scale: 0.8 }}
+            animate={{ 
+              scale: [0.8, 1, 0.8],
+              rotate: [0, i % 2 === 0 ? 15 : -15, 0],
+            }}
+            transition={{ duration: 1.5 + (i * 0.1), delay: i * 0.2, repeat: Infinity }}
+            style={{ opacity }}
+          >
+            <Dog style={{ width: size * 1.2, height: size * 1.2 }} />
+          </motion.div>
+        );
+      }
+      case 'cats': {
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none text-violet-200"
+            initial={{ x: `${startX}vw`, y: `${70 + extraRandom3}vh` }}
+            animate={{ 
+              x: [`${startX}vw`, `${startX + extraRandom2 * 0.5}vw`, `${startX}vw`],
+              rotate: [0, i % 2 === 0 ? 10 : -10, 0],
+            }}
+            transition={{ duration: 3 + (i * 0.2), delay: i * 0.3, repeat: Infinity }}
+            style={{ opacity }}
+          >
+            <Cat style={{ width: size * 1.2, height: size * 1.2 }} />
+          </motion.div>
+        );
+      }
+      case 'space': {
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none"
+            initial={{ x: `${startX}vw`, y: `${(i * 6.7) % 80}vh`, scale: 0 }}
+            animate={{ 
+              scale: [0, 1, 0],
+              opacity: [0, opacity, 0],
+            }}
+            transition={{ duration: 2 + (i * 0.2), delay: i * 0.5, repeat: Infinity }}
+          >
+            <Star className="text-yellow-200 fill-yellow-200" style={{ width: size * 0.5, height: size * 0.5 }} />
+          </motion.div>
+        );
+      }
+      case 'music': {
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none text-rose-200"
+            initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0 }}
+            animate={{ 
+              y: `${endY}vh`,
+              scale: [0, 1, 1, 0],
+              rotate: [-20, 20, -20],
+              x: [`${startX}vw`, `${startX + Math.sin(i) * 5}vw`, `${startX}vw`],
+            }}
+            transition={{ duration, delay, repeat: Infinity }}
+            style={{ opacity }}
+          >
+            <Music style={{ width: size, height: size }} />
+          </motion.div>
+        );
+      }
+      case 'art': {
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none"
+            initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0 }}
+            animate={{ 
+              y: `${endY}vh`,
+              scale: [0, 1, 1, 0],
+            }}
+            transition={{ duration, delay, repeat: Infinity }}
+            style={{ opacity }}
+          >
+            <div 
+              className="rounded-full" 
+              style={{ 
+                width: size * 0.6, 
+                height: size * 0.6, 
+                background: ART_COLORS[i % ART_COLORS.length],
+              }} 
+            />
+          </motion.div>
+        );
+      }
+      default: {
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none text-white"
+            initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0 }}
+            animate={{ 
+              y: `${endY}vh`,
+              scale: [0, 1, 1, 0],
+              rotate: [0, 360],
+            }}
+            transition={{ duration, delay, repeat: Infinity }}
+            style={{ opacity }}
+          >
+            <Sparkles style={{ width: size, height: size }} />
+          </motion.div>
+        );
+      }
+    }
+  });
+  
+  return (
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+      {elements}
+    </div>
+  );
 };
 
 export default function Blitzgrid() {
@@ -142,7 +373,7 @@ export default function Blitzgrid() {
   // Form state
   const [showNewGridForm, setShowNewGridForm] = useState(false);
   const [newGridName, setNewGridName] = useState("");
-  const [newGridTheme, setNewGridTheme] = useState("football");
+  const [newGridTheme, setNewGridTheme] = useState("birthday");
   const [editingGridId, setEditingGridId] = useState<number | null>(null);
   const [editGridName, setEditGridName] = useState("");
   const [deleteGridId, setDeleteGridId] = useState<number | null>(null);
@@ -179,7 +410,7 @@ export default function Blitzgrid() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
       setNewGridName("");
-      setNewGridTheme("football");
+      setNewGridTheme("birthday");
       setShowNewGridForm(false);
       toast({ title: "Grid created" });
     },
@@ -762,11 +993,14 @@ export default function Blitzgrid() {
       const restPhase = 2;
       
       // Get theme from grid
-      const gridThemeId = grid.theme?.replace('blitzgrid:', '') || 'football';
+      const gridThemeId = grid.theme?.replace('blitzgrid:', '') || 'birthday';
       const currentTheme = GRID_THEMES.find(t => t.id === gridThemeId) || GRID_THEMES[0];
       
       return (
-        <div className="h-screen overflow-hidden flex flex-col" style={{ background: currentTheme.background }} data-testid="page-blitzgrid-play">
+        <div className="h-screen overflow-hidden flex flex-col relative" style={{ background: currentTheme.background }} data-testid="page-blitzgrid-play">
+          
+          {/* Animated theme elements */}
+          <ThemeElements themeId={gridThemeId} />
           
           {/* Game Over Reveal Overlay */}
           <AnimatePresence>
