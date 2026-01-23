@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Loader2,
-  AlertCircle, CheckCircle2
+  AlertCircle, CheckCircle2, Image, Music, Video
 } from "lucide-react";
 import { 
   AlertDialog, AlertDialogAction, AlertDialogCancel, 
@@ -52,6 +52,9 @@ export default function BlitzgridAdmin() {
     question: string; 
     correctAnswer: string; 
     options: string[];
+    imageUrl?: string;
+    audioUrl?: string;
+    videoUrl?: string;
   }>>({});
   
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
@@ -144,15 +147,18 @@ export default function BlitzgridAdmin() {
   });
 
   const saveQuestionMutation = useMutation({
-    mutationFn: async ({ categoryId, points, question, correctAnswer, options }: { 
+    mutationFn: async ({ categoryId, points, question, correctAnswer, options, imageUrl, audioUrl, videoUrl }: { 
       categoryId: number; 
       points: number; 
       question: string; 
       correctAnswer: string;
       options: string[];
+      imageUrl?: string;
+      audioUrl?: string;
+      videoUrl?: string;
     }) => {
       return apiRequest('POST', `/api/blitzgrid/categories/${categoryId}/questions`, { 
-        points, question, correctAnswer, options 
+        points, question, correctAnswer, options, imageUrl, audioUrl, videoUrl 
       });
     },
     onSuccess: (_, variables) => {
@@ -209,11 +215,19 @@ export default function BlitzgridAdmin() {
       const isEditing = !!formData;
       
       if (existingQuestion && !isEditing) {
+        const hasMedia = existingQuestion.imageUrl || existingQuestion.audioUrl || existingQuestion.videoUrl;
         return (
           <div className="flex items-center justify-between p-2 bg-muted/30 rounded text-sm">
-            <div className="flex-1 min-w-0">
-              <span className="font-medium text-xs text-muted-foreground mr-2">{points}pts:</span>
+            <div className="flex-1 min-w-0 flex items-center gap-2">
+              <span className="font-medium text-xs text-muted-foreground shrink-0">{points}pts:</span>
               <span className="truncate">{existingQuestion.question}</span>
+              {hasMedia && (
+                <div className="flex gap-1 shrink-0">
+                  {existingQuestion.imageUrl && <Image className="w-3 h-3 text-muted-foreground" />}
+                  {existingQuestion.audioUrl && <Music className="w-3 h-3 text-muted-foreground" />}
+                  {existingQuestion.videoUrl && <Video className="w-3 h-3 text-muted-foreground" />}
+                </div>
+              )}
             </div>
             <div className="flex gap-1 shrink-0">
               <Button 
@@ -226,6 +240,9 @@ export default function BlitzgridAdmin() {
                     question: existingQuestion.question,
                     correctAnswer: existingQuestion.correctAnswer,
                     options: existingQuestion.options || [],
+                    imageUrl: existingQuestion.imageUrl || '',
+                    audioUrl: existingQuestion.audioUrl || '',
+                    videoUrl: existingQuestion.videoUrl || '',
                   }
                 }))}
               >
@@ -245,6 +262,7 @@ export default function BlitzgridAdmin() {
         );
       }
       
+      const defaultForm = { question: '', correctAnswer: '', options: [], imageUrl: '', audioUrl: '', videoUrl: '' };
       return (
         <div className="space-y-2 p-2 border border-dashed rounded">
           <div className="flex items-center gap-2">
@@ -255,23 +273,63 @@ export default function BlitzgridAdmin() {
               value={formData?.question || ''}
               onChange={(e) => setQuestionForms(prev => ({
                 ...prev,
-                [formKey]: { ...prev[formKey] || { question: '', correctAnswer: '', options: [] }, question: e.target.value }
+                [formKey]: { ...prev[formKey] || defaultForm, question: e.target.value }
               }))}
             />
           </div>
           <div className="flex items-center gap-2">
             <Input
               placeholder="Answer..."
-              className="h-8 text-sm"
+              className="h-8 text-sm flex-1"
               value={formData?.correctAnswer || ''}
               onChange={(e) => setQuestionForms(prev => ({
                 ...prev,
-                [formKey]: { ...prev[formKey] || { question: '', correctAnswer: '', options: [] }, correctAnswer: e.target.value }
+                [formKey]: { ...prev[formKey] || defaultForm, correctAnswer: e.target.value }
               }))}
             />
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1 flex-1 min-w-[140px]">
+              <Image className="w-3 h-3 text-muted-foreground shrink-0" />
+              <Input
+                placeholder="Image URL"
+                className="h-7 text-xs"
+                value={formData?.imageUrl || ''}
+                onChange={(e) => setQuestionForms(prev => ({
+                  ...prev,
+                  [formKey]: { ...prev[formKey] || defaultForm, imageUrl: e.target.value }
+                }))}
+              />
+            </div>
+            <div className="flex items-center gap-1 flex-1 min-w-[140px]">
+              <Music className="w-3 h-3 text-muted-foreground shrink-0" />
+              <Input
+                placeholder="Audio URL"
+                className="h-7 text-xs"
+                value={formData?.audioUrl || ''}
+                onChange={(e) => setQuestionForms(prev => ({
+                  ...prev,
+                  [formKey]: { ...prev[formKey] || defaultForm, audioUrl: e.target.value }
+                }))}
+              />
+            </div>
+            <div className="flex items-center gap-1 flex-1 min-w-[140px]">
+              <Video className="w-3 h-3 text-muted-foreground shrink-0" />
+              <Input
+                placeholder="Video URL"
+                className="h-7 text-xs"
+                value={formData?.videoUrl || ''}
+                onChange={(e) => setQuestionForms(prev => ({
+                  ...prev,
+                  [formKey]: { ...prev[formKey] || defaultForm, videoUrl: e.target.value }
+                }))}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
             <Button
               size="sm"
-              className="h-8 shrink-0"
+              className="h-8"
               onClick={() => {
                 if (formData?.question && formData?.correctAnswer) {
                   saveQuestionMutation.mutate({
@@ -280,6 +338,9 @@ export default function BlitzgridAdmin() {
                     question: formData.question,
                     correctAnswer: formData.correctAnswer,
                     options: formData.options || [],
+                    imageUrl: formData.imageUrl || undefined,
+                    audioUrl: formData.audioUrl || undefined,
+                    videoUrl: formData.videoUrl || undefined,
                   });
                   setQuestionForms(prev => {
                     const newForms = { ...prev };
@@ -290,7 +351,7 @@ export default function BlitzgridAdmin() {
               }}
               disabled={!formData?.question || !formData?.correctAnswer || saveQuestionMutation.isPending}
             >
-              {saveQuestionMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+              {saveQuestionMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Check className="w-3 h-3 mr-1" /> Save</>}
             </Button>
           </div>
         </div>
