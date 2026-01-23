@@ -1606,6 +1606,33 @@ export default function Blitzgrid() {
                 </p>
               </div>
               
+              {/* Media Display */}
+              {(activeQuestion?.imageUrl || activeQuestion?.audioUrl || activeQuestion?.videoUrl) && (
+                <div className="flex flex-col items-center gap-3 py-2">
+                  {activeQuestion?.imageUrl && (
+                    <img 
+                      src={activeQuestion.imageUrl} 
+                      alt="Question media"
+                      className="max-w-full max-h-48 md:max-h-64 rounded-lg object-contain shadow-lg"
+                    />
+                  )}
+                  {activeQuestion?.videoUrl && (
+                    <video 
+                      src={activeQuestion.videoUrl}
+                      controls
+                      className="max-w-full max-h-48 md:max-h-64 rounded-lg shadow-lg"
+                    />
+                  )}
+                  {activeQuestion?.audioUrl && (
+                    <audio 
+                      src={activeQuestion.audioUrl}
+                      controls
+                      className="w-full max-w-sm"
+                    />
+                  )}
+                </div>
+              )}
+              
               {/* Timer Button */}
               <div className="flex justify-center py-2">
                 <Button
