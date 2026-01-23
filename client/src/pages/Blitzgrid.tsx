@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import type { Board, Category, Question } from "@shared/schema";
 import { PLAYER_AVATARS } from "@shared/schema";
+import { getBoardColorConfig, getBoardColorName } from "@/lib/boardColors";
 
 interface GridWithStats extends Board {
   categoryCount: number;
@@ -2231,30 +2232,35 @@ export default function Blitzgrid() {
             </Card>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {grids.filter(g => g.isActive).map(grid => (
-                <Card
-                  key={grid.id}
-                  className="hover-elevate cursor-pointer transition-all"
-                  onClick={() => startNextGrid(grid.id, grid.name)}
-                  data-testid={`card-picker-grid-${grid.id}`}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 min-w-0 mb-3">
-                      <Grid3X3 className="w-5 h-5 text-purple-500 shrink-0" />
-                      <h3 className="font-semibold truncate" data-testid={`text-picker-grid-name-${grid.id}`}>{grid.name}</h3>
-                    </div>
-                    
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm text-muted-foreground" data-testid={`text-picker-grid-stats-${grid.id}`}>
-                        {grid.categoryCount} categories · {grid.questionCount} questions
-                      </p>
-                      <Badge variant="secondary" className="text-xs shrink-0" data-testid={`badge-picker-grid-play-${grid.id}`}>
-                        <Play className="w-3 h-3 mr-1" /> Play
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              {grids.filter(g => g.isActive).map(grid => {
+                const colorConfig = getBoardColorConfig(grid.colorCode);
+                return (
+                  <Card
+                    key={grid.id}
+                    className={`hover-elevate cursor-pointer transition-all border bg-gradient-to-br ${colorConfig.card}`}
+                    onClick={() => startNextGrid(grid.id, grid.name)}
+                    data-testid={`card-picker-grid-${grid.id}`}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 min-w-0 mb-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${colorConfig.bg}`}>
+                          <Grid3X3 className="w-4 h-4 text-white" />
+                        </div>
+                        <h3 className={`font-semibold truncate ${colorConfig.cardTitle}`} data-testid={`text-picker-grid-name-${grid.id}`}>{grid.name}</h3>
+                      </div>
+                      
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={`text-sm ${colorConfig.cardSub}`} data-testid={`text-picker-grid-stats-${grid.id}`}>
+                          {grid.categoryCount} categories · {grid.questionCount} questions
+                        </p>
+                        <Badge variant="secondary" className="text-xs shrink-0" data-testid={`badge-picker-grid-play-${grid.id}`}>
+                          <Play className="w-3 h-3 mr-1" /> Play
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
@@ -2355,46 +2361,51 @@ export default function Blitzgrid() {
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {grids.map(grid => (
-              <Card
-                key={grid.id}
-                className={`hover-elevate transition-all ${grid.isActive ? 'cursor-pointer' : 'opacity-60'}`}
-                onClick={() => {
-                  if (grid.isActive) {
-                    setSelectedGridId(grid.id);
-                    setPlayMode(true);
-                    setRevealedCells(new Set());
-                    setActiveQuestion(null);
-                    setShowAnswer(false);
-                  } else {
-                    toast({ title: "Grid not ready", description: "This grid needs 5 categories with 5 questions each." });
-                  }
-                }}
-                data-testid={`card-grid-${grid.id}`}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 min-w-0 mb-3">
-                    <Grid3X3 className="w-5 h-5 text-purple-500 shrink-0" />
-                    <h3 className="font-semibold truncate">{grid.name}</h3>
-                  </div>
-                  
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm text-muted-foreground">
-                      {grid.categoryCount}/5 categories · {grid.questionCount}/25 questions
-                    </p>
-                    {grid.isActive ? (
-                      <Badge className="bg-green-500/20 text-green-600 text-xs shrink-0">
-                        <Play className="w-3 h-3 mr-1" /> Active
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary" className="text-xs shrink-0">
-                        Incomplete
-                      </Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {grids.map(grid => {
+              const colorConfig = getBoardColorConfig(grid.colorCode);
+              return (
+                <Card
+                  key={grid.id}
+                  className={`hover-elevate transition-all border bg-gradient-to-br ${colorConfig.card} ${grid.isActive ? 'cursor-pointer' : 'opacity-60'}`}
+                  onClick={() => {
+                    if (grid.isActive) {
+                      setSelectedGridId(grid.id);
+                      setPlayMode(true);
+                      setRevealedCells(new Set());
+                      setActiveQuestion(null);
+                      setShowAnswer(false);
+                    } else {
+                      toast({ title: "Grid not ready", description: "This grid needs 5 categories with 5 questions each." });
+                    }
+                  }}
+                  data-testid={`card-grid-${grid.id}`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 min-w-0 mb-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${colorConfig.bg}`}>
+                        <Grid3X3 className="w-4 h-4 text-white" />
+                      </div>
+                      <h3 className={`font-semibold truncate ${colorConfig.cardTitle}`}>{grid.name}</h3>
+                    </div>
+                    
+                    <div className="flex items-center justify-between gap-2">
+                      <p className={`text-sm ${colorConfig.cardSub}`}>
+                        {grid.categoryCount}/5 categories · {grid.questionCount}/25 questions
+                      </p>
+                      {grid.isActive ? (
+                        <Badge className="bg-green-400/30 text-green-700 dark:text-green-300 text-xs shrink-0">
+                          <Play className="w-3 h-3 mr-1" /> Active
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs shrink-0">
+                          Incomplete
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
