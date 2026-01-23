@@ -16,8 +16,9 @@ import {
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Play, Loader2,
   AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Zap, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Sparkles, Medal,
-  Circle, Waves, Sun, Star, TreePine, Flower2,
-  PartyPopper, Cake, Umbrella, Briefcase, Dog, Cat, Rocket, Music, Palette, Heart, Timer
+  Circle, Waves, Sun, Star, TreePine, Flower2, Leaf, Bird,
+  PartyPopper, Cake, Umbrella, Briefcase, Dog, Cat, Rocket, Music, Palette, Heart, Timer,
+  Target, Flag, Award, Dribbble, Shirt, Footprints, Shell, Fish, Gift, Candy, Coffee, Laptop, Headphones, Mic2, Guitar
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -115,180 +116,355 @@ const ThemeElements = ({ themeId }: { themeId: string }) => {
   const elements = ELEMENT_DATA.map((data, i) => {
     const { delay, duration, startX, startY, endY, size, opacity, extraRandom1, extraRandom2, extraRandom3 } = data;
     
+    const sportsElements = [Trophy, Flag, Award, Target, Medal, Shirt];
+    const SportsIcon = sportsElements[i % sportsElements.length];
+    const sportsColors = ['text-yellow-400', 'text-orange-400', 'text-green-400', 'text-white', 'text-amber-300', 'text-red-400'];
+    
     switch (themeId) {
       case 'sports': {
+        if (i % 3 === 0) {
+          return (
+            <motion.div
+              key={i}
+              className="absolute pointer-events-none"
+              initial={{ x: `${startX}vw`, y: `${startY + 20}vh` }}
+              animate={{ 
+                x: [`${startX}vw`, `${startX + 30}vw`],
+                y: [`${startY + 20}vh`, `${startY}vh`, `${startY + 40}vh`],
+                rotate: [0, 360, 720, 1080],
+              }}
+              transition={{ duration: duration * 2, delay, repeat: Infinity, ease: "easeInOut" }}
+              style={{ opacity: opacity * 1.2 }}
+            >
+              <div 
+                className="rounded-full bg-gradient-to-br from-amber-600 to-amber-900 border-2 border-white/50"
+                style={{ width: size * 1.2, height: size * 0.8 }}
+              >
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="w-[60%] h-[2px] bg-white/60" />
+                </div>
+              </div>
+            </motion.div>
+          );
+        }
         return (
           <motion.div
             key={i}
-            className="absolute pointer-events-none"
+            className={`absolute pointer-events-none ${sportsColors[i % sportsColors.length]}`}
             initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0 }}
             animate={{ 
               y: `${endY}vh`,
-              scale: [0, 1, 1, 0],
-              rotate: [0, 360, 720],
+              scale: [0, 1.2, 1, 0],
+              rotate: i % 2 === 0 ? [0, 15, -15, 0] : [0, -15, 15, 0],
             }}
-            transition={{ duration: duration * 1.2, delay, repeat: Infinity, ease: "linear" }}
-            style={{ opacity: opacity * 0.8 }}
+            transition={{ duration: duration * 1.5, delay, repeat: Infinity, ease: "easeOut" }}
+            style={{ opacity: opacity * 1.2 }}
           >
-            <Trophy style={{ width: size * 0.8, height: size * 0.8 }} className="text-yellow-400" />
+            <SportsIcon style={{ width: size, height: size }} />
           </motion.div>
         );
       }
       case 'birthday': {
+        const birthdayElements = [PartyPopper, Cake, Gift, Candy, Sparkles];
+        const BirthdayIcon = birthdayElements[i % birthdayElements.length];
+        if (i % 2 === 0) {
+          return (
+            <motion.div
+              key={i}
+              className="absolute pointer-events-none"
+              initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0 }}
+              animate={{ 
+                y: `${endY}vh`,
+                scale: [0, 1, 1, 0],
+                rotate: [-10, 10, -10],
+              }}
+              transition={{ 
+                duration, 
+                delay, 
+                repeat: Infinity, 
+                ease: "linear",
+                rotate: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+              }}
+              style={{ opacity }}
+            >
+              <div 
+                className="rounded-full" 
+                style={{ 
+                  width: size, 
+                  height: size * 1.2, 
+                  background: BALLOON_COLORS[i % BALLOON_COLORS.length],
+                  boxShadow: `inset -${size/4}px -${size/4}px ${size/2}px rgba(0,0,0,0.2)`
+                }} 
+              />
+              <div className="w-px h-8 bg-white/30 mx-auto" />
+            </motion.div>
+          );
+        }
         return (
           <motion.div
             key={i}
-            className="absolute pointer-events-none"
-            initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0 }}
+            className="absolute pointer-events-none text-pink-300"
+            initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0, rotate: -20 }}
             animate={{ 
               y: `${endY}vh`,
-              scale: [0, 1, 1, 0],
-              rotate: [-10, 10, -10],
+              scale: [0, 1.3, 1, 0],
+              rotate: [0, 20, -20, 0],
             }}
-            transition={{ 
-              duration, 
-              delay, 
-              repeat: Infinity, 
-              ease: "linear",
-              rotate: { duration: 2, repeat: Infinity, ease: "easeInOut" }
-            }}
-            style={{ opacity }}
+            transition={{ duration: duration * 1.2, delay, repeat: Infinity }}
+            style={{ opacity: opacity * 1.2 }}
           >
-            <div 
-              className="rounded-full" 
-              style={{ 
-                width: size, 
-                height: size * 1.2, 
-                background: BALLOON_COLORS[i % BALLOON_COLORS.length],
-                boxShadow: `inset -${size/4}px -${size/4}px ${size/2}px rgba(0,0,0,0.2)`
-              }} 
-            />
-            <div className="w-px h-8 bg-white/30 mx-auto" />
+            <BirthdayIcon style={{ width: size * 1.1, height: size * 1.1 }} />
           </motion.div>
         );
       }
       case 'beach': {
+        const beachElements = [Sun, Shell, Fish, Umbrella, Waves];
+        const BeachIcon = beachElements[i % beachElements.length];
+        const beachColors = ['text-yellow-300', 'text-pink-300', 'text-cyan-300', 'text-orange-300', 'text-blue-300'];
+        if (i % 4 === 0) {
+          return (
+            <motion.div
+              key={i}
+              className="absolute pointer-events-none text-cyan-200"
+              initial={{ x: `${startX}vw`, y: `${70 + (i % 3) * 10}vh` }}
+              animate={{ 
+                x: [`${startX}vw`, `${startX + 25}vw`, `${startX}vw`],
+                y: [`${70 + (i % 3) * 10}vh`, `${68 + (i % 3) * 10}vh`, `${70 + (i % 3) * 10}vh`],
+              }}
+              transition={{ duration: 4 + i * 0.3, repeat: Infinity, ease: "easeInOut" }}
+              style={{ opacity: opacity * 0.9 }}
+            >
+              <Waves style={{ width: size * 2.5, height: size * 1.2 }} />
+            </motion.div>
+          );
+        }
         return (
           <motion.div
             key={i}
-            className="absolute pointer-events-none text-cyan-200"
-            initial={{ x: `${startX}vw`, y: `${60 + (i % 3) * 15}vh` }}
+            className={`absolute pointer-events-none ${beachColors[i % beachColors.length]}`}
+            initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0 }}
             animate={{ 
-              x: [`${startX}vw`, `${startX + 20}vw`, `${startX}vw`],
-              y: [`${60 + (i % 3) * 15}vh`, `${58 + (i % 3) * 15}vh`, `${60 + (i % 3) * 15}vh`],
+              y: `${endY + 20}vh`,
+              scale: [0, 1, 1, 0],
+              rotate: i % 2 === 0 ? [0, 10, -10, 0] : [0, -10, 10, 0],
             }}
-            transition={{ duration: 4 + i * 0.3, repeat: Infinity, ease: "easeInOut" }}
-            style={{ opacity: opacity * 0.8 }}
+            transition={{ duration: duration * 1.5, delay, repeat: Infinity }}
+            style={{ opacity: opacity * 1.1 }}
           >
-            <Waves style={{ width: size * 2, height: size }} />
+            <BeachIcon style={{ width: size * 1.1, height: size * 1.1 }} />
           </motion.div>
         );
       }
       case 'office': {
+        const officeElements = [Briefcase, Coffee, Laptop];
+        const OfficeIcon = officeElements[i % officeElements.length];
+        if (i % 3 === 0) {
+          return (
+            <motion.div
+              key={i}
+              className="absolute pointer-events-none"
+              initial={{ x: `${startX}vw`, y: `${startY}vh`, rotate: extraRandom1 }}
+              animate={{ 
+                y: `${endY}vh`,
+                rotate: [extraRandom1, extraRandom1 + 360],
+                x: [`${startX}vw`, `${startX + extraRandom2}vw`],
+              }}
+              transition={{ duration: duration * 1.5, delay, repeat: Infinity, ease: "linear" }}
+              style={{ opacity: opacity * 0.7 }}
+            >
+              <div 
+                className="bg-white rounded-sm shadow-sm" 
+                style={{ width: size * 0.8, height: size, transform: 'rotate(-5deg)' }} 
+              />
+            </motion.div>
+          );
+        }
         return (
           <motion.div
             key={i}
-            className="absolute pointer-events-none"
-            initial={{ x: `${startX}vw`, y: `${startY}vh`, rotate: extraRandom1 }}
+            className="absolute pointer-events-none text-gray-300"
+            initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0 }}
             animate={{ 
               y: `${endY}vh`,
-              rotate: [0, 360],
-              x: [`${startX}vw`, `${startX + extraRandom2}vw`],
+              scale: [0, 1, 1, 0],
+              rotate: [0, i % 2 === 0 ? 10 : -10, 0],
             }}
-            transition={{ duration: duration * 1.5, delay, repeat: Infinity, ease: "linear" }}
-            style={{ opacity: opacity * 0.6 }}
+            transition={{ duration: duration * 1.3, delay, repeat: Infinity }}
+            style={{ opacity: opacity * 0.9 }}
           >
-            <div 
-              className="bg-white rounded-sm shadow-sm" 
-              style={{ width: size * 0.8, height: size, transform: 'rotate(-5deg)' }} 
-            />
+            <OfficeIcon style={{ width: size, height: size }} />
           </motion.div>
         );
       }
       case 'dogs': {
+        if (i % 3 === 0) {
+          return (
+            <motion.div
+              key={i}
+              className="absolute pointer-events-none text-amber-300"
+              initial={{ x: `${startX}vw`, y: `${70 + extraRandom3}vh` }}
+              animate={{ 
+                x: [`${startX}vw`, `${startX + 15}vw`, `${startX}vw`],
+                y: [`${70 + extraRandom3}vh`, `${65 + extraRandom3}vh`, `${70 + extraRandom3}vh`],
+                rotate: [0, 10, -10, 0],
+              }}
+              transition={{ duration: 2 + (i * 0.2), delay: i * 0.15, repeat: Infinity }}
+              style={{ opacity: opacity * 1.2 }}
+            >
+              <Dog style={{ width: size * 1.5, height: size * 1.5 }} />
+            </motion.div>
+          );
+        }
         return (
           <motion.div
             key={i}
             className="absolute pointer-events-none text-amber-200"
-            initial={{ x: `${startX}vw`, y: `${80 + extraRandom3}vh`, scale: 0.8 }}
+            initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0 }}
             animate={{ 
-              scale: [0.8, 1, 0.8],
-              rotate: [0, i % 2 === 0 ? 15 : -15, 0],
+              y: `${endY}vh`,
+              scale: [0, 1.1, 1, 0],
+              rotate: i % 2 === 0 ? [0, 20, -20, 0] : [0, -20, 20, 0],
             }}
-            transition={{ duration: 1.5 + (i * 0.1), delay: i * 0.2, repeat: Infinity }}
+            transition={{ duration: duration * 1.2, delay, repeat: Infinity }}
             style={{ opacity }}
           >
-            <Dog style={{ width: size * 1.2, height: size * 1.2 }} />
+            <Footprints style={{ width: size, height: size }} />
           </motion.div>
         );
       }
       case 'cats': {
+        if (i % 3 === 0) {
+          return (
+            <motion.div
+              key={i}
+              className="absolute pointer-events-none text-violet-300"
+              initial={{ x: `${startX}vw`, y: `${65 + extraRandom3}vh` }}
+              animate={{ 
+                x: [`${startX}vw`, `${startX + 10}vw`, `${startX - 5}vw`, `${startX}vw`],
+                y: [`${65 + extraRandom3}vh`, `${60 + extraRandom3}vh`, `${65 + extraRandom3}vh`],
+                rotate: [0, 15, -10, 0],
+              }}
+              transition={{ duration: 3 + (i * 0.2), delay: i * 0.2, repeat: Infinity }}
+              style={{ opacity: opacity * 1.3 }}
+            >
+              <Cat style={{ width: size * 1.6, height: size * 1.6 }} />
+            </motion.div>
+          );
+        }
         return (
           <motion.div
             key={i}
-            className="absolute pointer-events-none text-violet-200"
-            initial={{ x: `${startX}vw`, y: `${70 + extraRandom3}vh` }}
+            className="absolute pointer-events-none text-pink-200"
+            initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0 }}
             animate={{ 
-              x: [`${startX}vw`, `${startX + extraRandom2 * 0.5}vw`, `${startX}vw`],
-              rotate: [0, i % 2 === 0 ? 10 : -10, 0],
+              y: `${endY}vh`,
+              scale: [0, 1, 1, 0],
+              rotate: [0, i % 2 === 0 ? 15 : -15, 0],
             }}
-            transition={{ duration: 3 + (i * 0.2), delay: i * 0.3, repeat: Infinity }}
+            transition={{ duration: duration * 1.1, delay, repeat: Infinity }}
             style={{ opacity }}
           >
-            <Cat style={{ width: size * 1.2, height: size * 1.2 }} />
+            <Heart style={{ width: size * 0.9, height: size * 0.9 }} className="fill-pink-200" />
           </motion.div>
         );
       }
       case 'space': {
+        const spaceElements = [Star, Rocket, Sparkles];
+        const SpaceIcon = spaceElements[i % spaceElements.length];
+        const spaceColors = ['text-yellow-200', 'text-blue-200', 'text-purple-200', 'text-cyan-200'];
+        if (i % 4 === 0) {
+          return (
+            <motion.div
+              key={i}
+              className="absolute pointer-events-none text-orange-300"
+              initial={{ x: `${startX}vw`, y: `${80}vh`, rotate: -45 }}
+              animate={{ 
+                x: [`${startX}vw`, `${startX + 40}vw`],
+                y: [`${80}vh`, `${10}vh`],
+                scale: [0.5, 1, 0.5],
+              }}
+              transition={{ duration: duration * 2.5, delay: delay * 2, repeat: Infinity }}
+              style={{ opacity: opacity * 1.5 }}
+            >
+              <Rocket style={{ width: size * 1.5, height: size * 1.5 }} />
+            </motion.div>
+          );
+        }
         return (
           <motion.div
             key={i}
-            className="absolute pointer-events-none"
+            className={`absolute pointer-events-none ${spaceColors[i % spaceColors.length]}`}
             initial={{ x: `${startX}vw`, y: `${(i * 6.7) % 80}vh`, scale: 0 }}
             animate={{ 
-              scale: [0, 1, 0],
-              opacity: [0, opacity, 0],
+              scale: [0, 1.2, 0],
+              rotate: [0, 180, 360],
             }}
-            transition={{ duration: 2 + (i * 0.2), delay: i * 0.5, repeat: Infinity }}
+            transition={{ duration: 2.5 + (i * 0.3), delay: i * 0.4, repeat: Infinity }}
+            style={{ opacity }}
           >
-            <Star className="text-yellow-200 fill-yellow-200" style={{ width: size * 0.5, height: size * 0.5 }} />
+            <SpaceIcon className="fill-current" style={{ width: size * 0.7, height: size * 0.7 }} />
           </motion.div>
         );
       }
       case 'music': {
+        const musicElements = [Music, Headphones, Mic2, Guitar];
+        const MusicIcon = musicElements[i % musicElements.length];
+        const musicColors = ['text-rose-300', 'text-purple-300', 'text-pink-300', 'text-red-300', 'text-orange-300'];
         return (
           <motion.div
             key={i}
-            className="absolute pointer-events-none text-rose-200"
+            className={`absolute pointer-events-none ${musicColors[i % musicColors.length]}`}
             initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0 }}
             animate={{ 
               y: `${endY}vh`,
-              scale: [0, 1, 1, 0],
-              rotate: [-20, 20, -20],
-              x: [`${startX}vw`, `${startX + Math.sin(i) * 5}vw`, `${startX}vw`],
+              scale: [0, 1.2, 1, 0],
+              rotate: [-25, 25, -25],
+              x: [`${startX}vw`, `${startX + Math.sin(i) * 8}vw`, `${startX}vw`],
             }}
-            transition={{ duration, delay, repeat: Infinity }}
-            style={{ opacity }}
+            transition={{ duration: duration * 1.1, delay, repeat: Infinity }}
+            style={{ opacity: opacity * 1.1 }}
           >
-            <Music style={{ width: size, height: size }} />
+            <MusicIcon style={{ width: size * 1.1, height: size * 1.1 }} />
           </motion.div>
         );
       }
       case 'nature': {
+        const natureElements = [TreePine, Leaf, Flower2, Bird];
+        const NatureIcon = natureElements[i % natureElements.length];
+        const natureColors = ['text-emerald-300', 'text-green-300', 'text-lime-300', 'text-teal-300', 'text-cyan-300'];
+        if (i % 4 === 0) {
+          return (
+            <motion.div
+              key={i}
+              className="absolute pointer-events-none text-sky-300"
+              initial={{ x: `${startX}vw`, y: `${20 + extraRandom3}vh` }}
+              animate={{ 
+                x: [`${startX}vw`, `${startX + 30}vw`, `${startX + 50}vw`],
+                y: [`${20 + extraRandom3}vh`, `${15 + extraRandom3}vh`, `${20 + extraRandom3}vh`],
+                rotate: [0, 5, -5, 0],
+              }}
+              transition={{ duration: 4 + (i * 0.3), delay: i * 0.2, repeat: Infinity }}
+              style={{ opacity: opacity * 1.2 }}
+            >
+              <Bird style={{ width: size * 1.3, height: size * 1.3 }} />
+            </motion.div>
+          );
+        }
         return (
           <motion.div
             key={i}
-            className="absolute pointer-events-none text-emerald-300"
+            className={`absolute pointer-events-none ${natureColors[i % natureColors.length]}`}
             initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0 }}
             animate={{ 
               y: `${endY}vh`,
-              scale: [0, 1, 1, 0],
-              rotate: [-5, 5, -5],
+              scale: [0, 1.1, 1, 0],
+              rotate: [-10, 10, -10],
+              x: [`${startX}vw`, `${startX + (i % 2 === 0 ? 5 : -5)}vw`, `${startX}vw`],
             }}
-            transition={{ duration, delay, repeat: Infinity }}
-            style={{ opacity }}
+            transition={{ duration: duration * 1.2, delay, repeat: Infinity }}
+            style={{ opacity: opacity * 1.1 }}
           >
-            <TreePine style={{ width: size * 0.8, height: size * 0.8 }} />
+            <NatureIcon style={{ width: size, height: size }} />
           </motion.div>
         );
       }
