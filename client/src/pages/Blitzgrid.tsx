@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import type { Board, Category, Question } from "@shared/schema";
 import { PLAYER_AVATARS } from "@shared/schema";
-import { getBoardColorConfig, getBoardColorName } from "@/lib/boardColors";
+import { getBoardColorConfig } from "@/lib/boardColors";
 
 interface GridWithStats extends Board {
   categoryCount: number;
