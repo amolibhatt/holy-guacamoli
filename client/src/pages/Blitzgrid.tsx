@@ -2176,11 +2176,14 @@ export default function Blitzgrid() {
               </div>
             )}
             
-            {/* Grid is always visible */}
+            {/* Grid only shows after first reveal */}
+            <AnimatePresence>
+              {revealedCategoryCount > 0 && (
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
               className="h-full flex flex-col gap-3 relative z-10"
             >
               {/* Category Headers - Always visible, animate on reveal */}
@@ -2279,6 +2282,8 @@ export default function Blitzgrid() {
                 ))}
               </div>
             </motion.div>
+              )}
+            </AnimatePresence>
           </div>
           
           {/* Category Reveal Hint */}
