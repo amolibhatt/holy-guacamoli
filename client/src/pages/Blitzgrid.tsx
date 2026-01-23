@@ -24,6 +24,7 @@ import {
   Volume2, VolumeX, MoreVertical, Settings, Copy, Link2, Share2
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import html2canvas from "html2canvas";
 
 interface Player {
   id: string;
@@ -1205,6 +1206,7 @@ export default function Blitzgrid() {
   const gameOverTimers = useRef<NodeJS.Timeout[]>([]);
   const joinNotificationTimer = useRef<NodeJS.Timeout | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const scoresPanelRef = useRef<HTMLDivElement | null>(null);
   const reconnectAttempts = useRef(0);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const pingInterval = useRef<NodeJS.Timeout | null>(null);
@@ -1957,7 +1959,7 @@ export default function Blitzgrid() {
                 className="fixed inset-0 z-50 flex items-center justify-center"
                 style={{ background: currentTheme.background }}
               >
-                <div className="text-center p-4 md:p-8 max-w-4xl w-full mx-4">
+                <div ref={scoresPanelRef} className="text-center p-4 md:p-8 max-w-4xl w-full mx-4">
                   {/* Title */}
                   <motion.div
                     initial={{ y: -50, opacity: 0 }}
@@ -2161,7 +2163,7 @@ export default function Blitzgrid() {
                           variant="secondary"
                           className="font-bold gap-2"
                           data-testid="button-share-results"
-                          onClick={() => {
+                          onClick={async () => {
                             const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
                             const topPlayers = sortedPlayers.slice(0, 3);
                             const scoreText = topPlayers.map((p, i) => 
@@ -2169,12 +2171,36 @@ export default function Blitzgrid() {
                             ).join('\n');
                             const shareText = `🎮 Blitzgrid Results!\n\n${scoreText}\n\nPlay at Holy GuacAmoli!`;
                             
-                            if (navigator.share) {
-                              navigator.share({
-                                title: 'Blitzgrid Results',
-                                text: shareText,
-                              }).catch(() => {});
-                            } else {
+                            try {
+                              if (scoresPanelRef.current) {
+                                const canvas = await html2canvas(scoresPanelRef.current, {
+                                  backgroundColor: null,
+                                  scale: 2,
+                                });
+                                
+                                canvas.toBlob(async (blob) => {
+                                  if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], 'blitzgrid-results.png', { type: 'image/png' })] })) {
+                                    const file = new File([blob], 'blitzgrid-results.png', { type: 'image/png' });
+                                    await navigator.share({
+                                      title: 'Blitzgrid Results',
+                                      text: shareText,
+                                      files: [file],
+                                    });
+                                  } else if (navigator.share) {
+                                    await navigator.share({
+                                      title: 'Blitzgrid Results',
+                                      text: shareText,
+                                    });
+                                  } else {
+                                    const link = document.createElement('a');
+                                    link.download = 'blitzgrid-results.png';
+                                    link.href = canvas.toDataURL();
+                                    link.click();
+                                    toast({ title: "Image saved!", description: "Share it on your favorite platform" });
+                                  }
+                                }, 'image/png');
+                              }
+                            } catch (err) {
                               const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
                               window.open(twitterUrl, '_blank');
                             }
