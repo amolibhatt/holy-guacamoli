@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles, Users, ChevronUp, ChevronDown, Volume2, VolumeX, Lock, Grid3X3 } from "lucide-react";
+import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles, Users, ChevronUp, ChevronDown, Volume2, VolumeX, Lock, Grid3X3, Hand, Flame, Laugh, CircleDot, ThumbsUp } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { soundManager } from "@/lib/sounds";
@@ -375,6 +375,16 @@ export default function PlayerPage() {
       soundManager.play('buzz', 0.6);
       try {
         navigator.vibrate?.([50, 30, 100]);
+      } catch {}
+    }
+  };
+
+  const handleReaction = (reactionType: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "player:reaction", reactionType }));
+      soundManager.play('pop', 0.3);
+      try {
+        navigator.vibrate?.([30]);
       } catch {}
     }
   };
@@ -787,6 +797,28 @@ export default function PlayerPage() {
           )}
         </AnimatePresence>
       </main>
+
+      {/* Reaction buttons */}
+      <div className="py-3 px-4 flex items-center justify-center gap-2">
+        {[
+          { type: 'clap', Icon: Hand, label: 'Clap', color: 'text-amber-400' },
+          { type: 'fire', Icon: Flame, label: 'Fire', color: 'text-orange-500' },
+          { type: 'laugh', Icon: Laugh, label: 'Laugh', color: 'text-yellow-400' },
+          { type: 'wow', Icon: CircleDot, label: 'Wow', color: 'text-purple-400' },
+          { type: 'thumbsup', Icon: ThumbsUp, label: 'Thumbs Up', color: 'text-emerald-400' },
+        ].map(r => (
+          <motion.button
+            key={r.type}
+            whileTap={{ scale: 0.8 }}
+            onClick={() => handleReaction(r.type)}
+            className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            aria-label={r.label}
+            data-testid={`button-reaction-${r.type}`}
+          >
+            <r.Icon className={`w-6 h-6 ${r.color}`} />
+          </motion.button>
+        ))}
+      </div>
 
       <footer className="p-4 text-center border-t border-border/30 bg-card/40 backdrop-blur" role="status" aria-live="polite" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
         <div className="flex items-center justify-center gap-3">

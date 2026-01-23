@@ -4129,6 +4129,28 @@ export async function registerRoutes(
             break;
           }
 
+          case 'player:reaction': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || mapping.isHost) break;
+
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            const player = room.players.get(mapping.playerId!);
+            if (!player) break;
+
+            const reactionType = data.reactionType;
+            if (!reactionType || typeof reactionType !== 'string') break;
+
+            sendToHost(room, { 
+              type: 'player:reaction', 
+              playerId: mapping.playerId, 
+              playerName: player.name,
+              reactionType 
+            });
+            break;
+          }
+
           case 'host:unlock': {
             const mapping = wsToRoom.get(ws);
             if (!mapping || !mapping.isHost) break;

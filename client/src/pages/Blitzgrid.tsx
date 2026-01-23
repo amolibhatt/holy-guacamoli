@@ -11,9 +11,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
 import { Logo } from "@/components/Logo";
 import { useScore } from "@/components/ScoreContext";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import confetti from "canvas-confetti";
-import { playWhoosh, playRevealFlip, playPointsAwarded, playCelebration, playWrongBuzz, soundManager } from "@/lib/sounds";
+import { playWhoosh, playRevealFlip, playPointsAwarded, playCelebration, playWrongBuzz, playDrumroll, playFanfare, playApplause, playReaction, playSwoosh, soundManager } from "@/lib/sounds";
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Play, Loader2,
@@ -21,7 +21,8 @@ import {
   Circle, Waves, Sun, Star, TreePine, Flower2, Leaf, Bird,
   PartyPopper, Cake, Umbrella, Briefcase, Dog, Cat, Rocket, Music, Palette, Heart, Timer,
   Target, Flag, Award, Dribbble, Shirt, Footprints, Shell, Fish, Gift, Candy, Coffee, Laptop, Headphones, Mic2, Guitar,
-  Volume2, VolumeX, MoreVertical, Settings, Copy, Link2, Share2, Download, Image, Loader2 as LoaderIcon, Clock
+  Volume2, VolumeX, MoreVertical, Settings, Copy, Link2, Share2, Download, Image, Loader2 as LoaderIcon, Clock,
+  Hand, Flame, Laugh, CircleDot, ThumbsUp
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import html2canvas from "html2canvas";
@@ -1206,7 +1207,10 @@ export default function Blitzgrid() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
+  const [scoreAnimations, setScoreAnimations] = useState<Map<string, { delta: number; timestamp: number }>>(new Map());
+  const [reactions, setReactions] = useState<Array<{ id: string; type: string; playerId?: string; timestamp: number }>>([]);
   const shareCardRef = useRef<HTMLDivElement | null>(null);
+  const previousScoresRef = useRef<Map<string, number>>(new Map());
   const gameOverTimers = useRef<NodeJS.Timeout[]>([]);
   const joinNotificationTimer = useRef<NodeJS.Timeout | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -1525,6 +1529,21 @@ export default function Blitzgrid() {
             setPlayers(prev => prev.filter(p => p.id !== data.playerId));
             setBuzzQueue(prev => prev.filter(b => b.playerId !== data.playerId));
             break;
+          case 'player:reaction':
+            if (data.reactionType && data.playerName) {
+              const reactionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+              setReactions(prev => [...prev, { 
+                id: reactionId, 
+                type: data.reactionType, 
+                playerId: data.playerId,
+                timestamp: Date.now() 
+              }]);
+              playReaction();
+              setTimeout(() => {
+                setReactions(prev => prev.filter(r => r.id !== reactionId));
+              }, 2500);
+            }
+            break;
           case 'player:disconnected':
             setPlayers(prev => prev.map(p => 
               p.id === data.playerId ? { ...p, connected: false } : p
@@ -1625,8 +1644,27 @@ export default function Blitzgrid() {
         setLastScoreChange({ playerId, playerName: player?.name || 'Player', points });
       }
       
+      const animTimestamp = Date.now();
+      setScoreAnimations(prev => {
+        const next = new Map(prev);
+        next.set(playerId, { delta: points, timestamp: animTimestamp });
+        return next;
+      });
+      setTimeout(() => {
+        setScoreAnimations(prev => {
+          const current = prev.get(playerId);
+          if (current && current.timestamp === animTimestamp) {
+            const next = new Map(prev);
+            next.delete(playerId);
+            return next;
+          }
+          return prev;
+        });
+      }, 1500);
+      
       if (points > 0) {
         playPointsAwarded(points);
+        playSwoosh();
         if (points >= 40) {
           confetti({
             particleCount: 100,
@@ -1703,22 +1741,43 @@ export default function Blitzgrid() {
     toast({ title: "Session ended", description: "All players have been disconnected." });
   }, [clearStoredSession, disconnectWebSocket, toast]);
   
-  // Fire celebratory confetti
+  // Fire celebratory confetti with fireworks
   const fireConfetti = useCallback(() => {
-    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+    const defaults = { startVelocity: 30, spread: 360, ticks: 80, zIndex: 100 };
     const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
     
-    // Multiple bursts
+    playFanfare();
+    
+    // Initial burst from sides
     confetti({ ...defaults, particleCount: 80, origin: { x: randomInRange(0.1, 0.3), y: randomInRange(0.2, 0.4) }, colors: ['#22c55e', '#16a34a', '#FFD700', '#FFA500'] });
+    confetti({ ...defaults, particleCount: 80, origin: { x: randomInRange(0.7, 0.9), y: randomInRange(0.2, 0.4) }, colors: ['#22c55e', '#16a34a', '#FFD700', '#FFA500'] });
+    
+    // Firework burst pattern - center explosion
     setTimeout(() => {
-      confetti({ ...defaults, particleCount: 80, origin: { x: randomInRange(0.7, 0.9), y: randomInRange(0.2, 0.4) }, colors: ['#22c55e', '#16a34a', '#FFD700', '#FFA500'] });
+      confetti({ particleCount: 150, spread: 70, origin: { x: 0.5, y: 0.35 }, colors: ['#FFD700', '#FFFFFF', '#22c55e', '#4ADEBC', '#f472b6', '#8b5cf6'] });
     }, 200);
+    
+    // Star shapes
     setTimeout(() => {
-      confetti({ ...defaults, particleCount: 120, origin: { x: 0.5, y: 0.3 }, colors: ['#FFD700', '#FFFFFF', '#22c55e', '#4ADEBC'] });
+      confetti({ particleCount: 60, spread: 100, origin: { x: 0.5, y: 0.5 }, shapes: ['star'], colors: ['#FFD700', '#FFA500', '#FFFFFF'], scalar: 1.8 });
     }, 400);
+    
+    // Side fireworks
     setTimeout(() => {
-      confetti({ particleCount: 50, spread: 100, origin: { x: 0.5, y: 0.5 }, shapes: ['star'], colors: ['#FFD700', '#FFA500'], scalar: 1.5 });
+      confetti({ particleCount: 100, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#8b5cf6', '#a855f7', '#c084fc'] });
+      confetti({ particleCount: 100, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#ec4899', '#f472b6', '#fb7185'] });
     }, 600);
+    
+    // Final golden shower
+    setTimeout(() => {
+      playApplause();
+      confetti({ particleCount: 200, spread: 180, origin: { x: 0.5, y: 0.1 }, startVelocity: 45, colors: ['#FFD700', '#FFA500', '#FFEC8B', '#FFFFFF'], gravity: 0.8 });
+    }, 900);
+    
+    // Extra stars burst
+    setTimeout(() => {
+      confetti({ particleCount: 80, spread: 360, origin: { x: 0.5, y: 0.4 }, shapes: ['star'], colors: ['#FFD700', '#FFFFFF'], scalar: 2, ticks: 100 });
+    }, 1200);
   }, []);
   
   // Start the game over reveal animation
@@ -1745,6 +1804,9 @@ export default function Blitzgrid() {
     phases.forEach((delay, i) => {
       const timer = setTimeout(() => {
         setGameOverPhase(i + 1);
+        if (i === phases.length - 2) {
+          playDrumroll();
+        }
         if (i === phases.length - 1) {
           fireConfetti();
         }
@@ -2319,6 +2381,42 @@ export default function Blitzgrid() {
             )}
           </AnimatePresence>
           
+          {/* Player Reactions Overlay */}
+          <div className="absolute bottom-24 right-4 z-40 pointer-events-none">
+            <AnimatePresence>
+              {reactions.map((reaction) => {
+                const ReactionIcon = {
+                  clap: Hand,
+                  fire: Flame,
+                  laugh: Laugh,
+                  wow: CircleDot,
+                  thumbsup: ThumbsUp,
+                }[reaction.type] || Heart;
+                
+                const reactionColor = {
+                  clap: 'text-amber-400',
+                  fire: 'text-orange-500',
+                  laugh: 'text-yellow-400',
+                  wow: 'text-purple-400',
+                  thumbsup: 'text-emerald-400',
+                }[reaction.type] || 'text-pink-400';
+                
+                return (
+                  <motion.div
+                    key={reaction.id}
+                    initial={{ opacity: 1, y: 0, scale: 0.5, x: Math.random() * 40 - 20 }}
+                    animate={{ opacity: 0, y: -120, scale: 1.5 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 2, ease: "easeOut" }}
+                    className="absolute bottom-0 right-0"
+                  >
+                    <ReactionIcon className={`w-10 h-10 ${reactionColor}`} />
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+          
           {/* Game Grid */}
           <div className="flex-1 p-3 md:p-5 overflow-hidden relative">
             {/* Football pitch markings - only show for sports theme */}
@@ -2516,69 +2614,106 @@ export default function Blitzgrid() {
             className="bg-white/5 backdrop-blur-md border-t border-white/10 px-4 py-2"
           >
             {players.length > 0 ? (
-              <div className="flex items-center justify-center gap-3 md:gap-5 flex-wrap">
-                {[...players].sort((a, b) => b.score - a.score).map((player, idx) => {
-                  const avatarEmoji = PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji;
-                  const isSelected = selectedPlayerId === player.id;
-                  return (
-                    <motion.div
-                      key={player.id}
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.4 + idx * 0.05 }}
-                      onClick={() => setSelectedPlayerId(isSelected ? null : player.id)}
-                      className={`flex items-center gap-2 rounded-full py-1 pl-1 pr-3 cursor-pointer transition-all ${
-                        isSelected ? 'bg-white/15 ring-2 ring-emerald-400/50' : 'hover:bg-white/10'
-                      } ${!player.connected ? 'opacity-50' : ''}`}
-                    >
-                      <div className="relative">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-base ${
-                          idx === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-600' : 
-                          idx === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400' : 
-                          idx === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-800' : 
-                          'bg-gradient-to-br from-emerald-400 to-emerald-600'
-                        }`}>
-                          {avatarEmoji}
-                        </div>
-                        <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-slate-900 ${player.connected ? 'bg-green-500' : 'bg-red-500'}`} />
-                      </div>
-                      <div className="flex flex-col leading-tight">
-                        <span className="text-white font-medium text-xs">{player.name}</span>
-                        <span className="text-emerald-400 font-bold text-sm">{player.score}</span>
-                      </div>
-                      
-                      <AnimatePresence>
-                        {isSelected && (
+              <LayoutGroup>
+                <div className="flex items-center justify-center gap-3 md:gap-5 flex-wrap">
+                  {[...players].sort((a, b) => b.score - a.score).map((player, idx) => {
+                    const avatarEmoji = PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji;
+                    const isSelected = selectedPlayerId === player.id;
+                    const scoreAnim = scoreAnimations.get(player.id);
+                    return (
+                      <motion.div
+                        key={player.id}
+                        layoutId={`player-score-${player.id}`}
+                        layout
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ 
+                          layout: { type: "spring", stiffness: 400, damping: 30 },
+                          opacity: { delay: 0.4 + idx * 0.05 }
+                        }}
+                        onClick={() => setSelectedPlayerId(isSelected ? null : player.id)}
+                        className={`relative flex items-center gap-2 rounded-full py-1 pl-1 pr-3 cursor-pointer transition-all ${
+                          isSelected ? 'bg-white/15 ring-2 ring-emerald-400/50' : 'hover:bg-white/10'
+                        } ${!player.connected ? 'opacity-50' : ''}`}
+                      >
+                        {/* Score change indicator */}
+                        <AnimatePresence>
+                          {scoreAnim && (
+                            <motion.div
+                              initial={{ opacity: 1, y: 0, scale: 1 }}
+                              animate={{ opacity: 0, y: -30, scale: 1.3 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 1, ease: "easeOut" }}
+                              className={`absolute -top-6 left-1/2 -translate-x-1/2 font-bold text-sm whitespace-nowrap ${
+                                scoreAnim.delta > 0 ? 'text-emerald-400' : 'text-red-400'
+                              }`}
+                            >
+                              {scoreAnim.delta > 0 ? '+' : ''}{scoreAnim.delta}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                        
+                        <div className="relative">
                           <motion.div 
-                            initial={{ width: 0, opacity: 0 }}
-                            animate={{ width: 'auto', opacity: 1 }}
-                            exit={{ width: 0, opacity: 0 }}
-                            className="flex gap-1 overflow-hidden ml-1"
+                            animate={scoreAnim ? { scale: [1, 1.2, 1] } : {}}
+                            transition={{ duration: 0.3 }}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-base ${
+                              idx === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-600' : 
+                              idx === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400' : 
+                              idx === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-800' : 
+                              'bg-gradient-to-br from-emerald-400 to-emerald-600'
+                            }`}
                           >
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={(e) => { e.stopPropagation(); updatePlayerScore(player.id, -10); }}
-                              data-testid={`button-sub-score-${player.id}`}
-                            >
-                              <Minus className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="default"
-                              className="bg-emerald-500"
-                              onClick={(e) => { e.stopPropagation(); updatePlayerScore(player.id, 10); }}
-                              data-testid={`button-add-score-${player.id}`}
-                            >
-                              <Plus className="w-3 h-3" />
-                            </Button>
+                            {avatarEmoji}
                           </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                          <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-slate-900 ${player.connected ? 'bg-green-500' : 'bg-red-500'}`} />
+                        </div>
+                        <div className="flex flex-col leading-tight">
+                          <span className="text-white font-medium text-xs">{player.name}</span>
+                          <motion.span 
+                            key={player.score}
+                            initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? '#34d399' : scoreAnim?.delta && scoreAnim.delta < 0 ? '#f87171' : '#34d399' }}
+                            animate={{ scale: 1, color: '#34d399' }}
+                            transition={{ duration: 0.3 }}
+                            className="text-emerald-400 font-bold text-sm"
+                          >
+                            {player.score}
+                          </motion.span>
+                        </div>
+                        
+                        <AnimatePresence>
+                          {isSelected && (
+                            <motion.div 
+                              initial={{ width: 0, opacity: 0 }}
+                              animate={{ width: 'auto', opacity: 1 }}
+                              exit={{ width: 0, opacity: 0 }}
+                              className="flex gap-1 overflow-hidden ml-1"
+                            >
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={(e) => { e.stopPropagation(); updatePlayerScore(player.id, -10); }}
+                                data-testid={`button-sub-score-${player.id}`}
+                              >
+                                <Minus className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                className="bg-emerald-500"
+                                onClick={(e) => { e.stopPropagation(); updatePlayerScore(player.id, 10); }}
+                                data-testid={`button-add-score-${player.id}`}
+                              >
+                                <Plus className="w-3 h-3" />
+                              </Button>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </LayoutGroup>
             ) : (
               <div className="flex items-center justify-center gap-2 text-white/40 text-sm py-1">
                 <Users className="w-4 h-4" />
