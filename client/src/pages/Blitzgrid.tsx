@@ -1955,9 +1955,9 @@ export default function Blitzgrid() {
     };
     
     return (
-      <div className="h-screen overflow-hidden flex flex-col bg-background" data-testid="page-blitzgrid-grid">
+      <div className="min-h-screen flex flex-col bg-background" data-testid="page-blitzgrid-grid">
         <AppHeader showAdminButton adminHref="/admin/games" />
-        <div className="flex-1 overflow-hidden flex flex-col container mx-auto px-4 py-4">
+        <div className="flex-1 flex flex-col container mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4 shrink-0">
             <div className="flex items-center gap-4">
               <Button 
@@ -2065,8 +2065,8 @@ export default function Blitzgrid() {
             </Card>
           )}
 
-          {/* Categories with inline questions - scrollable area */}
-          <div className="flex-1 overflow-y-auto">
+          {/* Categories with inline questions */}
+          <div className="flex-1">
             {loadingCategories ? (
               <div className="space-y-4">
                 {[1, 2, 3].map(i => <Skeleton key={i} className="h-48" />)}
