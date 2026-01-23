@@ -112,9 +112,10 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
     };
 
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      try {
+        const data = JSON.parse(event.data);
 
-      switch (data.type) {
+        switch (data.type) {
         case "room:created":
           setRoomCode(data.code);
           setSessionId(data.sessionId);
@@ -206,6 +207,7 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
           }
           break;
       }
+      } catch { /* ignore parse errors */ }
     };
 
     ws.onclose = () => {

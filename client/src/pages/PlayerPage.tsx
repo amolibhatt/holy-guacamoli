@@ -112,9 +112,10 @@ export default function PlayerPage() {
     };
 
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      try {
+        const data = JSON.parse(event.data);
 
-      switch (data.type) {
+        switch (data.type) {
         case "joined":
           setJoined(true);
           joinedRef.current = true;
@@ -278,6 +279,7 @@ export default function PlayerPage() {
           }
           break;
       }
+      } catch { /* ignore parse errors */ }
     };
 
     ws.onclose = () => {

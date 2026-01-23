@@ -54,17 +54,17 @@ interface CategoryWithQuestions extends Category {
 
 const POINT_TIERS = [10, 20, 30, 40, 50];
 
-// Available themes for grids - fun and interactive!
+// Available themes for grids - sophisticated and playful
 const GRID_THEMES = [
-  { id: 'sports', name: 'Sports', iconType: 'trophy' as const, background: 'linear-gradient(180deg, #15803d 0%, #22c55e 50%, #15803d 100%)' },
-  { id: 'birthday', name: 'Birthday', iconType: 'cake' as const, background: 'linear-gradient(180deg, #7c3aed 0%, #a78bfa 50%, #7c3aed 100%)' },
-  { id: 'beach', name: 'Beach', iconType: 'umbrella' as const, background: 'linear-gradient(180deg, #0891b2 0%, #22d3ee 50%, #0891b2 100%)' },
-  { id: 'office', name: 'Office', iconType: 'briefcase' as const, background: 'linear-gradient(180deg, #374151 0%, #6b7280 50%, #374151 100%)' },
-  { id: 'dogs', name: 'Dogs', iconType: 'dog' as const, background: 'linear-gradient(180deg, #92400e 0%, #d97706 50%, #92400e 100%)' },
-  { id: 'cats', name: 'Cats', iconType: 'cat' as const, background: 'linear-gradient(180deg, #6b21a8 0%, #a855f7 50%, #6b21a8 100%)' },
-  { id: 'space', name: 'Space', iconType: 'rocket' as const, background: 'linear-gradient(180deg, #0c1222 0%, #1e3a5f 50%, #0c1222 100%)' },
-  { id: 'music', name: 'Music', iconType: 'music' as const, background: 'linear-gradient(180deg, #991b1b 0%, #dc2626 50%, #991b1b 100%)' },
-  { id: 'nature', name: 'Nature', iconType: 'palette' as const, background: 'linear-gradient(180deg, #065f46 0%, #10b981 50%, #065f46 100%)' },
+  { id: 'sports', name: 'Sports', iconType: 'trophy' as const, background: 'linear-gradient(180deg, #166534 0%, #22c55e 40%, #4ade80 60%, #22c55e 100%)' },
+  { id: 'birthday', name: 'Birthday', iconType: 'cake' as const, background: 'linear-gradient(180deg, #9333ea 0%, #c084fc 50%, #e879f9 70%, #c084fc 100%)' },
+  { id: 'beach', name: 'Beach', iconType: 'umbrella' as const, background: 'linear-gradient(180deg, #0369a1 0%, #38bdf8 50%, #7dd3fc 70%, #38bdf8 100%)' },
+  { id: 'office', name: 'Office', iconType: 'briefcase' as const, background: 'linear-gradient(180deg, #1f2937 0%, #4b5563 50%, #6b7280 70%, #4b5563 100%)' },
+  { id: 'dogs', name: 'Dogs', iconType: 'dog' as const, background: 'linear-gradient(180deg, #b45309 0%, #f59e0b 50%, #fbbf24 70%, #f59e0b 100%)' },
+  { id: 'cats', name: 'Cats', iconType: 'cat' as const, background: 'linear-gradient(180deg, #4c1d95 0%, #8b5cf6 50%, #a78bfa 70%, #8b5cf6 100%)' },
+  { id: 'space', name: 'Space', iconType: 'rocket' as const, background: 'linear-gradient(180deg, #0f172a 0%, #1e3a5f 40%, #334155 60%, #1e3a5f 100%)' },
+  { id: 'music', name: 'Music', iconType: 'music' as const, background: 'linear-gradient(180deg, #be123c 0%, #f43f5e 50%, #fb7185 70%, #f43f5e 100%)' },
+  { id: 'nature', name: 'Nature', iconType: 'leaf' as const, background: 'linear-gradient(180deg, #14532d 0%, #16a34a 50%, #4ade80 70%, #16a34a 100%)' },
 ] as const;
 
 type ThemeIconType = typeof GRID_THEMES[number]['iconType'];
@@ -80,7 +80,7 @@ const ThemeIcon = ({ type, className }: { type: ThemeIconType; className?: strin
     case 'cat': return <Cat className={className} />;
     case 'rocket': return <Rocket className={className} />;
     case 'music': return <Music className={className} />;
-    case 'palette': return <Palette className={className} />;
+    case 'leaf': return <Leaf className={className} />;
     default: return <PartyPopper className={className} />;
   }
 };

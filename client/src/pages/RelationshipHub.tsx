@@ -179,8 +179,10 @@ export default function RelationshipHub() {
   
   const [answers, setAnswersState] = useState<Record<number, string>>(() => {
     if (typeof window !== 'undefined' && storageKey) {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) return JSON.parse(saved);
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) return JSON.parse(saved);
+      } catch { /* ignore parse errors */ }
     }
     return {};
   });
@@ -204,7 +206,9 @@ export default function RelationshipHub() {
     
     if (saved) {
       // Restore from localStorage
-      setAnswersState(JSON.parse(saved));
+      try {
+        setAnswersState(JSON.parse(saved));
+      } catch { /* ignore parse errors */ }
     } else if (dailyData.answers && dailyData.answers.length > 0 && user) {
       // Fall back to server data (already submitted)
       const userAnswers = dailyData.answers.filter(a => a.userId === user.id);
