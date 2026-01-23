@@ -2235,10 +2235,6 @@ export default function Blitzgrid() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => setShowQRCode(true)}>
-                    <QrCode className="w-4 h-4 mr-2" />
-                    Show QR Code
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => {
                     const newVal = soundManager.toggle();
                     setSoundEnabled(newVal);
