@@ -39,7 +39,7 @@ const POINT_TIERS = [10, 20, 30, 40, 50];
 
 // Available themes for grids
 const GRID_THEMES = [
-  { id: 'sports', name: 'Sports', iconType: 'trophy' as const },
+  { id: 'sports', name: 'Football', iconType: 'trophy' as const },
   { id: 'birthday', name: 'Birthday', iconType: 'cake' as const },
   { id: 'beach', name: 'Beach', iconType: 'umbrella' as const },
   { id: 'office', name: 'Office', iconType: 'briefcase' as const },

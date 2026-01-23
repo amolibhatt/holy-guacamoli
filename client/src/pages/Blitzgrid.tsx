@@ -57,7 +57,7 @@ const POINT_TIERS = [10, 20, 30, 40, 50];
 
 // Available themes for grids - sophisticated and playful
 const GRID_THEMES = [
-  { id: 'sports', name: 'Sports', iconType: 'trophy' as const, background: 'linear-gradient(180deg, #166534 0%, #22c55e 40%, #4ade80 60%, #22c55e 100%)' },
+  { id: 'sports', name: 'Football', iconType: 'trophy' as const, background: 'linear-gradient(180deg, #15803d 0%, #16a34a 30%, #22c55e 50%, #16a34a 70%, #15803d 100%)' },
   { id: 'birthday', name: 'Birthday', iconType: 'cake' as const, background: 'linear-gradient(180deg, #9333ea 0%, #c084fc 50%, #e879f9 70%, #c084fc 100%)' },
   { id: 'beach', name: 'Beach', iconType: 'umbrella' as const, background: 'linear-gradient(180deg, #0369a1 0%, #38bdf8 50%, #7dd3fc 70%, #38bdf8 100%)' },
   { id: 'office', name: 'Office', iconType: 'briefcase' as const, background: 'linear-gradient(180deg, #1f2937 0%, #4b5563 50%, #6b7280 70%, #4b5563 100%)' },
@@ -123,45 +123,57 @@ const ThemeElements = ({ themeId }: { themeId: string }) => {
     
     switch (themeId) {
       case 'sports': {
-        if (i % 3 === 0) {
+        // Soccer balls bouncing around!
+        if (i % 2 === 0) {
+          const ballSize = size * 1.3;
           return (
             <motion.div
               key={i}
               className="absolute pointer-events-none"
-              initial={{ x: `${startX}vw`, y: `${startY + 20}vh` }}
+              initial={{ x: `${startX}vw`, y: `${startY}vh` }}
               animate={{ 
-                x: [`${startX}vw`, `${startX + 30}vw`],
-                y: [`${startY + 20}vh`, `${startY}vh`, `${startY + 40}vh`],
-                rotate: [0, 360, 720, 1080],
+                x: [`${startX}vw`, `${startX + 15}vw`, `${startX - 10}vw`, `${startX}vw`],
+                y: [`${startY}vh`, `${startY - 20}vh`, `${startY + 10}vh`, `${startY - 15}vh`, `${startY}vh`],
+                rotate: [0, 360, 720, 1080, 1440],
               }}
-              transition={{ duration: duration * 2, delay, repeat: Infinity, ease: "easeInOut" }}
-              style={{ opacity: opacity * 1.2 }}
+              transition={{ duration: duration * 3, delay, repeat: Infinity, ease: "easeInOut" }}
+              style={{ opacity: 0.9 }}
             >
+              {/* Soccer ball */}
               <div 
-                className="rounded-full bg-gradient-to-br from-amber-600 to-amber-900 border-2 border-white/50"
-                style={{ width: size * 1.2, height: size * 0.8 }}
+                className="rounded-full bg-white shadow-lg relative overflow-hidden"
+                style={{ width: ballSize, height: ballSize }}
               >
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="w-[60%] h-[2px] bg-white/60" />
+                {/* Pentagon pattern */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-[40%] h-[40%] bg-gray-900 rounded-sm rotate-45" />
                 </div>
+                <div className="absolute top-[10%] left-[25%] w-[20%] h-[20%] bg-gray-900 rounded-sm" />
+                <div className="absolute top-[10%] right-[25%] w-[20%] h-[20%] bg-gray-900 rounded-sm" />
+                <div className="absolute bottom-[10%] left-[25%] w-[20%] h-[20%] bg-gray-900 rounded-sm" />
+                <div className="absolute bottom-[10%] right-[25%] w-[20%] h-[20%] bg-gray-900 rounded-sm" />
               </div>
             </motion.div>
           );
         }
+        // Goal posts, whistles, medals, flags
+        const footballElements = [Trophy, Medal, Flag, Award, Target, Crown];
+        const FootballIcon = footballElements[i % footballElements.length];
+        const footballColors = ['text-yellow-400', 'text-amber-300', 'text-white', 'text-yellow-500', 'text-orange-400', 'text-yellow-300'];
         return (
           <motion.div
             key={i}
-            className={`absolute pointer-events-none ${sportsColors[i % sportsColors.length]}`}
+            className={`absolute pointer-events-none ${footballColors[i % footballColors.length]}`}
             initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0 }}
             animate={{ 
-              y: `${endY}vh`,
-              scale: [0, 1.2, 1, 0],
-              rotate: i % 2 === 0 ? [0, 15, -15, 0] : [0, -15, 15, 0],
+              y: [`${startY}vh`, `${endY}vh`],
+              scale: [0, 1.3, 1.1, 0],
+              rotate: i % 2 === 0 ? [0, 20, -20, 0] : [0, -20, 20, 0],
             }}
-            transition={{ duration: duration * 1.5, delay, repeat: Infinity, ease: "easeOut" }}
-            style={{ opacity: opacity * 1.2 }}
+            transition={{ duration: duration * 1.8, delay, repeat: Infinity, ease: "easeOut" }}
+            style={{ opacity: 0.85 }}
           >
-            <SportsIcon style={{ width: size, height: size }} />
+            <FootballIcon style={{ width: size * 1.2, height: size * 1.2 }} />
           </motion.div>
         );
       }
