@@ -62,15 +62,60 @@ const POINT_TIERS = [10, 20, 30, 40, 50];
 
 // Available themes for grids - sophisticated and playful
 const GRID_THEMES = [
-  { id: 'sports', name: 'Football', iconType: 'trophy' as const, background: 'linear-gradient(180deg, #15803d 0%, #16a34a 30%, #22c55e 50%, #16a34a 70%, #15803d 100%)' },
-  { id: 'birthday', name: 'Birthday', iconType: 'cake' as const, background: 'linear-gradient(180deg, #9333ea 0%, #c084fc 50%, #e879f9 70%, #c084fc 100%)' },
-  { id: 'beach', name: 'Beach', iconType: 'umbrella' as const, background: 'linear-gradient(180deg, #0369a1 0%, #38bdf8 50%, #7dd3fc 70%, #38bdf8 100%)' },
-  { id: 'office', name: 'Office', iconType: 'briefcase' as const, background: 'linear-gradient(180deg, #1f2937 0%, #4b5563 50%, #6b7280 70%, #4b5563 100%)' },
-  { id: 'dogs', name: 'Dogs', iconType: 'dog' as const, background: 'linear-gradient(180deg, #b45309 0%, #f59e0b 50%, #fbbf24 70%, #f59e0b 100%)' },
-  { id: 'cats', name: 'Cats', iconType: 'cat' as const, background: 'linear-gradient(180deg, #4c1d95 0%, #8b5cf6 50%, #a78bfa 70%, #8b5cf6 100%)' },
-  { id: 'space', name: 'Space', iconType: 'rocket' as const, background: 'linear-gradient(180deg, #0f172a 0%, #1e3a5f 40%, #334155 60%, #1e3a5f 100%)' },
-  { id: 'music', name: 'Music', iconType: 'music' as const, background: 'linear-gradient(180deg, #be123c 0%, #f43f5e 50%, #fb7185 70%, #f43f5e 100%)' },
-  { id: 'nature', name: 'Nature', iconType: 'leaf' as const, background: 'linear-gradient(180deg, #14532d 0%, #16a34a 50%, #4ade80 70%, #16a34a 100%)' },
+  { 
+    id: 'sports', name: 'Football', iconType: 'trophy' as const, 
+    background: 'linear-gradient(135deg, #064e3b 0%, #059669 25%, #10b981 50%, #34d399 75%, #065f46 100%)',
+    overlay: 'radial-gradient(ellipse at 30% 20%, rgba(52, 211, 153, 0.3) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(16, 185, 129, 0.2) 0%, transparent 50%)',
+    glow: '#34d399'
+  },
+  { 
+    id: 'birthday', name: 'Birthday', iconType: 'cake' as const, 
+    background: 'linear-gradient(135deg, #581c87 0%, #9333ea 20%, #c084fc 40%, #e879f9 60%, #f0abfc 80%, #a855f7 100%)',
+    overlay: 'radial-gradient(ellipse at 20% 30%, rgba(232, 121, 249, 0.4) 0%, transparent 40%), radial-gradient(ellipse at 80% 70%, rgba(192, 132, 252, 0.3) 0%, transparent 50%), radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 70%)',
+    glow: '#e879f9'
+  },
+  { 
+    id: 'beach', name: 'Beach', iconType: 'umbrella' as const, 
+    background: 'linear-gradient(180deg, #0c4a6e 0%, #0284c7 20%, #38bdf8 45%, #7dd3fc 65%, #fef3c7 85%, #fde68a 100%)',
+    overlay: 'radial-gradient(ellipse at 80% 20%, rgba(251, 191, 36, 0.3) 0%, transparent 40%), radial-gradient(ellipse at 20% 60%, rgba(56, 189, 248, 0.2) 0%, transparent 50%)',
+    glow: '#38bdf8'
+  },
+  { 
+    id: 'office', name: 'Office', iconType: 'briefcase' as const, 
+    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #334155 50%, #475569 75%, #1e293b 100%)',
+    overlay: 'radial-gradient(ellipse at 30% 30%, rgba(148, 163, 184, 0.15) 0%, transparent 50%), radial-gradient(ellipse at 70% 70%, rgba(100, 116, 139, 0.1) 0%, transparent 50%)',
+    glow: '#94a3b8'
+  },
+  { 
+    id: 'dogs', name: 'Dogs', iconType: 'dog' as const, 
+    background: 'linear-gradient(135deg, #78350f 0%, #b45309 20%, #f59e0b 45%, #fbbf24 65%, #fcd34d 85%, #d97706 100%)',
+    overlay: 'radial-gradient(ellipse at 25% 25%, rgba(251, 191, 36, 0.4) 0%, transparent 45%), radial-gradient(ellipse at 75% 75%, rgba(245, 158, 11, 0.3) 0%, transparent 50%)',
+    glow: '#fbbf24'
+  },
+  { 
+    id: 'cats', name: 'Cats', iconType: 'cat' as const, 
+    background: 'linear-gradient(135deg, #1e1b4b 0%, #3730a3 20%, #6366f1 40%, #818cf8 60%, #a5b4fc 80%, #4f46e5 100%)',
+    overlay: 'radial-gradient(ellipse at 20% 40%, rgba(165, 180, 252, 0.3) 0%, transparent 45%), radial-gradient(ellipse at 80% 60%, rgba(129, 140, 248, 0.25) 0%, transparent 50%)',
+    glow: '#a5b4fc'
+  },
+  { 
+    id: 'space', name: 'Space', iconType: 'rocket' as const, 
+    background: 'linear-gradient(180deg, #020617 0%, #0f172a 20%, #1e1b4b 40%, #312e81 60%, #1e1b4b 80%, #0f172a 100%)',
+    overlay: 'radial-gradient(ellipse at 20% 20%, rgba(139, 92, 246, 0.3) 0%, transparent 40%), radial-gradient(ellipse at 80% 30%, rgba(236, 72, 153, 0.2) 0%, transparent 35%), radial-gradient(ellipse at 50% 80%, rgba(56, 189, 248, 0.15) 0%, transparent 45%)',
+    glow: '#8b5cf6'
+  },
+  { 
+    id: 'music', name: 'Music', iconType: 'music' as const, 
+    background: 'linear-gradient(135deg, #4c0519 0%, #9f1239 20%, #e11d48 40%, #fb7185 60%, #fda4af 80%, #be123c 100%)',
+    overlay: 'radial-gradient(ellipse at 30% 25%, rgba(251, 113, 133, 0.4) 0%, transparent 45%), radial-gradient(ellipse at 70% 75%, rgba(225, 29, 72, 0.3) 0%, transparent 50%)',
+    glow: '#fb7185'
+  },
+  { 
+    id: 'nature', name: 'Nature', iconType: 'leaf' as const, 
+    background: 'linear-gradient(180deg, #14532d 0%, #166534 20%, #22c55e 45%, #86efac 65%, #bbf7d0 80%, #16a34a 100%)',
+    overlay: 'radial-gradient(ellipse at 25% 30%, rgba(134, 239, 172, 0.35) 0%, transparent 45%), radial-gradient(ellipse at 75% 70%, rgba(34, 197, 94, 0.25) 0%, transparent 50%)',
+    glow: '#86efac'
+  },
 ] as const;
 
 type ThemeIconType = typeof GRID_THEMES[number]['iconType'];
@@ -116,6 +161,107 @@ const generateElementData = (count: number) => {
 };
 
 const ELEMENT_DATA = generateElementData(12);
+
+// Atmospheric particles for depth and ambiance
+const AtmosphericParticles = ({ themeId, glowColor }: { themeId: string; glowColor: string }) => {
+  // Different particle configs per theme
+  const particleConfigs = {
+    space: { count: 40, type: 'stars' as const },
+    birthday: { count: 25, type: 'sparkles' as const },
+    beach: { count: 15, type: 'bubbles' as const },
+    music: { count: 20, type: 'notes' as const },
+    nature: { count: 18, type: 'leaves' as const },
+    default: { count: 20, type: 'dots' as const },
+  };
+  
+  const config = particleConfigs[themeId as keyof typeof particleConfigs] || particleConfigs.default;
+  
+  return (
+    <div className="absolute inset-0 pointer-events-none z-[3] overflow-hidden">
+      {/* Layer 1: Far background (slow, small, faded) */}
+      {[...Array(Math.floor(config.count * 0.4))].map((_, i) => (
+        <motion.div
+          key={`far-${i}`}
+          className="absolute rounded-full"
+          style={{
+            left: `${(i * 17.3) % 100}%`,
+            top: `${(i * 23.7) % 100}%`,
+            width: config.type === 'stars' ? 2 : 3,
+            height: config.type === 'stars' ? 2 : 3,
+            background: config.type === 'stars' ? 'white' : `${glowColor}40`,
+            boxShadow: config.type === 'stars' ? `0 0 4px 1px white` : 'none',
+          }}
+          animate={{
+            y: [0, -30, 0],
+            opacity: config.type === 'stars' ? [0.3, 0.8, 0.3] : [0.2, 0.4, 0.2],
+          }}
+          transition={{
+            duration: 8 + (i % 4) * 2,
+            delay: i * 0.3,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+      
+      {/* Layer 2: Mid-ground (medium speed, medium size) */}
+      {[...Array(Math.floor(config.count * 0.35))].map((_, i) => (
+        <motion.div
+          key={`mid-${i}`}
+          className="absolute rounded-full"
+          style={{
+            left: `${(i * 13.1 + 5) % 100}%`,
+            top: `${(i * 19.3 + 10) % 100}%`,
+            width: config.type === 'stars' ? 3 : 5,
+            height: config.type === 'stars' ? 3 : 5,
+            background: config.type === 'stars' ? 'white' : `${glowColor}50`,
+            boxShadow: config.type === 'stars' ? `0 0 6px 2px ${glowColor}` : `0 0 8px 2px ${glowColor}30`,
+          }}
+          animate={{
+            y: [0, -50, 0],
+            x: [0, (i % 2 === 0 ? 10 : -10), 0],
+            opacity: [0.4, 0.7, 0.4],
+            scale: config.type === 'stars' ? [1, 1.3, 1] : [1, 1.1, 1],
+          }}
+          transition={{
+            duration: 6 + (i % 3) * 1.5,
+            delay: i * 0.4,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+      
+      {/* Layer 3: Foreground (fast, larger, more visible) */}
+      {[...Array(Math.floor(config.count * 0.25))].map((_, i) => (
+        <motion.div
+          key={`fore-${i}`}
+          className="absolute rounded-full"
+          style={{
+            left: `${(i * 21.7 + 15) % 100}%`,
+            top: `${(i * 31.3 + 20) % 100}%`,
+            width: config.type === 'stars' ? 4 : 8,
+            height: config.type === 'stars' ? 4 : 8,
+            background: `${glowColor}60`,
+            boxShadow: `0 0 12px 4px ${glowColor}40`,
+            filter: 'blur(1px)',
+          }}
+          animate={{
+            y: [0, -80, 0],
+            x: [0, (i % 2 === 0 ? 20 : -20), 0],
+            opacity: [0.3, 0.6, 0.3],
+          }}
+          transition={{
+            duration: 4 + (i % 2) * 2,
+            delay: i * 0.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+    </div>
+  );
+};
 
 // Animated theme elements that float around the grid
 const ThemeElements = ({ themeId }: { themeId: string }) => {
@@ -1779,6 +1925,24 @@ export default function Blitzgrid() {
           onKeyDown={handleKeyDown}
           onClick={() => categoryRevealMode && !activeQuestion && revealNextCategory()}
         >
+          {/* Atmospheric overlay layer */}
+          <div 
+            className="absolute inset-0 pointer-events-none z-[1]" 
+            style={{ background: currentTheme.overlay }}
+          />
+          
+          {/* Ambient glow pulse */}
+          <motion.div
+            className="absolute inset-0 pointer-events-none z-[2]"
+            animate={{ opacity: [0.3, 0.5, 0.3] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            style={{ 
+              background: `radial-gradient(circle at 50% 50%, ${currentTheme.glow}20 0%, transparent 60%)`,
+            }}
+          />
+          
+          {/* Floating particles layer */}
+          <AtmosphericParticles themeId={gridThemeId} glowColor={currentTheme.glow} />
           
           {/* Animated theme elements */}
           <ThemeElements themeId={gridThemeId} />
