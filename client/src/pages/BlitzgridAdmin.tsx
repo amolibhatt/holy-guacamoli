@@ -14,7 +14,8 @@ import {
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Loader2,
   AlertCircle, CheckCircle2, Image, Music, Video,
-  Download, Upload, FileSpreadsheet
+  Download, Upload, FileSpreadsheet,
+  Trophy, Cake, Umbrella, Briefcase, Dog, Cat, Rocket, Leaf, PartyPopper
 } from "lucide-react";
 import { 
   AlertDialog, AlertDialogAction, AlertDialogCancel, 
@@ -36,6 +37,36 @@ interface CategoryWithQuestions extends Category {
 
 const POINT_TIERS = [10, 20, 30, 40, 50];
 
+// Available themes for grids
+const GRID_THEMES = [
+  { id: 'sports', name: 'Sports', iconType: 'trophy' as const },
+  { id: 'birthday', name: 'Birthday', iconType: 'cake' as const },
+  { id: 'beach', name: 'Beach', iconType: 'umbrella' as const },
+  { id: 'office', name: 'Office', iconType: 'briefcase' as const },
+  { id: 'dogs', name: 'Dogs', iconType: 'dog' as const },
+  { id: 'cats', name: 'Cats', iconType: 'cat' as const },
+  { id: 'space', name: 'Space', iconType: 'rocket' as const },
+  { id: 'music', name: 'Music', iconType: 'music' as const },
+  { id: 'nature', name: 'Nature', iconType: 'leaf' as const },
+] as const;
+
+type ThemeIconType = typeof GRID_THEMES[number]['iconType'];
+
+const ThemeIcon = ({ type, className }: { type: ThemeIconType; className?: string }) => {
+  switch (type) {
+    case 'trophy': return <Trophy className={className} />;
+    case 'cake': return <Cake className={className} />;
+    case 'umbrella': return <Umbrella className={className} />;
+    case 'briefcase': return <Briefcase className={className} />;
+    case 'dog': return <Dog className={className} />;
+    case 'cat': return <Cat className={className} />;
+    case 'rocket': return <Rocket className={className} />;
+    case 'music': return <Music className={className} />;
+    case 'leaf': return <Leaf className={className} />;
+    default: return <PartyPopper className={className} />;
+  }
+};
+
 export default function BlitzgridAdmin() {
   const { toast } = useToast();
   const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
@@ -45,6 +76,7 @@ export default function BlitzgridAdmin() {
   
   const [showNewGridForm, setShowNewGridForm] = useState(false);
   const [newGridName, setNewGridName] = useState("");
+  const [newGridTheme, setNewGridTheme] = useState("birthday");
   const [editingGridId, setEditingGridId] = useState<number | null>(null);
   const [editGridName, setEditGridName] = useState("");
   const [deleteGridId, setDeleteGridId] = useState<number | null>(null);
@@ -75,12 +107,13 @@ export default function BlitzgridAdmin() {
   });
 
   const createGridMutation = useMutation({
-    mutationFn: async (name: string) => {
-      return apiRequest('POST', '/api/blitzgrid/grids', { name });
+    mutationFn: async ({ name, theme }: { name: string; theme: string }) => {
+      return apiRequest('POST', '/api/blitzgrid/grids', { name, theme });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
       setNewGridName("");
+      setNewGridTheme("birthday");
       setShowNewGridForm(false);
       toast({ title: "Grid created" });
     },
@@ -663,7 +696,7 @@ export default function BlitzgridAdmin() {
               className="mb-4"
             >
               <Card>
-                <CardContent className="py-3">
+                <CardContent className="py-3 space-y-3">
                   <div className="flex items-center gap-2">
                     <Input
                       placeholder="Grid name..."
@@ -672,7 +705,7 @@ export default function BlitzgridAdmin() {
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && newGridName.trim()) {
-                          createGridMutation.mutate(newGridName.trim());
+                          createGridMutation.mutate({ name: newGridName.trim(), theme: newGridTheme });
                         }
                         if (e.key === 'Escape') {
                           setShowNewGridForm(false);
@@ -682,7 +715,7 @@ export default function BlitzgridAdmin() {
                       data-testid="input-grid-name"
                     />
                     <Button
-                      onClick={() => createGridMutation.mutate(newGridName.trim())}
+                      onClick={() => createGridMutation.mutate({ name: newGridName.trim(), theme: newGridTheme })}
                       disabled={!newGridName.trim() || createGridMutation.isPending}
                       data-testid="button-create-grid"
                     >
@@ -691,6 +724,22 @@ export default function BlitzgridAdmin() {
                     <Button variant="ghost" onClick={() => setShowNewGridForm(false)}>
                       <X className="w-4 h-4" />
                     </Button>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm text-muted-foreground" data-testid="text-theme-label">Theme:</span>
+                    {GRID_THEMES.map(theme => (
+                      <Button
+                        key={theme.id}
+                        variant={newGridTheme === theme.id ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setNewGridTheme(theme.id)}
+                        className="gap-1"
+                        data-testid={`button-theme-${theme.id}`}
+                      >
+                        <ThemeIcon type={theme.iconType} className="w-4 h-4" />
+                        <span className="hidden sm:inline">{theme.name}</span>
+                      </Button>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
