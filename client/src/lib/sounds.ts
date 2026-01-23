@@ -9,6 +9,12 @@ const SOUND_URLS = {
   pop: 'https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3',
   chime: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3',
   buzz: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
+  drumroll: 'https://assets.mixkit.co/active_storage/sfx/1201/1201-preview.mp3',
+  fanfare: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3',
+  applause: 'https://assets.mixkit.co/active_storage/sfx/159/159-preview.mp3',
+  countdown: 'https://assets.mixkit.co/active_storage/sfx/1085/1085-preview.mp3',
+  swoosh: 'https://assets.mixkit.co/active_storage/sfx/2587/2587-preview.mp3',
+  reaction: 'https://assets.mixkit.co/active_storage/sfx/2001/2001-preview.mp3',
 };
 
 type SoundName = keyof typeof SOUND_URLS;
@@ -116,4 +122,24 @@ export function playPointsAwarded(points: number) {
   } else {
     soundManager.play('pop', 0.4);
   }
+}
+
+export function playDrumroll() {
+  soundManager.play('drumroll', 0.5);
+}
+
+export function playFanfare() {
+  soundManager.play('fanfare', 0.6);
+}
+
+export function playApplause() {
+  soundManager.play('applause', 0.4);
+}
+
+export function playReaction() {
+  soundManager.play('reaction', 0.3);
+}
+
+export function playSwoosh() {
+  soundManager.play('swoosh', 0.4);
 }
