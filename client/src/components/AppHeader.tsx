@@ -54,21 +54,64 @@ export function AppHeader({
               </Button>
             </Link>
           )}
-          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <Link href="/" className="flex items-center gap-3 group">
             <motion.div 
-              className="w-10 h-10 flex items-center justify-center"
-              animate={{ rotate: [0, -3, 3, -3, 0], y: [0, -2, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="w-10 h-10 flex items-center justify-center relative"
+              animate={{ 
+                rotate: [0, -5, 5, -5, 0], 
+                y: [0, -3, 0],
+                scale: [1, 1.02, 1]
+              }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              whileHover={{ 
+                scale: 1.15, 
+                rotate: [0, -10, 10, -10, 0],
+                transition: { duration: 0.4 }
+              }}
+              whileTap={{ scale: 0.95 }}
             >
-              <AvocadoIcon className="w-8 h-8 drop-shadow-md" />
+              {/* Glow ring behind icon */}
+              <motion.div 
+                className="absolute inset-0 rounded-full bg-gradient-to-r from-green-400 via-emerald-300 to-lime-400 opacity-0 group-hover:opacity-40 blur-md"
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              <AvocadoIcon className="w-8 h-8 drop-shadow-lg relative z-10" />
             </motion.div>
             <div className="flex flex-col">
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)' }}>
-                <span className="text-foreground">Holy </span>
-                <span className="bg-gradient-to-r from-green-500 via-emerald-400 to-lime-400 bg-clip-text text-transparent">GuacAmoli!</span>
-              </h1>
+              <motion.h1 
+                className="text-2xl sm:text-3xl font-black tracking-tight leading-none flex items-center" 
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
+                <motion.span 
+                  className="text-foreground"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  Holy{' '}
+                </motion.span>
+                <motion.span 
+                  className="bg-gradient-to-r from-green-500 via-emerald-400 to-lime-400 bg-clip-text text-transparent bg-[length:200%_auto]"
+                  animate={{ 
+                    backgroundPosition: ['0% center', '100% center', '0% center']
+                  }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                  whileHover={{ 
+                    scale: 1.05,
+                    textShadow: "0 0 20px rgba(34, 197, 94, 0.5)"
+                  }}
+                >
+                  GuacAmoli!
+                </motion.span>
+              </motion.h1>
               {(title || subtitle) && (
-                <span className="text-xs text-muted-foreground tracking-wide">{title}{subtitle ? ` - ${subtitle}` : ''}</span>
+                <motion.span 
+                  className="text-xs text-muted-foreground tracking-wide"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  {title}{subtitle ? ` - ${subtitle}` : ''}
+                </motion.span>
               )}
             </div>
           </Link>
