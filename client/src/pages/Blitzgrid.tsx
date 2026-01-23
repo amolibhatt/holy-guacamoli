@@ -1610,29 +1610,30 @@ export default function Blitzgrid() {
     };
     
     return (
-      <div className="min-h-screen bg-background" data-testid="page-blitzgrid-grid">
+      <div className="h-screen overflow-hidden flex flex-col bg-background" data-testid="page-blitzgrid-grid">
         <AppHeader showAdminButton adminHref="/admin/games" />
-        <div className="container mx-auto px-4 py-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => setSelectedGridId(null)}
-            className="mb-4"
-            data-testid="button-back-to-grids"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Grids
-          </Button>
-          
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold">{grid?.name || 'Grid'}</h1>
-              <p className="text-muted-foreground text-sm">
-                {gridCategories.length}/5 categories · {grid?.questionCount || 0}/25 questions
-              </p>
+        <div className="flex-1 overflow-hidden flex flex-col container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-4 shrink-0">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setSelectedGridId(null)}
+                data-testid="button-back-to-grids"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+              <div>
+                <h1 className="text-xl font-bold">{grid?.name || 'Grid'}</h1>
+                <p className="text-muted-foreground text-xs">
+                  {gridCategories.length}/5 categories · {grid?.questionCount || 0}/25 questions
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {grid?.isActive ? (
-                <Badge className="bg-green-500/20 text-green-600">
-                  <CheckCircle2 className="w-3 h-3 mr-1" /> Ready to Play
+                <Badge variant="secondary" className="text-green-600">
+                  <CheckCircle2 className="w-3 h-3 mr-1" /> Ready
                 </Badge>
               ) : (
                 <Badge variant="outline" className="text-amber-600">
@@ -1658,7 +1659,7 @@ export default function Blitzgrid() {
 
           {/* New Category Form */}
           {gridCategories.length < 5 && (
-            <Card className="mb-4">
+            <Card className="mb-4 shrink-0">
               <CardContent className="py-3">
                 {showNewCategoryForm ? (
                   <div className="flex items-center gap-2">
@@ -1703,88 +1704,90 @@ export default function Blitzgrid() {
             </Card>
           )}
 
-          {/* Categories with inline questions */}
-          {loadingCategories ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map(i => <Skeleton key={i} className="h-48" />)}
-            </div>
-          ) : gridCategories.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-                <h3 className="font-medium mb-2">No categories yet</h3>
-                <p className="text-muted-foreground text-sm">Add your first category above to start building your grid</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {gridCategories.map(category => {
-                const isExpanded = selectedCategoryId === category.id;
-                
-                return (
-                  <Card key={category.id} className={isExpanded ? 'ring-2 ring-primary/20' : ''}>
-                    <CardHeader 
-                      className="cursor-pointer py-3"
-                      onClick={() => setSelectedCategoryId(isExpanded ? null : category.id)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                          <div>
-                            <CardTitle className="text-base">{category.name}</CardTitle>
-                            <CardDescription className="text-xs">
-                              {category.questionCount}/5 questions
-                            </CardDescription>
+          {/* Categories with inline questions - scrollable area */}
+          <div className="flex-1 overflow-y-auto">
+            {loadingCategories ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-48" />)}
+              </div>
+            ) : gridCategories.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                  <h3 className="font-medium mb-2">No categories yet</h3>
+                  <p className="text-muted-foreground text-sm">Add your first category above to start building your grid</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {gridCategories.map(category => {
+                  const isExpanded = selectedCategoryId === category.id;
+                  
+                  return (
+                    <Card key={category.id} className={isExpanded ? 'ring-2 ring-primary/20' : ''}>
+                      <CardHeader 
+                        className="cursor-pointer py-3"
+                        onClick={() => setSelectedCategoryId(isExpanded ? null : category.id)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                            <div>
+                              <CardTitle className="text-base">{category.name}</CardTitle>
+                              <CardDescription className="text-xs">
+                                {category.questionCount}/5 questions
+                              </CardDescription>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {category.questionCount >= 5 ? (
+                              <Badge variant="secondary" className="text-green-600 text-xs">Complete</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-amber-600 text-xs">
+                                {5 - category.questionCount} needed
+                              </Badge>
+                            )}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeCategoryMutation.mutate({ gridId: selectedGridId, categoryId: category.id });
+                              }}
+                              disabled={removeCategoryMutation.isPending}
+                              data-testid={`button-remove-category-${category.id}`}
+                            >
+                              <Trash2 className="w-3 h-3 text-destructive" />
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {category.questionCount >= 5 ? (
-                            <Badge className="bg-green-500/20 text-green-600 text-xs">Complete</Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-amber-600 text-xs">
-                              {5 - category.questionCount} needed
-                            </Badge>
-                          )}
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeCategoryMutation.mutate({ gridId: selectedGridId, categoryId: category.id });
-                            }}
-                            disabled={removeCategoryMutation.isPending}
-                            data-testid={`button-remove-category-${category.id}`}
+                      </CardHeader>
+                      
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
                           >
-                            <Trash2 className="w-3 h-3 text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    
-                    <AnimatePresence>
-                      {isExpanded && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <CardContent className="pt-0 space-y-2">
-                            {POINT_TIERS.map(points => (
-                              <div key={points}>
-                                {renderQuestionSlot(category, points)}
-                              </div>
-                            ))}
-                          </CardContent>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
+                            <CardContent className="pt-0 space-y-2">
+                              {POINT_TIERS.map(points => (
+                                <div key={points}>
+                                  {renderQuestionSlot(category, points)}
+                                </div>
+                              ))}
+                            </CardContent>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
