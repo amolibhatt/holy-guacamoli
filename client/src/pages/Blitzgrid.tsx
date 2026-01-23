@@ -1510,16 +1510,48 @@ export default function Blitzgrid() {
             
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-center">
-                <div className="flex items-center gap-1">
+                <motion.div 
+                  className="flex items-center gap-1 relative"
+                  animate={{ scale: [1, 1.02, 1] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                >
                   <span className="text-2xl">🥑</span>
-                  <div className="flex flex-col items-start leading-none">
+                  <div className="flex flex-col items-start leading-none relative">
                     <span className="text-[10px] font-black tracking-widest text-emerald-400 uppercase">Holy</span>
                     <span className="text-sm font-black tracking-tight bg-gradient-to-r from-emerald-400 via-lime-300 to-yellow-300 bg-clip-text text-transparent">
                       GuacAmoli!
                     </span>
+                    <motion.span
+                      className="absolute -top-1.5 -right-4 text-yellow-300"
+                      animate={{ 
+                        scale: [1, 1.4, 1],
+                        rotate: [0, 20, -20, 0],
+                        opacity: [0.6, 1, 0.6]
+                      }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <Sparkles className="w-3 h-3" />
+                    </motion.span>
+                    <motion.span
+                      className="absolute -bottom-1 -left-3 text-lime-300"
+                      animate={{ 
+                        scale: [1, 1.3, 1],
+                        rotate: [0, -15, 15, 0],
+                        opacity: [0.5, 1, 0.5]
+                      }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.7 }}
+                    >
+                      <Sparkles className="w-2.5 h-2.5" />
+                    </motion.span>
                   </div>
-                  <span className="text-lg">🎉</span>
-                </div>
+                  <motion.span 
+                    className="text-lg"
+                    animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    🎉
+                  </motion.span>
+                </motion.div>
                 <h1 className="text-xs font-medium text-white/60 tracking-tight">{grid.name}</h1>
               </div>
               {roomCode && (

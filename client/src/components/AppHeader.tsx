@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
-import { ArrowLeft, Settings, Shield, LogOut, HelpCircle } from "lucide-react";
+import { ArrowLeft, Settings, Shield, LogOut, HelpCircle, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -90,7 +90,7 @@ export function AppHeader({
                   Holy{' '}
                 </motion.span>
                 <motion.span 
-                  className="bg-gradient-to-r from-green-500 via-emerald-400 to-lime-400 bg-clip-text text-transparent bg-[length:200%_auto]"
+                  className="bg-gradient-to-r from-green-500 via-emerald-400 to-lime-400 bg-clip-text text-transparent bg-[length:200%_auto] relative"
                   animate={{ 
                     backgroundPosition: ['0% center', '100% center', '0% center']
                   }}
@@ -101,6 +101,28 @@ export function AppHeader({
                   }}
                 >
                   GuacAmoli!
+                  <motion.span 
+                    className="absolute -top-1 -right-3 text-yellow-400"
+                    animate={{ 
+                      scale: [1, 1.3, 1],
+                      rotate: [0, 15, -15, 0],
+                      opacity: [0.7, 1, 0.7]
+                    }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                  </motion.span>
+                  <motion.span 
+                    className="absolute -bottom-0.5 -left-2 text-lime-400"
+                    animate={{ 
+                      scale: [1, 1.2, 1],
+                      rotate: [0, -10, 10, 0],
+                      opacity: [0.5, 1, 0.5]
+                    }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                  </motion.span>
                 </motion.span>
               </motion.h1>
               {(title || subtitle) && (

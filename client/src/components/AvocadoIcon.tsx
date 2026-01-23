@@ -244,8 +244,30 @@ export function AnimatedLogo({
             transition={{ duration: 3, repeat: Infinity }}
           >
             <span className="text-foreground">Holy </span>
-            <span className="bg-gradient-to-r from-green-500 via-emerald-400 to-lime-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-green-500 via-emerald-400 to-lime-400 bg-clip-text text-transparent relative">
               GuacAmoli!
+              <motion.span 
+                className="absolute -top-2 -right-4 text-yellow-400"
+                animate={{ 
+                  scale: [1, 1.3, 1],
+                  rotate: [0, 15, -15, 0],
+                  opacity: [0.6, 1, 0.6]
+                }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+              >
+                ✨
+              </motion.span>
+              <motion.span 
+                className="absolute -bottom-1 -left-3 text-lime-400"
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  rotate: [0, -10, 10, 0],
+                  opacity: [0.5, 1, 0.5]
+                }}
+                transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+              >
+                ✨
+              </motion.span>
             </span>
           </motion.h1>
           <motion.p 
