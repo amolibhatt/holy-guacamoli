@@ -17,7 +17,7 @@ import {
   ChevronRight, ArrowLeft, Play, Loader2,
   AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Zap, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Sparkles, Medal,
   Circle, Waves, Sun, Star, TreePine, Flower2,
-  PartyPopper, Cake, Umbrella, Briefcase, Dog, Cat, Rocket, Music, Palette, Heart
+  PartyPopper, Cake, Umbrella, Briefcase, Dog, Cat, Rocket, Music, Palette, Heart, Timer
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -317,6 +317,68 @@ export default function Blitzgrid() {
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
+  
+  // Timer state
+  const [timerActive, setTimerActive] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(10);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Play timer sound using Web Audio API
+  const playTimerSound = useCallback(() => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // Create a sequence of beeps for a "time's up" sound
+      const playBeep = (startTime: number, frequency: number, duration: number) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, startTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+        
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+      };
+      
+      const now = audioContext.currentTime;
+      // Three ascending beeps
+      playBeep(now, 440, 0.15);
+      playBeep(now + 0.2, 554, 0.15);
+      playBeep(now + 0.4, 659, 0.3);
+    } catch (e) {
+      console.log('Could not play timer sound');
+    }
+  }, []);
+  
+  // Timer countdown effect
+  useEffect(() => {
+    if (timerActive && timeLeft > 0) {
+      timerIntervalRef.current = setTimeout(() => {
+        setTimeLeft(prev => prev - 1);
+      }, 1000);
+    } else if (timerActive && timeLeft === 0) {
+      playTimerSound();
+      setTimerActive(false);
+    }
+    
+    return () => {
+      if (timerIntervalRef.current) {
+        clearTimeout(timerIntervalRef.current);
+      }
+    };
+  }, [timerActive, timeLeft, playTimerSound]);
+  
+  // Reset timer when question changes
+  useEffect(() => {
+    setTimerActive(false);
+    setTimeLeft(10);
+  }, [activeQuestion?.id]);
   
   // Multiplayer state
   const [roomCode, setRoomCode] = useState<string | null>(null);
@@ -1518,6 +1580,32 @@ export default function Blitzgrid() {
                 <p className="text-xl md:text-2xl text-center font-medium">
                   {activeQuestion?.question}
                 </p>
+              </div>
+              
+              {/* Timer Button */}
+              <div className="flex justify-center py-2">
+                <Button
+                  variant={timerActive ? "destructive" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    if (timerActive) {
+                      setTimerActive(false);
+                      setTimeLeft(10);
+                    } else {
+                      setTimeLeft(10);
+                      setTimerActive(true);
+                    }
+                  }}
+                  className={`gap-2 ${timerActive ? 'animate-pulse' : ''}`}
+                  data-testid="button-timer"
+                >
+                  <Timer className="w-4 h-4" />
+                  {timerActive ? (
+                    <span className="font-mono font-bold text-lg min-w-[2ch]">{timeLeft}</span>
+                  ) : (
+                    <span>Start 10s Timer</span>
+                  )}
+                </Button>
               </div>
               
               {/* Buzzer Status + Skip Option */}
