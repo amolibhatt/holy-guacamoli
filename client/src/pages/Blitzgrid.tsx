@@ -747,20 +747,27 @@ export default function Blitzgrid() {
                           transition={{ type: "spring", stiffness: 100, damping: 15 }}
                           className="flex flex-col items-center"
                         >
-                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: "spring" }} className="mb-2">
-                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center text-3xl md:text-4xl shadow-lg border-4 border-gray-300 bg-slate-600">
+                          {/* Player floating above podium */}
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: "spring" }} className="mb-1">
+                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center text-3xl md:text-4xl shadow-lg border-4 border-gray-300 bg-gradient-to-br from-slate-500 to-slate-700">
                               {PLAYER_AVATARS.find(a => a.id === runnerUp.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
                             </div>
-                            <div className="text-white font-bold text-sm md:text-base mt-1 truncate max-w-[100px]">
-                              {runnerUp.name}
-                            </div>
-                            <motion.div className="text-2xl md:text-3xl font-black text-gray-300">
-                              {runnerUp.score}
-                            </motion.div>
                           </motion.div>
-                          <div className="w-20 md:w-28 h-24 md:h-32 bg-gradient-to-b from-gray-400 to-gray-600 rounded-t-lg flex items-center justify-center shadow-xl border-t-4 border-gray-300">
-                            <Medal className="w-8 h-8 text-white/80 mr-1" />
-                            <span className="text-4xl md:text-5xl font-black text-white/80">2</span>
+                          {/* Podium with name plate */}
+                          <div className="w-24 md:w-32 h-28 md:h-36 bg-gradient-to-b from-gray-400 to-gray-600 rounded-t-lg flex flex-col items-center justify-between shadow-xl border-t-4 border-gray-300 pt-2 pb-3">
+                            {/* Name plate */}
+                            <div className="bg-white/90 px-2 py-0.5 rounded shadow-sm">
+                              <div className="text-gray-800 font-bold text-xs md:text-sm truncate max-w-[80px] md:max-w-[110px]" data-testid="text-2nd-place-name">
+                                {runnerUp.name}
+                              </div>
+                            </div>
+                            <div className="text-2xl md:text-3xl font-black text-white drop-shadow" data-testid="text-2nd-place-score">
+                              {runnerUp.score} pts
+                            </div>
+                            <div className="flex items-center">
+                              <Medal className="w-6 h-6 text-white/80 mr-1" />
+                              <span className="text-3xl md:text-4xl font-black text-white/80">2</span>
+                            </div>
                           </div>
                         </motion.div>
                       )}
@@ -787,31 +794,34 @@ export default function Blitzgrid() {
                             <Crown className="w-10 h-10 md:w-12 md:h-12 text-yellow-400 mx-auto drop-shadow-lg" />
                           </motion.div>
                           
-                          {/* Player */}
-                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: "spring" }} className="relative">
+                          {/* Player floating above podium */}
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: "spring" }} className="relative mb-1">
                             <motion.div
                               className="absolute inset-0 rounded-full border-4 border-yellow-400"
                               animate={{ scale: [1, 1.3, 1], opacity: [1, 0, 1] }}
                               transition={{ duration: 1.5, repeat: Infinity }}
                             />
-                            <div className="w-20 h-20 md:w-28 md:h-28 rounded-full flex items-center justify-center text-4xl md:text-5xl shadow-2xl border-4 border-yellow-400 relative z-10 bg-emerald-600">
+                            <div className="w-20 h-20 md:w-28 md:h-28 rounded-full flex items-center justify-center text-4xl md:text-5xl shadow-2xl border-4 border-yellow-400 relative z-10 bg-gradient-to-br from-emerald-500 to-emerald-700">
                               {PLAYER_AVATARS.find(a => a.id === winner.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
                             </div>
                           </motion.div>
                           
-                          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="mt-2">
-                            <div className="text-white font-black text-lg md:text-xl">{winner.name}</div>
+                          {/* Grand Podium with name plate */}
+                          <div className="w-28 md:w-40 h-44 md:h-56 bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-700 rounded-t-lg flex flex-col items-center justify-between shadow-2xl border-t-4 border-yellow-300 pt-2 pb-4">
+                            {/* Name plate */}
+                            <div className="bg-white px-3 py-1 rounded shadow-md">
+                              <div className="text-yellow-900 font-black text-sm md:text-base truncate max-w-[90px] md:max-w-[130px]" data-testid="text-winner-name">
+                                {winner.name}
+                              </div>
+                            </div>
                             <motion.div 
-                              className="text-4xl md:text-5xl font-black text-yellow-400 drop-shadow-lg"
+                              className="text-3xl md:text-4xl font-black text-yellow-900 drop-shadow"
                               animate={{ scale: [1, 1.05, 1] }}
                               transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 1 }}
+                              data-testid="text-winner-score"
                             >
-                              {winner.score}
+                              {winner.score} pts
                             </motion.div>
-                          </motion.div>
-                          
-                          {/* Podium */}
-                          <div className="w-24 md:w-36 h-36 md:h-48 bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-700 rounded-t-lg flex items-center justify-center shadow-2xl border-t-4 border-yellow-300 mt-2">
                             <div className="flex flex-col items-center">
                               <Trophy className="w-8 h-8 md:w-10 md:h-10 text-yellow-900 mb-1" />
                               <span className="text-5xl md:text-6xl font-black text-yellow-900">1</span>
@@ -830,19 +840,24 @@ export default function Blitzgrid() {
                           transition={{ type: "spring", stiffness: 100, damping: 15 }}
                           className="flex flex-col items-center"
                         >
-                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: "spring" }} className="mb-2">
-                            <div className="w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-2xl md:text-3xl shadow-lg border-4 border-amber-600 bg-slate-600">
+                          {/* Player floating above podium */}
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: "spring" }} className="mb-1">
+                            <div className="w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-2xl md:text-3xl shadow-lg border-4 border-amber-600 bg-gradient-to-br from-amber-700 to-amber-900">
                               {PLAYER_AVATARS.find(a => a.id === thirdPlace.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
                             </div>
-                            <div className="text-white font-bold text-sm md:text-base mt-1 truncate max-w-[100px]">
-                              {thirdPlace.name}
-                            </div>
-                            <motion.div className="text-xl md:text-2xl font-black text-amber-500">
-                              {thirdPlace.score}
-                            </motion.div>
                           </motion.div>
-                          <div className="w-18 md:w-24 h-16 md:h-20 bg-gradient-to-b from-amber-600 to-amber-800 rounded-t-lg flex items-center justify-center shadow-xl border-t-4 border-amber-500">
-                            <span className="text-3xl md:text-4xl font-black text-white/80">3</span>
+                          {/* Podium with name plate */}
+                          <div className="w-20 md:w-28 h-20 md:h-24 bg-gradient-to-b from-amber-600 to-amber-800 rounded-t-lg flex flex-col items-center justify-between shadow-xl border-t-4 border-amber-500 pt-1 pb-2">
+                            {/* Name plate */}
+                            <div className="bg-white/90 px-2 py-0.5 rounded shadow-sm">
+                              <div className="text-amber-900 font-bold text-xs truncate max-w-[70px] md:max-w-[100px]" data-testid="text-3rd-place-name">
+                                {thirdPlace.name}
+                              </div>
+                            </div>
+                            <div className="text-lg md:text-xl font-black text-white drop-shadow" data-testid="text-3rd-place-score">
+                              {thirdPlace.score} pts
+                            </div>
+                            <span className="text-2xl md:text-3xl font-black text-white/80">3</span>
                           </div>
                         </motion.div>
                       )}
