@@ -255,6 +255,8 @@ export const questions = pgTable("questions", {
   correctAnswer: text("correct_answer").notNull(),
   points: integer("points").notNull(),
   imageUrl: text("image_url"),
+  audioUrl: text("audio_url"),
+  videoUrl: text("video_url"),
 });
 
 export const passwordResetTokens = pgTable("password_reset_tokens", {
