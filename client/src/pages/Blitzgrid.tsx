@@ -55,14 +55,15 @@ const POINT_TIERS = [10, 20, 30, 40, 50];
 
 // Available themes for grids - fun and interactive!
 const GRID_THEMES = [
-  { id: 'birthday', name: 'Birthday', iconType: 'cake' as const, background: 'linear-gradient(180deg, #ec4899 0%, #f472b6 50%, #ec4899 100%)' },
-  { id: 'beach', name: 'Beach', iconType: 'umbrella' as const, background: 'linear-gradient(180deg, #0891b2 0%, #06b6d4 50%, #0891b2 100%)' },
-  { id: 'office', name: 'Office', iconType: 'briefcase' as const, background: 'linear-gradient(180deg, #374151 0%, #4b5563 50%, #374151 100%)' },
-  { id: 'dogs', name: 'Dogs', iconType: 'dog' as const, background: 'linear-gradient(180deg, #b45309 0%, #d97706 50%, #b45309 100%)' },
-  { id: 'cats', name: 'Cats', iconType: 'cat' as const, background: 'linear-gradient(180deg, #7c3aed 0%, #8b5cf6 50%, #7c3aed 100%)' },
-  { id: 'space', name: 'Space', iconType: 'rocket' as const, background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)' },
-  { id: 'music', name: 'Music', iconType: 'music' as const, background: 'linear-gradient(180deg, #be123c 0%, #e11d48 50%, #be123c 100%)' },
-  { id: 'art', name: 'Art', iconType: 'palette' as const, background: 'linear-gradient(180deg, #0d9488 0%, #14b8a6 50%, #0d9488 100%)' },
+  { id: 'sports', name: 'Sports', iconType: 'trophy' as const, background: 'linear-gradient(180deg, #15803d 0%, #22c55e 50%, #15803d 100%)' },
+  { id: 'birthday', name: 'Birthday', iconType: 'cake' as const, background: 'linear-gradient(180deg, #7c3aed 0%, #a78bfa 50%, #7c3aed 100%)' },
+  { id: 'beach', name: 'Beach', iconType: 'umbrella' as const, background: 'linear-gradient(180deg, #0891b2 0%, #22d3ee 50%, #0891b2 100%)' },
+  { id: 'office', name: 'Office', iconType: 'briefcase' as const, background: 'linear-gradient(180deg, #374151 0%, #6b7280 50%, #374151 100%)' },
+  { id: 'dogs', name: 'Dogs', iconType: 'dog' as const, background: 'linear-gradient(180deg, #92400e 0%, #d97706 50%, #92400e 100%)' },
+  { id: 'cats', name: 'Cats', iconType: 'cat' as const, background: 'linear-gradient(180deg, #6b21a8 0%, #a855f7 50%, #6b21a8 100%)' },
+  { id: 'space', name: 'Space', iconType: 'rocket' as const, background: 'linear-gradient(180deg, #0c1222 0%, #1e3a5f 50%, #0c1222 100%)' },
+  { id: 'music', name: 'Music', iconType: 'music' as const, background: 'linear-gradient(180deg, #991b1b 0%, #dc2626 50%, #991b1b 100%)' },
+  { id: 'nature', name: 'Nature', iconType: 'palette' as const, background: 'linear-gradient(180deg, #065f46 0%, #10b981 50%, #065f46 100%)' },
 ] as const;
 
 type ThemeIconType = typeof GRID_THEMES[number]['iconType'];
@@ -70,6 +71,7 @@ type ThemeIconType = typeof GRID_THEMES[number]['iconType'];
 // Map theme icon types to lucide icons
 const ThemeIcon = ({ type, className }: { type: ThemeIconType; className?: string }) => {
   switch (type) {
+    case 'trophy': return <Trophy className={className} />;
     case 'cake': return <Cake className={className} />;
     case 'umbrella': return <Umbrella className={className} />;
     case 'briefcase': return <Briefcase className={className} />;
@@ -114,6 +116,24 @@ const ThemeElements = ({ themeId }: { themeId: string }) => {
     const { delay, duration, startX, startY, endY, size, opacity, extraRandom1, extraRandom2, extraRandom3 } = data;
     
     switch (themeId) {
+      case 'sports': {
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none"
+            initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0 }}
+            animate={{ 
+              y: `${endY}vh`,
+              scale: [0, 1, 1, 0],
+              rotate: [0, 360, 720],
+            }}
+            transition={{ duration: duration * 1.2, delay, repeat: Infinity, ease: "linear" }}
+            style={{ opacity: opacity * 0.8 }}
+          >
+            <Trophy style={{ width: size * 0.8, height: size * 0.8 }} className="text-yellow-400" />
+          </motion.div>
+        );
+      }
       case 'birthday': {
         return (
           <motion.div
@@ -254,27 +274,21 @@ const ThemeElements = ({ themeId }: { themeId: string }) => {
           </motion.div>
         );
       }
-      case 'art': {
+      case 'nature': {
         return (
           <motion.div
             key={i}
-            className="absolute pointer-events-none"
+            className="absolute pointer-events-none text-emerald-300"
             initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0 }}
             animate={{ 
               y: `${endY}vh`,
               scale: [0, 1, 1, 0],
+              rotate: [-5, 5, -5],
             }}
             transition={{ duration, delay, repeat: Infinity }}
             style={{ opacity }}
           >
-            <div 
-              className="rounded-full" 
-              style={{ 
-                width: size * 0.6, 
-                height: size * 0.6, 
-                background: ART_COLORS[i % ART_COLORS.length],
-              }} 
-            />
+            <TreePine style={{ width: size * 0.8, height: size * 0.8 }} />
           </motion.div>
         );
       }
@@ -1389,12 +1403,14 @@ export default function Blitzgrid() {
           
           {/* Game Grid */}
           <div className="flex-1 p-3 md:p-5 overflow-hidden relative">
-            {/* Football pitch markings */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30">
-              <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white -translate-x-1/2" />
-              <div className="absolute left-1/2 top-1/2 w-28 h-28 md:w-48 md:h-48 border-2 border-white rounded-full -translate-x-1/2 -translate-y-1/2" />
-              <div className="absolute left-1/2 top-1/2 w-2 h-2 bg-white rounded-full -translate-x-1/2 -translate-y-1/2" />
-            </div>
+            {/* Football pitch markings - only show for sports theme */}
+            {gridThemeId === 'sports' && (
+              <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30">
+                <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white -translate-x-1/2" />
+                <div className="absolute left-1/2 top-1/2 w-28 h-28 md:w-48 md:h-48 border-2 border-white rounded-full -translate-x-1/2 -translate-y-1/2" />
+                <div className="absolute left-1/2 top-1/2 w-2 h-2 bg-white rounded-full -translate-x-1/2 -translate-y-1/2" />
+              </div>
+            )}
             
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
