@@ -123,36 +123,76 @@ const ThemeElements = ({ themeId }: { themeId: string }) => {
     
     switch (themeId) {
       case 'sports': {
-        // All soccer balls floating gently
-        const ballSize = size * 1.2;
+        // Soccer balls floating gently
+        const ballSize = size * 1.3;
         return (
           <motion.div
             key={i}
             className="absolute pointer-events-none"
             initial={{ x: `${startX}vw`, y: `${startY}vh` }}
             animate={{ 
-              x: [`${startX}vw`, `${startX + 8}vw`, `${startX - 5}vw`, `${startX}vw`],
-              y: [`${startY}vh`, `${startY - 12}vh`, `${startY + 5}vh`, `${startY}vh`],
-              rotate: [0, 180, 360],
+              x: [`${startX}vw`, `${startX + 6}vw`, `${startX - 4}vw`, `${startX}vw`],
+              y: [`${startY}vh`, `${startY - 10}vh`, `${startY + 4}vh`, `${startY}vh`],
+              rotate: [0, 120, 240, 360],
             }}
-            transition={{ duration: duration * 4, delay, repeat: Infinity, ease: "easeInOut" }}
-            style={{ opacity: 0.7 }}
+            transition={{ duration: duration * 5, delay, repeat: Infinity, ease: "easeInOut" }}
+            style={{ opacity: 0.8 }}
           >
-            {/* Clean soccer ball emoji-style */}
-            <svg 
-              width={ballSize} 
-              height={ballSize} 
-              viewBox="0 0 100 100"
-              style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }}
+            {/* Classic soccer ball with proper pentagon pattern */}
+            <div 
+              className="rounded-full shadow-xl"
+              style={{ 
+                width: ballSize, 
+                height: ballSize,
+                background: 'radial-gradient(circle at 30% 30%, #ffffff 0%, #f0f0f0 50%, #d0d0d0 100%)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
             >
-              <circle cx="50" cy="50" r="48" fill="white" stroke="#333" strokeWidth="2"/>
-              <polygon points="50,15 62,35 50,50 38,35" fill="#333"/>
-              <polygon points="75,40 85,55 75,70 60,60 60,45" fill="#333"/>
-              <polygon points="25,40 40,45 40,60 25,70 15,55" fill="#333"/>
-              <polygon points="35,75 50,85 65,75 60,60 40,60" fill="#333"/>
-              <polygon points="38,35 50,50 40,60 25,55 25,40" fill="#333" opacity="0.3"/>
-              <polygon points="62,35 75,40 75,55 60,60 50,50" fill="#333" opacity="0.3"/>
-            </svg>
+              {/* Center pentagon */}
+              <div 
+                className="absolute bg-gray-800 rounded-sm"
+                style={{ 
+                  width: '30%', height: '30%', 
+                  top: '35%', left: '35%',
+                  clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)'
+                }}
+              />
+              {/* Top pentagon */}
+              <div 
+                className="absolute bg-gray-800"
+                style={{ 
+                  width: '22%', height: '22%', 
+                  top: '8%', left: '39%',
+                  clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)'
+                }}
+              />
+              {/* Bottom left pentagon */}
+              <div 
+                className="absolute bg-gray-800"
+                style={{ 
+                  width: '22%', height: '22%', 
+                  bottom: '12%', left: '15%',
+                  clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)',
+                  transform: 'rotate(35deg)'
+                }}
+              />
+              {/* Bottom right pentagon */}
+              <div 
+                className="absolute bg-gray-800"
+                style={{ 
+                  width: '22%', height: '22%', 
+                  bottom: '12%', right: '15%',
+                  clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)',
+                  transform: 'rotate(-35deg)'
+                }}
+              />
+              {/* Shine highlight */}
+              <div 
+                className="absolute rounded-full bg-white/60"
+                style={{ width: '20%', height: '20%', top: '15%', left: '20%' }}
+              />
+            </div>
           </motion.div>
         );
       }
