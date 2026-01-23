@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameSessionWithDetails, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion } from "@shared/schema";
 import { users } from "@shared/models/auth";
-import { eq, and, asc, count, inArray, desc, sql, gte } from "drizzle-orm";
+import { eq, and, asc, count, inArray, desc, sql, gte, like } from "drizzle-orm";
 
 export interface IStorage {
   getBoards(userId: string, role?: string): Promise<Board[]>;
@@ -1596,6 +1596,56 @@ export class DatabaseStorage implements IStorage {
   async setGlobalBoard(boardId: number, isGlobal: boolean): Promise<Board | undefined> {
     const [updated] = await db.update(boards).set({ isGlobal }).where(eq(boards.id, boardId)).returning();
     return updated;
+  }
+
+  async setStarterPackBoard(boardId: number, isStarterPack: boolean): Promise<Board | undefined> {
+    const [updated] = await db.update(boards).set({ isStarterPack }).where(eq(boards.id, boardId)).returning();
+    return updated;
+  }
+
+  async getAllBlitzgridsWithOwners() {
+    const allGrids = await db.select().from(boards)
+      .where(like(boards.theme, 'blitzgrid:%'))
+      .orderBy(desc(boards.id));
+    
+    const gridsWithOwners = await Promise.all(allGrids.map(async (board) => {
+      const [owner] = board.userId 
+        ? await db.select({ email: users.email, firstName: users.firstName, lastName: users.lastName })
+            .from(users)
+            .where(eq(users.id, board.userId))
+        : [{ email: 'Unknown', firstName: null, lastName: null }];
+      
+      const [catCount] = await db.select({ count: count() })
+        .from(boardCategories)
+        .where(eq(boardCategories.boardId, board.id));
+      
+      const boardCats = await db.select({ categoryId: boardCategories.categoryId })
+        .from(boardCategories)
+        .where(eq(boardCategories.boardId, board.id));
+      const categoryIds = Array.from(new Set(boardCats.map(bc => bc.categoryId)));
+      
+      let questionCount = 0;
+      if (categoryIds.length > 0) {
+        const [qCount] = await db.select({ count: count() })
+          .from(questions)
+          .where(inArray(questions.categoryId, categoryIds));
+        questionCount = qCount?.count ?? 0;
+      }
+
+      return {
+        ...board,
+        ownerEmail: owner?.email ?? 'Unknown',
+        ownerName: [owner?.firstName, owner?.lastName].filter(Boolean).join(' ') || null,
+        categoryCount: catCount?.count ?? 0,
+        questionCount,
+      };
+    }));
+
+    return gridsWithOwners;
+  }
+
+  async getStarterPackBoards(): Promise<Board[]> {
+    return await db.select().from(boards).where(eq(boards.isStarterPack, true));
   }
 }
 

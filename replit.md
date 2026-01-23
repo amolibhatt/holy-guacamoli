@@ -75,6 +75,7 @@ Preferred communication style: Simple, everyday language.
 - **Auto-Save Drafts**: Work-in-progress questions are saved to localStorage per category, cleared on successful save or when all fields are empty
 - **Improved Admin Navigation**: Hierarchical sidebar shows categories nested under boards (expandable tree), breadcrumb navigation shows current location (Board > Category), clearer completion indicators at each level
 - **Enhanced Admin UX**: Collapsible sidebar with tooltip hover, visual progress bars (color-coded: amber/blue/green), quick-add inline question form, progress dashboard with next actions, improved empty states with action buttons
+- **Super Admin Starter Packs**: Super admin can promote any complete grid to "starter pack" status via toggle in SuperAdmin > All Grids tab. Starter packs are automatically copied to new users on signup, giving them ready-to-play content. Uses isStarterPack boolean on boards table.
 
 ### Known Security Notes
 - **Express v4 Vulnerabilities**: npm audit shows 3 HIGH severity vulnerabilities in express/qs/body-parser. Express v5 upgrade was attempted but reverted due to breaking changes in path-to-regexp (route syntax like `:param(*)` no longer works). Will revisit when upstream compatibility improves.

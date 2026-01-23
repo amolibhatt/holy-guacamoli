@@ -225,6 +225,7 @@ export const boards = pgTable("boards", {
   isGlobal: boolean("is_global").notNull().default(false),
   colorCode: text("color_code").default("#6366f1"),
   sortOrder: integer("sort_order").notNull().default(0),
+  isStarterPack: boolean("is_starter_pack").notNull().default(false),
 });
 
 export const categories = pgTable("categories", {
