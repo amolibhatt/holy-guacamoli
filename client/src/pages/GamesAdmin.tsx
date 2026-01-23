@@ -23,6 +23,7 @@ const MODE_LABELS: Record<GameMode, string> = {
   board: "Board Game",
   sequence: "Sequence Squeeze",
   double_dip: "Double Dip",
+  blitzgrid: "Blitzgrid",
 };
 
 const MODE_ICONS: Record<GameMode, typeof Grid3X3> = {
@@ -31,6 +32,7 @@ const MODE_ICONS: Record<GameMode, typeof Grid3X3> = {
   board: Grid3X3,
   sequence: ListOrdered,
   double_dip: Grid3X3,
+  blitzgrid: Grid3X3,
 };
 
 export default function GamesAdmin() {

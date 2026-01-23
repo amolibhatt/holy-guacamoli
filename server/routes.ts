@@ -3675,7 +3675,7 @@ export async function registerRoutes(
             if (!room) {
               try {
                 const session = await storage.getSessionByCode(code);
-                if (session && session.state !== 'completed') {
+                if (session && session.state !== 'ended') {
                   const players = await storage.getSessionPlayers(session.id);
                   room = {
                     code: session.code,
@@ -4060,7 +4060,6 @@ export async function registerRoutes(
             // Reset per-grid state (buzz queue, etc.) while keeping players and scores
             room.buzzQueue = [];
             room.buzzerLocked = true;
-            room.activeQuestionId = null;
             
             if (room.sessionId && data.boardId) {
               try {
@@ -4076,7 +4075,7 @@ export async function registerRoutes(
             });
             
             // Send score sync to all players to ensure state is consistent
-            const playerScores = room.players.map(p => ({ id: p.id, name: p.name, avatar: p.avatar, score: p.score }));
+            const playerScores = Array.from(room.players.values()).map(p => ({ id: p.id, name: p.name, avatar: p.avatar, score: p.score }));
             room.players.forEach((player) => {
               sendToPlayer(player, { type: 'scores:sync', players: playerScores });
             });
