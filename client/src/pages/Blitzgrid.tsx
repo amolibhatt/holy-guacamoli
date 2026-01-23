@@ -1627,22 +1627,31 @@ export default function Blitzgrid() {
                         animate={{ opacity: 1, rotateX: 0, y: 0 }}
                         transition={{ delay, type: "spring", stiffness: 150, damping: 15 }}
                         className={`
-                          rounded-lg font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-200
+                          rounded-lg font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden
                           ${isRevealed 
-                            ? 'bg-black/30 text-white/20 cursor-default' 
-                            : 'bg-white text-gray-800 cursor-pointer hover:bg-gray-100'
+                            ? 'bg-white/10 backdrop-blur-sm cursor-default border border-white/20' 
+                            : 'bg-gradient-to-br from-white via-white to-gray-50 text-gray-800 cursor-pointer hover:from-gray-50 hover:to-white'
                           }
                         `}
                         style={!isRevealed ? { 
-                          boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)' 
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)' 
                         } : {}}
                         onClick={() => question && !isRevealed && handleCellClick(category.id, points, question)}
                         disabled={isRevealed || !question}
-                        whileHover={!isRevealed ? { scale: 1.04, y: -4, boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)' } : {}}
+                        whileHover={!isRevealed ? { scale: 1.04, y: -4, boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.1)' } : {}}
                         whileTap={!isRevealed ? { scale: 0.96 } : {}}
                         data-testid={`cell-${category.id}-${points}`}
                       >
-                        {!isRevealed && (
+                        {isRevealed ? (
+                          <motion.div
+                            initial={{ scale: 0, rotate: -180 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                            className="flex items-center justify-center"
+                          >
+                            <Check className="w-8 h-8 md:w-12 md:h-12 text-white/40" strokeWidth={3} />
+                          </motion.div>
+                        ) : (
                           <motion.span
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
@@ -1763,32 +1772,49 @@ export default function Blitzgrid() {
           
           {/* Question Modal */}
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
-            <DialogContent className="max-w-2xl bg-slate-800 text-white border-slate-700">
+            <DialogContent className="max-w-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-2 border-violet-200/50 dark:border-violet-500/30 shadow-2xl shadow-violet-500/10">
               <DialogHeader>
                 {/* Category Name and Description */}
                 {(() => {
                   const category = gridCategories.find(c => c.id === activeQuestion?.categoryId);
                   return category ? (
                     <div className="text-center mb-2">
-                      <p className="text-slate-300 text-sm font-semibold uppercase tracking-wider">
+                      <p className="text-violet-600 dark:text-violet-300 text-sm font-semibold uppercase tracking-wider">
                         {category.name}
                       </p>
                       {category.description && (
-                        <p className="text-slate-400 text-xs mt-0.5">
+                        <p className="text-muted-foreground text-xs mt-0.5">
                           {category.description}
                         </p>
                       )}
                     </div>
                   ) : null;
                 })()}
-                <DialogTitle className="text-amber-400 text-2xl text-center">
-                  {activeQuestion?.points} Points
-                </DialogTitle>
+                {/* Animated shimmer points badge */}
+                <div className="flex justify-center">
+                  <motion.div 
+                    className="relative overflow-hidden px-6 py-2 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 shadow-lg"
+                    animate={{ 
+                      boxShadow: ['0 4px 20px rgba(251, 191, 36, 0.3)', '0 4px 30px rgba(251, 191, 36, 0.5)', '0 4px 20px rgba(251, 191, 36, 0.3)']
+                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    {/* Shimmer effect */}
+                    <motion.div 
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12"
+                      animate={{ x: ['-100%', '200%'] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <DialogTitle className="text-amber-900 text-2xl font-black relative z-10">
+                      {activeQuestion?.points} Points
+                    </DialogTitle>
+                  </motion.div>
+                </div>
               </DialogHeader>
               
               {/* Question */}
               <div className="py-4">
-                <p className="text-xl md:text-2xl text-center font-medium">
+                <p className="text-xl md:text-2xl text-center font-medium text-foreground">
                   {activeQuestion?.question}
                 </p>
               </div>
@@ -1849,9 +1875,9 @@ export default function Blitzgrid() {
               {/* Buzzer Status + Skip Option */}
               {players.length > 0 && !showAnswer && buzzQueue.length === 0 && (
                 <div className="flex flex-col items-center gap-3 py-2">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-emerald-900/50 border border-emerald-600 rounded-full">
-                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                    <span className="text-emerald-300 text-sm font-medium">Buzzers Active - Waiting for players</span>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-600 rounded-full">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                    <span className="text-emerald-700 dark:text-emerald-300 text-sm font-medium">Buzzers Active - Waiting for players</span>
                   </div>
                   <Button
                     variant="ghost"
@@ -1860,7 +1886,7 @@ export default function Blitzgrid() {
                       lockBuzzer();
                       handleRevealAnswer();
                     }}
-                    className="text-slate-400"
+                    className="text-muted-foreground"
                     data-testid="button-skip-reveal"
                   >
                     <Eye className="w-4 h-4 mr-2" /> No one buzzing? Reveal Answer
@@ -1870,10 +1896,10 @@ export default function Blitzgrid() {
               
               {/* Buzz Queue - players who buzzed in order */}
               {buzzQueue.length > 0 && !showAnswer && (
-                <div className="bg-indigo-900/50 border border-indigo-600 rounded-lg p-4">
+                <div className="bg-violet-50 dark:bg-indigo-900/50 border border-violet-200 dark:border-indigo-600 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Zap className="w-4 h-4 text-indigo-400" />
-                    <span className="text-sm text-indigo-300 font-medium">Buzz Order</span>
+                    <Zap className="w-4 h-4 text-violet-500 dark:text-indigo-400" />
+                    <span className="text-sm text-violet-700 dark:text-indigo-300 font-medium">Buzz Order</span>
                   </div>
                   <div className="space-y-2">
                     {buzzQueue.map((buzz, index) => {
@@ -1882,22 +1908,22 @@ export default function Blitzgrid() {
                         <div 
                           key={buzz.playerId}
                           className={`flex items-center justify-between rounded-lg px-3 py-2 ${
-                            index === 0 ? 'bg-amber-600/30 border border-amber-500' : 'bg-slate-600/50'
+                            index === 0 ? 'bg-amber-100 dark:bg-amber-600/30 border border-amber-300 dark:border-amber-500' : 'bg-gray-100 dark:bg-slate-600/50'
                           }`}
                         >
                           <div className="flex items-center gap-3">
-                            <span className={`text-lg font-bold ${index === 0 ? 'text-amber-400' : 'text-slate-500'}`}>
+                            <span className={`text-lg font-bold ${index === 0 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 dark:text-slate-500'}`}>
                               #{index + 1}
                             </span>
-                            <span className="font-medium text-white">{buzz.name}</span>
-                            <span className="text-xs text-slate-400">({player?.score || 0} pts)</span>
+                            <span className="font-medium text-foreground">{buzz.name}</span>
+                            <span className="text-xs text-muted-foreground">({player?.score || 0} pts)</span>
                           </div>
                           <div className="flex items-center gap-1">
                             {index === 0 ? (
                               <>
                                 <Button
                                   size="sm"
-                                  className="bg-red-600 text-white h-8"
+                                  className="bg-red-500 hover:bg-red-600 text-white h-8"
                                   disabled={isJudging}
                                   onClick={() => {
                                     setIsJudging(true);
@@ -1925,7 +1951,7 @@ export default function Blitzgrid() {
                                 </Button>
                                 <Button
                                   size="sm"
-                                  className="bg-emerald-600 text-white h-8"
+                                  className="bg-emerald-500 hover:bg-emerald-600 text-white h-8"
                                   disabled={isJudging}
                                   onClick={() => {
                                     setIsJudging(true);
@@ -1941,7 +1967,7 @@ export default function Blitzgrid() {
                                 </Button>
                               </>
                             ) : (
-                              <span className="text-xs text-slate-500">Waiting...</span>
+                              <span className="text-xs text-muted-foreground">Waiting...</span>
                             )}
                           </div>
                         </div>
@@ -1953,7 +1979,7 @@ export default function Blitzgrid() {
               
               {/* No players yet prompt */}
               {players.length === 0 && !showAnswer && (
-                <div className="text-center py-4 text-slate-400">
+                <div className="text-center py-4 text-muted-foreground">
                   <Users className="w-6 h-6 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">No players have joined yet</p>
                   <p className="text-xs mt-1">Click "Join" to show QR code</p>
@@ -1968,10 +1994,10 @@ export default function Blitzgrid() {
                     transition={{ repeat: Infinity, duration: 1.5 }}
                     className="inline-block"
                   >
-                    <Zap className="w-12 h-12 text-amber-400 mx-auto" />
+                    <Zap className="w-12 h-12 text-amber-500 mx-auto" />
                   </motion.div>
-                  <p className="text-amber-300 mt-2 font-medium">Waiting for buzzes...</p>
-                  <p className="text-slate-400 text-sm">{players.length} player{players.length !== 1 ? 's' : ''} ready</p>
+                  <p className="text-amber-600 dark:text-amber-300 mt-2 font-medium">Waiting for buzzes...</p>
+                  <p className="text-muted-foreground text-sm">{players.length} player{players.length !== 1 ? 's' : ''} ready</p>
                 </div>
               )}
               
@@ -1981,10 +2007,10 @@ export default function Blitzgrid() {
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-emerald-900/50 border border-emerald-600 rounded-lg p-4 text-center"
+                    className="bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/50 dark:to-green-900/30 border border-emerald-300 dark:border-emerald-600 rounded-lg p-4 text-center"
                   >
-                    <p className="text-sm text-emerald-400 mb-1">Answer</p>
-                    <p className="text-xl font-bold text-emerald-100">
+                    <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-1">Answer</p>
+                    <p className="text-xl font-bold text-emerald-800 dark:text-emerald-100">
                       {activeQuestion?.correctAnswer}
                     </p>
                   </motion.div>
@@ -1993,26 +2019,26 @@ export default function Blitzgrid() {
               
               {/* All Players for Manual Scoring (after answer revealed) */}
               {showAnswer && players.length > 0 && (
-                <div className="bg-slate-700/50 rounded-lg p-4 mt-4">
+                <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 mt-4 border border-gray-200 dark:border-transparent">
                   <div className="flex items-center gap-2 mb-3">
-                    <Users className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm text-slate-300">Manage Points</span>
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Manage Points</span>
                   </div>
                   <div className="space-y-2 max-h-40 overflow-y-auto">
                     {players.map(player => (
                       <div 
                         key={player.id}
-                        className="flex items-center justify-between bg-slate-600/50 rounded-lg px-3 py-2"
+                        className="flex items-center justify-between bg-white dark:bg-slate-600/50 rounded-lg px-3 py-2 border border-gray-100 dark:border-transparent"
                       >
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-white">{player.name}</span>
-                          <span className="text-sm text-slate-400">({player.score} pts)</span>
+                          <span className="font-medium text-foreground">{player.name}</span>
+                          <span className="text-sm text-muted-foreground">({player.score} pts)</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 text-red-400"
+                            className="h-7 w-7 text-red-500"
                             onClick={() => updatePlayerScore(player.id, -(activeQuestion?.points || 0))}
                             data-testid={`button-deduct-${player.id}`}
                           >
@@ -2021,7 +2047,7 @@ export default function Blitzgrid() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 text-emerald-400"
+                            className="h-7 w-7 text-emerald-500"
                             onClick={() => updatePlayerScore(player.id, activeQuestion?.points || 0)}
                             data-testid={`button-award-${player.id}`}
                           >
