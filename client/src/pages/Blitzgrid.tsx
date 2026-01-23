@@ -2176,60 +2176,55 @@ export default function Blitzgrid() {
               </div>
             )}
             
-            <AnimatePresence>
-              {revealedCategoryCount > 0 && (
+            {/* Grid is always visible */}
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
               className="h-full flex flex-col gap-3 relative z-10"
             >
-              {/* Category Headers */}
+              {/* Category Headers - Always visible, animate on reveal */}
               <div className="grid gap-2 md:gap-3" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)` }}>
                 {gridCategories.map((category, idx) => {
                   const isRevealed = idx < revealedCategoryCount;
                   return (
-                    <div key={category.id} className="relative">
-                      <AnimatePresence mode="wait">
-                        {isRevealed ? (
-                          <motion.div 
-                            key={`revealed-${category.id}`}
-                            initial={{ rotateY: 90, opacity: 0 }}
-                            animate={{ rotateY: 0, opacity: 1 }}
-                            exit={{ rotateY: -90, opacity: 0 }}
-                            transition={{ type: "spring", stiffness: 120, damping: 15 }}
-                            className="bg-white/95 py-3 md:py-4 px-2 rounded-lg text-center shadow-lg"
-                            style={{ transformStyle: 'preserve-3d' }}
-                          >
-                            <span className="text-gray-800 font-bold text-xs md:text-sm uppercase tracking-wider block">
-                              {category.name}
-                            </span>
-                            {category.description && (
-                              <span className="text-gray-500 text-[10px] md:text-xs block mt-0.5 font-normal">
-                                {category.description}
-                              </span>
-                            )}
-                          </motion.div>
-                        ) : (
-                          <motion.div 
-                            key={`hidden-${category.id}`}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ rotateY: 90, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="bg-white/20 backdrop-blur-sm py-3 md:py-4 px-2 rounded-lg text-center border border-white/30"
-                          >
-                            <span className="text-white/60 font-bold text-xs md:text-sm uppercase tracking-wider block">?</span>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
+                    <motion.div 
+                      key={category.id} 
+                      initial={{ scale: 1, opacity: 0.7 }}
+                      animate={{ 
+                        scale: isRevealed ? [1, 1.05, 1] : 1,
+                        opacity: isRevealed ? 1 : 0.7,
+                        boxShadow: isRevealed ? '0 4px 20px rgba(255,255,255,0.3)' : 'none'
+                      }}
+                      transition={{ 
+                        duration: 0.4, 
+                        ease: "easeOut",
+                        delay: isRevealed ? 0.05 : 0
+                      }}
+                      className={`py-3 md:py-4 px-2 rounded-lg text-center transition-colors ${
+                        isRevealed 
+                          ? 'bg-white/95 shadow-lg' 
+                          : 'bg-white/60 backdrop-blur-sm'
+                      }`}
+                    >
+                      <span className={`font-bold text-xs md:text-sm uppercase tracking-wider block ${
+                        isRevealed ? 'text-gray-800' : 'text-gray-600'
+                      }`}>
+                        {category.name}
+                      </span>
+                      {category.description && (
+                        <span className={`text-[10px] md:text-xs block mt-0.5 font-normal ${
+                          isRevealed ? 'text-gray-500' : 'text-gray-400'
+                        }`}>
+                          {category.description}
+                        </span>
+                      )}
+                    </motion.div>
                   );
                 })}
               </div>
               
-              {/* Point Grid */}
+              {/* Point Grid - Always visible, enhanced on reveal */}
               <div className="flex-1 grid gap-2 md:gap-3" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)`, gridTemplateRows: 'repeat(5, 1fr)' }}>
                 {POINT_TIERS.map((points, rowIdx) => (
                   gridCategories.map((category, colIdx) => {
@@ -2237,69 +2232,53 @@ export default function Blitzgrid() {
                     const cellKey = `${category.id}-${points}`;
                     const isCellAnswered = revealedCells.has(cellKey);
                     const isCategoryRevealed = colIdx < revealedCategoryCount;
-                    const delay = 0.1 + rowIdx * 0.05;
+                    const isClickable = isCategoryRevealed && !isCellAnswered && question && !categoryRevealMode;
                     
                     return (
-                      <div key={cellKey} className="relative">
-                        <AnimatePresence mode="wait">
-                          {isCategoryRevealed ? (
-                            <motion.button
-                              key={`cell-${cellKey}`}
-                              initial={{ rotateY: 90, opacity: 0 }}
-                              animate={{ rotateY: 0, opacity: 1 }}
-                              exit={{ rotateY: -90, opacity: 0 }}
-                              transition={{ delay, type: "spring", stiffness: 150, damping: 15 }}
-                              className={`
-                                w-full h-full rounded-lg font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden
-                                ${isCellAnswered 
-                                  ? 'bg-white/10 backdrop-blur-sm cursor-default border border-white/20' 
-                                  : 'bg-gradient-to-br from-white via-white to-gray-50 text-gray-800 cursor-pointer hover:from-gray-50 hover:to-white'
-                                }
-                              `}
-                              style={!isCellAnswered ? { 
-                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)',
-                                transformStyle: 'preserve-3d'
-                              } : { transformStyle: 'preserve-3d' }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                question && !isCellAnswered && handleCellClick(category.id, points, question);
-                              }}
-                              disabled={isCellAnswered || !question || categoryRevealMode}
-                              whileHover={!isCellAnswered && !categoryRevealMode ? { scale: 1.04, y: -4, boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.1)' } : {}}
-                              whileTap={!isCellAnswered && !categoryRevealMode ? { scale: 0.96 } : {}}
-                              data-testid={`cell-${category.id}-${points}`}
-                            >
-                              {isCellAnswered ? (
-                                <motion.div
-                                  initial={{ scale: 0, rotate: -180 }}
-                                  animate={{ scale: 1, rotate: 0 }}
-                                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                                  className="flex items-center justify-center"
-                                >
-                                  <Check className="w-8 h-8 md:w-12 md:h-12 text-white/40" strokeWidth={3} />
-                                </motion.div>
-                              ) : (
-                                <span>{points}</span>
-                              )}
-                            </motion.button>
-                          ) : (
-                            <motion.div
-                              key={`hidden-${cellKey}`}
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              exit={{ rotateY: 90, opacity: 0 }}
-                              className="w-full h-full rounded-lg bg-white/10 backdrop-blur-sm border border-white/20"
-                            />
-                          )}
-                        </AnimatePresence>
-                      </div>
+                      <motion.button
+                        key={cellKey}
+                        initial={{ opacity: 0.5 }}
+                        animate={{ 
+                          opacity: isCategoryRevealed ? 1 : 0.5,
+                          scale: isCategoryRevealed && !isCellAnswered ? 1 : 0.98
+                        }}
+                        transition={{ duration: 0.3, delay: isCategoryRevealed ? rowIdx * 0.03 : 0 }}
+                        className={`
+                          w-full h-full rounded-lg font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden
+                          ${isCellAnswered 
+                            ? 'bg-white/10 backdrop-blur-sm cursor-default border border-white/20' 
+                            : isCategoryRevealed
+                              ? 'bg-gradient-to-br from-white via-white to-gray-50 text-gray-800 cursor-pointer shadow-lg'
+                              : 'bg-white/40 backdrop-blur-sm text-gray-500 cursor-default'
+                          }
+                        `}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          isClickable && handleCellClick(category.id, points, question);
+                        }}
+                        disabled={!isClickable}
+                        whileHover={isClickable ? { scale: 1.04, y: -4 } : {}}
+                        whileTap={isClickable ? { scale: 0.96 } : {}}
+                        data-testid={`cell-${category.id}-${points}`}
+                      >
+                        {isCellAnswered ? (
+                          <motion.div
+                            initial={{ scale: 0, rotate: -180 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                            className="flex items-center justify-center"
+                          >
+                            <Check className="w-8 h-8 md:w-12 md:h-12 text-white/40" strokeWidth={3} />
+                          </motion.div>
+                        ) : (
+                          <span>{points}</span>
+                        )}
+                      </motion.button>
                     );
                   })
                 ))}
               </div>
             </motion.div>
-              )}
-            </AnimatePresence>
           </div>
           
           {/* Category Reveal Hint */}
