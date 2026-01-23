@@ -83,3 +83,37 @@ class SoundManager {
 
 export const soundManager = new SoundManager();
 export type { SoundName };
+
+export function playWhoosh() {
+  soundManager.play('whoosh', 0.4);
+}
+
+export function playCorrectDing() {
+  soundManager.play('chime', 0.5);
+}
+
+export function playWrongBuzz() {
+  soundManager.play('buzz', 0.4);
+}
+
+export function playRevealFlip() {
+  soundManager.play('pop', 0.4);
+}
+
+export function playCelebration() {
+  soundManager.play('victory', 0.6);
+}
+
+export function playBuzzerPress() {
+  soundManager.play('click', 0.5);
+}
+
+export function playPointsAwarded(points: number) {
+  if (points >= 40) {
+    playCelebration();
+  } else if (points >= 20) {
+    playCorrectDing();
+  } else {
+    soundManager.play('pop', 0.4);
+  }
+}
