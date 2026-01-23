@@ -139,20 +139,39 @@ const ThemeElements = ({ themeId }: { themeId: string }) => {
               transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", times: [0, 0.14, 0.28, 0.42, 0.56, 0.70, 0.85, 1] }}
               style={{ opacity: 0.9 }}
             >
-              <div 
-                className="rounded-full shadow-2xl"
-                style={{ 
-                  width: 50, height: 50,
-                  background: 'radial-gradient(circle at 30% 30%, #ffffff 0%, #f0f0f0 50%, #d0d0d0 100%)',
-                  position: 'relative', overflow: 'hidden'
-                }}
-              >
-                <div className="absolute bg-gray-800" style={{ width: '28%', height: '28%', top: '36%', left: '36%', clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)' }}/>
-                <div className="absolute bg-gray-800" style={{ width: '20%', height: '20%', top: '10%', left: '40%', clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)' }}/>
-                <div className="absolute bg-gray-800" style={{ width: '20%', height: '20%', bottom: '12%', left: '18%', clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)', transform: 'rotate(35deg)' }}/>
-                <div className="absolute bg-gray-800" style={{ width: '20%', height: '20%', bottom: '12%', right: '18%', clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)', transform: 'rotate(-35deg)' }}/>
-                <div className="absolute rounded-full bg-white/50" style={{ width: '18%', height: '18%', top: '15%', left: '22%' }}/>
-              </div>
+              {/* Classic soccer ball SVG */}
+              <svg width="55" height="55" viewBox="0 0 100 100" style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))' }}>
+                <defs>
+                  <radialGradient id="ballGradient" cx="35%" cy="35%" r="60%">
+                    <stop offset="0%" stopColor="#ffffff"/>
+                    <stop offset="70%" stopColor="#e8e8e8"/>
+                    <stop offset="100%" stopColor="#c0c0c0"/>
+                  </radialGradient>
+                </defs>
+                {/* Ball base */}
+                <circle cx="50" cy="50" r="48" fill="url(#ballGradient)" stroke="#999" strokeWidth="1"/>
+                {/* Center pentagon */}
+                <polygon points="50,30 62,42 58,58 42,58 38,42" fill="#1a1a1a" stroke="#333" strokeWidth="0.5"/>
+                {/* Top pentagon */}
+                <polygon points="50,8 58,18 50,30 42,18" fill="#1a1a1a" stroke="#333" strokeWidth="0.5"/>
+                {/* Top right */}
+                <polygon points="62,42 78,35 85,50 72,58 58,58" fill="#1a1a1a" stroke="#333" strokeWidth="0.5"/>
+                {/* Top left */}
+                <polygon points="38,42 42,58 28,58 15,50 22,35" fill="#1a1a1a" stroke="#333" strokeWidth="0.5"/>
+                {/* Bottom right */}
+                <polygon points="58,58 72,58 75,75 60,85 50,72" fill="#1a1a1a" stroke="#333" strokeWidth="0.5"/>
+                {/* Bottom left */}
+                <polygon points="42,58 50,72 40,85 25,75 28,58" fill="#1a1a1a" stroke="#333" strokeWidth="0.5"/>
+                {/* White seams/lines */}
+                <line x1="50" y1="30" x2="50" y2="8" stroke="#ddd" strokeWidth="1.5"/>
+                <line x1="62" y1="42" x2="78" y2="35" stroke="#ddd" strokeWidth="1.5"/>
+                <line x1="38" y1="42" x2="22" y2="35" stroke="#ddd" strokeWidth="1.5"/>
+                <line x1="58" y1="58" x2="72" y2="58" stroke="#ddd" strokeWidth="1.5"/>
+                <line x1="42" y1="58" x2="28" y2="58" stroke="#ddd" strokeWidth="1.5"/>
+                <line x1="50" y1="72" x2="50" y2="92" stroke="#ddd" strokeWidth="1.5"/>
+                {/* Highlight shine */}
+                <ellipse cx="35" cy="30" rx="12" ry="8" fill="white" opacity="0.4"/>
+              </svg>
             </motion.div>
           );
         }
