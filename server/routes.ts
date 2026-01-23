@@ -3997,6 +3997,58 @@ export async function registerRoutes(
             break;
           }
 
+          case 'host:pickingNextGrid': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.players.forEach((player) => {
+              sendToPlayer(player, { type: 'host:pickingNextGrid' });
+            });
+            console.log(`[WebSocket] Host picking next grid in room ${room.code}`);
+            break;
+          }
+
+          case 'host:startNextGrid': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            const gridName = data.gridName || 'New Grid';
+            room.boardId = data.boardId;
+            
+            // Reset per-grid state (buzz queue, etc.) while keeping players and scores
+            room.buzzQueue = [];
+            room.buzzerLocked = true;
+            room.activeQuestionId = null;
+            
+            if (room.sessionId && data.boardId) {
+              try {
+                await storage.updateSession(room.sessionId, { currentBoardId: data.boardId });
+              } catch (err) {
+                console.error('[WebSocket] Failed to update session board:', err);
+              }
+            }
+
+            // Notify all players and sync scores
+            room.players.forEach((player) => {
+              sendToPlayer(player, { type: 'host:startNextGrid', gridName });
+            });
+            
+            // Send score sync to all players to ensure state is consistent
+            const playerScores = room.players.map(p => ({ id: p.id, name: p.name, avatar: p.avatar, score: p.score }));
+            room.players.forEach((player) => {
+              sendToPlayer(player, { type: 'scores:sync', players: playerScores });
+            });
+            
+            console.log(`[WebSocket] Host started next grid "${gridName}" in room ${room.code}`);
+            break;
+          }
+
           case 'host:kickPlayer': {
             const mapping = wsToRoom.get(ws);
             if (!mapping || !mapping.isHost) break;
