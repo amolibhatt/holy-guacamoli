@@ -10,6 +10,7 @@ interface AppHeaderProps {
   title?: string;
   subtitle?: string;
   backHref?: string;
+  onBack?: () => void;
   showAdminButton?: boolean;
   adminHref?: string;
   showHelpButton?: boolean;
@@ -23,6 +24,7 @@ export function AppHeader({
   title,
   subtitle,
   backHref,
+  onBack,
   showAdminButton = false,
   adminHref = "/admin/games",
   showHelpButton = false,
@@ -41,18 +43,31 @@ export function AppHeader({
     <header className="border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-50">
       <div className="px-4 py-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          {backHref && (
-            <Link href={backHref}>
+          {(backHref || onBack) && (
+            onBack ? (
               <Button 
                 variant="ghost" 
                 size="icon" 
                 className="text-muted-foreground hover:text-foreground" 
                 data-testid="button-back"
                 aria-label="Go back"
+                onClick={onBack}
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
-            </Link>
+            ) : (
+              <Link href={backHref!}>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-muted-foreground hover:text-foreground" 
+                  data-testid="button-back"
+                  aria-label="Go back"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+              </Link>
+            )
           )}
           <Link href="/" className="flex flex-col">
             <Logo size="md" />
