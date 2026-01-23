@@ -123,57 +123,36 @@ const ThemeElements = ({ themeId }: { themeId: string }) => {
     
     switch (themeId) {
       case 'sports': {
-        // Soccer balls bouncing around!
-        if (i % 2 === 0) {
-          const ballSize = size * 1.3;
-          return (
-            <motion.div
-              key={i}
-              className="absolute pointer-events-none"
-              initial={{ x: `${startX}vw`, y: `${startY}vh` }}
-              animate={{ 
-                x: [`${startX}vw`, `${startX + 15}vw`, `${startX - 10}vw`, `${startX}vw`],
-                y: [`${startY}vh`, `${startY - 20}vh`, `${startY + 10}vh`, `${startY - 15}vh`, `${startY}vh`],
-                rotate: [0, 360, 720, 1080, 1440],
-              }}
-              transition={{ duration: duration * 3, delay, repeat: Infinity, ease: "easeInOut" }}
-              style={{ opacity: 0.9 }}
-            >
-              {/* Soccer ball */}
-              <div 
-                className="rounded-full bg-white shadow-lg relative overflow-hidden"
-                style={{ width: ballSize, height: ballSize }}
-              >
-                {/* Pentagon pattern */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-[40%] h-[40%] bg-gray-900 rounded-sm rotate-45" />
-                </div>
-                <div className="absolute top-[10%] left-[25%] w-[20%] h-[20%] bg-gray-900 rounded-sm" />
-                <div className="absolute top-[10%] right-[25%] w-[20%] h-[20%] bg-gray-900 rounded-sm" />
-                <div className="absolute bottom-[10%] left-[25%] w-[20%] h-[20%] bg-gray-900 rounded-sm" />
-                <div className="absolute bottom-[10%] right-[25%] w-[20%] h-[20%] bg-gray-900 rounded-sm" />
-              </div>
-            </motion.div>
-          );
-        }
-        // Goal posts, whistles, medals, flags
-        const footballElements = [Trophy, Medal, Flag, Award, Target, Crown];
-        const FootballIcon = footballElements[i % footballElements.length];
-        const footballColors = ['text-yellow-400', 'text-amber-300', 'text-white', 'text-yellow-500', 'text-orange-400', 'text-yellow-300'];
+        // All soccer balls floating gently
+        const ballSize = size * 1.2;
         return (
           <motion.div
             key={i}
-            className={`absolute pointer-events-none ${footballColors[i % footballColors.length]}`}
-            initial={{ x: `${startX}vw`, y: `${startY}vh`, scale: 0 }}
+            className="absolute pointer-events-none"
+            initial={{ x: `${startX}vw`, y: `${startY}vh` }}
             animate={{ 
-              y: [`${startY}vh`, `${endY}vh`],
-              scale: [0, 1.3, 1.1, 0],
-              rotate: i % 2 === 0 ? [0, 20, -20, 0] : [0, -20, 20, 0],
+              x: [`${startX}vw`, `${startX + 8}vw`, `${startX - 5}vw`, `${startX}vw`],
+              y: [`${startY}vh`, `${startY - 12}vh`, `${startY + 5}vh`, `${startY}vh`],
+              rotate: [0, 180, 360],
             }}
-            transition={{ duration: duration * 1.8, delay, repeat: Infinity, ease: "easeOut" }}
-            style={{ opacity: 0.85 }}
+            transition={{ duration: duration * 4, delay, repeat: Infinity, ease: "easeInOut" }}
+            style={{ opacity: 0.7 }}
           >
-            <FootballIcon style={{ width: size * 1.2, height: size * 1.2 }} />
+            {/* Clean soccer ball emoji-style */}
+            <svg 
+              width={ballSize} 
+              height={ballSize} 
+              viewBox="0 0 100 100"
+              style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }}
+            >
+              <circle cx="50" cy="50" r="48" fill="white" stroke="#333" strokeWidth="2"/>
+              <polygon points="50,15 62,35 50,50 38,35" fill="#333"/>
+              <polygon points="75,40 85,55 75,70 60,60 60,45" fill="#333"/>
+              <polygon points="25,40 40,45 40,60 25,70 15,55" fill="#333"/>
+              <polygon points="35,75 50,85 65,75 60,60 40,60" fill="#333"/>
+              <polygon points="38,35 50,50 40,60 25,55 25,40" fill="#333" opacity="0.3"/>
+              <polygon points="62,35 75,40 75,55 60,60 50,50" fill="#333" opacity="0.3"/>
+            </svg>
           </motion.div>
         );
       }
@@ -1588,10 +1567,17 @@ export default function Blitzgrid() {
           <div className="flex-1 p-3 md:p-5 overflow-hidden relative">
             {/* Football pitch markings - only show for sports theme */}
             {gridThemeId === 'sports' && (
-              <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30">
-                <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white -translate-x-1/2" />
-                <div className="absolute left-1/2 top-1/2 w-28 h-28 md:w-48 md:h-48 border-2 border-white rounded-full -translate-x-1/2 -translate-y-1/2" />
-                <div className="absolute left-1/2 top-1/2 w-2 h-2 bg-white rounded-full -translate-x-1/2 -translate-y-1/2" />
+              <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-40">
+                {/* Center line */}
+                <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-white/80 -translate-x-1/2" />
+                {/* Center circle */}
+                <div className="absolute left-1/2 top-1/2 w-32 h-32 md:w-56 md:h-56 border-4 border-white/80 rounded-full -translate-x-1/2 -translate-y-1/2" />
+                {/* Center dot */}
+                <div className="absolute left-1/2 top-1/2 w-3 h-3 bg-white rounded-full -translate-x-1/2 -translate-y-1/2" />
+                {/* Left penalty box */}
+                <div className="absolute left-0 top-1/2 w-16 md:w-24 h-40 md:h-56 border-4 border-white/80 border-l-0 -translate-y-1/2" />
+                {/* Right penalty box */}
+                <div className="absolute right-0 top-1/2 w-16 md:w-24 h-40 md:h-56 border-4 border-white/80 border-r-0 -translate-y-1/2" />
               </div>
             )}
             
