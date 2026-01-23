@@ -1511,7 +1511,7 @@ export default function Blitzgrid() {
             
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-center">
-                <Logo size="compact" variant="light" />
+                <Logo size="sm" variant="light" />
                 <h1 className="text-xs font-medium text-white/60 tracking-tight mt-1">{grid.name}</h1>
               </div>
               {roomCode && (
