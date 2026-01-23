@@ -1509,9 +1509,18 @@ export default function Blitzgrid() {
             </Button>
             
             <div className="flex items-center gap-4">
-              <div className="flex flex-col items-start">
-                <span className="text-xs text-white/50 font-medium tracking-wide">HOLY GUACAMOLI!</span>
-                <h1 className="text-lg font-semibold text-white tracking-tight">{grid.name}</h1>
+              <div className="flex flex-col items-center">
+                <div className="flex items-center gap-1">
+                  <span className="text-2xl">🥑</span>
+                  <div className="flex flex-col items-start leading-none">
+                    <span className="text-[10px] font-black tracking-widest text-emerald-400 uppercase">Holy</span>
+                    <span className="text-sm font-black tracking-tight bg-gradient-to-r from-emerald-400 via-lime-300 to-yellow-300 bg-clip-text text-transparent">
+                      GuacAmoli!
+                    </span>
+                  </div>
+                  <span className="text-lg">🎉</span>
+                </div>
+                <h1 className="text-xs font-medium text-white/60 tracking-tight">{grid.name}</h1>
               </div>
               {roomCode && (
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.2 }}>
