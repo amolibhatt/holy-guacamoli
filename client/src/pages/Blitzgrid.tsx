@@ -123,78 +123,100 @@ const ThemeElements = ({ themeId }: { themeId: string }) => {
     
     switch (themeId) {
       case 'sports': {
-        // Soccer balls floating across the screen
-        const ballSize = size * 1.3;
-        const onScreenY = 15 + (i * 6) % 60; // Start position
-        const onScreenX = 5 + (i * 8) % 85;
+        // One ball with players kicking it around!
+        if (i === 0) {
+          // The soccer ball - bounces between kick positions
+          return (
+            <motion.div
+              key="ball"
+              className="absolute pointer-events-none z-10"
+              animate={{ 
+                x: ['15vw', '75vw', '50vw', '25vw', '80vw', '10vw', '60vw', '15vw'],
+                y: ['70vh', '30vh', '65vh', '25vh', '55vh', '45vh', '20vh', '70vh'],
+                rotate: [0, 360, 720, 1080, 1440, 1800, 2160, 2520],
+                scale: [1, 1.1, 1, 1.15, 1, 1.1, 1, 1],
+              }}
+              transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", times: [0, 0.14, 0.28, 0.42, 0.56, 0.70, 0.85, 1] }}
+              style={{ opacity: 0.9 }}
+            >
+              <div 
+                className="rounded-full shadow-2xl"
+                style={{ 
+                  width: 50, height: 50,
+                  background: 'radial-gradient(circle at 30% 30%, #ffffff 0%, #f0f0f0 50%, #d0d0d0 100%)',
+                  position: 'relative', overflow: 'hidden'
+                }}
+              >
+                <div className="absolute bg-gray-800" style={{ width: '28%', height: '28%', top: '36%', left: '36%', clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)' }}/>
+                <div className="absolute bg-gray-800" style={{ width: '20%', height: '20%', top: '10%', left: '40%', clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)' }}/>
+                <div className="absolute bg-gray-800" style={{ width: '20%', height: '20%', bottom: '12%', left: '18%', clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)', transform: 'rotate(35deg)' }}/>
+                <div className="absolute bg-gray-800" style={{ width: '20%', height: '20%', bottom: '12%', right: '18%', clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)', transform: 'rotate(-35deg)' }}/>
+                <div className="absolute rounded-full bg-white/50" style={{ width: '18%', height: '18%', top: '15%', left: '22%' }}/>
+              </div>
+            </motion.div>
+          );
+        }
+        // Players kicking at different positions
+        const playerPositions = [
+          { x: 12, y: 72, kickDelay: 0, facing: 'right' },
+          { x: 72, y: 32, kickDelay: 2, facing: 'left' },
+          { x: 47, y: 67, kickDelay: 4, facing: 'right' },
+          { x: 22, y: 27, kickDelay: 6, facing: 'left' },
+          { x: 77, y: 57, kickDelay: 8, facing: 'left' },
+          { x: 7, y: 47, kickDelay: 10, facing: 'right' },
+          { x: 57, y: 22, kickDelay: 12, facing: 'left' },
+        ];
+        const playerIndex = (i - 1) % playerPositions.length;
+        if (i > playerPositions.length) return null;
+        const player = playerPositions[playerIndex];
+        const isRight = player.facing === 'right';
+        
         return (
           <motion.div
-            key={i}
+            key={`player-${i}`}
             className="absolute pointer-events-none"
-            initial={{ x: `${onScreenX}vw`, y: `${onScreenY}vh` }}
-            animate={{ 
-              x: [`${onScreenX}vw`, `${onScreenX + 10}vw`, `${onScreenX - 8}vw`, `${onScreenX}vw`],
-              y: [`${onScreenY}vh`, `${onScreenY - 25}vh`, `${onScreenY + 15}vh`, `${onScreenY - 20}vh`, `${onScreenY}vh`],
-              rotate: [0, 180, 360, 540, 720],
-            }}
-            transition={{ duration: duration * 3, delay: delay * 0.2, repeat: Infinity, ease: "easeInOut" }}
-            style={{ opacity: 0.8 }}
+            style={{ left: `${player.x}vw`, top: `${player.y}vh`, transform: isRight ? 'scaleX(1)' : 'scaleX(-1)' }}
           >
-            {/* Classic soccer ball with proper pentagon pattern */}
-            <div 
-              className="rounded-full shadow-xl"
-              style={{ 
-                width: ballSize, 
-                height: ballSize,
-                background: 'radial-gradient(circle at 30% 30%, #ffffff 0%, #f0f0f0 50%, #d0d0d0 100%)',
-                position: 'relative',
-                overflow: 'hidden'
+            {/* Player silhouette */}
+            <motion.div
+              animate={{ 
+                rotate: [0, 0, -25, 0, 0],
               }}
+              transition={{ 
+                duration: 16, 
+                delay: player.kickDelay,
+                repeat: Infinity, 
+                times: [0, 0.02, 0.06, 0.10, 1],
+                ease: "easeOut"
+              }}
+              style={{ transformOrigin: 'bottom center' }}
             >
-              {/* Center pentagon */}
-              <div 
-                className="absolute bg-gray-800 rounded-sm"
-                style={{ 
-                  width: '30%', height: '30%', 
-                  top: '35%', left: '35%',
-                  clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)'
-                }}
-              />
-              {/* Top pentagon */}
-              <div 
-                className="absolute bg-gray-800"
-                style={{ 
-                  width: '22%', height: '22%', 
-                  top: '8%', left: '39%',
-                  clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)'
-                }}
-              />
-              {/* Bottom left pentagon */}
-              <div 
-                className="absolute bg-gray-800"
-                style={{ 
-                  width: '22%', height: '22%', 
-                  bottom: '12%', left: '15%',
-                  clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)',
-                  transform: 'rotate(35deg)'
-                }}
-              />
-              {/* Bottom right pentagon */}
-              <div 
-                className="absolute bg-gray-800"
-                style={{ 
-                  width: '22%', height: '22%', 
-                  bottom: '12%', right: '15%',
-                  clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)',
-                  transform: 'rotate(-35deg)'
-                }}
-              />
-              {/* Shine highlight */}
-              <div 
-                className="absolute rounded-full bg-white/60"
-                style={{ width: '20%', height: '20%', top: '15%', left: '20%' }}
-              />
-            </div>
+              <svg width="45" height="70" viewBox="0 0 45 70" fill="none" style={{ opacity: 0.7 }}>
+                {/* Head */}
+                <circle cx="22" cy="10" r="8" fill="white"/>
+                {/* Body */}
+                <rect x="17" y="18" width="10" height="22" rx="3" fill="white"/>
+                {/* Left arm */}
+                <rect x="8" y="20" width="9" height="5" rx="2" fill="white"/>
+                {/* Right arm */}
+                <rect x="27" y="20" width="9" height="5" rx="2" fill="white"/>
+                {/* Left leg (standing) */}
+                <rect x="17" y="40" width="5" height="25" rx="2" fill="white"/>
+                {/* Right leg (kicking) */}
+                <motion.rect 
+                  x="23" y="40" width="5" height="25" rx="2" fill="white"
+                  animate={{ rotate: [0, 0, 60, 0, 0] }}
+                  transition={{ 
+                    duration: 16, 
+                    delay: player.kickDelay,
+                    repeat: Infinity, 
+                    times: [0, 0.02, 0.06, 0.10, 1],
+                    ease: "easeOut"
+                  }}
+                  style={{ transformOrigin: 'top center' }}
+                />
+              </svg>
+            </motion.div>
           </motion.div>
         );
       }
