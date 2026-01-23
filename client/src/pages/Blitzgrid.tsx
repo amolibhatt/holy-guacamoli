@@ -1577,6 +1577,22 @@ export default function Blitzgrid() {
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
             <DialogContent className="max-w-2xl bg-slate-800 text-white border-slate-700">
               <DialogHeader>
+                {/* Category Name and Description */}
+                {(() => {
+                  const category = gridCategories.find(c => c.id === activeQuestion?.categoryId);
+                  return category ? (
+                    <div className="text-center mb-2">
+                      <p className="text-slate-300 text-sm font-semibold uppercase tracking-wider">
+                        {category.name}
+                      </p>
+                      {category.description && (
+                        <p className="text-slate-400 text-xs mt-0.5">
+                          {category.description}
+                        </p>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
                 <DialogTitle className="text-amber-400 text-2xl text-center">
                   {activeQuestion?.points} Points
                 </DialogTitle>
