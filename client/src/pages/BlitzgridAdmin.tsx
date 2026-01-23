@@ -123,8 +123,8 @@ export default function BlitzgridAdmin() {
   });
 
   const updateGridMutation = useMutation({
-    mutationFn: async ({ id, name }: { id: number; name: string }) => {
-      return apiRequest('PATCH', `/api/blitzgrid/grids/${id}`, { name });
+    mutationFn: async ({ id, name, theme }: { id: number; name?: string; theme?: string }) => {
+      return apiRequest('PATCH', `/api/blitzgrid/grids/${id}`, { name, theme });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
@@ -478,7 +478,7 @@ export default function BlitzgridAdmin() {
         />
         <div className="container mx-auto px-4 py-6">
           
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-2xl font-bold">{grid?.name || 'Grid'}</h1>
               <p className="text-muted-foreground text-sm">
@@ -496,6 +496,28 @@ export default function BlitzgridAdmin() {
                 </Badge>
               )}
             </div>
+          </div>
+          
+          {/* Theme Selector */}
+          <div className="flex items-center gap-2 flex-wrap mb-6">
+            <span className="text-sm text-muted-foreground" data-testid="text-grid-theme-label">Theme:</span>
+            {GRID_THEMES.map(theme => {
+              const currentTheme = grid?.theme?.replace('blitzgrid:', '') || 'birthday';
+              return (
+                <Button
+                  key={theme.id}
+                  variant={currentTheme === theme.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => updateGridMutation.mutate({ id: selectedGridId, theme: theme.id })}
+                  disabled={updateGridMutation.isPending}
+                  className="gap-1"
+                  data-testid={`button-grid-theme-${theme.id}`}
+                >
+                  <ThemeIcon type={theme.iconType} className="w-4 h-4" />
+                  <span className="hidden sm:inline">{theme.name}</span>
+                </Button>
+              );
+            })}
           </div>
 
           {/* New Category Form */}
