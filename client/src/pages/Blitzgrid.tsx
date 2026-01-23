@@ -21,7 +21,7 @@ import {
   Circle, Waves, Sun, Star, TreePine, Flower2, Leaf, Bird,
   PartyPopper, Cake, Umbrella, Briefcase, Dog, Cat, Rocket, Music, Palette, Heart, Timer,
   Target, Flag, Award, Dribbble, Shirt, Footprints, Shell, Fish, Gift, Candy, Coffee, Laptop, Headphones, Mic2, Guitar,
-  Volume2, VolumeX
+  Volume2, VolumeX, MoreVertical, Settings
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -40,6 +40,9 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
 import type { Board, Category, Question } from "@shared/schema";
 import { PLAYER_AVATARS } from "@shared/schema";
 import { getBoardColorConfig } from "@/lib/boardColors";
@@ -971,6 +974,8 @@ export default function Blitzgrid() {
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
+  const [showEndSessionDialog, setShowEndSessionDialog] = useState(false);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(soundManager.isEnabled());
   
   // Category reveal state - reveals categories one by one before gameplay
@@ -2036,54 +2041,81 @@ export default function Blitzgrid() {
               </div>
             </div>
             
-            {/* Right: Room Code + Action Buttons */}
+            {/* Right: Room Code + Invite + Settings */}
             <div className="flex items-center gap-2">
               {roomCode && (
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.2 }}>
-                  <Badge className="bg-emerald-400 text-black font-mono font-bold px-3 py-1">{roomCode}</Badge>
+                <motion.div 
+                  initial={{ scale: 0 }} 
+                  animate={{ scale: 1 }} 
+                  transition={{ type: "spring", delay: 0.2 }}
+                  className="flex items-center gap-2"
+                >
+                  <Badge className="bg-emerald-400 text-black font-mono font-bold px-3 py-1.5">
+                    {roomCode}
+                  </Badge>
+                  <Button 
+                    size="sm" 
+                    onClick={() => setShowQRCode(true)} 
+                    className="bg-emerald-400 text-black font-medium"
+                    data-testid="button-show-qr"
+                  >
+                    <QrCode className="w-4 h-4" />
+                  </Button>
                 </motion.div>
               )}
-              <Button size="sm" onClick={() => setShowQRCode(true)} className="bg-emerald-400 text-black font-medium h-9" data-testid="button-show-qr">
-                <QrCode className="w-4 h-4 mr-1.5" /> <span className="hidden sm:inline">Join</span>
-              </Button>
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                onClick={() => {
-                  const newVal = soundManager.toggle();
-                  setSoundEnabled(newVal);
-                }} 
-                className="text-white/50 h-9 w-9" 
-                data-testid="button-toggle-sound"
-              >
-                {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-              </Button>
-              <Button size="icon" variant="ghost" onClick={resetGame} className="text-white/50 h-9 w-9" data-testid="button-reset-game">
-                <RotateCcw className="w-4 h-4" />
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button size="icon" variant="ghost" className="text-red-400/70 h-9 w-9" data-testid="button-end-session">
-                    <Power className="w-4 h-4" />
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="ghost" className="text-white/60" data-testid="button-game-menu">
+                    <MoreVertical className="w-4 h-4" />
                   </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>End this game session?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will disconnect all {players.length} player{players.length !== 1 ? 's' : ''} and close the room. 
-                      Players will need to rejoin with a new room code to play again.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={startGameOverReveal} className="bg-red-600">
-                      End Session
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => setShowQRCode(true)}>
+                    <QrCode className="w-4 h-4 mr-2" />
+                    Show QR Code
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    const newVal = soundManager.toggle();
+                    setSoundEnabled(newVal);
+                  }}>
+                    {soundEnabled ? <Volume2 className="w-4 h-4 mr-2" /> : <VolumeX className="w-4 h-4 mr-2" />}
+                    {soundEnabled ? 'Sound On' : 'Sound Off'}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={resetGame}>
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Reset Questions
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setShowEndSessionDialog(true)}
+                    className="text-red-500 focus:text-red-500"
+                  >
+                    <Power className="w-4 h-4 mr-2" />
+                    End Session
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
+            
+            {/* End Session Dialog */}
+            <AlertDialog open={showEndSessionDialog} onOpenChange={setShowEndSessionDialog}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>End this game session?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will disconnect all {players.length} player{players.length !== 1 ? 's' : ''} and close the room. 
+                    Players will need to rejoin with a new room code to play again.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => { setShowEndSessionDialog(false); startGameOverReveal(); }} className="bg-red-600">
+                    End Session
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </motion.div>
           
           {/* Join Notification */}
@@ -2303,64 +2335,81 @@ export default function Blitzgrid() {
             )}
           </AnimatePresence>
           
-          {/* Bottom Scoreboard Bar */}
+          {/* Bottom Scoreboard Bar - Clean & Minimal */}
           <motion.div 
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3, type: "spring" }}
-            className="bg-white/5 backdrop-blur-md border-t border-white/10 px-4 py-3"
+            className="bg-white/5 backdrop-blur-md border-t border-white/10 px-4 py-2"
           >
             {players.length > 0 ? (
-              <div className="flex items-center justify-center gap-4 md:gap-8 flex-wrap">
+              <div className="flex items-center justify-center gap-3 md:gap-5 flex-wrap">
                 {[...players].sort((a, b) => b.score - a.score).map((player, idx) => {
                   const avatarEmoji = PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji;
+                  const isSelected = selectedPlayerId === player.id;
                   return (
                     <motion.div
                       key={player.id}
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.4 + idx * 0.05 }}
-                      className={`flex items-center gap-3 bg-white/5 rounded-full pl-1 pr-4 py-1 border ${player.connected ? 'border-white/10' : 'border-red-500/30 opacity-60'}`}
+                      onClick={() => setSelectedPlayerId(isSelected ? null : player.id)}
+                      className={`flex items-center gap-2 rounded-full py-1 pl-1 pr-3 cursor-pointer transition-all ${
+                        isSelected ? 'bg-white/15 ring-2 ring-emerald-400/50' : 'hover:bg-white/10'
+                      } ${!player.connected ? 'opacity-50' : ''}`}
                     >
-                      <div className="flex items-center gap-2">
-                        <div className="relative">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg ${idx === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-600' : idx === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400' : idx === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-800' : 'bg-gradient-to-br from-emerald-400 to-emerald-600'}`}>
-                            {avatarEmoji}
-                          </div>
-                          {/* Connection status dot */}
-                          <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-900 ${player.connected ? 'bg-green-500' : 'bg-red-500'}`} />
+                      <div className="relative">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-base ${
+                          idx === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-600' : 
+                          idx === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400' : 
+                          idx === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-800' : 
+                          'bg-gradient-to-br from-emerald-400 to-emerald-600'
+                        }`}>
+                          {avatarEmoji}
                         </div>
-                        <span className="text-white font-medium text-sm">{player.name}</span>
+                        <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-slate-900 ${player.connected ? 'bg-green-500' : 'bg-red-500'}`} />
                       </div>
-                      <span className="text-emerald-400 font-bold text-lg">{player.score}</span>
-                      <div className="flex gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-6 w-6 text-emerald-400"
-                          onClick={() => updatePlayerScore(player.id, 10)}
-                          data-testid={`button-add-score-${player.id}`}
-                        >
-                          <Plus className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-6 w-6 text-red-400"
-                          onClick={() => updatePlayerScore(player.id, -10)}
-                          data-testid={`button-sub-score-${player.id}`}
-                        >
-                          <Minus className="w-3 h-3" />
-                        </Button>
+                      <div className="flex flex-col leading-tight">
+                        <span className="text-white font-medium text-xs">{player.name}</span>
+                        <span className="text-emerald-400 font-bold text-sm">{player.score}</span>
                       </div>
+                      
+                      <AnimatePresence>
+                        {isSelected && (
+                          <motion.div 
+                            initial={{ width: 0, opacity: 0 }}
+                            animate={{ width: 'auto', opacity: 1 }}
+                            exit={{ width: 0, opacity: 0 }}
+                            className="flex gap-1 overflow-hidden ml-1"
+                          >
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={(e) => { e.stopPropagation(); updatePlayerScore(player.id, -10); }}
+                              data-testid={`button-sub-score-${player.id}`}
+                            >
+                              <Minus className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="bg-emerald-500"
+                              onClick={(e) => { e.stopPropagation(); updatePlayerScore(player.id, 10); }}
+                              data-testid={`button-add-score-${player.id}`}
+                            >
+                              <Plus className="w-3 h-3" />
+                            </Button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </motion.div>
                   );
                 })}
               </div>
             ) : (
-              <div className="flex items-center justify-center gap-2 text-white/40 text-sm">
+              <div className="flex items-center justify-center gap-2 text-white/40 text-sm py-1">
                 <Users className="w-4 h-4" />
-                <span>No players yet - share the room code to invite players</span>
+                <span>Tap room code to invite players</span>
               </div>
             )}
           </motion.div>
