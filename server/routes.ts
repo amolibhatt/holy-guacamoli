@@ -3312,7 +3312,7 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid grid ID" });
       }
       
-      const { name } = req.body;
+      const { name, description } = req.body;
       if (!name || typeof name !== "string" || !name.trim()) {
         return res.status(400).json({ message: "Category name is required" });
       }
@@ -3332,7 +3332,7 @@ export async function registerRoutes(
       // Create the category
       const category = await storage.createCategory({
         name: name.trim(),
-        description: "",
+        description: typeof description === "string" ? description.trim() : "",
         imageUrl: "",
       });
       
