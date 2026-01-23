@@ -3173,10 +3173,7 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid grid ID" });
       }
       
-      const { name } = req.body;
-      if (!name || typeof name !== "string") {
-        return res.status(400).json({ message: "Grid name is required" });
-      }
+      const { name, theme } = req.body;
       
       // Verify ownership
       const board = await storage.getBoard(id, userId);
@@ -3184,7 +3181,24 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Grid not found" });
       }
       
-      const updated = await storage.updateBoard(id, { name: name.trim() }, userId);
+      // Build update object
+      const updateData: { name?: string; theme?: string } = {};
+      if (name && typeof name === "string") {
+        updateData.name = name.trim();
+      }
+      if (theme && typeof theme === "string") {
+        // Validate theme
+        const validThemes = ['sports', 'birthday', 'beach', 'office', 'dogs', 'cats', 'space', 'music', 'nature'];
+        if (validThemes.includes(theme)) {
+          updateData.theme = `blitzgrid:${theme}`;
+        }
+      }
+      
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
+      
+      const updated = await storage.updateBoard(id, updateData, userId);
       res.json(updated);
     } catch (err) {
       console.error("Error updating blitzgrid grid:", err);
