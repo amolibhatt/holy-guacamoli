@@ -65,7 +65,7 @@ export function AppHeader({
             <div className="flex flex-col">
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)' }}>
                 <span className="text-foreground">Holy </span>
-                <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-amber-500 bg-clip-text text-transparent">GuacAmoli!</span>
+                <span className="bg-gradient-to-r from-green-500 via-emerald-400 to-lime-400 bg-clip-text text-transparent">GuacAmoli!</span>
               </h1>
               {(title || subtitle) && (
                 <span className="text-xs text-muted-foreground tracking-wide">{title}{subtitle ? ` - ${subtitle}` : ''}</span>

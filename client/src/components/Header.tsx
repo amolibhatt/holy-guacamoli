@@ -16,7 +16,7 @@ export function Header() {
             <AvocadoIcon className="w-8 h-8 drop-shadow-md" />
           </motion.div>
           <span className="font-display font-bold text-2xl text-foreground hidden sm:block">
-            Holy <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-amber-500 bg-clip-text text-transparent">GuacAmoli!</span>
+            Holy <span className="bg-gradient-to-r from-green-500 via-emerald-400 to-lime-400 bg-clip-text text-transparent">GuacAmoli!</span>
           </span>
         </Link>
 
