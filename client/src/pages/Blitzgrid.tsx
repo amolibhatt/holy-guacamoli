@@ -1499,21 +1499,25 @@ export default function Blitzgrid() {
             animate={{ y: 0, opacity: 1 }}
             className="flex items-center justify-between px-4 py-3 bg-black/50 backdrop-blur-md border-b border-white/10"
           >
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => { setPlayMode(false); setSelectedGridId(null); }}
-              className="text-white/60 h-9 w-9"
-              data-testid="button-exit-play"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col items-center">
-                <Logo size="sm" variant="light" />
-                <h1 className="text-xs font-medium text-white/60 tracking-tight mt-1">{grid.name}</h1>
+            {/* Left: Back + Logo + Grid Name */}
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => { setPlayMode(false); setSelectedGridId(null); }}
+                className="text-white/60 h-9 w-9"
+                data-testid="button-exit-play"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <Logo size="sm" variant="light" />
+              <div className="hidden sm:block">
+                <h1 className="text-sm font-medium text-white/80 tracking-tight">{grid.name}</h1>
               </div>
+            </div>
+            
+            {/* Center: Room Code + Player Count */}
+            <div className="flex items-center gap-3">
               {roomCode && (
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.2 }}>
                   <Badge className="bg-emerald-400 text-black font-mono font-bold px-3 py-1">{roomCode}</Badge>
@@ -1527,13 +1531,14 @@ export default function Blitzgrid() {
               >
                 <Users className="w-4 h-4 text-emerald-400" />
                 <span className="text-emerald-300 font-bold">{players.length}</span>
-                <span className="text-emerald-400/70 text-sm">player{players.length !== 1 ? 's' : ''}</span>
+                <span className="text-emerald-400/70 text-sm hidden sm:inline">player{players.length !== 1 ? 's' : ''}</span>
               </motion.div>
             </div>
             
+            {/* Right: Action Buttons */}
             <div className="flex gap-2">
               <Button size="sm" onClick={() => setShowQRCode(true)} className="bg-emerald-400 text-black font-medium h-9" data-testid="button-show-qr">
-                <QrCode className="w-4 h-4 mr-1.5" /> Join
+                <QrCode className="w-4 h-4 mr-1.5" /> <span className="hidden sm:inline">Join</span>
               </Button>
               <Button size="icon" variant="ghost" onClick={resetGame} className="text-white/50 h-9 w-9" data-testid="button-reset-game">
                 <RotateCcw className="w-4 h-4" />
