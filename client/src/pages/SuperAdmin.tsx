@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Users, BarChart3, Shield, ArrowLeft,
   Trash2, MoreHorizontal, Pencil,
   TrendingUp, Gamepad2, Clock, Activity, Heart,
-  ListOrdered, RefreshCw, Grid3X3,
-  ChevronRight, Star
+  ListOrdered, Grid3X3,
+  ChevronRight, Star, ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,15 +30,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { GameStatus, BoardVisibility } from "@shared/schema";
+import type { GameStatus } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
@@ -72,9 +65,7 @@ export default function SuperAdmin() {
   const { toast } = useToast();
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [deleteBoardId, setDeleteBoardId] = useState<number | null>(null);
-  
-  // Game management state - which game is selected for management
-  const [selectedGameSlug, setSelectedGameSlug] = useState<string | null>(null);
+  const [expandedGameSlug, setExpandedGameSlug] = useState<string | null>(null);
 
   const { data: stats, isLoading: isLoadingStats } = useQuery<PlatformStats>({
     queryKey: ['/api/super-admin/stats'],
@@ -99,6 +90,7 @@ export default function SuperAdmin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/game-types'] });
       queryClient.invalidateQueries({ queryKey: ['/api/game-types'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/game-types/homepage'] });
       toast({ title: "Game updated" });
     },
     onError: () => {
@@ -133,20 +125,6 @@ export default function SuperAdmin() {
     },
     onError: () => {
       toast({ title: "Couldn't delete grid", description: "Please try again.", variant: "destructive" });
-    },
-  });
-
-  const seedDatabaseMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest('POST', '/api/super-admin/seed');
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/game-types'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/game-types'] });
-      toast({ title: "Database seeded", description: "Missing game types have been added." });
-    },
-    onError: () => {
-      toast({ title: "Seed failed", description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -197,6 +175,26 @@ export default function SuperAdmin() {
     );
   }
 
+  const getGameIcon = (slug: string) => {
+    switch (slug) {
+      case 'blitzgrid': return Grid3X3;
+      case 'sequence_squeeze': return ListOrdered;
+      case 'double_dip': return Heart;
+      default: return Gamepad2;
+    }
+  };
+
+  const getGameGradient = (slug: string) => {
+    switch (slug) {
+      case 'blitzgrid': return 'from-amber-400 via-orange-500 to-red-500';
+      case 'sequence_squeeze': return 'from-emerald-400 via-teal-500 to-cyan-500';
+      case 'double_dip': return 'from-rose-400 via-pink-500 to-fuchsia-500';
+      default: return 'from-purple-400 via-violet-500 to-indigo-500';
+    }
+  };
+
+  const blitzgrids = allBoards.filter((b: any) => b.theme === 'blitzgrid' || b.isBlitzgrid);
+
   return (
     <div className="min-h-screen gradient-game">
       <AppHeader
@@ -212,14 +210,10 @@ export default function SuperAdmin() {
 
       <main className="p-6 max-w-7xl mx-auto">
         <Tabs defaultValue="analytics" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 max-w-xl">
+          <TabsList className="grid w-full grid-cols-3 max-w-md">
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Analytics</span>
-            </TabsTrigger>
-            <TabsTrigger value="grids" className="gap-2">
-              <Grid3X3 className="w-4 h-4" />
-              <span className="hidden sm:inline">All Grids</span>
             </TabsTrigger>
             <TabsTrigger value="games" className="gap-2">
               <Gamepad2 className="w-4 h-4" />
@@ -285,241 +279,200 @@ export default function SuperAdmin() {
             </motion.div>
           </TabsContent>
 
-          <TabsContent value="grids" className="space-y-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-foreground">All Grids</h2>
-                <Badge variant="secondary">{allBoards.length} grids</Badge>
-              </div>
-
-              {isLoadingBoards ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-20 w-full" />
-                  ))}
-                </div>
-              ) : allBoards.length === 0 ? (
-                <Card>
-                  <CardContent className="py-8 text-center text-muted-foreground">
-                    No grids found. Users can create grids from the Admin panel.
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  {allBoards.map((board: any) => {
-                    const isComplete = board.categoryCount >= 5 && board.questionCount >= 25;
-                    const isStarterPack = board.isStarterPack ?? false;
-                    return (
-                      <Card key={board.id} className="hover-elevate">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <span className="font-medium truncate">{board.name}</span>
-                                {isComplete ? (
-                                  <Badge className="bg-green-500/20 text-green-600 text-xs">Complete</Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-amber-600 text-xs">
-                                    {board.categoryCount}/5 categories, {board.questionCount}/25 questions
-                                  </Badge>
-                                )}
-                                {isStarterPack && (
-                                  <Badge className="bg-amber-500/20 text-amber-600 text-xs">
-                                    <Star className="w-3 h-3 mr-1" />
-                                    Starter Pack
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                Owner: {board.ownerEmail || 'Unknown'}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant={isStarterPack ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => toggleStarterPackMutation.mutate({ 
-                                  boardId: board.id, 
-                                  isStarterPack: !isStarterPack 
-                                })}
-                                disabled={toggleStarterPackMutation.isPending || !isComplete}
-                                title={!isComplete ? "Grid must be complete to be a starter pack" : (isStarterPack ? "Remove from starter packs" : "Add to starter packs")}
-                                data-testid={`button-starter-pack-${board.id}`}
-                              >
-                                <Star className={`w-3 h-3 mr-1 ${isStarterPack ? 'fill-current' : ''}`} />
-                                {isStarterPack ? 'Starter' : 'Promote'}
-                              </Button>
-                              <Link href={`/admin?game=${board.id}`}>
-                                <Button variant="outline" size="sm">
-                                  <Pencil className="w-3 h-3 mr-1" />
-                                  Edit
-                                </Button>
-                              </Link>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setDeleteBoardId(board.id)}
-                                data-testid={`button-delete-grid-${board.id}`}
-                              >
-                                <Trash2 className="w-4 h-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </motion.div>
-          </TabsContent>
-
           <TabsContent value="games" className="space-y-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              {/* Game selector header */}
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-foreground">Games</h2>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => seedDatabaseMutation.mutate()}
-                  disabled={seedDatabaseMutation.isPending}
-                  data-testid="button-sync-games"
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${seedDatabaseMutation.isPending ? 'animate-spin' : ''}`} />
-                  Sync Games
-                </Button>
-              </div>
+              <h2 className="text-2xl font-bold text-foreground mb-6">Game Management</h2>
 
               {isLoadingGameTypes ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-32 w-full" />
+                    <Skeleton key={i} className="h-20 w-full" />
                   ))}
                 </div>
               ) : (
                 <div className="space-y-4">
                   {gameTypes.map((gameType) => {
-                    const isSelected = selectedGameSlug === gameType.slug;
-                    const starterPacks = allBoards.filter((b: any) => b.isGlobal);
-                    const completePacks = starterPacks.filter((b: any) => b.categoryCount >= 5 && b.questionCount >= 25);
+                    const isExpanded = expandedGameSlug === gameType.slug;
+                    const GameIcon = getGameIcon(gameType.slug);
+                    const gradient = getGameGradient(gameType.slug);
+                    const status = (gameType as any).status || 'active';
                     
                     return (
-                      <Card key={gameType.id} className={`transition-all ${isSelected ? 'border-primary' : ''}`}>
+                      <Card key={gameType.id} className={`transition-all ${isExpanded ? 'border-primary' : ''}`}>
                         <CardContent className="p-0">
-                          {/* Game header - always visible */}
                           <div 
                             className="p-4 cursor-pointer hover:bg-muted/30 transition-colors"
-                            onClick={() => setSelectedGameSlug(isSelected ? null : gameType.slug)}
+                            onClick={() => setExpandedGameSlug(isExpanded ? null : gameType.slug)}
                             role="button"
                             tabIndex={0}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault();
-                                setSelectedGameSlug(isSelected ? null : gameType.slug);
+                                setExpandedGameSlug(isExpanded ? null : gameType.slug);
                               }
                             }}
-                            aria-expanded={isSelected}
+                            aria-expanded={isExpanded}
                             data-testid={`game-row-${gameType.slug}`}
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-4">
-                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                                  gameType.slug === 'sequence_squeeze'
-                                      ? 'bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500'
-                                      : 'bg-gradient-to-br from-rose-400 via-pink-500 to-fuchsia-500'
-                                }`}>
-                                  {gameType.slug === 'sequence_squeeze' ? (
-                                    <ListOrdered className="w-6 h-6 text-white" />
-                                  ) : (
-                                    <Heart className="w-6 h-6 text-white" />
-                                  )}
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br ${gradient}`}>
+                                  <GameIcon className="w-6 h-6 text-white" />
                                 </div>
                                 <div>
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 flex-wrap">
                                     <h3 className="font-semibold text-lg text-foreground">{gameType.displayName}</h3>
-                                    {(gameType as any).status === 'coming_soon' && (
+                                    {status === 'coming_soon' && (
                                       <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
                                     )}
-                                    {(gameType as any).status === 'hidden' && (
+                                    {status === 'hidden' && (
                                       <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>
                                     )}
-                                    {(gameType as any).status === 'active' && (
+                                    {status === 'active' && (
                                       <Badge className="bg-green-500/20 text-green-600 border-green-500/30 text-xs">Active</Badge>
                                     )}
                                   </div>
                                   <p className="text-sm text-muted-foreground">{gameType.description || 'No description'}</p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-4">
-                                <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform ${isSelected ? 'rotate-90' : ''}`} />
-                              </div>
+                              <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                             </div>
                           </div>
                           
-                          {/* Expanded game management */}
-                          {isSelected && (
-                            <div className="border-t border-border p-4 bg-muted/20">
-                              {/* Game settings row */}
-                              <div className="flex flex-wrap gap-6 mb-6 pb-4 border-b border-border">
-                                <div className="flex items-center gap-3">
-                                  <span className="text-sm text-muted-foreground">Status:</span>
-                                  <Select
-                                    value={(gameType as any).status || 'active'}
-                                    onValueChange={(value: GameStatus) => {
-                                      updateGameTypeMutation.mutate({
-                                        id: gameType.id,
-                                        data: { status: value }
-                                      });
-                                    }}
-                                    disabled={updateGameTypeMutation.isPending}
-                                  >
-                                    <SelectTrigger className="w-[130px]" data-testid={`select-status-${gameType.slug}`}>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="active">Active</SelectItem>
-                                      <SelectItem value="coming_soon">Coming Soon</SelectItem>
-                                      <SelectItem value="hidden">Hidden</SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                          <AnimatePresence>
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="border-t border-border p-4 bg-muted/20">
+                                  <div className="flex items-center gap-4 mb-4">
+                                    <span className="text-sm text-muted-foreground">Status:</span>
+                                    <Select
+                                      value={status}
+                                      onValueChange={(value: GameStatus) => {
+                                        updateGameTypeMutation.mutate({
+                                          id: gameType.id,
+                                          data: { status: value }
+                                        });
+                                      }}
+                                      disabled={updateGameTypeMutation.isPending}
+                                    >
+                                      <SelectTrigger className="w-[140px]" data-testid={`select-status-${gameType.slug}`}>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="active">Active</SelectItem>
+                                        <SelectItem value="coming_soon">Coming Soon</SelectItem>
+                                        <SelectItem value="hidden">Hidden</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  
+                                  {gameType.slug === 'blitzgrid' && (
+                                    <div className="space-y-3">
+                                      <div className="flex items-center justify-between">
+                                        <h4 className="font-medium text-foreground">All Grids</h4>
+                                        <Badge variant="secondary">{allBoards.length} total</Badge>
+                                      </div>
+                                      
+                                      {isLoadingBoards ? (
+                                        <Skeleton className="h-20 w-full" />
+                                      ) : allBoards.length === 0 ? (
+                                        <div className="text-center py-6 text-muted-foreground">
+                                          No grids created yet.
+                                        </div>
+                                      ) : (
+                                        <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                                          {allBoards.map((board: any) => {
+                                            const isComplete = board.categoryCount >= 5 && board.questionCount >= 25;
+                                            const isStarterPack = board.isStarterPack ?? false;
+                                            return (
+                                              <div key={board.id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
+                                                <div className="flex-1 min-w-0">
+                                                  <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="font-medium truncate">{board.name}</span>
+                                                    {isComplete ? (
+                                                      <Badge className="bg-green-500/20 text-green-600 text-xs">Complete</Badge>
+                                                    ) : (
+                                                      <Badge variant="outline" className="text-amber-600 text-xs">
+                                                        {board.categoryCount}/5 categories
+                                                      </Badge>
+                                                    )}
+                                                    {isStarterPack && (
+                                                      <Badge className="bg-amber-500/20 text-amber-600 text-xs">
+                                                        <Star className="w-3 h-3 mr-1" />
+                                                        Starter
+                                                      </Badge>
+                                                    )}
+                                                  </div>
+                                                  <div className="text-xs text-muted-foreground">
+                                                    {board.ownerEmail || 'Unknown owner'}
+                                                  </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                  <Button
+                                                    variant={isStarterPack ? "default" : "outline"}
+                                                    size="sm"
+                                                    onClick={() => toggleStarterPackMutation.mutate({ 
+                                                      boardId: board.id, 
+                                                      isStarterPack: !isStarterPack 
+                                                    })}
+                                                    disabled={toggleStarterPackMutation.isPending || !isComplete}
+                                                    title={!isComplete ? "Grid must be complete" : "Toggle starter pack"}
+                                                    data-testid={`button-starter-pack-${board.id}`}
+                                                  >
+                                                    <Star className={`w-3 h-3 ${isStarterPack ? 'fill-current' : ''}`} />
+                                                  </Button>
+                                                  <Link href={`/admin?game=${board.id}`}>
+                                                    <Button variant="ghost" size="sm">
+                                                      <Pencil className="w-3 h-3" />
+                                                    </Button>
+                                                  </Link>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => setDeleteBoardId(board.id)}
+                                                    data-testid={`button-delete-grid-${board.id}`}
+                                                  >
+                                                    <Trash2 className="w-3 h-3 text-destructive" />
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {gameType.slug === 'sequence_squeeze' && (
+                                    <div className="text-center py-4 text-muted-foreground">
+                                      Content is created per-session during gameplay.
+                                    </div>
+                                  )}
+                                  
+                                  {gameType.slug === 'double_dip' && (
+                                    <div className="text-center py-4 text-muted-foreground">
+                                      Uses AI-generated questions. No manual content needed.
+                                    </div>
+                                  )}
+                                  
+                                  {gameType.slug === 'buzzkill' && (
+                                    <div className="text-center py-4 text-muted-foreground">
+                                      Legacy game mode. Set to "Hidden" to remove from homepage.
+                                    </div>
+                                  )}
                                 </div>
-                                <div className="flex items-center gap-3">
-                                  <span className="text-sm text-muted-foreground">Show to Hosts:</span>
-                                  <Switch
-                                    checked={gameType.hostEnabled}
-                                    onCheckedChange={(checked) => {
-                                      updateGameTypeMutation.mutate({
-                                        id: gameType.id,
-                                        data: { hostEnabled: checked }
-                                      });
-                                    }}
-                                    disabled={updateGameTypeMutation.isPending}
-                                    data-testid={`switch-host-${gameType.slug}`}
-                                  />
-                                </div>
-                              </div>
-                              
-                              {/* Game-specific content */}
-                              {gameType.slug === 'sequence_squeeze' && (
-                                <div className="text-center py-6 text-muted-foreground">
-                                  Sequence Squeeze content is managed per-game session. No global content to configure.
-                                </div>
-                              )}
-                              
-                              {gameType.slug === 'double_dip' && (
-                                <div className="text-center py-6 text-muted-foreground">
-                                  Double Dip uses AI-generated questions. No manual content management needed.
-                                </div>
-                              )}
-                            </div>
-                          )}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </CardContent>
                       </Card>
                     );
@@ -528,7 +481,7 @@ export default function SuperAdmin() {
                   {gameTypes.length === 0 && (
                     <Card>
                       <CardContent className="p-8 text-center text-muted-foreground">
-                        No games found. Click "Sync Games" to add them.
+                        No games configured.
                       </CardContent>
                     </Card>
                   )}
@@ -536,7 +489,6 @@ export default function SuperAdmin() {
               )}
             </motion.div>
           </TabsContent>
-
 
           <TabsContent value="users" className="space-y-4">
             <motion.div
@@ -673,7 +625,6 @@ export default function SuperAdmin() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
     </div>
   );
 }
