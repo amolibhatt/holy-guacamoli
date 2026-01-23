@@ -1510,7 +1510,7 @@ export default function Blitzgrid() {
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
-              <Logo size="sm" variant="light" />
+              <Logo size="md" variant="light" />
               <div className="hidden sm:block">
                 <h1 className="text-sm font-medium text-white/80 tracking-tight">{grid.name}</h1>
               </div>
