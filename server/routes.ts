@@ -3491,6 +3491,175 @@ export async function registerRoutes(
     }
   });
 
+  // Export all grids for the current user
+  app.get("/api/blitzgrid/export", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const allBoards = await storage.getBoards(userId);
+      const boards = allBoards.filter(b => b.theme === "blitzgrid");
+      
+      const exportData = [];
+      for (const board of boards) {
+        const boardCategories = await storage.getBoardCategories(board.id);
+        const categories = [];
+        
+        for (const bc of boardCategories) {
+          const category = await storage.getCategory(bc.categoryId);
+          if (!category) continue;
+          
+          const questions = await storage.getQuestionsByCategory(category.id);
+          categories.push({
+            name: category.name,
+            description: category.description || "",
+            questions: questions.map(q => ({
+              points: q.points,
+              question: q.question,
+              correctAnswer: q.correctAnswer,
+              options: q.options || [],
+              imageUrl: q.imageUrl || "",
+              audioUrl: q.audioUrl || "",
+              videoUrl: q.videoUrl || "",
+            }))
+          });
+        }
+        
+        exportData.push({
+          name: board.name,
+          description: board.description || "",
+          categories
+        });
+      }
+      
+      res.json({ grids: exportData, exportedAt: new Date().toISOString() });
+    } catch (err) {
+      console.error("Error exporting grids:", err);
+      res.status(500).json({ message: "Failed to export grids" });
+    }
+  });
+  
+  // Download template for import
+  app.get("/api/blitzgrid/template", async (req, res) => {
+    const template = {
+      grids: [
+        {
+          name: "Example Grid Name",
+          description: "Optional grid description",
+          categories: [
+            {
+              name: "Category 1",
+              description: "Optional category description",
+              questions: [
+                { points: 10, question: "Easy question?", correctAnswer: "Answer 1", options: [], imageUrl: "", audioUrl: "", videoUrl: "" },
+                { points: 20, question: "Medium question?", correctAnswer: "Answer 2", options: [], imageUrl: "", audioUrl: "", videoUrl: "" },
+                { points: 30, question: "Harder question?", correctAnswer: "Answer 3", options: [], imageUrl: "", audioUrl: "", videoUrl: "" },
+                { points: 40, question: "Difficult question?", correctAnswer: "Answer 4", options: [], imageUrl: "", audioUrl: "", videoUrl: "" },
+                { points: 50, question: "Hardest question?", correctAnswer: "Answer 5", options: [], imageUrl: "", audioUrl: "", videoUrl: "" },
+              ]
+            }
+          ]
+        }
+      ],
+      instructions: {
+        format: "Each grid must have a name and 1-5 categories. Each category needs a name and exactly 5 questions with unique point values (10, 20, 30, 40, 50).",
+        mediaUrls: "imageUrl, audioUrl, and videoUrl are optional. Leave empty string if not needed.",
+        options: "The options array is for multiple choice questions. Leave as empty array [] for open-ended questions."
+      }
+    };
+    res.json(template);
+  });
+  
+  // Import grids from JSON
+  app.post("/api/blitzgrid/import", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { grids } = req.body;
+      
+      if (!Array.isArray(grids) || grids.length === 0) {
+        return res.status(400).json({ message: "Invalid format: grids array required" });
+      }
+      
+      const results = { imported: 0, errors: [] as string[] };
+      
+      for (const grid of grids) {
+        try {
+          if (!grid.name || typeof grid.name !== "string") {
+            results.errors.push(`Grid missing name`);
+            continue;
+          }
+          
+          if (!Array.isArray(grid.categories) || grid.categories.length === 0 || grid.categories.length > 5) {
+            results.errors.push(`Grid "${grid.name}": must have 1-5 categories`);
+            continue;
+          }
+          
+          // Create the grid (board)
+          const board = await storage.createBoard({
+            name: grid.name.trim(),
+            description: grid.description?.trim() || null,
+            userId,
+            theme: "blitzgrid",
+            pointValues: [10, 20, 30, 40, 50],
+          });
+          
+          for (const cat of grid.categories) {
+            if (!cat.name || typeof cat.name !== "string") {
+              results.errors.push(`Grid "${grid.name}": category missing name`);
+              continue;
+            }
+            
+            if (!Array.isArray(cat.questions) || cat.questions.length !== 5) {
+              results.errors.push(`Grid "${grid.name}", Category "${cat.name}": must have exactly 5 questions`);
+              continue;
+            }
+            
+            // Validate point values
+            const pointSet = new Set(cat.questions.map((q: any) => q.points));
+            if (pointSet.size !== 5 || ![10, 20, 30, 40, 50].every(p => pointSet.has(p))) {
+              results.errors.push(`Grid "${grid.name}", Category "${cat.name}": questions must have unique points 10, 20, 30, 40, 50`);
+              continue;
+            }
+            
+            // Create category
+            const category = await storage.createCategory({
+              name: cat.name.trim(),
+              description: cat.description?.trim() || "",
+              imageUrl: "",
+            });
+            
+            // Link category to board
+            await storage.createBoardCategory({
+              boardId: board.id,
+              categoryId: category.id,
+            });
+            
+            // Create questions
+            for (const q of cat.questions) {
+              await storage.createQuestion({
+                categoryId: category.id,
+                question: q.question?.trim() || "",
+                correctAnswer: q.correctAnswer?.trim() || "",
+                points: q.points,
+                options: q.options || [],
+                imageUrl: q.imageUrl?.trim() || null,
+                audioUrl: q.audioUrl?.trim() || null,
+                videoUrl: q.videoUrl?.trim() || null,
+              });
+            }
+          }
+          
+          results.imported++;
+        } catch (gridErr) {
+          results.errors.push(`Grid "${grid.name}": ${(gridErr as Error).message}`);
+        }
+      }
+      
+      res.json(results);
+    } catch (err) {
+      console.error("Error importing grids:", err);
+      res.status(500).json({ message: "Failed to import grids" });
+    }
+  });
+
   // ==================== END BLITZGRID ROUTES ====================
 
   // Analytics endpoint - event collection with validation
