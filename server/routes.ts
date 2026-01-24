@@ -2316,9 +2316,10 @@ export async function registerRoutes(
       });
       
       res.json(board);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error creating blitzgrid grid:", err);
-      res.status(500).json({ message: "Failed to create grid" });
+      console.error("Error details:", err?.message, err?.code, err?.detail);
+      res.status(500).json({ message: `Failed to create grid: ${err?.message || 'Unknown error'}` });
     }
   });
   
