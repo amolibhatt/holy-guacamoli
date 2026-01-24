@@ -2301,8 +2301,8 @@ export async function registerRoutes(
       }
       
       // Validate theme - prefix with blitzgrid: for storage
-      const validThemes = ['football', 'ocean', 'sunset', 'galaxy', 'forest', 'cherry'];
-      const selectedTheme = validThemes.includes(theme) ? theme : 'football';
+      const validThemes = ['sports', 'birthday', 'beach', 'office', 'dogs', 'cats', 'space', 'music', 'nature'];
+      const selectedTheme = validThemes.includes(theme) ? theme : 'birthday';
       
       const board = await storage.createBoard({
         userId,
