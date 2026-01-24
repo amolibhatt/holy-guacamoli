@@ -1581,6 +1581,16 @@ export class DatabaseStorage implements IStorage {
       console.log(`[SEED] Added ${addedCount} new game type(s), updated ${updatedCount} existing.`);
     }
 
+    // Disable removed game types (buzzkill, double_dip)
+    const removedGameTypes = ["buzzkill", "double_dip"];
+    console.log("[SEED] Disabling removed game types...");
+    for (const slug of removedGameTypes) {
+      await db.update(gameTypes)
+        .set({ hostEnabled: false, status: "hidden" as const })
+        .where(eq(gameTypes.slug, slug));
+    }
+    console.log("[SEED] Removed game types disabled.");
+
     console.log("[SEED] Game types seeding complete.");
   }
 
