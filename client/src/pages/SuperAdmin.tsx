@@ -457,18 +457,6 @@ export default function SuperAdmin() {
                                       Content is created per-session during gameplay.
                                     </div>
                                   )}
-                                  
-                                  {gameType.slug === 'double_dip' && (
-                                    <div className="text-center py-4 text-muted-foreground">
-                                      Uses AI-generated questions. No manual content needed.
-                                    </div>
-                                  )}
-                                  
-                                  {gameType.slug === 'buzzkill' && (
-                                    <div className="text-center py-4 text-muted-foreground">
-                                      Legacy game mode. Set to "Hidden" to remove from homepage.
-                                    </div>
-                                  )}
                                 </div>
                               </motion.div>
                             )}

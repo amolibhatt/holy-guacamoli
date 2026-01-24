@@ -2,7 +2,7 @@
 
 ## Overview
 
-Holy GuacAmoli! is a multi-game party platform featuring Blitzgrid (5x5 trivia grid game), Sequence Squeeze (multiplayer ordering game), and Double Dip (2-player relationship game). Built for Amoli's birthday. It's built as a full-stack TypeScript application with a React frontend and Express backend.
+Holy GuacAmoli! is a multi-game party platform featuring Blitzgrid (5x5 trivia grid game) and Sequence Squeeze (multiplayer ordering game). Built for Amoli's birthday. It's built as a full-stack TypeScript application with a React frontend and Express backend.
 
 ## User Preferences
 
@@ -41,9 +41,7 @@ Preferred communication style: Simple, everyday language.
 6. **Multiplayer Game System**: WebSocket-based real-time multiplayer for Sequence Squeeze where players join via room codes.
 7. **Animations**: 3D flip card animations for question cells, particle effects for milestones and category completion
 8. **Portable Email/Password Auth**: Host authentication uses bcrypt for password hashing and express-session with PostgreSQL store. No external OAuth dependencies - works on any platform.
-9. **Relationship Hub**: Double Dip couples game uses a unified tabbed interface (Today/Vault/Journey) with streak tracking, anniversary countdown, progress bars, favorites section, and celebratory confetti.
-10. **Sync-Stakes (Weekly Stakes)**: Couples can set weekly stakes with curated rewards/penalties. First completer each day earns 1 point; bonus point for 85%+ compatibility. Atomic SQL prevents race conditions. Weekly winner revealed on Sundays.
-11. **Blitzgrid Structure**: Grid = Board (up to 5 categories), Category = 5 Questions (unique point tiers 10/20/30/40/50). A Category is "Active" when it has all 5 point tiers filled. A Grid is "Active" when it has 5 Active Categories. Uses theme="blitzgrid" to distinguish from other boards.
+9. **Blitzgrid Structure**: Grid = Board (up to 5 categories), Category = 5 Questions (unique point tiers 10/20/30/40/50). A Category is "Active" when it has all 5 point tiers filled. A Grid is "Active" when it has 5 Active Categories. Uses theme="blitzgrid" to distinguish from other boards.
 
 ### Recent Changes (January 2026)
 - **Simplified Architecture**: Questions now belong directly to categories via categoryId (not boardCategoryId). Each category has exactly 5 questions with unique points {10,20,30,40,50}.
@@ -57,20 +55,15 @@ Preferred communication style: Simple, everyday language.
 - **Unified Party Scoreboard**: Scores persist to the database (gameSessions/sessionPlayers tables) so scores survive disconnects and reconnections. Players can rejoin and see their accumulated scores instantly.
 - **Sequence Squeeze Bulk Import**: Pipe-delimited format for bulk question upload with validation
 - **Onboarding Tooltips**: Step-by-step tooltips guide first-time users with analytics tracking (started/completed/skipped)
-- **Tab State Persistence**: RelationshipHub remembers active tab via localStorage
 - **AI Response Caching**: 1-hour TTL cache with MD5 keys reduces API calls, 100-entry max
-- **Code Splitting**: React.lazy loads 9 heavy routes (Admin, RelationshipHub, etc.) for faster initial load
-- **Funnel Analytics**: New events for pair invites, stake reveals, AI insights, favorites, onboarding
+- **Code Splitting**: React.lazy for faster initial load
 - **Improved Error Messages**: User-friendly copy like "Couldn't save - check your connection"
 - **Login Rate Limiting**: 5 failed attempts triggers 15-minute lockout
-- **Vault/Journey Loading States**: Added skeleton loaders for smoother UX
-- **Sync-Stakes Backend**: Complete API for weekly stakes with atomic scoring
 - **Score Undo Feature**: Hosts can undo last 20 score changes with previousScore tracking for accurate reversals
-- **Database Indices**: 12 new indices on Double Dip tables for query optimization
 - **Bulk Import Validation**: Enhanced with length limits, board-specific point values, max 50 items per import
 - **Analytics Improvements**: Server-side validation, 10% log sampling, event batching
 - **AI Fallback**: Rate-limit detection, empty answer handling with 30% scoring
-- **Buzzkill Removed**: Removed entire Buzzkill trivia game mode to focus on Sequence Squeeze and Double Dip
+- **Buzzkill and Double Dip Removed**: Removed Buzzkill trivia and Double Dip couples game to focus on Blitzgrid and Sequence Squeeze
 - **Drag-and-Drop Category Reordering**: Categories can be reordered within a board by dragging category tabs
 - **Auto-Save Drafts**: Work-in-progress questions are saved to localStorage per category, cleared on successful save or when all fields are empty
 - **Improved Admin Navigation**: Hierarchical sidebar shows categories nested under boards (expandable tree), breadcrumb navigation shows current location (Board > Category), clearer completion indicators at each level
