@@ -772,9 +772,7 @@ export class DatabaseStorage implements IStorage {
       
       // Last resort: use game mode as indicator
       if (!boardName && session.currentMode) {
-        boardName = session.currentMode === "sequence" ? "Sequence Squeeze" : 
-                   session.currentMode === "double_dip" ? "Double Dip" :
-                   session.currentMode;
+        boardName = session.currentMode === "sequence" ? "Sequence Squeeze" : session.currentMode;
       }
       
       result.push({ 
@@ -1548,16 +1546,6 @@ export class DatabaseStorage implements IStorage {
         playerEnabled: true,
         sortOrder: 2,
       },
-      {
-        slug: "double_dip",
-        displayName: "Double Dip",
-        description: "Deep dives and daily drives into the mind of your favorite person.",
-        icon: "heart",
-        status: "active" as const,
-        hostEnabled: true,
-        playerEnabled: true,
-        sortOrder: 3,
-      },
     ];
 
     console.log("[SEED] Checking for missing game types...");
@@ -1566,26 +1554,34 @@ export class DatabaseStorage implements IStorage {
     console.log(`[SEED] Found ${existingTypes.length} existing game types: ${Array.from(existingSlugs).join(', ')}`);
 
     let addedCount = 0;
+    let updatedCount = 0;
     for (const gameType of requiredGameTypes) {
       if (!existingSlugs.has(gameType.slug)) {
         console.log(`[SEED] Adding missing game type: ${gameType.slug} (${gameType.displayName})`);
         await db.insert(gameTypes).values(gameType);
         addedCount++;
+      } else {
+        console.log(`[SEED] Ensuring game type ${gameType.slug} is enabled with correct settings...`);
+        await db.update(gameTypes)
+          .set({ 
+            hostEnabled: gameType.hostEnabled, 
+            status: gameType.status, 
+            sortOrder: gameType.sortOrder,
+            displayName: gameType.displayName,
+            description: gameType.description,
+          })
+          .where(eq(gameTypes.slug, gameType.slug));
+        updatedCount++;
       }
     }
     
-    if (addedCount === 0) {
+    if (addedCount === 0 && updatedCount === 0) {
       console.log("[SEED] All game types already exist, nothing to add.");
     } else {
-      console.log(`[SEED] Added ${addedCount} new game type(s).`);
+      console.log(`[SEED] Added ${addedCount} new game type(s), updated ${updatedCount} existing.`);
     }
 
-    // Ensure correct sort order
-    console.log("[SEED] Updating game type sort orders...");
-    await db.update(gameTypes).set({ sortOrder: 1 }).where(eq(gameTypes.slug, "blitzgrid"));
-    await db.update(gameTypes).set({ sortOrder: 2 }).where(eq(gameTypes.slug, "sequence_squeeze"));
-    await db.update(gameTypes).set({ sortOrder: 3 }).where(eq(gameTypes.slug, "double_dip"));
-    console.log("[SEED] Sort orders updated.");
+    console.log("[SEED] Game types seeding complete.");
   }
 
   // Master Bank - global boards
