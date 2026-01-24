@@ -1,0 +1,50 @@
+2026-01-24T08:13:13.541231449Z   length: 116,
+2026-01-24T08:13:13.541234609Z   severity: 'ERROR',
+2026-01-24T08:13:13.541236659Z   code: '42703',
+2026-01-24T08:13:13.541238759Z   detail: undefined,
+2026-01-24T08:13:13.541240859Z   hint: undefined,
+2026-01-24T08:13:13.541242799Z   position: '128',
+2026-01-24T08:13:13.541245429Z   internalPosition: undefined,
+2026-01-24T08:13:13.541247449Z   internalQuery: undefined,
+2026-01-24T08:13:13.541249449Z   where: undefined,
+2026-01-24T08:13:13.541251479Z   schema: undefined,
+2026-01-24T08:13:13.541253379Z   table: undefined,
+2026-01-24T08:13:13.541255409Z   column: undefined,
+2026-01-24T08:13:13.54125758Z   dataType: undefined,
+2026-01-24T08:13:13.54125958Z   constraint: undefined,
+2026-01-24T08:13:13.541261689Z   file: 'parse_relation.c',
+2026-01-24T08:13:13.541264329Z   line: '3716',
+2026-01-24T08:13:13.54126682Z   routine: 'errorMissingColumn'
+2026-01-24T08:13:13.54126906Z }
+2026-01-24T08:13:13.546878415Z 8:13:13 AM [express] GET /api/super-admin/game-types 304 in 10ms :: [{"id":1,"slug":"buzzkill","displayName":"Buzzkill","description":"Race the clock, decode the clues, and claim the grid.","icon":"grid","status":"active","hostEnabled":true,"playerEnabled":true,"sortOrder":1,"createdAt":"2026-01-12T09:20:58.405Z"},{"id":3,"slug":"sequence_squeeze","displayName":"Sequence Squeeze","description":"Race to put 4 options in the correct order! Fastest correct sequence wins.","icon":"list-ordered","status":"active","hostEnabled":true,"playerEnabled":true,"sortOrder":2,"createdAt":"2026-01-12T16:33:13.799Z"},{"id":2,"slug":"double_dip","displayName":"Double Dip","description":"Deep dives and daily drives into the mind of your favorite person.","icon":"heart","status":"active","hostEnabled":true,"playerEnabled":true,"sortOrder":3,"createdAt":"2026-01-12T09:20:58.405Z"}]
+2026-01-24T08:13:13.632198877Z 8:13:13 AM [express] GET /api/super-admin/boards 500 in 96ms :: {"message":"Failed to get boards"}
+2026-01-24T08:13:13.642217243Z 8:13:13 AM [express] GET /api/super-admin/stats 304 in 94ms :: {"totalUsers":2,"totalBoards":1,"totalQuestions":85,"totalGamesPlayed":9,"activeSessionsToday":0,"newUsersThisWeek":0}
+2026-01-24T08:13:13.725646736Z Error getting users: error: column questions.category_id does not exist
+2026-01-24T08:13:13.725666347Z     at /opt/render/project/src/dist/index.cjs:72:13356
+2026-01-24T08:13:13.725669757Z     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-01-24T08:13:13.725673367Z     at async /opt/render/project/src/dist/index.cjs:222:32901
+2026-01-24T08:13:13.725689857Z     at async /opt/render/project/src/dist/index.cjs:269:1135
+2026-01-24T08:13:13.725693707Z     at async Promise.all (index 1)
+2026-01-24T08:13:13.725696297Z     at async iw.getAllUsersWithStats (/opt/render/project/src/dist/index.cjs:269:779)
+2026-01-24T08:13:13.725698927Z     at async /opt/render/project/src/dist/index.cjs:287:35657 {
+2026-01-24T08:13:13.725701827Z   length: 119,
+2026-01-24T08:13:13.725705248Z   severity: 'ERROR',
+2026-01-24T08:13:13.725707688Z   code: '42703',
+2026-01-24T08:13:13.725710168Z   detail: undefined,
+2026-01-24T08:13:13.725713168Z   hint: undefined,
+2026-01-24T08:13:13.725716438Z   position: '40',
+2026-01-24T08:13:13.725719858Z   internalPosition: undefined,
+2026-01-24T08:13:13.725722778Z   internalQuery: undefined,
+2026-01-24T08:13:13.725725628Z   where: undefined,
+2026-01-24T08:13:13.725728238Z   schema: undefined,
+2026-01-24T08:13:13.725730818Z   table: undefined,
+2026-01-24T08:13:13.725733428Z   column: undefined,
+2026-01-24T08:13:13.725736198Z   dataType: undefined,
+2026-01-24T08:13:13.725739088Z   constraint: undefined,
+2026-01-24T08:13:13.725740908Z   file: 'parse_relation.c',
+2026-01-24T08:13:13.725742598Z   line: '3716',
+2026-01-24T08:13:13.725744418Z   routine: 'errorMissingColumn'
+2026-01-24T08:13:13.725746138Z }
+2026-01-24T08:13:13.728796361Z 8:13:13 AM [express] GET /api/super-admin/users 500 in 189ms :: {"message":"Failed to get users"}
+2026-01-24T08:13:23.694580986Z 8:13:23 AM [express] GET /api/auth/user 200 in 10ms :: {"id":"f6a23e56-76c5-40df-a1bb-876892018c67","email":"amoli.bhatt@gmail.com","firstName":"Amoli","lastName":"Bhatt","role":"super_admin","createdAt":"2026-01-12T07:51:30.294Z","updatedAt":"2026-01-12T07:51:30.294Z"}
+2026-01-24T08:13:23.886361934Z 8:13:23 AM [express] GET /api/game-types/homepage 200 in 8ms :: [{"id":1,"slug":"buzzkill","displayName":"Buzzkill","description":"Race the clock, decode the clues, and claim the grid.","icon":"grid","status":"active","hostEnabled":true,"playerEnabled":true,"sortOrder":1,"createdAt":"2026-01-12T09:20:58.405Z"},{"id":3,"slug":"sequence_squeeze","displayName":"Sequence Squeeze","description":"Race to put 4 options in the correct order! Fastest correct sequence wins.","icon":"list-ordered","status":"active","hostEnabled":true,"playerEnabled":true,"sortOrder":2,"createdAt":"2026-01-12T16:33:13.799Z"},{"id":2,"slug":"double_dip","displayName":"Double Dip","description":"Deep dives and daily drives into the mind of your favorite person.","icon":"heart","status":"active","hostEnabled":true,"playerEnabled":true,"sortOrder":3,"createdAt":"2026-01-12T09:20:58.405Z"}]
