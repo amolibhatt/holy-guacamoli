@@ -3726,21 +3726,39 @@ export default function Blitzgrid() {
 
   // Main grid list view
   return (
-    <div className="min-h-screen bg-background" data-testid="page-blitzgrid">
+    <div className="min-h-screen bg-gradient-to-b from-violet-50 via-background to-background dark:from-violet-950/30 dark:via-background" data-testid="page-blitzgrid">
       <AppHeader title="Blitzgrid" backHref="/" showAdminButton adminHref="/admin/games" />
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Grid3X3 className="w-6 h-6 text-purple-500" />
-              Blitzgrid
-            </h1>
-            <p className="text-muted-foreground text-sm">{grids.length} grids</p>
+      
+      {/* Hero Section */}
+      <div className="relative overflow-hidden border-b border-violet-100 dark:border-violet-900/50">
+        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-purple-500/10 to-pink-500/5" />
+        <div className="container mx-auto px-4 py-8 relative">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25">
+                <Grid3X3 className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 dark:from-violet-400 dark:to-purple-400 bg-clip-text text-transparent">
+                  Blitzgrid
+                </h1>
+                <p className="text-muted-foreground">
+                  {grids.length === 0 ? "Create your first trivia grid" : `${grids.length} ${grids.length === 1 ? 'grid' : 'grids'} ready to play`}
+                </p>
+              </div>
+            </div>
+            <Button 
+              onClick={() => setShowNewGridForm(true)} 
+              className="bg-gradient-to-r from-violet-500 to-purple-600 shadow-lg shadow-violet-500/25"
+              data-testid="button-new-grid"
+            >
+              <Plus className="w-4 h-4 mr-2" /> New Grid
+            </Button>
           </div>
-          <Button onClick={() => setShowNewGridForm(true)} data-testid="button-new-grid">
-            <Plus className="w-4 h-4 mr-2" /> New Grid
-          </Button>
         </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-6">
 
         <AnimatePresence>
           {showNewGridForm && (
@@ -3805,63 +3823,133 @@ export default function Blitzgrid() {
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-32" />)}
           </div>
         ) : grids.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-              <h3 className="font-medium mb-2">No grids yet</h3>
-              <p className="text-muted-foreground text-sm mb-4">Create your first Blitzgrid</p>
-              <Button onClick={() => setShowNewGridForm(true)} data-testid="button-create-first-grid">
-                <Plus className="w-4 h-4 mr-2" /> Create Grid
-              </Button>
-            </CardContent>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card className="border-2 border-dashed border-violet-200 dark:border-violet-800 bg-gradient-to-br from-violet-50/50 to-purple-50/50 dark:from-violet-950/20 dark:to-purple-950/20">
+              <CardContent className="py-16 text-center">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-violet-500/25">
+                  <Grid3X3 className="w-10 h-10 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Create Your First Grid</h3>
+                <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                  Build a 5x5 trivia grid with categories and questions. Perfect for game nights and parties!
+                </p>
+                <Button 
+                  onClick={() => setShowNewGridForm(true)} 
+                  className="bg-gradient-to-r from-violet-500 to-purple-600 shadow-lg shadow-violet-500/25"
+                  data-testid="button-create-first-grid"
+                >
+                  <Plus className="w-4 h-4 mr-2" /> Create Grid
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {grids.map(grid => {
               const colorConfig = getBoardColorConfig(grid.colorCode);
+              const themeId = grid.theme?.replace('blitzgrid:', '') || 'birthday';
+              const gridTheme = GRID_THEMES.find(t => t.id === themeId) || GRID_THEMES[1];
+              const progressPercent = Math.round((grid.questionCount / 25) * 100);
+              
               return (
-                <Card
+                <motion.div
                   key={grid.id}
-                  className={`hover-elevate transition-all border bg-gradient-to-br ${colorConfig.card} ${grid.isActive ? 'cursor-pointer' : 'opacity-60'}`}
-                  onClick={() => {
-                    if (grid.isActive) {
-                      setSelectedGridId(grid.id);
-                      setPlayMode(true);
-                      setRevealedCells(new Set());
-                      setRevealedCategoryCount(0);
-                      setCategoryRevealMode(true);
-                      setActiveQuestion(null);
-                      setShowAnswer(false);
-                    } else {
-                      toast({ title: "Grid not ready", description: "This grid needs 5 categories with 5 questions each." });
-                    }
-                  }}
-                  data-testid={`card-grid-${grid.id}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 min-w-0 mb-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${colorConfig.bg}`}>
-                        <Grid3X3 className="w-4 h-4 text-white" />
-                      </div>
-                      <h3 className={`font-semibold truncate ${colorConfig.cardTitle}`}>{grid.name}</h3>
-                    </div>
+                  <Card
+                    className={`group hover-elevate transition-all border-2 overflow-hidden ${
+                      grid.isActive 
+                        ? 'cursor-pointer border-violet-200 dark:border-violet-800 hover:border-violet-400 dark:hover:border-violet-600 hover:shadow-xl hover:shadow-violet-500/10' 
+                        : 'opacity-70 border-muted'
+                    }`}
+                    onClick={() => {
+                      if (grid.isActive) {
+                        setSelectedGridId(grid.id);
+                        setPlayMode(true);
+                        setRevealedCells(new Set());
+                        setRevealedCategoryCount(0);
+                        setCategoryRevealMode(true);
+                        setActiveQuestion(null);
+                        setShowAnswer(false);
+                      } else {
+                        toast({ title: "Grid not ready", description: "This grid needs 5 categories with 5 questions each." });
+                      }
+                    }}
+                    data-testid={`card-grid-${grid.id}`}
+                  >
+                    {/* Theme accent bar */}
+                    <div 
+                      className="h-2" 
+                      style={{ background: gridTheme.background }}
+                    />
                     
-                    <div className="flex items-center justify-between gap-2">
-                      <p className={`text-sm ${colorConfig.cardSub}`}>
-                        {grid.categoryCount}/5 categories · {grid.questionCount}/25 questions
-                      </p>
-                      {grid.isActive ? (
-                        <Badge className="bg-green-400/30 text-green-700 dark:text-green-300 text-xs shrink-0">
-                          <Play className="w-3 h-3 mr-1" /> Active
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="text-xs shrink-0">
-                          Incomplete
-                        </Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div 
+                            className="w-11 h-11 rounded-xl flex items-center justify-center shadow-md transition-transform group-hover:scale-105"
+                            style={{ background: gridTheme.background }}
+                          >
+                            <ThemeIcon type={gridTheme.iconType} className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-semibold text-lg truncate text-foreground">{grid.name}</h3>
+                            <p className="text-sm text-muted-foreground capitalize">{gridTheme.name} Theme</p>
+                          </div>
+                        </div>
+                        {grid.isActive && (
+                          <div className="shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                              <Play className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Progress section */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2 flex-wrap text-sm">
+                          <span className="text-muted-foreground">
+                            {grid.categoryCount}/5 categories
+                          </span>
+                          <span className="font-medium text-foreground">
+                            {grid.questionCount}/25 questions
+                          </span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <motion.div 
+                            className="h-full rounded-full"
+                            style={{ 
+                              background: grid.isActive 
+                                ? 'linear-gradient(90deg, #10b981, #34d399)' 
+                                : 'linear-gradient(90deg, #6366f1, #a78bfa)'
+                            }}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${progressPercent}%` }}
+                            transition={{ duration: 0.5, delay: 0.1 }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between gap-2 flex-wrap pt-1">
+                          {grid.isActive ? (
+                            <Badge className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-0">
+                              <CheckCircle2 className="w-3 h-3 mr-1" /> Ready to Play
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-muted-foreground">
+                              {25 - grid.questionCount} more needed
+                            </Badge>
+                          )}
+                          <ChevronRight className={`w-4 h-4 transition-transform ${grid.isActive ? 'text-violet-500 group-hover:translate-x-1' : 'text-muted-foreground/50'}`} />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               );
             })}
           </div>
