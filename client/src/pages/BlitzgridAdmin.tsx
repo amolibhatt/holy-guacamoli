@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -430,22 +431,26 @@ export default function BlitzgridAdmin() {
       const defaultForm = { question: '', correctAnswer: '', options: [], imageUrl: '', audioUrl: '', videoUrl: '' };
       return (
         <div className="space-y-2 p-2 border border-dashed rounded">
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs shrink-0">{points}pts</Badge>
-            <Input
-              placeholder="Question..."
-              className="h-8 text-sm"
-              value={formData?.question || ''}
-              onChange={(e) => setQuestionForms(prev => ({
-                ...prev,
-                [formKey]: { ...prev[formKey] || defaultForm, question: e.target.value }
-              }))}
-            />
+          <div className="flex items-start gap-2">
+            <Badge variant="outline" className="text-xs shrink-0 mt-2">{points}pts</Badge>
+            <div className="flex-1 space-y-1">
+              <Textarea
+                placeholder="Question... (Use **bold**, *italic*, or new lines for formatting)"
+                className="text-sm min-h-[60px] resize-y"
+                data-testid={`input-question-${formKey}`}
+                value={formData?.question || ''}
+                onChange={(e) => setQuestionForms(prev => ({
+                  ...prev,
+                  [formKey]: { ...prev[formKey] || defaultForm, question: e.target.value }
+                }))}
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder="Answer..."
-              className="h-8 text-sm flex-1"
+          <div className="flex items-start gap-2">
+            <Textarea
+              placeholder="Answer... (Supports **bold**, *italic*, line breaks)"
+              className="text-sm min-h-[40px] resize-y flex-1"
+              data-testid={`input-answer-${formKey}`}
               value={formData?.correctAnswer || ''}
               onChange={(e) => setQuestionForms(prev => ({
                 ...prev,
