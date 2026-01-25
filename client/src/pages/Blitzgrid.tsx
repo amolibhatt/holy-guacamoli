@@ -3,6 +3,9 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import ReactMarkdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
+import remarkGfm from "remark-gfm";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -3023,9 +3026,11 @@ export default function Blitzgrid() {
               
               {/* Question */}
               <div className="py-4">
-                <p className="text-xl md:text-2xl text-center font-medium text-foreground">
-                  {activeQuestion?.question}
-                </p>
+                <div className="text-xl md:text-2xl text-center font-medium text-foreground prose prose-lg dark:prose-invert max-w-none [&>p]:m-0">
+                  <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
+                    {activeQuestion?.question || ''}
+                  </ReactMarkdown>
+                </div>
               </div>
               
               {/* Media Display */}
@@ -3219,9 +3224,11 @@ export default function Blitzgrid() {
                     className="bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/50 dark:to-green-900/30 border border-emerald-300 dark:border-emerald-600 rounded-lg p-4 text-center"
                   >
                     <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-1">Answer</p>
-                    <p className="text-xl font-bold text-emerald-800 dark:text-emerald-100">
-                      {activeQuestion?.correctAnswer}
-                    </p>
+                    <div className="text-xl font-bold text-emerald-800 dark:text-emerald-100 prose prose-lg dark:prose-invert max-w-none [&>p]:m-0">
+                      <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
+                        {activeQuestion?.correctAnswer || ''}
+                      </ReactMarkdown>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
