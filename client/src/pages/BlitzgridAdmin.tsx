@@ -459,6 +459,7 @@ export default function BlitzgridAdmin() {
               <Input
                 placeholder="Image URL"
                 className="h-7 text-xs flex-1"
+                data-testid={`input-image-url-${formKey}`}
                 value={formData?.imageUrl || ''}
                 onChange={(e) => setQuestionForms(prev => ({
                   ...prev,
@@ -470,6 +471,7 @@ export default function BlitzgridAdmin() {
                   type="file"
                   accept="image/*"
                   className="hidden"
+                  data-testid={`input-file-image-${formKey}`}
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file) {
@@ -486,8 +488,8 @@ export default function BlitzgridAdmin() {
                     }
                   }}
                 />
-                <Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild>
-                  <span><Upload className="w-3 h-3" /></span>
+                <Button type="button" size="icon" variant="ghost" data-testid={`button-upload-image-${formKey}`} asChild>
+                  <span><Upload className="w-4 h-4" /></span>
                 </Button>
               </label>
             </div>
@@ -496,6 +498,7 @@ export default function BlitzgridAdmin() {
               <Input
                 placeholder="Audio URL"
                 className="h-7 text-xs flex-1"
+                data-testid={`input-audio-url-${formKey}`}
                 value={formData?.audioUrl || ''}
                 onChange={(e) => setQuestionForms(prev => ({
                   ...prev,
@@ -507,6 +510,7 @@ export default function BlitzgridAdmin() {
                   type="file"
                   accept="audio/*"
                   className="hidden"
+                  data-testid={`input-file-audio-${formKey}`}
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file) {
@@ -523,8 +527,8 @@ export default function BlitzgridAdmin() {
                     }
                   }}
                 />
-                <Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild>
-                  <span><Upload className="w-3 h-3" /></span>
+                <Button type="button" size="icon" variant="ghost" data-testid={`button-upload-audio-${formKey}`} asChild>
+                  <span><Upload className="w-4 h-4" /></span>
                 </Button>
               </label>
             </div>
@@ -533,6 +537,7 @@ export default function BlitzgridAdmin() {
               <Input
                 placeholder="Video URL"
                 className="h-7 text-xs flex-1"
+                data-testid={`input-video-url-${formKey}`}
                 value={formData?.videoUrl || ''}
                 onChange={(e) => setQuestionForms(prev => ({
                   ...prev,
@@ -544,6 +549,7 @@ export default function BlitzgridAdmin() {
                   type="file"
                   accept="video/*"
                   className="hidden"
+                  data-testid={`input-file-video-${formKey}`}
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file) {
@@ -560,8 +566,8 @@ export default function BlitzgridAdmin() {
                     }
                   }}
                 />
-                <Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild>
-                  <span><Upload className="w-3 h-3" /></span>
+                <Button type="button" size="icon" variant="ghost" data-testid={`button-upload-video-${formKey}`} asChild>
+                  <span><Upload className="w-4 h-4" /></span>
                 </Button>
               </label>
             </div>
