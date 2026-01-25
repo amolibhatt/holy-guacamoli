@@ -93,6 +93,9 @@ export default function BlitzgridAdmin() {
   
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryDescription, setNewCategoryDescription] = useState("");
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+  const [editCategoryDescription, setEditCategoryDescription] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -169,18 +172,33 @@ export default function BlitzgridAdmin() {
   });
 
   const createCategoryMutation = useMutation({
-    mutationFn: async ({ gridId, name }: { gridId: number; name: string }) => {
-      return apiRequest('POST', `/api/blitzgrid/grids/${gridId}/categories/create`, { name });
+    mutationFn: async ({ gridId, name, description }: { gridId: number; name: string; description?: string }) => {
+      return apiRequest('POST', `/api/blitzgrid/grids/${gridId}/categories/create`, { name, description });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
       setNewCategoryName("");
+      setNewCategoryDescription("");
       setShowNewCategoryForm(false);
       toast({ title: "Category created" });
     },
     onError: (error: any) => {
       toast({ title: error?.message || "Couldn't create category", variant: "destructive" });
+    },
+  });
+  
+  const updateCategoryMutation = useMutation({
+    mutationFn: async ({ categoryId, description }: { categoryId: number; description: string }) => {
+      return apiRequest('PUT', `/api/categories/${categoryId}`, { description });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'] });
+      setEditingCategoryId(null);
+      toast({ title: "Category updated" });
+    },
+    onError: (error: any) => {
+      toast({ title: error?.message || "Couldn't update category", variant: "destructive" });
     },
   });
 
@@ -534,33 +552,47 @@ export default function BlitzgridAdmin() {
             <Card className="mb-4">
               <CardContent className="py-3">
                 {showNewCategoryForm ? (
-                  <div className="flex items-center gap-2">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        placeholder="Category name..."
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') {
+                            setShowNewCategoryForm(false);
+                            setNewCategoryName("");
+                            setNewCategoryDescription("");
+                          }
+                        }}
+                        data-testid="input-category-name"
+                      />
+                      <Button
+                        onClick={() => createCategoryMutation.mutate({ 
+                          gridId: selectedGridId, 
+                          name: newCategoryName.trim(),
+                          description: newCategoryDescription.trim() || undefined
+                        })}
+                        disabled={!newCategoryName.trim() || createCategoryMutation.isPending}
+                        data-testid="button-create-category"
+                      >
+                        {createCategoryMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
+                      </Button>
+                      <Button variant="ghost" onClick={() => { 
+                        setShowNewCategoryForm(false); 
+                        setNewCategoryName(""); 
+                        setNewCategoryDescription("");
+                      }}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
                     <Input
-                      placeholder="Category name..."
-                      value={newCategoryName}
-                      onChange={(e) => setNewCategoryName(e.target.value)}
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && newCategoryName.trim()) {
-                          createCategoryMutation.mutate({ gridId: selectedGridId, name: newCategoryName.trim() });
-                        }
-                        if (e.key === 'Escape') {
-                          setShowNewCategoryForm(false);
-                          setNewCategoryName("");
-                        }
-                      }}
-                      data-testid="input-category-name"
+                      placeholder="Description (optional)..."
+                      value={newCategoryDescription}
+                      onChange={(e) => setNewCategoryDescription(e.target.value)}
+                      data-testid="input-category-description"
                     />
-                    <Button
-                      onClick={() => createCategoryMutation.mutate({ gridId: selectedGridId, name: newCategoryName.trim() })}
-                      disabled={!newCategoryName.trim() || createCategoryMutation.isPending}
-                      data-testid="button-create-category"
-                    >
-                      {createCategoryMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
-                    </Button>
-                    <Button variant="ghost" onClick={() => { setShowNewCategoryForm(false); setNewCategoryName(""); }}>
-                      <X className="w-4 h-4" />
-                    </Button>
                   </div>
                 ) : (
                   <Button
@@ -606,7 +638,7 @@ export default function BlitzgridAdmin() {
                           <div>
                             <CardTitle className="text-base">{category.name}</CardTitle>
                             <CardDescription className="text-xs">
-                              {category.questionCount}/5 questions
+                              {category.description ? `${category.description} · ` : ''}{category.questionCount}/5 questions
                             </CardDescription>
                           </div>
                         </div>
@@ -644,6 +676,76 @@ export default function BlitzgridAdmin() {
                           transition={{ duration: 0.2 }}
                         >
                           <CardContent className="pt-0 space-y-2">
+                            {/* Category Description Editor */}
+                            <div className="flex items-center gap-2 mb-3 pb-2 border-b">
+                              {editingCategoryId === category.id ? (
+                                <>
+                                  <Input
+                                    placeholder="Category description..."
+                                    value={editCategoryDescription}
+                                    onChange={(e) => setEditCategoryDescription(e.target.value)}
+                                    autoFocus
+                                    className="flex-1 h-8 text-sm"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        updateCategoryMutation.mutate({ 
+                                          categoryId: category.id, 
+                                          description: editCategoryDescription.trim() 
+                                        });
+                                      }
+                                      if (e.key === 'Escape') {
+                                        setEditingCategoryId(null);
+                                      }
+                                    }}
+                                    data-testid={`input-edit-category-description-${category.id}`}
+                                  />
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7"
+                                    onClick={() => updateCategoryMutation.mutate({ 
+                                      categoryId: category.id, 
+                                      description: editCategoryDescription.trim() 
+                                    })}
+                                    disabled={updateCategoryMutation.isPending}
+                                    data-testid={`button-save-category-description-${category.id}`}
+                                  >
+                                    {updateCategoryMutation.isPending ? (
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                    ) : (
+                                      <Check className="w-3 h-3" />
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7"
+                                    onClick={() => setEditingCategoryId(null)}
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="text-sm text-muted-foreground flex-1">
+                                    {category.description || 'No description'}
+                                  </span>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingCategoryId(category.id);
+                                      setEditCategoryDescription(category.description || '');
+                                    }}
+                                    data-testid={`button-edit-category-description-${category.id}`}
+                                  >
+                                    <Pencil className="w-3 h-3" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                             {POINT_TIERS.map(points => (
                               <div key={points}>
                                 {renderQuestionSlot(category, points)}
