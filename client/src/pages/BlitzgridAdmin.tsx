@@ -131,6 +131,7 @@ export default function BlitzgridAdmin() {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryDescription, setNewCategoryDescription] = useState("");
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+  const [editCategoryName, setEditCategoryName] = useState("");
   const [editCategoryDescription, setEditCategoryDescription] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -225,8 +226,8 @@ export default function BlitzgridAdmin() {
   });
   
   const updateCategoryMutation = useMutation({
-    mutationFn: async ({ categoryId, description }: { categoryId: number; description: string }) => {
-      return apiRequest('PUT', `/api/categories/${categoryId}`, { description });
+    mutationFn: async ({ categoryId, name, description }: { categoryId: number; name?: string; description?: string }) => {
+      return apiRequest('PUT', `/api/categories/${categoryId}`, { name, description });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'] });
@@ -799,74 +800,88 @@ export default function BlitzgridAdmin() {
                           transition={{ duration: 0.2 }}
                         >
                           <CardContent className="pt-0 space-y-2">
-                            {/* Category Description Editor */}
-                            <div className="flex items-center gap-2 mb-3 pb-2 border-b">
+                            {/* Category Name & Description Editor */}
+                            <div className="mb-3 pb-2 border-b space-y-2">
                               {editingCategoryId === category.id ? (
-                                <>
-                                  <Input
-                                    placeholder="Category description..."
-                                    value={editCategoryDescription}
-                                    onChange={(e) => setEditCategoryDescription(e.target.value)}
-                                    autoFocus
-                                    className="flex-1 h-8 text-sm"
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        updateCategoryMutation.mutate({ 
-                                          categoryId: category.id, 
-                                          description: editCategoryDescription.trim() 
-                                        });
-                                      }
-                                      if (e.key === 'Escape') {
-                                        setEditingCategoryId(null);
-                                      }
-                                    }}
-                                    data-testid={`input-edit-category-description-${category.id}`}
-                                  />
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7"
-                                    onClick={() => updateCategoryMutation.mutate({ 
-                                      categoryId: category.id, 
-                                      description: editCategoryDescription.trim() 
-                                    })}
-                                    disabled={updateCategoryMutation.isPending}
-                                    data-testid={`button-save-category-description-${category.id}`}
-                                  >
-                                    {updateCategoryMutation.isPending ? (
-                                      <Loader2 className="w-3 h-3 animate-spin" />
-                                    ) : (
-                                      <Check className="w-3 h-3" />
-                                    )}
-                                  </Button>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7"
-                                    onClick={() => setEditingCategoryId(null)}
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </Button>
-                                </>
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <Input
+                                      placeholder="Category name..."
+                                      value={editCategoryName}
+                                      onChange={(e) => setEditCategoryName(e.target.value)}
+                                      autoFocus
+                                      className="flex-1 h-8 text-sm font-medium"
+                                      data-testid={`input-edit-category-name-${category.id}`}
+                                    />
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Input
+                                      placeholder="Category description (optional)..."
+                                      value={editCategoryDescription}
+                                      onChange={(e) => setEditCategoryDescription(e.target.value)}
+                                      className="flex-1 h-8 text-sm"
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          updateCategoryMutation.mutate({ 
+                                            categoryId: category.id, 
+                                            name: editCategoryName.trim() || undefined,
+                                            description: editCategoryDescription.trim() 
+                                          });
+                                        }
+                                        if (e.key === 'Escape') {
+                                          setEditingCategoryId(null);
+                                        }
+                                      }}
+                                      data-testid={`input-edit-category-description-${category.id}`}
+                                    />
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      onClick={() => updateCategoryMutation.mutate({ 
+                                        categoryId: category.id, 
+                                        name: editCategoryName.trim() || undefined,
+                                        description: editCategoryDescription.trim() 
+                                      })}
+                                      disabled={updateCategoryMutation.isPending || !editCategoryName.trim()}
+                                      data-testid={`button-save-category-${category.id}`}
+                                    >
+                                      {updateCategoryMutation.isPending ? (
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                      ) : (
+                                        <Check className="w-3 h-3" />
+                                      )}
+                                    </Button>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      onClick={() => setEditingCategoryId(null)}
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                </div>
                               ) : (
-                                <>
-                                  <span className="text-sm text-muted-foreground flex-1">
-                                    {category.description || 'No description'}
-                                  </span>
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{category.name}</p>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {category.description || 'No description'}
+                                    </p>
+                                  </div>
                                   <Button
                                     size="icon"
                                     variant="ghost"
-                                    className="h-7 w-7"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setEditingCategoryId(category.id);
+                                      setEditCategoryName(category.name);
                                       setEditCategoryDescription(category.description || '');
                                     }}
-                                    data-testid={`button-edit-category-description-${category.id}`}
+                                    data-testid={`button-edit-category-${category.id}`}
                                   >
                                     <Pencil className="w-3 h-3" />
                                   </Button>
-                                </>
+                                </div>
                               )}
                             </div>
                             {POINT_TIERS.map(points => (
