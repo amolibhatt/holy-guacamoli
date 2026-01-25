@@ -2588,7 +2588,7 @@ export default function Blitzgrid() {
                   transition={{ duration: 2, repeat: Infinity }}
                 >
                   <span className="text-sm md:text-base font-medium">
-                    Click or press Space to reveal ({revealedCategoryCount}/{gridCategories.length})
+                    Click to reveal ({revealedCategoryCount}/{gridCategories.length})
                   </span>
                   <Button
                     size="sm"
