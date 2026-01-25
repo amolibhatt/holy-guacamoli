@@ -582,10 +582,13 @@ export async function registerRoutes(
       const role = req.session.userRole;
       const categoryId = Number(req.params.id);
       
+      console.log("[PUT /api/categories/:id] userId:", userId, "role:", role, "categoryId:", categoryId);
+      
       // Verify ownership
       const hasAccess = await verifyCategoryOwnership(categoryId, userId, role);
+      console.log("[PUT /api/categories/:id] hasAccess:", hasAccess);
       if (!hasAccess) {
-        return res.status(403).json({ message: "You don't have permission to edit this category" });
+        return res.status(403).json({ message: "You don't have permission to modify this category" });
       }
       
       const { name, description, rule, imageUrl, isActive, sourceGroup } = req.body;
