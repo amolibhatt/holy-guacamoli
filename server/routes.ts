@@ -2670,7 +2670,7 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId!;
       const allBoards = await storage.getBoards(userId);
-      const boards = allBoards.filter(b => b.theme === "blitzgrid");
+      const boards = allBoards.filter(b => b.theme === "blitzgrid" || b.theme?.startsWith("blitzgrid:"));
       
       const rows: any[] = [];
       rows.push(["Grid Name", "Grid Description", "Category Name", "Category Description", "Points", "Question", "Answer", "Options", "Image URL", "Audio URL", "Video URL"]);
