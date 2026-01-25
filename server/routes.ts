@@ -2670,19 +2670,26 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId!;
       const allBoards = await storage.getBoards(userId);
+      console.log("[EXPORT] All boards for user:", allBoards.length, allBoards.map(b => ({ id: b.id, name: b.name, theme: b.theme })));
       const boards = allBoards.filter(b => b.theme === "blitzgrid" || b.theme?.startsWith("blitzgrid:"));
+      console.log("[EXPORT] Filtered blitzgrid boards:", boards.length);
       
       const rows: any[] = [];
       rows.push(["Grid Name", "Grid Description", "Category Name", "Category Description", "Points", "Question", "Answer", "Options", "Image URL", "Audio URL", "Video URL"]);
       
       for (const board of boards) {
         const boardCategories = await storage.getBoardCategories(board.id);
+        console.log("[EXPORT] Board", board.id, board.name, "has", boardCategories.length, "categories");
         
         for (const bc of boardCategories) {
           const category = await storage.getCategory(bc.categoryId);
-          if (!category) continue;
+          if (!category) {
+            console.log("[EXPORT] Category not found for bc:", bc.categoryId);
+            continue;
+          }
           
           const questions = await storage.getQuestionsByCategory(category.id);
+          console.log("[EXPORT] Category", category.id, category.name, "has", questions.length, "questions");
           for (const q of questions) {
             rows.push([
               board.name,
