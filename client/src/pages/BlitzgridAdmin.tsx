@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,41 @@ import {
   AlertDialogHeader, AlertDialogTitle 
 } from "@/components/ui/alert-dialog";
 import type { Board, Category, Question } from "@shared/schema";
+
+// Helper to upload a file to object storage
+async function uploadFile(file: File): Promise<string> {
+  // Step 1: Get presigned URL
+  const response = await fetch("/api/uploads/request-url", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      name: file.name,
+      size: file.size,
+      contentType: file.type,
+    }),
+  });
+  
+  if (!response.ok) {
+    throw new Error("Failed to get upload URL");
+  }
+  
+  const { uploadURL, objectPath } = await response.json();
+  
+  // Step 2: Upload directly to storage
+  const uploadResponse = await fetch(uploadURL, {
+    method: "PUT",
+    body: file,
+    headers: { "Content-Type": file.type },
+  });
+  
+  if (!uploadResponse.ok) {
+    throw new Error("Failed to upload file");
+  }
+  
+  // Return the served path
+  return objectPath;
+}
 
 interface GridWithStats extends Board {
   categoryCount: number;
@@ -419,41 +454,116 @@ export default function BlitzgridAdmin() {
             />
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1 flex-1 min-w-[140px]">
+            <div className="flex items-center gap-1 flex-1 min-w-[180px]">
               <Image className="w-3 h-3 text-muted-foreground shrink-0" />
               <Input
                 placeholder="Image URL"
-                className="h-7 text-xs"
+                className="h-7 text-xs flex-1"
                 value={formData?.imageUrl || ''}
                 onChange={(e) => setQuestionForms(prev => ({
                   ...prev,
                   [formKey]: { ...prev[formKey] || defaultForm, imageUrl: e.target.value }
                 }))}
               />
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      try {
+                        const url = await uploadFile(file);
+                        setQuestionForms(prev => ({
+                          ...prev,
+                          [formKey]: { ...prev[formKey] || defaultForm, imageUrl: url }
+                        }));
+                        toast({ title: "Image uploaded" });
+                      } catch (err) {
+                        toast({ title: "Upload failed", variant: "destructive" });
+                      }
+                    }
+                  }}
+                />
+                <Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild>
+                  <span><Upload className="w-3 h-3" /></span>
+                </Button>
+              </label>
             </div>
-            <div className="flex items-center gap-1 flex-1 min-w-[140px]">
+            <div className="flex items-center gap-1 flex-1 min-w-[180px]">
               <Music className="w-3 h-3 text-muted-foreground shrink-0" />
               <Input
                 placeholder="Audio URL"
-                className="h-7 text-xs"
+                className="h-7 text-xs flex-1"
                 value={formData?.audioUrl || ''}
                 onChange={(e) => setQuestionForms(prev => ({
                   ...prev,
                   [formKey]: { ...prev[formKey] || defaultForm, audioUrl: e.target.value }
                 }))}
               />
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="audio/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      try {
+                        const url = await uploadFile(file);
+                        setQuestionForms(prev => ({
+                          ...prev,
+                          [formKey]: { ...prev[formKey] || defaultForm, audioUrl: url }
+                        }));
+                        toast({ title: "Audio uploaded" });
+                      } catch (err) {
+                        toast({ title: "Upload failed", variant: "destructive" });
+                      }
+                    }
+                  }}
+                />
+                <Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild>
+                  <span><Upload className="w-3 h-3" /></span>
+                </Button>
+              </label>
             </div>
-            <div className="flex items-center gap-1 flex-1 min-w-[140px]">
+            <div className="flex items-center gap-1 flex-1 min-w-[180px]">
               <Video className="w-3 h-3 text-muted-foreground shrink-0" />
               <Input
                 placeholder="Video URL"
-                className="h-7 text-xs"
+                className="h-7 text-xs flex-1"
                 value={formData?.videoUrl || ''}
                 onChange={(e) => setQuestionForms(prev => ({
                   ...prev,
                   [formKey]: { ...prev[formKey] || defaultForm, videoUrl: e.target.value }
                 }))}
               />
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="video/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      try {
+                        const url = await uploadFile(file);
+                        setQuestionForms(prev => ({
+                          ...prev,
+                          [formKey]: { ...prev[formKey] || defaultForm, videoUrl: url }
+                        }));
+                        toast({ title: "Video uploaded" });
+                      } catch (err) {
+                        toast({ title: "Upload failed", variant: "destructive" });
+                      }
+                    }
+                  }}
+                />
+                <Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild>
+                  <span><Upload className="w-3 h-3" /></span>
+                </Button>
+              </label>
             </div>
           </div>
           <div className="flex justify-end">
