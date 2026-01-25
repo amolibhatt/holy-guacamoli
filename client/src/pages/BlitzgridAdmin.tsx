@@ -436,7 +436,8 @@ export default function BlitzgridAdmin() {
             <div className="flex-1 space-y-1">
               <Textarea
                 placeholder="Question... (Use **bold**, *italic*, or new lines for formatting)"
-                className="text-sm min-h-[60px] resize-y"
+                className="text-sm resize-y"
+                rows={2}
                 data-testid={`input-question-${formKey}`}
                 value={formData?.question || ''}
                 onChange={(e) => setQuestionForms(prev => ({
@@ -449,7 +450,8 @@ export default function BlitzgridAdmin() {
           <div className="flex items-start gap-2">
             <Textarea
               placeholder="Answer... (Supports **bold**, *italic*, line breaks)"
-              className="text-sm min-h-[40px] resize-y flex-1"
+              className="text-sm resize-y flex-1"
+              rows={1}
               data-testid={`input-answer-${formKey}`}
               value={formData?.correctAnswer || ''}
               onChange={(e) => setQuestionForms(prev => ({
