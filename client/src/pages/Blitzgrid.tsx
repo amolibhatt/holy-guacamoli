@@ -2984,7 +2984,7 @@ export default function Blitzgrid() {
           
           {/* Question Modal */}
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
-            <DialogContent className="max-w-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-2 border-violet-200/50 dark:border-violet-500/30 shadow-2xl shadow-violet-500/10">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-2 border-violet-200/50 dark:border-violet-500/30 shadow-2xl shadow-violet-500/10">
               <DialogHeader>
                 {/* Category Name and Description */}
                 {(() => {
