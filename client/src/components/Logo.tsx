@@ -105,23 +105,17 @@ export function Logo({ size = "md", showSparkles = true, variant = "dark" }: Log
       <motion.h1 
         className={`${config.text} font-black tracking-tight leading-none flex items-center`}
         style={{ fontFamily: 'var(--font-display)' }}
+        whileHover={{ scale: 1.05 }}
       >
-        <motion.span 
-          className={textColor}
-          whileHover={{ scale: 1.05 }}
-        >
+        <span className={textColor}>
           Holy{' '}
-        </motion.span>
+        </span>
         <motion.span 
           className="bg-gradient-to-r from-green-500 via-emerald-400 to-lime-400 bg-clip-text text-transparent bg-[length:200%_auto] relative"
           animate={{ 
             backgroundPosition: ['0% center', '100% center', '0% center']
           }}
           transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-          whileHover={{ 
-            scale: 1.05,
-            textShadow: "0 0 20px rgba(34, 197, 94, 0.5)"
-          }}
         >
           GuacAmoli!
           {showSparkles && (
