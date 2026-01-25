@@ -2567,13 +2567,16 @@ export async function registerRoutes(
       }
       
       // Verify user owns a grid that contains this category
+      const role = req.session.userRole;
       const boardCategoryLinks = await storage.getBoardCategoriesByCategoryId(categoryId);
-      let hasOwnership = false;
-      for (const bc of boardCategoryLinks) {
-        const board = await storage.getBoard(bc.boardId, userId);
-        if (board && board.theme === "blitzgrid") {
-          hasOwnership = true;
-          break;
+      let hasOwnership = role === 'super_admin';
+      if (!hasOwnership) {
+        for (const bc of boardCategoryLinks) {
+          const board = await storage.getBoard(bc.boardId, userId);
+          if (board && (board.theme === "blitzgrid" || board.theme?.startsWith("blitzgrid:"))) {
+            hasOwnership = true;
+            break;
+          }
         }
       }
       if (!hasOwnership) {
@@ -2647,13 +2650,16 @@ export async function registerRoutes(
       }
       
       // Verify user owns a grid that contains this category
+      const role = req.session.userRole;
       const boardCategoryLinks = await storage.getBoardCategoriesByCategoryId(question.categoryId);
-      let hasOwnership = false;
-      for (const bc of boardCategoryLinks) {
-        const board = await storage.getBoard(bc.boardId, userId);
-        if (board && board.theme === "blitzgrid") {
-          hasOwnership = true;
-          break;
+      let hasOwnership = role === 'super_admin';
+      if (!hasOwnership) {
+        for (const bc of boardCategoryLinks) {
+          const board = await storage.getBoard(bc.boardId, userId);
+          if (board && (board.theme === "blitzgrid" || board.theme?.startsWith("blitzgrid:"))) {
+            hasOwnership = true;
+            break;
+          }
         }
       }
       if (!hasOwnership) {
