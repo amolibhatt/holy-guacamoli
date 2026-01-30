@@ -827,6 +827,8 @@ export default function Blitzgrid() {
   
   // Shuffle Play - randomly select 5 categories from all grids
   const handleShufflePlay = useCallback(async () => {
+    // Prevent double-clicks/race conditions
+    if (isShuffling) return;
     setIsShuffling(true);
     try {
       // Always exclude all previously played categories (including current shuffle set)
@@ -903,7 +905,7 @@ export default function Blitzgrid() {
     } finally {
       setIsShuffling(false);
     }
-  }, [toast, playedShuffleCategoryIds]);
+  }, [toast, playedShuffleCategoryIds, isShuffling]);
   
   // Fire celebratory confetti with fireworks
   const fireConfetti = useCallback(() => {
