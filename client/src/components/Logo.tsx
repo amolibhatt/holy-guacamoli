@@ -15,7 +15,6 @@ export function Logo({ size = "md", variant = "dark" }: LogoProps) {
   };
 
   const config = sizeConfig[size];
-  const textColor = variant === "light" ? "text-white" : "text-foreground";
 
   return (
     <motion.h1 
@@ -23,10 +22,9 @@ export function Logo({ size = "md", variant = "dark" }: LogoProps) {
       style={{ fontFamily: 'var(--font-display)' }}
       whileHover={{ scale: 1.02 }}
     >
-      <span className={textColor}>Holy </span>
-      <span className="bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-500 bg-clip-text text-transparent">
-        GuacAmoli!
-      </span>
+      <span className="text-white">Holy </span>
+      <span style={{ color: '#39FF14' }}>Guac</span>
+      <span style={{ color: '#BC13FE' }}>Amoli!</span>
     </motion.h1>
   );
 }
