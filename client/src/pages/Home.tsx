@@ -61,7 +61,6 @@ const GAME_CONFIG: Record<string, {
     route: "/host/sequence-squeeze",
     playerCount: "Multiplayer",
     accentColor: "#14B8A6",
-    status: "coming_soon",
   },
 };
 
