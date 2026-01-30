@@ -16,88 +16,44 @@ function AvocadoIcon({ size = 32 }: { size?: number }) {
       xmlns="http://www.w3.org/2000/svg"
       className="shrink-0"
     >
-      {/* Party Hat */}
       <defs>
         <linearGradient id="hatGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FF69B4" />
+          <stop offset="0%" stopColor="#e879f9" />
           <stop offset="50%" stopColor="#BC13FE" />
-          <stop offset="100%" stopColor="#8B008B" />
+          <stop offset="100%" stopColor="#9333ea" />
         </linearGradient>
-        <filter id="hatGlow">
-          <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+        <filter id="eyeGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="1.5" result="blur"/>
           <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-        <filter id="eyeGlow">
-          <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="blur"/>
             <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
       </defs>
       
-      {/* Party Hat - Metallic Magenta */}
+      {/* Party Hat - Metallic Magenta matching page accent */}
       <path 
-        d="M32 4 L42 20 L22 20 Z" 
-        fill="url(#hatGradient)" 
-        filter="url(#hatGlow)"
-        stroke="#FF00FF"
-        strokeWidth="0.5"
+        d="M32 6 L40 18 L24 18 Z" 
+        fill="url(#hatGradient)"
       />
-      {/* Hat pom-pom */}
-      <circle cx="32" cy="4" r="3" fill="#FF00FF" filter="url(#hatGlow)" />
-      {/* Hat stripes */}
-      <path d="M27 16 L32 8 L37 16" stroke="#FFD700" strokeWidth="1" fill="none" opacity="0.6" />
+      <circle cx="32" cy="6" r="2" fill="#e879f9" />
       
-      {/* Avocado Body */}
-      <ellipse 
-        cx="32" 
-        cy="40" 
-        rx="18" 
-        ry="22" 
-        fill="#2D5016"
-      />
-      {/* Avocado inner (lighter green) */}
-      <ellipse 
-        cx="32" 
-        cy="42" 
-        rx="14" 
-        ry="17" 
-        fill="#8FBC3A"
-      />
-      {/* Avocado pit */}
-      <ellipse 
-        cx="32" 
-        cy="48" 
-        rx="7" 
-        ry="9" 
-        fill="#5D4E37"
-      />
+      {/* Avocado Body - Dark to match page bg */}
+      <ellipse cx="32" cy="40" rx="16" ry="20" fill="#1a1a1f" stroke="#333" strokeWidth="1"/>
+      
+      {/* Avocado inner */}
+      <ellipse cx="32" cy="42" rx="12" ry="15" fill="#2a2a30"/>
+      
+      {/* Pit */}
+      <ellipse cx="32" cy="46" rx="5" ry="7" fill="#1a1a1f" stroke="#333" strokeWidth="0.5"/>
       
       {/* Glowing Neon Green Eyes */}
       <g filter="url(#eyeGlow)">
-        {/* Left Eye */}
-        <ellipse cx="26" cy="36" rx="4" ry="5" fill="#0a0a0a" />
-        <ellipse cx="26" cy="36" rx="2.5" ry="3" fill="#39FF14" />
-        <ellipse cx="25" cy="35" rx="1" ry="1.5" fill="#AAFFAA" />
-        
-        {/* Right Eye */}
-        <ellipse cx="38" cy="36" rx="4" ry="5" fill="#0a0a0a" />
-        <ellipse cx="38" cy="36" rx="2.5" ry="3" fill="#39FF14" />
-        <ellipse cx="37" cy="35" rx="1" ry="1.5" fill="#AAFFAA" />
+        <circle cx="27" cy="35" r="3" fill="#39FF14" />
+        <circle cx="37" cy="35" r="3" fill="#39FF14" />
+        <circle cx="26" cy="34" r="1" fill="#aaffaa" />
+        <circle cx="36" cy="34" r="1" fill="#aaffaa" />
       </g>
-      
-      {/* Smile */}
-      <path 
-        d="M28 44 Q32 48 36 44" 
-        stroke="#2D5016" 
-        strokeWidth="2" 
-        fill="none" 
-        strokeLinecap="round"
-      />
     </svg>
   );
 }
@@ -105,8 +61,8 @@ function AvocadoIcon({ size = 32 }: { size?: number }) {
 export function Logo({ size = "md" }: LogoProps) {
   const sizeConfig = {
     sm: { text: "text-lg", icon: 28, gap: "gap-2" },
-    md: { text: "text-xl sm:text-2xl", icon: 36, gap: "gap-2" },
-    lg: { text: "text-2xl sm:text-3xl", icon: 44, gap: "gap-3" },
+    md: { text: "text-xl sm:text-2xl", icon: 32, gap: "gap-2" },
+    lg: { text: "text-2xl sm:text-3xl", icon: 40, gap: "gap-3" },
     compact: { text: "text-sm", icon: 20, gap: "gap-1" }
   };
 
@@ -123,31 +79,29 @@ export function Logo({ size = "md" }: LogoProps) {
         className={`${config.text} font-black tracking-tight leading-none relative`}
         style={{ fontFamily: "'Archivo Black', 'Impact', sans-serif" }}
       >
-        {/* Chromatic aberration layers */}
+        {/* Subtle chromatic aberration - matches page glow style */}
         <span 
-          className="absolute inset-0 opacity-70"
+          className="absolute inset-0 opacity-40 blur-[0.5px]"
           style={{ 
-            color: '#00FFFF', 
-            transform: 'translateX(-2px)',
-            clipPath: 'inset(0 0 0 0)',
+            color: '#22d3ee', 
+            transform: 'translateX(-1px)',
           }}
           aria-hidden="true"
         >
           Holy GuacAmoli!
         </span>
         <span 
-          className="absolute inset-0 opacity-70"
+          className="absolute inset-0 opacity-40 blur-[0.5px]"
           style={{ 
-            color: '#FF0080', 
-            transform: 'translateX(2px)',
-            clipPath: 'inset(0 0 0 0)',
+            color: '#e879f9', 
+            transform: 'translateX(1px)',
           }}
           aria-hidden="true"
         >
           Holy GuacAmoli!
         </span>
         
-        {/* Main text */}
+        {/* Main text - same colors as page */}
         <span className="relative">
           <span className="text-white">Holy </span>
           <span style={{ color: '#39FF14' }}>Guac</span>
