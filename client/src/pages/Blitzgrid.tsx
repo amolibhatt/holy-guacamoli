@@ -1054,7 +1054,7 @@ export default function Blitzgrid() {
                               animate={{ scale: [1, 1.3, 1], opacity: [1, 0, 1] }}
                               transition={{ duration: 1.5, repeat: Infinity }}
                             />
-                            <div className="w-20 h-20 md:w-28 md:h-28 rounded-full flex items-center justify-center text-4xl md:text-5xl shadow-2xl border-4 border-yellow-400 relative z-10 bg-gradient-to-br from-emerald-500 to-emerald-700">
+                            <div className="w-20 h-20 md:w-28 md:h-28 rounded-full flex items-center justify-center text-4xl md:text-5xl shadow-2xl border-4 border-yellow-400 relative z-10 bg-gradient-to-br from-violet-500 to-violet-700">
                               {PLAYER_AVATARS.find(a => a.id === winner.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
                             </div>
                           </motion.div>
@@ -1247,13 +1247,13 @@ export default function Blitzgrid() {
                   transition={{ type: "spring", delay: 0.2 }}
                   className="flex items-center gap-2"
                 >
-                  <Badge className="bg-emerald-400 text-black font-mono font-bold px-3 py-1.5">
+                  <Badge className="bg-white/90 text-violet-700 font-mono font-bold px-3 py-1.5 border border-white/50">
                     {roomCode}
                   </Badge>
                   <Button 
                     size="sm" 
                     onClick={() => setShowQRCode(true)} 
-                    className="bg-emerald-400 text-black font-medium"
+                    className="bg-white/90 text-violet-700 hover:bg-white font-medium"
                     data-testid="button-show-qr"
                   >
                     <QrCode className="w-4 h-4" />
@@ -1891,14 +1891,14 @@ export default function Blitzgrid() {
           
           {/* Question Modal */}
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-2 border-pink-200/50 dark:border-pink-500/30 shadow-2xl shadow-pink-500/10">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-2 border-violet-200/50 dark:border-violet-500/30 shadow-2xl shadow-violet-500/10">
               <DialogHeader>
                 {/* Category Name and Description */}
                 {(() => {
                   const category = gridCategories.find(c => c.id === activeQuestion?.categoryId);
                   return category ? (
                     <div className="text-center mb-2">
-                      <p className="text-pink-600 dark:text-pink-300 text-sm font-semibold uppercase tracking-wider">
+                      <p className="text-violet-600 dark:text-violet-300 text-sm font-semibold uppercase tracking-wider">
                         {category.name}
                       </p>
                       {category.description && (
@@ -2017,10 +2017,10 @@ export default function Blitzgrid() {
               
               {/* Buzz Queue - players who buzzed in order */}
               {buzzQueue.length > 0 && !showAnswer && (
-                <div className="bg-pink-50 dark:bg-pink-900/50 border border-pink-200 dark:border-pink-600 rounded-lg p-4">
+                <div className="bg-violet-50 dark:bg-violet-900/50 border border-violet-200 dark:border-violet-600 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Zap className="w-4 h-4 text-pink-500 dark:text-pink-400" />
-                    <span className="text-sm text-pink-700 dark:text-pink-300 font-medium">Buzz Order</span>
+                    <Zap className="w-4 h-4 text-violet-500 dark:text-violet-400" />
+                    <span className="text-sm text-violet-700 dark:text-violet-300 font-medium">Buzz Order</span>
                   </div>
                   <div className="space-y-2">
                     {buzzQueue.map((buzz, index) => {
@@ -2571,7 +2571,7 @@ export default function Blitzgrid() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Grid3X3 className="w-6 h-6 text-pink-500" />
+                <Grid3X3 className="w-6 h-6 text-violet-500" />
                 Choose Next Grid
               </h1>
               <p className="text-muted-foreground text-sm">Select a grid to continue playing</p>
