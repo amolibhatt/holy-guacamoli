@@ -2741,17 +2741,34 @@ export default function Blitzgrid() {
   const starterPacks = activeGrids.filter(g => g.isStarterPack);
   const myGrids = activeGrids.filter(g => !g.isStarterPack);
 
-  // Grid card component with balanced colorful design
+  // Grid card component with premium glassmorphism design
   const GridCard = ({ grid, index, colorOffset = 0 }: { grid: typeof activeGrids[0], index: number, colorOffset?: number }) => {
     const effectiveColor = grid.colorCode?.startsWith('#') ? null : grid.colorCode;
     const colorConfig = getBoardColorConfig(effectiveColor || BOARD_COLORS[(index + colorOffset) % BOARD_COLORS.length]);
+    
+    // Get shadow color for hover glow
+    const glowColors: Record<string, string> = {
+      rose: 'hover:shadow-rose-200/50',
+      amber: 'hover:shadow-amber-200/50',
+      emerald: 'hover:shadow-emerald-200/50',
+      sky: 'hover:shadow-sky-200/50',
+      violet: 'hover:shadow-violet-200/50',
+      pink: 'hover:shadow-pink-200/50',
+      orange: 'hover:shadow-orange-200/50',
+      teal: 'hover:shadow-teal-200/50',
+      indigo: 'hover:shadow-indigo-200/50',
+      cyan: 'hover:shadow-cyan-200/50',
+    };
+    const colorName = (effectiveColor || BOARD_COLORS[(index + colorOffset) % BOARD_COLORS.length]) as string;
+    const glowClass = glowColors[colorName] || 'hover:shadow-pink-200/50';
+    
     return (
       <motion.button
         key={grid.id}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: index * 0.08 }}
-        whileHover={{ y: -4, transition: { duration: 0.2 } }}
+        whileHover={{ y: -6, scale: 1.02, transition: { duration: 0.2 } }}
         whileTap={{ scale: 0.98 }}
         onClick={() => {
           setSelectedGridId(grid.id);
@@ -2762,20 +2779,22 @@ export default function Blitzgrid() {
           setActiveQuestion(null);
           setShowAnswer(false);
         }}
-        className="group text-left p-4 rounded-xl bg-card border border-border hover:border-transparent hover:shadow-lg transition-all duration-200 relative overflow-hidden"
+        className={`group text-left p-[2px] rounded-2xl bg-gradient-to-br ${colorConfig.header} transition-all duration-300 relative overflow-hidden shadow-lg shadow-black/5 hover:shadow-xl ${glowClass}`}
         data-testid={`card-grid-${grid.id}`}
       >
-        {/* Subtle gradient overlay */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${colorConfig.light} opacity-40 rounded-xl`} />
-        
-        <div className="relative flex items-center gap-3 flex-wrap pl-2">
-          <div className={`w-10 h-10 rounded-lg ${colorConfig.light} flex items-center justify-center`}>
-            <Grid3X3 className={`w-5 h-5 ${colorConfig.icon}`} />
+        {/* Glassmorphism inner card */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-[14px] p-4 h-full">
+          <div className="relative flex items-center gap-3 flex-wrap">
+            {/* Gradient icon */}
+            <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${colorConfig.header} flex items-center justify-center shadow-md`}>
+              <Grid3X3 className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-foreground truncate">{grid.name}</h3>
+              <p className="text-xs text-muted-foreground">Ready to play</p>
+            </div>
+            <ChevronRight className={`w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-all ${colorConfig.icon} group-hover:opacity-100 opacity-50`} />
           </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground truncate">{grid.name}</h3>
-          </div>
-          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
         </div>
       </motion.button>
     );
@@ -2818,19 +2837,19 @@ export default function Blitzgrid() {
               </h1>
             </motion.div>
 
-            {/* Shuffle Play Card */}
+            {/* Shuffle Play Card - Premium glassmorphism */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
+              whileHover={{ y: -4, scale: 1.01, transition: { duration: 0.2 } }}
+              className="group cursor-pointer p-[2px] rounded-2xl bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-400 shadow-lg shadow-pink-200/30 hover:shadow-xl hover:shadow-pink-300/40 transition-all duration-300"
+              onClick={handleShufflePlay}
+              data-testid="card-shuffle-play"
             >
-              <Card 
-                className="group cursor-pointer overflow-hidden border-2 border-dashed border-pink-300 bg-gradient-to-br from-rose-50/50 via-pink-50/50 to-fuchsia-50/50 hover-elevate"
-                onClick={handleShufflePlay}
-                data-testid="card-shuffle-play"
-              >
-                <CardContent className="flex items-center gap-4 p-5">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-300 via-pink-300 to-fuchsia-300 flex items-center justify-center shrink-0 shadow-lg shadow-pink-300/20">
+              <div className="bg-white/95 backdrop-blur-sm rounded-[14px] p-5">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-400 via-pink-400 to-fuchsia-400 flex items-center justify-center shrink-0 shadow-lg shadow-pink-300/30">
                     {isShuffling ? (
                       <Loader2 className="w-7 h-7 text-white animate-spin" />
                     ) : (
@@ -2840,7 +2859,7 @@ export default function Blitzgrid() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-lg text-foreground flex flex-wrap items-center gap-2">
                       Shuffle Play
-                      <Badge variant="secondary" className="text-xs bg-pink-100 text-pink-700 border-0">Mix it up</Badge>
+                      <Badge variant="secondary" className="text-xs bg-gradient-to-r from-rose-100 to-pink-100 text-pink-700 border-0">Mix it up</Badge>
                     </h3>
                     <p className="text-sm text-muted-foreground">
                       {playedShuffleCategoryIds.length > 0 
@@ -2865,10 +2884,10 @@ export default function Blitzgrid() {
                       Reset
                     </Button>
                   ) : (
-                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-pink-500 group-hover:translate-x-1 transition-all" />
+                    <ChevronRight className="w-5 h-5 text-pink-400 group-hover:text-pink-500 group-hover:translate-x-1 transition-all" />
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </motion.div>
 
             {/* My Grids Section */}
@@ -2878,8 +2897,12 @@ export default function Blitzgrid() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
               >
-                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">My Grids</h2>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {/* Section header with gradient divider */}
+                <div className="flex items-center gap-4 mb-5">
+                  <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider whitespace-nowrap">My Grids</h2>
+                  <div className="flex-1 h-[1px] bg-gradient-to-r from-rose-200 via-pink-200 to-transparent" />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {myGrids.map((grid, index) => (
                     <GridCard key={grid.id} grid={grid} index={index} />
                   ))}
@@ -2894,10 +2917,14 @@ export default function Blitzgrid() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.1 }}
               >
-                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 flex flex-wrap items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
-                  Starter Packs
-                </h2>
+                {/* Section header with gradient divider */}
+                <div className="flex items-center gap-4 mb-5">
+                  <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider whitespace-nowrap flex flex-wrap items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    Starter Packs
+                  </h2>
+                  <div className="flex-1 h-[1px] bg-gradient-to-r from-amber-200 via-orange-200 to-transparent" />
+                </div>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {starterPacks.map((grid, index) => (
                     <GridCard key={grid.id} grid={grid} index={index} colorOffset={myGrids.length} />
