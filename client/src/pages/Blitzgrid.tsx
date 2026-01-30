@@ -22,7 +22,7 @@ import {
   ChevronRight, ArrowLeft, Play, Loader2,
   AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Medal,
   Volume2, VolumeX, MoreVertical, Settings, Copy, Link2, Share2, Download, Image, Loader2 as LoaderIcon, Clock,
-  Hand, Flame, Laugh, CircleDot, ThumbsUp, Sparkles, Heart, Timer, Zap, Shuffle
+  Hand, Flame, Laugh, CircleDot, ThumbsUp, Sparkles, Heart, Timer, Zap, Shuffle, Lightbulb
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import html2canvas from "html2canvas";
@@ -86,6 +86,57 @@ interface CategoryWithQuestions extends Category {
 
 const POINT_TIERS = [10, 20, 30, 40, 50];
 
+// Hint button component that appears after 5 seconds
+function HintButton({ answer }: { answer: string }) {
+  const [showHintButton, setShowHintButton] = useState(false);
+  const [hintRevealed, setHintRevealed] = useState(false);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => setShowHintButton(true), 5000);
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // Generate hint: first letter + length
+  const generateHint = () => {
+    if (!answer) return '';
+    const cleanAnswer = answer.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+    const firstWord = cleanAnswer.split(' ')[0];
+    const firstLetter = firstWord.charAt(0).toUpperCase();
+    const wordCount = cleanAnswer.split(' ').filter(w => w.length > 0).length;
+    return `${firstLetter}... (${wordCount} word${wordCount > 1 ? 's' : ''}, ${cleanAnswer.length} chars)`;
+  };
+  
+  if (!showHintButton) return null;
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex justify-center mt-3"
+    >
+      {!hintRevealed ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setHintRevealed(true)}
+          className="text-xs text-muted-foreground hover:text-foreground gap-1"
+        >
+          <Lightbulb className="w-3 h-3" />
+          Show Hint
+        </Button>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium"
+        >
+          <Lightbulb className="w-3 h-3 inline mr-1" />
+          {generateHint()}
+        </motion.div>
+      )}
+    </motion.div>
+  );
+}
 
 export default function Blitzgrid() {
   const { toast } = useToast();
@@ -2366,94 +2417,120 @@ export default function Blitzgrid() {
           {/* Question Modal */}
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-2 border-slate-200/60 shadow-2xl">
-              {/* Decorative corner accents */}
-              <div className="absolute -top-6 -left-6 w-20 h-20 rounded-full bg-gradient-to-br from-slate-200/30 to-slate-100/10 blur-xl pointer-events-none" />
-              <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-gradient-to-br from-slate-200/30 to-slate-100/10 blur-xl pointer-events-none" />
-              
-              <DialogHeader className="relative z-10 pb-2">
-                {/* Compact Category Pill - single line */}
-                {(() => {
-                  const category = playCategories.find(c => c.id === activeQuestion?.categoryId);
-                  return category ? (
-                    <div className="flex justify-center mb-2">
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100/80 border border-slate-200/50 text-xs">
-                        <Sparkles className="w-3 h-3 text-slate-400" />
-                        <span className="text-slate-600 font-semibold uppercase tracking-wide">
-                          {category.name}
-                        </span>
-                        {category.description && (
-                          <>
-                            <span className="text-slate-300">·</span>
-                            <span className="text-slate-500 font-normal normal-case tracking-normal truncate max-w-[150px]">
-                              {category.description}
+              {(() => {
+                // Category color theming based on position
+                const categoryColors = [
+                  { bg: 'from-rose-100 to-pink-50', border: 'border-rose-200', text: 'text-rose-600', accent: 'bg-rose-500' },
+                  { bg: 'from-amber-100 to-orange-50', border: 'border-amber-200', text: 'text-amber-600', accent: 'bg-amber-500' },
+                  { bg: 'from-emerald-100 to-teal-50', border: 'border-emerald-200', text: 'text-emerald-600', accent: 'bg-emerald-500' },
+                  { bg: 'from-sky-100 to-blue-50', border: 'border-sky-200', text: 'text-sky-600', accent: 'bg-sky-500' },
+                  { bg: 'from-violet-100 to-purple-50', border: 'border-violet-200', text: 'text-violet-600', accent: 'bg-violet-500' },
+                ];
+                const categoryIndex = playCategories.findIndex(c => c.id === activeQuestion?.categoryId);
+                const colorTheme = categoryColors[categoryIndex] || categoryColors[0];
+                const category = playCategories.find(c => c.id === activeQuestion?.categoryId);
+                const questionText = activeQuestion?.question || '';
+                const questionLength = questionText.length;
+                // Auto-size text based on question length
+                const textSizeClass = questionLength < 50 ? 'text-2xl md:text-3xl' : 
+                                      questionLength < 100 ? 'text-xl md:text-2xl' : 
+                                      questionLength < 200 ? 'text-lg md:text-xl' : 'text-base md:text-lg';
+                
+                return (
+                  <>
+                    {/* Category-themed decorative corner accents */}
+                    <div className={`absolute -top-6 -left-6 w-20 h-20 rounded-full bg-gradient-to-br ${colorTheme.bg} blur-xl pointer-events-none opacity-60`} />
+                    <div className={`absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-gradient-to-br ${colorTheme.bg} blur-xl pointer-events-none opacity-60`} />
+                    
+                    {/* Floating corner points badge */}
+                    <motion.div 
+                      className="absolute -top-3 -left-3 z-30 overflow-hidden px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 shadow-lg"
+                      initial={{ scale: 0, rotate: -15 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                    >
+                      <motion.div 
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12"
+                        animate={{ x: ['-100%', '200%'] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                      />
+                      <span className="text-amber-900 text-sm font-black relative z-10">
+                        {activeQuestion?.points} pts
+                      </span>
+                    </motion.div>
+                    
+                    <DialogHeader className="relative z-10 pb-2 pt-2">
+                      {/* Timer button near close X */}
+                      <div className="absolute right-10 top-4 z-20">
+                        <Button
+                          variant={timerActive ? "destructive" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            if (timerActive) {
+                              setTimerActive(false);
+                              setTimeLeft(10);
+                            } else {
+                              setTimeLeft(10);
+                              setTimerActive(true);
+                            }
+                          }}
+                          className={`gap-1 ${timerActive ? 'animate-pulse' : ''}`}
+                          data-testid="button-timer"
+                        >
+                          <Timer className="w-4 h-4" />
+                          {timerActive ? (
+                            <span className="font-mono font-bold text-lg min-w-[2ch]">{timeLeft}</span>
+                          ) : (
+                            <span>10s</span>
+                          )}
+                        </Button>
+                      </div>
+                      
+                      {/* Category pill with themed color */}
+                      {category && (
+                        <div className="flex justify-center">
+                          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r ${colorTheme.bg} ${colorTheme.border} border text-xs`}>
+                            <div className={`w-2 h-2 rounded-full ${colorTheme.accent}`} />
+                            <span className={`${colorTheme.text} font-semibold uppercase tracking-wide`}>
+                              {category.name}
                             </span>
-                          </>
-                        )}
+                            {category.description && (
+                              <>
+                                <span className="text-slate-300">·</span>
+                                <span className="text-slate-500 font-normal normal-case tracking-normal truncate max-w-[150px]">
+                                  {category.description}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      <DialogTitle className="sr-only">{activeQuestion?.points} Points Question</DialogTitle>
+                    </DialogHeader>
+                    
+                    {/* Question with auto-sizing text and themed gradient */}
+                    <div className={`py-4 px-4 -mx-2 relative z-10 bg-gradient-to-b ${colorTheme.bg} rounded-lg border ${colorTheme.border}`}>
+                      <div className={`${textSizeClass} text-center font-medium text-foreground max-w-none leading-relaxed [&_p]:text-foreground [&_*]:text-foreground`}>
+                        <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
+                          {questionText}
+                        </ReactMarkdown>
+                      </div>
+                      
+                      {/* Hint button - appears after 5 seconds */}
+                      {!showAnswer && (
+                        <HintButton answer={activeQuestion?.correctAnswer || ''} />
+                      )}
+                      
+                      {/* Compact divider */}
+                      <div className="mt-3 flex items-center justify-center gap-2">
+                        <div className={`h-px w-12 bg-gradient-to-r from-transparent ${colorTheme.border.replace('border-', 'to-')}`} />
+                        <div className={`w-1 h-1 rounded-full ${colorTheme.accent} opacity-50`} />
+                        <div className={`h-px w-12 bg-gradient-to-l from-transparent ${colorTheme.border.replace('border-', 'to-')}`} />
                       </div>
                     </div>
-                  ) : null;
-                })()}
-                {/* Timer button near close X */}
-                <div className="absolute right-10 top-4 z-20">
-                  <Button
-                    variant={timerActive ? "destructive" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      if (timerActive) {
-                        setTimerActive(false);
-                        setTimeLeft(10);
-                      } else {
-                        setTimeLeft(10);
-                        setTimerActive(true);
-                      }
-                    }}
-                    className={`gap-1 ${timerActive ? 'animate-pulse' : ''}`}
-                    data-testid="button-timer"
-                  >
-                    <Timer className="w-4 h-4" />
-                    {timerActive ? (
-                      <span className="font-mono font-bold text-lg min-w-[2ch]">{timeLeft}</span>
-                    ) : (
-                      <span>10s</span>
-                    )}
-                  </Button>
-                </div>
-                {/* Animated shimmer points badge */}
-                <div className="flex justify-center">
-                  <motion.div 
-                    className="relative overflow-hidden px-6 py-2 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 shadow-lg"
-                    animate={{ 
-                      boxShadow: ['0 4px 20px rgba(251, 191, 36, 0.3)', '0 4px 30px rgba(251, 191, 36, 0.5)', '0 4px 20px rgba(251, 191, 36, 0.3)']
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    {/* Shimmer effect */}
-                    <motion.div 
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12"
-                      animate={{ x: ['-100%', '200%'] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                    <DialogTitle className="text-amber-900 text-2xl font-black relative z-10">
-                      {activeQuestion?.points} Points
-                    </DialogTitle>
-                  </motion.div>
-                </div>
-              </DialogHeader>
-              
-              {/* Question with subtle gradient background */}
-              <div className="py-3 px-4 -mx-2 relative z-10 bg-gradient-to-b from-slate-50/50 via-white to-slate-50/30 rounded-lg">
-                <div className="text-lg md:text-xl text-center font-medium text-foreground max-w-none leading-relaxed [&_p]:text-foreground [&_*]:text-foreground">
-                  <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
-                    {activeQuestion?.question || ''}
-                  </ReactMarkdown>
-                </div>
-                {/* Compact divider */}
-                <div className="mt-3 flex items-center justify-center gap-2">
-                  <div className="h-px w-12 bg-gradient-to-r from-transparent to-slate-200" />
-                  <div className="w-1 h-1 rounded-full bg-slate-200" />
-                  <div className="h-px w-12 bg-gradient-to-l from-transparent to-slate-200" />
-                </div>
-              </div>
+                  </>
+                );
+              })()}
               
               {/* Media Display */}
               {(activeQuestion?.imageUrl || activeQuestion?.audioUrl || activeQuestion?.videoUrl) && (
