@@ -186,10 +186,10 @@ export default function SuperAdmin() {
 
   const getGameGradient = (slug: string) => {
     switch (slug) {
-      case 'blitzgrid': return 'from-amber-400 via-orange-500 to-red-500';
-      case 'sequence_squeeze': return 'from-emerald-400 via-teal-500 to-cyan-500';
-      case 'double_dip': return 'from-rose-400 via-pink-500 to-fuchsia-500';
-      default: return 'from-purple-400 via-violet-500 to-indigo-500';
+      case 'blitzgrid': return 'from-rose-300 via-pink-300 to-fuchsia-300';
+      case 'sequence_squeeze': return 'from-emerald-300 via-teal-300 to-cyan-300';
+      case 'double_dip': return 'from-rose-300 via-pink-300 to-fuchsia-300';
+      default: return 'from-violet-300 via-purple-300 to-indigo-300';
     }
   };
 
@@ -237,42 +237,42 @@ export default function SuperAdmin() {
                   title="Total Users"
                   value={stats?.totalUsers ?? 0}
                   icon={Users}
-                  color="from-blue-500 to-cyan-500"
+                  color="from-emerald-300 via-teal-300 to-cyan-300"
                   isLoading={isLoadingStats}
                 />
                 <StatCard
                   title="Total Grids"
                   value={stats?.totalBoards ?? 0}
                   icon={Grid3X3}
-                  color="from-green-500 to-emerald-500"
+                  color="from-rose-300 via-pink-300 to-fuchsia-300"
                   isLoading={isLoadingStats}
                 />
                 <StatCard
                   title="Questions"
                   value={stats?.totalQuestions ?? 0}
                   icon={Activity}
-                  color="from-purple-500 to-pink-500"
+                  color="from-violet-300 via-purple-300 to-indigo-300"
                   isLoading={isLoadingStats}
                 />
                 <StatCard
                   title="Games Played"
                   value={stats?.totalGamesPlayed ?? 0}
                   icon={Gamepad2}
-                  color="from-orange-500 to-amber-500"
+                  color="from-amber-300 via-yellow-300 to-amber-300"
                   isLoading={isLoadingStats}
                 />
                 <StatCard
                   title="Sessions Today"
                   value={stats?.activeSessionsToday ?? 0}
                   icon={Clock}
-                  color="from-red-500 to-rose-500"
+                  color="from-rose-300 via-pink-300 to-fuchsia-300"
                   isLoading={isLoadingStats}
                 />
                 <StatCard
                   title="New This Week"
                   value={stats?.newUsersThisWeek ?? 0}
                   icon={TrendingUp}
-                  color="from-indigo-500 to-violet-500"
+                  color="from-violet-300 via-purple-300 to-indigo-300"
                   isLoading={isLoadingStats}
                 />
               </div>

@@ -200,7 +200,7 @@ export function SequenceSqueezeAdmin() {
     <div className="max-w-4xl mx-auto space-y-6" data-testid="section-sequence-squeeze-admin">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-teal-500/20">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-300 via-teal-300 to-cyan-300 flex items-center justify-center shadow-lg shadow-teal-300/20">
             <ListOrdered className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -226,10 +226,10 @@ export function SequenceSqueezeAdmin() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
           >
-            <Card className="border-teal-500/30 bg-gradient-to-b from-teal-500/5 to-transparent">
+            <Card className="border-teal-200/60 bg-gradient-to-b from-teal-100/30 to-transparent">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Sparkles className="w-5 h-5 text-teal-500" />
+                  <Sparkles className="w-5 h-5 text-teal-600" />
                   New Ordering Question
                 </CardTitle>
               </CardHeader>
@@ -295,7 +295,7 @@ export function SequenceSqueezeAdmin() {
 
                 <div>
                   <Label className="flex items-center gap-2">
-                    <GripVertical className="w-4 h-4 text-teal-500" />
+                    <GripVertical className="w-4 h-4 text-teal-600" />
                     Set Correct Order (click options in order)
                   </Label>
                   <p className="text-xs text-muted-foreground mb-2">
@@ -357,7 +357,7 @@ export function SequenceSqueezeAdmin() {
                   <Button
                     onClick={handleSubmit}
                     disabled={createMutation.isPending}
-                    className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 gap-2"
+                    className="bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 hover:from-emerald-400 hover:via-teal-400 hover:to-cyan-400 gap-2 text-white"
                     data-testid="button-create-sequence-question"
                   >
                     {createMutation.isPending ? (
@@ -382,11 +382,11 @@ export function SequenceSqueezeAdmin() {
         <CollapsibleTrigger asChild>
           <Button 
             variant="outline" 
-            className="w-full justify-between h-12 px-4 bg-gradient-to-r from-teal-500/10 to-cyan-500/10 border-dashed"
+            className="w-full justify-between h-12 px-4 bg-gradient-to-r from-teal-300/10 to-cyan-300/10 border-dashed"
             data-testid="button-toggle-bulk-import"
           >
             <span className="flex items-center gap-2">
-              <Upload className="w-4 h-4 text-teal-500" />
+              <Upload className="w-4 h-4 text-teal-600" />
               <span className="font-medium">Bulk Import Questions</span>
             </span>
             <ChevronDown className={`w-4 h-4 transition-transform ${bulkImportOpen ? 'rotate-180' : ''}`} />
@@ -481,7 +481,7 @@ export function SequenceSqueezeAdmin() {
                             }
                           }}
                           disabled={bulkImportMutation.isPending}
-                          className="px-6 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+                          className="px-6 bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 hover:from-emerald-400 hover:via-teal-400 hover:to-cyan-400 text-white"
                           data-testid="button-confirm-import"
                         >
                           {bulkImportMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
@@ -505,8 +505,8 @@ export function SequenceSqueezeAdmin() {
       ) : questions.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-teal-500/10 flex items-center justify-center mx-auto mb-4">
-              <ListOrdered className="w-8 h-8 text-teal-500" />
+            <div className="w-16 h-16 rounded-full bg-teal-100/50 flex items-center justify-center mx-auto mb-4">
+              <ListOrdered className="w-8 h-8 text-teal-600" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-2">No Questions Yet</h3>
             <p className="text-muted-foreground mb-4 max-w-sm mx-auto">
@@ -514,7 +514,7 @@ export function SequenceSqueezeAdmin() {
             </p>
             <Button
               onClick={() => setShowForm(true)}
-              className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 gap-2"
+              className="bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 hover:from-emerald-400 hover:via-teal-400 hover:to-cyan-400 gap-2 text-white"
               data-testid="button-create-first-sequence"
             >
               <Plus className="w-4 h-4" /> Create First Question
@@ -535,7 +535,7 @@ export function SequenceSqueezeAdmin() {
                 <Card className="hover-elevate transition-all" data-testid={`card-sequence-question-${q.id}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-400/20 to-teal-500/20 flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-300/20 to-teal-300/20 flex items-center justify-center shrink-0">
                         <span className="text-lg font-bold text-teal-600">{index + 1}</span>
                       </div>
                       <div className="flex-1 min-w-0">

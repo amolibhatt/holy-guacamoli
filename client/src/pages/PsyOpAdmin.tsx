@@ -24,7 +24,7 @@ export default function PsyOpAdmin() {
 
   return (
     <div className="min-h-screen bg-background" data-testid="page-psyop-admin">
-      <div className="fixed inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-fuchsia-500/5 pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-300/5 via-transparent to-purple-300/5 pointer-events-none" />
       
       <AppHeader
         title="Content Admin"

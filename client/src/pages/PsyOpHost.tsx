@@ -322,7 +322,7 @@ export default function PsyOpHost() {
 
   return (
     <div className="min-h-screen bg-background" data-testid="page-psyop-host">
-      <div className="fixed inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-fuchsia-500/5 pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-300/5 via-transparent to-purple-300/5 pointer-events-none" />
       
       <AppHeader title="PsyOp" backHref="/" />
 

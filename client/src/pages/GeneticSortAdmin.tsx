@@ -24,7 +24,7 @@ export default function GeneticSortAdmin() {
 
   return (
     <div className="min-h-screen bg-background" data-testid="page-genetic-sort-admin">
-      <div className="fixed inset-0 bg-gradient-to-br from-teal-500/5 via-transparent to-teal-500/5 pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-br from-teal-300/5 via-transparent to-teal-300/5 pointer-events-none" />
       
       <AppHeader
         title="Content Admin"

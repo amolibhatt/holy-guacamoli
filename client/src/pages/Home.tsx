@@ -184,7 +184,7 @@ export default function Home() {
             >
               <span className="text-foreground">What's up, </span>
               <span className="relative inline-block">
-                <span className="bg-gradient-to-r from-fuchsia-500 to-violet-500 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300 bg-clip-text text-transparent">
                   {user?.firstName || 'Legend'}
                 </span>
                 <motion.span 
@@ -426,7 +426,7 @@ export default function Home() {
               Got It
             </Button>
             <Button 
-              className="flex-1 gap-2 bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-400 text-white shadow-lg shadow-pink-300/30" 
+              className="flex-1 gap-2 bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300 text-white shadow-lg shadow-pink-300/30" 
               onClick={handleCloseGuide} 
               data-testid="button-start-hosting"
             >
