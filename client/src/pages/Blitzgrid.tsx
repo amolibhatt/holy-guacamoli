@@ -829,12 +829,21 @@ export default function Blitzgrid() {
   const handleShufflePlay = useCallback(async () => {
     setIsShuffling(true);
     try {
-      // Pass excluded category IDs to avoid repeats in the same session
+      // Always exclude all previously played categories (including current shuffle set)
+      // This ensures reshuffle always gives fresh categories
       const excludeParam = playedShuffleCategoryIds.length > 0 
         ? `?exclude=${playedShuffleCategoryIds.join(',')}` 
         : '';
       const response = await apiRequest('GET', `/api/boards/shuffle-play${excludeParam}`);
       const data = await response.json();
+      
+      // Check for server error responses
+      if (data.exhausted) {
+        throw new Error("You've played all available categories! Reset to play again.");
+      }
+      if (data.message && !data.categories) {
+        throw new Error(data.message);
+      }
       
       // Validate response has exactly 5 categories, each with 5 questions covering all point tiers
       const requiredPoints = [10, 20, 30, 40, 50];
@@ -856,9 +865,13 @@ export default function Blitzgrid() {
           questions: cat.questions,
         }));
         
-        // Track these categories as played
+        // Add new categories to played list (server already excluded these from previous plays)
         const newPlayedIds = mappedCategories.map(c => c.id);
-        setPlayedShuffleCategoryIds(prev => [...prev, ...newPlayedIds]);
+        setPlayedShuffleCategoryIds(prev => {
+          // Use Set to prevent any duplicate IDs
+          const uniqueIds = new Set([...prev, ...newPlayedIds]);
+          return Array.from(uniqueIds);
+        });
         
         setShuffledCategories(mappedCategories);
         setShuffleMode(true);
@@ -878,14 +891,10 @@ export default function Blitzgrid() {
           description: "5 random categories mixed from your grids",
         });
       } else {
-        // Check if we've exhausted all categories
-        if (data.message?.includes("exhausted") || playedShuffleCategoryIds.length > 0) {
-          throw new Error("You've played all available categories! Reset to play again.");
-        }
         throw new Error("Not enough complete categories to shuffle");
       }
     } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || error?.message || "Need at least 5 complete categories across your grids";
+      const errorMessage = error?.message || "Need at least 5 complete categories across your grids";
       toast({
         title: "Can't shuffle yet",
         description: errorMessage,
