@@ -14,7 +14,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { ThemePreview } from "@/components/ThemePreview";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Plus, Trash2, Pencil, Check, X, Grid3X3, ListOrdered,
+  Plus, Trash2, Pencil, Check, X, Grid3X3, ListOrdered, Brain,
   ChevronRight, ArrowLeft, Loader2,
   AlertCircle, CheckCircle2, Image, Music, Video,
   Download, Upload, FileSpreadsheet,
@@ -930,6 +930,16 @@ export default function BlitzgridAdmin() {
               >
                 <ListOrdered className="w-4 h-4 mr-2" />
                 Genetic Sort
+              </Button>
+            </Link>
+            <Link href="/admin/psyop">
+              <Button 
+                variant="ghost" 
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
+                data-testid="tab-psyop"
+              >
+                <Brain className="w-4 h-4 mr-2" />
+                PsyOp
               </Button>
             </Link>
           </nav>
