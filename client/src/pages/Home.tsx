@@ -113,6 +113,11 @@ export default function Home() {
       <main className="flex-1 px-6 py-12 flex items-center justify-center">
         <div className="w-full max-w-5xl mx-auto">
           
+          {/* Tagline */}
+          <p className="text-center text-white/40 text-sm tracking-widest uppercase mb-8">
+            Think fast. Buzz faster. Dominate the grid.
+          </p>
+          
           {/* Game Cards - 3 column grid on large screens */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {isLoadingGames ? (
