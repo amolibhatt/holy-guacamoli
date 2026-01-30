@@ -3189,43 +3189,19 @@ export default function Blitzgrid() {
   const starterPacks = activeGrids.filter(g => g.isStarterPack);
   const myGrids = activeGrids.filter(g => !g.isStarterPack);
 
-  // Grid card component with premium glassmorphism design
+  // Grid card component - clean design with color accent only on icon
   const GridCard = ({ grid, index, colorOffset = 0 }: { grid: typeof activeGrids[0], index: number, colorOffset?: number }) => {
     const effectiveColor = grid.colorCode?.startsWith('#') ? null : grid.colorCode;
     const colorConfig = getBoardColorConfig(effectiveColor || BOARD_COLORS[(index + colorOffset) % BOARD_COLORS.length]);
-    
-    // Get border and accent colors to match Home page style
-    const borderColors: Record<string, string> = {
-      rose: 'border-rose-200/60',
-      amber: 'border-amber-200/60',
-      emerald: 'border-emerald-200/60',
-      sky: 'border-sky-200/60',
-      violet: 'border-violet-200/60',
-      pink: 'border-pink-200/60',
-      orange: 'border-orange-200/60',
-      teal: 'border-teal-200/60',
-      indigo: 'border-indigo-200/60',
-      cyan: 'border-cyan-200/60',
-    };
-    const shadowColors: Record<string, string> = {
-      rose: '#fda4af',
-      amber: '#fcd34d',
-      sky: '#7dd3fc',
-      violet: '#c4b5fd',
-      teal: '#5eead4',
-    };
-    const colorName = (effectiveColor || BOARD_COLORS[(index + colorOffset) % BOARD_COLORS.length]) as string;
-    const borderClass = borderColors[colorName] || 'border-pink-200/60';
-    const shadowColor = shadowColors[colorName] || '#f9a8d4';
     
     return (
       <motion.button
         key={grid.id}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: index * 0.08 }}
-        whileHover={{ y: -8, transition: { duration: 0.25, ease: "easeOut" } }}
-        whileTap={{ scale: 0.97 }}
+        transition={{ duration: 0.4, delay: index * 0.05 }}
+        whileHover={{ y: -4, transition: { duration: 0.2 } }}
+        whileTap={{ scale: 0.98 }}
         onClick={() => {
           setSelectedGridId(grid.id);
           setPlayMode(true);
@@ -3241,38 +3217,21 @@ export default function Blitzgrid() {
           });
           setShowAnswer(false);
         }}
-        className={`group text-left p-5 rounded-3xl bg-card/90 backdrop-blur-sm border ${borderClass} transition-all duration-300 relative overflow-hidden`}
-        style={{
-          boxShadow: `0 8px 32px -8px ${shadowColor}30`
-        }}
+        className="group text-left p-4 rounded-2xl bg-card border border-slate-200/60 hover:border-slate-300/80 transition-all duration-200 hover:shadow-md"
         data-testid={`card-grid-${grid.id}`}
       >
-        {/* Gradient overlay */}
-        <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${colorConfig.light} opacity-40 group-hover:opacity-60 transition-opacity duration-300`} />
-        
-        {/* Shimmer effect on hover */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
-        
-        <div className="relative flex items-center gap-4">
-          {/* Gradient icon with glow */}
-          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colorConfig.header} flex items-center justify-center shadow-lg`} style={{ boxShadow: `0 4px 12px ${shadowColor}40` }}>
-            <Grid3X3 className="w-6 h-6 text-white drop-shadow-sm" />
+        <div className="flex items-center gap-3">
+          {/* Gradient icon - only colored element */}
+          <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colorConfig.header} flex items-center justify-center shadow-sm`}>
+            <Grid3X3 className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-foreground truncate text-base">{grid.name}</h3>
-            <div className="flex items-center gap-2 mt-1">
-              {/* Category count indicator dots - all same grid color */}
-              <div className="flex gap-1">
-                {Array.from({ length: Math.min(grid.categoryCount || 5, 5) }).map((_, i) => (
-                  <div key={i} className={`w-2 h-2 rounded-full bg-gradient-to-br ${colorConfig.header}`} />
-                ))}
-              </div>
-              <span className="text-xs text-muted-foreground">{grid.categoryCount || 5} categories</span>
-            </div>
+            <h3 className="font-semibold text-foreground truncate">{grid.name}</h3>
+            {grid.description && (
+              <p className="text-xs text-muted-foreground truncate mt-0.5">{grid.description}</p>
+            )}
           </div>
-          <div className="w-8 h-8 rounded-full bg-white/60 flex items-center justify-center group-hover:bg-white/80 transition-colors">
-            <ChevronRight className={`w-5 h-5 text-muted-foreground group-hover:translate-x-0.5 group-hover:text-foreground transition-all`} />
-          </div>
+          <ChevronRight className="w-5 h-5 text-muted-foreground/50 group-hover:text-muted-foreground group-hover:translate-x-0.5 transition-all" />
         </div>
       </motion.button>
     );
