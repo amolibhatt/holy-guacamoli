@@ -1,4 +1,4 @@
-export const BOARD_COLORS = ['violet', 'fuchsia', 'amber', 'teal', 'sky'] as const;
+export const BOARD_COLORS = ['rose', 'violet', 'amber', 'teal', 'sky'] as const;
 export type BoardColor = typeof BOARD_COLORS[number];
 
 export const boardColorConfig: Record<BoardColor, {
@@ -22,6 +22,27 @@ export const boardColorConfig: Record<BoardColor, {
   accent: string;
   accentDark: string;
 }> = {
+  rose: {
+    card: 'from-rose-100/80 via-pink-100/60 to-fuchsia-100/80 border-pink-200/60',
+    cardTitle: 'text-rose-700',
+    cardSub: 'text-pink-600',
+    cardIcon: 'text-rose-500',
+    header: 'from-rose-400 via-pink-400 to-fuchsia-400',
+    tile: 'from-rose-100/90 via-pink-100/80 to-fuchsia-100/90',
+    tileBorder: 'border-pink-200/60 hover:border-pink-300/80',
+    tileText: 'text-rose-600',
+    progress: 'bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-400',
+    bg: 'bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-400',
+    badge: 'bg-white/90 border-pink-200/50',
+    badgeText: 'text-rose-700',
+    light: 'bg-gradient-to-br from-rose-50 via-pink-50 to-fuchsia-50',
+    lightBorder: 'border-pink-200/50',
+    lightText: 'text-rose-700',
+    icon: 'text-rose-500',
+    dialogBorder: 'border-pink-200/50',
+    accent: 'text-rose-600',
+    accentDark: 'text-rose-800',
+  },
   violet: {
     card: 'from-violet-500/25 to-violet-600/10 border-violet-500/40',
     cardTitle: 'text-violet-700',
@@ -133,22 +154,23 @@ const legacyColorMap: Record<string, BoardColor> = {
   cyan: 'teal',
   orange: 'amber',
   green: 'teal',
-  pink: 'fuchsia',
+  pink: 'rose',
+  fuchsia: 'rose',
   blue: 'sky',
-  red: 'fuchsia',
+  red: 'rose',
   yellow: 'amber',
   purple: 'violet',
 };
 
 export function getBoardColorConfig(colorCode: string | null | undefined) {
-  if (!colorCode) return boardColorConfig.violet;
+  if (!colorCode) return boardColorConfig.rose;
   const mapped = legacyColorMap[colorCode];
   if (mapped) return boardColorConfig[mapped];
   return boardColorConfig[colorCode as BoardColor] || boardColorConfig.violet;
 }
 
 export function getBoardColorName(colorCode: string | null | undefined): BoardColor {
-  if (!colorCode) return 'violet';
+  if (!colorCode) return 'rose';
   const mapped = legacyColorMap[colorCode];
   if (mapped) return mapped;
   if (BOARD_COLORS.includes(colorCode as BoardColor)) return colorCode as BoardColor;
