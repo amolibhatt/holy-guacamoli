@@ -74,6 +74,7 @@ export default function Blitzgrid() {
   const [shuffleMode, setShuffleMode] = useState(false);
   const [shuffledCategories, setShuffledCategories] = useState<CategoryWithQuestions[] | null>(null);
   const [isShuffling, setIsShuffling] = useState(false);
+  const [playedShuffleCategoryIds, setPlayedShuffleCategoryIds] = useState<number[]>([]);
   const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set());
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -705,7 +706,11 @@ export default function Blitzgrid() {
   const handleShufflePlay = useCallback(async () => {
     setIsShuffling(true);
     try {
-      const response = await apiRequest('/api/boards/shuffle-play');
+      // Pass excluded category IDs to avoid repeats in the same session
+      const excludeParam = playedShuffleCategoryIds.length > 0 
+        ? `?exclude=${playedShuffleCategoryIds.join(',')}` 
+        : '';
+      const response = await apiRequest('GET', `/api/boards/shuffle-play${excludeParam}`);
       const data = await response.json();
       
       // Validate response has exactly 5 categories, each with 5 questions covering all point tiers
@@ -727,6 +732,11 @@ export default function Blitzgrid() {
           questionCount: cat.questions.length,
           questions: cat.questions,
         }));
+        
+        // Track these categories as played
+        const newPlayedIds = mappedCategories.map(c => c.id);
+        setPlayedShuffleCategoryIds(prev => [...prev, ...newPlayedIds]);
+        
         setShuffledCategories(mappedCategories);
         setShuffleMode(true);
         setPlayMode(true);
@@ -738,6 +748,10 @@ export default function Blitzgrid() {
           description: "5 random categories mixed from your grids",
         });
       } else {
+        // Check if we've exhausted all categories
+        if (data.message?.includes("exhausted") || playedShuffleCategoryIds.length > 0) {
+          throw new Error("You've played all available categories! Reset to play again.");
+        }
         throw new Error("Not enough complete categories to shuffle");
       }
     } catch (error: any) {
@@ -750,7 +764,7 @@ export default function Blitzgrid() {
     } finally {
       setIsShuffling(false);
     }
-  }, [toast]);
+  }, [toast, playedShuffleCategoryIds]);
   
   // Fire celebratory confetti with fireworks
   const fireConfetti = useCallback(() => {
@@ -2818,10 +2832,30 @@ export default function Blitzgrid() {
                       <Badge variant="secondary" className="text-xs bg-fuchsia-100 text-fuchsia-700 border-0">Mix it up</Badge>
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      Play with 5 random categories from all your grids
+                      {playedShuffleCategoryIds.length > 0 
+                        ? `${playedShuffleCategoryIds.length} categories played this session`
+                        : "Play with 5 random categories from all your grids"
+                      }
                     </p>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-fuchsia-500 group-hover:translate-x-1 transition-all" />
+                  {playedShuffleCategoryIds.length > 0 ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="shrink-0 border-fuchsia-300 text-fuchsia-600 hover:bg-fuchsia-50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPlayedShuffleCategoryIds([]);
+                        toast({ title: "Shuffle session reset", description: "All categories available again!" });
+                      }}
+                      data-testid="button-reset-shuffle"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-1" />
+                      Reset
+                    </Button>
+                  ) : (
+                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-fuchsia-500 group-hover:translate-x-1 transition-all" />
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
