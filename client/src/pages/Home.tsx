@@ -408,25 +408,66 @@ export default function Home() {
       </main>
       
       {/* Footer */}
-      <footer className="relative z-10 border-t border-border/20 bg-gradient-to-r from-emerald-50/50 via-teal-50/30 to-cyan-50/50 dark:from-emerald-500/5 dark:via-teal-500/3 dark:to-cyan-500/5 backdrop-blur-sm px-6 py-5">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <AvocadoIcon className="w-8 h-8" />
-            <div className="text-left">
-              <p className="text-sm font-semibold text-foreground">Holy GuacAmoli!</p>
-              <p className="text-xs text-muted-foreground">Party games, perfected</p>
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground flex flex-wrap items-center gap-1.5">
-            Crafted with 
-            <motion.span
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 2 }}
+      <footer className="relative z-10 border-t border-border/10 px-6 py-8 overflow-hidden">
+        {/* Subtle gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-t from-emerald-100/40 via-background to-background dark:from-emerald-900/10 dark:via-background" />
+        
+        <div className="relative max-w-5xl mx-auto">
+          {/* Main footer content */}
+          <div className="flex flex-col items-center text-center gap-4">
+            {/* Logo and brand */}
+            <motion.div 
+              className="flex items-center gap-3"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.2 }}
             >
-              <Star className="w-4 h-4 text-amber-400 fill-amber-400 inline" />
-            </motion.span>
-            for Amoli
-          </p>
+              <AvocadoIcon className="w-10 h-10" />
+              <div className="text-left">
+                <h3 className="text-lg font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-400 dark:via-teal-400 dark:to-cyan-400 bg-clip-text text-transparent">
+                  Holy GuacAmoli!
+                </h3>
+                <p className="text-xs text-muted-foreground font-medium tracking-wide">
+                  Where every game night becomes legendary
+                </p>
+              </div>
+            </motion.div>
+            
+            {/* Divider with decorative elements */}
+            <div className="flex items-center gap-4 w-full max-w-xs">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+              <div className="flex gap-1.5">
+                <motion.div 
+                  className="w-1.5 h-1.5 rounded-full bg-pink-300 dark:bg-pink-400"
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0 }}
+                />
+                <motion.div 
+                  className="w-1.5 h-1.5 rounded-full bg-emerald-300 dark:bg-emerald-400"
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
+                />
+                <motion.div 
+                  className="w-1.5 h-1.5 rounded-full bg-violet-300 dark:bg-violet-400"
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0.6 }}
+                />
+              </div>
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+            </div>
+            
+            {/* Dedication */}
+            <p className="text-sm text-muted-foreground">
+              Designed & built with love
+              <motion.span
+                className="inline-block mx-1"
+                animate={{ scale: [1, 1.15, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <Star className="w-4 h-4 text-amber-400 fill-amber-400 inline align-text-bottom" />
+              </motion.span>
+              exclusively for <span className="font-semibold text-foreground">Amoli</span>
+            </p>
+          </div>
         </div>
       </footer>
 
