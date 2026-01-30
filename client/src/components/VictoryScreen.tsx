@@ -51,13 +51,13 @@ function fireworksBurst(timerRefs: { current: ReturnType<typeof setTimeout>[] })
   
   const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
   
-  // Multiple bursts from different positions
+  // Multiple bursts from different positions - pink palette with gold accents
   timerRefs.current.push(setTimeout(() => {
     confetti({
       ...defaults,
       particleCount: 80,
       origin: { x: randomInRange(0.1, 0.3), y: randomInRange(0.2, 0.4) },
-      colors: ['#FFD700', '#FFA500', '#FF6B6B', '#FFE66D']
+      colors: ['#fda4af', '#f9a8d4', '#f0abfc', '#fb7185']
     });
   }, 0));
   
@@ -66,7 +66,7 @@ function fireworksBurst(timerRefs: { current: ReturnType<typeof setTimeout>[] })
       ...defaults,
       particleCount: 80,
       origin: { x: randomInRange(0.7, 0.9), y: randomInRange(0.2, 0.4) },
-      colors: ['#FFD700', '#FFA500', '#FF6B6B', '#FFE66D']
+      colors: ['#ec4899', '#f472b6', '#fce7f3', '#fbcfe8']
     });
   }, 200));
   
@@ -75,18 +75,18 @@ function fireworksBurst(timerRefs: { current: ReturnType<typeof setTimeout>[] })
       ...defaults,
       particleCount: 120,
       origin: { x: 0.5, y: 0.3 },
-      colors: ['#FFD700', '#FFFFFF', '#C44AF5', '#4ADEBC']
+      colors: ['#FFD700', '#fda4af', '#f9a8d4', '#f0abfc']
     });
   }, 400));
 
-  // Star-shaped confetti
+  // Star-shaped confetti - gold for victory celebration
   timerRefs.current.push(setTimeout(() => {
     confetti({
       particleCount: 50,
       spread: 100,
       origin: { x: 0.5, y: 0.5 },
       shapes: ['star'],
-      colors: ['#FFD700', '#FFA500'],
+      colors: ['#FFD700', '#fb7185'],
       scalar: 1.5
     });
   }, 600));
@@ -132,7 +132,7 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
       fireworksBurst(timerRefs);
     }, 6000));
 
-    // Continuous confetti after reveal
+    // Continuous confetti after reveal - pink palette with gold accent
     timerRefs.current.push(setTimeout(() => {
       const duration = 4000;
       const animationEnd = Date.now() + duration;
@@ -146,14 +146,14 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
           angle: 60,
           spread: 55,
           origin: { x: 0 },
-          colors: ['#FFD93D', '#FF6B6B', '#C44AF5', '#4ADEBC']
+          colors: ['#fda4af', '#f9a8d4', '#f0abfc', '#FFD700']
         });
         confetti({
           particleCount: 2,
           angle: 120,
           spread: 55,
           origin: { x: 1 },
-          colors: ['#FFD93D', '#FF6B6B', '#C44AF5', '#4ADEBC']
+          colors: ['#ec4899', '#f472b6', '#fb7185', '#FFD700']
         });
       }, 80);
     }, 6500));
