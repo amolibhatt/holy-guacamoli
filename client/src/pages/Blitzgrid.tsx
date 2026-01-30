@@ -65,61 +65,70 @@ interface CategoryWithQuestions extends Category {
 
 const POINT_TIERS = [10, 20, 30, 40, 50];
 
-// Available themes for grids - sophisticated and playful
+// Available themes for grids - refined pastel aesthetics
 const GRID_THEMES = [
   { 
-    id: 'sports', name: 'Football', iconType: 'trophy' as const, 
-    background: 'linear-gradient(135deg, #064e3b 0%, #059669 25%, #10b981 50%, #34d399 75%, #065f46 100%)',
-    overlay: 'radial-gradient(ellipse at 30% 20%, rgba(52, 211, 153, 0.3) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(16, 185, 129, 0.2) 0%, transparent 50%)',
-    glow: '#34d399'
+    id: 'sports', name: 'Sports', iconType: 'trophy' as const, 
+    background: 'linear-gradient(145deg, #d1fae5 0%, #a7f3d0 50%, #6ee7b7 100%)',
+    overlay: 'radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.4) 0%, transparent 60%)',
+    glow: '#6ee7b7',
+    foreground: '#065f46'
   },
   { 
     id: 'birthday', name: 'Birthday', iconType: 'cake' as const, 
-    background: 'linear-gradient(135deg, #581c87 0%, #9333ea 20%, #c084fc 40%, #e879f9 60%, #f0abfc 80%, #a855f7 100%)',
-    overlay: 'radial-gradient(ellipse at 20% 30%, rgba(232, 121, 249, 0.4) 0%, transparent 40%), radial-gradient(ellipse at 80% 70%, rgba(192, 132, 252, 0.3) 0%, transparent 50%), radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 70%)',
-    glow: '#e879f9'
+    background: 'linear-gradient(145deg, #fce7f3 0%, #fbcfe8 50%, #f9a8d4 100%)',
+    overlay: 'radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.5) 0%, transparent 60%)',
+    glow: '#f9a8d4',
+    foreground: '#9d174d'
   },
   { 
     id: 'beach', name: 'Beach', iconType: 'umbrella' as const, 
-    background: 'linear-gradient(180deg, #0c4a6e 0%, #0284c7 20%, #38bdf8 45%, #7dd3fc 65%, #fef3c7 85%, #fde68a 100%)',
-    overlay: 'radial-gradient(ellipse at 80% 20%, rgba(251, 191, 36, 0.3) 0%, transparent 40%), radial-gradient(ellipse at 20% 60%, rgba(56, 189, 248, 0.2) 0%, transparent 50%)',
-    glow: '#38bdf8'
+    background: 'linear-gradient(145deg, #cffafe 0%, #a5f3fc 50%, #67e8f9 100%)',
+    overlay: 'radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.4) 0%, transparent 60%)',
+    glow: '#67e8f9',
+    foreground: '#155e75'
   },
   { 
     id: 'office', name: 'Office', iconType: 'briefcase' as const, 
-    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #334155 50%, #475569 75%, #1e293b 100%)',
-    overlay: 'radial-gradient(ellipse at 30% 30%, rgba(148, 163, 184, 0.15) 0%, transparent 50%), radial-gradient(ellipse at 70% 70%, rgba(100, 116, 139, 0.1) 0%, transparent 50%)',
-    glow: '#94a3b8'
+    background: 'linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 50%, #cbd5e1 100%)',
+    overlay: 'radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.5) 0%, transparent 60%)',
+    glow: '#94a3b8',
+    foreground: '#334155'
   },
   { 
     id: 'dogs', name: 'Dogs', iconType: 'dog' as const, 
-    background: 'linear-gradient(135deg, #78350f 0%, #b45309 20%, #f59e0b 45%, #fbbf24 65%, #fcd34d 85%, #d97706 100%)',
-    overlay: 'radial-gradient(ellipse at 25% 25%, rgba(251, 191, 36, 0.4) 0%, transparent 45%), radial-gradient(ellipse at 75% 75%, rgba(245, 158, 11, 0.3) 0%, transparent 50%)',
-    glow: '#fbbf24'
+    background: 'linear-gradient(145deg, #fef3c7 0%, #fde68a 50%, #fcd34d 100%)',
+    overlay: 'radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.4) 0%, transparent 60%)',
+    glow: '#fbbf24',
+    foreground: '#92400e'
   },
   { 
     id: 'cats', name: 'Cats', iconType: 'cat' as const, 
-    background: 'linear-gradient(135deg, #1e1b4b 0%, #3730a3 20%, #6366f1 40%, #818cf8 60%, #a5b4fc 80%, #4f46e5 100%)',
-    overlay: 'radial-gradient(ellipse at 20% 40%, rgba(165, 180, 252, 0.3) 0%, transparent 45%), radial-gradient(ellipse at 80% 60%, rgba(129, 140, 248, 0.25) 0%, transparent 50%)',
-    glow: '#a5b4fc'
+    background: 'linear-gradient(145deg, #ede9fe 0%, #ddd6fe 50%, #c4b5fd 100%)',
+    overlay: 'radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.5) 0%, transparent 60%)',
+    glow: '#a78bfa',
+    foreground: '#5b21b6'
   },
   { 
     id: 'space', name: 'Space', iconType: 'rocket' as const, 
-    background: 'linear-gradient(180deg, #020617 0%, #0f172a 20%, #1e1b4b 40%, #312e81 60%, #1e1b4b 80%, #0f172a 100%)',
-    overlay: 'radial-gradient(ellipse at 20% 20%, rgba(139, 92, 246, 0.3) 0%, transparent 40%), radial-gradient(ellipse at 80% 30%, rgba(236, 72, 153, 0.2) 0%, transparent 35%), radial-gradient(ellipse at 50% 80%, rgba(56, 189, 248, 0.15) 0%, transparent 45%)',
-    glow: '#8b5cf6'
+    background: 'linear-gradient(145deg, #1e1b4b 0%, #312e81 50%, #3730a3 100%)',
+    overlay: 'radial-gradient(ellipse at 30% 30%, rgba(139,92,246,0.3) 0%, transparent 60%)',
+    glow: '#8b5cf6',
+    foreground: '#e0e7ff'
   },
   { 
     id: 'music', name: 'Music', iconType: 'music' as const, 
-    background: 'linear-gradient(135deg, #4c0519 0%, #9f1239 20%, #e11d48 40%, #fb7185 60%, #fda4af 80%, #be123c 100%)',
-    overlay: 'radial-gradient(ellipse at 30% 25%, rgba(251, 113, 133, 0.4) 0%, transparent 45%), radial-gradient(ellipse at 70% 75%, rgba(225, 29, 72, 0.3) 0%, transparent 50%)',
-    glow: '#fb7185'
+    background: 'linear-gradient(145deg, #ffe4e6 0%, #fecdd3 50%, #fda4af 100%)',
+    overlay: 'radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.4) 0%, transparent 60%)',
+    glow: '#fb7185',
+    foreground: '#9f1239'
   },
   { 
     id: 'nature', name: 'Nature', iconType: 'leaf' as const, 
-    background: 'linear-gradient(180deg, #14532d 0%, #166534 20%, #22c55e 45%, #86efac 65%, #bbf7d0 80%, #16a34a 100%)',
-    overlay: 'radial-gradient(ellipse at 25% 30%, rgba(134, 239, 172, 0.35) 0%, transparent 45%), radial-gradient(ellipse at 75% 70%, rgba(34, 197, 94, 0.25) 0%, transparent 50%)',
-    glow: '#86efac'
+    background: 'linear-gradient(145deg, #dcfce7 0%, #bbf7d0 50%, #86efac 100%)',
+    overlay: 'radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.4) 0%, transparent 60%)',
+    glow: '#4ade80',
+    foreground: '#166534'
   },
 ] as const;
 
