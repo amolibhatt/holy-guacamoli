@@ -3220,7 +3220,7 @@ export default function Blitzgrid() {
       
       <div className="flex-1 container mx-auto px-4 py-8">
         {loadingGrids ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 rounded-2xl" />)}
           </div>
         ) : activeGrids.length === 0 ? (
