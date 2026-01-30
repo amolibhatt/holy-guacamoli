@@ -2366,16 +2366,10 @@ export default function Blitzgrid() {
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-2 border-slate-200/60 shadow-2xl">
               {(() => {
-                // Category color theming based on position
-                const categoryColors = [
-                  { bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-600', accent: 'bg-rose-500' },
-                  { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-600', accent: 'bg-amber-500' },
-                  { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-600', accent: 'bg-emerald-500' },
-                  { bg: 'bg-sky-50', border: 'border-sky-200', text: 'text-sky-600', accent: 'bg-sky-500' },
-                  { bg: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-600', accent: 'bg-violet-500' },
-                ];
+                // Use the same colors as the grid - from BOARD_COLORS order: rose, violet, amber, teal, sky
                 const categoryIndex = playCategories.findIndex(c => c.id === activeQuestion?.categoryId);
-                const colorTheme = categoryColors[categoryIndex] || categoryColors[0];
+                const colorName = BOARD_COLORS[categoryIndex] || 'rose';
+                const colorConfig = getBoardColorConfig(colorName);
                 const category = playCategories.find(c => c.id === activeQuestion?.categoryId);
                 const questionText = activeQuestion?.question || '';
                 const questionLength = questionText.length;
@@ -2429,13 +2423,13 @@ export default function Blitzgrid() {
                     </DialogHeader>
                     
                     {/* Question box with category info inside */}
-                    <div className={`py-4 px-4 my-2 ${colorTheme.bg} rounded-lg border ${colorTheme.border}`}>
+                    <div className={`py-4 px-4 my-2 ${colorConfig.light} rounded-lg border ${colorConfig.lightBorder}`}>
                       {/* Category name and description at top of question box */}
                       {category && (
                         <div className="text-center mb-3">
-                          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/60 ${colorTheme.border} border text-xs mb-1`}>
-                            <div className={`w-2 h-2 rounded-full ${colorTheme.accent}`} />
-                            <span className={`${colorTheme.text} font-semibold uppercase tracking-wide`}>
+                          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/60 ${colorConfig.lightBorder} border text-xs mb-1`}>
+                            <div className={`w-2 h-2 rounded-full ${colorConfig.bg}`} />
+                            <span className={`${colorConfig.accent} font-semibold uppercase tracking-wide`}>
                               {category.name}
                             </span>
                           </div>
