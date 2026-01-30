@@ -2984,14 +2984,14 @@ export default function Blitzgrid() {
           
           {/* Question Modal */}
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-2 border-violet-200/50 dark:border-violet-500/30 shadow-2xl shadow-violet-500/10">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-2 border-pink-200/50 dark:border-pink-500/30 shadow-2xl shadow-pink-500/10">
               <DialogHeader>
                 {/* Category Name and Description */}
                 {(() => {
                   const category = gridCategories.find(c => c.id === activeQuestion?.categoryId);
                   return category ? (
                     <div className="text-center mb-2">
-                      <p className="text-violet-600 dark:text-violet-300 text-sm font-semibold uppercase tracking-wider">
+                      <p className="text-pink-600 dark:text-pink-300 text-sm font-semibold uppercase tracking-wider">
                         {category.name}
                       </p>
                       {category.description && (
@@ -3110,10 +3110,10 @@ export default function Blitzgrid() {
               
               {/* Buzz Queue - players who buzzed in order */}
               {buzzQueue.length > 0 && !showAnswer && (
-                <div className="bg-violet-50 dark:bg-indigo-900/50 border border-violet-200 dark:border-indigo-600 rounded-lg p-4">
+                <div className="bg-pink-50 dark:bg-pink-900/50 border border-pink-200 dark:border-pink-600 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Zap className="w-4 h-4 text-violet-500 dark:text-indigo-400" />
-                    <span className="text-sm text-violet-700 dark:text-indigo-300 font-medium">Buzz Order</span>
+                    <Zap className="w-4 h-4 text-pink-500 dark:text-pink-400" />
+                    <span className="text-sm text-pink-700 dark:text-pink-300 font-medium">Buzz Order</span>
                   </div>
                   <div className="space-y-2">
                     {buzzQueue.map((buzz, index) => {
@@ -3664,7 +3664,7 @@ export default function Blitzgrid() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Grid3X3 className="w-6 h-6 text-purple-500" />
+                <Grid3X3 className="w-6 h-6 text-pink-500" />
                 Choose Next Grid
               </h1>
               <p className="text-muted-foreground text-sm">Select a grid to continue playing</p>
@@ -3726,20 +3726,20 @@ export default function Blitzgrid() {
 
   // Main grid list view
   return (
-    <div className="min-h-screen bg-gradient-to-b from-violet-50 via-background to-background dark:from-violet-950/30 dark:via-background" data-testid="page-blitzgrid">
+    <div className="min-h-screen bg-gradient-to-b from-rose-50 via-background to-background dark:from-rose-950/30 dark:via-background" data-testid="page-blitzgrid">
       <AppHeader title="Blitzgrid" backHref="/" showAdminButton adminHref="/admin/games" />
       
       {/* Hero Section */}
-      <div className="relative overflow-hidden border-b border-violet-100 dark:border-violet-900/50">
-        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-purple-500/10 to-pink-500/5" />
+      <div className="relative overflow-hidden border-b border-pink-100 dark:border-pink-900/50">
+        <div className="absolute inset-0 bg-gradient-to-r from-rose-500/5 via-pink-500/10 to-fuchsia-500/5" />
         <div className="container mx-auto px-4 py-8 relative">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-400 via-pink-400 to-fuchsia-400 flex items-center justify-center shadow-lg shadow-pink-400/25">
                 <Grid3X3 className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 dark:from-violet-400 dark:to-purple-400 bg-clip-text text-transparent">
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 dark:from-rose-400 dark:via-pink-400 dark:to-fuchsia-400 bg-clip-text text-transparent">
                   Blitzgrid
                 </h1>
                 <p className="text-muted-foreground">
@@ -3749,7 +3749,7 @@ export default function Blitzgrid() {
             </div>
             <Button 
               onClick={() => setShowNewGridForm(true)} 
-              className="bg-gradient-to-r from-violet-500 to-purple-600 shadow-lg shadow-violet-500/25"
+              className="bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-400 shadow-lg shadow-pink-400/25"
               data-testid="button-new-grid"
             >
               <Plus className="w-4 h-4 mr-2" /> New Grid
@@ -3827,9 +3827,9 @@ export default function Blitzgrid() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <Card className="border-2 border-dashed border-violet-200 dark:border-violet-800 bg-gradient-to-br from-violet-50/50 to-purple-50/50 dark:from-violet-950/20 dark:to-purple-950/20">
+            <Card className="border-2 border-dashed border-pink-200 dark:border-pink-800 bg-gradient-to-br from-rose-50/50 to-pink-50/50 dark:from-rose-950/20 dark:to-pink-950/20">
               <CardContent className="py-16 text-center">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-violet-500/25">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-400 via-pink-400 to-fuchsia-400 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-400/25">
                   <Grid3X3 className="w-10 h-10 text-white" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Create Your First Grid</h3>
@@ -3838,7 +3838,7 @@ export default function Blitzgrid() {
                 </p>
                 <Button 
                   onClick={() => setShowNewGridForm(true)} 
-                  className="bg-gradient-to-r from-violet-500 to-purple-600 shadow-lg shadow-violet-500/25"
+                  className="bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-400 shadow-lg shadow-pink-400/25"
                   data-testid="button-create-first-grid"
                 >
                   <Plus className="w-4 h-4 mr-2" /> Create Grid
@@ -3864,7 +3864,7 @@ export default function Blitzgrid() {
                   <Card
                     className={`group hover-elevate transition-all border-2 overflow-hidden ${
                       grid.isActive 
-                        ? 'cursor-pointer border-violet-200 dark:border-violet-800 hover:border-violet-400 dark:hover:border-violet-600 hover:shadow-xl hover:shadow-violet-500/10' 
+                        ? 'cursor-pointer border-pink-200 dark:border-pink-800 hover:border-pink-400 dark:hover:border-pink-600 hover:shadow-xl hover:shadow-pink-500/10' 
                         : 'opacity-70 border-muted'
                     }`}
                     onClick={() => {
@@ -3944,7 +3944,7 @@ export default function Blitzgrid() {
                               {25 - grid.questionCount} more needed
                             </Badge>
                           )}
-                          <ChevronRight className={`w-4 h-4 transition-transform ${grid.isActive ? 'text-violet-500 group-hover:translate-x-1' : 'text-muted-foreground/50'}`} />
+                          <ChevronRight className={`w-4 h-4 transition-transform ${grid.isActive ? 'text-pink-500 group-hover:translate-x-1' : 'text-muted-foreground/50'}`} />
                         </div>
                       </div>
                     </CardContent>
