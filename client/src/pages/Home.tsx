@@ -210,18 +210,6 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
           >
-            {/* System greeting */}
-            <motion.div 
-              className="mb-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1, duration: 0.4 }}
-            >
-              <span className="text-white/40 text-sm md:text-base font-mono tracking-widest uppercase">
-                // SYSTEM ACTIVE
-              </span>
-            </motion.div>
-            
             {/* Personal greeting - the soul */}
             <motion.h1 
               className="text-4xl md:text-5xl lg:text-6xl font-black mb-4 tracking-tight"
