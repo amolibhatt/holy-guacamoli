@@ -69,19 +69,20 @@ export function AppHeader({
               </Link>
             )
           )}
-          <Link href="/" className="flex flex-col">
+          <Link href="/">
             <Logo size="md" />
-            {(title || subtitle) && (
-              <motion.span 
-                className="text-xs text-muted-foreground tracking-wide ml-11"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                {title}{subtitle ? ` - ${subtitle}` : ''}
-              </motion.span>
-            )}
           </Link>
+          
+          {/* Page title - separate from logo */}
+          {title && (
+            <div className="flex items-center gap-2 ml-2">
+              <div className="w-px h-6 bg-border" />
+              <h1 className="text-lg font-semibold text-foreground">
+                {title}
+                {subtitle && <span className="text-muted-foreground font-normal ml-2">- {subtitle}</span>}
+              </h1>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-1">
