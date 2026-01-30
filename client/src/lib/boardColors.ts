@@ -12,6 +12,15 @@ export const boardColorConfig: Record<BoardColor, {
   tileText: string;
   progress: string;
   bg: string;
+  badge: string;
+  badgeText: string;
+  light: string;
+  lightBorder: string;
+  lightText: string;
+  icon: string;
+  dialogBorder: string;
+  accent: string;
+  accentDark: string;
 }> = {
   violet: {
     card: 'from-violet-300/30 to-violet-400/15 border-violet-300/50',
@@ -24,6 +33,15 @@ export const boardColorConfig: Record<BoardColor, {
     tileText: 'text-violet-600 dark:text-violet-300',
     progress: 'bg-violet-400',
     bg: 'bg-violet-400',
+    badge: 'bg-white/90 border-white/50',
+    badgeText: 'text-violet-700',
+    light: 'bg-violet-50 dark:bg-violet-900/50',
+    lightBorder: 'border-violet-300 dark:border-violet-600',
+    lightText: 'text-violet-700 dark:text-violet-300',
+    icon: 'text-violet-500 dark:text-violet-400',
+    dialogBorder: 'border-violet-200/50 dark:border-violet-500/30',
+    accent: 'text-violet-600 dark:text-violet-300',
+    accentDark: 'text-violet-800 dark:text-violet-100',
   },
   fuchsia: {
     card: 'from-fuchsia-300/30 to-fuchsia-400/15 border-fuchsia-300/50',
@@ -36,6 +54,15 @@ export const boardColorConfig: Record<BoardColor, {
     tileText: 'text-fuchsia-600 dark:text-fuchsia-300',
     progress: 'bg-fuchsia-400',
     bg: 'bg-fuchsia-400',
+    badge: 'bg-white/90 border-white/50',
+    badgeText: 'text-fuchsia-700',
+    light: 'bg-fuchsia-50 dark:bg-fuchsia-900/50',
+    lightBorder: 'border-fuchsia-300 dark:border-fuchsia-600',
+    lightText: 'text-fuchsia-700 dark:text-fuchsia-300',
+    icon: 'text-fuchsia-500 dark:text-fuchsia-400',
+    dialogBorder: 'border-fuchsia-200/50 dark:border-fuchsia-500/30',
+    accent: 'text-fuchsia-600 dark:text-fuchsia-300',
+    accentDark: 'text-fuchsia-800 dark:text-fuchsia-100',
   },
   amber: {
     card: 'from-amber-300/30 to-amber-400/15 border-amber-300/50',
@@ -48,6 +75,15 @@ export const boardColorConfig: Record<BoardColor, {
     tileText: 'text-amber-600 dark:text-amber-300',
     progress: 'bg-amber-400',
     bg: 'bg-amber-400',
+    badge: 'bg-white/90 border-white/50',
+    badgeText: 'text-amber-700',
+    light: 'bg-amber-50 dark:bg-amber-900/50',
+    lightBorder: 'border-amber-300 dark:border-amber-600',
+    lightText: 'text-amber-700 dark:text-amber-300',
+    icon: 'text-amber-500 dark:text-amber-400',
+    dialogBorder: 'border-amber-200/50 dark:border-amber-500/30',
+    accent: 'text-amber-600 dark:text-amber-300',
+    accentDark: 'text-amber-800 dark:text-amber-100',
   },
   teal: {
     card: 'from-teal-300/30 to-teal-400/15 border-teal-300/50',
@@ -60,6 +96,15 @@ export const boardColorConfig: Record<BoardColor, {
     tileText: 'text-teal-600 dark:text-teal-300',
     progress: 'bg-teal-400',
     bg: 'bg-teal-400',
+    badge: 'bg-white/90 border-white/50',
+    badgeText: 'text-teal-700',
+    light: 'bg-teal-50 dark:bg-teal-900/50',
+    lightBorder: 'border-teal-300 dark:border-teal-600',
+    lightText: 'text-teal-700 dark:text-teal-300',
+    icon: 'text-teal-500 dark:text-teal-400',
+    dialogBorder: 'border-teal-200/50 dark:border-teal-500/30',
+    accent: 'text-teal-600 dark:text-teal-300',
+    accentDark: 'text-teal-800 dark:text-teal-100',
   },
   sky: {
     card: 'from-sky-300/30 to-sky-400/15 border-sky-300/50',
@@ -72,6 +117,15 @@ export const boardColorConfig: Record<BoardColor, {
     tileText: 'text-sky-600 dark:text-sky-300',
     progress: 'bg-sky-400',
     bg: 'bg-sky-400',
+    badge: 'bg-white/90 border-white/50',
+    badgeText: 'text-sky-700',
+    light: 'bg-sky-50 dark:bg-sky-900/50',
+    lightBorder: 'border-sky-300 dark:border-sky-600',
+    lightText: 'text-sky-700 dark:text-sky-300',
+    icon: 'text-sky-500 dark:text-sky-400',
+    dialogBorder: 'border-sky-200/50 dark:border-sky-500/30',
+    accent: 'text-sky-600 dark:text-sky-300',
+    accentDark: 'text-sky-800 dark:text-sky-100',
   },
 };
 
