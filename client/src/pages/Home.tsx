@@ -50,39 +50,39 @@ const GAME_CONFIG: Record<string, {
 }> = {
   blitzgrid: {
     icon: Grid3X3,
-    gradient: "from-fuchsia-400 to-fuchsia-500",
-    bgGradient: "from-fuchsia-100/50 to-fuchsia-50/30",
-    shadowColor: "shadow-fuchsia-300/40",
+    gradient: "from-rose-300 via-pink-300 to-fuchsia-300",
+    bgGradient: "from-rose-100/50 via-pink-100/40 to-fuchsia-100/30",
+    shadowColor: "shadow-pink-300/40",
     route: "/host/blitzgrid",
-    accentColor: "#D946EF",
-    iconBg: "bg-gradient-to-br from-fuchsia-400 to-fuchsia-500",
+    accentColor: "#F9A8D4",
+    iconBg: "bg-gradient-to-br from-rose-300 via-pink-300 to-fuchsia-300",
     tagline: "The Grid Awaits",
     description: "5 categories. 25 questions. One champion. Race against the clock to decode clues and dominate the board.",
-    borderColor: "border-fuchsia-200/60",
+    borderColor: "border-pink-200/60",
   },
   sequence_squeeze: {
     icon: ListOrdered,
-    gradient: "from-teal-400 to-teal-500",
-    bgGradient: "from-teal-100/50 to-teal-50/30",
+    gradient: "from-emerald-300 via-teal-300 to-cyan-300",
+    bgGradient: "from-emerald-100/50 via-teal-100/40 to-cyan-100/30",
     shadowColor: "shadow-teal-300/40",
     route: "/host/genetic-sort",
-    accentColor: "#14B8A6",
-    iconBg: "bg-gradient-to-br from-teal-400 to-teal-500",
+    accentColor: "#5EEAD4",
+    iconBg: "bg-gradient-to-br from-emerald-300 via-teal-300 to-cyan-300",
     tagline: "Order From Chaos",
     description: "Four items. One correct sequence. The fastest brain wins. Can you crack the pattern before anyone else?",
     borderColor: "border-teal-200/60",
   },
   psyop: {
     icon: Brain,
-    gradient: "from-violet-400 to-violet-500",
-    bgGradient: "from-violet-100/50 to-violet-50/30",
-    shadowColor: "shadow-violet-300/40",
+    gradient: "from-violet-300 via-purple-300 to-indigo-300",
+    bgGradient: "from-violet-100/50 via-purple-100/40 to-indigo-100/30",
+    shadowColor: "shadow-purple-300/40",
     route: "/host/psyop",
-    accentColor: "#8B5CF6",
-    iconBg: "bg-gradient-to-br from-violet-400 to-violet-500",
+    accentColor: "#C4B5FD",
+    iconBg: "bg-gradient-to-br from-violet-300 via-purple-300 to-indigo-300",
     tagline: "Truth or Bluff",
     description: "Craft the perfect lie. Fool your friends. Sniff out the truth. The best deceiver takes it all.",
-    borderColor: "border-violet-200/60",
+    borderColor: "border-purple-200/60",
   },
 };
 
@@ -283,6 +283,14 @@ export default function Home() {
                       }}
                       data-testid={`button-game-${game.slug}`}
                     >
+                      {/* Decorative semi-circle in top-right corner */}
+                      <div 
+                        className={`absolute -top-16 -right-16 w-40 h-40 rounded-full bg-gradient-to-br ${config.gradient} opacity-20`}
+                      />
+                      <div 
+                        className={`absolute -top-8 -right-8 w-24 h-24 rounded-full bg-gradient-to-br ${config.gradient} opacity-15`}
+                      />
+                      
                       {/* Gradient background on hover */}
                       <motion.div 
                         className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${config.bgGradient}`}
@@ -378,7 +386,7 @@ export default function Home() {
       <footer className="relative z-10 border-t border-border/10 px-6 py-6">
         <div className="max-w-5xl mx-auto flex items-center justify-center">
           <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-1">
-            made with <span className="text-fuchsia-500">♥</span> by <span className="font-semibold bg-gradient-to-r from-fuchsia-600 to-violet-600 bg-clip-text text-transparent">Amoli</span>
+            made with <span className="text-pink-500">♥</span> by <span className="font-semibold bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 bg-clip-text text-transparent">Amoli</span>
           </p>
         </div>
       </footer>
@@ -388,7 +396,7 @@ export default function Home() {
         <DialogContent className="max-w-md bg-card/95 backdrop-blur-xl border-border/50">
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-3 text-xl font-bold">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-400 to-violet-400 flex items-center justify-center shadow-lg shadow-fuchsia-300/30">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-300 via-pink-300 to-fuchsia-300 flex items-center justify-center shadow-lg shadow-pink-300/30">
                 <Crown className="w-5 h-5 text-white" />
               </div>
               How to Host
@@ -406,12 +414,12 @@ export default function Home() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-fuchsia-100 to-violet-100 border border-fuchsia-200/50 flex items-center justify-center shrink-0">
-                  <step.icon className="w-5 h-5 text-fuchsia-600" />
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-rose-100 via-pink-100 to-fuchsia-100 border border-pink-200/50 flex items-center justify-center shrink-0">
+                  <step.icon className="w-5 h-5 text-pink-600" />
                 </div>
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                    <span className="text-[10px] font-bold text-fuchsia-600 uppercase tracking-widest">
+                    <span className="text-[10px] font-bold text-pink-600 uppercase tracking-widest">
                       Step {index + 1}
                     </span>
                   </div>
@@ -426,7 +434,7 @@ export default function Home() {
               Got It
             </Button>
             <Button 
-              className="flex-1 gap-2 bg-fuchsia-500 text-white shadow-lg shadow-fuchsia-300/30" 
+              className="flex-1 gap-2 bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-400 text-white shadow-lg shadow-pink-300/30" 
               onClick={handleCloseGuide} 
               data-testid="button-start-hosting"
             >
