@@ -1947,6 +1947,125 @@ export async function registerRoutes(
     }
   });
 
+  // PsyOp API routes
+  app.get("/api/psyop/questions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const questions = await storage.getPsyopQuestions(userId, role);
+      res.json(questions);
+    } catch (err) {
+      console.error("Error getting PsyOp questions:", err);
+      res.status(500).json({ message: "Failed to get questions" });
+    }
+  });
+
+  app.post("/api/psyop/questions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { factText, correctAnswer, category, isActive } = req.body;
+      
+      if (!factText || typeof factText !== 'string' || factText.trim().length === 0) {
+        return res.status(400).json({ message: "Fact text is required" });
+      }
+      if (!factText.includes('[BLANK]')) {
+        return res.status(400).json({ message: "Fact text must contain [BLANK] placeholder" });
+      }
+      if (!correctAnswer || typeof correctAnswer !== 'string' || correctAnswer.trim().length === 0) {
+        return res.status(400).json({ message: "Correct answer is required" });
+      }
+      if (factText.length > 500) {
+        return res.status(400).json({ message: "Fact text too long (max 500 chars)" });
+      }
+      if (correctAnswer.length > 100) {
+        return res.status(400).json({ message: "Answer too long (max 100 chars)" });
+      }
+
+      const question = await storage.createPsyopQuestion({
+        userId,
+        factText: factText.trim(),
+        correctAnswer: correctAnswer.trim(),
+        category: category?.trim() || null,
+        isActive: isActive ?? true,
+      });
+      res.json(question);
+    } catch (err) {
+      console.error("Error creating PsyOp question:", err);
+      res.status(500).json({ message: "Failed to create question" });
+    }
+  });
+
+  app.delete("/api/psyop/questions/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      
+      const deleted = await storage.deletePsyopQuestion(id, userId, role);
+      if (!deleted) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting PsyOp question:", err);
+      res.status(500).json({ message: "Failed to delete question" });
+    }
+  });
+
+  app.post("/api/psyop/questions/bulk", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { questions } = req.body;
+      
+      if (!Array.isArray(questions) || questions.length === 0) {
+        return res.status(400).json({ message: "Questions array is required" });
+      }
+      if (questions.length > 50) {
+        return res.status(400).json({ message: "Maximum 50 questions per import" });
+      }
+
+      const results: { success: number; errors: string[] } = { success: 0, errors: [] };
+      
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
+        try {
+          if (!q.factText || !q.factText.includes('[BLANK]')) {
+            results.errors.push(`Row ${i + 1}: Missing [BLANK] placeholder`);
+            continue;
+          }
+          if (!q.correctAnswer) {
+            results.errors.push(`Row ${i + 1}: Missing correct answer`);
+            continue;
+          }
+          if (q.factText.length > 500) {
+            results.errors.push(`Row ${i + 1}: Fact text too long (max 500 chars)`);
+            continue;
+          }
+          if (q.correctAnswer.length > 100) {
+            results.errors.push(`Row ${i + 1}: Answer too long (max 100 chars)`);
+            continue;
+          }
+          
+          await storage.createPsyopQuestion({
+            userId,
+            factText: q.factText.trim(),
+            correctAnswer: q.correctAnswer.trim(),
+            category: q.category?.trim() || null,
+            isActive: true,
+          });
+          results.success++;
+        } catch (err) {
+          results.errors.push(`Row ${i + 1}: Database error`);
+        }
+      }
+      
+      res.json(results);
+    } catch (err) {
+      console.error("Error bulk importing PsyOp questions:", err);
+      res.status(500).json({ message: "Failed to import questions" });
+    }
+  });
+
   // Excel Export - Download all boards with categories and questions
   app.get("/api/export/excel", isAuthenticated, async (req, res) => {
     try {
@@ -2972,6 +3091,7 @@ export async function registerRoutes(
     boardId: number | null;
     completedQuestions: Set<number>;
     sessionId: number | null;
+    gameMode?: 'buzzer' | 'psyop';
   }
 
   const rooms = new Map<string, Room>();
@@ -3578,6 +3698,144 @@ export async function registerRoutes(
             wsToRoom.delete(ws);
             ws.send(JSON.stringify({ type: 'room:closed', reason: 'Room closed' }));
             console.log(`[WebSocket] Host closed room ${room.code}`);
+            break;
+          }
+
+          // PsyOp Game Events
+          case 'psyop:host:create': {
+            const code = generateRoomCode();
+            let sessionId: number | null = null;
+            
+            try {
+              const session = await storage.createSession({
+                code,
+                hostId: data.hostId?.toString() || 'anonymous',
+                state: 'active',
+              });
+              sessionId = session.id;
+            } catch (err) {
+              console.error('[WebSocket] Failed to create PsyOp session:', err);
+            }
+
+            const room: Room = {
+              code,
+              hostId: data.hostId?.toString() || 'anonymous',
+              hostWs: ws,
+              players: new Map(),
+              buzzerLocked: true,
+              buzzQueue: [],
+              boardId: null,
+              completedQuestions: new Set(),
+              sessionId,
+              gameMode: 'psyop',
+            };
+            rooms.set(code, room);
+            wsToRoom.set(ws, { roomCode: code, isHost: true });
+
+            ws.send(JSON.stringify({
+              type: 'psyop:room:created',
+              code,
+              sessionId,
+            }));
+            console.log(`[WebSocket] PsyOp room ${code} created`);
+            break;
+          }
+
+          case 'psyop:start:submission': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                sendToPlayer(player, {
+                  type: 'psyop:submission:start',
+                  question: data.question,
+                  deadline: data.deadline,
+                });
+              }
+            });
+            break;
+          }
+
+          case 'psyop:submit:lie': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            const player = room.players.get(mapping.playerId!);
+            if (!player) break;
+
+            sendToHost(room, {
+              type: 'psyop:submission',
+              playerId: player.id,
+              playerName: player.name,
+              playerAvatar: player.avatar,
+              lieText: data.lieText,
+            });
+            break;
+          }
+
+          case 'psyop:start:voting': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                const filteredOptions = data.options.filter((o: { id: string }) => o.id !== player.id);
+                sendToPlayer(player, {
+                  type: 'psyop:voting:start',
+                  options: filteredOptions,
+                  deadline: data.deadline,
+                });
+              }
+            });
+            break;
+          }
+
+          case 'psyop:submit:vote': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            const player = room.players.get(mapping.playerId!);
+            if (!player) break;
+
+            sendToHost(room, {
+              type: 'psyop:vote',
+              voterId: player.id,
+              voterName: player.name,
+              votedForId: data.votedForId,
+            });
+            break;
+          }
+
+          case 'psyop:reveal': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                const playerScore = data.scores?.[player.id] || 0;
+                sendToPlayer(player, {
+                  type: 'psyop:revealed',
+                  correctAnswer: data.correctAnswer,
+                  yourScore: playerScore,
+                });
+              }
+            });
             break;
           }
 

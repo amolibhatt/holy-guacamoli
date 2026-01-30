@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles, Users, ChevronUp, ChevronDown, Volume2, VolumeX, Lock, Grid3X3, Hand, Flame, Laugh, CircleDot, ThumbsUp } from "lucide-react";
+import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles, Users, ChevronUp, ChevronDown, Volume2, VolumeX, Lock, Grid3X3, Hand, Flame, Laugh, CircleDot, ThumbsUp, Eye } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { soundManager } from "@/lib/sounds";
@@ -75,6 +75,15 @@ export default function PlayerPage() {
   const [hostPickingGrid, setHostPickingGrid] = useState(false);
   const [currentGridName, setCurrentGridName] = useState<string | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(soundManager.isEnabled());
+  const [gameMode, setGameMode] = useState<"buzzer" | "psyop">("buzzer");
+  const [psyopPhase, setPsyopPhase] = useState<"idle" | "submitting" | "voting" | "revealed">("idle");
+  const [psyopQuestion, setPsyopQuestion] = useState<{ id: number; factText: string } | null>(null);
+  const [psyopOptions, setPsyopOptions] = useState<Array<{ id: string; text: string }>>([]);
+  const [psyopDeadline, setPsyopDeadline] = useState<number | null>(null);
+  const [psyopSubmitted, setPsyopSubmitted] = useState(false);
+  const [psyopVoted, setPsyopVoted] = useState(false);
+  const [psyopLieText, setPsyopLieText] = useState("");
+  const [psyopCorrectAnswer, setPsyopCorrectAnswer] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -211,6 +220,13 @@ export default function PlayerPage() {
           });
           break;
         case "buzzer:unlocked":
+          setGameMode("buzzer");
+          setPsyopPhase("idle");
+          setPsyopQuestion(null);
+          setPsyopOptions([]);
+          setPsyopSubmitted(false);
+          setPsyopVoted(false);
+          setPsyopCorrectAnswer(null);
           setBuzzerLocked(false);
           setHasBuzzed(false);
           setBuzzPosition(null);
@@ -277,6 +293,41 @@ export default function PlayerPage() {
             if (data.score !== undefined) setScore(data.score);
             setLocation(`/play/sequence/${roomCode.toUpperCase()}`);
           }
+          break;
+        case "psyop:submission:start":
+          setGameMode("psyop");
+          setBuzzerLocked(true);
+          setHasBuzzed(false);
+          setBuzzPosition(null);
+          setFeedback(null);
+          setPsyopPhase("submitting");
+          setPsyopQuestion(data.question);
+          setPsyopDeadline(data.deadline);
+          setPsyopSubmitted(false);
+          break;
+        case "psyop:voting:start":
+          setGameMode("psyop");
+          setPsyopPhase("voting");
+          setPsyopOptions(data.options || []);
+          setPsyopDeadline(data.deadline);
+          setPsyopVoted(false);
+          break;
+        case "psyop:revealed":
+          setPsyopPhase("revealed");
+          setPsyopCorrectAnswer(data.correctAnswer);
+          if (data.yourScore && data.yourScore > 0) {
+            setScore(prev => prev + data.yourScore);
+            toast({
+              title: `+${data.yourScore} points!`,
+              description: data.yourScore >= 10 ? "You found the truth!" : "Your lie fooled someone!",
+            });
+          }
+          break;
+        case "psyop:ended":
+          setGameMode("buzzer");
+          setPsyopPhase("idle");
+          setPsyopQuestion(null);
+          setPsyopOptions([]);
           break;
       }
       } catch { /* ignore parse errors */ }
@@ -623,7 +674,147 @@ export default function PlayerPage() {
 
       <main className="flex-1 flex items-center justify-center p-4">
         <AnimatePresence mode="wait">
-          {hostPickingGrid ? (
+          {gameMode === "psyop" && psyopPhase === "submitting" && psyopQuestion ? (
+            <motion.div
+              key="psyop-submit"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="w-full max-w-md space-y-6"
+            >
+              <Card className="border-purple-500/30">
+                <div className="p-6 space-y-4">
+                  <div className="text-center">
+                    <h2 className="text-lg font-bold mb-2">Fill in the blank:</h2>
+                    <p className="text-xl leading-relaxed">
+                      {psyopQuestion.factText.includes('[BLANK]') ? (
+                        <>
+                          {psyopQuestion.factText.split('[BLANK]')[0]}
+                          <span className="px-2 py-1 mx-1 rounded bg-purple-500/20 text-purple-600 dark:text-purple-400 font-bold">______</span>
+                          {psyopQuestion.factText.split('[BLANK]')[1]}
+                        </>
+                      ) : psyopQuestion.factText}
+                    </p>
+                  </div>
+
+                  {psyopSubmitted ? (
+                    <div className="text-center py-8">
+                      <motion.div
+                        animate={{ scale: [1, 1.1, 1] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                      >
+                        <Sparkles className="w-16 h-16 mx-auto text-purple-500 mb-4" />
+                      </motion.div>
+                      <p className="text-lg font-medium">Lie submitted!</p>
+                      <p className="text-muted-foreground text-sm">Waiting for others...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <Input
+                        value={psyopLieText}
+                        onChange={(e) => setPsyopLieText(e.target.value)}
+                        placeholder="Enter a believable lie..."
+                        className="text-lg"
+                        maxLength={100}
+                        data-testid="input-psyop-lie"
+                      />
+                      <Button
+                        onClick={() => {
+                          if (psyopLieText.trim() && wsRef.current) {
+                            wsRef.current.send(JSON.stringify({
+                              type: "psyop:submit:lie",
+                              lieText: psyopLieText.trim(),
+                            }));
+                            setPsyopSubmitted(true);
+                            setPsyopLieText("");
+                          }
+                        }}
+                        disabled={!psyopLieText.trim()}
+                        className="w-full gap-2"
+                        data-testid="button-submit-lie"
+                      >
+                        <Eye className="w-4 h-4" />
+                        Submit Lie
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </Card>
+            </motion.div>
+          ) : gameMode === "psyop" && psyopPhase === "voting" && psyopOptions.length > 0 ? (
+            <motion.div
+              key="psyop-vote"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="w-full max-w-md space-y-4"
+            >
+              <div className="text-center mb-4">
+                <h2 className="text-lg font-bold">Which is the truth?</h2>
+                <p className="text-muted-foreground text-sm">Tap the answer you think is real</p>
+              </div>
+
+              {psyopVoted ? (
+                <div className="text-center py-8">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Clock className="w-16 h-16 mx-auto text-purple-500 mb-4" />
+                  </motion.div>
+                  <p className="text-lg font-medium">Vote cast!</p>
+                  <p className="text-muted-foreground text-sm">Waiting for reveal...</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {psyopOptions.map((option, i) => (
+                    <motion.button
+                      key={option.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      onClick={() => {
+                        if (wsRef.current) {
+                          wsRef.current.send(JSON.stringify({
+                            type: "psyop:submit:vote",
+                            votedForId: option.id,
+                          }));
+                          setPsyopVoted(true);
+                        }
+                      }}
+                      className="w-full p-4 border rounded-lg text-left hover-elevate bg-card"
+                      data-testid={`button-vote-${option.id}`}
+                    >
+                      <span className="font-bold mr-2 text-purple-600 dark:text-purple-400">
+                        {String.fromCharCode(65 + i)}.
+                      </span>
+                      {option.text}
+                    </motion.button>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          ) : gameMode === "psyop" && psyopPhase === "revealed" && psyopCorrectAnswer ? (
+            <motion.div
+              key="psyop-revealed"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center"
+            >
+              <motion.div
+                animate={{ rotate: [0, -5, 5, 0] }}
+                transition={{ duration: 0.5, repeat: 2 }}
+              >
+                <Trophy className="w-24 h-24 mx-auto text-yellow-500 mb-4" />
+              </motion.div>
+              <h2 className="text-2xl font-bold mb-2">The truth was:</h2>
+              <p className="text-3xl font-bold text-green-600 dark:text-green-400 mb-4">
+                {psyopCorrectAnswer}
+              </p>
+              <p className="text-muted-foreground">Waiting for next question...</p>
+            </motion.div>
+          ) : hostPickingGrid ? (
             <motion.div
               key="picking-grid"
               initial={{ opacity: 0, scale: 0.9 }}

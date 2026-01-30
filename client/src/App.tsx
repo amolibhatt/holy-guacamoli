@@ -19,6 +19,8 @@ const SuperAdmin = lazy(() => import("@/pages/SuperAdmin"));
 const GeneticSort = lazy(() => import("@/pages/SequenceSqueeze"));
 const GeneticSortPlayer = lazy(() => import("@/pages/SequencePlayer"));
 const GeneticSortAdmin = lazy(() => import("@/pages/GeneticSortAdmin"));
+const PsyOpAdmin = lazy(() => import("@/pages/PsyOpAdmin"));
+const PsyOpHost = lazy(() => import("@/pages/PsyOpHost"));
 const GameHistory = lazy(() => import("@/pages/GameHistory"));
 const Blitzgrid = lazy(() => import("@/pages/Blitzgrid"));
 
@@ -49,6 +51,8 @@ function Router() {
         <Route path="/host/genetic-sort" component={GeneticSort} />
         <Route path="/host/sequence-squeeze" component={GeneticSort} />
         <Route path="/admin/genetic-sort" component={GeneticSortAdmin} />
+        <Route path="/admin/psyop" component={PsyOpAdmin} />
+        <Route path="/host/psyop" component={PsyOpHost} />
         <Route path="/sequence/:code?" component={GeneticSortPlayer} />
         <Route path="/host/blitzgrid" component={Blitzgrid} />
         <Route component={NotFound} />
