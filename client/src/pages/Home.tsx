@@ -156,33 +156,8 @@ export default function Home() {
     return <LandingPage />;
   }
 
-  // Floating orb component for cosmic background
-  const FloatingOrb = ({ color, size, delay, duration, x, y }: { color: string, size: number, delay: number, duration: number, x: string, y: string }) => (
-    <motion.div
-      className={`absolute rounded-full blur-3xl opacity-30 pointer-events-none ${color}`}
-      style={{ width: size, height: size, left: x, top: y }}
-      animate={{ 
-        y: [0, -30, 0, 30, 0],
-        x: [0, 20, 0, -20, 0],
-        scale: [1, 1.1, 1, 0.9, 1],
-      }}
-      transition={{ duration, delay, repeat: Infinity, ease: "easeInOut" }}
-    />
-  );
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 flex flex-col overflow-hidden relative">
-      {/* Animated background orbs */}
-      <FloatingOrb color="bg-violet-600" size={350} delay={0} duration={8} x="5%" y="15%" />
-      <FloatingOrb color="bg-fuchsia-600" size={280} delay={2} duration={10} x="75%" y="5%" />
-      <FloatingOrb color="bg-amber-500" size={220} delay={4} duration={9} x="85%" y="55%" />
-      <FloatingOrb color="bg-teal-500" size={300} delay={1} duration={11} x="0%" y="65%" />
-      <FloatingOrb color="bg-sky-500" size={250} delay={3} duration={7} x="55%" y="75%" />
-      <FloatingOrb color="bg-rose-500" size={200} delay={5} duration={8} x="40%" y="10%" />
-      
-      {/* Grid pattern overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px] pointer-events-none" />
-      
+    <div className="min-h-screen bg-background flex flex-col overflow-hidden relative">
       <AppHeader 
         showAdminButton={true}
         showHelpButton={true}
@@ -190,12 +165,12 @@ export default function Home() {
         onHelpClick={() => setShowGuide(true)}
       />
 
-      <main className="flex-1 px-4 md:px-6 py-10 overflow-y-auto relative z-10">
+      <main className="flex-1 px-4 md:px-6 py-10 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
           
           {/* Hero Section */}
           <motion.section 
-            className="text-center mb-16"
+            className="text-center mb-12"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
@@ -207,31 +182,31 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.5 }}
             >
-              <span className="text-white">Hey, </span>
+              <span className="text-foreground">What's up, </span>
               <span className="relative inline-block">
-                <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-amber-400 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
                   {user?.firstName || 'Legend'}
                 </span>
                 <motion.span 
-                  className="absolute -top-1 -right-6 text-xl"
-                  animate={{ rotate: [0, 20, 0], scale: [1, 1.3, 1] }}
-                  transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 3 }}
+                  className="absolute -top-1 -right-5 text-xl"
+                  animate={{ rotate: [0, 20, 0], scale: [1, 1.2, 1] }}
+                  transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 4 }}
                 >
-                  <Sparkles className="w-6 h-6 text-amber-400" />
+                  <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
                 </motion.span>
               </span>
             </motion.h1>
             
             {/* Subtitle */}
             <motion.p 
-              className="text-xl md:text-2xl text-white/60 font-medium max-w-lg mx-auto"
+              className="text-xl md:text-2xl text-muted-foreground font-medium max-w-lg mx-auto"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25, duration: 0.5 }}
             >
               Pick your game. Rally your crew.
               <br />
-              <span className="text-white font-semibold">Let the chaos begin.</span>
+              <span className="text-foreground font-semibold">Let the chaos begin.</span>
             </motion.p>
           </motion.section>
 
@@ -244,18 +219,8 @@ export default function Home() {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * i }}
-                  className="p-6 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/10"
                 >
-                  <div className="flex items-center gap-4 mb-4 flex-wrap">
-                    <Skeleton className="w-16 h-16 rounded-2xl bg-white/10" />
-                    <div className="flex-1">
-                      <Skeleton className="h-5 w-24 mb-2 bg-white/10" />
-                      <Skeleton className="h-3 w-16 bg-white/10" />
-                    </div>
-                  </div>
-                  <Skeleton className="h-4 w-full mb-2 bg-white/10" />
-                  <Skeleton className="h-4 w-3/4 mb-4 bg-white/10" />
-                  <Skeleton className="h-12 w-full rounded-xl bg-white/10" />
+                  <GameCardSkeleton />
                 </motion.div>
               ))}
             </div>
@@ -266,14 +231,14 @@ export default function Home() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3 }}
             >
-              <div className="w-28 h-28 rounded-3xl bg-white/10 backdrop-blur-sm flex items-center justify-center mx-auto mb-8 shadow-xl border border-white/20">
-                <AvocadoIcon className="w-14 h-14 opacity-60" />
+              <div className="w-28 h-28 rounded-3xl bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mx-auto mb-8 shadow-xl">
+                <AvocadoIcon className="w-14 h-14 opacity-40" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-4">No Games Yet</h3>
-              <p className="text-white/60 text-lg max-w-sm mx-auto mb-8">
+              <h3 className="text-2xl font-bold text-foreground mb-4">No Games Yet</h3>
+              <p className="text-muted-foreground text-lg max-w-sm mx-auto mb-8">
                 Games will appear here once they're ready to play
               </p>
-              <Button variant="outline" size="lg" className="gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20" data-testid="button-empty-state">
+              <Button variant="outline" size="lg" className="gap-2" data-testid="button-empty-state">
                 <PartyPopper className="w-5 h-5" />
                 Check Back Soon
               </Button>
@@ -289,10 +254,10 @@ export default function Home() {
                 return (
                   <motion.div
                     key={game.id}
-                    initial={{ opacity: 0, y: 40, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ 
-                      delay: 0.3 + index * 0.12,
+                      delay: 0.3 + index * 0.1,
                       type: "spring",
                       stiffness: 80,
                       damping: 15
@@ -303,73 +268,88 @@ export default function Home() {
                       onClick={() => !isComingSoon && setLocation(config.route)}
                       onMouseEnter={() => setHoveredCard(game.slug)}
                       onMouseLeave={() => setHoveredCard(null)}
-                      whileHover={isComingSoon ? {} : { y: -8, scale: 1.02, transition: { duration: 0.2 } }}
-                      whileTap={isComingSoon ? {} : { scale: 0.97 }}
+                      whileHover={isComingSoon ? {} : { y: -6, transition: { duration: 0.2 } }}
+                      whileTap={isComingSoon ? {} : { scale: 0.98 }}
                       disabled={isComingSoon}
-                      className={`relative flex flex-col p-6 rounded-3xl text-left transition-all duration-300 w-full overflow-hidden ${
+                      className={`relative flex flex-col p-6 rounded-3xl text-left transition-all duration-300 w-full overflow-hidden border ${
                         isComingSoon 
-                          ? 'opacity-40 cursor-not-allowed bg-white/5 border border-white/10' 
-                          : 'bg-white/10 backdrop-blur-md border border-white/20 hover:border-white/40 hover:bg-white/15 shadow-xl hover:shadow-2xl'
+                          ? 'opacity-50 cursor-not-allowed bg-card/40 border-border/30' 
+                          : `bg-card/80 dark:bg-card/60 backdrop-blur-sm ${config.borderColor}`
                       }`}
+                      style={{
+                        boxShadow: isHovered && !isComingSoon 
+                          ? `0 20px 40px -12px ${config.accentColor}40`
+                          : undefined
+                      }}
                       data-testid={`button-game-${game.slug}`}
                     >
-                      {/* Gradient glow effects */}
-                      <div className={`absolute -top-24 -right-24 w-48 h-48 rounded-full bg-gradient-to-br ${config.gradient} opacity-40 blur-3xl group-hover:opacity-60 transition-opacity`} />
-                      <div className={`absolute -bottom-16 -left-16 w-32 h-32 rounded-full bg-gradient-to-br ${config.gradient} opacity-20 blur-2xl`} />
+                      {/* Gradient background on hover */}
+                      <motion.div 
+                        className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${config.bgGradient}`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: isHovered && !isComingSoon ? 1 : 0.3 }}
+                        transition={{ duration: 0.3 }}
+                      />
                       
                       {/* Coming Soon Badge */}
                       {isComingSoon && (
-                        <div className="absolute top-5 right-5 px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-[10px] font-bold text-white/60 uppercase tracking-widest flex flex-wrap items-center gap-1.5 border border-white/10">
+                        <div className="absolute top-5 right-5 px-3 py-1.5 bg-muted rounded-full text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex flex-wrap items-center gap-1.5">
                           <Clock className="w-3 h-3" />
                           Soon
                         </div>
                       )}
                       
                       {/* Card Header */}
-                      <div className="relative flex flex-wrap items-start gap-4 mb-4 z-10">
+                      <div className="relative flex flex-wrap items-start gap-4 mb-4">
                         <motion.div 
-                          className={`w-16 h-16 rounded-2xl ${config.iconBg} flex items-center justify-center shadow-lg`}
+                          className={`w-14 h-14 rounded-2xl ${config.iconBg} flex items-center justify-center shadow-lg ${config.shadowColor}`}
                           animate={isHovered && !isComingSoon ? { 
-                            scale: 1.1, 
-                            rotate: 5
+                            scale: 1.05, 
+                            rotate: 3
                           } : { 
                             scale: 1, 
                             rotate: 0 
                           }}
                           transition={{ duration: 0.2 }}
                         >
-                          <Icon className="w-8 h-8 text-white drop-shadow-sm" />
+                          <Icon className="w-7 h-7 text-white drop-shadow-sm" />
                         </motion.div>
                         
                         <div className="flex-1 min-w-0 pt-1">
-                          <h3 className="text-xl font-bold text-white">
+                          <h3 className="text-xl font-bold text-foreground">
                             {game.displayName}
                           </h3>
-                          <p className="text-sm font-medium text-white/70">
-                            {config.tagline}
-                          </p>
                         </div>
                       </div>
                       
+                      {/* Tagline */}
+                      <p className={`relative text-sm font-semibold mb-2 transition-colors duration-300 ${
+                        isHovered && !isComingSoon 
+                          ? 'text-foreground' 
+                          : 'text-muted-foreground'
+                      }`}>
+                        {config.tagline}
+                      </p>
+                      
                       {/* Description */}
-                      <p className="relative text-sm text-white/60 mb-5 leading-relaxed flex-1 z-10">
+                      <p className="relative text-sm text-muted-foreground mb-5 leading-relaxed flex-1">
                         {config.description}
                       </p>
                       
                       {/* Play Button */}
                       {!isComingSoon && (
                         <motion.div 
-                          className={`relative flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-sm transition-all duration-300 z-10 ${
+                          className={`relative flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${
                             isHovered 
-                              ? `bg-gradient-to-r ${config.gradient} text-white shadow-lg` 
-                              : 'bg-white/10 text-white border border-white/10'
+                              ? `bg-gradient-to-r ${config.gradient} text-white shadow-lg ${config.shadowColor}` 
+                              : 'bg-muted/60 text-foreground'
                           }`}
                           animate={isHovered ? { scale: 1.02 } : { scale: 1 }}
                           transition={{ duration: 0.2 }}
                         >
                           <Play className="w-4 h-4" fill={isHovered ? "currentColor" : "none"} />
-                          <span>Play Now</span>
-                          <ArrowRight className={`w-4 h-4 transition-transform duration-200 ${isHovered ? 'translate-x-1' : ''}`} />
+                          <span>Play</span>
+                          <ArrowRight className={`w-4 h-4 transition-transform duration-200 ${isHovered ? 'translate-x-0.5' : ''}`} />
                         </motion.div>
                       )}
                     </motion.button>
@@ -381,12 +361,12 @@ export default function Home() {
 
           {/* Bottom teaser */}
           <motion.div 
-            className="mt-16 text-center"
+            className="mt-12 text-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
+            transition={{ delay: 0.7 }}
           >
-            <p className="text-sm text-white/40">
+            <p className="text-sm text-muted-foreground/60">
               More games coming soon
             </p>
           </motion.div>
@@ -395,10 +375,10 @@ export default function Home() {
       </main>
       
       {/* Footer */}
-      <footer className="relative z-10 border-t border-white/10 px-6 py-6">
+      <footer className="relative z-10 border-t border-border/10 px-6 py-6">
         <div className="max-w-5xl mx-auto flex items-center justify-center">
-          <p className="text-sm text-white/50 flex flex-wrap items-center justify-center gap-1">
-            made with <span className="text-rose-400">♥</span> by <span className="font-semibold bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent">Amoli</span>
+          <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-1">
+            made with <span className="text-emerald-500 dark:text-emerald-400">♥</span> by <span className="font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">Amoli</span>
           </p>
         </div>
       </footer>

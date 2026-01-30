@@ -2659,11 +2659,11 @@ export default function Blitzgrid() {
     return (
       <motion.button
         key={grid.id}
-        initial={{ opacity: 0, y: 30, scale: 0.9 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: index * 0.1, type: "spring", stiffness: 80 }}
-        whileHover={{ y: -8, scale: 1.02, transition: { duration: 0.2 } }}
-        whileTap={{ scale: 0.97 }}
+        whileHover={{ y: -6, transition: { duration: 0.2 } }}
+        whileTap={{ scale: 0.98 }}
         onClick={() => {
           setSelectedGridId(grid.id);
           setPlayMode(true);
@@ -2673,66 +2673,41 @@ export default function Blitzgrid() {
           setActiveQuestion(null);
           setShowAnswer(false);
         }}
-        className="group text-left p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover:border-white/40 hover:bg-white/15 shadow-xl hover:shadow-2xl transition-all duration-300 relative overflow-hidden"
+        className={`group text-left p-6 rounded-2xl bg-card border ${colorConfig.border} hover:shadow-lg transition-all duration-300 relative overflow-hidden`}
         data-testid={`card-grid-${grid.id}`}
       >
-        {/* Gradient glow */}
-        <div className={`absolute -top-20 -right-20 w-40 h-40 rounded-full ${colorConfig.bg} opacity-40 blur-3xl group-hover:opacity-60 transition-opacity`} />
-        <div className={`absolute -bottom-10 -left-10 w-32 h-32 rounded-full ${colorConfig.bg} opacity-20 blur-2xl`} />
+        {/* Gradient background */}
+        <div className={`absolute inset-0 rounded-2xl ${colorConfig.bgLight} opacity-30 group-hover:opacity-50 transition-opacity`} />
         
         <div className="flex items-center gap-4 flex-wrap relative z-10">
           <motion.div 
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${colorConfig.bg} shadow-lg`}
-            whileHover={{ rotate: 5 }}
+            className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${colorConfig.bg} shadow-lg ${colorConfig.shadow}`}
+            whileHover={{ rotate: 5, scale: 1.05 }}
           >
             <Grid3X3 className="w-7 h-7 text-white" />
           </motion.div>
           
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-lg text-white truncate group-hover:text-white/90">{grid.name}</h3>
+            <h3 className="font-bold text-lg text-foreground truncate">{grid.name}</h3>
           </div>
           
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/10 group-hover:bg-white/20 transition-all border border-white/10">
-            <ChevronRight className="w-5 h-5 text-white/70 group-hover:text-white group-hover:translate-x-1 transition-all" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-muted/60 group-hover:bg-muted transition-all">
+            <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
           </div>
         </div>
       </motion.button>
     );
   };
 
-  // Floating orb component
-  const FloatingOrb = ({ color, size, delay, duration, x, y }: { color: string, size: number, delay: number, duration: number, x: string, y: string }) => (
-    <motion.div
-      className={`absolute rounded-full blur-3xl opacity-30 pointer-events-none ${color}`}
-      style={{ width: size, height: size, left: x, top: y }}
-      animate={{ 
-        y: [0, -30, 0, 30, 0],
-        x: [0, 20, 0, -20, 0],
-        scale: [1, 1.1, 1, 0.9, 1],
-      }}
-      transition={{ duration, delay, repeat: Infinity, ease: "easeInOut" }}
-    />
-  );
-
   // Main grid list view
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 flex flex-col relative overflow-hidden" data-testid="page-blitzgrid">
-      {/* Animated background orbs */}
-      <FloatingOrb color="bg-violet-600" size={300} delay={0} duration={8} x="10%" y="20%" />
-      <FloatingOrb color="bg-fuchsia-600" size={250} delay={2} duration={10} x="70%" y="10%" />
-      <FloatingOrb color="bg-amber-500" size={200} delay={4} duration={9} x="80%" y="60%" />
-      <FloatingOrb color="bg-teal-500" size={280} delay={1} duration={11} x="5%" y="70%" />
-      <FloatingOrb color="bg-sky-500" size={220} delay={3} duration={7} x="50%" y="80%" />
-      
-      {/* Grid pattern overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px] pointer-events-none" />
-      
+    <div className="min-h-screen bg-background flex flex-col" data-testid="page-blitzgrid">
       <AppHeader title="Blitzgrid" backHref="/" showAdminButton adminHref="/admin/games" />
       
-      <div className="flex-1 container mx-auto px-4 py-8 relative z-10">
+      <div className="flex-1 container mx-auto px-4 py-8">
         {loadingGrids ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 rounded-2xl bg-white/5" />)}
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 rounded-2xl" />)}
           </div>
         ) : activeGrids.length === 0 ? (
           <motion.div
@@ -2740,35 +2715,26 @@ export default function Blitzgrid() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-16"
           >
-            <div className="w-20 h-20 rounded-3xl bg-white/10 backdrop-blur-sm flex items-center justify-center mx-auto mb-5">
-              <Grid3X3 className="w-10 h-10 text-white/60" />
+            <div className="w-20 h-20 rounded-3xl bg-muted flex items-center justify-center mx-auto mb-5">
+              <Grid3X3 className="w-10 h-10 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-semibold mb-2 text-white">No grids ready yet</h3>
-            <p className="text-white/60 max-w-sm mx-auto">
+            <h3 className="text-xl font-semibold mb-2 text-foreground">No grids ready yet</h3>
+            <p className="text-muted-foreground max-w-sm mx-auto">
               The host needs to create some grids first. Check back soon!
             </p>
           </motion.div>
         ) : (
-          <div className="max-w-5xl mx-auto space-y-16">
+          <div className="max-w-5xl mx-auto space-y-12">
             {/* Hero section */}
             <motion.div 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center pt-8 pb-4"
+              className="text-center pt-4 pb-4"
             >
-              <motion.div
-                animate={{ rotate: [0, 5, -5, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="inline-block mb-6"
-              >
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-amber-500 flex items-center justify-center shadow-2xl shadow-violet-500/30">
-                  <Grid3X3 className="w-10 h-10 text-white" />
-                </div>
-              </motion.div>
-              <h1 className="text-4xl md:text-5xl font-black text-white mb-3 tracking-tight">
-                Pick Your <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-amber-400 bg-clip-text text-transparent">Grid</span>
+              <h1 className="text-4xl md:text-5xl font-black text-foreground mb-3 tracking-tight">
+                Pick Your <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-amber-500 bg-clip-text text-transparent">Grid</span>
               </h1>
-              <p className="text-lg text-white/60">{activeGrids.length} grids ready to play</p>
+              <p className="text-lg text-muted-foreground">{activeGrids.length} grids ready to play</p>
             </motion.div>
 
             {/* My Grids Section */}
@@ -2778,13 +2744,13 @@ export default function Blitzgrid() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/20 backdrop-blur-sm border border-violet-500/30">
-                    <Grid3X3 className="w-4 h-4 text-violet-400" />
-                    <span className="text-sm font-semibold text-violet-300 uppercase tracking-wider">My Grids</span>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-violet-100 dark:bg-violet-500/20 border border-violet-200 dark:border-violet-500/30">
+                    <Grid3X3 className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                    <span className="text-sm font-semibold text-violet-700 dark:text-violet-300 uppercase tracking-wider">My Grids</span>
                   </div>
-                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
                 </div>
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                   {myGrids.map((grid, index) => (
@@ -2801,13 +2767,13 @@ export default function Blitzgrid() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/20 backdrop-blur-sm border border-amber-500/30">
-                    <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span className="text-sm font-semibold text-amber-300 uppercase tracking-wider">Starter Packs</span>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 dark:bg-amber-500/20 border border-amber-200 dark:border-amber-500/30">
+                    <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span className="text-sm font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wider">Starter Packs</span>
                   </div>
-                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
                 </div>
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                   {starterPacks.map((grid, index) => (
@@ -2821,10 +2787,10 @@ export default function Blitzgrid() {
       </div>
       
       {/* Footer */}
-      <footer className="border-t border-white/10 px-6 py-6 mt-auto relative z-10">
+      <footer className="border-t border-border/50 px-6 py-6 mt-auto">
         <div className="max-w-5xl mx-auto flex items-center justify-center">
-          <p className="text-sm text-white/50 flex flex-wrap items-center justify-center gap-1">
-            made with <span className="text-rose-400">♥</span> by <span className="font-semibold bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent">Amoli</span>
+          <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-1">
+            made with <span className="text-emerald-500 dark:text-emerald-400">♥</span> by <span className="font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">Amoli</span>
           </p>
         </div>
       </footer>
