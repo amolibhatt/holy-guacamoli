@@ -310,94 +310,84 @@ export default function Home() {
                       onMouseEnter={() => setHoveredCard(game.slug)}
                       onMouseLeave={() => setHoveredCard(null)}
                       whileHover={isComingSoon ? {} : { 
-                        scale: 1.08, 
-                        rotate: config.rotation * 1.5,
-                        y: -12,
+                        scale: 1.05, 
+                        y: -8,
                         transition: { duration: 0.2, type: "spring", stiffness: 300 } 
                       }}
-                      whileTap={isComingSoon ? {} : { scale: 0.95, rotate: 0 }}
+                      whileTap={isComingSoon ? {} : { scale: 0.98 }}
                       disabled={isComingSoon}
                       className={`relative flex flex-col items-center justify-center p-6 md:p-8 rounded-2xl text-center w-full min-h-[220px] overflow-hidden ${
                         isComingSoon ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
                       }`}
                       style={{
-                        border: `2px solid rgba(255,255,255,0.3)`,
+                        background: 'rgba(0, 0, 0, 0.6)',
+                        backdropFilter: 'blur(20px)',
+                        border: `2px solid ${isHovered && !isComingSoon ? config.accentColor : 'rgba(255,255,255,0.1)'}`,
                         boxShadow: isHovered && !isComingSoon 
-                          ? `0 20px 40px -10px ${config.accentColor}60, 0 0 30px ${config.accentColor}30`
-                          : `0 8px 24px rgba(0,0,0,0.3)`
+                          ? `0 0 40px ${config.accentColor}50, 0 0 80px ${config.accentColor}20, inset 0 0 30px ${config.accentColor}10`
+                          : `0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)`,
+                        transition: 'border-color 0.3s, box-shadow 0.3s'
                       }}
                       data-testid={`button-game-${game.slug}`}
                     >
-                      {/* Solid gradient background */}
-                      <div className={`absolute inset-0 bg-gradient-to-br ${config.gradient}`} />
-                      
-                      {/* Subtle top highlight */}
-                      <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/20 to-transparent" />
-                      
-                      {/* Diagonal slash decorations */}
-                      <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rotate-12" />
-                      <div className="absolute -bottom-16 -left-8 w-32 h-32 bg-black/10 -rotate-12" />
-                      
-                      {/* Glitch lines on hover */}
-                      {isHovered && !isComingSoon && (
-                        <>
-                          <motion.div 
-                            className="absolute left-0 right-0 h-[2px] bg-white/40"
-                            initial={{ top: "30%", opacity: 0 }}
-                            animate={{ top: ["30%", "70%", "30%"], opacity: [0.5, 0.8, 0.5] }}
-                            transition={{ duration: 0.3, repeat: Infinity }}
-                          />
-                          <motion.div 
-                            className="absolute left-0 right-0 h-[1px] bg-white/30"
-                            initial={{ top: "60%", opacity: 0 }}
-                            animate={{ top: ["60%", "20%", "60%"], opacity: [0.3, 0.6, 0.3] }}
-                            transition={{ duration: 0.4, repeat: Infinity }}
-                          />
-                        </>
-                      )}
+                      {/* Subtle inner glow on edges */}
+                      <div 
+                        className="absolute inset-0 rounded-2xl pointer-events-none"
+                        style={{
+                          background: `linear-gradient(135deg, ${config.accentColor}08 0%, transparent 50%, ${config.accentColor}05 100%)`
+                        }}
+                      />
                       
                       {/* Coming Soon Badge */}
                       {isComingSoon && (
-                        <div className="absolute top-3 right-3 px-3 py-1 bg-black/40 backdrop-blur-sm rounded-full text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-1.5">
+                        <div className="absolute top-3 right-3 px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-[10px] font-black text-white/60 uppercase tracking-widest flex items-center gap-1.5 border border-white/10">
                           <Clock className="w-3 h-3" />
                           SOON
                         </div>
                       )}
                       
-                      {/* Icon with spaceship button glow */}
+                      {/* Icon with neon glow */}
                       <motion.div 
-                        className="relative w-16 h-16 md:w-20 md:h-20 rounded-xl flex items-center justify-center mb-3 border-2 border-white/40"
+                        className="relative w-16 h-16 md:w-20 md:h-20 rounded-xl flex items-center justify-center mb-4"
                         style={{
-                          background: 'linear-gradient(145deg, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.3) 100%)',
+                          background: 'rgba(255,255,255,0.03)',
+                          border: `2px solid ${config.accentColor}`,
                           boxShadow: isHovered && !isComingSoon
-                            ? `inset 0 0 20px rgba(255,255,255,0.5), inset 0 0 40px rgba(255,255,255,0.2), 0 0 30px ${config.accentColor}80`
-                            : `inset 0 0 15px rgba(255,255,255,0.3), inset 0 0 30px rgba(255,255,255,0.1), 0 0 15px ${config.accentColor}40`
+                            ? `0 0 30px ${config.accentColor}80, 0 0 60px ${config.accentColor}40, inset 0 0 20px ${config.accentColor}30`
+                            : `0 0 20px ${config.accentColor}40, inset 0 0 15px ${config.accentColor}15`
                         }}
                         animate={isHovered && !isComingSoon ? { 
-                          scale: 1.2, 
-                          rotate: -8,
-                          y: -8
+                          scale: 1.15,
+                          y: -4
                         } : { 
-                          scale: 1, 
-                          rotate: 0,
+                          scale: 1,
                           y: 0
                         }}
-                        transition={{ duration: 0.15, type: "spring", stiffness: 400 }}
+                        transition={{ duration: 0.2, type: "spring", stiffness: 400 }}
                       >
-                        {/* Inner glow ring */}
-                        <div className="absolute inset-1 rounded-lg border border-white/20" 
-                          style={{ boxShadow: 'inset 0 0 10px rgba(255,255,255,0.2)' }} 
+                        <Icon 
+                          className="w-8 h-8 md:w-10 md:h-10" 
+                          style={{ 
+                            color: config.accentColor,
+                            filter: `drop-shadow(0 0 12px ${config.accentColor})`
+                          }}
+                          strokeWidth={2.5} 
                         />
-                        <Icon className="w-8 h-8 md:w-10 md:h-10 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" strokeWidth={2.5} />
                       </motion.div>
                       
-                      {/* Game name - BOLD */}
-                      <h3 className="relative text-2xl md:text-3xl font-black text-white tracking-tight drop-shadow-lg uppercase">
+                      {/* Game name */}
+                      <h3 
+                        className="relative text-2xl md:text-3xl font-black tracking-tight uppercase"
+                        style={{ 
+                          color: config.accentColor,
+                          textShadow: `0 0 30px ${config.accentColor}60`
+                        }}
+                      >
                         {game.displayName}
                       </h3>
                       
-                      {/* Tagline - punchy */}
-                      <p className="relative text-xs md:text-sm font-black text-white/90 tracking-widest mt-1 uppercase">
+                      {/* Tagline */}
+                      <p className="relative text-xs md:text-sm font-medium text-white/50 tracking-widest mt-2 uppercase">
                         {config.tagline}
                       </p>
                       
@@ -411,7 +401,11 @@ export default function Home() {
                         }}
                         transition={{ duration: 0.2 }}
                       >
-                        <ArrowRight className="w-8 h-8 text-white" strokeWidth={3} />
+                        <ArrowRight 
+                          className="w-6 h-6" 
+                          style={{ color: config.accentColor }}
+                          strokeWidth={2.5} 
+                        />
                       </motion.div>
                     </motion.button>
                   </motion.div>
@@ -428,43 +422,29 @@ export default function Home() {
             transition={{ delay: 0.6 }}
           >
             <div 
-              className="relative flex flex-col items-center justify-center p-8 rounded-2xl text-center min-h-[180px] overflow-hidden border-2 border-white/10 cursor-not-allowed"
+              className="relative flex flex-col items-center justify-center p-8 rounded-2xl text-center min-h-[140px] overflow-hidden cursor-not-allowed"
               style={{
-                background: 'linear-gradient(135deg, rgba(100,100,100,0.3) 0%, rgba(60,60,60,0.4) 100%)',
-                filter: 'grayscale(100%)',
-                boxShadow: '0 10px 40px -10px rgba(0,0,0,0.3)'
+                background: 'rgba(0, 0, 0, 0.4)',
+                backdropFilter: 'blur(20px)',
+                border: '2px solid rgba(255,255,255,0.05)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
               }}
             >
-              {/* Blur overlay */}
-              <div className="absolute inset-0 backdrop-blur-[2px] rounded-2xl" />
-              
-              {/* Diagonal decorations */}
-              <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rotate-12" />
-              <div className="absolute -bottom-16 -left-8 w-32 h-32 bg-black/10 -rotate-12" />
-              
-              {/* Lock icon with glow */}
+              {/* Lock icon */}
               <div 
-                className="relative w-16 h-16 rounded-xl flex items-center justify-center mb-3 border-2 border-white/20"
+                className="relative w-12 h-12 rounded-lg flex items-center justify-center mb-3"
                 style={{
-                  background: 'linear-gradient(145deg, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.2) 100%)',
-                  boxShadow: 'inset 0 0 15px rgba(255,255,255,0.15), 0 0 10px rgba(0,0,0,0.2)'
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  boxShadow: '0 0 15px rgba(255,255,255,0.05)'
                 }}
               >
-                <Lock className="w-8 h-8 text-white/60 drop-shadow-lg" strokeWidth={2.5} />
+                <Lock className="w-6 h-6 text-white/30" strokeWidth={2} />
               </div>
               
               {/* Coming Soon text */}
-              <h3 className="relative text-xl md:text-2xl font-black text-white/50 tracking-widest uppercase">
-                COMING SOON...
+              <h3 className="text-lg font-bold text-white/30 tracking-widest uppercase">
+                More coming soon...
               </h3>
-              
-              {/* Scanlines effect */}
-              <div 
-                className="absolute inset-0 pointer-events-none opacity-10"
-                style={{
-                  background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)'
-                }}
-              />
             </div>
           </motion.div>
 
