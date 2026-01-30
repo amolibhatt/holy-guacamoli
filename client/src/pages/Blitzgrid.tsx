@@ -2765,14 +2765,10 @@ export default function Blitzgrid() {
         className="group text-left p-4 rounded-xl bg-card border border-border hover:border-transparent hover:shadow-lg transition-all duration-200 relative overflow-hidden"
         data-testid={`card-grid-${grid.id}`}
       >
-        {/* Decorative semi-circles in top-right corner */}
-        <div className={`absolute -top-10 -right-10 w-24 h-24 rounded-full bg-gradient-to-br ${colorConfig.header} opacity-10`} />
-        <div className={`absolute -top-5 -right-5 w-14 h-14 rounded-full bg-gradient-to-br ${colorConfig.header} opacity-8`} />
+        {/* Subtle gradient overlay */}
+        <div className={`absolute inset-0 bg-gradient-to-br ${colorConfig.light} opacity-40 rounded-xl`} />
         
-        {/* Color accent bar on left */}
-        <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${colorConfig.bg} rounded-l-xl`} />
-        
-        <div className="flex items-center gap-3 flex-wrap pl-2">
+        <div className="relative flex items-center gap-3 flex-wrap pl-2">
           <div className={`w-10 h-10 rounded-lg ${colorConfig.light} flex items-center justify-center`}>
             <Grid3X3 className={`w-5 h-5 ${colorConfig.icon}`} />
           </div>
