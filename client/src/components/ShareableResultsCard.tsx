@@ -41,16 +41,16 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
     canvas.height = height;
 
     const gradient = ctx.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, "#1a0533");
-    gradient.addColorStop(0.3, "#2d1b4e");
-    gradient.addColorStop(0.6, "#4a1942");
-    gradient.addColorStop(1, "#1a0533");
+    gradient.addColorStop(0, "#fdf2f8");
+    gradient.addColorStop(0.3, "#fce7f3");
+    gradient.addColorStop(0.6, "#fbcfe8");
+    gradient.addColorStop(1, "#fdf2f8");
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
 
     const confettiColors = [
-      "#FFD700", "#FF6B6B", "#4ADEBC", "#C44AF5", "#FF8C00", 
-      "#00CED1", "#FF69B4", "#7B68EE", "#32CD32", "#FF4500"
+      "#fda4af", "#f9a8d4", "#f0abfc", "#FFD700", "#FF6B6B", 
+      "#4ADEBC", "#FF8C00", "#00CED1"
     ];
     
     for (let i = 0; i < 150; i++) {
@@ -140,28 +140,28 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
       ctx.fill();
     };
 
-    drawStar(120, 200, 5, 25, 12, "rgba(255, 215, 0, 0.6)");
-    drawStar(960, 180, 5, 20, 10, "rgba(255, 215, 0, 0.5)");
-    drawStar(200, 1100, 5, 18, 9, "rgba(255, 215, 0, 0.4)");
-    drawStar(880, 1150, 5, 22, 11, "rgba(255, 215, 0, 0.5)");
-    drawStar(100, 700, 5, 15, 7, "rgba(255, 215, 0, 0.3)");
-    drawStar(980, 600, 5, 17, 8, "rgba(255, 215, 0, 0.4)");
+    drawStar(120, 200, 5, 25, 12, "rgba(244, 114, 182, 0.5)");
+    drawStar(960, 180, 5, 20, 10, "rgba(240, 171, 252, 0.5)");
+    drawStar(200, 1100, 5, 18, 9, "rgba(253, 164, 175, 0.4)");
+    drawStar(880, 1150, 5, 22, 11, "rgba(244, 114, 182, 0.5)");
+    drawStar(100, 700, 5, 15, 7, "rgba(249, 168, 212, 0.4)");
+    drawStar(980, 600, 5, 17, 8, "rgba(240, 171, 252, 0.4)");
 
     ctx.save();
-    ctx.shadowColor = "rgba(255, 215, 0, 0.8)";
-    ctx.shadowBlur = 30;
+    ctx.shadowColor = "rgba(244, 114, 182, 0.5)";
+    ctx.shadowBlur = 20;
     ctx.font = "bold 72px system-ui, -apple-system, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillStyle = "#FFD700";
+    ctx.fillStyle = "#be185d";
     ctx.fillText("HOLY GUACAMOLI!", width / 2, 100);
     ctx.restore();
 
     ctx.font = "italic 600 42px system-ui, -apple-system, sans-serif";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    ctx.fillStyle = "#9d174d";
     ctx.fillText("Who knows you best?", width / 2, 160);
 
     ctx.font = "500 28px system-ui, -apple-system, sans-serif";
-    ctx.fillStyle = "rgba(255, 215, 0, 0.7)";
+    ctx.fillStyle = "#f472b6";
     ctx.fillText("GAME RESULTS", width / 2, 210);
 
     const podiumBaseY = 750;
@@ -271,7 +271,7 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
       ctx.fillText(getPlayerEmoji(originalIndex), x, avatarY);
 
       ctx.font = `bold ${place === 1 ? 36 : 28}px system-ui`;
-      ctx.fillStyle = "#FFFFFF";
+      ctx.fillStyle = "#be185d";
       ctx.textBaseline = "alphabetic";
       const displayName = contestant.name.length > 10 ? contestant.name.slice(0, 10) + "..." : contestant.name;
       ctx.fillText(displayName, x, avatarY + avatarSize/2 + 40);
@@ -306,7 +306,7 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
     if (sortedContestants.length > 3) {
       const startY = 900;
       ctx.font = "600 28px system-ui";
-      ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+      ctx.fillStyle = "#f472b6";
       ctx.textAlign = "center";
       ctx.fillText("OTHER PLAYERS", width/2, startY);
 
@@ -316,7 +316,7 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
         const originalIdx = contestants.findIndex(c => c.name === contestant.name);
         
         ctx.save();
-        ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+        ctx.fillStyle = "rgba(244, 114, 182, 0.15)";
         ctx.beginPath();
         ctx.roundRect(width/2 - 300, yPos - 30, 600, 60, 15);
         ctx.fill();
@@ -327,11 +327,11 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
         ctx.fillText(getPlayerEmoji(originalIdx), width/2 - 260, yPos + 10);
 
         ctx.font = "bold 28px system-ui";
-        ctx.fillStyle = "#FFFFFF";
+        ctx.fillStyle = "#be185d";
         ctx.fillText(contestant.name, width/2 - 200, yPos + 10);
 
         ctx.font = "bold 28px system-ui";
-        ctx.fillStyle = "rgba(255, 215, 0, 0.8)";
+        ctx.fillStyle = "#9d174d";
         ctx.textAlign = "right";
         ctx.fillText(`${contestant.score} pts`, width/2 + 260, yPos + 10);
       });
@@ -343,7 +343,7 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
       year: "numeric" 
     });
     ctx.font = "24px system-ui";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+    ctx.fillStyle = "#db2777";
     ctx.textAlign = "center";
     ctx.fillText(date, width/2, height - 40);
 
@@ -353,7 +353,7 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
       width: 140,
       margin: 1,
       color: {
-        dark: "#1a0533",
+        dark: "#be185d",
         light: "#FFFFFF"
       }
     }).then((qrDataUrl) => {
@@ -365,7 +365,7 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
         
         // Draw white rounded background for QR
         ctx.save();
-        ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
+        ctx.shadowColor = "rgba(244, 114, 182, 0.3)";
         ctx.shadowBlur = 15;
         ctx.fillStyle = "#FFFFFF";
         ctx.beginPath();
@@ -378,7 +378,7 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
         
         // Draw "Scan to play!" text below QR
         ctx.font = "bold 18px system-ui";
-        ctx.fillStyle = "#FFFFFF";
+        ctx.fillStyle = "#9d174d";
         ctx.textAlign = "center";
         ctx.fillText("Scan to play!", qrX + qrSize/2, qrY + qrSize + 35);
         
