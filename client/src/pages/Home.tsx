@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ArrowRight, Lock, Sparkles, PartyPopper, Users, ChevronRight, ListOrdered, Trophy, Clock, Brain } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, Lock, Sparkles, PartyPopper, Users, ChevronRight, ListOrdered, Trophy, Clock, Brain, Gamepad2, Zap, Star } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
 import LandingPage from "./LandingPage";
@@ -42,41 +43,64 @@ const GAME_CONFIG: Record<string, {
   route: string;
   playerCount: string;
   accentColor: string;
+  glowColor: string;
   status?: string;
 }> = {
   blitzgrid: {
     icon: Grid3X3,
     gradient: "from-violet-500 via-purple-500 to-indigo-500",
     shadowColor: "shadow-purple-500/30",
-    hoverBorder: "hover:border-purple-400/50 hover:shadow-purple-500/20",
+    hoverBorder: "hover:border-purple-400/50",
     route: "/host/blitzgrid",
     playerCount: "Multiplayer",
     accentColor: "#8B5CF6",
+    glowColor: "purple",
   },
   sequence_squeeze: {
     icon: ListOrdered,
     gradient: "from-emerald-400 via-teal-500 to-cyan-500",
     shadowColor: "shadow-teal-500/30",
-    hoverBorder: "hover:border-teal-400/50 hover:shadow-teal-500/20",
+    hoverBorder: "hover:border-teal-400/50",
     route: "/host/genetic-sort",
     playerCount: "Multiplayer",
     accentColor: "#14B8A6",
+    glowColor: "teal",
   },
   psyop: {
     icon: Brain,
     gradient: "from-rose-400 via-pink-500 to-fuchsia-500",
     shadowColor: "shadow-pink-500/30",
-    hoverBorder: "hover:border-pink-400/50 hover:shadow-pink-500/20",
+    hoverBorder: "hover:border-pink-400/50",
     route: "/host/psyop",
     playerCount: "Multiplayer",
     accentColor: "#EC4899",
+    glowColor: "pink",
   },
 };
+
+function GameCardSkeleton() {
+  return (
+    <div className="relative flex flex-col p-8 bg-card border-2 border-border rounded-2xl max-w-md w-full overflow-hidden">
+      <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-muted/20 to-transparent rounded-bl-full" />
+      <div className="flex items-start justify-between gap-3 mb-6">
+        <Skeleton className="w-16 h-16 rounded-2xl" />
+        <Skeleton className="w-6 h-6 rounded" />
+      </div>
+      <Skeleton className="h-8 w-3/4 mb-3" />
+      <Skeleton className="h-4 w-full mb-2" />
+      <Skeleton className="h-4 w-2/3 mb-6" />
+      <div className="pt-4 border-t border-border/50">
+        <Skeleton className="h-4 w-24" />
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [showGuide, setShowGuide] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   const { data: gameTypes = [], isLoading: isLoadingGames } = useQuery<(GameType & { status?: string })[]>({
     queryKey: ['/api/game-types/homepage'],
@@ -122,8 +146,19 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Subtle gradient overlay */}
-      <div className="fixed inset-0 bg-gradient-to-br from-primary/5 via-transparent to-pink-500/5 pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-pink-500/5 pointer-events-none" />
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <motion.div 
+          className="absolute top-20 left-10 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 8, repeat: Infinity }}
+        />
+        <motion.div 
+          className="absolute bottom-20 right-10 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl"
+          animate={{ scale: [1.2, 1, 1.2], opacity: [0.5, 0.3, 0.5] }}
+          transition={{ duration: 10, repeat: Infinity }}
+        />
+      </div>
       
       <AppHeader 
         showAdminButton={true}
@@ -132,115 +167,250 @@ export default function Home() {
         onHelpClick={() => setShowGuide(true)}
       />
 
-      <main className="flex-1 p-6 overflow-y-auto">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
+      <main className="flex-1 p-6 overflow-y-auto relative">
+        <div className="max-w-6xl mx-auto">
+          
+          <motion.section 
+            className="text-center py-12 mb-8"
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-10"
+            transition={{ duration: 0.6 }}
           >
             <motion.div 
-              className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-violet-500/10 via-fuchsia-500/10 to-pink-500/10 border border-violet-300/30 dark:border-violet-500/30 shadow-lg shadow-violet-500/10 mb-6"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-violet-500/10 via-fuchsia-500/10 to-pink-500/10 border border-violet-300/20 mb-6"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.1 }}
+              transition={{ delay: 0.2 }}
             >
-              <motion.div animate={{ rotate: [0, 15, -15, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
-                <PartyPopper className="w-5 h-5 text-fuchsia-500" />
+              <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 2, repeat: Infinity }}>
+                <Gamepad2 className="w-4 h-4 text-violet-500" />
               </motion.div>
-              <span className="text-sm font-semibold text-foreground">Welcome back, <span className="bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text text-transparent">{user?.firstName || 'Host'}</span>!</span>
-              <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 2, repeat: Infinity }}>
-                <Sparkles className="w-5 h-5 text-amber-500" />
-              </motion.div>
+              <span className="text-sm font-medium text-muted-foreground">Welcome back, <span className="text-foreground font-semibold">{user?.firstName || 'Host'}</span></span>
             </motion.div>
             
-            <h2 className="text-4xl md:text-5xl font-black mb-3">
-              <span className="text-foreground">Choose Your </span>
-              <span className="bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">Game</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-md mx-auto">
-              Pick a game mode and let the fiesta begin
-            </p>
+            <motion.h1 
+              className="text-5xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <span className="text-foreground">Game Night,</span>
+              <br />
+              <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
+                Elevated
+              </span>
+            </motion.h1>
+            
+            <motion.p 
+              className="text-xl text-muted-foreground max-w-lg mx-auto mb-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              Transform your gatherings into unforgettable experiences with our curated collection of party games
+            </motion.p>
+            
+            <motion.div 
+              className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-violet-500/10 flex items-center justify-center">
+                  <Zap className="w-4 h-4 text-violet-500" />
+                </div>
+                <span>Instant Setup</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-pink-500/10 flex items-center justify-center">
+                  <Users className="w-4 h-4 text-pink-500" />
+                </div>
+                <span>Multiplayer Ready</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center">
+                  <Star className="w-4 h-4 text-amber-500" />
+                </div>
+                <span>Party Tested</span>
+              </div>
+            </motion.div>
+          </motion.section>
+
+          <motion.div 
+            className="flex items-center gap-4 mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+          >
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+            <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Choose Your Game</span>
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
           </motion.div>
 
           {isLoadingGames ? (
-            <div className="flex justify-center py-16">
-              <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            <div className="flex flex-wrap justify-center gap-8 mb-12">
+              {[1, 2, 3].map((i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 * i }}
+                >
+                  <GameCardSkeleton />
+                </motion.div>
+              ))}
             </div>
           ) : gameTypes.length === 0 ? (
             <motion.div 
-              className="text-center py-16 px-8 bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border"
+              className="text-center py-20 px-8"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
             >
-              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
-                <AvocadoIcon className="w-10 h-10 opacity-40" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground mb-2">No games available</h3>
-              <p className="text-muted-foreground max-w-sm mx-auto">
-                Contact the administrator to enable game modes
+              <motion.div 
+                className="w-32 h-32 rounded-full bg-gradient-to-br from-violet-500/10 to-pink-500/10 flex items-center justify-center mx-auto mb-8 relative"
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 4, repeat: Infinity }}
+              >
+                <AvocadoIcon className="w-16 h-16 opacity-60" />
+                <motion.div 
+                  className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                </motion.div>
+              </motion.div>
+              <h3 className="text-3xl font-bold text-foreground mb-4">No Games Yet</h3>
+              <p className="text-lg text-muted-foreground max-w-md mx-auto mb-8">
+                Looks like the party hasn't started! Contact your admin to unlock some awesome games.
               </p>
+              <Button variant="outline" size="lg" className="gap-2" data-testid="button-empty-state">
+                <PartyPopper className="w-5 h-5" />
+                Check Back Soon
+              </Button>
             </motion.div>
           ) : (
-            <div className="flex flex-wrap justify-center gap-6 mb-12">
+            <div className="flex flex-wrap justify-center gap-8 mb-12">
               {gameTypes.filter(g => GAME_CONFIG[g.slug]).map((game, index) => {
-                const config = GAME_CONFIG[game.slug] || {
-                  icon: Grid3X3,
-                  gradient: "from-primary to-secondary",
-                  shadowColor: "shadow-primary/20",
-                  hoverBorder: "hover:border-primary/50 hover:shadow-primary/10",
-                  route: "/",
-                  playerCount: "Multiplayer",
-                };
+                const config = GAME_CONFIG[game.slug];
                 const Icon = config.icon;
                 const isComingSoon = (game as any).status === 'coming_soon' || config.status === 'coming_soon';
+                const isHovered = hoveredCard === game.slug;
 
                 return (
                   <motion.button
                     key={game.id}
                     onClick={() => !isComingSoon && setLocation(config.route)}
-                    initial={{ opacity: 0, y: 20 }}
+                    onMouseEnter={() => setHoveredCard(game.slug)}
+                    onMouseLeave={() => setHoveredCard(null)}
+                    initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 + index * 0.1 }}
-                    whileHover={isComingSoon ? {} : { scale: 1.02, y: -4 }}
+                    transition={{ 
+                      delay: 0.8 + index * 0.15,
+                      type: "spring",
+                      stiffness: 100,
+                      damping: 15
+                    }}
+                    whileHover={isComingSoon ? {} : { 
+                      y: -8,
+                      rotateX: 5,
+                      rotateY: -2,
+                      transition: { duration: 0.3 }
+                    }}
                     whileTap={isComingSoon ? {} : { scale: 0.98 }}
                     disabled={isComingSoon}
-                    className={`relative flex flex-col p-8 bg-card border-2 rounded-2xl text-left transition-all group overflow-hidden max-w-md w-full ${
+                    style={{ 
+                      perspective: "1000px",
+                      transformStyle: "preserve-3d"
+                    }}
+                    className={`relative flex flex-col p-8 bg-card border-2 rounded-3xl text-left transition-all duration-300 group overflow-visible max-w-sm w-full ${
                       isComingSoon 
-                        ? 'opacity-60 cursor-not-allowed border-border' 
-                        : `hover:shadow-2xl border-border ${config.hoverBorder}`
+                        ? 'opacity-50 cursor-not-allowed border-border grayscale' 
+                        : 'border-border hover-elevate active-elevate-2'
                     }`}
                     data-testid={`button-game-${game.slug}`}
                   >
-                    <div className={`absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl ${config.gradient} ${isComingSoon ? 'opacity-5' : 'opacity-15'} rounded-bl-full`} />
+                    {!isComingSoon && isHovered && (
+                      <motion.div 
+                        className={`absolute inset-0 bg-gradient-to-br ${config.gradient} opacity-[0.08] pointer-events-none`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.08 }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    )}
+                    
+                    <div className={`absolute top-0 right-0 w-56 h-56 bg-gradient-to-bl ${config.gradient} ${isComingSoon ? 'opacity-5' : 'opacity-10'} rounded-bl-full transition-opacity duration-300 ${!isComingSoon && isHovered ? 'opacity-20' : ''}`} />
                     
                     {isComingSoon && (
-                      <div className="absolute top-4 right-4 px-3 py-1 bg-muted rounded-full text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                      <motion.div 
+                        className="absolute top-4 right-4 px-3 py-1.5 bg-muted/80 backdrop-blur-sm rounded-full text-xs font-semibold text-muted-foreground flex items-center gap-1.5 border border-border/50"
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.9 + index * 0.15 }}
+                      >
                         <Clock className="w-3 h-3" />
                         Coming Soon
-                      </div>
+                      </motion.div>
                     )}
                     
                     <div className="flex items-start justify-between gap-3 mb-6">
-                      <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${config.gradient} ${isComingSoon ? 'opacity-50' : ''} flex items-center justify-center shadow-lg ${config.shadowColor}`}>
-                        <Icon className="w-8 h-8 text-white" />
-                      </div>
+                      <motion.div 
+                        className={`w-18 h-18 rounded-2xl bg-gradient-to-br ${config.gradient} ${isComingSoon ? 'opacity-50' : ''} flex items-center justify-center shadow-xl ${config.shadowColor} relative`}
+                        animate={!isComingSoon && isHovered ? { 
+                          scale: [1, 1.05, 1],
+                          rotate: [0, 5, -5, 0]
+                        } : {}}
+                        transition={{ duration: 0.6 }}
+                        style={{ width: "72px", height: "72px" }}
+                      >
+                        {isHovered && !isComingSoon && (
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ 
+                              duration: 20, 
+                              repeat: Infinity, 
+                              ease: "linear" 
+                            }}
+                            className="absolute inset-0 rounded-2xl border-2 border-white/20"
+                            style={{ borderStyle: "dashed" }}
+                          />
+                        )}
+                        <Icon className="w-9 h-9 text-white drop-shadow-lg" />
+                      </motion.div>
                       {!isComingSoon && (
-                        <ArrowRight className="w-6 h-6 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+                        <motion.div
+                          animate={isHovered ? { x: 4, scale: 1.1 } : { x: 0, scale: 1 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <ArrowRight className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors" />
+                        </motion.div>
                       )}
                     </div>
                     
-                    <h3 className={`text-2xl font-bold mb-2 ${isComingSoon ? 'text-foreground/60' : 'text-foreground'}`}>
+                    <h3 className={`text-2xl font-bold mb-3 ${isComingSoon ? 'text-foreground/50' : 'text-foreground'}`}>
                       {game.displayName}
                     </h3>
                     
-                    <p className={`mb-6 flex-1 ${isComingSoon ? 'text-muted-foreground/60' : 'text-muted-foreground'}`}>
+                    <p className={`mb-6 flex-1 leading-relaxed ${isComingSoon ? 'text-muted-foreground/50' : 'text-muted-foreground'}`}>
                       {game.description}
                     </p>
                     
-                    <div className="pt-4 border-t border-border/50 flex items-center gap-2 text-sm text-muted-foreground">
-                      <Users className="w-4 h-4" />
-                      <span>{config.playerCount}</span>
+                    <div className="pt-4 border-t border-border/50 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <Users className="w-4 h-4" />
+                        <span>{config.playerCount}</span>
+                      </div>
+                      {!isComingSoon && (
+                        <motion.span 
+                          className="text-xs font-medium text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                          animate={isHovered ? { x: [0, 3, 0] } : {}}
+                          transition={{ duration: 0.6, repeat: Infinity }}
+                        >
+                          Click to play
+                        </motion.span>
+                      )}
                     </div>
                   </motion.button>
                 );
@@ -251,7 +421,7 @@ export default function Home() {
         </div>
       </main>
       
-      <footer className="border-t border-border/50 bg-card/30 backdrop-blur px-6 py-4 text-center">
+      <footer className="border-t border-border/50 bg-card/30 backdrop-blur-sm px-6 py-4 text-center relative">
         <p className="text-xs text-muted-foreground">
           Made with love for Amoli's Birthday
         </p>
@@ -270,7 +440,13 @@ export default function Home() {
           </DialogHeader>
           <div className="space-y-3 mt-2">
             {GUIDE_STEPS.map((step, index) => (
-              <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <motion.div 
+                key={index} 
+                className="flex items-start gap-3 p-3 rounded-lg bg-muted/50"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
                 <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
                   <step.icon className="w-4 h-4 text-primary" />
                 </div>
@@ -281,7 +457,7 @@ export default function Home() {
                   <h4 className="font-semibold text-foreground text-sm">{step.title}</h4>
                   <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
           <div className="flex gap-2 mt-4">
