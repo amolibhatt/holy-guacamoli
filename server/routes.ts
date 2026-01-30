@@ -2377,12 +2377,25 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId!;
       
-      // Get boards for this user (filter by theme starting with blitzgrid)
-      const allBoards = await storage.getBoards(userId);
-      const boards = allBoards.filter(b => b.theme === "blitzgrid" || b.theme.startsWith("blitzgrid:"));
+      // Get user's own boards + all starter packs (filter by blitzgrid theme)
+      const userBoards = await storage.getBoards(userId);
+      const starterPacks = await storage.getStarterPackBoards();
+      
+      // Combine and deduplicate (user might own a starter pack)
+      const allBoardsMap = new Map<number, typeof userBoards[number]>();
+      for (const board of userBoards) {
+        allBoardsMap.set(board.id, board);
+      }
+      for (const board of starterPacks) {
+        if (!allBoardsMap.has(board.id)) {
+          allBoardsMap.set(board.id, board);
+        }
+      }
+      
+      const boards = Array.from(allBoardsMap.values()).filter(b => b.theme === "blitzgrid" || b.theme.startsWith("blitzgrid:"));
       
       // Enhance with category counts and active status
-      const gridsWithStats = await Promise.all(boards.map(async (board: typeof allBoards[number]) => {
+      const gridsWithStats = await Promise.all(boards.map(async (board) => {
         const boardCategories = await storage.getBoardCategories(board.id);
         let totalQuestions = 0;
         let activeCategoryCount = 0;

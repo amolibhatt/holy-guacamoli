@@ -5,6 +5,7 @@ import { eq, and, asc, count, inArray, desc, sql, gte, like } from "drizzle-orm"
 
 export interface IStorage {
   getBoards(userId: string, role?: string): Promise<Board[]>;
+  getStarterPackBoards(): Promise<Board[]>;
   getBoard(id: number, userId: string, role?: string): Promise<Board | undefined>;
   createBoard(board: InsertBoard & { userId: string }): Promise<Board>;
   updateBoard(id: number, data: Partial<InsertBoard>, userId: string, role?: string): Promise<Board | undefined>;
@@ -178,6 +179,10 @@ export class DatabaseStorage implements IStorage {
       return await db.select().from(boards);
     }
     return await db.select().from(boards).where(eq(boards.userId, userId));
+  }
+
+  async getStarterPackBoards(): Promise<Board[]> {
+    return await db.select().from(boards).where(eq(boards.isStarterPack, true));
   }
 
   async getBoard(id: number, userId: string, role?: string): Promise<Board | undefined> {
@@ -1685,10 +1690,6 @@ export class DatabaseStorage implements IStorage {
     }));
 
     return gridsWithOwners;
-  }
-
-  async getStarterPackBoards(): Promise<Board[]> {
-    return await db.select().from(boards).where(eq(boards.isStarterPack, true));
   }
 }
 
