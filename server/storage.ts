@@ -1546,6 +1546,16 @@ export class DatabaseStorage implements IStorage {
         playerEnabled: true,
         sortOrder: 2,
       },
+      {
+        slug: "psyop",
+        displayName: "PsyOp",
+        description: "Mind games and psychological challenges. Can you outsmart your opponents?",
+        icon: "brain",
+        status: "coming_soon" as const,
+        hostEnabled: false,
+        playerEnabled: false,
+        sortOrder: 3,
+      },
     ];
 
     console.log("[SEED] Checking for missing game types...");

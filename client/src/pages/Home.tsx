@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ArrowRight, Lock, Sparkles, PartyPopper, Users, ChevronRight, ListOrdered, Trophy, Clock } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, Lock, Sparkles, PartyPopper, Users, ChevronRight, ListOrdered, Trophy, Clock, Brain } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation } from "wouter";
@@ -61,6 +61,15 @@ const GAME_CONFIG: Record<string, {
     route: "/host/genetic-sort",
     playerCount: "Multiplayer",
     accentColor: "#14B8A6",
+  },
+  psyop: {
+    icon: Brain,
+    gradient: "from-rose-400 via-pink-500 to-fuchsia-500",
+    shadowColor: "shadow-pink-500/30",
+    hoverBorder: "hover:border-pink-400/50 hover:shadow-pink-500/20",
+    route: "/host/psyop",
+    playerCount: "Multiplayer",
+    accentColor: "#EC4899",
   },
 };
 
