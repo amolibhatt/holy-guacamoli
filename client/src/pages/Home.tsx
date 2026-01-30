@@ -38,53 +38,38 @@ const GUIDE_STEPS = [
 const GAME_CONFIG: Record<string, { 
   icon: typeof Grid3X3; 
   gradient: string; 
-  bgGradient: string;
-  shadowColor: string;
   route: string;
   accentColor: string;
-  iconBg: string;
-  status?: string;
   tagline: string;
-  description: string;
-  borderColor: string;
-  sparkleColors?: string[];
+  rotation: number;
+  scale: number;
 }> = {
   blitzgrid: {
     icon: Grid3X3,
-    gradient: "from-rose-300 via-pink-300 to-fuchsia-300",
-    bgGradient: "from-rose-100/60 via-pink-100/50 to-fuchsia-100/40",
-    shadowColor: "shadow-pink-300/50",
+    gradient: "from-rose-500 via-pink-500 to-fuchsia-600",
     route: "/host/blitzgrid",
-    accentColor: "#F9A8D4",
-    iconBg: "bg-gradient-to-br from-rose-300 via-pink-300 to-fuchsia-300",
-    tagline: "Buzz. Answer. Dominate.",
-    description: "5x5 grid of trivia glory. Smash that buzzer, nail the answer, and watch the points stack up.",
-    borderColor: "border-pink-200/60",
-    sparkleColors: ['#fda4af', '#f9a8d4', '#f0abfc'],
+    accentColor: "#ec4899",
+    tagline: "SMASH. BUZZ. WIN.",
+    rotation: -2,
+    scale: 1.02,
   },
   sequence_squeeze: {
     icon: ListOrdered,
-    gradient: "from-emerald-300 via-teal-300 to-cyan-300",
-    bgGradient: "from-emerald-100/50 via-teal-100/40 to-cyan-100/30",
-    shadowColor: "shadow-teal-300/40",
+    gradient: "from-emerald-500 via-teal-500 to-cyan-500",
     route: "/host/genetic-sort",
-    accentColor: "#5EEAD4",
-    iconBg: "bg-gradient-to-br from-emerald-300 via-teal-300 to-cyan-300",
-    tagline: "Order From Chaos",
-    description: "Four items. One correct sequence. The fastest brain wins. Can you crack the pattern before anyone else?",
-    borderColor: "border-teal-200/60",
+    accentColor: "#14b8a6",
+    tagline: "CHAOS → ORDER",
+    rotation: 1,
+    scale: 1,
   },
   psyop: {
     icon: Brain,
-    gradient: "from-violet-300 via-purple-300 to-indigo-300",
-    bgGradient: "from-violet-100/50 via-purple-100/40 to-indigo-100/30",
-    shadowColor: "shadow-purple-300/40",
+    gradient: "from-violet-600 via-purple-600 to-fuchsia-600",
     route: "/host/psyop",
-    accentColor: "#C4B5FD",
-    iconBg: "bg-gradient-to-br from-violet-300 via-purple-300 to-indigo-300",
-    tagline: "Truth or Bluff",
-    description: "Craft the perfect lie. Fool your friends. Sniff out the truth. The best deceiver takes it all.",
-    borderColor: "border-purple-200/60",
+    accentColor: "#a855f7",
+    tagline: "LIE. DETECT. DESTROY.",
+    rotation: -1,
+    scale: 1.01,
   },
 };
 
@@ -250,7 +235,7 @@ export default function Home() {
               {gameTypes.filter(g => GAME_CONFIG[g.slug]).map((game, index) => {
                 const config = GAME_CONFIG[game.slug];
                 const Icon = config.icon;
-                const isComingSoon = (game as any).status === 'coming_soon' || config.status === 'coming_soon';
+                const isComingSoon = (game as any).status === 'coming_soon';
                 const isHovered = hoveredCard === game.slug;
 
                 return (
@@ -270,109 +255,101 @@ export default function Home() {
                       onClick={() => !isComingSoon && setLocation(config.route)}
                       onMouseEnter={() => setHoveredCard(game.slug)}
                       onMouseLeave={() => setHoveredCard(null)}
-                      whileHover={isComingSoon ? {} : { y: -6, scale: 1.02, transition: { duration: 0.2, ease: "easeOut" } }}
-                      whileTap={isComingSoon ? {} : { scale: 0.98 }}
+                      whileHover={isComingSoon ? {} : { 
+                        scale: 1.08, 
+                        rotate: config.rotation * 1.5,
+                        y: -12,
+                        transition: { duration: 0.2, type: "spring", stiffness: 300 } 
+                      }}
+                      whileTap={isComingSoon ? {} : { scale: 0.95, rotate: 0 }}
                       disabled={isComingSoon}
-                      className={`relative flex flex-col items-center justify-center p-8 rounded-3xl text-center transition-all duration-300 w-full min-h-[200px] overflow-hidden ${
-                        isComingSoon 
-                          ? 'opacity-40 cursor-not-allowed' 
-                          : 'cursor-pointer'
+                      className={`relative flex flex-col items-center justify-center p-6 md:p-8 rounded-2xl text-center w-full min-h-[220px] overflow-hidden border-2 border-white/20 ${
+                        isComingSoon ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
                       }`}
                       style={{
+                        transform: `rotate(${config.rotation}deg) scale(${config.scale})`,
                         boxShadow: isHovered && !isComingSoon 
-                          ? `0 20px 40px -10px ${config.accentColor}60`
-                          : `0 8px 24px -6px ${config.accentColor}30`
+                          ? `0 25px 50px -12px ${config.accentColor}, 0 0 60px ${config.accentColor}40`
+                          : `0 10px 40px -10px ${config.accentColor}80`
                       }}
                       data-testid={`button-game-${game.slug}`}
                     >
-                      {/* Full gradient background */}
-                      <motion.div 
-                        className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${config.gradient}`}
-                        animate={{ opacity: isHovered && !isComingSoon ? 1 : 0.85 }}
-                        transition={{ duration: 0.2 }}
+                      {/* Saturated gradient background */}
+                      <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${config.gradient}`} />
+                      
+                      {/* Noise texture overlay */}
+                      <div className="absolute inset-0 rounded-2xl opacity-30 mix-blend-overlay" 
+                        style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }} 
                       />
                       
-                      {/* Decorative circles */}
-                      <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full" />
-                      <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-white/10 rounded-full" />
+                      {/* Diagonal slash decorations */}
+                      <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rotate-12" />
+                      <div className="absolute -bottom-16 -left-8 w-32 h-32 bg-black/10 -rotate-12" />
                       
-                      {/* Floating sparkles on hover */}
+                      {/* Glitch lines on hover */}
                       {isHovered && !isComingSoon && (
                         <>
-                          {[...Array(5)].map((_, i) => (
-                            <motion.div
-                              key={i}
-                              className="absolute w-2 h-2 bg-white/60 rounded-full pointer-events-none"
-                              initial={{ 
-                                x: 40 + Math.random() * 120, 
-                                y: 60 + Math.random() * 80,
-                                opacity: 0,
-                                scale: 0
-                              }}
-                              animate={{ 
-                                y: [null, -30 - Math.random() * 30],
-                                opacity: [0, 0.8, 0],
-                                scale: [0, 1, 0]
-                              }}
-                              transition={{ 
-                                duration: 1.2,
-                                delay: i * 0.1,
-                                repeat: Infinity,
-                                ease: "easeOut"
-                              }}
-                            />
-                          ))}
+                          <motion.div 
+                            className="absolute left-0 right-0 h-[2px] bg-white/40"
+                            initial={{ top: "30%", opacity: 0 }}
+                            animate={{ top: ["30%", "70%", "30%"], opacity: [0.5, 0.8, 0.5] }}
+                            transition={{ duration: 0.3, repeat: Infinity }}
+                          />
+                          <motion.div 
+                            className="absolute left-0 right-0 h-[1px] bg-white/30"
+                            initial={{ top: "60%", opacity: 0 }}
+                            animate={{ top: ["60%", "20%", "60%"], opacity: [0.3, 0.6, 0.3] }}
+                            transition={{ duration: 0.4, repeat: Infinity }}
+                          />
                         </>
                       )}
                       
                       {/* Coming Soon Badge */}
                       {isComingSoon && (
-                        <div className="absolute top-4 right-4 px-3 py-1 bg-black/20 backdrop-blur-sm rounded-full text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <div className="absolute top-3 right-3 px-3 py-1 bg-black/40 backdrop-blur-sm rounded-full text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-1.5">
                           <Clock className="w-3 h-3" />
-                          Soon
+                          SOON
                         </div>
                       )}
                       
-                      {/* Big centered icon */}
+                      {/* Icon with attitude */}
                       <motion.div 
-                        className="relative w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4 shadow-lg"
+                        className="relative w-16 h-16 md:w-20 md:h-20 rounded-xl bg-black/20 backdrop-blur-sm flex items-center justify-center mb-3 border border-white/20"
                         animate={isHovered && !isComingSoon ? { 
-                          scale: 1.1, 
-                          rotate: 5,
-                          y: -4
+                          scale: 1.2, 
+                          rotate: -8,
+                          y: -8
                         } : { 
                           scale: 1, 
                           rotate: 0,
                           y: 0
                         }}
-                        transition={{ duration: 0.25, type: "spring", stiffness: 200 }}
+                        transition={{ duration: 0.15, type: "spring", stiffness: 400 }}
                       >
-                        <Icon className="w-10 h-10 text-white drop-shadow-md" />
+                        <Icon className="w-8 h-8 md:w-10 md:h-10 text-white drop-shadow-lg" strokeWidth={2.5} />
                       </motion.div>
                       
-                      {/* Game name */}
-                      <h3 className="relative text-2xl font-black text-white drop-shadow-sm mb-1">
+                      {/* Game name - BOLD */}
+                      <h3 className="relative text-2xl md:text-3xl font-black text-white tracking-tight drop-shadow-lg uppercase">
                         {game.displayName}
                       </h3>
                       
-                      {/* Tagline */}
-                      <p className="relative text-sm font-medium text-white/80">
+                      {/* Tagline - punchy */}
+                      <p className="relative text-xs md:text-sm font-black text-white/90 tracking-widest mt-1 uppercase">
                         {config.tagline}
                       </p>
                       
-                      {/* Play indicator on hover */}
+                      {/* GO indicator */}
                       <motion.div 
-                        className="absolute bottom-4 left-1/2 flex items-center gap-1 text-white/90 font-semibold text-sm"
-                        initial={{ opacity: 0, x: "-50%", y: 10 }}
+                        className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full"
                         animate={{ 
-                          opacity: isHovered && !isComingSoon ? 1 : 0, 
-                          x: "-50%",
-                          y: isHovered && !isComingSoon ? 0 : 10 
+                          scale: isHovered && !isComingSoon ? 1.1 : 1,
+                          x: isHovered && !isComingSoon ? -4 : 0
                         }}
-                        transition={{ duration: 0.2 }}
+                        transition={{ duration: 0.15 }}
                       >
-                        <Play className="w-4 h-4" fill="currentColor" />
-                        <span>Let's go!</span>
+                        <span className="text-xs font-black text-white uppercase tracking-wider">GO</span>
+                        <ArrowRight className="w-4 h-4 text-white" strokeWidth={3} />
                       </motion.div>
                     </motion.button>
                   </motion.div>
