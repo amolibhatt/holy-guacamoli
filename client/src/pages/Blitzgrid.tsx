@@ -3733,17 +3733,6 @@ export default function Blitzgrid() {
       <AppHeader title="Blitzgrid" backHref="/" showAdminButton adminHref="/admin/games" />
       
       <div className="container mx-auto px-4 py-8">
-        {/* Simple heading */}
-        <motion.div 
-          className="text-center mb-10"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <h1 className="text-2xl font-semibold text-foreground mb-2">Choose a Grid</h1>
-          <p className="text-muted-foreground">
-            {activeGrids.length} {activeGrids.length === 1 ? 'grid' : 'grids'} ready to play
-          </p>
-        </motion.div>
 
         {loadingGrids ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
