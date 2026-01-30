@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ArrowRight, Sparkles, PartyPopper, Users, ChevronRight, ListOrdered, Trophy, Clock, Brain } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, Sparkles, PartyPopper, Users, ChevronRight, ListOrdered, Trophy, Clock, Brain, Play, Zap } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation } from "wouter";
@@ -38,60 +38,59 @@ const GUIDE_STEPS = [
 const GAME_CONFIG: Record<string, { 
   icon: typeof Grid3X3; 
   gradient: string; 
+  bgGradient: string;
   shadowColor: string;
-  hoverBorder: string;
   route: string;
   playerCount: string;
   accentColor: string;
-  glowColor: string;
+  iconBg: string;
   status?: string;
 }> = {
   blitzgrid: {
     icon: Grid3X3,
     gradient: "from-violet-500 via-purple-500 to-indigo-500",
-    shadowColor: "shadow-purple-500/30",
-    hoverBorder: "hover:border-purple-400/50",
+    bgGradient: "from-violet-500/5 via-purple-500/5 to-indigo-500/5",
+    shadowColor: "shadow-purple-500/20",
     route: "/host/blitzgrid",
-    playerCount: "Multiplayer",
+    playerCount: "2-10 players",
     accentColor: "#8B5CF6",
-    glowColor: "purple",
+    iconBg: "bg-gradient-to-br from-violet-500 to-purple-600",
   },
   sequence_squeeze: {
     icon: ListOrdered,
     gradient: "from-emerald-400 via-teal-500 to-cyan-500",
-    shadowColor: "shadow-teal-500/30",
-    hoverBorder: "hover:border-teal-400/50",
+    bgGradient: "from-emerald-500/5 via-teal-500/5 to-cyan-500/5",
+    shadowColor: "shadow-teal-500/20",
     route: "/host/genetic-sort",
-    playerCount: "Multiplayer",
+    playerCount: "2-20 players",
     accentColor: "#14B8A6",
-    glowColor: "teal",
+    iconBg: "bg-gradient-to-br from-emerald-400 to-teal-500",
   },
   psyop: {
     icon: Brain,
     gradient: "from-rose-400 via-pink-500 to-fuchsia-500",
-    shadowColor: "shadow-pink-500/30",
-    hoverBorder: "hover:border-pink-400/50",
+    bgGradient: "from-rose-500/5 via-pink-500/5 to-fuchsia-500/5",
+    shadowColor: "shadow-pink-500/20",
     route: "/host/psyop",
-    playerCount: "Multiplayer",
+    playerCount: "4-12 players",
     accentColor: "#EC4899",
-    glowColor: "pink",
+    iconBg: "bg-gradient-to-br from-rose-400 to-pink-500",
   },
 };
 
 function GameCardSkeleton() {
   return (
-    <div className="relative flex flex-col p-5 bg-card border-2 border-border rounded-2xl w-full overflow-hidden">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-muted/20 to-transparent rounded-bl-full" />
-      <div className="flex items-start justify-between gap-2 mb-4">
-        <Skeleton className="w-12 h-12 rounded-xl" />
-        <Skeleton className="w-5 h-5 rounded" />
+    <div className="relative flex flex-col p-6 bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl w-full overflow-hidden">
+      <div className="flex items-center gap-4 mb-4">
+        <Skeleton className="w-14 h-14 rounded-2xl" />
+        <div className="flex-1">
+          <Skeleton className="h-5 w-24 mb-2" />
+          <Skeleton className="h-3 w-16" />
+        </div>
       </div>
-      <Skeleton className="h-6 w-3/4 mb-2" />
-      <Skeleton className="h-4 w-full mb-1" />
-      <Skeleton className="h-4 w-2/3 mb-4" />
-      <div className="pt-3 border-t border-border/50">
-        <Skeleton className="h-4 w-20" />
-      </div>
+      <Skeleton className="h-4 w-full mb-2" />
+      <Skeleton className="h-4 w-3/4 mb-4" />
+      <Skeleton className="h-10 w-full rounded-xl" />
     </div>
   );
 }
@@ -133,9 +132,14 @@ export default function Home() {
 
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gradient-game">
-        <Loader2 className="w-12 h-12 text-primary animate-spin" />
-        <p className="text-muted-foreground mt-4">Loading...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        >
+          <Loader2 className="w-10 h-10 text-primary" />
+        </motion.div>
+        <p className="text-muted-foreground mt-4 text-sm">Loading your games...</p>
       </div>
     );
   }
@@ -146,17 +150,15 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="fixed inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-pink-500/5 pointer-events-none" />
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <motion.div 
-          className="absolute top-20 left-10 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl"
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 8, repeat: Infinity }}
-        />
-        <motion.div 
-          className="absolute bottom-20 right-10 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl"
-          animate={{ scale: [1.2, 1, 1.2], opacity: [0.5, 0.3, 0.5] }}
-          transition={{ duration: 10, repeat: Infinity }}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-violet-500/5 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-pink-500/5 via-transparent to-transparent" />
+        <div 
+          className="absolute inset-0 opacity-[0.015]"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+            backgroundSize: '32px 32px'
+          }}
         />
       </div>
       
@@ -167,39 +169,50 @@ export default function Home() {
         onHelpClick={() => setShowGuide(true)}
       />
 
-      <main className="flex-1 p-6 overflow-y-auto relative">
-        <div className="max-w-6xl mx-auto">
+      <main className="flex-1 px-4 md:px-6 py-8 overflow-y-auto relative">
+        <div className="max-w-5xl mx-auto">
           
           <motion.section 
-            className="text-center py-6 mb-4"
+            className="text-center mb-10"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.5 }}
           >
-            <motion.h1 
-              className="text-3xl md:text-4xl font-black mb-2 leading-tight"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+            <motion.div
+              className="inline-flex flex-wrap items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 text-xs font-medium mb-4"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1 }}
             >
-              <span className="text-foreground">Game Night, </span>
+              <Zap className="w-3 h-3" />
+              Ready to play
+            </motion.div>
+            
+            <motion.h1 
+              className="text-4xl md:text-5xl font-black mb-3 tracking-tight"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.15 }}
+            >
+              <span className="text-foreground">Hey </span>
               <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
-                Elevated
+                {user?.firstName || 'there'}
               </span>
+              <span className="text-foreground">!</span>
             </motion.h1>
             
             <motion.p 
-              className="text-muted-foreground"
+              className="text-muted-foreground text-lg"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-              Welcome back, <span className="font-semibold text-foreground">{user?.firstName || 'Host'}</span>
+              Pick a game and let's get this party started
             </motion.p>
           </motion.section>
 
           {isLoadingGames ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {[1, 2, 3].map((i) => (
                 <motion.div
                   key={i}
@@ -213,36 +226,25 @@ export default function Home() {
             </div>
           ) : gameTypes.length === 0 ? (
             <motion.div 
-              className="text-center py-20 px-8"
+              className="text-center py-16 px-6"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3 }}
             >
-              <motion.div 
-                className="w-32 h-32 rounded-full bg-gradient-to-br from-violet-500/10 to-pink-500/10 flex items-center justify-center mx-auto mb-8 relative"
-                animate={{ rotate: [0, 5, -5, 0] }}
-                transition={{ duration: 4, repeat: Infinity }}
-              >
-                <AvocadoIcon className="w-16 h-16 opacity-60" />
-                <motion.div 
-                  className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <Sparkles className="w-4 h-4 text-amber-500" />
-                </motion.div>
-              </motion.div>
-              <h3 className="text-3xl font-bold text-foreground mb-4">No Games Yet</h3>
-              <p className="text-lg text-muted-foreground max-w-md mx-auto mb-8">
-                Looks like the party hasn't started! Contact your admin to unlock some awesome games.
+              <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mx-auto mb-6">
+                <AvocadoIcon className="w-12 h-12 opacity-40" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-3">No Games Available</h3>
+              <p className="text-muted-foreground max-w-sm mx-auto mb-6">
+                Games will appear here once your admin enables them
               </p>
-              <Button variant="outline" size="lg" className="gap-2" data-testid="button-empty-state">
-                <PartyPopper className="w-5 h-5" />
-                Check Back Soon
+              <Button variant="outline" className="gap-2" data-testid="button-empty-state">
+                <PartyPopper className="w-4 h-4" />
+                Check Back Later
               </Button>
             </motion.div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {gameTypes.filter(g => GAME_CONFIG[g.slug]).map((game, index) => {
                 const config = GAME_CONFIG[game.slug];
                 const Icon = config.icon;
@@ -250,118 +252,109 @@ export default function Home() {
                 const isHovered = hoveredCard === game.slug;
 
                 return (
-                  <motion.button
+                  <motion.div
                     key={game.id}
-                    onClick={() => !isComingSoon && setLocation(config.route)}
-                    onMouseEnter={() => setHoveredCard(game.slug)}
-                    onMouseLeave={() => setHoveredCard(null)}
-                    initial={{ opacity: 0, y: 40 }}
+                    initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ 
-                      delay: 0.8 + index * 0.15,
+                      delay: 0.25 + index * 0.1,
                       type: "spring",
                       stiffness: 100,
                       damping: 15
                     }}
-                    whileHover={isComingSoon ? {} : { 
-                      y: -8,
-                      rotateX: 5,
-                      rotateY: -2,
-                      transition: { duration: 0.3 }
-                    }}
-                    whileTap={isComingSoon ? {} : { scale: 0.98 }}
-                    disabled={isComingSoon}
-                    style={{ 
-                      perspective: "1000px",
-                      transformStyle: "preserve-3d"
-                    }}
-                    className={`relative flex flex-col p-5 bg-card border-2 rounded-2xl text-left transition-all duration-300 group overflow-visible w-full ${
-                      isComingSoon 
-                        ? 'opacity-50 cursor-not-allowed border-border grayscale' 
-                        : 'border-border hover-elevate active-elevate-2'
-                    }`}
-                    data-testid={`button-game-${game.slug}`}
+                    className="relative"
                   >
-                    {!isComingSoon && isHovered && (
-                      <motion.div 
-                        className={`absolute inset-0 bg-gradient-to-br ${config.gradient} opacity-[0.08] pointer-events-none`}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 0.08 }}
-                        transition={{ duration: 0.3 }}
-                      />
-                    )}
-                    
-                    <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${config.gradient} ${isComingSoon ? 'opacity-5' : 'opacity-10'} rounded-bl-full transition-opacity duration-300 ${!isComingSoon && isHovered ? 'opacity-20' : ''}`} />
-                    
-                    {isComingSoon && (
-                      <motion.div 
-                        className="absolute top-3 right-3 px-2 py-1 bg-muted/80 backdrop-blur-sm rounded-full text-xs font-medium text-muted-foreground flex items-center gap-1 border border-border/50"
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.9 + index * 0.15 }}
-                      >
-                        <Clock className="w-3 h-3" />
-                        Soon
-                      </motion.div>
-                    )}
-                    
-                    <div className="flex items-start justify-between gap-2 mb-4">
-                      <motion.div 
-                        className={`rounded-xl bg-gradient-to-br ${config.gradient} ${isComingSoon ? 'opacity-50' : ''} flex items-center justify-center shadow-lg ${config.shadowColor} relative`}
-                        animate={!isComingSoon && isHovered ? { 
-                          scale: [1, 1.05, 1],
-                          rotate: [0, 3, -3, 0]
-                        } : {}}
-                        transition={{ duration: 0.6 }}
-                        style={{ width: "48px", height: "48px" }}
-                      >
-                        <Icon className="w-6 h-6 text-white drop-shadow-lg" />
-                      </motion.div>
-                      {!isComingSoon && (
-                        <motion.div
-                          animate={isHovered ? { x: 3, scale: 1.1 } : { x: 0, scale: 1 }}
+                    <motion.button
+                      onClick={() => !isComingSoon && setLocation(config.route)}
+                      onMouseEnter={() => setHoveredCard(game.slug)}
+                      onMouseLeave={() => setHoveredCard(null)}
+                      whileHover={isComingSoon ? {} : { y: -4, transition: { duration: 0.2 } }}
+                      whileTap={isComingSoon ? {} : { scale: 0.98 }}
+                      disabled={isComingSoon}
+                      className={`relative flex flex-col p-6 rounded-2xl text-left transition-all duration-300 w-full overflow-visible ${
+                        isComingSoon 
+                          ? 'opacity-40 cursor-not-allowed bg-card/30 border border-border/30' 
+                          : 'bg-card/80 backdrop-blur-sm border border-border/50 hover-elevate active-elevate-2'
+                      }`}
+                      style={{
+                        boxShadow: isHovered && !isComingSoon 
+                          ? `0 20px 40px -15px ${config.accentColor}20, 0 0 0 1px ${config.accentColor}15`
+                          : undefined
+                      }}
+                      data-testid={`button-game-${game.slug}`}
+                    >
+                      <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${config.bgGradient} opacity-0 transition-opacity duration-300 ${isHovered && !isComingSoon ? 'opacity-100' : ''}`} />
+                      
+                      {isComingSoon && (
+                        <div className="absolute top-4 right-4 px-2.5 py-1 bg-muted rounded-full text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex flex-wrap items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          Soon
+                        </div>
+                      )}
+                      
+                      <div className="relative flex flex-wrap items-start gap-4 mb-4">
+                        <motion.div 
+                          className={`w-14 h-14 rounded-2xl ${config.iconBg} flex items-center justify-center shadow-lg ${config.shadowColor}`}
+                          animate={isHovered && !isComingSoon ? { scale: 1.05, rotate: 3 } : { scale: 1, rotate: 0 }}
                           transition={{ duration: 0.2 }}
                         >
-                          <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                          <Icon className="w-7 h-7 text-white" />
+                        </motion.div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-bold text-foreground truncate">
+                            {game.displayName}
+                          </h3>
+                          <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            {config.playerCount}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <p className="relative text-sm text-muted-foreground mb-5 line-clamp-2 flex-1">
+                        {game.description}
+                      </p>
+                      
+                      {!isComingSoon && (
+                        <motion.div 
+                          className={`relative flex items-center justify-center gap-2 py-2.5 rounded-xl font-medium text-sm transition-all ${
+                            isHovered 
+                              ? `bg-gradient-to-r ${config.gradient} text-white shadow-lg ${config.shadowColor}` 
+                              : 'bg-muted text-muted-foreground'
+                          }`}
+                          animate={isHovered ? { scale: 1.02 } : { scale: 1 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <Play className="w-4 h-4" fill={isHovered ? "currentColor" : "none"} />
+                          <span>{isHovered ? 'Start Game' : 'Play'}</span>
+                          <ArrowRight className={`w-4 h-4 transition-transform ${isHovered ? 'translate-x-0.5' : ''}`} />
                         </motion.div>
                       )}
-                    </div>
-                    
-                    <h3 className={`text-lg font-bold mb-1 ${isComingSoon ? 'text-foreground/50' : 'text-foreground'}`}>
-                      {game.displayName}
-                    </h3>
-                    
-                    <p className={`text-sm mb-4 flex-1 leading-relaxed ${isComingSoon ? 'text-muted-foreground/50' : 'text-muted-foreground'}`}>
-                      {game.description}
-                    </p>
-                    
-                    <div className="pt-3 border-t border-border/50 flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                        <Users className="w-4 h-4" />
-                        <span>{config.playerCount}</span>
-                      </div>
-                      {!isComingSoon && (
-                        <motion.span 
-                          className="text-xs font-medium text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                          animate={isHovered ? { x: [0, 3, 0] } : {}}
-                          transition={{ duration: 0.6, repeat: Infinity }}
-                        >
-                          Click to play
-                        </motion.span>
-                      )}
-                    </div>
-                  </motion.button>
+                    </motion.button>
+                  </motion.div>
                 );
               })}
             </div>
           )}
 
+          <motion.div 
+            className="mt-10 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+          >
+            <p className="text-xs text-muted-foreground/60">
+              More games coming soon
+            </p>
+          </motion.div>
+
         </div>
       </main>
       
-      <footer className="border-t border-border/50 bg-card/30 backdrop-blur-sm px-6 py-4 text-center relative">
-        <p className="text-xs text-muted-foreground">
-          Made with love for Amoli's Birthday
+      <footer className="border-t border-border/30 bg-card/20 backdrop-blur-sm px-6 py-3 text-center">
+        <p className="text-xs text-muted-foreground/60">
+          Made with love for Amoli
         </p>
       </footer>
 
@@ -380,30 +373,30 @@ export default function Home() {
             {GUIDE_STEPS.map((step, index) => (
               <motion.div 
                 key={index} 
-                className="flex items-start gap-3 p-3 rounded-lg bg-muted/50"
+                className="flex flex-wrap items-start gap-3 p-3 rounded-xl bg-muted/50"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
-                  <step.icon className="w-4 h-4 text-primary" />
+                <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
+                  <step.icon className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-primary">Step {index + 1}</span>
+                  <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                    <span className="text-[10px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">Step {index + 1}</span>
                   </div>
-                  <h4 className="font-semibold text-foreground text-sm">{step.title}</h4>
+                  <h4 className="font-semibold text-foreground">{step.title}</h4>
                   <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
                 </div>
               </motion.div>
             ))}
           </div>
-          <div className="flex gap-2 mt-4">
+          <div className="flex gap-3 mt-4">
             <Button variant="outline" onClick={handleCloseGuide} className="flex-1" data-testid="button-close-guide">
               Got it!
             </Button>
             <Button className="flex-1 gap-2" onClick={handleCloseGuide} data-testid="button-start-hosting">
-              Start Hosting <ChevronRight className="w-4 h-4" />
+              Let's Go <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         </DialogContent>
