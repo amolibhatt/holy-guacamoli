@@ -312,9 +312,15 @@ export default function Home() {
                         </div>
                       )}
                       
-                      {/* Icon with attitude */}
+                      {/* Icon with spaceship button glow */}
                       <motion.div 
-                        className="relative w-16 h-16 md:w-20 md:h-20 rounded-xl bg-black/20 backdrop-blur-sm flex items-center justify-center mb-3 border border-white/20"
+                        className="relative w-16 h-16 md:w-20 md:h-20 rounded-xl flex items-center justify-center mb-3 border-2 border-white/40"
+                        style={{
+                          background: 'linear-gradient(145deg, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.3) 100%)',
+                          boxShadow: isHovered && !isComingSoon
+                            ? `inset 0 0 20px rgba(255,255,255,0.5), inset 0 0 40px rgba(255,255,255,0.2), 0 0 30px ${config.accentColor}80`
+                            : `inset 0 0 15px rgba(255,255,255,0.3), inset 0 0 30px rgba(255,255,255,0.1), 0 0 15px ${config.accentColor}40`
+                        }}
                         animate={isHovered && !isComingSoon ? { 
                           scale: 1.2, 
                           rotate: -8,
@@ -326,7 +332,11 @@ export default function Home() {
                         }}
                         transition={{ duration: 0.15, type: "spring", stiffness: 400 }}
                       >
-                        <Icon className="w-8 h-8 md:w-10 md:h-10 text-white drop-shadow-lg" strokeWidth={2.5} />
+                        {/* Inner glow ring */}
+                        <div className="absolute inset-1 rounded-lg border border-white/20" 
+                          style={{ boxShadow: 'inset 0 0 10px rgba(255,255,255,0.2)' }} 
+                        />
+                        <Icon className="w-8 h-8 md:w-10 md:h-10 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" strokeWidth={2.5} />
                       </motion.div>
                       
                       {/* Game name - BOLD */}
