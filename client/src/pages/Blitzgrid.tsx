@@ -3747,14 +3747,7 @@ export default function Blitzgrid() {
                 </p>
               </div>
             </div>
-            <Button 
-              onClick={() => setShowNewGridForm(true)} 
-              className="bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-400 shadow-lg shadow-pink-400/25"
-              data-testid="button-new-grid"
-            >
-              <Plus className="w-4 h-4 mr-2" /> New Grid
-            </Button>
-          </div>
+                      </div>
         </div>
       </div>
 
