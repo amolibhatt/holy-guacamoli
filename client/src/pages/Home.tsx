@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ArrowRight, Sparkles, PartyPopper, Users, ChevronRight, ListOrdered, Crown, Clock, Brain, Play, Star, Heart } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, Sparkles, PartyPopper, Users, ChevronRight, ListOrdered, Crown, Clock, Brain, Play, Star, Heart, Lock } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation } from "wouter";
@@ -368,16 +368,52 @@ export default function Home() {
             </div>
           )}
 
-          {/* Bottom teaser */}
+          {/* Coming Soon Card */}
           <motion.div 
-            className="mt-12 text-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
+            className="mt-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
           >
-            <p className="text-sm text-muted-foreground/60">
-              More games coming soon
-            </p>
+            <div 
+              className="relative flex flex-col items-center justify-center p-8 rounded-2xl text-center min-h-[180px] overflow-hidden border-2 border-white/10 cursor-not-allowed"
+              style={{
+                background: 'linear-gradient(135deg, rgba(100,100,100,0.3) 0%, rgba(60,60,60,0.4) 100%)',
+                filter: 'grayscale(100%)',
+                boxShadow: '0 10px 40px -10px rgba(0,0,0,0.3)'
+              }}
+            >
+              {/* Blur overlay */}
+              <div className="absolute inset-0 backdrop-blur-[2px] rounded-2xl" />
+              
+              {/* Diagonal decorations */}
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rotate-12" />
+              <div className="absolute -bottom-16 -left-8 w-32 h-32 bg-black/10 -rotate-12" />
+              
+              {/* Lock icon with glow */}
+              <div 
+                className="relative w-16 h-16 rounded-xl flex items-center justify-center mb-3 border-2 border-white/20"
+                style={{
+                  background: 'linear-gradient(145deg, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.2) 100%)',
+                  boxShadow: 'inset 0 0 15px rgba(255,255,255,0.15), 0 0 10px rgba(0,0,0,0.2)'
+                }}
+              >
+                <Lock className="w-8 h-8 text-white/60 drop-shadow-lg" strokeWidth={2.5} />
+              </div>
+              
+              {/* Coming Soon text */}
+              <h3 className="relative text-xl md:text-2xl font-black text-white/50 tracking-widest uppercase">
+                COMING SOON...
+              </h3>
+              
+              {/* Scanlines effect */}
+              <div 
+                className="absolute inset-0 pointer-events-none opacity-10"
+                style={{
+                  background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)'
+                }}
+              />
+            </div>
           </motion.div>
 
         </div>
