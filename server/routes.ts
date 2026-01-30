@@ -2417,21 +2417,17 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId!;
       
-      const { name, theme } = req.body;
+      const { name } = req.body;
       if (!name || typeof name !== "string") {
         return res.status(400).json({ message: "Grid name is required" });
       }
-      
-      // Validate theme - prefix with blitzgrid: for storage
-      const validThemes = ['sports', 'birthday', 'beach', 'office', 'dogs', 'cats', 'space', 'music', 'nature'];
-      const selectedTheme = validThemes.includes(theme) ? theme : 'birthday';
       
       const board = await storage.createBoard({
         userId,
         name: name.trim(),
         description: "Blitzgrid",
         pointValues: [10, 20, 30, 40, 50],
-        theme: `blitzgrid:${selectedTheme}`,
+        theme: "blitzgrid",
         visibility: "private",
         isGlobal: false,
         sortOrder: 0,
@@ -2455,7 +2451,7 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid grid ID" });
       }
       
-      const { name, theme } = req.body;
+      const { name } = req.body;
       
       // Verify ownership
       const board = await storage.getBoard(id, userId);
@@ -2464,16 +2460,9 @@ export async function registerRoutes(
       }
       
       // Build update object
-      const updateData: { name?: string; theme?: string } = {};
+      const updateData: { name?: string } = {};
       if (name && typeof name === "string") {
         updateData.name = name.trim();
-      }
-      if (theme && typeof theme === "string") {
-        // Validate theme
-        const validThemes = ['sports', 'birthday', 'beach', 'office', 'dogs', 'cats', 'space', 'music', 'nature'];
-        if (validThemes.includes(theme)) {
-          updateData.theme = `blitzgrid:${theme}`;
-        }
       }
       
       if (Object.keys(updateData).length === 0) {

@@ -11,14 +11,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
-import { ThemePreview } from "@/components/ThemePreview";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, ListOrdered, Brain,
   ChevronRight, ArrowLeft, Loader2,
   AlertCircle, CheckCircle2, Image, Music, Video,
   Download, Upload, FileSpreadsheet,
-  Zap, Sun, Sparkles, Waves, Candy, TreePine, Star, Flame, Gamepad, Circle, PartyPopper
 } from "lucide-react";
 import { 
   AlertDialog, AlertDialogAction, AlertDialogCancel, 
@@ -75,38 +73,6 @@ interface CategoryWithQuestions extends Category {
 
 const POINT_TIERS = [10, 20, 30, 40, 50];
 
-// Available themes for grids - matching Blitzgrid.tsx
-const GRID_THEMES = [
-  { id: 'neon', name: 'Neon Nights', iconType: 'zap' as const },
-  { id: 'sunset', name: 'Golden Hour', iconType: 'sun' as const },
-  { id: 'aurora', name: 'Northern Lights', iconType: 'sparkles' as const },
-  { id: 'ocean', name: 'Deep Sea', iconType: 'waves' as const },
-  { id: 'candy', name: 'Sugar Rush', iconType: 'candy' as const },
-  { id: 'forest', name: 'Enchanted', iconType: 'trees' as const },
-  { id: 'galaxy', name: 'Stardust', iconType: 'star' as const },
-  { id: 'fire', name: 'Inferno', iconType: 'flame' as const },
-  { id: 'retro', name: 'Arcade', iconType: 'gamepad' as const },
-  { id: 'minimal', name: 'Clean Slate', iconType: 'circle' as const },
-] as const;
-
-type ThemeIconType = typeof GRID_THEMES[number]['iconType'];
-
-const ThemeIcon = ({ type, className }: { type: ThemeIconType; className?: string }) => {
-  switch (type) {
-    case 'zap': return <Zap className={className} />;
-    case 'sun': return <Sun className={className} />;
-    case 'sparkles': return <Sparkles className={className} />;
-    case 'waves': return <Waves className={className} />;
-    case 'candy': return <Candy className={className} />;
-    case 'trees': return <TreePine className={className} />;
-    case 'star': return <Star className={className} />;
-    case 'flame': return <Flame className={className} />;
-    case 'gamepad': return <Gamepad className={className} />;
-    case 'circle': return <Circle className={className} />;
-    default: return <PartyPopper className={className} />;
-  }
-};
-
 export default function BlitzgridAdmin() {
   const { toast } = useToast();
   const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
@@ -116,7 +82,6 @@ export default function BlitzgridAdmin() {
   
   const [showNewGridForm, setShowNewGridForm] = useState(false);
   const [newGridName, setNewGridName] = useState("");
-  const [newGridTheme, setNewGridTheme] = useState("aurora");
   const [editingGridId, setEditingGridId] = useState<number | null>(null);
   const [editGridName, setEditGridName] = useState("");
   const [deleteGridId, setDeleteGridId] = useState<number | null>(null);
@@ -151,13 +116,12 @@ export default function BlitzgridAdmin() {
   });
 
   const createGridMutation = useMutation({
-    mutationFn: async ({ name, theme }: { name: string; theme: string }) => {
-      return apiRequest('POST', '/api/blitzgrid/grids', { name, theme });
+    mutationFn: async ({ name }: { name: string }) => {
+      return apiRequest('POST', '/api/blitzgrid/grids', { name });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
       setNewGridName("");
-      setNewGridTheme("aurora");
       setShowNewGridForm(false);
       toast({ title: "Grid created" });
     },
@@ -167,8 +131,8 @@ export default function BlitzgridAdmin() {
   });
 
   const updateGridMutation = useMutation({
-    mutationFn: async ({ id, name, theme }: { id: number; name?: string; theme?: string }) => {
-      return apiRequest('PATCH', `/api/blitzgrid/grids/${id}`, { name, theme });
+    mutationFn: async ({ id, name }: { id: number; name?: string }) => {
+      return apiRequest('PATCH', `/api/blitzgrid/grids/${id}`, { name });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
@@ -644,36 +608,6 @@ export default function BlitzgridAdmin() {
             </div>
           </div>
           
-          {/* Theme Selector */}
-          <div className="flex items-center gap-2 flex-wrap mb-6">
-            <span className="text-sm text-muted-foreground" data-testid="text-grid-theme-label">Theme:</span>
-            {GRID_THEMES.map(theme => {
-              const currentTheme = grid?.theme?.replace('blitzgrid:', '') || 'aurora';
-              const isSelected = currentTheme === theme.id;
-              return (
-                <button
-                  key={theme.id}
-                  onClick={() => updateGridMutation.mutate({ id: selectedGridId, theme: theme.id })}
-                  disabled={updateGridMutation.isPending}
-                  className={`relative group flex items-center gap-2 px-2 py-1.5 rounded-lg border-2 transition-all ${
-                    isSelected 
-                      ? 'border-primary bg-primary/10 shadow-md' 
-                      : 'border-transparent hover:border-muted-foreground/30 hover:bg-muted/50'
-                  }`}
-                  data-testid={`button-grid-theme-${theme.id}`}
-                >
-                  <ThemePreview themeId={theme.id} />
-                  <span className={`text-sm font-medium ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>
-                    {theme.name}
-                  </span>
-                  {isSelected && (
-                    <Check className="w-4 h-4 text-primary" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
           {/* New Category Form */}
           {gridCategories.length < 5 && (
             <Card className="mb-4">
@@ -1008,8 +942,8 @@ export default function BlitzgridAdmin() {
               className="mb-4"
             >
               <Card>
-                <CardContent className="py-3 space-y-3">
-                  <div className="flex items-center gap-2">
+                <CardContent className="py-3">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Input
                       placeholder="Grid name..."
                       value={newGridName}
@@ -1017,7 +951,7 @@ export default function BlitzgridAdmin() {
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && newGridName.trim()) {
-                          createGridMutation.mutate({ name: newGridName.trim(), theme: newGridTheme });
+                          createGridMutation.mutate({ name: newGridName.trim() });
                         }
                         if (e.key === 'Escape') {
                           setShowNewGridForm(false);
@@ -1027,7 +961,7 @@ export default function BlitzgridAdmin() {
                       data-testid="input-grid-name"
                     />
                     <Button
-                      onClick={() => createGridMutation.mutate({ name: newGridName.trim(), theme: newGridTheme })}
+                      onClick={() => createGridMutation.mutate({ name: newGridName.trim() })}
                       disabled={!newGridName.trim() || createGridMutation.isPending}
                       data-testid="button-create-grid"
                     >
@@ -1036,32 +970,6 @@ export default function BlitzgridAdmin() {
                     <Button variant="ghost" onClick={() => setShowNewGridForm(false)}>
                       <X className="w-4 h-4" />
                     </Button>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm text-muted-foreground" data-testid="text-theme-label">Theme:</span>
-                    {GRID_THEMES.map(theme => {
-                      const isSelected = newGridTheme === theme.id;
-                      return (
-                        <button
-                          key={theme.id}
-                          onClick={() => setNewGridTheme(theme.id)}
-                          className={`relative group flex items-center gap-2 px-2 py-1.5 rounded-lg border-2 transition-all ${
-                            isSelected 
-                              ? 'border-primary bg-primary/10 shadow-md' 
-                              : 'border-transparent hover:border-muted-foreground/30 hover:bg-muted/50'
-                          }`}
-                          data-testid={`button-theme-${theme.id}`}
-                        >
-                          <ThemePreview themeId={theme.id} />
-                          <span className={`text-sm font-medium ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>
-                            {theme.name}
-                          </span>
-                          {isSelected && (
-                            <Check className="w-4 h-4 text-primary" />
-                          )}
-                        </button>
-                      );
-                    })}
                   </div>
                 </CardContent>
               </Card>
