@@ -263,19 +263,26 @@ export default function Home() {
                       }}
                       whileTap={isComingSoon ? {} : { scale: 0.95, rotate: 0 }}
                       disabled={isComingSoon}
-                      className={`relative flex flex-col items-center justify-center p-6 md:p-8 rounded-2xl text-center w-full min-h-[220px] overflow-hidden border-2 border-white/20 ${
+                      className={`relative flex flex-col items-center justify-center p-6 md:p-8 rounded-2xl text-center w-full min-h-[220px] overflow-hidden ${
                         isComingSoon ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
                       }`}
                       style={{
                         transform: `rotate(${config.rotation}deg) scale(${config.scale})`,
+                        border: `3px solid rgba(255,255,255,0.4)`,
                         boxShadow: isHovered && !isComingSoon 
-                          ? `0 25px 50px -12px ${config.accentColor}, 0 0 60px ${config.accentColor}40`
-                          : `0 10px 40px -10px ${config.accentColor}80`
+                          ? `0 30px 60px -15px ${config.accentColor}, 0 0 80px ${config.accentColor}50, 0 15px 30px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -2px 0 rgba(0,0,0,0.2)`
+                          : `0 15px 40px -10px ${config.accentColor}90, 0 8px 20px -5px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -2px 0 rgba(0,0,0,0.15)`
                       }}
                       data-testid={`button-game-${game.slug}`}
                     >
                       {/* Saturated gradient background */}
-                      <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${config.gradient}`} />
+                      <div className={`absolute inset-0 bg-gradient-to-br ${config.gradient}`} />
+                      
+                      {/* Top shine highlight for 3D effect */}
+                      <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/30 via-white/10 to-transparent" />
+                      
+                      {/* Bottom shadow for depth */}
+                      <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/20 to-transparent" />
                       
                       {/* Noise texture overlay */}
                       <div className="absolute inset-0 rounded-2xl opacity-30 mix-blend-overlay" 
