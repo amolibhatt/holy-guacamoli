@@ -951,6 +951,83 @@ export async function registerRoutes(
     }
   });
 
+  // Shuffle Play - get 5 random categories from user's grids
+  app.get("/api/boards/shuffle-play", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      
+      // Get all active blitzgrid boards for this user (theme can be "blitzgrid" or "blitzgrid:space", etc.)
+      const allBoards = await storage.getBoards(userId, role);
+      const blitzgridBoards = allBoards.filter(b => b.theme && b.theme.startsWith('blitzgrid'));
+      
+      // Collect all categories with their questions from active boards
+      const allCategories: Array<{
+        id: number;
+        name: string;
+        description: string | null;
+        imageUrl: string | null;
+        questions: Array<{
+          id: number;
+          question: string;
+          correctAnswer: string;
+          options: string[] | null;
+          points: number;
+          questionType: string | null;
+          imageUrl: string | null;
+          audioUrl: string | null;
+          videoUrl: string | null;
+        }>;
+      }> = [];
+      
+      for (const board of blitzgridBoards) {
+        const categoriesWithQuestions = await storage.getBoardWithCategoriesAndQuestions(board.id, userId, role);
+        // Only include categories with exactly 5 questions with correct point tiers (10, 20, 30, 40, 50)
+        const requiredPoints = [10, 20, 30, 40, 50];
+        for (const cat of categoriesWithQuestions) {
+          if (cat.questions && cat.questions.length === 5) {
+            const questionPoints = cat.questions.map(q => q.points).sort((a, b) => a - b);
+            const hasAllPoints = requiredPoints.every((pt, idx) => questionPoints[idx] === pt);
+            
+            if (hasAllPoints) {
+              allCategories.push({
+                id: cat.category.id,
+                name: cat.category.name,
+                description: cat.category.description,
+                imageUrl: cat.category.imageUrl,
+                questions: cat.questions.map(q => ({
+                  id: q.id,
+                  question: q.question,
+                  correctAnswer: q.correctAnswer,
+                  options: q.options,
+                  points: q.points,
+                  imageUrl: q.imageUrl,
+                  audioUrl: q.audioUrl,
+                  videoUrl: q.videoUrl,
+                })),
+              });
+            }
+          }
+        }
+      }
+      
+      if (allCategories.length < 5) {
+        return res.status(400).json({ 
+          message: "Not enough complete categories to shuffle. Need at least 5 complete categories across your grids." 
+        });
+      }
+      
+      // Shuffle and pick 5 random categories
+      const shuffled = allCategories.sort(() => Math.random() - 0.5);
+      const selectedCategories = shuffled.slice(0, 5);
+      
+      res.json({ categories: selectedCategories });
+    } catch (err) {
+      console.error("Error getting shuffle play categories:", err);
+      res.status(500).json({ message: "Failed to get shuffle play data" });
+    }
+  });
+
   // === GAMES ===
   app.get("/api/games", isAuthenticated, async (req, res) => {
     const userId = req.session.userId!;

@@ -22,7 +22,7 @@ import {
   ChevronRight, ArrowLeft, Play, Loader2,
   AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Medal,
   Volume2, VolumeX, MoreVertical, Settings, Copy, Link2, Share2, Download, Image, Loader2 as LoaderIcon, Clock,
-  Hand, Flame, Laugh, CircleDot, ThumbsUp, Sparkles, Heart, Timer, Zap
+  Hand, Flame, Laugh, CircleDot, ThumbsUp, Sparkles, Heart, Timer, Zap, Shuffle
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import html2canvas from "html2canvas";
@@ -71,6 +71,9 @@ export default function Blitzgrid() {
   const [selectedGridId, setSelectedGridId] = useState<number | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [playMode, setPlayMode] = useState(false);
+  const [shuffleMode, setShuffleMode] = useState(false);
+  const [shuffledCategories, setShuffledCategories] = useState<CategoryWithQuestions[] | null>(null);
+  const [isShuffling, setIsShuffling] = useState(false);
   const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set());
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -237,6 +240,8 @@ export default function Blitzgrid() {
     enabled: !!selectedGridId,
   });
 
+  // Use shuffled categories when in shuffle mode, otherwise use grid categories
+  const playCategories = shuffleMode ? (shuffledCategories || []) : gridCategories;
 
   // Create grid mutation
   const createGridMutation = useMutation({
@@ -689,10 +694,63 @@ export default function Blitzgrid() {
     setBuzzQueue([]);
     setBuzzerLocked(true);
     setPlayMode(false);
+    setShuffleMode(false);
+    setShuffledCategories(null);
     setSelectedGridId(null);
     setLastScoreChange(null);
     toast({ title: "Session ended", description: "All players have been disconnected." });
   }, [clearStoredSession, disconnectWebSocket, toast]);
+  
+  // Shuffle Play - randomly select 5 categories from all grids
+  const handleShufflePlay = useCallback(async () => {
+    setIsShuffling(true);
+    try {
+      const response = await apiRequest('/api/boards/shuffle-play');
+      const data = await response.json();
+      
+      // Validate response has exactly 5 categories, each with 5 questions covering all point tiers
+      const requiredPoints = [10, 20, 30, 40, 50];
+      const isValid = data.categories && 
+        data.categories.length === 5 && 
+        data.categories.every((cat: any) => 
+          cat.questions?.length === 5 &&
+          requiredPoints.every(pt => cat.questions.some((q: any) => q.points === pt))
+        );
+      
+      if (isValid) {
+        // Map the response to CategoryWithQuestions format
+        const mappedCategories: CategoryWithQuestions[] = data.categories.map((cat: any) => ({
+          id: cat.id,
+          name: cat.name,
+          description: cat.description,
+          imageUrl: cat.imageUrl,
+          questionCount: cat.questions.length,
+          questions: cat.questions,
+        }));
+        setShuffledCategories(mappedCategories);
+        setShuffleMode(true);
+        setPlayMode(true);
+        setCategoryRevealMode(true);
+        setRevealedCategoryCount(0);
+        setRevealedCells(new Set());
+        toast({
+          title: "Shuffle Play!",
+          description: "5 random categories mixed from your grids",
+        });
+      } else {
+        throw new Error("Not enough complete categories to shuffle");
+      }
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || "Need at least 5 complete categories across your grids";
+      toast({
+        title: "Can't shuffle yet",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsShuffling(false);
+    }
+  }, [toast]);
   
   // Fire celebratory confetti with fireworks
   const fireConfetti = useCallback(() => {
@@ -795,6 +853,8 @@ export default function Blitzgrid() {
     setIsJudging(false);
     setSelectedGridId(null);
     setPlayMode(false);
+    setShuffleMode(false);
+    setShuffledCategories(null);
     
     // Enter grid picker mode - room stays open
     setGridPickerMode(true);
@@ -840,15 +900,17 @@ export default function Blitzgrid() {
     );
   }
 
-  // Grid detail view with inline categories and questions
-  if (selectedGridId) {
-    const grid = grids.find(g => g.id === selectedGridId);
-    const gridIndex = grids.filter(g => g.isActive).findIndex(g => g.id === selectedGridId);
+  // Grid detail view with inline categories and questions (or shuffle mode)
+  if (selectedGridId || shuffleMode) {
+    const grid = selectedGridId ? grids.find(g => g.id === selectedGridId) : null;
+    const gridIndex = selectedGridId ? grids.filter(g => g.isActive).findIndex(g => g.id === selectedGridId) : -1;
     const effectiveColor = grid?.colorCode?.startsWith('#') ? null : grid?.colorCode;
-    const colorConfig = getBoardColorConfig(effectiveColor || BOARD_COLORS[gridIndex >= 0 ? gridIndex % BOARD_COLORS.length : 0]);
+    // Use fuchsia/violet theme for shuffle mode
+    const shuffleColor = 'fuchsia';
+    const colorConfig = getBoardColorConfig(shuffleMode ? shuffleColor : (effectiveColor || BOARD_COLORS[gridIndex >= 0 ? gridIndex % BOARD_COLORS.length : 0]));
     
-    // GAMEPLAY MODE
-    if (playMode && grid?.isActive) {
+    // GAMEPLAY MODE (normal grid or shuffle mode)
+    if (playMode && (grid?.isActive || shuffleMode)) {
       const handleCellClick = (categoryId: number, points: number, question: Question) => {
         const cellKey = `${categoryId}-${points}`;
         if (!revealedCells.has(cellKey)) {
@@ -862,7 +924,7 @@ export default function Blitzgrid() {
       const handleRevealAnswer = () => {
         setShowAnswer(true);
         if (activeQuestion) {
-          const cat = gridCategories.find(c => c.questions?.some(q => q.id === activeQuestion.id));
+          const cat = playCategories.find(c => c.questions?.some(q => q.id === activeQuestion.id));
           if (cat) {
             const cellKey = `${cat.id}-${activeQuestion.points}`;
             setRevealedCells(prev => {
@@ -891,11 +953,11 @@ export default function Blitzgrid() {
       
       // Reveal next category
       const revealNextCategory = () => {
-        if (revealedCategoryCount < gridCategories.length) {
+        if (revealedCategoryCount < playCategories.length) {
           playRevealFlip();
           setRevealedCategoryCount(prev => prev + 1);
           // Check if all categories revealed
-          if (revealedCategoryCount + 1 >= gridCategories.length) {
+          if (revealedCategoryCount + 1 >= playCategories.length) {
             setCategoryRevealMode(false);
             playWhoosh();
           }
@@ -904,7 +966,7 @@ export default function Blitzgrid() {
       
       // Skip reveal mode and show all
       const skipReveal = () => {
-        setRevealedCategoryCount(gridCategories.length);
+        setRevealedCategoryCount(playCategories.length);
         setCategoryRevealMode(false);
       };
       
@@ -1239,7 +1301,7 @@ export default function Blitzgrid() {
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={() => { setPlayMode(false); setSelectedGridId(null); }}
+                onClick={() => { setPlayMode(false); setShuffleMode(false); setShuffledCategories(null); setSelectedGridId(null); }}
                 className="text-white/60 h-9 w-9"
                 data-testid="button-exit-play"
               >
@@ -1247,7 +1309,9 @@ export default function Blitzgrid() {
               </Button>
               <Logo size="md" variant="light" />
               <div className="hidden sm:block">
-                <h1 className="text-sm font-medium text-white/80 tracking-tight">{grid.name}</h1>
+                <h1 className="text-sm font-medium text-white/80 tracking-tight">
+                  {shuffleMode ? "Shuffle Play" : grid?.name}
+                </h1>
               </div>
             </div>
             
@@ -1391,8 +1455,8 @@ export default function Blitzgrid() {
               className="h-full flex flex-col gap-3 relative z-10"
             >
               {/* Category Headers - Only revealed categories visible */}
-              <div className="grid gap-2 md:gap-3" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)` }}>
-                {gridCategories.map((category, idx) => {
+              <div className="grid gap-2 md:gap-3" style={{ gridTemplateColumns: `repeat(${playCategories.length}, 1fr)` }}>
+                {playCategories.map((category, idx) => {
                   const isRevealed = idx < revealedCategoryCount;
                   return (
                     <motion.div 
@@ -1431,9 +1495,9 @@ export default function Blitzgrid() {
               </div>
               
               {/* Point Grid - Only revealed categories visible */}
-              <div className="flex-1 grid gap-2 md:gap-3" style={{ gridTemplateColumns: `repeat(${gridCategories.length}, 1fr)`, gridTemplateRows: 'repeat(5, 1fr)' }}>
+              <div className="flex-1 grid gap-2 md:gap-3" style={{ gridTemplateColumns: `repeat(${playCategories.length}, 1fr)`, gridTemplateRows: 'repeat(5, 1fr)' }}>
                 {POINT_TIERS.map((points, rowIdx) => (
-                  gridCategories.map((category, colIdx) => {
+                  playCategories.map((category, colIdx) => {
                     const question = category.questions?.find(q => q.points === points);
                     const cellKey = `${category.id}-${points}`;
                     const isCellAnswered = revealedCells.has(cellKey);
@@ -1511,7 +1575,7 @@ export default function Blitzgrid() {
                   transition={{ duration: 2, repeat: Infinity }}
                 >
                   <span className="text-sm md:text-base font-medium">
-                    Click to reveal ({revealedCategoryCount}/{gridCategories.length})
+                    Click to reveal ({revealedCategoryCount}/{playCategories.length})
                   </span>
                   <Button
                     size="sm"
@@ -1908,7 +1972,7 @@ export default function Blitzgrid() {
               <DialogHeader>
                 {/* Category Name and Description */}
                 {(() => {
-                  const category = gridCategories.find(c => c.id === activeQuestion?.categoryId);
+                  const category = playCategories.find(c => c.id === activeQuestion?.categoryId);
                   return category ? (
                     <div className="text-center mb-2">
                       <p className={`${colorConfig.accent} text-sm font-semibold uppercase tracking-wider`}>
@@ -2727,6 +2791,39 @@ export default function Blitzgrid() {
               <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
                 Pick Your <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-amber-500 bg-clip-text text-transparent">Grid</span>
               </h1>
+            </motion.div>
+
+            {/* Shuffle Play Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card 
+                className="group cursor-pointer overflow-hidden border-2 border-dashed border-fuchsia-300 bg-gradient-to-br from-fuchsia-50/50 to-violet-50/50 hover-elevate"
+                onClick={handleShufflePlay}
+                data-testid="card-shuffle-play"
+              >
+                <CardContent className="flex items-center gap-4 p-5">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-violet-500 flex items-center justify-center shrink-0 shadow-lg shadow-fuchsia-500/20">
+                    {isShuffling ? (
+                      <Loader2 className="w-7 h-7 text-white animate-spin" />
+                    ) : (
+                      <Shuffle className="w-7 h-7 text-white" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-lg text-foreground flex flex-wrap items-center gap-2">
+                      Shuffle Play
+                      <Badge variant="secondary" className="text-xs bg-fuchsia-100 text-fuchsia-700 border-0">Mix it up</Badge>
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Play with 5 random categories from all your grids
+                    </p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-fuchsia-500 group-hover:translate-x-1 transition-all" />
+                </CardContent>
+              </Card>
             </motion.div>
 
             {/* My Grids Section */}
