@@ -13,15 +13,13 @@ const GAME_CONFIG: Record<string, {
   route: string;
   accentColor: string;
   description: string;
-  tagline?: string;
   players: string;
 }> = {
   blitzgrid: {
     icon: Grid3X3,
     route: "/host/blitzgrid",
     accentColor: "#e879f9",
-    description: "5x5 trivia grid. Race to buzz in and answer first.",
-    tagline: "Think fast. Buzz faster. Dominate the grid.",
+    description: "Think fast. Buzz faster. Dominate the grid.",
     players: "2-8 players",
   },
   sequence_squeeze: {
@@ -190,17 +188,6 @@ export default function Home() {
                     >
                       {game.displayName}
                     </h3>
-                    
-                    {/* Tagline (if exists) */}
-                    {config.tagline && (
-                      <p 
-                        className="text-xs uppercase tracking-widest mb-3"
-                        style={{ color: config.accentColor }}
-                        data-testid={`text-game-tagline-${game.slug}`}
-                      >
-                        {config.tagline}
-                      </p>
-                    )}
                     
                     {/* Description */}
                     <p 
