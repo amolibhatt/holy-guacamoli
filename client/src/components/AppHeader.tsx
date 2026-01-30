@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ArrowLeft, Settings, Shield, LogOut, HelpCircle, User, ChevronDown, Palette } from "lucide-react";
+import { ArrowLeft, Settings, Shield, LogOut, HelpCircle, User, ChevronDown } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import {
   DropdownMenu,
@@ -92,13 +92,6 @@ export function AppHeader({
                     </DropdownMenuItem>
                   </Link>
                 )}
-                
-                <Link href="/settings/appearance">
-                  <DropdownMenuItem className="cursor-pointer" data-testid="menu-mode">
-                    <Palette className="w-4 h-4 mr-2" />
-                    Mode
-                  </DropdownMenuItem>
-                </Link>
                 
                 <DropdownMenuSeparator />
                 
