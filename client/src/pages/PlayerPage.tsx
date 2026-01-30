@@ -825,7 +825,7 @@ export default function PlayerPage() {
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                className="w-32 h-32 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center mx-auto shadow-2xl mb-6"
+                className="w-32 h-32 rounded-2xl bg-gradient-to-br from-rose-300 via-pink-300 to-fuchsia-300 flex items-center justify-center mx-auto shadow-2xl mb-6"
               >
                 <Grid3X3 className="w-16 h-16 text-white" />
               </motion.div>

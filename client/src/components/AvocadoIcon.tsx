@@ -236,7 +236,7 @@ export function AnimatedLogo({
             className={`${config.text} font-black leading-tight`}
           >
             <span className="text-foreground">Holy </span>
-            <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 bg-clip-text text-transparent">
               GuacAmoli!
             </span>
           </motion.h1>

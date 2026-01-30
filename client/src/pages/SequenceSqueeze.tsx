@@ -379,7 +379,7 @@ export default function SequenceSqueeze() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="fixed inset-0 bg-gradient-to-br from-teal-500/5 via-transparent to-teal-500/5 pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-br from-teal-300/5 via-transparent to-teal-300/5 pointer-events-none" />
 
       <AppHeader
         title="Genetic Sort"
@@ -621,7 +621,7 @@ export default function SequenceSqueeze() {
                         initial={{ scale: 0, rotate: -10 }}
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{ delay: i * 0.15, type: "spring", stiffness: 300 }}
-                        className="p-6 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl text-white text-center shadow-xl"
+                        className="p-6 bg-gradient-to-br from-emerald-300 via-teal-300 to-cyan-300 rounded-xl text-white text-center shadow-xl"
                       >
                         <div className="w-12 h-12 rounded-full bg-white/20 text-white flex items-center justify-center mx-auto mb-3 text-2xl font-black">
                           {letter}
@@ -674,7 +674,7 @@ export default function SequenceSqueeze() {
                       whileHover={{ scale: 1.02 }}
                       className="p-6 bg-card rounded-xl border-2 border-border shadow-lg"
                     >
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 text-white flex items-center justify-center mx-auto mb-3 text-xl font-bold shadow-md">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-300 via-teal-300 to-cyan-300 text-white flex items-center justify-center mx-auto mb-3 text-xl font-bold shadow-md">
                         {letter}
                       </div>
                       <p className="text-lg font-medium">{option}</p>

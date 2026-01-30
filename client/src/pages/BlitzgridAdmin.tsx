@@ -590,7 +590,7 @@ export default function BlitzgridAdmin() {
           
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-bold"><span className="bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-400 bg-clip-text text-transparent">{grid?.name || 'Grid'}</span></h1>
+              <h1 className="text-2xl font-bold"><span className="bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300 bg-clip-text text-transparent">{grid?.name || 'Grid'}</span></h1>
               <p className="text-muted-foreground text-sm">
                 {gridCategories.length}/5 categories · {grid?.questionCount || 0}/25 questions
               </p>
@@ -894,7 +894,7 @@ export default function BlitzgridAdmin() {
       <div className="container mx-auto px-4 py-6 flex-1">
         <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold">Blitzgrid <span className="bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-400 bg-clip-text text-transparent">Grids</span></h1>
+            <h1 className="text-2xl font-bold">Blitzgrid <span className="bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300 bg-clip-text text-transparent">Grids</span></h1>
             <p className="text-muted-foreground text-sm">Create and edit your trivia grids</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">

@@ -828,7 +828,7 @@ export default function GamesAdmin() {
           <TabsContent value="blitz">
             <Card className="max-w-lg mx-auto">
               <CardContent className="p-12 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-300 via-yellow-300 to-amber-300 flex items-center justify-center mx-auto mb-4">
                   <Zap className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-2xl font-bold text-foreground mb-2">Brain Rot Blitz</h3>
@@ -841,7 +841,7 @@ export default function GamesAdmin() {
           <TabsContent value="liar">
             <Card className="max-w-lg mx-auto">
               <CardContent className="p-12 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-300 via-pink-300 to-fuchsia-300 flex items-center justify-center mx-auto mb-4">
                   <Skull className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-2xl font-bold text-foreground mb-2">Liar's Lobby</h3>
