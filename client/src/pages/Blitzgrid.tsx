@@ -2420,11 +2420,11 @@ export default function Blitzgrid() {
               {(() => {
                 // Category color theming based on position
                 const categoryColors = [
-                  { bg: 'from-rose-100 to-pink-50', border: 'border-rose-200', text: 'text-rose-600', accent: 'bg-rose-500' },
-                  { bg: 'from-amber-100 to-orange-50', border: 'border-amber-200', text: 'text-amber-600', accent: 'bg-amber-500' },
-                  { bg: 'from-emerald-100 to-teal-50', border: 'border-emerald-200', text: 'text-emerald-600', accent: 'bg-emerald-500' },
-                  { bg: 'from-sky-100 to-blue-50', border: 'border-sky-200', text: 'text-sky-600', accent: 'bg-sky-500' },
-                  { bg: 'from-violet-100 to-purple-50', border: 'border-violet-200', text: 'text-violet-600', accent: 'bg-violet-500' },
+                  { bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-600', accent: 'bg-rose-500' },
+                  { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-600', accent: 'bg-amber-500' },
+                  { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-600', accent: 'bg-emerald-500' },
+                  { bg: 'bg-sky-50', border: 'border-sky-200', text: 'text-sky-600', accent: 'bg-sky-500' },
+                  { bg: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-600', accent: 'bg-violet-500' },
                 ];
                 const categoryIndex = playCategories.findIndex(c => c.id === activeQuestion?.categoryId);
                 const colorTheme = categoryColors[categoryIndex] || categoryColors[0];
@@ -2438,30 +2438,20 @@ export default function Blitzgrid() {
                 
                 return (
                   <>
-                    {/* Category-themed decorative corner accents */}
-                    <div className={`absolute -top-6 -left-6 w-20 h-20 rounded-full bg-gradient-to-br ${colorTheme.bg} blur-xl pointer-events-none opacity-60`} />
-                    <div className={`absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-gradient-to-br ${colorTheme.bg} blur-xl pointer-events-none opacity-60`} />
-                    
-                    {/* Floating corner points badge */}
-                    <motion.div 
-                      className="absolute -top-3 -left-3 z-30 overflow-hidden px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 shadow-lg"
-                      initial={{ scale: 0, rotate: -15 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                    >
-                      <motion.div 
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12"
-                        animate={{ x: ['-100%', '200%'] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                      />
-                      <span className="text-amber-900 text-sm font-black relative z-10">
-                        {activeQuestion?.points} pts
-                      </span>
-                    </motion.div>
-                    
-                    <DialogHeader className="relative z-10 pb-2 pt-2">
-                      {/* Timer button near close X */}
-                      <div className="absolute right-10 top-4 z-20">
+                    <DialogHeader className="space-y-3">
+                      {/* Top row: Category pill + Timer */}
+                      <div className="flex items-center justify-between">
+                        {/* Category pill with themed color */}
+                        {category ? (
+                          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${colorTheme.bg} ${colorTheme.border} border text-xs`}>
+                            <div className={`w-2 h-2 rounded-full ${colorTheme.accent}`} />
+                            <span className={`${colorTheme.text} font-semibold uppercase tracking-wide`}>
+                              {category.name}
+                            </span>
+                          </div>
+                        ) : <div />}
+                        
+                        {/* Timer button */}
                         <Button
                           variant={timerActive ? "destructive" : "outline"}
                           size="sm"
@@ -2486,47 +2476,44 @@ export default function Blitzgrid() {
                         </Button>
                       </div>
                       
-                      {/* Category pill with themed color */}
-                      {category && (
-                        <div className="flex justify-center">
-                          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r ${colorTheme.bg} ${colorTheme.border} border text-xs`}>
-                            <div className={`w-2 h-2 rounded-full ${colorTheme.accent}`} />
-                            <span className={`${colorTheme.text} font-semibold uppercase tracking-wide`}>
-                              {category.name}
-                            </span>
-                            {category.description && (
-                              <>
-                                <span className="text-slate-300">·</span>
-                                <span className="text-slate-500 font-normal normal-case tracking-normal truncate max-w-[150px]">
-                                  {category.description}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      <DialogTitle className="sr-only">{activeQuestion?.points} Points Question</DialogTitle>
+                      {/* Points badge - centered */}
+                      <div className="flex justify-center">
+                        <motion.div 
+                          className="relative overflow-hidden px-5 py-1.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 shadow-md"
+                          initial={{ scale: 0.9 }}
+                          animate={{ scale: 1 }}
+                        >
+                          <motion.div 
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12"
+                            animate={{ x: ['-100%', '200%'] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                          />
+                          <DialogTitle className="text-amber-900 text-xl font-black relative z-10">
+                            {activeQuestion?.points} Points
+                          </DialogTitle>
+                        </motion.div>
+                      </div>
                     </DialogHeader>
                     
-                    {/* Question with auto-sizing text and themed gradient */}
-                    <div className={`py-4 px-4 -mx-2 relative z-10 bg-gradient-to-b ${colorTheme.bg} rounded-lg border ${colorTheme.border}`}>
-                      <div className={`${textSizeClass} text-center font-medium text-foreground max-w-none leading-relaxed [&_p]:text-foreground [&_*]:text-foreground`}>
+                    {/* Question with auto-sizing text */}
+                    <div className={`py-4 px-4 my-2 ${colorTheme.bg} rounded-lg border ${colorTheme.border}`}>
+                      <div className={`${textSizeClass} text-center font-medium text-foreground leading-relaxed`}>
                         <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
                           {questionText}
                         </ReactMarkdown>
                       </div>
                       
+                      {/* Category description if exists */}
+                      {category?.description && (
+                        <p className="text-center text-muted-foreground text-sm mt-3 italic">
+                          {category.description}
+                        </p>
+                      )}
+                      
                       {/* Hint button - appears after 5 seconds */}
                       {!showAnswer && (
                         <HintButton answer={activeQuestion?.correctAnswer || ''} />
                       )}
-                      
-                      {/* Compact divider */}
-                      <div className="mt-3 flex items-center justify-center gap-2">
-                        <div className={`h-px w-12 bg-gradient-to-r from-transparent ${colorTheme.border.replace('border-', 'to-')}`} />
-                        <div className={`w-1 h-1 rounded-full ${colorTheme.accent} opacity-50`} />
-                        <div className={`h-px w-12 bg-gradient-to-l from-transparent ${colorTheme.border.replace('border-', 'to-')}`} />
-                      </div>
                     </div>
                   </>
                 );
