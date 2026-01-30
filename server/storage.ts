@@ -1263,11 +1263,12 @@ export class DatabaseStorage implements IStorage {
 
   async getHomepageGameTypes(): Promise<GameType[]> {
     // Get games that are active or coming_soon (exclude hidden)
+    // Show coming_soon games even if hostEnabled is false
     return await db.select().from(gameTypes)
       .where(
         and(
-          eq(gameTypes.hostEnabled, true),
-          sql`${gameTypes.status} != 'hidden'`
+          sql`${gameTypes.status} != 'hidden'`,
+          sql`(${gameTypes.hostEnabled} = true OR ${gameTypes.status} = 'coming_soon')`
         )
       )
       .orderBy(asc(gameTypes.sortOrder));
