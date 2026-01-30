@@ -2390,25 +2390,8 @@ export default function Blitzgrid() {
                     </div>
                   ) : null;
                 })()}
-                {/* Points badge and Timer in same row */}
-                <div className="flex items-center justify-center gap-3">
-                  <motion.div 
-                    className="relative overflow-hidden px-6 py-2 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 shadow-lg"
-                    animate={{ 
-                      boxShadow: ['0 4px 20px rgba(251, 191, 36, 0.3)', '0 4px 30px rgba(251, 191, 36, 0.5)', '0 4px 20px rgba(251, 191, 36, 0.3)']
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    {/* Shimmer effect */}
-                    <motion.div 
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12"
-                      animate={{ x: ['-100%', '200%'] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                    <DialogTitle className="text-amber-900 text-2xl font-black relative z-10">
-                      {activeQuestion?.points} Points
-                    </DialogTitle>
-                  </motion.div>
+                {/* Timer button near close X */}
+                <div className="absolute right-10 top-4 z-20">
                   <Button
                     variant={timerActive ? "destructive" : "outline"}
                     size="sm"
@@ -2431,6 +2414,26 @@ export default function Blitzgrid() {
                       <span>10s</span>
                     )}
                   </Button>
+                </div>
+                {/* Animated shimmer points badge */}
+                <div className="flex justify-center">
+                  <motion.div 
+                    className="relative overflow-hidden px-6 py-2 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 shadow-lg"
+                    animate={{ 
+                      boxShadow: ['0 4px 20px rgba(251, 191, 36, 0.3)', '0 4px 30px rgba(251, 191, 36, 0.5)', '0 4px 20px rgba(251, 191, 36, 0.3)']
+                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    {/* Shimmer effect */}
+                    <motion.div 
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12"
+                      animate={{ x: ['-100%', '200%'] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <DialogTitle className="text-amber-900 text-2xl font-black relative z-10">
+                      {activeQuestion?.points} Points
+                    </DialogTitle>
+                  </motion.div>
                 </div>
               </DialogHeader>
               
