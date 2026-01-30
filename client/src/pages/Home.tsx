@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ArrowRight, Lock, Sparkles, PartyPopper, Users, ChevronRight, ListOrdered, Trophy, Clock, Brain, Gamepad2, Zap, Star } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, Sparkles, PartyPopper, Users, ChevronRight, ListOrdered, Trophy, Clock, Brain } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation } from "wouter";
@@ -171,82 +171,32 @@ export default function Home() {
         <div className="max-w-6xl mx-auto">
           
           <motion.section 
-            className="text-center py-12 mb-8"
-            initial={{ opacity: 0, y: 30 }}
+            className="text-center py-6 mb-4"
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.4 }}
           >
-            <motion.div 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-violet-500/10 via-fuchsia-500/10 to-pink-500/10 border border-violet-300/20 mb-6"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 2, repeat: Infinity }}>
-                <Gamepad2 className="w-4 h-4 text-violet-500" />
-              </motion.div>
-              <span className="text-sm font-medium text-muted-foreground">Welcome back, <span className="text-foreground font-semibold">{user?.firstName || 'Host'}</span></span>
-            </motion.div>
-            
             <motion.h1 
-              className="text-5xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              className="text-3xl md:text-4xl font-black mb-2 leading-tight"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
             >
-              <span className="text-foreground">Game Night,</span>
-              <br />
+              <span className="text-foreground">Game Night, </span>
               <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
                 Elevated
               </span>
             </motion.h1>
             
             <motion.p 
-              className="text-xl text-muted-foreground max-w-lg mx-auto mb-8"
+              className="text-muted-foreground"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
+              transition={{ delay: 0.2 }}
             >
-              Transform your gatherings into unforgettable experiences with our curated collection of party games
+              Welcome back, <span className="font-semibold text-foreground">{user?.firstName || 'Host'}</span>
             </motion.p>
-            
-            <motion.div 
-              className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-violet-500/10 flex items-center justify-center">
-                  <Zap className="w-4 h-4 text-violet-500" />
-                </div>
-                <span>Instant Setup</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-pink-500/10 flex items-center justify-center">
-                  <Users className="w-4 h-4 text-pink-500" />
-                </div>
-                <span>Multiplayer Ready</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center">
-                  <Star className="w-4 h-4 text-amber-500" />
-                </div>
-                <span>Party Tested</span>
-              </div>
-            </motion.div>
           </motion.section>
-
-          <motion.div 
-            className="flex items-center gap-4 mb-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
-          >
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-            <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Choose Your Game</span>
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-          </motion.div>
 
           {isLoadingGames ? (
             <div className="flex flex-wrap justify-center gap-8 mb-12">
