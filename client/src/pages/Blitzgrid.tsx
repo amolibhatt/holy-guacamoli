@@ -1812,11 +1812,10 @@ export default function Blitzgrid() {
               transition={{ duration: 0.5, ease: "easeOut" }}
               className="h-full flex flex-col gap-3 relative z-10"
             >
-              {/* Category Headers - Only revealed categories visible */}
+              {/* Category Headers - Only revealed categories visible - all use same grid color */}
               <div className="grid gap-2 md:gap-3" style={{ gridTemplateColumns: `repeat(${playCategories.length}, 1fr)` }}>
                 {playCategories.map((category, idx) => {
                   const isRevealed = idx < revealedCategoryCount;
-                  const colColor = getBoardColorConfig(BOARD_COLORS[idx] || 'rose');
                   return (
                     <motion.div 
                       key={category.id} 
@@ -1836,7 +1835,7 @@ export default function Blitzgrid() {
                       style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
                       className={`py-3 md:py-4 px-3 rounded-xl text-center border relative overflow-hidden ${
                         isRevealed 
-                          ? `${colColor.light} backdrop-blur-sm ${colColor.lightBorder} shadow-sm` 
+                          ? `${colorConfig.light} backdrop-blur-sm ${colorConfig.lightBorder} shadow-sm` 
                           : 'bg-transparent border-transparent'
                       }`}
                     >
@@ -1844,7 +1843,7 @@ export default function Blitzgrid() {
                       {isRevealed && (
                         <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent rounded-xl pointer-events-none" />
                       )}
-                      <span className={`font-bold text-xs md:text-sm uppercase tracking-wider block ${colColor.lightText} relative z-10`}>
+                      <span className={`font-bold text-xs md:text-sm uppercase tracking-wider block ${colorConfig.lightText} relative z-10`}>
                         {category.name}
                       </span>
                       {category.description && (
@@ -1857,7 +1856,7 @@ export default function Blitzgrid() {
                 })}
               </div>
               
-              {/* Point Grid - Only revealed categories visible */}
+              {/* Point Grid - Only revealed categories visible - all use same grid color */}
               <div className="flex-1 grid gap-2 md:gap-3" style={{ gridTemplateColumns: `repeat(${playCategories.length}, 1fr)`, gridTemplateRows: 'repeat(5, 1fr)' }}>
                 {POINT_TIERS.map((points, rowIdx) => (
                   playCategories.map((category, colIdx) => {
@@ -1866,7 +1865,6 @@ export default function Blitzgrid() {
                     const isCellAnswered = revealedCells.has(cellKey);
                     const isCategoryRevealed = colIdx < revealedCategoryCount;
                     const isClickable = isCategoryRevealed && !isCellAnswered && question && !categoryRevealMode;
-                    const cellColor = getBoardColorConfig(BOARD_COLORS[colIdx] || 'rose');
                     
                     return (
                       <motion.button
@@ -1887,9 +1885,9 @@ export default function Blitzgrid() {
                         className={`
                           w-full h-full rounded-xl font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden border group
                           ${isCellAnswered 
-                            ? `${cellColor.light} opacity-50 backdrop-blur-sm cursor-default ${cellColor.lightBorder}` 
+                            ? `${colorConfig.light} opacity-50 backdrop-blur-sm cursor-default ${colorConfig.lightBorder}` 
                             : isCategoryRevealed
-                              ? `${cellColor.light} backdrop-blur-sm ${cellColor.lightBorder} ${cellColor.lightText} cursor-pointer shadow-lg hover:shadow-xl`
+                              ? `${colorConfig.light} backdrop-blur-sm ${colorConfig.lightBorder} ${colorConfig.lightText} cursor-pointer shadow-lg hover:shadow-xl`
                               : 'bg-transparent cursor-default border-transparent'
                           }
                         `}
@@ -1917,7 +1915,7 @@ export default function Blitzgrid() {
                             transition={{ type: "spring", stiffness: 200, damping: 15 }}
                             className="flex items-center justify-center relative z-10"
                           >
-                            <Check className={`w-8 h-8 md:w-12 md:h-12 ${cellColor.icon} opacity-60`} strokeWidth={3} />
+                            <Check className={`w-8 h-8 md:w-12 md:h-12 ${colorConfig.icon} opacity-60`} strokeWidth={3} />
                           </motion.div>
                         ) : (
                           <span className="relative z-10 drop-shadow-sm">{points}</span>
@@ -2410,10 +2408,7 @@ export default function Blitzgrid() {
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-xl border-2 border-slate-200/60 shadow-2xl rounded-3xl">
               {(() => {
-                // Use the same colors as the grid - from BOARD_COLORS order: rose, violet, amber, teal, sky
-                const categoryIndex = playCategories.findIndex(c => c.id === activeQuestion?.categoryId);
-                const colorName = BOARD_COLORS[categoryIndex] || 'rose';
-                const colorConfig = getBoardColorConfig(colorName);
+                // Use the grid's single color for consistency
                 const category = playCategories.find(c => c.id === activeQuestion?.categoryId);
                 const questionText = activeQuestion?.question || '';
                 const questionLength = questionText.length;
@@ -3266,10 +3261,10 @@ export default function Blitzgrid() {
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-foreground truncate text-base">{grid.name}</h3>
             <div className="flex items-center gap-2 mt-1">
-              {/* Category count indicator dots */}
+              {/* Category count indicator dots - all same grid color */}
               <div className="flex gap-1">
-                {BOARD_COLORS.slice(0, Math.min(grid.categoryCount || 5, 5)).map((c, i) => (
-                  <div key={i} className={`w-2 h-2 rounded-full bg-gradient-to-br ${getBoardColorConfig(c).header}`} />
+                {Array.from({ length: Math.min(grid.categoryCount || 5, 5) }).map((_, i) => (
+                  <div key={i} className={`w-2 h-2 rounded-full bg-gradient-to-br ${colorConfig.header}`} />
                 ))}
               </div>
               <span className="text-xs text-muted-foreground">{grid.categoryCount || 5} categories</span>
