@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +14,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { ThemePreview } from "@/components/ThemePreview";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Plus, Trash2, Pencil, Check, X, Grid3X3, 
+  Plus, Trash2, Pencil, Check, X, Grid3X3, ListOrdered,
   ChevronRight, ArrowLeft, Loader2,
   AlertCircle, CheckCircle2, Image, Music, Video,
   Download, Upload, FileSpreadsheet,
@@ -906,7 +907,35 @@ export default function BlitzgridAdmin() {
   // Grid list view
   return (
     <div className="min-h-screen bg-background" data-testid="page-blitzgrid-admin">
-      <AppHeader title="Blitzgrid Admin" backHref="/" />
+      <AppHeader title="Content Admin" backHref="/" />
+      
+      <div className="border-b border-border bg-card/50">
+        <div className="container mx-auto px-4">
+          <nav className="flex gap-1">
+            <Link href="/admin/games">
+              <Button 
+                variant="ghost" 
+                className="relative rounded-none border-b-2 border-primary text-foreground"
+                data-testid="tab-blitzgrid"
+              >
+                <Grid3X3 className="w-4 h-4 mr-2" />
+                Blitzgrid
+              </Button>
+            </Link>
+            <Link href="/admin/genetic-sort">
+              <Button 
+                variant="ghost" 
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
+                data-testid="tab-genetic-sort"
+              >
+                <ListOrdered className="w-4 h-4 mr-2" />
+                Genetic Sort
+              </Button>
+            </Link>
+          </nav>
+        </div>
+      </div>
+      
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
           <div>
