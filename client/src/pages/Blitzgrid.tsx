@@ -843,6 +843,7 @@ export default function Blitzgrid() {
   // Grid detail view with inline categories and questions
   if (selectedGridId) {
     const grid = grids.find(g => g.id === selectedGridId);
+    const colorConfig = getBoardColorConfig(grid?.colorCode);
     
     // GAMEPLAY MODE
     if (playMode && grid?.isActive) {
@@ -1247,13 +1248,13 @@ export default function Blitzgrid() {
                   transition={{ type: "spring", delay: 0.2 }}
                   className="flex items-center gap-2"
                 >
-                  <Badge className="bg-white/90 text-violet-700 font-mono font-bold px-3 py-1.5 border border-white/50">
+                  <Badge className={`${colorConfig.badge} ${colorConfig.badgeText} font-mono font-bold px-3 py-1.5 border`}>
                     {roomCode}
                   </Badge>
                   <Button 
                     size="sm" 
                     onClick={() => setShowQRCode(true)} 
-                    className="bg-white/90 text-violet-700 hover:bg-white font-medium"
+                    className={`${colorConfig.badge} ${colorConfig.badgeText} hover:bg-white font-medium`}
                     data-testid="button-show-qr"
                   >
                     <QrCode className="w-4 h-4" />
@@ -1320,7 +1321,7 @@ export default function Blitzgrid() {
                 exit={{ y: -50, opacity: 0 }}
                 className="absolute top-16 left-1/2 -translate-x-1/2 z-50"
               >
-                <div className="bg-violet-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+                <div className={`${colorConfig.bg} text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2`}>
                   <span className="text-lg">{PLAYER_AVATARS.find(a => a.id === lastJoinedPlayer.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
                   <span className="font-medium">{lastJoinedPlayer.name} joined!</span>
                   <UserPlus className="w-4 h-4" />
@@ -1891,14 +1892,14 @@ export default function Blitzgrid() {
           
           {/* Question Modal */}
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-2 border-violet-200/50 dark:border-violet-500/30 shadow-2xl shadow-violet-500/10">
+            <DialogContent className={`max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-2 ${colorConfig.dialogBorder} shadow-2xl`}>
               <DialogHeader>
                 {/* Category Name and Description */}
                 {(() => {
                   const category = gridCategories.find(c => c.id === activeQuestion?.categoryId);
                   return category ? (
                     <div className="text-center mb-2">
-                      <p className="text-violet-600 dark:text-violet-300 text-sm font-semibold uppercase tracking-wider">
+                      <p className={`${colorConfig.accent} text-sm font-semibold uppercase tracking-wider`}>
                         {category.name}
                       </p>
                       {category.description && (
@@ -1996,9 +1997,9 @@ export default function Blitzgrid() {
               {/* Buzzer Status + Skip Option */}
               {players.length > 0 && !showAnswer && buzzQueue.length === 0 && (
                 <div className="flex flex-col items-center gap-3 py-2">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-violet-50 dark:bg-violet-900/50 border border-violet-300 dark:border-violet-600 rounded-full">
-                    <div className="w-2 h-2 bg-violet-500 rounded-full animate-pulse" />
-                    <span className="text-violet-700 dark:text-violet-300 text-sm font-medium">Buzzers Active - Waiting for players</span>
+                  <div className={`flex items-center gap-2 px-4 py-2 ${colorConfig.light} border ${colorConfig.lightBorder} rounded-full`}>
+                    <div className={`w-2 h-2 ${colorConfig.bg} rounded-full animate-pulse`} />
+                    <span className={`${colorConfig.lightText} text-sm font-medium`}>Buzzers Active - Waiting for players</span>
                   </div>
                   <Button
                     variant="ghost"
@@ -2017,10 +2018,10 @@ export default function Blitzgrid() {
               
               {/* Buzz Queue - players who buzzed in order */}
               {buzzQueue.length > 0 && !showAnswer && (
-                <div className="bg-violet-50 dark:bg-violet-900/50 border border-violet-200 dark:border-violet-600 rounded-lg p-4">
+                <div className={`${colorConfig.light} border ${colorConfig.lightBorder} rounded-lg p-4`}>
                   <div className="flex items-center gap-2 mb-3">
-                    <Zap className="w-4 h-4 text-violet-500 dark:text-violet-400" />
-                    <span className="text-sm text-violet-700 dark:text-violet-300 font-medium">Buzz Order</span>
+                    <Zap className={`w-4 h-4 ${colorConfig.icon}`} />
+                    <span className={`text-sm ${colorConfig.lightText} font-medium`}>Buzz Order</span>
                   </div>
                   <div className="space-y-2">
                     {buzzQueue.map((buzz, index) => {
@@ -2115,9 +2116,9 @@ export default function Blitzgrid() {
                     transition={{ repeat: Infinity, duration: 1.5 }}
                     className="inline-block"
                   >
-                    <Zap className="w-12 h-12 text-violet-500 mx-auto" />
+                    <Zap className={`w-12 h-12 ${colorConfig.icon} mx-auto`} />
                   </motion.div>
-                  <p className="text-violet-600 dark:text-violet-300 mt-2 font-medium">Waiting for buzzes...</p>
+                  <p className={`${colorConfig.accent} mt-2 font-medium`}>Waiting for buzzes...</p>
                   <p className="text-muted-foreground text-sm">{players.length} player{players.length !== 1 ? 's' : ''} ready</p>
                 </div>
               )}
