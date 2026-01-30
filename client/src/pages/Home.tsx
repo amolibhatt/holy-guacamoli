@@ -50,9 +50,9 @@ const GAME_CONFIG: Record<string, {
     gradient: "from-pink-500 via-fuchsia-500 to-rose-500",
     route: "/host/blitzgrid",
     accentColor: "#ec4899",
-    glowColor: "rgba(236, 72, 153, 0.6)",
+    glowColor: "rgba(236, 72, 153, 0.5)",
     tagline: "SMASH. BUZZ. WIN.",
-    rotation: -6,
+    rotation: 0,
     scale: 1,
   },
   sequence_squeeze: {
@@ -60,9 +60,9 @@ const GAME_CONFIG: Record<string, {
     gradient: "from-green-400 via-lime-400 to-emerald-400",
     route: "/host/genetic-sort",
     accentColor: "#39FF14",
-    glowColor: "rgba(57, 255, 20, 0.6)",
+    glowColor: "rgba(57, 255, 20, 0.5)",
     tagline: "CHAOS → ORDER",
-    rotation: 4,
+    rotation: 0,
     scale: 1,
   },
   psyop: {
@@ -70,9 +70,9 @@ const GAME_CONFIG: Record<string, {
     gradient: "from-violet-600 via-purple-500 to-fuchsia-500",
     route: "/host/psyop",
     accentColor: "#a855f7",
-    glowColor: "rgba(168, 85, 247, 0.6)",
+    glowColor: "rgba(168, 85, 247, 0.5)",
     tagline: "LIE. DETECT. DESTROY.",
-    rotation: -5,
+    rotation: 0,
     scale: 1,
   },
 };
@@ -336,27 +336,22 @@ export default function Home() {
                       }}
                       whileTap={isComingSoon ? {} : { scale: 0.95, rotate: 0 }}
                       disabled={isComingSoon}
-                      className={`relative flex flex-col items-center justify-center p-6 md:p-8 rounded-3xl text-center w-full min-h-[220px] overflow-hidden backdrop-blur-xl ${
+                      className={`relative flex flex-col items-center justify-center p-6 md:p-8 rounded-2xl text-center w-full min-h-[220px] overflow-hidden ${
                         isComingSoon ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
                       }`}
                       style={{
-                        transform: `rotate(${config.rotation}deg) scale(${config.scale})`,
-                        background: `linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 100%)`,
-                        border: `1.5px solid rgba(255,255,255,0.5)`,
+                        border: `2px solid rgba(255,255,255,0.3)`,
                         boxShadow: isHovered && !isComingSoon 
-                          ? `0 30px 60px -15px ${config.accentColor}80, 0 0 60px ${config.accentColor}40, 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.6)`
-                          : `0 8px 32px rgba(0,0,0,0.2), 0 0 40px ${config.accentColor}30, inset 0 1px 1px rgba(255,255,255,0.4)`
+                          ? `0 20px 40px -10px ${config.accentColor}60, 0 0 30px ${config.accentColor}30`
+                          : `0 8px 24px rgba(0,0,0,0.3)`
                       }}
                       data-testid={`button-game-${game.slug}`}
                     >
-                      {/* Color tint layer - translucent for glass effect */}
-                      <div className={`absolute inset-0 bg-gradient-to-br ${config.gradient} opacity-70`} />
+                      {/* Solid gradient background */}
+                      <div className={`absolute inset-0 bg-gradient-to-br ${config.gradient}`} />
                       
-                      {/* Glass refraction effect - top highlight */}
-                      <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 via-white/10 to-transparent" />
-                      
-                      {/* Subtle bottom edge shadow */}
-                      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/10 to-transparent" />
+                      {/* Subtle top highlight */}
+                      <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/20 to-transparent" />
                       
                       {/* Diagonal slash decorations */}
                       <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rotate-12" />
