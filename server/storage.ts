@@ -161,7 +161,7 @@ export interface IStorage {
   updateDoubleDipWeeklyStake(id: number, data: Partial<InsertDoubleDipWeeklyStake>): Promise<DoubleDipWeeklyStake | undefined>;
   scoreDoubleDipDailyForWeeklyStake(dailySetId: number, weeklyStakeId: number, userAPoints: number, userBPoints: number): Promise<boolean>;
   
-  // Sequence Squeeze
+  // Genetic Sort
   getSequenceQuestions(userId: string, role?: string): Promise<SequenceQuestion[]>;
   createSequenceQuestion(data: InsertSequenceQuestion): Promise<SequenceQuestion>;
   deleteSequenceQuestion(id: number, userId: string, role?: string): Promise<boolean>;
@@ -772,7 +772,7 @@ export class DatabaseStorage implements IStorage {
       
       // Last resort: use game mode as indicator
       if (!boardName && session.currentMode) {
-        boardName = session.currentMode === "sequence" ? "Sequence Squeeze" : session.currentMode;
+        boardName = session.currentMode === "sequence" ? "Genetic Sort" : session.currentMode;
       }
       
       result.push({ 
@@ -1538,7 +1538,7 @@ export class DatabaseStorage implements IStorage {
       },
       {
         slug: "sequence_squeeze",
-        displayName: "Sequence Squeeze",
+        displayName: "Genetic Sort",
         description: "Race to put 4 options in the correct order! Fastest correct sequence wins.",
         icon: "list-ordered",
         status: "active" as const,

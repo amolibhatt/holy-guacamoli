@@ -2,7 +2,7 @@
 
 ## Overview
 
-Holy GuacAmoli! is a multi-game party platform featuring Blitzgrid (5x5 trivia grid game) and Sequence Squeeze (multiplayer ordering game). Built for Amoli's birthday. It's built as a full-stack TypeScript application with a React frontend and Express backend.
+Holy GuacAmoli! is a multi-game party platform featuring Blitzgrid (5x5 trivia grid game) and Genetic Sort (multiplayer ordering game). Built for Amoli's birthday. It's built as a full-stack TypeScript application with a React frontend and Express backend.
 
 ## User Preferences
 
@@ -38,7 +38,7 @@ Preferred communication style: Simple, everyday language.
 3. **Contestant System**: Managed via React Context (ScoreContext) with add/remove contestants, award/deduct points, and track completed questions
 4. **Simplified Category Model**: 1 Category = 1 set of 5 Questions. Categories have exactly 5 questions with unique point values {10,20,30,40,50}. Questions belong directly to categories via categoryId.
 5. **Simple Flat Board List**: Boards are displayed in a simple flat list without grouping. Each board can link up to 5 categories.
-6. **Multiplayer Game System**: WebSocket-based real-time multiplayer for Sequence Squeeze where players join via room codes.
+6. **Multiplayer Game System**: WebSocket-based real-time multiplayer for Genetic Sort where players join via room codes.
 7. **Animations**: 3D flip card animations for question cells, particle effects for milestones and category completion
 8. **Portable Email/Password Auth**: Host authentication uses bcrypt for password hashing and express-session with PostgreSQL store. No external OAuth dependencies - works on any platform.
 9. **Blitzgrid Structure**: Grid = Board (up to 5 categories), Category = 5 Questions (unique point tiers 10/20/30/40/50). A Category is "Active" when it has all 5 point tiers filled. A Grid is "Active" when it has 5 Active Categories. Uses theme="blitzgrid" to distinguish from other boards.
@@ -53,7 +53,7 @@ Preferred communication style: Simple, everyday language.
 - **Global Error Handlers**: Server-side uncaughtException/unhandledRejection handlers with graceful shutdown
 - **WebSocket Error Handling**: Added error handlers to prevent connection crashes from taking down the server
 - **Unified Party Scoreboard**: Scores persist to the database (gameSessions/sessionPlayers tables) so scores survive disconnects and reconnections. Players can rejoin and see their accumulated scores instantly.
-- **Sequence Squeeze Bulk Import**: Pipe-delimited format for bulk question upload with validation
+- **Genetic Sort Bulk Import**: Pipe-delimited format for bulk question upload with validation
 - **Onboarding Tooltips**: Step-by-step tooltips guide first-time users with analytics tracking (started/completed/skipped)
 - **AI Response Caching**: 1-hour TTL cache with MD5 keys reduces API calls, 100-entry max
 - **Code Splitting**: React.lazy for faster initial load
@@ -63,7 +63,7 @@ Preferred communication style: Simple, everyday language.
 - **Bulk Import Validation**: Enhanced with length limits, board-specific point values, max 50 items per import
 - **Analytics Improvements**: Server-side validation, 10% log sampling, event batching
 - **AI Fallback**: Rate-limit detection, empty answer handling with 30% scoring
-- **Buzzkill and Double Dip Removed**: Removed Buzzkill trivia and Double Dip couples game to focus on Blitzgrid and Sequence Squeeze
+- **Buzzkill and Double Dip Removed**: Removed Buzzkill trivia and Double Dip couples game to focus on Blitzgrid and Genetic Sort
 - **Drag-and-Drop Category Reordering**: Categories can be reordered within a board by dragging category tabs
 - **Auto-Save Drafts**: Work-in-progress questions are saved to localStorage per category, cleared on successful save or when all fields are empty
 - **Improved Admin Navigation**: Hierarchical sidebar shows categories nested under boards (expandable tree), breadcrumb navigation shows current location (Board > Category), clearer completion indicators at each level
@@ -82,7 +82,7 @@ Preferred communication style: Simple, everyday language.
 
 ### WebSocket Architecture
 - **Server**: WebSocket for real-time multiplayer game communication
-- **Sequence Squeeze**: Players join rooms and participate in ordering challenges in real-time
+- **Genetic Sort**: Players join rooms and participate in ordering challenges in real-time
 - **Player Page**: `/play` route for mobile devices to join and buzz in
 - **Room Codes**: 4-character alphanumeric codes for easy joining
 

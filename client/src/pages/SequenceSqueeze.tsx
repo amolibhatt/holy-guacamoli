@@ -382,9 +382,11 @@ export default function SequenceSqueeze() {
       <div className="fixed inset-0 bg-gradient-to-br from-teal-500/5 via-transparent to-cyan-500/5 pointer-events-none" />
 
       <AppHeader
-        title="Sequence Squeeze"
+        title="Genetic Sort"
         subtitle="Put it in order, fast!"
         backHref="/"
+        showAdminButton
+        adminHref="/admin/genetic-sort"
         rightContent={
           <>
             <Button
@@ -423,7 +425,7 @@ export default function SequenceSqueeze() {
             <div className="w-28 h-28 mx-auto mb-8 rounded-full bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 flex items-center justify-center shadow-2xl shadow-teal-500/40">
               <ListOrdered className="w-14 h-14 text-white" />
             </div>
-            <h2 className="text-4xl font-black mb-3">Sequence Squeeze</h2>
+            <h2 className="text-4xl font-black mb-3">Genetic Sort</h2>
             <p className="text-lg text-muted-foreground mb-8">
               Put it in order, fast!
             </p>

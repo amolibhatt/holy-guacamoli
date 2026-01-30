@@ -16,8 +16,9 @@ import ResetPassword from "@/pages/ResetPassword";
 // Lazy load heavier components to reduce initial bundle size
 const BlitzgridAdmin = lazy(() => import("@/pages/BlitzgridAdmin"));
 const SuperAdmin = lazy(() => import("@/pages/SuperAdmin"));
-const SequenceSqueeze = lazy(() => import("@/pages/SequenceSqueeze"));
-const SequencePlayer = lazy(() => import("@/pages/SequencePlayer"));
+const GeneticSort = lazy(() => import("@/pages/SequenceSqueeze"));
+const GeneticSortPlayer = lazy(() => import("@/pages/SequencePlayer"));
+const GeneticSortAdmin = lazy(() => import("@/pages/GeneticSortAdmin"));
 const GameHistory = lazy(() => import("@/pages/GameHistory"));
 const Blitzgrid = lazy(() => import("@/pages/Blitzgrid"));
 
@@ -45,8 +46,10 @@ function Router() {
         <Route path="/play/:code?" component={PlayerPage} />
         <Route path="/forgot-password" component={ForgotPassword} />
         <Route path="/reset-password" component={ResetPassword} />
-        <Route path="/host/sequence-squeeze" component={SequenceSqueeze} />
-        <Route path="/sequence/:code?" component={SequencePlayer} />
+        <Route path="/host/genetic-sort" component={GeneticSort} />
+        <Route path="/host/sequence-squeeze" component={GeneticSort} />
+        <Route path="/admin/genetic-sort" component={GeneticSortAdmin} />
+        <Route path="/sequence/:code?" component={GeneticSortPlayer} />
         <Route path="/host/blitzgrid" component={Blitzgrid} />
         <Route component={NotFound} />
       </Switch>
