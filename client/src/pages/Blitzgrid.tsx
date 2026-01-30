@@ -1122,7 +1122,7 @@ export default function Blitzgrid() {
                               animate={{ scale: [1, 1.3, 1], opacity: [1, 0, 1] }}
                               transition={{ duration: 1.5, repeat: Infinity }}
                             />
-                            <div className="w-20 h-20 md:w-28 md:h-28 rounded-full flex items-center justify-center text-4xl md:text-5xl shadow-2xl border-4 border-yellow-400 relative z-10 bg-gradient-to-br from-pink-400 to-rose-500">
+                            <div className="w-20 h-20 md:w-28 md:h-28 rounded-full flex items-center justify-center text-4xl md:text-5xl shadow-2xl border-4 border-yellow-400 relative z-10 bg-gradient-to-br from-rose-300 via-pink-300 to-fuchsia-300">
                               {PLAYER_AVATARS.find(a => a.id === winner.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
                             </div>
                           </motion.div>
@@ -1653,7 +1653,7 @@ export default function Blitzgrid() {
                               idx === 0 ? 'bg-gradient-to-br from-amber-300 to-amber-500' : 
                               idx === 1 ? 'bg-gradient-to-br from-slate-200 to-slate-400' : 
                               idx === 2 ? 'bg-gradient-to-br from-amber-500 to-amber-700' : 
-                              'bg-gradient-to-br from-rose-300 to-rose-500'
+                              'bg-gradient-to-br from-rose-300 via-pink-300 to-fuchsia-300'
                             }`}
                           >
                             {avatarEmoji}
@@ -2816,7 +2816,7 @@ export default function Blitzgrid() {
               className="text-center py-4"
             >
               <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-                Pick Your <span className="bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-400 bg-clip-text text-transparent">Grid</span>
+                Pick Your <span className="bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300 bg-clip-text text-transparent">Grid</span>
               </h1>
             </motion.div>
 
@@ -2836,7 +2836,7 @@ export default function Blitzgrid() {
               <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-rose-50 via-pink-50 to-fuchsia-50 opacity-40" />
               
               <div className="relative flex items-center gap-4 flex-wrap">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-400 via-pink-400 to-fuchsia-400 flex items-center justify-center shrink-0 shadow-lg">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-300 via-pink-300 to-fuchsia-300 flex items-center justify-center shrink-0 shadow-lg shadow-pink-300/30">
                   {isShuffling ? (
                     <Loader2 className="w-7 h-7 text-white animate-spin" />
                   ) : (
