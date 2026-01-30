@@ -148,7 +148,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col overflow-hidden relative">
+    <div className="min-h-screen bg-background flex flex-col overflow-x-hidden overflow-y-auto relative">
       {/* Deep space mesh gradient background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <motion.div
@@ -308,18 +308,18 @@ export default function Home() {
                       stiffness: 80,
                       damping: 15
                     }}
-                    className="relative group"
+                    className="relative group overflow-visible"
                   >
                     {/* BLOOM GLOW - lights up background */}
                     <motion.div
-                      className="absolute -inset-8 rounded-[60px] pointer-events-none"
+                      className="absolute inset-0 rounded-2xl pointer-events-none"
                       style={{
                         background: `radial-gradient(ellipse at center, ${config.glowColor} 0%, transparent 70%)`,
-                        filter: 'blur(30px)',
+                        filter: 'blur(40px)',
+                        transform: 'scale(1.3)',
                       }}
                       animate={{
-                        opacity: isHovered && !isComingSoon ? 1 : 0.4,
-                        scale: isHovered && !isComingSoon ? 1.2 : 1,
+                        opacity: isHovered && !isComingSoon ? 0.8 : 0.3,
                       }}
                       transition={{ duration: 0.3 }}
                     />
