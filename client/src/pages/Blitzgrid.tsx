@@ -20,10 +20,7 @@ import { playWhoosh, playRevealFlip, playPointsAwarded, playCelebration, playWro
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Play, Loader2,
-  AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Zap, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Sparkles, Medal,
-  Circle, Waves, Sun, Star, TreePine, Flower2, Leaf, Bird, Gamepad,
-  PartyPopper, Cake, Umbrella, Briefcase, Dog, Cat, Rocket, Music, Palette, Heart, Timer,
-  Target, Flag, Award, Dribbble, Shirt, Footprints, Shell, Fish, Gift, Candy, Coffee, Laptop, Headphones, Mic2, Guitar,
+  AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Medal,
   Volume2, VolumeX, MoreVertical, Settings, Copy, Link2, Share2, Download, Image, Loader2 as LoaderIcon, Clock,
   Hand, Flame, Laugh, CircleDot, ThumbsUp
 } from "lucide-react";
@@ -65,530 +62,7 @@ interface CategoryWithQuestions extends Category {
 
 const POINT_TIERS = [10, 20, 30, 40, 50];
 
-// Available themes for grids - each with unique visual identity
-const GRID_THEMES = [
-  { 
-    id: 'neon', name: 'Neon Nights', iconType: 'zap' as const,
-    background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 30%, #16213e 60%, #0f3460 100%)',
-    accent: '#00fff5',
-    glow: '#00fff5',
-    style: 'dark'
-  },
-  { 
-    id: 'sunset', name: 'Golden Hour', iconType: 'sun' as const,
-    background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 25%, #ffcc02 50%, #ff6b6b 100%)',
-    accent: '#fff',
-    glow: '#ff6b35',
-    style: 'warm'
-  },
-  { 
-    id: 'aurora', name: 'Northern Lights', iconType: 'sparkles' as const,
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #6B8DD6 50%, #8E37D7 75%, #00d4ff 100%)',
-    accent: '#fff',
-    glow: '#764ba2',
-    style: 'magical'
-  },
-  { 
-    id: 'ocean', name: 'Deep Sea', iconType: 'waves' as const,
-    background: 'linear-gradient(180deg, #0077b6 0%, #023e8a 40%, #03045e 100%)',
-    accent: '#90e0ef',
-    glow: '#0077b6',
-    style: 'cool'
-  },
-  { 
-    id: 'candy', name: 'Sugar Rush', iconType: 'candy' as const,
-    background: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 25%, #fecfef 50%, #ff9a9e 75%, #fad0c4 100%)',
-    accent: '#fff',
-    glow: '#ff9a9e',
-    style: 'sweet'
-  },
-  { 
-    id: 'forest', name: 'Enchanted', iconType: 'trees' as const,
-    background: 'linear-gradient(135deg, #134e5e 0%, #1a5d3a 50%, #2d5a27 100%)',
-    accent: '#a8e6cf',
-    glow: '#2d5a27',
-    style: 'nature'
-  },
-  { 
-    id: 'galaxy', name: 'Stardust', iconType: 'star' as const,
-    background: 'linear-gradient(135deg, #0c0c1e 0%, #1a1a3e 25%, #2d1b4e 50%, #1e3a5f 75%, #0c0c1e 100%)',
-    accent: '#ffd700',
-    glow: '#8b5cf6',
-    style: 'cosmic'
-  },
-  { 
-    id: 'fire', name: 'Inferno', iconType: 'flame' as const,
-    background: 'linear-gradient(135deg, #f12711 0%, #f5af19 50%, #f12711 100%)',
-    accent: '#fff',
-    glow: '#f5af19',
-    style: 'hot'
-  },
-  { 
-    id: 'retro', name: 'Arcade', iconType: 'gamepad' as const,
-    background: 'linear-gradient(135deg, #ff00ff 0%, #00ffff 50%, #ff00ff 100%)',
-    accent: '#fff',
-    glow: '#ff00ff',
-    style: 'retro'
-  },
-  { 
-    id: 'minimal', name: 'Clean Slate', iconType: 'circle' as const,
-    background: 'linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 50%, #ffffff 100%)',
-    accent: '#333',
-    glow: '#999',
-    style: 'minimal'
-  },
-] as const;
 
-type ThemeIconType = typeof GRID_THEMES[number]['iconType'];
-
-// Map theme icon types to lucide icons
-const ThemeIcon = ({ type, className }: { type: ThemeIconType; className?: string }) => {
-  switch (type) {
-    case 'zap': return <Zap className={className} />;
-    case 'sun': return <Sun className={className} />;
-    case 'sparkles': return <Sparkles className={className} />;
-    case 'waves': return <Waves className={className} />;
-    case 'candy': return <Candy className={className} />;
-    case 'trees': return <TreePine className={className} />;
-    case 'star': return <Star className={className} />;
-    case 'flame': return <Flame className={className} />;
-    case 'gamepad': return <Gamepad className={className} />;
-    case 'circle': return <Circle className={className} />;
-    default: return <PartyPopper className={className} />;
-  }
-};
-
-// Color palettes for themes
-const BALLOON_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899'];
-const ART_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'];
-
-// Pre-generate stable random values for theme elements
-const generateElementData = (count: number) => {
-  const data = [];
-  for (let i = 0; i < count; i++) {
-    data.push({
-      delay: i * 0.5,
-      duration: 8 + (i * 0.7) % 6,
-      startX: (i * 8.3) % 100,
-      startY: 100 + (i * 1.7) % 20,
-      endY: -20 - (i * 0.8) % 10,
-      size: 16 + (i * 1.9) % 20,
-      opacity: 0.15 + (i * 0.02) % 0.25,
-      extraRandom1: (i * 2.3) % 30 - 15,
-      extraRandom2: (i * 1.1) % 20 - 10,
-      extraRandom3: (i * 0.9) % 15,
-    });
-  }
-  return data;
-};
-
-const ELEMENT_DATA = generateElementData(12);
-
-// Atmospheric particles for depth and ambiance
-const AtmosphericParticles = ({ themeId, glowColor }: { themeId: string; glowColor: string }) => {
-  // Different particle configs per theme
-  const particleConfigs = {
-    neon: { count: 30, type: 'dots' as const },
-    sunset: { count: 20, type: 'sparkles' as const },
-    aurora: { count: 35, type: 'sparkles' as const },
-    ocean: { count: 25, type: 'bubbles' as const },
-    candy: { count: 20, type: 'sparkles' as const },
-    forest: { count: 18, type: 'leaves' as const },
-    galaxy: { count: 45, type: 'stars' as const },
-    fire: { count: 25, type: 'sparkles' as const },
-    retro: { count: 30, type: 'dots' as const },
-    minimal: { count: 10, type: 'dots' as const },
-    default: { count: 20, type: 'dots' as const },
-  };
-  
-  const config = particleConfigs[themeId as keyof typeof particleConfigs] || particleConfigs.default;
-  
-  return (
-    <div className="absolute inset-0 pointer-events-none z-[3] overflow-hidden">
-      {/* Layer 1: Far background (slow, small, faded) */}
-      {[...Array(Math.floor(config.count * 0.4))].map((_, i) => (
-        <motion.div
-          key={`far-${i}`}
-          className="absolute rounded-full"
-          style={{
-            left: `${(i * 17.3) % 100}%`,
-            top: `${(i * 23.7) % 100}%`,
-            width: config.type === 'stars' ? 2 : 3,
-            height: config.type === 'stars' ? 2 : 3,
-            background: config.type === 'stars' ? 'white' : `${glowColor}40`,
-            boxShadow: config.type === 'stars' ? `0 0 4px 1px white` : 'none',
-          }}
-          animate={{
-            y: [0, -30, 0],
-            opacity: config.type === 'stars' ? [0.3, 0.8, 0.3] : [0.2, 0.4, 0.2],
-          }}
-          transition={{
-            duration: 8 + (i % 4) * 2,
-            delay: i * 0.3,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      ))}
-      
-      {/* Layer 2: Mid-ground (medium speed, medium size) */}
-      {[...Array(Math.floor(config.count * 0.35))].map((_, i) => (
-        <motion.div
-          key={`mid-${i}`}
-          className="absolute rounded-full"
-          style={{
-            left: `${(i * 13.1 + 5) % 100}%`,
-            top: `${(i * 19.3 + 10) % 100}%`,
-            width: config.type === 'stars' ? 3 : 5,
-            height: config.type === 'stars' ? 3 : 5,
-            background: config.type === 'stars' ? 'white' : `${glowColor}50`,
-            boxShadow: config.type === 'stars' ? `0 0 6px 2px ${glowColor}` : `0 0 8px 2px ${glowColor}30`,
-          }}
-          animate={{
-            y: [0, -50, 0],
-            x: [0, (i % 2 === 0 ? 10 : -10), 0],
-            opacity: [0.4, 0.7, 0.4],
-            scale: config.type === 'stars' ? [1, 1.3, 1] : [1, 1.1, 1],
-          }}
-          transition={{
-            duration: 6 + (i % 3) * 1.5,
-            delay: i * 0.4,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      ))}
-      
-      {/* Layer 3: Foreground (fast, larger, more visible) */}
-      {[...Array(Math.floor(config.count * 0.25))].map((_, i) => (
-        <motion.div
-          key={`fore-${i}`}
-          className="absolute rounded-full"
-          style={{
-            left: `${(i * 21.7 + 15) % 100}%`,
-            top: `${(i * 31.3 + 20) % 100}%`,
-            width: config.type === 'stars' ? 4 : 8,
-            height: config.type === 'stars' ? 4 : 8,
-            background: `${glowColor}60`,
-            boxShadow: `0 0 12px 4px ${glowColor}40`,
-            filter: 'blur(1px)',
-          }}
-          animate={{
-            y: [0, -80, 0],
-            x: [0, (i % 2 === 0 ? 20 : -20), 0],
-            opacity: [0.3, 0.6, 0.3],
-          }}
-          transition={{
-            duration: 4 + (i % 2) * 2,
-            delay: i * 0.5,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      ))}
-    </div>
-  );
-};
-
-// Animated theme elements that float around the grid
-const ThemeElements = ({ themeId }: { themeId: string }) => {
-  const elements = ELEMENT_DATA.map((data, i) => {
-    const { delay, duration, startX, startY, endY, size, opacity } = data;
-    
-    switch (themeId) {
-      case 'neon': {
-        // Neon light beams and glowing lines
-        const neonColors = ['#00fff5', '#ff00ff', '#00ff00', '#ffff00', '#ff6b6b'];
-        const color = neonColors[i % neonColors.length];
-        return (
-          <motion.div
-            key={i}
-            className="absolute pointer-events-none"
-            style={{
-              left: `${startX}vw`,
-              top: `${startY}vh`,
-              width: 2,
-              height: 40 + i * 10,
-              background: `linear-gradient(180deg, ${color} 0%, transparent 100%)`,
-              boxShadow: `0 0 20px 5px ${color}60`,
-              borderRadius: 2,
-            }}
-            animate={{
-              y: [0, 100, 0],
-              opacity: [0.3, 0.8, 0.3],
-              scaleY: [1, 1.5, 1],
-            }}
-            transition={{ duration: duration * 1.5, delay, repeat: Infinity, ease: "easeInOut" }}
-          />
-        );
-      }
-      
-      case 'sunset': {
-        // Floating sun rays and warm orbs
-        const warmColors = ['#ff6b35', '#f7931e', '#ffcc02', '#ff9a9e'];
-        const color = warmColors[i % warmColors.length];
-        return (
-          <motion.div
-            key={i}
-            className="absolute pointer-events-none rounded-full"
-            style={{
-              left: `${startX}vw`,
-              top: `${startY}vh`,
-              width: size * 2,
-              height: size * 2,
-              background: `radial-gradient(circle, ${color} 0%, transparent 70%)`,
-              filter: 'blur(2px)',
-            }}
-            animate={{
-              x: [0, 30, -20, 0],
-              y: [0, -40, -20, 0],
-              scale: [1, 1.3, 0.9, 1],
-              opacity: [0.4, 0.7, 0.5, 0.4],
-            }}
-            transition={{ duration: duration * 2, delay, repeat: Infinity, ease: "easeInOut" }}
-          />
-        );
-      }
-      
-      case 'aurora': {
-        // Northern lights waves
-        const auroraColors = ['#667eea', '#764ba2', '#00d4ff', '#8E37D7', '#6B8DD6'];
-        const color = auroraColors[i % auroraColors.length];
-        return (
-          <motion.div
-            key={i}
-            className="absolute pointer-events-none"
-            style={{
-              left: `${startX - 10}vw`,
-              top: `${10 + (i * 8)}vh`,
-              width: '40vw',
-              height: 60,
-              background: `linear-gradient(90deg, transparent 0%, ${color}40 50%, transparent 100%)`,
-              filter: 'blur(20px)',
-              borderRadius: 30,
-            }}
-            animate={{
-              x: [-100, 200, -100],
-              opacity: [0.2, 0.6, 0.2],
-              scaleX: [1, 1.3, 1],
-            }}
-            transition={{ duration: duration * 3, delay: delay * 2, repeat: Infinity, ease: "easeInOut" }}
-          />
-        );
-      }
-      
-      case 'ocean': {
-        // Bubbles rising
-        const bubbleSize = 10 + (i % 4) * 8;
-        return (
-          <motion.div
-            key={i}
-            className="absolute pointer-events-none rounded-full"
-            style={{
-              left: `${startX}vw`,
-              bottom: '-10vh',
-              width: bubbleSize,
-              height: bubbleSize,
-              background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8) 0%, rgba(144,224,239,0.3) 50%, transparent 100%)',
-              border: '1px solid rgba(255,255,255,0.3)',
-            }}
-            animate={{
-              y: [0, -120 * (1 + i * 0.1)],
-              x: [0, 20 * (i % 2 === 0 ? 1 : -1), 0],
-              opacity: [0, 0.7, 0],
-            }}
-            transition={{ duration: duration * 2, delay, repeat: Infinity, ease: "easeOut" }}
-          />
-        );
-      }
-      
-      case 'candy': {
-        // Sweet floating candy shapes
-        const candyColors = ['#ff9a9e', '#fecfef', '#fad0c4', '#ff6b6b', '#ffd93d'];
-        const color = candyColors[i % candyColors.length];
-        const shapes = ['rounded-full', 'rounded-lg', 'rounded-full'];
-        return (
-          <motion.div
-            key={i}
-            className={`absolute pointer-events-none ${shapes[i % shapes.length]}`}
-            style={{
-              left: `${startX}vw`,
-              top: `${startY}vh`,
-              width: size * 1.5,
-              height: size * 1.5,
-              background: color,
-              boxShadow: `0 4px 15px ${color}50`,
-            }}
-            animate={{
-              y: [0, -30, 0],
-              rotate: [0, 180, 360],
-              scale: [1, 1.2, 1],
-            }}
-            transition={{ duration, delay, repeat: Infinity, ease: "easeInOut" }}
-          />
-        );
-      }
-      
-      case 'forest': {
-        // Falling leaves
-        const leafColors = ['#22c55e', '#84cc16', '#a8e6cf', '#15803d'];
-        const color = leafColors[i % leafColors.length];
-        return (
-          <motion.div
-            key={i}
-            className="absolute pointer-events-none"
-            style={{ left: `${startX}vw`, top: '-5vh' }}
-          >
-            <motion.svg
-              width="20" height="25" viewBox="0 0 20 25"
-              animate={{
-                y: [0, 110 * (1 + i * 0.05)],
-                x: [0, 30, -20, 10],
-                rotate: [0, 180, 360, 540],
-              }}
-              transition={{ duration: duration * 2, delay, repeat: Infinity, ease: "linear" }}
-              style={{ opacity: 0.7 }}
-            >
-              <path d="M10,0 Q20,10 10,25 Q0,10 10,0" fill={color}/>
-            </motion.svg>
-          </motion.div>
-        );
-      }
-      
-      case 'galaxy': {
-        // Twinkling stars
-        const starSize = 2 + (i % 4) * 2;
-        return (
-          <motion.div
-            key={i}
-            className="absolute pointer-events-none"
-            style={{
-              left: `${startX}vw`,
-              top: `${startY}vh`,
-              width: starSize,
-              height: starSize,
-              background: i % 3 === 0 ? '#ffd700' : '#fff',
-              borderRadius: '50%',
-              boxShadow: `0 0 ${starSize * 3}px ${starSize}px ${i % 3 === 0 ? '#ffd700' : 'white'}`,
-            }}
-            animate={{
-              opacity: [0.3, 1, 0.3],
-              scale: [1, 1.5, 1],
-            }}
-            transition={{ duration: 1 + (i % 3), delay: delay * 0.5, repeat: Infinity, ease: "easeInOut" }}
-          />
-        );
-      }
-      
-      case 'fire': {
-        // Flames and embers rising
-        const fireColors = ['#f12711', '#f5af19', '#ff6b35', '#ffd93d'];
-        const color = fireColors[i % fireColors.length];
-        return (
-          <motion.div
-            key={i}
-            className="absolute pointer-events-none rounded-full"
-            style={{
-              left: `${startX}vw`,
-              bottom: '0vh',
-              width: size,
-              height: size * 1.5,
-              background: `radial-gradient(ellipse at bottom, ${color} 0%, transparent 70%)`,
-              filter: 'blur(3px)',
-            }}
-            animate={{
-              y: [0, -100 - i * 10],
-              x: [0, 15 * (i % 2 === 0 ? 1 : -1), 0],
-              opacity: [0.8, 0],
-              scale: [1, 0.3],
-            }}
-            transition={{ duration: duration * 1.5, delay, repeat: Infinity, ease: "easeOut" }}
-          />
-        );
-      }
-      
-      case 'retro': {
-        // Pixel-style blocks and shapes
-        const retroColors = ['#ff00ff', '#00ffff', '#ffff00', '#ff0000', '#00ff00'];
-        const color = retroColors[i % retroColors.length];
-        return (
-          <motion.div
-            key={i}
-            className="absolute pointer-events-none"
-            style={{
-              left: `${startX}vw`,
-              top: `${startY}vh`,
-              width: 8 + (i % 3) * 4,
-              height: 8 + (i % 3) * 4,
-              background: color,
-              boxShadow: `0 0 10px ${color}`,
-            }}
-            animate={{
-              y: [0, -50, 0],
-              x: [0, 20, -20, 0],
-              rotate: [0, 90, 180, 270, 360],
-            }}
-            transition={{ duration, delay, repeat: Infinity, ease: "linear" }}
-          />
-        );
-      }
-      
-      case 'minimal': {
-        // Subtle floating circles
-        return (
-          <motion.div
-            key={i}
-            className="absolute pointer-events-none rounded-full"
-            style={{
-              left: `${startX}vw`,
-              top: `${startY}vh`,
-              width: size * 0.8,
-              height: size * 0.8,
-              border: '1px solid rgba(0,0,0,0.1)',
-              background: 'rgba(0,0,0,0.03)',
-            }}
-            animate={{
-              y: [0, -20, 0],
-              opacity: [0.3, 0.5, 0.3],
-            }}
-            transition={{ duration: duration * 2, delay, repeat: Infinity, ease: "easeInOut" }}
-          />
-        );
-      }
-      
-      default: {
-        // Simple sparkles for any unknown theme
-        return (
-          <motion.div
-            key={i}
-            className="absolute pointer-events-none"
-            style={{
-              left: `${startX}vw`,
-              top: `${startY}vh`,
-              width: size,
-              height: size,
-              background: 'rgba(255,255,255,0.5)',
-              borderRadius: '50%',
-              boxShadow: '0 0 10px rgba(255,255,255,0.3)',
-            }}
-            animate={{
-              y: [0, -30, 0],
-              opacity: [0.3, 0.6, 0.3],
-              scale: [1, 1.2, 1],
-            }}
-            transition={{ duration, delay, repeat: Infinity, ease: "easeInOut" }}
-          />
-        );
-      }
-    }
-  });
-  
-  return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-      {elements}
-    </div>
-  );
-};
 export default function Blitzgrid() {
   const { toast } = useToast();
   const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
@@ -1448,9 +922,9 @@ export default function Blitzgrid() {
       const thirdPhase = sortedPlayers.length >= 4 ? 3 : 2;
       const restPhase = 2;
       
-      // Get theme from grid
-      const gridThemeId = grid.theme?.replace('blitzgrid:', '') || 'aurora';
-      const currentTheme = GRID_THEMES.find(t => t.id === gridThemeId) || GRID_THEMES[0];
+      // Simple background for play mode
+      const playBackground = 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #6366f1 100%)';
+      const glowColor = '#764ba2';
       
       // Keyboard handler for reveal mode
       const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -1466,7 +940,7 @@ export default function Blitzgrid() {
       return (
         <div 
           className="h-screen overflow-hidden flex flex-col relative touch-manipulation" 
-          style={{ background: currentTheme.background }} 
+          style={{ background: playBackground }} 
           data-testid="page-blitzgrid-play"
           tabIndex={0}
           onKeyDown={handleKeyDown}
@@ -1484,15 +958,10 @@ export default function Blitzgrid() {
             animate={{ opacity: [0.3, 0.5, 0.3] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
             style={{ 
-              background: `radial-gradient(circle at 50% 50%, ${currentTheme.glow}20 0%, transparent 60%)`,
+              background: `radial-gradient(circle at 50% 50%, ${glowColor}20 0%, transparent 60%)`,
             }}
           />
           
-          {/* Floating particles layer */}
-          <AtmosphericParticles themeId={gridThemeId} glowColor={currentTheme.glow} />
-          
-          {/* Animated theme elements */}
-          <ThemeElements themeId={gridThemeId} />
           
           {/* Game Over Reveal Overlay */}
           <AnimatePresence>
@@ -1502,7 +971,7 @@ export default function Blitzgrid() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 z-50 flex items-center justify-center"
-                style={{ background: currentTheme.background }}
+                style={{ background: playBackground }}
               >
                 <div ref={scoresPanelRef} className="text-center p-4 md:p-8 max-w-4xl w-full mx-4">
                   {/* Title */}
@@ -3229,47 +2698,41 @@ export default function Blitzgrid() {
           </motion.div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-3xl mx-auto">
-            {activeGrids.map((grid, index) => {
-              const themeId = grid.theme?.replace('blitzgrid:', '') || 'aurora';
-              const gridTheme = GRID_THEMES.find(t => t.id === themeId) || GRID_THEMES[1];
-              
-              return (
-                <motion.button
-                  key={grid.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2, delay: index * 0.05 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setSelectedGridId(grid.id);
-                    setPlayMode(true);
-                    setRevealedCells(new Set());
-                    setRevealedCategoryCount(0);
-                    setCategoryRevealMode(true);
-                    setActiveQuestion(null);
-                    setShowAnswer(false);
-                  }}
-                  className="group text-left p-4 rounded-xl bg-card border border-border hover-elevate transition-all"
-                  data-testid={`card-grid-${grid.id}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ background: gridTheme.background }}
-                    >
-                      <ThemeIcon type={gridTheme.iconType} className="w-5 h-5 text-white" />
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-foreground truncate">{grid.name}</h3>
-                      <p className="text-xs text-muted-foreground">{gridTheme.name}</p>
-                    </div>
-                    
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            {activeGrids.map((grid, index) => (
+              <motion.button
+                key={grid.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: index * 0.05 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  setSelectedGridId(grid.id);
+                  setPlayMode(true);
+                  setRevealedCells(new Set());
+                  setRevealedCategoryCount(0);
+                  setCategoryRevealMode(true);
+                  setActiveQuestion(null);
+                  setShowAnswer(false);
+                }}
+                className="group text-left p-4 rounded-xl bg-card border border-border hover-elevate transition-all"
+                data-testid={`card-grid-${grid.id}`}
+              >
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-primary/10">
+                    <Grid3X3 className="w-5 h-5 text-primary" />
                   </div>
-                </motion.button>
-              );
-            })}
+                  
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-foreground truncate">{grid.name}</h3>
+                    {grid.description && (
+                      <p className="text-xs text-muted-foreground truncate">{grid.description}</p>
+                    )}
+                  </div>
+                  
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </div>
+              </motion.button>
+            ))}
           </div>
         )}
       </div>
