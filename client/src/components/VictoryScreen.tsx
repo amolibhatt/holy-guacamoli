@@ -217,7 +217,7 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
                   className="mb-2"
                 >
                   <div 
-                    className="w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center text-3xl md:text-4xl shadow-lg border-4 border-gray-300"
+                    className="w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center text-3xl md:text-4xl shadow-lg border-4 border-slate-300"
                     style={{ backgroundColor: runnerUp.color }}
                   >
                     {getPlayerEmoji(contestants.findIndex(c => c.name === runnerUp.name))}
@@ -226,14 +226,14 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
                     {runnerUp.name}
                   </div>
                   <motion.div 
-                    className="text-2xl md:text-3xl font-black text-gray-300"
+                    className="text-2xl md:text-3xl font-black text-slate-300"
                     key={secondScore}
                   >
                     {secondScore}
                   </motion.div>
                 </motion.div>
                 {/* Podium */}
-                <div className="w-20 md:w-28 h-24 md:h-32 bg-gradient-to-b from-gray-400 to-gray-600 rounded-t-lg flex items-center justify-center shadow-xl border-t-4 border-gray-300">
+                <div className="w-20 md:w-28 h-24 md:h-32 bg-gradient-to-b from-slate-400 to-slate-600 rounded-t-lg flex items-center justify-center shadow-xl border-t-4 border-slate-300">
                   <span className="text-4xl md:text-5xl font-black text-white/80">2</span>
                 </div>
               </motion.div>
