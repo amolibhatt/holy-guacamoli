@@ -2684,8 +2684,7 @@ export default function Blitzgrid() {
           </div>
           
           <div className="flex-1 min-w-0">
-            <h3 className={`font-bold text-lg ${colorConfig.cardTitle} truncate mb-1`}>{grid.name}</h3>
-            <p className={`text-sm ${colorConfig.cardSub}`}>Tap to play</p>
+            <h3 className={`font-bold text-lg ${colorConfig.cardTitle} truncate`}>{grid.name}</h3>
           </div>
           
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${colorConfig.bg} bg-opacity-20 group-hover:bg-opacity-30 transition-all`}>
