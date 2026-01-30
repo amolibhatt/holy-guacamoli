@@ -2765,6 +2765,10 @@ export default function Blitzgrid() {
         className="group text-left p-4 rounded-xl bg-card border border-border hover:border-transparent hover:shadow-lg transition-all duration-200 relative overflow-hidden"
         data-testid={`card-grid-${grid.id}`}
       >
+        {/* Decorative semi-circles in top-right corner */}
+        <div className={`absolute -top-10 -right-10 w-24 h-24 rounded-full bg-gradient-to-br ${colorConfig.header} opacity-10`} />
+        <div className={`absolute -top-5 -right-5 w-14 h-14 rounded-full bg-gradient-to-br ${colorConfig.header} opacity-8`} />
+        
         {/* Color accent bar on left */}
         <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${colorConfig.bg} rounded-l-xl`} />
         
@@ -2814,7 +2818,7 @@ export default function Blitzgrid() {
               className="text-center py-4"
             >
               <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-                Pick Your <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-amber-500 bg-clip-text text-transparent">Grid</span>
+                Pick Your <span className="bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-400 bg-clip-text text-transparent">Grid</span>
               </h1>
             </motion.div>
 
@@ -2825,12 +2829,12 @@ export default function Blitzgrid() {
               transition={{ duration: 0.3 }}
             >
               <Card 
-                className="group cursor-pointer overflow-hidden border-2 border-dashed border-fuchsia-300 bg-gradient-to-br from-fuchsia-50/50 to-violet-50/50 hover-elevate"
+                className="group cursor-pointer overflow-hidden border-2 border-dashed border-pink-300 bg-gradient-to-br from-rose-50/50 via-pink-50/50 to-fuchsia-50/50 hover-elevate"
                 onClick={handleShufflePlay}
                 data-testid="card-shuffle-play"
               >
                 <CardContent className="flex items-center gap-4 p-5">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-violet-500 flex items-center justify-center shrink-0 shadow-lg shadow-fuchsia-500/20">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-300 via-pink-300 to-fuchsia-300 flex items-center justify-center shrink-0 shadow-lg shadow-pink-300/20">
                     {isShuffling ? (
                       <Loader2 className="w-7 h-7 text-white animate-spin" />
                     ) : (
@@ -2840,7 +2844,7 @@ export default function Blitzgrid() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-lg text-foreground flex flex-wrap items-center gap-2">
                       Shuffle Play
-                      <Badge variant="secondary" className="text-xs bg-fuchsia-100 text-fuchsia-700 border-0">Mix it up</Badge>
+                      <Badge variant="secondary" className="text-xs bg-pink-100 text-pink-700 border-0">Mix it up</Badge>
                     </h3>
                     <p className="text-sm text-muted-foreground">
                       {playedShuffleCategoryIds.length > 0 
@@ -2853,7 +2857,7 @@ export default function Blitzgrid() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="shrink-0 border-fuchsia-300 text-fuchsia-600 hover:bg-fuchsia-50"
+                      className="shrink-0 border-pink-300 text-pink-600"
                       onClick={(e) => {
                         e.stopPropagation();
                         setPlayedShuffleCategoryIds([]);
@@ -2865,7 +2869,7 @@ export default function Blitzgrid() {
                       Reset
                     </Button>
                   ) : (
-                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-fuchsia-500 group-hover:translate-x-1 transition-all" />
+                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-pink-500 group-hover:translate-x-1 transition-all" />
                   )}
                 </CardContent>
               </Card>
@@ -2913,7 +2917,7 @@ export default function Blitzgrid() {
       <footer className="border-t border-border/50 px-6 py-6 mt-auto">
         <div className="max-w-5xl mx-auto flex items-center justify-center">
           <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-1">
-            made with <span className="text-fuchsia-500">♥</span> by <span className="font-semibold bg-gradient-to-r from-fuchsia-600 to-violet-600 bg-clip-text text-transparent">Amoli</span>
+            made with <Heart className="w-4 h-4 text-pink-500 fill-pink-500 inline" /> by <span className="font-semibold bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 bg-clip-text text-transparent">Amoli</span>
           </p>
         </div>
       </footer>
