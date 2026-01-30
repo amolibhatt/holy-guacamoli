@@ -3729,10 +3729,10 @@ export default function Blitzgrid() {
 
   // Main grid list view
   return (
-    <div className="min-h-screen bg-background" data-testid="page-blitzgrid">
+    <div className="min-h-screen bg-background flex flex-col" data-testid="page-blitzgrid">
       <AppHeader title="Blitzgrid" backHref="/" showAdminButton adminHref="/admin/games" />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="flex-1 container mx-auto px-4 py-8">
         {loadingGrids ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 rounded-2xl" />)}
