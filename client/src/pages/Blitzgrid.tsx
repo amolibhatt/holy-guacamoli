@@ -2673,26 +2673,26 @@ export default function Blitzgrid() {
           setActiveQuestion(null);
           setShowAnswer(false);
         }}
-        className={`group text-left p-6 rounded-2xl bg-card border ${colorConfig.lightBorder} hover:shadow-lg transition-all duration-300 relative overflow-hidden`}
+        className={`group text-left p-4 rounded-xl bg-card border ${colorConfig.lightBorder} hover:shadow-md transition-all duration-300 relative overflow-hidden`}
         data-testid={`card-grid-${grid.id}`}
       >
         {/* Gradient background */}
-        <div className={`absolute inset-0 rounded-2xl ${colorConfig.light} opacity-50 group-hover:opacity-70 transition-opacity`} />
+        <div className={`absolute inset-0 rounded-xl ${colorConfig.light} opacity-50 group-hover:opacity-70 transition-opacity`} />
         
-        <div className="flex items-center gap-4 flex-wrap relative z-10">
+        <div className="flex items-center gap-3 flex-wrap relative z-10">
           <motion.div 
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${colorConfig.bg} shadow-lg`}
+            className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${colorConfig.bg} shadow-md`}
             whileHover={{ rotate: 5, scale: 1.05 }}
           >
-            <Grid3X3 className="w-7 h-7 text-white" />
+            <Grid3X3 className="w-5 h-5 text-white" />
           </motion.div>
           
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-lg text-foreground truncate">{grid.name}</h3>
+            <h3 className="font-semibold text-base text-foreground truncate">{grid.name}</h3>
           </div>
           
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-muted/60 group-hover:bg-muted transition-all">
-            <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-muted/60 group-hover:bg-muted transition-all">
+            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
           </div>
         </div>
       </motion.button>
@@ -2724,14 +2724,14 @@ export default function Blitzgrid() {
             </p>
           </motion.div>
         ) : (
-          <div className="max-w-5xl mx-auto space-y-12">
+          <div className="max-w-4xl mx-auto space-y-6">
             {/* Hero section */}
             <motion.div 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center pt-4 pb-4"
+              className="text-center pt-2 pb-2"
             >
-              <h1 className="text-4xl md:text-5xl font-black text-foreground mb-3 tracking-tight">
+              <h1 className="text-3xl md:text-4xl font-black text-foreground tracking-tight">
                 Pick Your <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-amber-500 bg-clip-text text-transparent">Grid</span>
               </h1>
             </motion.div>
@@ -2743,7 +2743,7 @@ export default function Blitzgrid() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center gap-3 mb-4">
                   <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
                   <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-violet-100 dark:bg-violet-500/20 border border-violet-200 dark:border-violet-500/30">
                     <Grid3X3 className="w-4 h-4 text-violet-600 dark:text-violet-400" />
@@ -2751,7 +2751,7 @@ export default function Blitzgrid() {
                   </div>
                   <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
                 </div>
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {myGrids.map((grid, index) => (
                     <GridCard key={grid.id} grid={grid} index={index} />
                   ))}
@@ -2766,7 +2766,7 @@ export default function Blitzgrid() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center gap-3 mb-4">
                   <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
                   <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 dark:bg-amber-500/20 border border-amber-200 dark:border-amber-500/30">
                     <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
