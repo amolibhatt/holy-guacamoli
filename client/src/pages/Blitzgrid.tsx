@@ -3724,250 +3724,100 @@ export default function Blitzgrid() {
     );
   }
 
-  // Main grid list view
+  // Filter to only show active grids (ready to play)
+  const activeGrids = grids.filter(g => g.isActive);
+
+  // Main grid list view - clean grid picker for hosts/players
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50 via-background to-background dark:from-rose-950/30 dark:via-background" data-testid="page-blitzgrid">
+    <div className="min-h-screen bg-background" data-testid="page-blitzgrid">
       <AppHeader title="Blitzgrid" backHref="/" showAdminButton adminHref="/admin/games" />
       
-      {/* Hero Section */}
-      <div className="relative overflow-hidden border-b border-pink-100 dark:border-pink-900/50">
-        <div className="absolute inset-0 bg-gradient-to-r from-rose-500/5 via-pink-500/10 to-fuchsia-500/5" />
-        <div className="container mx-auto px-4 py-8 relative">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-400 via-pink-400 to-fuchsia-400 flex items-center justify-center shadow-lg shadow-pink-400/25">
-                <Grid3X3 className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 dark:from-rose-400 dark:via-pink-400 dark:to-fuchsia-400 bg-clip-text text-transparent">
-                  Blitzgrid
-                </h1>
-                <p className="text-muted-foreground">
-                  {grids.length === 0 ? "Create your first trivia grid" : `${grids.length} ${grids.length === 1 ? 'grid' : 'grids'} ready to play`}
-                </p>
-              </div>
-            </div>
-                      </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-4 py-6">
-
-        <AnimatePresence>
-          {showNewGridForm && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mb-4"
-            >
-              <Card>
-                <CardContent className="pt-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      placeholder="Grid name..."
-                      value={newGridName}
-                      onChange={(e) => setNewGridName(e.target.value)}
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && newGridName.trim()) {
-                          createGridMutation.mutate({ name: newGridName.trim(), theme: newGridTheme });
-                        }
-                        if (e.key === 'Escape') setShowNewGridForm(false);
-                      }}
-                      data-testid="input-grid-name"
-                    />
-                    <Button
-                      onClick={() => createGridMutation.mutate({ name: newGridName.trim(), theme: newGridTheme })}
-                      disabled={!newGridName.trim() || createGridMutation.isPending}
-                      data-testid="button-create-grid"
-                    >
-                      {createGridMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
-                    </Button>
-                    <Button variant="ghost" onClick={() => setShowNewGridForm(false)}>
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  {/* Theme selector */}
-                  <div className="flex flex-wrap gap-2">
-                    <span className="text-sm text-muted-foreground self-center mr-1" data-testid="text-theme-label">Theme:</span>
-                    {GRID_THEMES.map(theme => (
-                      <Button
-                        key={theme.id}
-                        variant={newGridTheme === theme.id ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setNewGridTheme(theme.id)}
-                        className="gap-1"
-                        data-testid={`button-theme-${theme.id}`}
-                      >
-                        <ThemeIcon type={theme.iconType} className="w-4 h-4" />
-                        <span className="hidden sm:inline">{theme.name}</span>
-                      </Button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <div className="container mx-auto px-4 py-8">
+        {/* Simple heading */}
+        <motion.div 
+          className="text-center mb-10"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <h1 className="text-2xl font-semibold text-foreground mb-2">Choose a Grid</h1>
+          <p className="text-muted-foreground">
+            {activeGrids.length} {activeGrids.length === 1 ? 'grid' : 'grids'} ready to play
+          </p>
+        </motion.div>
 
         {loadingGrids ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-32" />)}
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 rounded-2xl" />)}
           </div>
-        ) : grids.length === 0 ? (
+        ) : activeGrids.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            className="text-center py-16"
           >
-            <Card className="border-2 border-dashed border-pink-200 dark:border-pink-800 bg-gradient-to-br from-rose-50/50 to-pink-50/50 dark:from-rose-950/20 dark:to-pink-950/20">
-              <CardContent className="py-16 text-center">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-400 via-pink-400 to-fuchsia-400 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-400/25">
-                  <Grid3X3 className="w-10 h-10 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Create Your First Grid</h3>
-                <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                  Build a 5x5 trivia grid with categories and questions. Perfect for game nights and parties!
-                </p>
-                <Button 
-                  onClick={() => setShowNewGridForm(true)} 
-                  className="bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-400 shadow-lg shadow-pink-400/25"
-                  data-testid="button-create-first-grid"
-                >
-                  <Plus className="w-4 h-4 mr-2" /> Create Grid
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+              <Grid3X3 className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">No grids ready yet</h3>
+            <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+              Create grids in the admin area. They'll appear here once they're complete.
+            </p>
           </motion.div>
         ) : (
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {grids.map(grid => {
-              const colorConfig = getBoardColorConfig(grid.colorCode);
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
+            {activeGrids.map((grid, index) => {
               const themeId = grid.theme?.replace('blitzgrid:', '') || 'birthday';
               const gridTheme = GRID_THEMES.find(t => t.id === themeId) || GRID_THEMES[1];
-              const progressPercent = Math.round((grid.questionCount / 25) * 100);
               
               return (
-                <motion.div
+                <motion.button
                   key={grid.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setSelectedGridId(grid.id);
+                    setPlayMode(true);
+                    setRevealedCells(new Set());
+                    setRevealedCategoryCount(0);
+                    setCategoryRevealMode(true);
+                    setActiveQuestion(null);
+                    setShowAnswer(false);
+                  }}
+                  className="relative group text-left rounded-2xl overflow-hidden transition-shadow hover:shadow-xl"
+                  style={{ 
+                    background: gridTheme.background,
+                    boxShadow: `0 8px 32px ${gridTheme.glow}30`
+                  }}
+                  data-testid={`card-grid-${grid.id}`}
                 >
-                  <Card
-                    className={`group hover-elevate transition-all border-2 overflow-hidden ${
-                      grid.isActive 
-                        ? 'cursor-pointer border-pink-200 dark:border-pink-800 hover:border-pink-400 dark:hover:border-pink-600 hover:shadow-xl hover:shadow-pink-500/10' 
-                        : 'opacity-70 border-muted'
-                    }`}
-                    onClick={() => {
-                      if (grid.isActive) {
-                        setSelectedGridId(grid.id);
-                        setPlayMode(true);
-                        setRevealedCells(new Set());
-                        setRevealedCategoryCount(0);
-                        setCategoryRevealMode(true);
-                        setActiveQuestion(null);
-                        setShowAnswer(false);
-                      } else {
-                        toast({ title: "Grid not ready", description: "This grid needs 5 categories with 5 questions each." });
-                      }
-                    }}
-                    data-testid={`card-grid-${grid.id}`}
-                  >
-                    {/* Theme accent bar */}
-                    <div 
-                      className="h-2" 
-                      style={{ background: gridTheme.background }}
-                    />
+                  {/* Glass overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+                  
+                  {/* Content */}
+                  <div className="relative p-6 min-h-[140px] flex flex-col justify-between">
+                    <div>
+                      <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4">
+                        <ThemeIcon type={gridTheme.iconType} className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="font-bold text-xl text-white drop-shadow-sm">{grid.name}</h3>
+                    </div>
                     
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between gap-3 mb-4">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div 
-                            className="w-11 h-11 rounded-xl flex items-center justify-center shadow-md transition-transform group-hover:scale-105"
-                            style={{ background: gridTheme.background }}
-                          >
-                            <ThemeIcon type={gridTheme.iconType} className="w-5 h-5 text-white" />
-                          </div>
-                          <div className="min-w-0">
-                            <h3 className="font-semibold text-lg truncate text-foreground">{grid.name}</h3>
-                            <p className="text-sm text-muted-foreground capitalize">{gridTheme.name} Theme</p>
-                          </div>
-                        </div>
-                        {grid.isActive && (
-                          <div className="shrink-0">
-                            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
-                              <Play className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                            </div>
-                          </div>
-                        )}
+                    <div className="flex items-center justify-between mt-4">
+                      <span className="text-white/80 text-sm font-medium">{gridTheme.name}</span>
+                      <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                        <Play className="w-4 h-4 text-white" />
                       </div>
-                      
-                      {/* Progress section */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between gap-2 flex-wrap text-sm">
-                          <span className="text-muted-foreground">
-                            {grid.categoryCount}/5 categories
-                          </span>
-                          <span className="font-medium text-foreground">
-                            {grid.questionCount}/25 questions
-                          </span>
-                        </div>
-                        <div className="h-2 bg-muted rounded-full overflow-hidden">
-                          <motion.div 
-                            className="h-full rounded-full"
-                            style={{ 
-                              background: grid.isActive 
-                                ? 'linear-gradient(90deg, #10b981, #34d399)' 
-                                : 'linear-gradient(90deg, #6366f1, #a78bfa)'
-                            }}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${progressPercent}%` }}
-                            transition={{ duration: 0.5, delay: 0.1 }}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between gap-2 flex-wrap pt-1">
-                          {grid.isActive ? (
-                            <Badge className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-0">
-                              <CheckCircle2 className="w-3 h-3 mr-1" /> Ready to Play
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="text-muted-foreground">
-                              {25 - grid.questionCount} more needed
-                            </Badge>
-                          )}
-                          <ChevronRight className={`w-4 h-4 transition-transform ${grid.isActive ? 'text-pink-500 group-hover:translate-x-1' : 'text-muted-foreground/50'}`} />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                    </div>
+                  </div>
+                </motion.button>
               );
             })}
           </div>
         )}
       </div>
-
-      <AlertDialog open={deleteGridId !== null} onOpenChange={(open) => !open && setDeleteGridId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this grid?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will delete the grid and unlink all categories. Categories and questions will still exist.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteGridId && deleteGridMutation.mutate(deleteGridId)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
