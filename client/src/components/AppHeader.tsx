@@ -68,41 +68,50 @@ export function AppHeader({
                   <ChevronDown className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="text-xs uppercase tracking-wider">
-                  Welcome back
-                </DropdownMenuLabel>
-                <DropdownMenuItem className="font-medium cursor-default focus:bg-transparent" data-testid="text-username">
-                  {user?.firstName || user?.email || 'User'}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
+              <DropdownMenuContent align="end" className="w-64 p-2">
+                {/* User profile section */}
+                <div className="flex items-center gap-3 px-2 py-3 mb-2">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
+                    <User className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground truncate" data-testid="text-username">
+                      {user?.firstName || 'User'}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {user?.email || ''}
+                    </p>
+                  </div>
+                </div>
+                
+                <DropdownMenuSeparator className="my-1" />
                 
                 <Link href={adminHref}>
-                  <DropdownMenuItem className="cursor-pointer" data-testid="menu-admin">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Admin
+                  <DropdownMenuItem className="cursor-pointer py-2.5" data-testid="menu-admin">
+                    <Settings className="w-4 h-4 mr-3" />
+                    Admin Dashboard
                   </DropdownMenuItem>
                 </Link>
                 
                 {user?.role === 'super_admin' && (
                   <Link href="/admin/super">
-                    <DropdownMenuItem className="cursor-pointer" data-testid="menu-super-admin">
-                      <Shield className="w-4 h-4 mr-2" />
+                    <DropdownMenuItem className="cursor-pointer py-2.5" data-testid="menu-super-admin">
+                      <Shield className="w-4 h-4 mr-3 text-purple-500" />
                       Super Admin
                     </DropdownMenuItem>
                   </Link>
                 )}
                 
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="my-1" />
                 
                 <DropdownMenuItem 
-                  className="cursor-pointer text-destructive" 
+                  className="cursor-pointer py-2.5 text-destructive focus:text-destructive" 
                   onClick={() => logout()}
                   disabled={isLoggingOut}
                   data-testid="menu-logout"
                 >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Logout
+                  <LogOut className="w-4 h-4 mr-3" />
+                  {isLoggingOut ? 'Logging out...' : 'Log out'}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
