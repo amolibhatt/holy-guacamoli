@@ -1825,7 +1825,7 @@ export default function Blitzgrid() {
                       style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
                       className={`py-3 md:py-4 px-3 rounded-xl text-center border relative overflow-hidden ${
                         isRevealed 
-                          ? 'bg-card/90 backdrop-blur-sm border-pink-200/60 shadow-sm' 
+                          ? 'bg-card/90 backdrop-blur-sm border-slate-200/60 shadow-sm' 
                           : 'bg-transparent border-transparent'
                       }`}
                     >
@@ -2483,9 +2483,9 @@ export default function Blitzgrid() {
               {/* Buzzer Status + Skip Option */}
               {players.length > 0 && !showAnswer && buzzQueue.length === 0 && (
                 <div className="flex flex-col items-center gap-3 py-2">
-                  <div className={`flex items-center gap-2 px-4 py-2 ${colorConfig.light} border ${colorConfig.lightBorder} rounded-full`}>
-                    <div className={`w-2 h-2 ${colorConfig.bg} rounded-full animate-pulse`} />
-                    <span className={`${colorConfig.lightText} text-sm font-medium`}>Buzzers Active - Waiting for players</span>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200/60 rounded-full">
+                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-pulse" />
+                    <span className="text-slate-600 text-sm font-medium">Buzzers Active - Waiting for players</span>
                   </div>
                   <Button
                     variant="ghost"
@@ -2504,10 +2504,10 @@ export default function Blitzgrid() {
               
               {/* Buzz Queue - players who buzzed in order */}
               {buzzQueue.length > 0 && !showAnswer && (
-                <div className={`${colorConfig.light} border ${colorConfig.lightBorder} rounded-lg p-4`}>
+                <div className="bg-slate-50 border border-slate-200/60 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Zap className={`w-4 h-4 ${colorConfig.icon}`} />
-                    <span className={`text-sm ${colorConfig.lightText} font-medium`}>Buzz Order</span>
+                    <Zap className="w-4 h-4 text-slate-500" />
+                    <span className="text-sm text-slate-600 font-medium">Buzz Order</span>
                   </div>
                   <div className="space-y-2">
                     {buzzQueue.map((buzz, index) => {
@@ -2602,9 +2602,9 @@ export default function Blitzgrid() {
                     transition={{ repeat: Infinity, duration: 1.5 }}
                     className="inline-block"
                   >
-                    <Zap className={`w-12 h-12 ${colorConfig.icon} mx-auto`} />
+                    <Zap className="w-12 h-12 text-slate-500 mx-auto" />
                   </motion.div>
-                  <p className={`${colorConfig.accent} mt-2 font-medium`}>Waiting for buzzes...</p>
+                  <p className="text-slate-600 mt-2 font-medium">Waiting for buzzes...</p>
                   <p className="text-muted-foreground text-sm">{players.length} player{players.length !== 1 ? 's' : ''} ready</p>
                 </div>
               )}
@@ -2880,8 +2880,8 @@ export default function Blitzgrid() {
                         data-testid="input-category-name"
                       />
                       <Button
-                        onClick={() => createCategoryMutation.mutate({ gridId: selectedGridId, name: newCategoryName.trim(), description: newCategoryDescription.trim() })}
-                        disabled={!newCategoryName.trim() || createCategoryMutation.isPending}
+                        onClick={() => selectedGridId && createCategoryMutation.mutate({ gridId: selectedGridId, name: newCategoryName.trim(), description: newCategoryDescription.trim() })}
+                        disabled={!newCategoryName.trim() || createCategoryMutation.isPending || !selectedGridId}
                         data-testid="button-create-category"
                       >
                         {createCategoryMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
@@ -2895,7 +2895,7 @@ export default function Blitzgrid() {
                       value={newCategoryDescription}
                       onChange={(e) => setNewCategoryDescription(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && newCategoryName.trim()) {
+                        if (e.key === 'Enter' && newCategoryName.trim() && selectedGridId) {
                           createCategoryMutation.mutate({ gridId: selectedGridId, name: newCategoryName.trim(), description: newCategoryDescription.trim() });
                         }
                         if (e.key === 'Escape') {
@@ -2970,7 +2970,7 @@ export default function Blitzgrid() {
                               className="h-7 w-7"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                removeCategoryMutation.mutate({ gridId: selectedGridId, categoryId: category.id });
+                                if (selectedGridId) removeCategoryMutation.mutate({ gridId: selectedGridId, categoryId: category.id });
                               }}
                               disabled={removeCategoryMutation.isPending}
                               data-testid={`button-remove-category-${category.id}`}
