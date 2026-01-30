@@ -203,38 +203,81 @@ export default function Home() {
       <main className="flex-1 px-4 md:px-6 py-10 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
           
-          {/* Hero Section */}
+          {/* Hero Section - System Login Feel */}
           <motion.section 
             className="text-center mb-14"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
           >
-            {/* Subtitle on top */}
+            {/* System greeting */}
+            <motion.div 
+              className="mb-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1, duration: 0.4 }}
+            >
+              <span className="text-white/40 text-sm md:text-base font-mono tracking-widest uppercase">
+                // SYSTEM ACTIVE
+              </span>
+            </motion.div>
+            
+            {/* Personal greeting - the soul */}
+            <motion.h1 
+              className="text-4xl md:text-5xl lg:text-6xl font-black mb-4 tracking-tight"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+            >
+              <span className="text-white/60">What's up, </span>
+              <span 
+                style={{ 
+                  background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  textShadow: '0 0 40px rgba(168, 85, 247, 0.5)'
+                }}
+              >
+                {user?.firstName || 'Legend'}
+              </span>
+            </motion.h1>
+            
+            {/* Subtitle */}
             <motion.p 
-              className="text-lg md:text-xl text-muted-foreground max-w-md mx-auto mb-3"
+              className="text-base md:text-lg text-white/40 max-w-md mx-auto mb-6 font-mono"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15, duration: 0.5 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
             >
               Pick your game. Rally your crew.
             </motion.p>
             
-            {/* Hero headline on bottom */}
-            <motion.h1 
-              className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight"
-              style={{ 
-                fontFamily: 'var(--font-display)',
-                background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #14b8a6 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25, duration: 0.5 }}
+            {/* Big chaos line */}
+            <motion.div
+              className="relative inline-block"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4, duration: 0.5, type: "spring" }}
             >
-              Let the chaos begin.
-            </motion.h1>
+              <h2 
+                className="text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-tight"
+                style={{ 
+                  fontFamily: 'var(--font-display)',
+                  background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #14b8a6 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                Let the chaos begin.
+              </h2>
+              {/* Underline glow */}
+              <motion.div 
+                className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-[2px] bg-gradient-to-r from-transparent via-purple-500 to-transparent"
+                initial={{ width: 0 }}
+                animate={{ width: "80%" }}
+                transition={{ delay: 0.6, duration: 0.8 }}
+              />
+            </motion.div>
           </motion.section>
 
           {/* Game Cards Grid */}
