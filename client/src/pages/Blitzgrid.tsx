@@ -22,7 +22,7 @@ import {
   ChevronRight, ArrowLeft, Play, Loader2,
   AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Medal,
   Volume2, VolumeX, MoreVertical, Settings, Copy, Link2, Share2, Download, Image, Loader2 as LoaderIcon, Clock,
-  Hand, Flame, Laugh, CircleDot, ThumbsUp
+  Hand, Flame, Laugh, CircleDot, ThumbsUp, Sparkles, Heart, Timer, Zap
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import html2canvas from "html2canvas";
@@ -47,7 +47,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Board, Category, Question } from "@shared/schema";
 import { PLAYER_AVATARS } from "@shared/schema";
-import { getBoardColorConfig } from "@/lib/boardColors";
+import { getBoardColorConfig, BOARD_COLORS } from "@/lib/boardColors";
 
 interface GridWithStats extends Board {
   categoryCount: number;
@@ -1367,44 +1367,6 @@ export default function Blitzgrid() {
           
           {/* Game Grid */}
           <div className="flex-1 p-3 md:p-5 overflow-hidden relative">
-            {/* Football pitch markings - only show for sports theme */}
-            {gridThemeId === 'sports' && (
-              <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-40">
-                {/* Center line */}
-                <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-white/80 -translate-x-1/2" />
-                {/* Center circle */}
-                <div className="absolute left-1/2 top-1/2 w-32 h-32 md:w-56 md:h-56 border-4 border-white/80 rounded-full -translate-x-1/2 -translate-y-1/2" />
-                {/* Center dot */}
-                <div className="absolute left-1/2 top-1/2 w-3 h-3 bg-white rounded-full -translate-x-1/2 -translate-y-1/2" />
-                {/* Left penalty box */}
-                <div className="absolute left-0 top-1/2 w-16 md:w-24 h-40 md:h-56 border-4 border-white/80 border-l-0 -translate-y-1/2" />
-                {/* Right penalty box */}
-                <div className="absolute right-0 top-1/2 w-16 md:w-24 h-40 md:h-56 border-4 border-white/80 border-r-0 -translate-y-1/2" />
-                {/* Left goal post */}
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 opacity-70">
-                  <svg width="40" height="120" viewBox="0 0 40 120" className="md:w-[60px] md:h-[180px]">
-                    <rect x="0" y="0" width="6" height="120" fill="white" rx="2"/>
-                    <rect x="34" y="0" width="6" height="120" fill="white" rx="2"/>
-                    <rect x="0" y="0" width="40" height="6" fill="white" rx="2"/>
-                    <rect x="5" y="5" width="30" height="3" fill="white" opacity="0.5"/>
-                    <line x1="5" y1="10" x2="5" y2="115" stroke="white" strokeWidth="1" opacity="0.3"/>
-                    <line x1="35" y1="10" x2="35" y2="115" stroke="white" strokeWidth="1" opacity="0.3"/>
-                  </svg>
-                </div>
-                {/* Right goal post */}
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-70">
-                  <svg width="40" height="120" viewBox="0 0 40 120" className="md:w-[60px] md:h-[180px]">
-                    <rect x="0" y="0" width="6" height="120" fill="white" rx="2"/>
-                    <rect x="34" y="0" width="6" height="120" fill="white" rx="2"/>
-                    <rect x="0" y="0" width="40" height="6" fill="white" rx="2"/>
-                    <rect x="5" y="5" width="30" height="3" fill="white" opacity="0.5"/>
-                    <line x1="5" y1="10" x2="5" y2="115" stroke="white" strokeWidth="1" opacity="0.3"/>
-                    <line x1="35" y1="10" x2="35" y2="115" stroke="white" strokeWidth="1" opacity="0.3"/>
-                  </svg>
-                </div>
-              </div>
-            )}
-            
             {/* Grid only shows after first reveal */}
             <AnimatePresence>
               {revealedCategoryCount > 0 && (
@@ -1743,7 +1705,7 @@ export default function Blitzgrid() {
                   ref={shareCardRef}
                   className="w-[320px] rounded-xl overflow-hidden shadow-xl"
                   style={{ 
-                    background: currentTheme.background,
+                    background: playBackground,
                     aspectRatio: '9/16'
                   }}
                 >
@@ -2697,42 +2659,45 @@ export default function Blitzgrid() {
             </p>
           </motion.div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-3xl mx-auto">
-            {activeGrids.map((grid, index) => (
-              <motion.button
-                key={grid.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, delay: index * 0.05 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  setSelectedGridId(grid.id);
-                  setPlayMode(true);
-                  setRevealedCells(new Set());
-                  setRevealedCategoryCount(0);
-                  setCategoryRevealMode(true);
-                  setActiveQuestion(null);
-                  setShowAnswer(false);
-                }}
-                className="group text-left p-4 rounded-xl bg-card border border-border hover-elevate transition-all"
-                data-testid={`card-grid-${grid.id}`}
-              >
-                <div className="flex items-center gap-3 flex-wrap">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-primary/10">
-                    <Grid3X3 className="w-5 h-5 text-primary" />
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
+            {activeGrids.map((grid, index) => {
+              const colorConfig = getBoardColorConfig(BOARD_COLORS[index % BOARD_COLORS.length]);
+              return (
+                <motion.button
+                  key={grid.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: index * 0.05 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setSelectedGridId(grid.id);
+                    setPlayMode(true);
+                    setRevealedCells(new Set());
+                    setRevealedCategoryCount(0);
+                    setCategoryRevealMode(true);
+                    setActiveQuestion(null);
+                    setShowAnswer(false);
+                  }}
+                  className={`group text-left p-5 rounded-2xl bg-gradient-to-br ${colorConfig.card} border hover-elevate transition-all`}
+                  data-testid={`card-grid-${grid.id}`}
+                >
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${colorConfig.bg}`}>
+                      <Grid3X3 className="w-6 h-6 text-white" />
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h3 className={`font-semibold text-lg ${colorConfig.cardTitle} truncate`}>{grid.name}</h3>
+                      <p className={`text-sm ${colorConfig.cardSub}`}>
+                        {grid.categoryCount || 0} categories
+                      </p>
+                    </div>
+                    
+                    <ChevronRight className={`w-5 h-5 ${colorConfig.cardIcon}`} />
                   </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-foreground truncate">{grid.name}</h3>
-                    {grid.description && (
-                      <p className="text-xs text-muted-foreground truncate">{grid.description}</p>
-                    )}
-                  </div>
-                  
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                </div>
-              </motion.button>
-            ))}
+                </motion.button>
+              );
+            })}
           </div>
         )}
       </div>
