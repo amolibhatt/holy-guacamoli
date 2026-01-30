@@ -66,32 +66,25 @@ export function Logo({ size = "md", variant = "dark" }: LogoProps) {
             </filter>
           </defs>
           
-          {/* Abstract hexagon with inner design */}
+          {/* Aggressive angular symbol */}
           <g filter="url(#logoGlow)">
-            {/* Outer hexagon */}
+            {/* Sharp angular frame */}
             <path
-              d="M20 2 L36 11 L36 29 L20 38 L4 29 L4 11 Z"
+              d="M20 2 L38 12 L38 28 L20 38 L2 28 L2 12 Z"
               fill="none"
               stroke="url(#logoGradient)"
-              strokeWidth="2"
-              strokeLinejoin="round"
+              strokeWidth="2.5"
+              strokeLinejoin="bevel"
             />
-            {/* Inner stylized "!" exclamation */}
+            {/* Inner lightning bolt / energy symbol */}
             <motion.path
-              d="M20 10 L20 24"
-              stroke="url(#logoGradient)"
-              strokeWidth="3"
-              strokeLinecap="round"
-              animate={{ opacity: [0.8, 1, 0.8] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-            <motion.circle
-              cx="20"
-              cy="30"
-              r="2"
+              d="M24 8 L16 20 L22 20 L18 32 L28 18 L22 18 L26 8 Z"
               fill="url(#logoGradient)"
-              animate={{ scale: [1, 1.2, 1], opacity: [0.8, 1, 0.8] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
+              animate={{ 
+                opacity: [0.9, 1, 0.9],
+                filter: ["drop-shadow(0 0 4px #ec4899)", "drop-shadow(0 0 8px #a855f7)", "drop-shadow(0 0 4px #14b8a6)"]
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
             />
           </g>
         </motion.svg>

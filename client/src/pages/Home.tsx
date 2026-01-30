@@ -52,8 +52,8 @@ const GAME_CONFIG: Record<string, {
     accentColor: "#ec4899",
     glowColor: "rgba(236, 72, 153, 0.6)",
     tagline: "SMASH. BUZZ. WIN.",
-    rotation: -2,
-    scale: 1.02,
+    rotation: -6,
+    scale: 1,
   },
   sequence_squeeze: {
     icon: ListOrdered,
@@ -62,7 +62,7 @@ const GAME_CONFIG: Record<string, {
     accentColor: "#39FF14",
     glowColor: "rgba(57, 255, 20, 0.6)",
     tagline: "CHAOS → ORDER",
-    rotation: 1,
+    rotation: 4,
     scale: 1,
   },
   psyop: {
@@ -72,8 +72,8 @@ const GAME_CONFIG: Record<string, {
     accentColor: "#a855f7",
     glowColor: "rgba(168, 85, 247, 0.6)",
     tagline: "LIE. DETECT. DESTROY.",
-    rotation: -1,
-    scale: 1.01,
+    rotation: -5,
+    scale: 1,
   },
 };
 
@@ -217,19 +217,15 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.5 }}
             >
-              <span className="text-foreground" style={{ fontFamily: 'var(--font-display)' }}>What's up, </span>
+              <span className="text-muted-foreground text-lg md:text-xl">What's up, </span>
               <span className="relative inline-block">
-                <span 
-                  className="glitch-text bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-500 bg-clip-text text-transparent"
-                  data-text={user?.firstName || 'Legend'}
-                  style={{ fontFamily: 'var(--font-display)' }}
-                >
+                <span className="text-foreground text-lg md:text-xl">
                   {user?.firstName || 'Legend'}
                 </span>
                 <motion.span 
-                  className="absolute -top-1 -right-5 text-xl"
-                  animate={{ rotate: [0, 20, 0], scale: [1, 1.2, 1] }}
-                  transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 4 }}
+                  className="absolute -top-1 -right-4 text-base"
+                  animate={{ rotate: [0, 15, 0] }}
+                  transition={{ duration: 0.4, repeat: Infinity, repeatDelay: 5 }}
                 >
                   <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
                 </motion.span>
@@ -245,7 +241,18 @@ export default function Home() {
             >
               Pick your game. Rally your crew.
               <br />
-              <span className="text-foreground font-black text-2xl md:text-3xl glitch-text inline-block" data-text="Let the chaos begin.">Let the chaos begin.</span>
+              <span 
+                  className="block text-4xl md:text-6xl font-black uppercase tracking-tight mt-2"
+                  style={{ 
+                    fontFamily: 'var(--font-display)',
+                    background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #14b8a6 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    textShadow: '0 0 60px rgba(168, 85, 247, 0.5)'
+                  }}
+                >
+                  LET THE CHAOS BEGIN.
+                </span>
             </motion.p>
           </motion.section>
 
@@ -418,22 +425,17 @@ export default function Home() {
                         {config.tagline}
                       </p>
                       
-                      {/* GO button with matching glow */}
+                      {/* Arrow indicator - appears on hover */}
                       <motion.div 
-                        className="absolute bottom-4 right-4 flex items-center gap-2 bg-black/40 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/30"
-                        style={{
-                          boxShadow: isHovered && !isComingSoon
-                            ? `0 0 25px ${config.accentColor}, 0 0 50px ${config.accentColor}60, inset 0 0 15px rgba(255,255,255,0.2)`
-                            : `0 0 15px ${config.accentColor}60, inset 0 0 10px rgba(255,255,255,0.1)`
-                        }}
+                        className="absolute bottom-4 right-4"
+                        initial={{ opacity: 0, x: -10 }}
                         animate={{ 
-                          scale: isHovered && !isComingSoon ? 1.15 : 1,
-                          x: isHovered && !isComingSoon ? -6 : 0
+                          opacity: isHovered && !isComingSoon ? 1 : 0,
+                          x: isHovered && !isComingSoon ? 0 : -10
                         }}
-                        transition={{ duration: 0.15, type: "spring", stiffness: 300 }}
+                        transition={{ duration: 0.2 }}
                       >
-                        <span className="text-sm font-black text-white uppercase tracking-widest">GO</span>
-                        <ArrowRight className="w-5 h-5 text-white" strokeWidth={3} />
+                        <ArrowRight className="w-8 h-8 text-white" strokeWidth={3} />
                       </motion.div>
                     </motion.button>
                   </motion.div>
@@ -493,12 +495,26 @@ export default function Home() {
         </div>
       </main>
       
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-border/10 px-6 py-6">
-        <div className="max-w-5xl mx-auto flex items-center justify-center">
-          <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-1">
-            made with <Heart className="w-4 h-4 text-pink-500 fill-pink-500 inline" /> by <span className="font-black glitch-text bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-500 bg-clip-text text-transparent" data-text="Amoli" style={{ fontFamily: 'var(--font-display)' }}>Amoli</span>
+      {/* Footer - integrated branding */}
+      <footer className="relative z-10 px-6 py-8">
+        <div className="max-w-5xl mx-auto flex flex-col items-center justify-center gap-2">
+          <p 
+            className="text-xs uppercase tracking-[0.3em] text-muted-foreground/60"
+          >
+            A Party Experience by
           </p>
+          <motion.p 
+            className="text-2xl font-black uppercase tracking-tight"
+            style={{ 
+              fontFamily: 'var(--font-display)',
+              background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #14b8a6 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+            whileHover={{ scale: 1.05 }}
+          >
+            AMOLI
+          </motion.p>
         </div>
       </footer>
 
