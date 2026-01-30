@@ -149,6 +149,50 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-hidden relative">
+      {/* Deep space mesh gradient background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <motion.div
+          className="absolute w-[150%] h-[150%] -top-1/4 -left-1/4"
+          style={{
+            background: `
+              radial-gradient(ellipse 80% 50% at 20% 40%, rgba(88, 28, 135, 0.4) 0%, transparent 50%),
+              radial-gradient(ellipse 60% 80% at 80% 20%, rgba(30, 58, 138, 0.35) 0%, transparent 50%),
+              radial-gradient(ellipse 50% 60% at 40% 80%, rgba(91, 33, 182, 0.3) 0%, transparent 50%),
+              radial-gradient(ellipse 70% 40% at 70% 70%, rgba(29, 78, 216, 0.25) 0%, transparent 50%),
+              radial-gradient(ellipse 40% 50% at 10% 60%, rgba(124, 58, 237, 0.2) 0%, transparent 50%)
+            `,
+          }}
+          animate={{
+            x: ["0%", "3%", "0%", "-2%", "0%"],
+            y: ["0%", "-2%", "1%", "2%", "0%"],
+            rotate: [0, 1, 0, -1, 0],
+          }}
+          transition={{
+            duration: 120,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+        <motion.div
+          className="absolute w-[120%] h-[120%] -top-[10%] -left-[10%]"
+          style={{
+            background: `
+              radial-gradient(ellipse 50% 70% at 60% 30%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+              radial-gradient(ellipse 80% 40% at 30% 70%, rgba(59, 130, 246, 0.15) 0%, transparent 50%)
+            `,
+          }}
+          animate={{
+            x: ["0%", "-2%", "1%", "2%", "0%"],
+            y: ["0%", "2%", "-1%", "-2%", "0%"],
+          }}
+          transition={{
+            duration: 90,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+      </div>
+      
       <AppHeader 
         showAdminButton={true}
         showHelpButton={true}
