@@ -2370,23 +2370,26 @@ export default function Blitzgrid() {
               <div className="absolute -top-6 -left-6 w-20 h-20 rounded-full bg-gradient-to-br from-slate-200/30 to-slate-100/10 blur-xl pointer-events-none" />
               <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-gradient-to-br from-slate-200/30 to-slate-100/10 blur-xl pointer-events-none" />
               
-              <DialogHeader className="relative z-10">
-                {/* Category Name and Description */}
+              <DialogHeader className="relative z-10 pb-2">
+                {/* Compact Category Pill - single line */}
                 {(() => {
                   const category = playCategories.find(c => c.id === activeQuestion?.categoryId);
                   return category ? (
-                    <div className="text-center mb-3">
-                      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-50/80 border border-slate-200/60">
-                        <Sparkles className="w-3.5 h-3.5 text-slate-500" />
-                        <p className="text-slate-600 text-sm font-semibold uppercase tracking-wider">
+                    <div className="flex justify-center mb-2">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100/80 border border-slate-200/50 text-xs">
+                        <Sparkles className="w-3 h-3 text-slate-400" />
+                        <span className="text-slate-600 font-semibold uppercase tracking-wide">
                           {category.name}
-                        </p>
+                        </span>
+                        {category.description && (
+                          <>
+                            <span className="text-slate-300">·</span>
+                            <span className="text-slate-500 font-normal normal-case tracking-normal truncate max-w-[150px]">
+                              {category.description}
+                            </span>
+                          </>
+                        )}
                       </div>
-                      {category.description && (
-                        <p className="text-muted-foreground text-xs mt-1.5">
-                          {category.description}
-                        </p>
-                      )}
                     </div>
                   ) : null;
                 })()}
@@ -2437,18 +2440,18 @@ export default function Blitzgrid() {
                 </div>
               </DialogHeader>
               
-              {/* Question */}
-              <div className="py-6 relative z-10">
-                <div className="text-xl md:text-2xl text-center font-medium text-foreground max-w-none leading-relaxed [&_p]:text-foreground [&_*]:text-foreground">
+              {/* Question with subtle gradient background */}
+              <div className="py-3 px-4 -mx-2 relative z-10 bg-gradient-to-b from-slate-50/50 via-white to-slate-50/30 rounded-lg">
+                <div className="text-lg md:text-xl text-center font-medium text-foreground max-w-none leading-relaxed [&_p]:text-foreground [&_*]:text-foreground">
                   <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
                     {activeQuestion?.question || ''}
                   </ReactMarkdown>
                 </div>
-                {/* Subtle divider */}
-                <div className="mt-6 flex items-center justify-center gap-3">
-                  <div className="h-px w-16 bg-gradient-to-r from-transparent to-slate-300/60" />
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                  <div className="h-px w-16 bg-gradient-to-l from-transparent to-slate-300/60" />
+                {/* Compact divider */}
+                <div className="mt-3 flex items-center justify-center gap-2">
+                  <div className="h-px w-12 bg-gradient-to-r from-transparent to-slate-200" />
+                  <div className="w-1 h-1 rounded-full bg-slate-200" />
+                  <div className="h-px w-12 bg-gradient-to-l from-transparent to-slate-200" />
                 </div>
               </div>
               
@@ -2479,12 +2482,13 @@ export default function Blitzgrid() {
                 </div>
               )}
               
-              {/* Buzzer Status + Skip Option */}
+              {/* Buzzer Status + Skip Option - muted waiting state */}
               {players.length > 0 && !showAnswer && buzzQueue.length === 0 && (
-                <div className="flex flex-col items-center gap-3 py-2">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200/60 rounded-full">
-                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-pulse" />
-                    <span className="text-slate-600 text-sm font-medium">Buzzers Active - Waiting for players</span>
+                <div className="flex items-center justify-between py-2 px-3 bg-slate-50/80 border border-dashed border-slate-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-slate-300 rounded-full animate-pulse" />
+                    <span className="text-slate-500 text-sm">Waiting for buzzes...</span>
+                    <span className="text-slate-400 text-xs">({players.length} ready)</span>
                   </div>
                   <Button
                     variant="ghost"
@@ -2493,72 +2497,78 @@ export default function Blitzgrid() {
                       lockBuzzer();
                       handleRevealAnswer();
                     }}
-                    className="text-muted-foreground"
+                    className="text-slate-400 hover:text-slate-600 h-7 text-xs"
                     data-testid="button-skip-reveal"
                   >
-                    <Eye className="w-4 h-4 mr-2" /> No one buzzing? Reveal Answer
+                    <Eye className="w-3 h-3 mr-1" /> Skip
                   </Button>
                 </div>
               )}
               
-              {/* Buzz Queue - players who buzzed in order */}
+              {/* Buzz Queue - players who buzzed - prominent amber glow */}
               {buzzQueue.length > 0 && !showAnswer && (
-                <div className="bg-slate-50 border border-slate-200/60 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Zap className="w-4 h-4 text-slate-500" />
-                    <span className="text-sm text-slate-600 font-medium">Buzz Order</span>
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-lg p-3 shadow-lg shadow-amber-100"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <motion.div
+                      animate={{ rotate: [0, 15, -15, 0] }}
+                      transition={{ repeat: Infinity, duration: 0.5 }}
+                    >
+                      <Zap className="w-4 h-4 text-amber-500" />
+                    </motion.div>
+                    <span className="text-sm text-amber-700 font-bold">Someone Buzzed!</span>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {buzzQueue.map((buzz, index) => {
                       const player = players.find(p => p.id === buzz.playerId);
                       return (
                         <div 
                           key={buzz.playerId}
-                          className={`flex items-center justify-between rounded-lg px-3 py-2 ${
-                            index === 0 ? 'bg-amber-100 dark:bg-amber-600/30 border border-amber-300 dark:border-amber-500' : 'bg-gray-100 dark:bg-slate-600/50'
+                          className={`flex items-center justify-between rounded-lg px-3 py-1.5 ${
+                            index === 0 ? 'bg-white border-2 border-amber-400 shadow-sm' : 'bg-amber-50/50 border border-amber-200/50'
                           }`}
                         >
-                          <div className="flex items-center gap-3">
-                            <span className={`text-lg font-bold ${index === 0 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 dark:text-slate-500'}`}>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-sm font-bold ${index === 0 ? 'text-amber-600' : 'text-amber-400'}`}>
                               #{index + 1}
                             </span>
-                            <span className="font-medium text-foreground">{buzz.name}</span>
-                            <span className="text-xs text-muted-foreground">({player?.score || 0} pts)</span>
+                            <span className={`font-medium ${index === 0 ? 'text-foreground' : 'text-slate-500'}`}>{buzz.name}</span>
+                            <span className="text-xs text-muted-foreground">({player?.score || 0})</span>
                           </div>
                           <div className="flex items-center gap-1">
                             {index === 0 ? (
                               <>
                                 <Button
                                   size="sm"
-                                  className="bg-red-500 hover:bg-red-600 text-white h-8"
+                                  className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs px-2"
                                   disabled={isJudging}
                                   onClick={() => {
                                     setIsJudging(true);
                                     const pts = activeQuestion?.points || 0;
                                     updatePlayerScore(buzz.playerId, -pts, true, activeQuestion?.categoryId);
                                     sendFeedback(buzz.playerId, false, -pts);
-                                    // Remove player from queue
                                     if (wsRef.current?.readyState === WebSocket.OPEN) {
                                       wsRef.current.send(JSON.stringify({ type: 'host:passPlayer', playerId: buzz.playerId }));
                                     }
                                     const remainingQueue = buzzQueue.slice(1);
                                     if (remainingQueue.length > 0) {
-                                      // More players in queue - let next one answer
                                       setBuzzQueue(remainingQueue.map((b, i) => ({ ...b, position: i + 1 })));
                                       setTimeout(() => setIsJudging(false), 300);
                                     } else {
-                                      // No more players - end round and reveal answer
                                       lockBuzzer();
                                       handleRevealAnswer();
                                     }
                                   }}
                                   data-testid={`button-wrong-${buzz.playerId}`}
                                 >
-                                  <X className="w-3 h-3 mr-1" /> Wrong
+                                  <X className="w-3 h-3" />
                                 </Button>
                                 <Button
                                   size="sm"
-                                  className="bg-teal-500 text-white h-8"
+                                  className="bg-teal-500 hover:bg-teal-600 text-white h-7 text-xs px-2"
                                   disabled={isJudging}
                                   onClick={() => {
                                     setIsJudging(true);
@@ -2570,58 +2580,62 @@ export default function Blitzgrid() {
                                   }}
                                   data-testid={`button-correct-${buzz.playerId}`}
                                 >
-                                  <Check className="w-3 h-3 mr-1" /> Correct
+                                  <Check className="w-3 h-3" />
                                 </Button>
                               </>
                             ) : (
-                              <span className="text-xs text-muted-foreground">Waiting...</span>
+                              <span className="text-xs text-amber-400">next</span>
                             )}
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                </div>
+                </motion.div>
               )}
               
-              {/* No players yet prompt */}
+              {/* No players yet prompt - compact */}
               {players.length === 0 && !showAnswer && (
-                <div className="text-center py-4 text-muted-foreground">
-                  <Users className="w-6 h-6 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No players have joined yet</p>
-                  <p className="text-xs mt-1">Click "Join" to show QR code</p>
+                <div className="flex items-center justify-center gap-2 py-2 text-muted-foreground">
+                  <Users className="w-4 h-4 opacity-50" />
+                  <p className="text-sm">No players yet · Click "Join" for QR code</p>
                 </div>
               )}
               
-              {/* Waiting for buzzes */}
-              {players.length > 0 && !buzzerLocked && buzzQueue.length === 0 && !showAnswer && (
-                <div className="text-center py-6">
-                  <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                    className="inline-block"
-                  >
-                    <Zap className="w-12 h-12 text-slate-500 mx-auto" />
-                  </motion.div>
-                  <p className="text-slate-600 mt-2 font-medium">Waiting for buzzes...</p>
-                  <p className="text-muted-foreground text-sm">{players.length} player{players.length !== 1 ? 's' : ''} ready</p>
-                </div>
-              )}
-              
-              {/* Answer Revealed */}
+              {/* Answer Revealed - dramatic animation */}
               <AnimatePresence>
                 {showAnswer && (
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-gradient-to-br from-teal-50 to-teal-100 border border-teal-300 rounded-lg p-4 text-center"
+                    initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className="relative overflow-hidden bg-gradient-to-br from-teal-50 via-emerald-50 to-teal-100 border-2 border-teal-400 rounded-xl p-4 text-center shadow-lg shadow-teal-100"
                   >
-                    <p className="text-sm text-teal-600 mb-1">Answer</p>
-                    <div className="text-xl font-bold text-teal-800 prose prose-lg max-w-none [&>p]:m-0">
+                    {/* Shine effect */}
+                    <motion.div 
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent -skew-x-12"
+                      initial={{ x: '-100%' }}
+                      animate={{ x: '200%' }}
+                      transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }}
+                    />
+                    <motion.p 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.1 }}
+                      className="text-xs text-teal-600 font-semibold uppercase tracking-wider mb-1"
+                    >
+                      Answer
+                    </motion.p>
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                      className="text-xl font-bold text-teal-800 prose prose-lg max-w-none [&>p]:m-0 relative z-10"
+                    >
                       <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
                         {activeQuestion?.correctAnswer || ''}
                       </ReactMarkdown>
-                    </div>
+                    </motion.div>
                   </motion.div>
                 )}
               </AnimatePresence>
