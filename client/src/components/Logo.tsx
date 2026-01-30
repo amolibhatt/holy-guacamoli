@@ -18,12 +18,12 @@ function AvocadoIcon({ size = 32 }: { size?: number }) {
     >
       <defs>
         <linearGradient id="hatGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#e879f9" />
-          <stop offset="50%" stopColor="#BC13FE" />
-          <stop offset="100%" stopColor="#9333ea" />
+          <stop offset="0%" stopColor="#f0abfc" />
+          <stop offset="50%" stopColor="#e879f9" />
+          <stop offset="100%" stopColor="#c026d3" />
         </linearGradient>
-        <filter id="eyeGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="1.5" result="blur"/>
+        <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="1" result="blur"/>
           <feMerge>
             <feMergeNode in="blur"/>
             <feMergeNode in="SourceGraphic"/>
@@ -31,29 +31,43 @@ function AvocadoIcon({ size = 32 }: { size?: number }) {
         </filter>
       </defs>
       
-      {/* Party Hat - Metallic Magenta matching page accent */}
+      {/* Party Hat */}
       <path 
-        d="M32 6 L40 18 L24 18 Z" 
+        d="M32 8 L38 18 L26 18 Z" 
         fill="url(#hatGradient)"
       />
-      <circle cx="32" cy="6" r="2" fill="#e879f9" />
+      <circle cx="32" cy="8" r="2" fill="#f0abfc" />
       
-      {/* Avocado Body - Dark to match page bg */}
-      <ellipse cx="32" cy="40" rx="16" ry="20" fill="#1a1a1f" stroke="#333" strokeWidth="1"/>
+      {/* Avocado Body - Friendly green */}
+      <ellipse cx="32" cy="40" rx="15" ry="18" fill="#4ade80"/>
       
-      {/* Avocado inner */}
-      <ellipse cx="32" cy="42" rx="12" ry="15" fill="#2a2a30"/>
+      {/* Avocado inner - lighter */}
+      <ellipse cx="32" cy="42" rx="11" ry="13" fill="#86efac"/>
       
-      {/* Pit */}
-      <ellipse cx="32" cy="46" rx="5" ry="7" fill="#1a1a1f" stroke="#333" strokeWidth="0.5"/>
+      {/* Pit - warm brown */}
+      <ellipse cx="32" cy="45" rx="5" ry="6" fill="#a16207"/>
       
-      {/* Glowing Neon Green Eyes */}
-      <g filter="url(#eyeGlow)">
-        <circle cx="27" cy="35" r="3" fill="#39FF14" />
-        <circle cx="37" cy="35" r="3" fill="#39FF14" />
-        <circle cx="26" cy="34" r="1" fill="#aaffaa" />
-        <circle cx="36" cy="34" r="1" fill="#aaffaa" />
+      {/* Friendly Eyes - simple dots */}
+      <g filter="url(#softGlow)">
+        <circle cx="27" cy="36" r="2.5" fill="#0f172a" />
+        <circle cx="37" cy="36" r="2.5" fill="#0f172a" />
+        {/* Eye shine */}
+        <circle cx="26" cy="35" r="0.8" fill="white" />
+        <circle cx="36" cy="35" r="0.8" fill="white" />
       </g>
+      
+      {/* Cute smile */}
+      <path 
+        d="M28 42 Q32 46 36 42" 
+        stroke="#0f172a" 
+        strokeWidth="1.5" 
+        fill="none" 
+        strokeLinecap="round"
+      />
+      
+      {/* Rosy cheeks */}
+      <circle cx="24" cy="40" r="2" fill="#fda4af" opacity="0.6" />
+      <circle cx="40" cy="40" r="2" fill="#fda4af" opacity="0.6" />
     </svg>
   );
 }
@@ -79,9 +93,9 @@ export function Logo({ size = "md" }: LogoProps) {
         className={`${config.text} font-black tracking-tight leading-none relative`}
         style={{ fontFamily: "'Archivo Black', 'Impact', sans-serif" }}
       >
-        {/* Subtle chromatic aberration - matches page glow style */}
+        {/* Subtle chromatic aberration */}
         <span 
-          className="absolute inset-0 opacity-40 blur-[0.5px]"
+          className="absolute inset-0 opacity-30 blur-[0.5px]"
           style={{ 
             color: '#22d3ee', 
             transform: 'translateX(-1px)',
@@ -91,7 +105,7 @@ export function Logo({ size = "md" }: LogoProps) {
           Holy GuacAmoli!
         </span>
         <span 
-          className="absolute inset-0 opacity-40 blur-[0.5px]"
+          className="absolute inset-0 opacity-30 blur-[0.5px]"
           style={{ 
             color: '#e879f9', 
             transform: 'translateX(1px)',
@@ -101,7 +115,7 @@ export function Logo({ size = "md" }: LogoProps) {
           Holy GuacAmoli!
         </span>
         
-        {/* Main text - same colors as page */}
+        {/* Main text */}
         <span className="relative">
           <span className="text-white">Holy </span>
           <span style={{ color: '#39FF14' }}>Guac</span>
