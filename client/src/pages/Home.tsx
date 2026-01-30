@@ -200,17 +200,6 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
           >
-            {/* Animated logo */}
-            <motion.div
-              animate={{ rotate: [0, 5, -5, 0] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              className="inline-block mb-8"
-            >
-              <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-amber-500 flex items-center justify-center shadow-2xl shadow-violet-500/40">
-                <PartyPopper className="w-12 h-12 text-white" />
-              </div>
-            </motion.div>
-            
             {/* Main heading */}
             <motion.h1 
               className="text-5xl md:text-6xl lg:text-7xl font-black mb-5 tracking-tight leading-[1.1]"
