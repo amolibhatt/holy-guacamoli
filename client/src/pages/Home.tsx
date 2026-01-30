@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ArrowRight, Sparkles, PartyPopper, Users, ChevronRight, ListOrdered, Crown, Clock, Brain, Play, Heart, Lock } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, Sparkles, PartyPopper, Users, ChevronRight, ListOrdered, Crown, Clock, Brain, Play, Heart } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation } from "wouter";
@@ -254,16 +254,6 @@ export default function Home() {
               </span>
             </motion.h1>
             
-            {/* Subtitle */}
-            <motion.p 
-              className="text-base md:text-lg text-white/40 max-w-md mx-auto mb-6 font-mono"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-            >
-              Pick your game. Rally your crew.
-            </motion.p>
-            
             {/* Big chaos line */}
             <motion.div
               className="relative inline-block"
@@ -474,39 +464,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* Coming Soon Card */}
-          <motion.div 
-            className="mt-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-          >
-            <div 
-              className="relative flex flex-col items-center justify-center p-8 rounded-2xl text-center min-h-[140px] overflow-hidden cursor-not-allowed"
-              style={{
-                background: 'rgba(0, 0, 0, 0.4)',
-                backdropFilter: 'blur(20px)',
-                border: '2px solid rgba(255,255,255,0.05)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
-              }}
-            >
-              {/* Lock icon */}
-              <div 
-                className="relative w-12 h-12 rounded-lg flex items-center justify-center mb-3"
-                style={{
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  boxShadow: '0 0 15px rgba(255,255,255,0.05)'
-                }}
-              >
-                <Lock className="w-6 h-6 text-white/30" strokeWidth={2} />
-              </div>
-              
-              {/* Coming Soon text */}
-              <h3 className="text-lg font-bold text-white/30 tracking-widest uppercase">
-                More coming soon...
-              </h3>
-            </div>
-          </motion.div>
 
         </div>
       </main>
