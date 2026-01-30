@@ -3764,7 +3764,7 @@ export default function Blitzgrid() {
             </p>
           </motion.div>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
             {activeGrids.map((grid, index) => {
               const themeId = grid.theme?.replace('blitzgrid:', '') || 'birthday';
               const gridTheme = GRID_THEMES.find(t => t.id === themeId) || GRID_THEMES[1];
@@ -3772,10 +3772,10 @@ export default function Blitzgrid() {
               return (
                 <motion.button
                   key={grid.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                  transition={{ duration: 0.2, delay: index * 0.03 }}
+                  whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     setSelectedGridId(grid.id);
@@ -3786,31 +3786,25 @@ export default function Blitzgrid() {
                     setActiveQuestion(null);
                     setShowAnswer(false);
                   }}
-                  className="relative group text-left rounded-2xl overflow-hidden transition-shadow hover:shadow-xl"
-                  style={{ 
-                    background: gridTheme.background,
-                    boxShadow: `0 8px 32px ${gridTheme.glow}30`
-                  }}
+                  className="group text-left p-5 rounded-xl bg-card border border-border hover:border-border/80 hover:shadow-lg transition-all"
                   data-testid={`card-grid-${grid.id}`}
                 >
-                  {/* Glass overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
-                  
-                  {/* Content */}
-                  <div className="relative p-6 min-h-[140px] flex flex-col justify-between">
-                    <div>
-                      <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4">
-                        <ThemeIcon type={gridTheme.iconType} className="w-5 h-5 text-white" />
-                      </div>
-                      <h3 className="font-bold text-xl text-white drop-shadow-sm">{grid.name}</h3>
+                  <div className="flex items-center gap-4">
+                    {/* Theme icon with accent color */}
+                    <div 
+                      className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: gridTheme.background }}
+                    >
+                      <ThemeIcon type={gridTheme.iconType} className="w-6 h-6 text-white" />
                     </div>
                     
-                    <div className="flex items-center justify-between mt-4">
-                      <span className="text-white/80 text-sm font-medium">{gridTheme.name}</span>
-                      <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/30 transition-colors">
-                        <Play className="w-4 h-4 text-white" />
-                      </div>
+                    {/* Grid name and play indicator */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground truncate">{grid.name}</h3>
+                      <p className="text-sm text-muted-foreground">{gridTheme.name}</p>
                     </div>
+                    
+                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
                   </div>
                 </motion.button>
               );
