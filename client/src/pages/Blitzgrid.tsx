@@ -2176,66 +2176,105 @@ export default function Blitzgrid() {
               </DialogHeader>
               
               {/* Shareable Card Preview */}
-              <div className="flex justify-center py-2">
+              <div className="flex justify-center py-4">
                 <div 
                   ref={shareCardRef}
-                  className="w-[320px] rounded-xl overflow-hidden shadow-xl"
+                  className="w-[300px] rounded-2xl overflow-hidden shadow-2xl"
                   style={{ 
-                    background: 'linear-gradient(135deg, #f472b6 0%, #ec4899 30%, #db2777 70%, #be185d 100%)',
-                    aspectRatio: '9/16'
+                    background: 'linear-gradient(160deg, #fdf2f8 0%, #fbcfe8 25%, #f9a8d4 50%, #f472b6 75%, #ec4899 100%)',
+                    aspectRatio: '4/5'
                   }}
                 >
-                  {/* Overlay for better text visibility */}
-                  <div 
-                    className="w-full h-full flex flex-col items-center justify-between p-5"
-                    style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.15) 30%, rgba(0,0,0,0.15) 70%, rgba(0,0,0,0.5) 100%)' }}
-                  >
-                    {/* Header with branding */}
-                    <div className="text-center">
-                      <div className="flex items-center justify-center gap-2 mb-2">
-                        <Grid3X3 className="w-5 h-5 text-white" />
-                        <span className="text-white font-bold text-base">Blitzgrid</span>
+                  <div className="w-full h-full flex flex-col p-6">
+                    {/* Header */}
+                    <div className="text-center mb-4">
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 shadow-sm mb-3">
+                        <Grid3X3 className="w-4 h-4 text-pink-600" />
+                        <span className="text-pink-700 font-bold text-sm tracking-wide">BLITZGRID</span>
                       </div>
-                      <p className="text-white/80 text-sm font-medium">{grid?.name || 'Game Results'}</p>
+                      <h2 className="text-xl font-black text-pink-900 leading-tight">
+                        {grid?.name || 'Game Results'}
+                      </h2>
                     </div>
                     
-                    {/* Scores */}
-                    <div className="flex-1 flex flex-col items-center justify-center gap-3 w-full py-4">
-                      <h3 className="text-white font-bold text-xl mb-3">Final Scores</h3>
-                      {[...players].sort((a, b) => b.score - a.score).slice(0, 5).map((player, idx) => {
-                        return (
-                          <div 
-                            key={player.id}
-                            className={`flex items-center gap-3 px-4 py-2 rounded-lg w-full max-w-[260px] ${
-                              idx === 0 ? 'bg-amber-400/30 border border-amber-400/50' :
-                              idx === 1 ? 'bg-slate-300/30 border border-slate-300/50' :
-                              idx === 2 ? 'bg-amber-600/30 border border-amber-600/50' :
-                              'bg-white/10'
-                            }`}
-                          >
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-slate-300' : idx === 2 ? 'bg-amber-700' : 'bg-white/20'
-                            }`}>
-                              {idx < 3 ? (
-                                <Trophy className={`w-4 h-4 ${idx === 0 ? 'text-amber-800' : idx === 1 ? 'text-slate-600' : 'text-amber-200'}`} />
-                              ) : (
-                                <span className="text-white text-sm font-bold">{idx + 1}</span>
-                              )}
-                            </div>
-                            <span className="text-white font-medium text-base flex-1 truncate">{player.name}</span>
-                            <span className="text-white font-bold text-base">{player.score} pts</span>
+                    {/* Podium visualization for top 3 */}
+                    {(() => {
+                      const sorted = [...players].sort((a, b) => b.score - a.score);
+                      const top3 = sorted.slice(0, 3);
+                      const others = sorted.slice(3, 5);
+                      
+                      if (top3.length === 0) return null;
+                      
+                      return (
+                        <div className="flex-1 flex flex-col justify-center">
+                          {/* Podium */}
+                          <div className="flex items-end justify-center gap-1 mb-4" style={{ height: '140px' }}>
+                            {/* 2nd Place */}
+                            {top3[1] && (
+                              <div className="flex flex-col items-center w-[80px]">
+                                <div className="text-2xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[1].avatar)?.emoji || '👤'}</div>
+                                <div className="text-xs font-bold text-pink-800 truncate max-w-[75px] mb-1">{top3[1].name}</div>
+                                <div className="w-full h-[70px] bg-gradient-to-b from-slate-200 to-slate-400 rounded-t-lg flex flex-col items-center justify-center shadow-md">
+                                  <span className="text-2xl font-black text-slate-700">2</span>
+                                  <span className="text-xs font-bold text-slate-600">{top3[1].score} pts</span>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* 1st Place */}
+                            {top3[0] && (
+                              <div className="flex flex-col items-center w-[90px]">
+                                <Crown className="w-6 h-6 text-yellow-500 mb-0.5" />
+                                <div className="text-3xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[0].avatar)?.emoji || '👤'}</div>
+                                <div className="text-sm font-bold text-pink-800 truncate max-w-[85px] mb-1">{top3[0].name}</div>
+                                <div className="w-full h-[90px] bg-gradient-to-b from-yellow-300 to-yellow-500 rounded-t-lg flex flex-col items-center justify-center shadow-lg">
+                                  <Trophy className="w-5 h-5 text-yellow-800 mb-0.5" />
+                                  <span className="text-3xl font-black text-yellow-800">1</span>
+                                  <span className="text-sm font-bold text-yellow-800">{top3[0].score} pts</span>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* 3rd Place */}
+                            {top3[2] && (
+                              <div className="flex flex-col items-center w-[80px]">
+                                <div className="text-2xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[2].avatar)?.emoji || '👤'}</div>
+                                <div className="text-xs font-bold text-pink-800 truncate max-w-[75px] mb-1">{top3[2].name}</div>
+                                <div className="w-full h-[55px] bg-gradient-to-b from-amber-400 to-amber-600 rounded-t-lg flex flex-col items-center justify-center shadow-md">
+                                  <span className="text-2xl font-black text-amber-900">3</span>
+                                  <span className="text-xs font-bold text-amber-800">{top3[2].score} pts</span>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        );
-                      })}
-                    </div>
+                          
+                          {/* Others (4th, 5th) */}
+                          {others.length > 0 && (
+                            <div className="flex justify-center gap-2 mt-2">
+                              {others.map((p, i) => (
+                                <div key={p.id} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/60 rounded-full text-xs">
+                                  <span className="font-bold text-pink-700">#{i + 4}</span>
+                                  <span className="text-pink-800 font-medium truncate max-w-[60px]">{p.name}</span>
+                                  <span className="text-pink-600 font-bold">{p.score}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                     
-                    {/* Footer with timestamp and branding */}
-                    <div className="text-center">
-                      <div className="flex items-center justify-center gap-1 text-white/60 text-xs mb-2">
-                        <Clock className="w-3 h-3" />
-                        <span>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                      </div>
-                      <p className="text-white font-bold text-sm">Holy GuacAmoli!</p>
+                    {/* Footer */}
+                    <div className="text-center mt-auto pt-4">
+                      <p className="text-pink-900/60 text-xs mb-1">
+                        {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                      <p className="text-pink-800 font-black text-sm flex items-center justify-center gap-1">
+                        <span>made with</span>
+                        <Heart className="w-3.5 h-3.5 text-pink-500 fill-pink-500" />
+                        <span>by</span>
+                        <span className="bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 bg-clip-text text-transparent">Amoli</span>
+                      </p>
                     </div>
                   </div>
                 </div>
