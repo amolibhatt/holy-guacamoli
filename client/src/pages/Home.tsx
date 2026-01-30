@@ -263,31 +263,27 @@ export default function Home() {
                       }}
                       whileTap={isComingSoon ? {} : { scale: 0.95, rotate: 0 }}
                       disabled={isComingSoon}
-                      className={`relative flex flex-col items-center justify-center p-6 md:p-8 rounded-2xl text-center w-full min-h-[220px] overflow-hidden ${
+                      className={`relative flex flex-col items-center justify-center p-6 md:p-8 rounded-3xl text-center w-full min-h-[220px] overflow-hidden backdrop-blur-xl ${
                         isComingSoon ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
                       }`}
                       style={{
                         transform: `rotate(${config.rotation}deg) scale(${config.scale})`,
-                        border: `3px solid rgba(255,255,255,0.4)`,
+                        background: `linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 100%)`,
+                        border: `1.5px solid rgba(255,255,255,0.5)`,
                         boxShadow: isHovered && !isComingSoon 
-                          ? `0 30px 60px -15px ${config.accentColor}, 0 0 80px ${config.accentColor}50, 0 15px 30px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -2px 0 rgba(0,0,0,0.2)`
-                          : `0 15px 40px -10px ${config.accentColor}90, 0 8px 20px -5px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -2px 0 rgba(0,0,0,0.15)`
+                          ? `0 30px 60px -15px ${config.accentColor}80, 0 0 60px ${config.accentColor}40, 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.6)`
+                          : `0 8px 32px rgba(0,0,0,0.2), 0 0 40px ${config.accentColor}30, inset 0 1px 1px rgba(255,255,255,0.4)`
                       }}
                       data-testid={`button-game-${game.slug}`}
                     >
-                      {/* Saturated gradient background */}
-                      <div className={`absolute inset-0 bg-gradient-to-br ${config.gradient}`} />
+                      {/* Color tint layer - translucent for glass effect */}
+                      <div className={`absolute inset-0 bg-gradient-to-br ${config.gradient} opacity-70`} />
                       
-                      {/* Top shine highlight for 3D effect */}
-                      <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/30 via-white/10 to-transparent" />
+                      {/* Glass refraction effect - top highlight */}
+                      <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 via-white/10 to-transparent" />
                       
-                      {/* Bottom shadow for depth */}
-                      <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/20 to-transparent" />
-                      
-                      {/* Noise texture overlay */}
-                      <div className="absolute inset-0 rounded-2xl opacity-30 mix-blend-overlay" 
-                        style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }} 
-                      />
+                      {/* Subtle bottom edge shadow */}
+                      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/10 to-transparent" />
                       
                       {/* Diagonal slash decorations */}
                       <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rotate-12" />
