@@ -47,10 +47,10 @@ const GAME_CONFIG: Record<string, {
 }> = {
   blitzgrid: {
     icon: Grid3X3,
-    gradient: "from-red-600 via-red-500 to-orange-500",
+    gradient: "from-pink-500 via-fuchsia-500 to-rose-500",
     route: "/host/blitzgrid",
-    accentColor: "#FF0000",
-    glowColor: "rgba(255, 0, 0, 0.6)",
+    accentColor: "#ec4899",
+    glowColor: "rgba(236, 72, 153, 0.6)",
     tagline: "SMASH. BUZZ. WIN.",
     rotation: -2,
     scale: 1.02,
