@@ -889,8 +889,8 @@ export default function Blitzgrid() {
           mvpMoments: []
         });
         toast({
-          title: "Shuffle Play!",
-          description: "5 random categories mixed from your grids",
+          title: "Let's gooo!",
+          description: "5 wild categories incoming. May the odds be ever in your favor.",
         });
       } else {
         throw new Error("Not enough complete categories to shuffle");
@@ -1120,7 +1120,7 @@ export default function Blitzgrid() {
         setRevealedCells(new Set());
         setRevealedCategoryCount(0);
         setCategoryRevealMode(true);
-        toast({ title: "Game reset! All questions available again." });
+        toast({ title: "Fresh start!", description: "All questions unlocked. Round 2, fight!" });
       };
       
       // Reveal next category
@@ -2523,7 +2523,7 @@ export default function Blitzgrid() {
                 <div className="flex items-center justify-between py-2 px-3 bg-slate-50/80 border border-dashed border-slate-200 rounded-lg">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-slate-300 rounded-full animate-pulse" />
-                    <span className="text-slate-500 text-sm">Waiting for buzzes...</span>
+                    <span className="text-slate-500 text-sm">Fingers on buzzers...</span>
                     <span className="text-slate-400 text-xs">({players.length} ready)</span>
                   </div>
                   <Button
@@ -3297,9 +3297,9 @@ export default function Blitzgrid() {
             <div className="w-20 h-20 rounded-3xl bg-muted flex items-center justify-center mx-auto mb-5">
               <Grid3X3 className="w-10 h-10 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-semibold mb-2 text-foreground">No grids ready yet</h3>
+            <h3 className="text-xl font-semibold mb-2 text-foreground">The grid gods are sleeping</h3>
             <p className="text-muted-foreground max-w-sm mx-auto">
-              The host needs to create some grids first. Check back soon!
+              No quizzes ready yet! Head to Admin to cook up some trivia magic.
             </p>
           </motion.div>
         ) : (
@@ -3311,8 +3311,9 @@ export default function Blitzgrid() {
               className="text-center py-4"
             >
               <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-                Pick Your <span className="bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300 bg-clip-text text-transparent">Grid</span>
+                Let's <span className="bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300 bg-clip-text text-transparent">Get Quizzy</span>
               </h1>
+              <p className="text-muted-foreground mt-2 text-sm">Pick a grid and unleash the chaos</p>
             </motion.div>
 
             {/* Shuffle Play Card - Premium design with animations */}
@@ -3366,8 +3367,8 @@ export default function Blitzgrid() {
                   </h3>
                   <p className="text-sm text-muted-foreground mt-0.5">
                     {playedShuffleCategoryIds.length > 0 
-                      ? `${playedShuffleCategoryIds.length} categories played this session`
-                      : "5 surprise categories from your entire collection"
+                      ? `${playedShuffleCategoryIds.length} down, more to go!`
+                      : "Feeling lucky? 5 random categories, infinite chaos"
                     }
                   </p>
                 </div>
@@ -3379,7 +3380,7 @@ export default function Blitzgrid() {
                     onClick={(e) => {
                       e.stopPropagation();
                       setPlayedShuffleCategoryIds([]);
-                      toast({ title: "Shuffle session reset", description: "All categories available again!" });
+                      toast({ title: "Deck reshuffled!", description: "All categories back in the mix" });
                     }}
                     data-testid="button-reset-shuffle"
                   >
