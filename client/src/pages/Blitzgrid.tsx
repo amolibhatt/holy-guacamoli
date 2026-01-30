@@ -1075,11 +1075,11 @@ export default function Blitzgrid() {
   // Grid detail view with inline categories and questions (or shuffle mode)
   if (selectedGridId || shuffleMode) {
     const grid = selectedGridId ? grids.find(g => g.id === selectedGridId) : null;
-    const gridIndex = selectedGridId ? grids.filter(g => g.isActive).findIndex(g => g.id === selectedGridId) : -1;
     const effectiveColor = grid?.colorCode?.startsWith('#') ? null : grid?.colorCode;
     // Use fuchsia/violet theme for shuffle mode
     const shuffleColor = 'fuchsia';
-    const colorConfig = getBoardColorConfig(shuffleMode ? shuffleColor : (effectiveColor || BOARD_COLORS[gridIndex >= 0 ? gridIndex % BOARD_COLORS.length : 0]));
+    // Use grid ID for stable color assignment (not position which can change)
+    const colorConfig = getBoardColorConfig(shuffleMode ? shuffleColor : (effectiveColor || BOARD_COLORS[grid?.id ? grid.id % BOARD_COLORS.length : 0]));
     
     // GAMEPLAY MODE (normal grid or shuffle mode)
     if (playMode && (grid?.isActive || shuffleMode)) {
@@ -1161,7 +1161,8 @@ export default function Blitzgrid() {
       
       // Use same background as grid selection page for unified look
       const effectiveColorName = grid?.colorCode?.startsWith('#') ? null : grid?.colorCode;
-      const colorName = effectiveColorName || BOARD_COLORS[gridIndex >= 0 ? gridIndex % BOARD_COLORS.length : 0];
+      // Use grid ID for stable color (same as grid cards)
+      const colorName = effectiveColorName || BOARD_COLORS[grid?.id ? grid.id % BOARD_COLORS.length : 0];
       
       // Keyboard handler for reveal mode
       const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -3190,9 +3191,10 @@ export default function Blitzgrid() {
   const myGrids = activeGrids.filter(g => !g.isStarterPack);
 
   // Grid card component - clean design with color accent only on icon
-  const GridCard = ({ grid, index, colorOffset = 0 }: { grid: typeof activeGrids[0], index: number, colorOffset?: number }) => {
+  const GridCard = ({ grid }: { grid: typeof activeGrids[0] }) => {
     const effectiveColor = grid.colorCode?.startsWith('#') ? null : grid.colorCode;
-    const colorConfig = getBoardColorConfig(effectiveColor || BOARD_COLORS[(index + colorOffset) % BOARD_COLORS.length]);
+    // Use grid ID for stable color assignment (same color in list and gameplay)
+    const colorConfig = getBoardColorConfig(effectiveColor || BOARD_COLORS[grid.id % BOARD_COLORS.length]);
     
     return (
       <motion.button
@@ -3368,7 +3370,7 @@ export default function Blitzgrid() {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {myGrids.map((grid, index) => (
-                    <GridCard key={grid.id} grid={grid} index={index} />
+                    <GridCard key={grid.id} grid={grid} />
                   ))}
                 </div>
               </motion.section>
@@ -3391,7 +3393,7 @@ export default function Blitzgrid() {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {starterPacks.map((grid, index) => (
-                    <GridCard key={grid.id} grid={grid} index={index} colorOffset={myGrids.length} />
+                    <GridCard key={grid.id} grid={grid} />
                   ))}
                 </div>
               </motion.section>
