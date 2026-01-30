@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ListOrdered, Brain, ArrowRight, Users } from "lucide-react";
+import { Loader2, Grid3X3, ListOrdered, Brain, Users } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -40,11 +40,11 @@ const GAME_CONFIG: Record<string, {
 
 function GameCardSkeleton() {
   return (
-    <div className="flex flex-col items-center justify-center p-8 bg-[#0d0d12] border border-[#333] rounded-xl animate-pulse" style={{ minHeight: '280px' }}>
-      <div className="w-16 h-16 rounded-xl bg-white/10 mb-6" />
-      <div className="h-6 w-32 bg-white/10 rounded mb-3" />
-      <div className="h-4 w-40 bg-white/5 rounded mb-2" />
-      <div className="h-4 w-32 bg-white/5 rounded" />
+    <div className="flex flex-col items-center justify-center p-6 lg:p-8 bg-[#0d0d12] border border-[#333] rounded-xl animate-pulse min-h-[200px] lg:min-h-[280px]">
+      <div className="w-14 h-14 lg:w-16 lg:h-16 rounded-xl bg-white/10 mb-4 lg:mb-6" />
+      <div className="h-6 w-28 lg:w-32 bg-white/10 rounded mb-2 lg:mb-3" />
+      <div className="h-4 w-36 lg:w-40 bg-white/5 rounded mb-2" />
+      <div className="h-3 w-20 bg-white/5 rounded" />
     </div>
   );
 }
@@ -110,12 +110,13 @@ export default function Home() {
       
       <AppHeader minimal />
 
-      <main className="flex-1 px-6 py-12 flex items-center justify-center">
+      <main className="flex-1 px-4 lg:px-6 py-8 lg:py-12 flex items-center justify-center">
         <div className="w-full max-w-5xl mx-auto">
           
-          
-          {/* Game Cards - 3 column grid on large screens */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Container frame for game cards */}
+          <div className="p-4 lg:p-6 rounded-2xl border border-white/5 bg-white/[0.02]">
+            {/* Game Cards - 3 column grid on large screens */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
             {isLoadingGames ? (
               <>
                 <GameCardSkeleton />
@@ -150,7 +151,7 @@ export default function Home() {
                     onMouseLeave={() => setHoveredCard(null)}
                     onClick={() => !isComingSoon && setLocation(config.route)}
                     disabled={isComingSoon}
-                    className={`flex flex-col items-center justify-center text-center p-8 rounded-xl bg-[#0d0d12] transition-all duration-200 ${
+                    className={`flex flex-col items-center justify-center text-center p-6 lg:p-8 rounded-xl bg-[#0d0d12] transition-all duration-200 min-h-[200px] lg:min-h-[280px] ${
                       isComingSoon 
                         ? 'opacity-40 cursor-not-allowed' 
                         : 'cursor-pointer'
@@ -162,27 +163,26 @@ export default function Home() {
                       boxShadow: isHovered && !isComingSoon 
                         ? `0 0 20px ${config.accentColor}` 
                         : 'none',
-                      minHeight: '280px',
                     }}
                     data-testid={`button-game-${game.slug}`}
                   >
                     {/* Icon */}
                     <div 
-                      className="w-16 h-16 rounded-xl flex items-center justify-center mb-6 transition-all duration-200"
+                      className="w-14 h-14 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center mb-4 lg:mb-6 transition-all duration-200"
                       style={{
                         border: `2px solid ${config.accentColor}`,
                         boxShadow: isHovered ? `0 0 25px ${config.accentColor}60` : `0 0 15px ${config.accentColor}30`,
                       }}
                     >
                       <Icon 
-                        className="w-7 h-7" 
+                        className="w-6 h-6 lg:w-7 lg:h-7" 
                         style={{ color: config.accentColor }}
                       />
                     </div>
                     
                     {/* Title */}
                     <h3 
-                      className="text-2xl mb-2 text-white uppercase tracking-wide"
+                      className="text-xl lg:text-2xl mb-2 text-white uppercase tracking-wide"
                       style={{ fontFamily: "'Archivo Black', 'Impact', sans-serif" }}
                       data-testid={`text-game-title-${game.slug}`}
                     >
@@ -205,26 +205,11 @@ export default function Home() {
                       <Users className="w-3 h-3" />
                       <span>{config.players}</span>
                     </div>
-                    
-                    {/* Arrow indicator on hover */}
-                    <motion.div
-                      className="mt-4"
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ 
-                        opacity: isHovered && !isComingSoon ? 1 : 0,
-                        y: isHovered && !isComingSoon ? 0 : -5
-                      }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      <ArrowRight 
-                        className="w-5 h-5" 
-                        style={{ color: config.accentColor }} 
-                      />
-                    </motion.div>
                   </motion.button>
                 );
               })
             )}
+            </div>
           </div>
 
         </div>
