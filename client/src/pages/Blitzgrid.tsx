@@ -1320,7 +1320,7 @@ export default function Blitzgrid() {
                 exit={{ y: -50, opacity: 0 }}
                 className="absolute top-16 left-1/2 -translate-x-1/2 z-50"
               >
-                <div className="bg-emerald-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+                <div className="bg-violet-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
                   <span className="text-lg">{PLAYER_AVATARS.find(a => a.id === lastJoinedPlayer.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
                   <span className="font-medium">{lastJoinedPlayer.name} joined!</span>
                   <UserPlus className="w-4 h-4" />
@@ -1343,11 +1343,11 @@ export default function Blitzgrid() {
                 
                 const reactionColor = {
                   clap: 'text-amber-400',
-                  fire: 'text-orange-500',
+                  fire: 'text-amber-500',
                   laugh: 'text-yellow-400',
-                  wow: 'text-purple-400',
-                  thumbsup: 'text-emerald-400',
-                }[reaction.type] || 'text-pink-400';
+                  wow: 'text-violet-400',
+                  thumbsup: 'text-teal-400',
+                }[reaction.type] || 'text-violet-400';
                 
                 return (
                   <motion.div
@@ -1996,9 +1996,9 @@ export default function Blitzgrid() {
               {/* Buzzer Status + Skip Option */}
               {players.length > 0 && !showAnswer && buzzQueue.length === 0 && (
                 <div className="flex flex-col items-center gap-3 py-2">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-600 rounded-full">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                    <span className="text-emerald-700 dark:text-emerald-300 text-sm font-medium">Buzzers Active - Waiting for players</span>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-violet-50 dark:bg-violet-900/50 border border-violet-300 dark:border-violet-600 rounded-full">
+                    <div className="w-2 h-2 bg-violet-500 rounded-full animate-pulse" />
+                    <span className="text-violet-700 dark:text-violet-300 text-sm font-medium">Buzzers Active - Waiting for players</span>
                   </div>
                   <Button
                     variant="ghost"
@@ -2115,9 +2115,9 @@ export default function Blitzgrid() {
                     transition={{ repeat: Infinity, duration: 1.5 }}
                     className="inline-block"
                   >
-                    <Zap className="w-12 h-12 text-amber-500 mx-auto" />
+                    <Zap className="w-12 h-12 text-violet-500 mx-auto" />
                   </motion.div>
-                  <p className="text-amber-600 dark:text-amber-300 mt-2 font-medium">Waiting for buzzes...</p>
+                  <p className="text-violet-600 dark:text-violet-300 mt-2 font-medium">Waiting for buzzes...</p>
                   <p className="text-muted-foreground text-sm">{players.length} player{players.length !== 1 ? 's' : ''} ready</p>
                 </div>
               )}
