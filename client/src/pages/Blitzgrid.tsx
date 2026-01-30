@@ -3727,42 +3727,12 @@ export default function Blitzgrid() {
   // Filter to only show active grids (ready to play)
   const activeGrids = grids.filter(g => g.isActive);
 
-  // Fun messages for the grid picker
-  const funMessages = [
-    "Pick your battlefield",
-    "Choose your adventure", 
-    "What are we playing?",
-    "Let's get this party started",
-    "Time to show off those brain cells"
-  ];
-  const randomMessage = funMessages[Math.floor(Date.now() / 60000) % funMessages.length];
-
-  // Main grid list view - fun grid picker for hosts/players
+  // Main grid list view
   return (
     <div className="min-h-screen bg-background" data-testid="page-blitzgrid">
       <AppHeader title="Blitzgrid" backHref="/" showAdminButton adminHref="/admin/games" />
       
-      <div className="container mx-auto px-4 py-10">
-        {/* Fun header */}
-        <motion.div 
-          className="text-center mb-10"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 200, damping: 15 }}
-            className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-rose-400 via-pink-400 to-fuchsia-400 mb-5 shadow-xl shadow-pink-300/30"
-          >
-            <Grid3X3 className="w-10 h-10 text-white" />
-          </motion.div>
-          <h2 className="text-3xl font-bold text-foreground mb-2">{randomMessage}</h2>
-          <p className="text-muted-foreground">
-            {activeGrids.length} {activeGrids.length === 1 ? 'grid' : 'grids'} loaded and ready
-          </p>
-        </motion.div>
-
+      <div className="container mx-auto px-4 py-8">
         {loadingGrids ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 rounded-2xl" />)}
@@ -3844,18 +3814,6 @@ export default function Blitzgrid() {
               );
             })}
           </div>
-        )}
-        
-        {/* Fun footer */}
-        {activeGrids.length > 0 && (
-          <motion.p 
-            className="text-center text-muted-foreground/60 text-sm mt-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            Tap a grid to start playing
-          </motion.p>
         )}
       </div>
     </div>
