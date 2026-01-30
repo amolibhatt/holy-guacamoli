@@ -1673,7 +1673,7 @@ export default function Blitzgrid() {
                               idx === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-600' : 
                               idx === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400' : 
                               idx === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-800' : 
-                              'bg-gradient-to-br from-emerald-400 to-emerald-600'
+                              'bg-gradient-to-br from-sky-400 to-sky-600'
                             }`}
                           >
                             {avatarEmoji}
@@ -2230,10 +2230,10 @@ export default function Blitzgrid() {
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/50 dark:to-green-900/30 border border-emerald-300 dark:border-emerald-600 rounded-lg p-4 text-center"
+                    className="bg-gradient-to-br from-teal-50 to-teal-100 border border-teal-300 rounded-lg p-4 text-center"
                   >
-                    <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-1">Answer</p>
-                    <div className="text-xl font-bold text-emerald-800 dark:text-emerald-100 prose prose-lg dark:prose-invert max-w-none [&>p]:m-0">
+                    <p className="text-sm text-teal-600 mb-1">Answer</p>
+                    <div className="text-xl font-bold text-teal-800 prose prose-lg max-w-none [&>p]:m-0">
                       <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
                         {activeQuestion?.correctAnswer || ''}
                       </ReactMarkdown>
@@ -2913,7 +2913,7 @@ export default function Blitzgrid() {
       <footer className="border-t border-border/50 px-6 py-6 mt-auto">
         <div className="max-w-5xl mx-auto flex items-center justify-center">
           <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-1">
-            made with <span className="text-emerald-500 dark:text-emerald-400">♥</span> by <span className="font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">Amoli</span>
+            made with <span className="text-fuchsia-500">♥</span> by <span className="font-semibold bg-gradient-to-r from-fuchsia-600 to-violet-600 bg-clip-text text-transparent">Amoli</span>
           </p>
         </div>
       </footer>

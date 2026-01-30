@@ -282,10 +282,10 @@ export default function SequencePlayer() {
 
   if (!joined) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-teal-900 to-cyan-950 flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-teal-900 flex flex-col items-center justify-center p-6">
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 flex items-center justify-center shadow-xl">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-teal-500 flex items-center justify-center shadow-xl">
               <ListOrdered className="w-10 h-10 text-white" />
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">Genetic Sort</h1>
@@ -339,7 +339,7 @@ export default function SequencePlayer() {
 
             <Button 
               type="submit" 
-              className="w-full h-14 text-lg bg-gradient-to-r from-emerald-500 to-teal-500"
+              className="w-full h-14 text-lg bg-teal-500 text-white"
               disabled={status === "connecting"}
             >
               {status === "connecting" ? "Joining..." : "Join Game"}
@@ -348,7 +348,7 @@ export default function SequencePlayer() {
 
           <div className="flex justify-center mt-4">
             {status === "connected" ? (
-              <Badge className="bg-emerald-500 gap-1"><Wifi className="w-3 h-3" />Connected</Badge>
+              <Badge className="bg-teal-500 gap-1"><Wifi className="w-3 h-3" />Connected</Badge>
             ) : status === "error" ? (
               <Badge variant="destructive" className="gap-1"><WifiOff className="w-3 h-3" />Error</Badge>
             ) : null}
@@ -359,7 +359,7 @@ export default function SequencePlayer() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-teal-900 to-cyan-950 flex flex-col">
+    <div className="min-h-screen bg-teal-900 flex flex-col">
       <header className="p-4 flex items-center justify-between border-b border-white/10">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center">
@@ -368,7 +368,7 @@ export default function SequencePlayer() {
           <span className="text-white font-medium">{playerName}</span>
         </div>
         {status === "connected" ? (
-          <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 gap-1">
+          <Badge className="bg-teal-500/20 text-teal-300 border-teal-500/30 gap-1">
             <Wifi className="w-3 h-3" />Online
           </Badge>
         ) : (
@@ -408,7 +408,7 @@ export default function SequencePlayer() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-teal-600 via-cyan-700 to-emerald-700 pb-safe"
+              className="absolute inset-0 flex flex-col items-center justify-center bg-teal-700 pb-safe"
             >
               <motion.div
                 animate={{ scale: [1, 1.2, 1] }}
@@ -565,7 +565,7 @@ export default function SequencePlayer() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.2 }}
-                    className="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xl font-bold"
+                    className="w-12 h-12 rounded-lg bg-teal-500 flex items-center justify-center text-white text-xl font-bold"
                   >
                     {letter}
                   </motion.div>
