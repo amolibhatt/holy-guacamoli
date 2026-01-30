@@ -9,64 +9,52 @@ interface ThemePreviewProps {
   className?: string;
 }
 
+// Matching the refined pastel design from GRID_THEMES in Blitzgrid.tsx
 const themeConfigs: Record<string, { 
   gradient: string; 
-  iconColor: string;
   glowColor: string;
 }> = {
   sports: {
-    gradient: "from-emerald-200 via-emerald-300 to-emerald-400",
-    iconColor: "#065f46",
-    glowColor: "rgba(110, 231, 183, 0.4)"
+    gradient: "from-emerald-300 via-teal-300 to-teal-400",
+    glowColor: "rgba(94, 234, 212, 0.3)"
   },
   birthday: {
-    gradient: "from-pink-200 via-pink-300 to-pink-400",
-    iconColor: "#9d174d",
-    glowColor: "rgba(249, 168, 212, 0.4)"
+    gradient: "from-rose-300 via-pink-300 to-fuchsia-300",
+    glowColor: "rgba(249, 168, 212, 0.3)"
   },
   beach: {
-    gradient: "from-cyan-200 via-cyan-300 to-cyan-400",
-    iconColor: "#155e75",
-    glowColor: "rgba(103, 232, 249, 0.4)"
+    gradient: "from-cyan-300 via-sky-300 to-blue-300",
+    glowColor: "rgba(125, 211, 252, 0.3)"
   },
   office: {
-    gradient: "from-slate-200 via-slate-300 to-slate-400",
-    iconColor: "#334155",
-    glowColor: "rgba(148, 163, 184, 0.4)"
+    gradient: "from-zinc-400 via-slate-400 to-stone-400",
+    glowColor: "rgba(148, 163, 184, 0.3)"
   },
   dogs: {
-    gradient: "from-amber-200 via-amber-300 to-amber-400",
-    iconColor: "#92400e",
-    glowColor: "rgba(251, 191, 36, 0.4)"
+    gradient: "from-yellow-300 via-amber-400 to-orange-400",
+    glowColor: "rgba(251, 191, 36, 0.3)"
   },
   cats: {
-    gradient: "from-violet-200 via-violet-300 to-violet-400",
-    iconColor: "#5b21b6",
-    glowColor: "rgba(167, 139, 250, 0.4)"
+    gradient: "from-violet-300 via-purple-400 to-violet-500",
+    glowColor: "rgba(167, 139, 250, 0.3)"
   },
   space: {
-    gradient: "from-indigo-800 via-indigo-900 to-violet-900",
-    iconColor: "#e0e7ff",
-    glowColor: "rgba(139, 92, 246, 0.4)"
+    gradient: "from-indigo-400 via-purple-500 to-fuchsia-500",
+    glowColor: "rgba(139, 92, 246, 0.3)"
   },
   music: {
-    gradient: "from-rose-200 via-rose-300 to-rose-400",
-    iconColor: "#9f1239",
-    glowColor: "rgba(251, 113, 133, 0.4)"
+    gradient: "from-rose-400 via-pink-400 to-fuchsia-400",
+    glowColor: "rgba(244, 114, 182, 0.3)"
   },
   nature: {
-    gradient: "from-green-200 via-green-300 to-green-400",
-    iconColor: "#166534",
-    glowColor: "rgba(74, 222, 128, 0.4)"
+    gradient: "from-green-300 via-emerald-300 to-teal-300",
+    glowColor: "rgba(110, 231, 183, 0.3)"
   },
 };
 
 const getIcon = (themeId: string, size: "sm" | "lg" = "sm") => {
   const iconSize = size === "lg" ? "w-8 h-8" : "w-4 h-4";
-  const config = themeConfigs[themeId];
-  const color = config?.iconColor || "#374151";
-  
-  const props = { className: iconSize, style: { color } };
+  const props = { className: `${iconSize} text-white drop-shadow-sm` };
   
   switch (themeId) {
     case "sports": return <Trophy {...props} />;
@@ -87,20 +75,14 @@ export function ThemePreview({ themeId, className = "" }: ThemePreviewProps) {
   
   return (
     <div 
-      className={`relative w-10 h-10 rounded-lg overflow-hidden bg-gradient-to-br ${config.gradient} ${className}`}
+      className={`relative w-10 h-10 rounded-xl overflow-hidden bg-gradient-to-br ${config.gradient} ${className}`}
       style={{ boxShadow: `0 4px 12px ${config.glowColor}` }}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
       <div className="absolute inset-0 flex items-center justify-center">
         <motion.div
-          animate={{ 
-            scale: [1, 1.08, 1],
-          }}
-          transition={{ 
-            duration: 2, 
-            repeat: Infinity, 
-            ease: "easeInOut"
-          }}
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         >
           {getIcon(themeId, "sm")}
         </motion.div>
@@ -116,21 +98,14 @@ export function ThemePreviewLarge({ themeId, className = "" }: ThemePreviewProps
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={`relative w-full h-24 rounded-xl overflow-hidden bg-gradient-to-br ${config.gradient} ${className}`}
+      className={`relative w-full h-24 rounded-2xl overflow-hidden bg-gradient-to-br ${config.gradient} ${className}`}
       style={{ boxShadow: `0 8px 24px ${config.glowColor}` }}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/20 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/25 via-white/10 to-transparent" />
       <div className="absolute inset-0 flex items-center justify-center">
         <motion.div
-          animate={{ 
-            y: [0, -4, 0],
-            scale: [1, 1.05, 1],
-          }}
-          transition={{ 
-            duration: 2.5, 
-            repeat: Infinity, 
-            ease: "easeInOut"
-          }}
+          animate={{ y: [0, -3, 0], scale: [1, 1.03, 1] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
         >
           {getIcon(themeId, "lg")}
         </motion.div>
