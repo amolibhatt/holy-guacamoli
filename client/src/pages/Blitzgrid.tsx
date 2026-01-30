@@ -3752,7 +3752,7 @@ export default function Blitzgrid() {
             </p>
           </motion.div>
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-3xl mx-auto">
             {activeGrids.map((grid, index) => {
               const themeId = grid.theme?.replace('blitzgrid:', '') || 'birthday';
               const gridTheme = GRID_THEMES.find(t => t.id === themeId) || GRID_THEMES[1];
@@ -3760,16 +3760,10 @@ export default function Blitzgrid() {
               return (
                 <motion.button
                   key={grid.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ 
-                    duration: 0.3, 
-                    delay: index * 0.08,
-                    type: "spring",
-                    stiffness: 150
-                  }}
-                  whileHover={{ scale: 1.03, y: -4 }}
-                  whileTap={{ scale: 0.97 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: index * 0.05 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     setSelectedGridId(grid.id);
                     setPlayMode(true);
@@ -3779,36 +3773,23 @@ export default function Blitzgrid() {
                     setActiveQuestion(null);
                     setShowAnswer(false);
                   }}
-                  className="group relative text-left p-6 rounded-2xl bg-card border-2 border-border hover:border-pink-300 dark:hover:border-pink-700 transition-all shadow-sm hover:shadow-xl"
+                  className="group text-left p-4 rounded-xl bg-card border border-border hover-elevate transition-all"
                   data-testid={`card-grid-${grid.id}`}
                 >
-                  <div className="flex items-center gap-4">
-                    {/* Theme icon with animation */}
-                    <motion.div 
-                      className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg"
-                      style={{ 
-                        background: gridTheme.background,
-                        boxShadow: `0 8px 24px ${gridTheme.glow}40`
-                      }}
-                      whileHover={{ rotate: [0, -5, 5, 0] }}
-                      transition={{ duration: 0.4 }}
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ background: gridTheme.background }}
                     >
-                      <ThemeIcon type={gridTheme.iconType} className="w-7 h-7 text-white" />
-                    </motion.div>
+                      <ThemeIcon type={gridTheme.iconType} className="w-5 h-5 text-white" />
+                    </div>
                     
-                    {/* Grid name */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-lg text-foreground truncate mb-1">{grid.name}</h3>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <ThemeIcon type={gridTheme.iconType} className="w-3 h-3" />
-                        {gridTheme.name}
-                      </p>
+                      <h3 className="font-medium text-foreground truncate">{grid.name}</h3>
+                      <p className="text-xs text-muted-foreground">{gridTheme.name}</p>
                     </div>
                     
-                    {/* Play button */}
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-lg shadow-pink-400/30 group-hover:scale-110 transition-transform">
-                      <Play className="w-5 h-5 text-white ml-0.5" />
-                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   </div>
                 </motion.button>
               );
@@ -3816,6 +3797,15 @@ export default function Blitzgrid() {
           </div>
         )}
       </div>
+      
+      {/* Footer */}
+      <footer className="border-t border-border/30 px-6 py-6 mt-auto">
+        <div className="max-w-5xl mx-auto flex items-center justify-center">
+          <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-1">
+            Designed & built by <span className="font-semibold bg-gradient-to-r from-rose-500 to-pink-500 dark:from-rose-400 dark:to-pink-400 bg-clip-text text-transparent ml-0.5">Amoli</span>
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
