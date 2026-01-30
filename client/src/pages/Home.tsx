@@ -193,7 +193,7 @@ export default function Home() {
             >
               Pick your game. Rally your crew.
               <br />
-              <span className="text-foreground font-semibold">Let the chaos begin.</span>
+              <span className="text-foreground font-black text-2xl md:text-3xl glitch-text inline-block" data-text="Let the chaos begin.">Let the chaos begin.</span>
             </motion.p>
           </motion.section>
 
