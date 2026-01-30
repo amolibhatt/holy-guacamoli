@@ -1805,6 +1805,7 @@ export default function Blitzgrid() {
               <div className="grid gap-2 md:gap-3" style={{ gridTemplateColumns: `repeat(${playCategories.length}, 1fr)` }}>
                 {playCategories.map((category, idx) => {
                   const isRevealed = idx < revealedCategoryCount;
+                  const colColor = getBoardColorConfig(BOARD_COLORS[idx] || 'rose');
                   return (
                     <motion.div 
                       key={category.id} 
@@ -1824,19 +1825,15 @@ export default function Blitzgrid() {
                       style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
                       className={`py-3 md:py-4 px-3 rounded-xl text-center border relative overflow-hidden ${
                         isRevealed 
-                          ? 'bg-card/90 backdrop-blur-sm border-slate-200/60 shadow-sm' 
+                          ? `${colColor.light} backdrop-blur-sm ${colColor.lightBorder} shadow-sm` 
                           : 'bg-transparent border-transparent'
                       }`}
                     >
-                      {/* Decorative semicircle accent - top right corner */}
-                      {isRevealed && (
-                        <div className="absolute -top-3 -right-3 w-6 h-6 rounded-full bg-gradient-to-br from-slate-200/60 to-slate-100/40" />
-                      )}
                       {/* Subtle gradient overlay for depth */}
                       {isRevealed && (
                         <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent rounded-xl pointer-events-none" />
                       )}
-                      <span className="font-bold text-xs md:text-sm uppercase tracking-wider block text-foreground relative z-10">
+                      <span className={`font-bold text-xs md:text-sm uppercase tracking-wider block ${colColor.lightText} relative z-10`}>
                         {category.name}
                       </span>
                       {category.description && (
@@ -1858,6 +1855,7 @@ export default function Blitzgrid() {
                     const isCellAnswered = revealedCells.has(cellKey);
                     const isCategoryRevealed = colIdx < revealedCategoryCount;
                     const isClickable = isCategoryRevealed && !isCellAnswered && question && !categoryRevealMode;
+                    const cellColor = getBoardColorConfig(BOARD_COLORS[colIdx] || 'rose');
                     
                     return (
                       <motion.button
@@ -1878,9 +1876,9 @@ export default function Blitzgrid() {
                         className={`
                           w-full h-full rounded-xl font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden border group
                           ${isCellAnswered 
-                            ? 'bg-slate-50/50 backdrop-blur-sm cursor-default border-slate-200/50' 
+                            ? `${cellColor.light} opacity-50 backdrop-blur-sm cursor-default ${cellColor.lightBorder}` 
                             : isCategoryRevealed
-                              ? 'bg-card/90 backdrop-blur-sm border-slate-200/60 text-slate-700 cursor-pointer shadow-lg hover:shadow-xl hover:border-slate-300/80'
+                              ? `${cellColor.light} backdrop-blur-sm ${cellColor.lightBorder} ${cellColor.lightText} cursor-pointer shadow-lg hover:shadow-xl`
                               : 'bg-transparent cursor-default border-transparent'
                           }
                         `}
@@ -1901,10 +1899,6 @@ export default function Blitzgrid() {
                         {isClickable && (
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
                         )}
-                        {/* Bottom corner accent */}
-                        {isCategoryRevealed && !isCellAnswered && (
-                          <div className="absolute -bottom-2 -left-2 w-4 h-4 rounded-full bg-gradient-to-br from-slate-200/40 to-slate-100/20 pointer-events-none" />
-                        )}
                         {isCellAnswered ? (
                           <motion.div
                             initial={{ scale: 0, rotate: -180 }}
@@ -1912,7 +1906,7 @@ export default function Blitzgrid() {
                             transition={{ type: "spring", stiffness: 200, damping: 15 }}
                             className="flex items-center justify-center relative z-10"
                           >
-                            <Check className="w-8 h-8 md:w-12 md:h-12 text-slate-400" strokeWidth={3} />
+                            <Check className={`w-8 h-8 md:w-12 md:h-12 ${cellColor.icon} opacity-60`} strokeWidth={3} />
                           </motion.div>
                         ) : (
                           <span className="relative z-10 drop-shadow-sm">{points}</span>
