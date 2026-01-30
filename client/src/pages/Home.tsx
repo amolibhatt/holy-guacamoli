@@ -346,18 +346,23 @@ export default function Home() {
                     }}
                     className="relative group overflow-visible"
                   >
-                    {/* Subtle glow on hover only */}
+                    {/* Ambient glow with slow pulse */}
                     <motion.div
                       className="absolute inset-0 rounded-2xl pointer-events-none"
                       style={{
                         background: `radial-gradient(ellipse at center, ${config.glowColor} 0%, transparent 70%)`,
-                        filter: 'blur(50px)',
-                        transform: 'scale(1.2)',
+                        filter: 'blur(60px)',
+                        transform: 'scale(1.1)',
                       }}
                       animate={{
-                        opacity: isHovered && !isComingSoon ? 0.4 : 0,
+                        opacity: isHovered && !isComingSoon 
+                          ? 0.5 
+                          : [0.08, 0.15, 0.08],
                       }}
-                      transition={{ duration: 0.4 }}
+                      transition={isHovered && !isComingSoon 
+                        ? { duration: 0.3 }
+                        : { duration: 4, repeat: Infinity, ease: "easeInOut" }
+                      }
                     />
                     
                     <motion.button
