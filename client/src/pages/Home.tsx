@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Grid3X3, ListOrdered, Brain, ArrowRight, Users } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
@@ -39,15 +40,11 @@ const GAME_CONFIG: Record<string, {
 
 function GameCardSkeleton() {
   return (
-    <div className="p-6 bg-white/5 border border-white/10 rounded-xl animate-pulse">
-      <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-lg bg-white/10" />
-        <div className="flex-1">
-          <div className="h-6 w-32 bg-white/10 rounded mb-2" />
-          <div className="h-4 w-full bg-white/5 rounded mb-1" />
-          <div className="h-4 w-2/3 bg-white/5 rounded" />
-        </div>
-      </div>
+    <div className="flex flex-col items-center justify-center p-8 bg-[#0d0d12] border border-[#333] rounded-xl animate-pulse" style={{ minHeight: '280px' }}>
+      <div className="w-16 h-16 rounded-xl bg-white/10 mb-6" />
+      <div className="h-6 w-32 bg-white/10 rounded mb-3" />
+      <div className="h-4 w-40 bg-white/5 rounded mb-2" />
+      <div className="h-4 w-32 bg-white/5 rounded" />
     </div>
   );
 }
@@ -55,6 +52,7 @@ function GameCardSkeleton() {
 export default function Home() {
   const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   const { data: gameTypes = [], isLoading: isLoadingGames } = useQuery<(GameType & { status?: string })[]>({
     queryKey: ['/api/game-types/homepage'],
@@ -84,14 +82,27 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] flex flex-col">
-      {/* Subtle background gradient */}
+      {/* Scanline background pattern */}
       <div className="fixed inset-0 pointer-events-none">
+        <div 
+          className="absolute w-full h-full opacity-[0.03]"
+          style={{
+            background: `repeating-linear-gradient(
+              0deg,
+              transparent,
+              transparent 2px,
+              rgba(255, 255, 255, 0.5) 2px,
+              rgba(255, 255, 255, 0.5) 4px
+            )`,
+          }}
+        />
+        {/* Subtle color gradients */}
         <div 
           className="absolute w-full h-full"
           style={{
             background: `
-              radial-gradient(ellipse 80% 60% at 50% 0%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
-              radial-gradient(ellipse 60% 40% at 100% 100%, rgba(34, 211, 238, 0.05) 0%, transparent 50%)
+              radial-gradient(ellipse 80% 60% at 50% 0%, rgba(188, 19, 254, 0.06) 0%, transparent 50%),
+              radial-gradient(ellipse 60% 40% at 100% 100%, rgba(57, 255, 20, 0.04) 0%, transparent 50%)
             `,
           }}
         />
@@ -99,11 +110,11 @@ export default function Home() {
       
       <AppHeader minimal />
 
-      <main className="flex-1 px-6 py-12">
-        <div className="max-w-2xl mx-auto">
+      <main className="flex-1 px-6 py-12 flex items-center justify-center">
+        <div className="w-full max-w-5xl mx-auto">
           
-          {/* Game Cards */}
-          <div className="space-y-4">
+          {/* Game Cards - 3 column grid on large screens */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {isLoadingGames ? (
               <>
                 <GameCardSkeleton />
@@ -111,7 +122,7 @@ export default function Home() {
                 <GameCardSkeleton />
               </>
             ) : gameTypes.length === 0 ? (
-              <div className="text-center py-20">
+              <div className="col-span-full text-center py-20">
                 <p className="text-white/40">No games available yet.</p>
               </div>
             ) : (
@@ -119,66 +130,96 @@ export default function Home() {
                 const config = GAME_CONFIG[game.slug];
                 const Icon = config.icon;
                 const isComingSoon = (game as any).status === 'coming_soon';
+                const isHovered = hoveredCard === game.slug;
 
                 return (
                   <motion.button
                     key={game.id}
                     initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
+                    animate={{ 
+                      opacity: 1, 
+                      y: 0,
+                      scale: isHovered && !isComingSoon ? 1.05 : 1,
+                    }}
+                    transition={{ 
+                      delay: index * 0.1,
+                      scale: { duration: 0.2 }
+                    }}
+                    onMouseEnter={() => setHoveredCard(game.slug)}
+                    onMouseLeave={() => setHoveredCard(null)}
                     onClick={() => !isComingSoon && setLocation(config.route)}
                     disabled={isComingSoon}
-                    className={`w-full text-left p-6 rounded-xl bg-card/50 border border-border hover-elevate active-elevate-2 ${
+                    className={`flex flex-col items-center justify-center text-center p-8 rounded-xl bg-[#0d0d12] transition-all duration-200 ${
                       isComingSoon 
                         ? 'opacity-40 cursor-not-allowed' 
                         : 'cursor-pointer'
                     }`}
+                    style={{
+                      border: isHovered && !isComingSoon 
+                        ? `2px solid ${config.accentColor}` 
+                        : '1px solid #333',
+                      boxShadow: isHovered && !isComingSoon 
+                        ? `0 0 20px ${config.accentColor}` 
+                        : 'none',
+                      minHeight: '280px',
+                    }}
                     data-testid={`button-game-${game.slug}`}
                   >
-                    <div className="flex items-start gap-4">
-                      {/* Icon with colored border */}
-                      <div 
-                        className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
-                        style={{
-                          border: `2px solid ${config.accentColor}`,
-                          boxShadow: `0 0 12px ${config.accentColor}30`,
-                        }}
-                      >
-                        <Icon 
-                          className="w-5 h-5" 
-                          style={{ color: config.accentColor }}
-                        />
-                      </div>
-                      
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-4 mb-1">
-                          <h3 
-                            className="text-lg font-bold text-foreground"
-                            data-testid={`text-game-title-${game.slug}`}
-                          >
-                            {game.displayName}
-                          </h3>
-                          
-                          <ArrowRight className="w-5 h-5 text-muted-foreground" />
-                        </div>
-                        
-                        <p 
-                          className="text-muted-foreground text-sm mb-2"
-                          data-testid={`text-game-description-${game.slug}`}
-                        >
-                          {config.description}
-                        </p>
-                        
-                        <div 
-                          className="flex items-center gap-2 text-muted-foreground/60 text-xs"
-                          data-testid={`text-game-players-${game.slug}`}
-                        >
-                          <Users className="w-3 h-3" />
-                          <span>{config.players}</span>
-                        </div>
-                      </div>
+                    {/* Icon */}
+                    <div 
+                      className="w-16 h-16 rounded-xl flex items-center justify-center mb-6 transition-all duration-200"
+                      style={{
+                        border: `2px solid ${config.accentColor}`,
+                        boxShadow: isHovered ? `0 0 25px ${config.accentColor}60` : `0 0 15px ${config.accentColor}30`,
+                      }}
+                    >
+                      <Icon 
+                        className="w-7 h-7" 
+                        style={{ color: config.accentColor }}
+                      />
                     </div>
+                    
+                    {/* Title */}
+                    <h3 
+                      className="text-xl mb-3 text-white"
+                      style={{ fontFamily: 'var(--font-display)' }}
+                      data-testid={`text-game-title-${game.slug}`}
+                    >
+                      {game.displayName}
+                    </h3>
+                    
+                    {/* Description */}
+                    <p 
+                      className="text-white/50 text-sm mb-4 leading-relaxed"
+                      data-testid={`text-game-description-${game.slug}`}
+                    >
+                      {config.description}
+                    </p>
+                    
+                    {/* Player count */}
+                    <div 
+                      className="flex items-center gap-2 text-white/30 text-xs"
+                      data-testid={`text-game-players-${game.slug}`}
+                    >
+                      <Users className="w-3 h-3" />
+                      <span>{config.players}</span>
+                    </div>
+                    
+                    {/* Arrow indicator on hover */}
+                    <motion.div
+                      className="mt-4"
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ 
+                        opacity: isHovered && !isComingSoon ? 1 : 0,
+                        y: isHovered && !isComingSoon ? 0 : -5
+                      }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <ArrowRight 
+                        className="w-5 h-5" 
+                        style={{ color: config.accentColor }} 
+                      />
+                    </motion.div>
                   </motion.button>
                 );
               })
