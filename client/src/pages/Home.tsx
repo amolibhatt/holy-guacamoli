@@ -192,22 +192,6 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
           >
-            {/* Floating badge */}
-            <motion.div
-              className="inline-flex flex-wrap items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-100 via-teal-100 to-cyan-100 dark:from-emerald-500/15 dark:via-teal-500/10 dark:to-cyan-500/15 border border-emerald-200/50 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-sm font-semibold mb-6 backdrop-blur-sm"
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.4 }}
-            >
-              <motion.div
-                animate={{ rotate: [0, 15, -15, 0] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-              >
-                <Sparkles className="w-4 h-4" />
-              </motion.div>
-              Game Night Mode: Activated
-            </motion.div>
-            
             {/* Main heading */}
             <motion.h1 
               className="text-5xl md:text-6xl lg:text-7xl font-black mb-5 tracking-tight leading-[1.1]"
