@@ -1,9 +1,8 @@
-import { useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { ArrowLeft, Settings, Shield, LogOut, HelpCircle } from "lucide-react";
-import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 
 interface AppHeaderProps {
@@ -34,10 +33,6 @@ export function AppHeader({
   themed = false,
 }: AppHeaderProps) {
   const { user, logout, isLoggingOut } = useAuth();
-  
-  useEffect(() => {
-    document.documentElement.classList.remove("dark");
-  }, []);
 
   return (
     <header className="border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-50">
@@ -87,6 +82,8 @@ export function AppHeader({
 
         <div className="flex items-center gap-1">
           {rightContent}
+          
+          <ThemeToggle />
           
           {showHelpButton && onHelpClick && (
             <Button 
