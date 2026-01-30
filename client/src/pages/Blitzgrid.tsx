@@ -3341,7 +3341,7 @@ export default function Blitzgrid() {
                   </h2>
                   <div className="flex-1 h-[1px] bg-gradient-to-r from-amber-200 via-orange-200 to-transparent" />
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {starterPacks.map((grid, index) => (
                     <GridCard key={grid.id} grid={grid} index={index} colorOffset={myGrids.length} />
                   ))}
