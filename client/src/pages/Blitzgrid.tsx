@@ -1026,28 +1026,28 @@ export default function Blitzgrid() {
         >
           {/* Subtle gradient overlay matching grid selection page style */}
           <div 
-            className="absolute inset-0 pointer-events-none z-[1] bg-gradient-to-br from-rose-50/30 via-pink-50/20 to-fuchsia-50/30" 
+            className="absolute inset-0 pointer-events-none z-[1] bg-gradient-to-br from-slate-50/30 via-slate-50/20 to-slate-100/30" 
           />
           
           {/* Floating decorative elements - Designer touch */}
           <div className="absolute inset-0 pointer-events-none z-[2] overflow-hidden">
             {/* Top-left semicircle accent */}
-            <div className="absolute -top-20 -left-20 w-40 h-40 rounded-full bg-gradient-to-br from-rose-200/40 to-pink-200/20 blur-xl" />
+            <div className="absolute -top-20 -left-20 w-40 h-40 rounded-full bg-gradient-to-br from-slate-200/40 to-slate-100/20 blur-xl" />
             {/* Bottom-right semicircle accent */}
-            <div className="absolute -bottom-16 -right-16 w-32 h-32 rounded-full bg-gradient-to-br from-fuchsia-200/40 to-pink-200/20 blur-xl" />
+            <div className="absolute -bottom-16 -right-16 w-32 h-32 rounded-full bg-gradient-to-br from-slate-200/40 to-slate-100/20 blur-xl" />
             {/* Floating dots */}
             <motion.div 
-              className="absolute top-1/4 right-[15%] w-2 h-2 rounded-full bg-rose-300/50"
+              className="absolute top-1/4 right-[15%] w-2 h-2 rounded-full bg-slate-300/50"
               animate={{ y: [0, -10, 0], opacity: [0.5, 0.8, 0.5] }}
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
             />
             <motion.div 
-              className="absolute top-1/3 left-[10%] w-1.5 h-1.5 rounded-full bg-pink-300/50"
+              className="absolute top-1/3 left-[10%] w-1.5 h-1.5 rounded-full bg-slate-300/50"
               animate={{ y: [0, -8, 0], opacity: [0.4, 0.7, 0.4] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
             />
             <motion.div 
-              className="absolute bottom-1/4 right-[20%] w-1 h-1 rounded-full bg-fuchsia-300/60"
+              className="absolute bottom-1/4 right-[20%] w-1 h-1 rounded-full bg-slate-400/60"
               animate={{ y: [0, -6, 0], opacity: [0.5, 0.9, 0.5] }}
               transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
             />
@@ -1064,7 +1064,7 @@ export default function Blitzgrid() {
                 className="fixed inset-0 z-50 flex items-center justify-center bg-background"
               >
                 {/* Subtle gradient overlay matching game page */}
-                <div className="absolute inset-0 bg-gradient-to-br from-rose-50/30 via-pink-50/20 to-fuchsia-50/30" />
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-50/30 via-slate-50/20 to-slate-100/30" />
                 <div ref={scoresPanelRef} className="text-center p-4 md:p-8 max-w-4xl w-full mx-4 relative">
                   {/* Title */}
                   <motion.div
@@ -1146,7 +1146,7 @@ export default function Blitzgrid() {
                               animate={{ scale: [1, 1.3, 1], opacity: [1, 0, 1] }}
                               transition={{ duration: 1.5, repeat: Infinity }}
                             />
-                            <div className="w-20 h-20 md:w-28 md:h-28 rounded-full flex items-center justify-center text-4xl md:text-5xl shadow-2xl border-4 border-yellow-400 relative z-10 bg-gradient-to-br from-rose-300 via-pink-300 to-fuchsia-300">
+                            <div className="w-20 h-20 md:w-28 md:h-28 rounded-full flex items-center justify-center text-4xl md:text-5xl shadow-2xl border-4 border-yellow-400 relative z-10 bg-gradient-to-br from-slate-200 via-slate-300 to-slate-400">
                               {PLAYER_AVATARS.find(a => a.id === winner.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
                             </div>
                           </motion.div>
@@ -1311,10 +1311,10 @@ export default function Blitzgrid() {
           <motion.div 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="flex items-center justify-between px-4 py-3 bg-card/90 backdrop-blur-md border-b border-pink-200/60 relative z-10 overflow-hidden"
+            className="flex items-center justify-between px-4 py-3 bg-card/90 backdrop-blur-md border-b border-slate-200/60 relative z-10 overflow-hidden"
           >
             {/* Subtle header gradient accent */}
-            <div className="absolute inset-0 bg-gradient-to-r from-rose-50/50 via-transparent to-fuchsia-50/50 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-50/50 via-transparent to-slate-50/50 pointer-events-none" />
             {/* Left: Back + Logo + Grid Name */}
             <div className="flex items-center gap-3">
               <Button 
@@ -1343,14 +1343,14 @@ export default function Blitzgrid() {
                   transition={{ type: "spring", delay: 0.2 }}
                   className="flex items-center gap-2"
                 >
-                  <Badge className="bg-pink-100 text-pink-700 border-0 font-mono font-bold px-3 py-1.5">
+                  <Badge className="bg-slate-100 text-slate-700 border-0 font-mono font-bold px-3 py-1.5">
                     {roomCode}
                   </Badge>
                   <Button 
                     size="sm" 
                     variant="outline"
                     onClick={() => setShowQRCode(true)} 
-                    className="border-pink-300 text-pink-600"
+                    className="border-slate-300 text-slate-600"
                     data-testid="button-show-qr"
                   >
                     <QrCode className="w-4 h-4" />
@@ -1428,10 +1428,10 @@ export default function Blitzgrid() {
                 exit={{ y: -50, opacity: 0 }}
                 className="absolute top-16 left-1/2 -translate-x-1/2 z-50"
               >
-                <div className="bg-card/90 backdrop-blur-sm border border-pink-200/60 text-foreground px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+                <div className="bg-card/90 backdrop-blur-sm border border-slate-200/60 text-foreground px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
                   <span className="text-lg">{PLAYER_AVATARS.find(a => a.id === lastJoinedPlayer.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
                   <span className="font-medium">{lastJoinedPlayer.name} joined!</span>
-                  <UserPlus className="w-4 h-4 text-pink-500" />
+                  <UserPlus className="w-4 h-4 text-slate-500" />
                 </div>
               </motion.div>
             )}
@@ -1514,7 +1514,7 @@ export default function Blitzgrid() {
                     >
                       {/* Decorative semicircle accent - top right corner */}
                       {isRevealed && (
-                        <div className="absolute -top-3 -right-3 w-6 h-6 rounded-full bg-gradient-to-br from-rose-200/60 to-pink-200/40" />
+                        <div className="absolute -top-3 -right-3 w-6 h-6 rounded-full bg-gradient-to-br from-slate-200/60 to-slate-100/40" />
                       )}
                       {/* Subtle gradient overlay for depth */}
                       {isRevealed && (
@@ -1562,9 +1562,9 @@ export default function Blitzgrid() {
                         className={`
                           w-full h-full rounded-xl font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden border group
                           ${isCellAnswered 
-                            ? 'bg-pink-50/50 backdrop-blur-sm cursor-default border-pink-100/50' 
+                            ? 'bg-slate-50/50 backdrop-blur-sm cursor-default border-slate-200/50' 
                             : isCategoryRevealed
-                              ? 'bg-card/90 backdrop-blur-sm border-pink-200/60 text-pink-600 cursor-pointer shadow-lg hover:shadow-xl hover:border-pink-300/80'
+                              ? 'bg-card/90 backdrop-blur-sm border-slate-200/60 text-slate-700 cursor-pointer shadow-lg hover:shadow-xl hover:border-slate-300/80'
                               : 'bg-transparent cursor-default border-transparent'
                           }
                         `}
@@ -1587,7 +1587,7 @@ export default function Blitzgrid() {
                         )}
                         {/* Bottom corner accent */}
                         {isCategoryRevealed && !isCellAnswered && (
-                          <div className="absolute -bottom-2 -left-2 w-4 h-4 rounded-full bg-gradient-to-br from-pink-200/40 to-rose-200/20 pointer-events-none" />
+                          <div className="absolute -bottom-2 -left-2 w-4 h-4 rounded-full bg-gradient-to-br from-slate-200/40 to-slate-100/20 pointer-events-none" />
                         )}
                         {isCellAnswered ? (
                           <motion.div
@@ -1596,7 +1596,7 @@ export default function Blitzgrid() {
                             transition={{ type: "spring", stiffness: 200, damping: 15 }}
                             className="flex items-center justify-center relative z-10"
                           >
-                            <Check className="w-8 h-8 md:w-12 md:h-12 text-pink-300" strokeWidth={3} />
+                            <Check className="w-8 h-8 md:w-12 md:h-12 text-slate-400" strokeWidth={3} />
                           </motion.div>
                         ) : (
                           <span className="relative z-10 drop-shadow-sm">{points}</span>
@@ -1621,7 +1621,7 @@ export default function Blitzgrid() {
                 className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30"
               >
                 <motion.div 
-                  className="bg-card/90 backdrop-blur-sm px-6 py-3 rounded-full text-foreground flex items-center gap-3 shadow-lg border border-pink-200/60"
+                  className="bg-card/90 backdrop-blur-sm px-6 py-3 rounded-full text-foreground flex items-center gap-3 shadow-lg border border-slate-200/60"
                   animate={{ scale: [1, 1.02, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
@@ -1631,7 +1631,7 @@ export default function Blitzgrid() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="text-xs border-pink-300 text-pink-600"
+                    className="text-xs border-slate-300 text-slate-600"
                     onClick={(e) => {
                       e.stopPropagation();
                       skipReveal();
@@ -1651,9 +1651,9 @@ export default function Blitzgrid() {
             transition={{ delay: 0.5 }}
             className="absolute bottom-[60px] left-4 right-4 z-20"
           >
-            <div className="h-1 bg-pink-100/60 rounded-full overflow-hidden backdrop-blur-sm">
+            <div className="h-1 bg-slate-200/60 rounded-full overflow-hidden backdrop-blur-sm">
               <motion.div 
-                className="h-full bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300 rounded-full"
+                className="h-full bg-gradient-to-r from-slate-400 via-slate-500 to-slate-400 rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${playCategories.length > 0 ? (revealedCells.size / (playCategories.length * 5)) * 100 : 0}%` }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
@@ -1666,10 +1666,10 @@ export default function Blitzgrid() {
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3, type: "spring" }}
-            className="bg-card/90 backdrop-blur-md border-t border-pink-200/60 px-4 py-2.5 relative z-10 overflow-hidden"
+            className="bg-card/90 backdrop-blur-md border-t border-slate-200/60 px-4 py-2.5 relative z-10 overflow-hidden"
           >
             {/* Subtle footer gradient accent */}
-            <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-50/50 via-transparent to-rose-50/50 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-50/50 via-transparent to-slate-50/50 pointer-events-none" />
             {players.length > 0 ? (
               <LayoutGroup>
                 <div className="flex items-center justify-center gap-3 md:gap-5 flex-wrap">
@@ -1690,7 +1690,7 @@ export default function Blitzgrid() {
                         }}
                         onClick={() => setSelectedPlayerId(isSelected ? null : player.id)}
                         className={`relative flex items-center gap-2 rounded-full py-1 pl-1 pr-3 cursor-pointer transition-all ${
-                          isSelected ? 'bg-pink-100 ring-2 ring-pink-300/50' : 'hover:bg-pink-50/50'
+                          isSelected ? 'bg-slate-100 ring-2 ring-slate-300/50' : 'hover:bg-slate-50/50'
                         } ${!player.connected ? 'opacity-50' : ''}`}
                       >
                         {/* Score change indicator */}
@@ -1718,7 +1718,7 @@ export default function Blitzgrid() {
                               idx === 0 ? 'bg-gradient-to-br from-amber-200 to-amber-400 border-amber-300' : 
                               idx === 1 ? 'bg-gradient-to-br from-slate-100 to-slate-300 border-slate-200' : 
                               idx === 2 ? 'bg-gradient-to-br from-amber-400 to-amber-600 border-amber-500' : 
-                              'bg-gradient-to-br from-rose-100 via-pink-100 to-fuchsia-100 border-pink-200'
+                              'bg-gradient-to-br from-slate-100 via-slate-150 to-slate-200 border-slate-200'
                             }`}
                           >
                             {avatarEmoji}
@@ -1739,10 +1739,10 @@ export default function Blitzgrid() {
                           <span className="text-foreground font-medium text-xs">{player.name}</span>
                           <motion.span 
                             key={player.score}
-                            initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? '#059669' : scoreAnim?.delta && scoreAnim.delta < 0 ? '#dc2626' : '#db2777' }}
-                            animate={{ scale: 1, color: '#db2777' }}
+                            initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? '#059669' : scoreAnim?.delta && scoreAnim.delta < 0 ? '#dc2626' : '#475569' }}
+                            animate={{ scale: 1, color: '#475569' }}
                             transition={{ duration: 0.3 }}
-                            className="text-pink-600 font-bold text-sm"
+                            className="text-slate-600 font-bold text-sm"
                           >
                             {player.score}
                           </motion.span>
@@ -2050,8 +2050,8 @@ export default function Blitzgrid() {
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
             <DialogContent className={`max-w-2xl max-h-[90vh] overflow-y-auto bg-card/98 backdrop-blur-xl border-2 ${colorConfig.dialogBorder} shadow-2xl relative overflow-hidden`}>
               {/* Decorative corner accents */}
-              <div className="absolute -top-6 -left-6 w-20 h-20 rounded-full bg-gradient-to-br from-rose-200/30 to-pink-200/10 blur-xl pointer-events-none" />
-              <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-gradient-to-br from-fuchsia-200/30 to-pink-200/10 blur-xl pointer-events-none" />
+              <div className="absolute -top-6 -left-6 w-20 h-20 rounded-full bg-gradient-to-br from-slate-200/30 to-slate-100/10 blur-xl pointer-events-none" />
+              <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-gradient-to-br from-slate-200/30 to-slate-100/10 blur-xl pointer-events-none" />
               
               <DialogHeader className="relative z-10">
                 {/* Category Name and Description */}
@@ -2059,9 +2059,9 @@ export default function Blitzgrid() {
                   const category = playCategories.find(c => c.id === activeQuestion?.categoryId);
                   return category ? (
                     <div className="text-center mb-3">
-                      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-pink-50/80 border border-pink-200/60">
-                        <Sparkles className="w-3.5 h-3.5 text-pink-500" />
-                        <p className="text-pink-600 text-sm font-semibold uppercase tracking-wider">
+                      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-50/80 border border-slate-200/60">
+                        <Sparkles className="w-3.5 h-3.5 text-slate-500" />
+                        <p className="text-slate-600 text-sm font-semibold uppercase tracking-wider">
                           {category.name}
                         </p>
                       </div>
@@ -2104,9 +2104,9 @@ export default function Blitzgrid() {
                 </div>
                 {/* Subtle divider */}
                 <div className="mt-6 flex items-center justify-center gap-3">
-                  <div className="h-px w-16 bg-gradient-to-r from-transparent to-pink-200/60" />
-                  <div className="w-1.5 h-1.5 rounded-full bg-pink-200" />
-                  <div className="h-px w-16 bg-gradient-to-l from-transparent to-pink-200/60" />
+                  <div className="h-px w-16 bg-gradient-to-r from-transparent to-slate-300/60" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                  <div className="h-px w-16 bg-gradient-to-l from-transparent to-slate-300/60" />
                 </div>
               </div>
               
@@ -2379,7 +2379,7 @@ export default function Blitzgrid() {
                   <Button 
                     onClick={handleCloseQuestion}
                     variant="outline"
-                    className="border-pink-300 text-pink-600"
+                    className="border-slate-300 text-slate-600"
                     data-testid="button-close-question"
                   >
                     Continue
