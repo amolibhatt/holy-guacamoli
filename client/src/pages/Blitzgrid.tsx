@@ -3727,16 +3727,45 @@ export default function Blitzgrid() {
   // Filter to only show active grids (ready to play)
   const activeGrids = grids.filter(g => g.isActive);
 
-  // Main grid list view - clean grid picker for hosts/players
+  // Fun messages for the grid picker
+  const funMessages = [
+    "Pick your battlefield",
+    "Choose your adventure", 
+    "What are we playing?",
+    "Let's get this party started",
+    "Time to show off those brain cells"
+  ];
+  const randomMessage = funMessages[Math.floor(Date.now() / 60000) % funMessages.length];
+
+  // Main grid list view - fun grid picker for hosts/players
   return (
     <div className="min-h-screen bg-background" data-testid="page-blitzgrid">
       <AppHeader title="Blitzgrid" backHref="/" showAdminButton adminHref="/admin/games" />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-10">
+        {/* Fun header */}
+        <motion.div 
+          className="text-center mb-10"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+            className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-rose-400 via-pink-400 to-fuchsia-400 mb-5 shadow-xl shadow-pink-300/30"
+          >
+            <Grid3X3 className="w-10 h-10 text-white" />
+          </motion.div>
+          <h2 className="text-3xl font-bold text-foreground mb-2">{randomMessage}</h2>
+          <p className="text-muted-foreground">
+            {activeGrids.length} {activeGrids.length === 1 ? 'grid' : 'grids'} loaded and ready
+          </p>
+        </motion.div>
 
         {loadingGrids ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 rounded-2xl" />)}
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 rounded-2xl" />)}
           </div>
         ) : activeGrids.length === 0 ? (
           <motion.div
@@ -3744,16 +3773,16 @@ export default function Blitzgrid() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-16"
           >
-            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-              <Grid3X3 className="w-8 h-8 text-muted-foreground" />
+            <div className="w-20 h-20 rounded-3xl bg-muted flex items-center justify-center mx-auto mb-5">
+              <Grid3X3 className="w-10 h-10 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium mb-2">No grids ready yet</h3>
-            <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-              Create grids in the admin area. They'll appear here once they're complete.
+            <h3 className="text-xl font-semibold mb-2">No grids ready yet</h3>
+            <p className="text-muted-foreground max-w-sm mx-auto">
+              The host needs to create some grids first. Check back soon!
             </p>
           </motion.div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
             {activeGrids.map((grid, index) => {
               const themeId = grid.theme?.replace('blitzgrid:', '') || 'birthday';
               const gridTheme = GRID_THEMES.find(t => t.id === themeId) || GRID_THEMES[1];
@@ -3761,11 +3790,16 @@ export default function Blitzgrid() {
               return (
                 <motion.button
                   key={grid.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2, delay: index * 0.03 }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ 
+                    duration: 0.3, 
+                    delay: index * 0.08,
+                    type: "spring",
+                    stiffness: 150
+                  }}
+                  whileHover={{ scale: 1.03, y: -4 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => {
                     setSelectedGridId(grid.id);
                     setPlayMode(true);
@@ -3775,30 +3809,53 @@ export default function Blitzgrid() {
                     setActiveQuestion(null);
                     setShowAnswer(false);
                   }}
-                  className="group text-left p-5 rounded-xl bg-card border border-border hover:border-border/80 hover:shadow-lg transition-all"
+                  className="group relative text-left p-6 rounded-2xl bg-card border-2 border-border hover:border-pink-300 dark:hover:border-pink-700 transition-all shadow-sm hover:shadow-xl"
                   data-testid={`card-grid-${grid.id}`}
                 >
                   <div className="flex items-center gap-4">
-                    {/* Theme icon with accent color */}
-                    <div 
-                      className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: gridTheme.background }}
+                    {/* Theme icon with animation */}
+                    <motion.div 
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg"
+                      style={{ 
+                        background: gridTheme.background,
+                        boxShadow: `0 8px 24px ${gridTheme.glow}40`
+                      }}
+                      whileHover={{ rotate: [0, -5, 5, 0] }}
+                      transition={{ duration: 0.4 }}
                     >
-                      <ThemeIcon type={gridTheme.iconType} className="w-6 h-6 text-white" />
-                    </div>
+                      <ThemeIcon type={gridTheme.iconType} className="w-7 h-7 text-white" />
+                    </motion.div>
                     
-                    {/* Grid name and play indicator */}
+                    {/* Grid name */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground truncate">{grid.name}</h3>
-                      <p className="text-sm text-muted-foreground">{gridTheme.name}</p>
+                      <h3 className="font-bold text-lg text-foreground truncate mb-1">{grid.name}</h3>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <ThemeIcon type={gridTheme.iconType} className="w-3 h-3" />
+                        {gridTheme.name}
+                      </p>
                     </div>
                     
-                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+                    {/* Play button */}
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-lg shadow-pink-400/30 group-hover:scale-110 transition-transform">
+                      <Play className="w-5 h-5 text-white ml-0.5" />
+                    </div>
                   </div>
                 </motion.button>
               );
             })}
           </div>
+        )}
+        
+        {/* Fun footer */}
+        {activeGrids.length > 0 && (
+          <motion.p 
+            className="text-center text-muted-foreground/60 text-sm mt-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            Tap a grid to start playing
+          </motion.p>
         )}
       </div>
     </div>
