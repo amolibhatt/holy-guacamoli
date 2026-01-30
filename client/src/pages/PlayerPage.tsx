@@ -839,9 +839,9 @@ export default function PlayerPage() {
                 animate={{ opacity: [0.3, 1, 0.3] }}
                 transition={{ duration: 1.5, repeat: Infinity }}
               >
-                <div className="w-2 h-2 rounded-full bg-purple-500" />
-                <div className="w-2 h-2 rounded-full bg-purple-500" />
-                <div className="w-2 h-2 rounded-full bg-purple-500" />
+                <div className="w-2 h-2 rounded-full bg-pink-400" />
+                <div className="w-2 h-2 rounded-full bg-pink-400" />
+                <div className="w-2 h-2 rounded-full bg-pink-400" />
               </motion.div>
             </motion.div>
           ) : feedback ? (
