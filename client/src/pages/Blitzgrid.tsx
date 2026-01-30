@@ -843,7 +843,9 @@ export default function Blitzgrid() {
   // Grid detail view with inline categories and questions
   if (selectedGridId) {
     const grid = grids.find(g => g.id === selectedGridId);
-    const colorConfig = getBoardColorConfig(grid?.colorCode);
+    const gridIndex = grids.filter(g => g.isActive).findIndex(g => g.id === selectedGridId);
+    const effectiveColor = grid?.colorCode?.startsWith('#') ? null : grid?.colorCode;
+    const colorConfig = getBoardColorConfig(effectiveColor || BOARD_COLORS[gridIndex >= 0 ? gridIndex % BOARD_COLORS.length : 0]);
     
     // GAMEPLAY MODE
     if (playMode && grid?.isActive) {
@@ -2596,8 +2598,9 @@ export default function Blitzgrid() {
             </Card>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {grids.filter(g => g.isActive).map(grid => {
-                const colorConfig = getBoardColorConfig(grid.colorCode);
+              {grids.filter(g => g.isActive).map((grid, idx) => {
+                const effectiveColor = grid.colorCode?.startsWith('#') ? null : grid.colorCode;
+                const colorConfig = getBoardColorConfig(effectiveColor || BOARD_COLORS[idx % BOARD_COLORS.length]);
                 return (
                   <Card
                     key={grid.id}
@@ -2662,7 +2665,8 @@ export default function Blitzgrid() {
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
             {activeGrids.map((grid, index) => {
-              const colorConfig = getBoardColorConfig(grid.colorCode);
+              const effectiveColor = grid.colorCode?.startsWith('#') ? null : grid.colorCode;
+              const colorConfig = getBoardColorConfig(effectiveColor || BOARD_COLORS[index % BOARD_COLORS.length]);
               return (
                 <motion.button
                   key={grid.id}
