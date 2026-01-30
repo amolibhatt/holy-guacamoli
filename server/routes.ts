@@ -957,6 +957,12 @@ export async function registerRoutes(
       const userId = req.session.userId!;
       const role = req.session.userRole;
       
+      // Parse excluded category IDs from query param (to avoid repeats in same session)
+      const excludeParam = req.query.exclude as string | undefined;
+      const excludedCategoryIds = excludeParam 
+        ? excludeParam.split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id))
+        : [];
+      
       // Get all active blitzgrid boards for this user (theme can be "blitzgrid" or "blitzgrid:space", etc.)
       const allBoards = await storage.getBoards(userId, role);
       const blitzgridBoards = allBoards.filter(b => b.theme && b.theme.startsWith('blitzgrid'));
@@ -973,7 +979,6 @@ export async function registerRoutes(
           correctAnswer: string;
           options: string[] | null;
           points: number;
-          questionType: string | null;
           imageUrl: string | null;
           audioUrl: string | null;
           videoUrl: string | null;
@@ -989,7 +994,8 @@ export async function registerRoutes(
             const questionPoints = cat.questions.map(q => q.points).sort((a, b) => a - b);
             const hasAllPoints = requiredPoints.every((pt, idx) => questionPoints[idx] === pt);
             
-            if (hasAllPoints) {
+            // Skip categories that were already played in this session
+            if (hasAllPoints && !excludedCategoryIds.includes(cat.category.id)) {
               allCategories.push({
                 id: cat.category.id,
                 name: cat.category.name,
@@ -1012,6 +1018,13 @@ export async function registerRoutes(
       }
       
       if (allCategories.length < 5) {
+        // Check if we have enough total categories but they're all excluded
+        if (excludedCategoryIds.length > 0) {
+          return res.status(400).json({ 
+            message: "All categories played! Reset to shuffle again.",
+            exhausted: true
+          });
+        }
         return res.status(400).json({ 
           message: "Not enough complete categories to shuffle. Need at least 5 complete categories across your grids." 
         });
