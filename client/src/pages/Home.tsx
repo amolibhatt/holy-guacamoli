@@ -490,28 +490,6 @@ export default function Home() {
         </div>
       </main>
       
-      {/* Footer - integrated branding */}
-      <footer className="relative z-10 px-6 py-8">
-        <div className="max-w-5xl mx-auto flex flex-col items-center justify-center gap-2">
-          <p 
-            className="text-xs uppercase tracking-[0.3em] text-muted-foreground/60"
-          >
-            A Party Experience by
-          </p>
-          <motion.p 
-            className="text-2xl font-black uppercase tracking-tight"
-            style={{ 
-              fontFamily: 'var(--font-display)',
-              background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #14b8a6 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-            whileHover={{ scale: 1.05 }}
-          >
-            AMOLI
-          </motion.p>
-        </div>
-      </footer>
 
       {/* Help Guide Dialog */}
       <Dialog open={showGuide} onOpenChange={(open) => !open && handleCloseGuide()}>
