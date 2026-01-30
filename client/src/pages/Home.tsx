@@ -408,66 +408,19 @@ export default function Home() {
       </main>
       
       {/* Footer */}
-      <footer className="relative z-10 border-t border-border/10 px-6 py-8 overflow-hidden">
-        {/* Subtle gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-t from-emerald-100/40 via-background to-background dark:from-emerald-900/10 dark:via-background" />
-        
-        <div className="relative max-w-5xl mx-auto">
-          {/* Main footer content */}
-          <div className="flex flex-col items-center text-center gap-4">
-            {/* Logo and brand */}
-            <motion.div 
-              className="flex items-center gap-3"
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.2 }}
+      <footer className="relative z-10 border-t border-border/10 px-6 py-6">
+        <div className="max-w-5xl mx-auto flex items-center justify-center">
+          <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-1">
+            Designed & built with
+            <motion.span
+              className="inline-block mx-0.5"
+              animate={{ scale: [1, 1.15, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
             >
-              <AvocadoIcon className="w-10 h-10" />
-              <div className="text-left">
-                <h3 className="text-lg font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-400 dark:via-teal-400 dark:to-cyan-400 bg-clip-text text-transparent">
-                  Holy GuacAmoli!
-                </h3>
-                <p className="text-xs text-muted-foreground font-medium tracking-wide">
-                  Where every game night becomes legendary
-                </p>
-              </div>
-            </motion.div>
-            
-            {/* Divider with decorative elements */}
-            <div className="flex items-center gap-4 w-full max-w-xs">
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-              <div className="flex gap-1.5">
-                <motion.div 
-                  className="w-1.5 h-1.5 rounded-full bg-pink-300 dark:bg-pink-400"
-                  animate={{ scale: [1, 1.3, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: 0 }}
-                />
-                <motion.div 
-                  className="w-1.5 h-1.5 rounded-full bg-emerald-300 dark:bg-emerald-400"
-                  animate={{ scale: [1, 1.3, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
-                />
-                <motion.div 
-                  className="w-1.5 h-1.5 rounded-full bg-violet-300 dark:bg-violet-400"
-                  animate={{ scale: [1, 1.3, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: 0.6 }}
-                />
-              </div>
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-            </div>
-            
-            {/* Credit */}
-            <p className="text-sm text-muted-foreground">
-              Designed & built with
-              <motion.span
-                className="inline-block mx-1"
-                animate={{ scale: [1, 1.15, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              >
-                <Star className="w-4 h-4 text-amber-400 fill-amber-400 inline align-text-bottom" />
-              </motion.span>
-              by <span className="font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">Amoli</span>
-            </p>
-          </div>
+              <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+            </motion.span>
+            by <span className="font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent ml-1">Amoli</span>
+          </p>
         </div>
       </footer>
 
