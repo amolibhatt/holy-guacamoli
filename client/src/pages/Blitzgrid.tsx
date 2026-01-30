@@ -3802,7 +3802,7 @@ export default function Blitzgrid() {
       <footer className="border-t border-border/30 px-6 py-6 mt-auto">
         <div className="max-w-5xl mx-auto flex items-center justify-center">
           <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-1">
-            made with <span className="text-rose-500 dark:text-rose-400">&lt;3</span> by <span className="font-semibold bg-gradient-to-r from-rose-500 to-pink-500 dark:from-rose-400 dark:to-pink-400 bg-clip-text text-transparent">Amoli</span>
+            made with <span className="text-rose-500 dark:text-rose-400">♥</span> by <span className="font-semibold bg-gradient-to-r from-rose-500 to-pink-500 dark:from-rose-400 dark:to-pink-400 bg-clip-text text-transparent">Amoli</span>
           </p>
         </div>
       </footer>
