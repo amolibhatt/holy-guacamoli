@@ -2383,7 +2383,7 @@ export default function Blitzgrid() {
                         </p>
                       </div>
                       {category.description && (
-                        <p className="text-slate-500 text-xs mt-1.5">
+                        <p className="text-muted-foreground text-xs mt-1.5">
                           {category.description}
                         </p>
                       )}
@@ -2414,7 +2414,7 @@ export default function Blitzgrid() {
               
               {/* Question */}
               <div className="py-6 relative z-10">
-                <div className="text-xl md:text-2xl text-center font-medium text-slate-800 max-w-none leading-relaxed">
+                <div className="text-xl md:text-2xl text-center font-medium text-foreground max-w-none leading-relaxed [&_p]:text-foreground [&_*]:text-foreground">
                   <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
                     {activeQuestion?.question || ''}
                   </ReactMarkdown>
