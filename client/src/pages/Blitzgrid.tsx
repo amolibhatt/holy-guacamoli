@@ -925,9 +925,19 @@ export default function Blitzgrid() {
       const thirdPhase = sortedPlayers.length >= 4 ? 3 : 2;
       const restPhase = 2;
       
-      // Simple background for play mode
-      const playBackground = 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #6366f1 100%)';
-      const glowColor = '#764ba2';
+      // Dynamic background based on grid color
+      const colorGradients: Record<string, { bg: string; glow: string }> = {
+        violet: { bg: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%)', glow: '#7c3aed' },
+        fuchsia: { bg: 'linear-gradient(135deg, #d946ef 0%, #c026d3 50%, #a21caf 100%)', glow: '#c026d3' },
+        amber: { bg: 'linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)', glow: '#d97706' },
+        teal: { bg: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 50%, #0f766e 100%)', glow: '#0d9488' },
+        sky: { bg: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%)', glow: '#0284c7' },
+      };
+      const effectiveColorName = grid?.colorCode?.startsWith('#') ? null : grid?.colorCode;
+      const colorName = effectiveColorName || BOARD_COLORS[gridIndex >= 0 ? gridIndex % BOARD_COLORS.length : 0];
+      const gradientConfig = colorGradients[colorName] || colorGradients.violet;
+      const playBackground = gradientConfig.bg;
+      const glowColor = gradientConfig.glow;
       
       // Keyboard handler for reveal mode
       const handleKeyDown = (e: React.KeyboardEvent) => {
