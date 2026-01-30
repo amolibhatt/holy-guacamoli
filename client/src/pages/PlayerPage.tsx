@@ -626,7 +626,7 @@ export default function PlayerPage() {
                 >
                   <div className="flex items-center gap-2">
                     <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${
-                      idx === 0 ? 'bg-yellow-500 text-black' : idx === 1 ? 'bg-gray-400 text-black' : idx === 2 ? 'bg-amber-600 text-white' : 'bg-muted text-muted-foreground'
+                      idx === 0 ? 'bg-yellow-500 text-black' : idx === 1 ? 'bg-slate-400 text-black' : idx === 2 ? 'bg-amber-600 text-white' : 'bg-muted text-muted-foreground'
                     }`}>
                       {idx + 1}
                     </span>
@@ -938,10 +938,10 @@ export default function PlayerPage() {
               <motion.div 
                 animate={{ scale: [1, 1.02, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="w-64 h-64 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 flex flex-col items-center justify-center mx-auto shadow-xl border-4 border-gray-500/50 relative"
+                className="w-64 h-64 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex flex-col items-center justify-center mx-auto shadow-xl border-4 border-slate-500/50 relative"
               >
-                <Lock className="w-20 h-20 text-gray-400 mb-2" />
-                <span className="text-gray-400 text-xl font-bold">LOCKED</span>
+                <Lock className="w-20 h-20 text-slate-400 mb-2" />
+                <span className="text-slate-400 text-xl font-bold">LOCKED</span>
               </motion.div>
               <h2 className="text-2xl font-bold text-foreground mt-6">You're In!</h2>
               <p className="text-muted-foreground mt-2 max-w-xs mx-auto">Buzzer will unlock when the host selects a question</p>
