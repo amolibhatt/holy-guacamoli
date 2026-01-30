@@ -387,10 +387,6 @@ export default function Home() {
                           <h3 className="text-xl font-extrabold text-foreground mb-1">
                             {game.displayName}
                           </h3>
-                          <p className="text-xs font-semibold text-muted-foreground/80 flex flex-wrap items-center gap-1.5 uppercase tracking-wide">
-                            <Users className="w-3.5 h-3.5" />
-                            {config.playerCount}
-                          </p>
                         </div>
                       </div>
                       
