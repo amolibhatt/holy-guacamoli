@@ -182,8 +182,8 @@ export default function Home() {
                     
                     {/* Title */}
                     <h3 
-                      className="text-xl mb-2 text-white"
-                      style={{ fontFamily: 'var(--font-display)' }}
+                      className="text-2xl mb-2 text-white uppercase tracking-wide"
+                      style={{ fontFamily: "'Archivo Black', 'Impact', sans-serif" }}
                       data-testid={`text-game-title-${game.slug}`}
                     >
                       {game.displayName}
