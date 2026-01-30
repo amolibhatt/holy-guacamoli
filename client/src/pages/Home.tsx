@@ -283,14 +283,6 @@ export default function Home() {
                       }}
                       data-testid={`button-game-${game.slug}`}
                     >
-                      {/* Decorative semi-circle in top-right corner */}
-                      <div 
-                        className={`absolute -top-16 -right-16 w-40 h-40 rounded-full bg-gradient-to-br ${config.gradient} opacity-20`}
-                      />
-                      <div 
-                        className={`absolute -top-8 -right-8 w-24 h-24 rounded-full bg-gradient-to-br ${config.gradient} opacity-15`}
-                      />
-                      
                       {/* Gradient background on hover */}
                       <motion.div 
                         className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${config.bgGradient}`}
