@@ -206,6 +206,67 @@ export const sequenceSubmissions = pgTable("sequence_submissions", {
   index("idx_submissions_session").on(table.sessionId),
 ]);
 
+// PsyOp Game Tables
+export const psyopQuestions = pgTable("psyop_questions", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id"),
+  factText: text("fact_text").notNull(), // The full fact with [BLANK] placeholder
+  correctAnswer: text("correct_answer").notNull(), // The actual word that fills the blank
+  category: text("category"), // Optional category for organizing questions
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const psyopSessions = pgTable("psyop_sessions", {
+  id: serial("id").primaryKey(),
+  hostId: text("host_id").notNull(),
+  roomCode: text("room_code").notNull().unique(),
+  status: text("status").notNull().$type<"waiting" | "submitting" | "voting" | "revealing" | "finished">().default("waiting"),
+  timerSeconds: integer("timer_seconds").notNull().default(30), // Configurable timer
+  currentRoundId: integer("current_round_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const psyopRounds = pgTable("psyop_rounds", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull(),
+  questionId: integer("question_id").notNull(),
+  roundNumber: integer("round_number").notNull(),
+  status: text("status").notNull().$type<"submitting" | "voting" | "revealing" | "complete">().default("submitting"),
+  submissionDeadline: timestamp("submission_deadline"),
+  votingDeadline: timestamp("voting_deadline"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  unique().on(table.sessionId, table.roundNumber),
+  index("idx_psyop_rounds_session").on(table.sessionId),
+]);
+
+export const psyopSubmissions = pgTable("psyop_submissions", {
+  id: serial("id").primaryKey(),
+  roundId: integer("round_id").notNull(),
+  playerId: text("player_id").notNull(),
+  playerName: text("player_name").notNull(),
+  playerAvatar: text("player_avatar"),
+  lieText: text("lie_text").notNull(), // The player's believable lie
+  submittedAt: timestamp("submitted_at").notNull().defaultNow(),
+}, (table) => [
+  unique().on(table.roundId, table.playerId),
+  index("idx_psyop_submissions_round").on(table.roundId),
+]);
+
+export const psyopVotes = pgTable("psyop_votes", {
+  id: serial("id").primaryKey(),
+  roundId: integer("round_id").notNull(),
+  voterId: text("voter_id").notNull(), // The player who voted
+  voterName: text("voter_name").notNull(),
+  votedForId: integer("voted_for_id"), // submission_id if voted for a lie, null if voted for truth
+  votedForTruth: boolean("voted_for_truth").notNull().default(false), // True if they voted for the real answer
+  submittedAt: timestamp("submitted_at").notNull().defaultNow(),
+}, (table) => [
+  unique().on(table.roundId, table.voterId),
+  index("idx_psyop_votes_round").on(table.roundId),
+]);
+
 // Board visibility - controls who can see/use the board
 export const BOARD_VISIBILITIES = ["private", "tenant", "public"] as const;
 export type BoardVisibility = typeof BOARD_VISIBILITIES[number];
@@ -558,6 +619,11 @@ export const insertDoubleDipWeeklyStakeSchema = createInsertSchema(doubleDipWeek
 export const insertSequenceQuestionSchema = createInsertSchema(sequenceQuestions).omit({ id: true, createdAt: true });
 export const insertSequenceSessionSchema = createInsertSchema(sequenceSessions).omit({ id: true, createdAt: true });
 export const insertSequenceSubmissionSchema = createInsertSchema(sequenceSubmissions).omit({ id: true, submittedAt: true });
+export const insertPsyopQuestionSchema = createInsertSchema(psyopQuestions).omit({ id: true, createdAt: true });
+export const insertPsyopSessionSchema = createInsertSchema(psyopSessions).omit({ id: true, createdAt: true });
+export const insertPsyopRoundSchema = createInsertSchema(psyopRounds).omit({ id: true, createdAt: true });
+export const insertPsyopSubmissionSchema = createInsertSchema(psyopSubmissions).omit({ id: true, submittedAt: true });
+export const insertPsyopVoteSchema = createInsertSchema(psyopVotes).omit({ id: true, submittedAt: true });
 
 export type Board = typeof boards.$inferSelect;
 export type Category = typeof categories.$inferSelect;
@@ -608,6 +674,16 @@ export type SequenceSubmission = typeof sequenceSubmissions.$inferSelect;
 export type InsertSequenceQuestion = z.infer<typeof insertSequenceQuestionSchema>;
 export type InsertSequenceSession = z.infer<typeof insertSequenceSessionSchema>;
 export type InsertSequenceSubmission = z.infer<typeof insertSequenceSubmissionSchema>;
+export type PsyopQuestion = typeof psyopQuestions.$inferSelect;
+export type PsyopSession = typeof psyopSessions.$inferSelect;
+export type PsyopRound = typeof psyopRounds.$inferSelect;
+export type PsyopSubmission = typeof psyopSubmissions.$inferSelect;
+export type PsyopVote = typeof psyopVotes.$inferSelect;
+export type InsertPsyopQuestion = z.infer<typeof insertPsyopQuestionSchema>;
+export type InsertPsyopSession = z.infer<typeof insertPsyopSessionSchema>;
+export type InsertPsyopRound = z.infer<typeof insertPsyopRoundSchema>;
+export type InsertPsyopSubmission = z.infer<typeof insertPsyopSubmissionSchema>;
+export type InsertPsyopVote = z.infer<typeof insertPsyopVoteSchema>;
 
 export type BoardCategoryWithCategory = BoardCategory & { category: Category };
 export type BoardCategoryWithCount = BoardCategoryWithCategory & { questionCount: number; position: number };
