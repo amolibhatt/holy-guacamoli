@@ -52,7 +52,7 @@ export default function ForgotPassword() {
       >
         <div className="text-center mb-6">
           <motion.div 
-            className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center border border-white/20"
+            className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-slate-800 via-slate-900 to-black flex items-center justify-center border border-white/20"
             animate={{ rotate: [0, -3, 3, -3, 0] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           >

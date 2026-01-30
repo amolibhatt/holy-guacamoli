@@ -2208,16 +2208,16 @@ export default function Blitzgrid() {
                             key={player.id}
                             className={`flex items-center gap-3 px-4 py-2 rounded-lg w-full max-w-[260px] ${
                               idx === 0 ? 'bg-amber-400/30 border border-amber-400/50' :
-                              idx === 1 ? 'bg-gray-300/30 border border-gray-300/50' :
+                              idx === 1 ? 'bg-slate-300/30 border border-slate-300/50' :
                               idx === 2 ? 'bg-amber-600/30 border border-amber-600/50' :
                               'bg-white/10'
                             }`}
                           >
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-gray-300' : idx === 2 ? 'bg-amber-700' : 'bg-white/20'
+                              idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-slate-300' : idx === 2 ? 'bg-amber-700' : 'bg-white/20'
                             }`}>
                               {idx < 3 ? (
-                                <Trophy className={`w-4 h-4 ${idx === 0 ? 'text-amber-800' : idx === 1 ? 'text-gray-600' : 'text-amber-200'}`} />
+                                <Trophy className={`w-4 h-4 ${idx === 0 ? 'text-amber-800' : idx === 1 ? 'text-slate-600' : 'text-amber-200'}`} />
                               ) : (
                                 <span className="text-white text-sm font-bold">{idx + 1}</span>
                               )}
