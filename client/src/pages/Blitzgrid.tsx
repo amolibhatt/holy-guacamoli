@@ -2673,15 +2673,15 @@ export default function Blitzgrid() {
           setActiveQuestion(null);
           setShowAnswer(false);
         }}
-        className={`group text-left p-6 rounded-2xl bg-card border ${colorConfig.border} hover:shadow-lg transition-all duration-300 relative overflow-hidden`}
+        className={`group text-left p-6 rounded-2xl bg-card border ${colorConfig.lightBorder} hover:shadow-lg transition-all duration-300 relative overflow-hidden`}
         data-testid={`card-grid-${grid.id}`}
       >
         {/* Gradient background */}
-        <div className={`absolute inset-0 rounded-2xl ${colorConfig.bgLight} opacity-30 group-hover:opacity-50 transition-opacity`} />
+        <div className={`absolute inset-0 rounded-2xl ${colorConfig.light} opacity-50 group-hover:opacity-70 transition-opacity`} />
         
         <div className="flex items-center gap-4 flex-wrap relative z-10">
           <motion.div 
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${colorConfig.bg} shadow-lg ${colorConfig.shadow}`}
+            className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${colorConfig.bg} shadow-lg`}
             whileHover={{ rotate: 5, scale: 1.05 }}
           >
             <Grid3X3 className="w-7 h-7 text-white" />
@@ -2734,7 +2734,6 @@ export default function Blitzgrid() {
               <h1 className="text-4xl md:text-5xl font-black text-foreground mb-3 tracking-tight">
                 Pick Your <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-amber-500 bg-clip-text text-transparent">Grid</span>
               </h1>
-              <p className="text-lg text-muted-foreground">{activeGrids.length} grids ready to play</p>
             </motion.div>
 
             {/* My Grids Section */}
