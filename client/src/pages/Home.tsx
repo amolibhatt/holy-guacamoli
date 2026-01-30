@@ -192,39 +192,54 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
           >
-            {/* Greeting badge */}
+            {/* Floating badge */}
             <motion.div
-              className="inline-flex flex-wrap items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-100 via-teal-100 to-cyan-100 dark:from-emerald-500/15 dark:via-teal-500/10 dark:to-cyan-500/15 border border-emerald-200/50 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-sm font-medium mb-6"
+              className="inline-flex flex-wrap items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-100 via-teal-100 to-cyan-100 dark:from-emerald-500/15 dark:via-teal-500/10 dark:to-cyan-500/15 border border-emerald-200/50 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-sm font-semibold mb-6 backdrop-blur-sm"
               initial={{ opacity: 0, scale: 0.9, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.4 }}
             >
-              <Star className="w-4 h-4 fill-current" />
-              Game Night Ready
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              >
+                <Sparkles className="w-4 h-4" />
+              </motion.div>
+              Game Night Mode: Activated
             </motion.div>
             
             {/* Main heading */}
             <motion.h1 
-              className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 tracking-tight leading-[1.15]"
+              className="text-5xl md:text-6xl lg:text-7xl font-black mb-5 tracking-tight leading-[1.1]"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.5 }}
             >
-              <span className="text-foreground">Hey </span>
-              <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
-                {user?.firstName || 'there'}
+              <span className="text-foreground">What's up, </span>
+              <span className="relative inline-block">
+                <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
+                  {user?.firstName || 'Legend'}
+                </span>
+                <motion.span 
+                  className="absolute -top-1 -right-5 text-xl"
+                  animate={{ rotate: [0, 20, 0], scale: [1, 1.2, 1] }}
+                  transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 4 }}
+                >
+                  <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+                </motion.span>
               </span>
-              <span className="text-foreground">!</span>
             </motion.h1>
             
             {/* Subtitle */}
             <motion.p 
-              className="text-lg md:text-xl text-muted-foreground max-w-md mx-auto"
+              className="text-xl md:text-2xl text-muted-foreground font-medium max-w-lg mx-auto"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25, duration: 0.5 }}
             >
-              Pick a game and let the fun begin
+              Pick your game. Rally your crew.
+              <br />
+              <span className="text-foreground font-semibold">Let the chaos begin.</span>
             </motion.p>
           </motion.section>
 
@@ -393,10 +408,26 @@ export default function Home() {
       </main>
       
       {/* Footer */}
-      <footer className="relative z-10 border-t border-border/30 bg-card/30 dark:bg-card/20 backdrop-blur-sm px-6 py-4 text-center">
-        <p className="text-sm text-muted-foreground/60 flex flex-wrap items-center justify-center gap-1.5">
-          Made with care for Amoli
-        </p>
+      <footer className="relative z-10 border-t border-border/20 bg-gradient-to-r from-emerald-50/50 via-teal-50/30 to-cyan-50/50 dark:from-emerald-500/5 dark:via-teal-500/3 dark:to-cyan-500/5 backdrop-blur-sm px-6 py-5">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <AvocadoIcon className="w-8 h-8" />
+            <div className="text-left">
+              <p className="text-sm font-semibold text-foreground">Holy GuacAmoli!</p>
+              <p className="text-xs text-muted-foreground">Party games, perfected</p>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground flex flex-wrap items-center gap-1.5">
+            Crafted with 
+            <motion.span
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 2 }}
+            >
+              <Star className="w-4 h-4 text-amber-400 fill-amber-400 inline" />
+            </motion.span>
+            for Amoli
+          </p>
+        </div>
       </footer>
 
       {/* Help Guide Dialog */}
