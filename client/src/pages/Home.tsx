@@ -50,39 +50,39 @@ const GAME_CONFIG: Record<string, {
 }> = {
   blitzgrid: {
     icon: Grid3X3,
-    gradient: "from-rose-300 via-pink-300 to-fuchsia-300",
-    bgGradient: "from-rose-100/50 via-pink-100/40 to-fuchsia-100/30 dark:from-rose-500/10 dark:via-pink-500/8 dark:to-fuchsia-500/5",
-    shadowColor: "shadow-pink-300/40 dark:shadow-pink-500/20",
+    gradient: "from-fuchsia-400 to-fuchsia-500",
+    bgGradient: "from-fuchsia-100/50 to-fuchsia-50/30",
+    shadowColor: "shadow-fuchsia-300/40",
     route: "/host/blitzgrid",
-    accentColor: "#F9A8D4",
-    iconBg: "bg-gradient-to-br from-rose-300 via-pink-300 to-fuchsia-300",
+    accentColor: "#D946EF",
+    iconBg: "bg-gradient-to-br from-fuchsia-400 to-fuchsia-500",
     tagline: "The Grid Awaits",
     description: "5 categories. 25 questions. One champion. Race against the clock to decode clues and dominate the board.",
-    borderColor: "border-pink-200/60 dark:border-pink-500/20",
+    borderColor: "border-fuchsia-200/60",
   },
   sequence_squeeze: {
     icon: ListOrdered,
-    gradient: "from-emerald-300 via-teal-300 to-cyan-300",
-    bgGradient: "from-emerald-100/50 via-teal-100/40 to-cyan-100/30 dark:from-emerald-500/10 dark:via-teal-500/8 dark:to-cyan-500/5",
-    shadowColor: "shadow-teal-300/40 dark:shadow-teal-500/20",
+    gradient: "from-teal-400 to-teal-500",
+    bgGradient: "from-teal-100/50 to-teal-50/30",
+    shadowColor: "shadow-teal-300/40",
     route: "/host/genetic-sort",
-    accentColor: "#5EEAD4",
-    iconBg: "bg-gradient-to-br from-emerald-300 via-teal-300 to-cyan-300",
+    accentColor: "#14B8A6",
+    iconBg: "bg-gradient-to-br from-teal-400 to-teal-500",
     tagline: "Order From Chaos",
     description: "Four items. One correct sequence. The fastest brain wins. Can you crack the pattern before anyone else?",
-    borderColor: "border-teal-200/60 dark:border-teal-500/20",
+    borderColor: "border-teal-200/60",
   },
   psyop: {
     icon: Brain,
-    gradient: "from-violet-300 via-purple-300 to-indigo-300",
-    bgGradient: "from-violet-100/50 via-purple-100/40 to-indigo-100/30 dark:from-violet-500/10 dark:via-purple-500/8 dark:to-indigo-500/5",
-    shadowColor: "shadow-purple-300/40 dark:shadow-purple-500/20",
+    gradient: "from-violet-400 to-violet-500",
+    bgGradient: "from-violet-100/50 to-violet-50/30",
+    shadowColor: "shadow-violet-300/40",
     route: "/host/psyop",
-    accentColor: "#C4B5FD",
-    iconBg: "bg-gradient-to-br from-violet-300 via-purple-300 to-indigo-300",
+    accentColor: "#8B5CF6",
+    iconBg: "bg-gradient-to-br from-violet-400 to-violet-500",
     tagline: "Truth or Bluff",
     description: "Craft the perfect lie. Fool your friends. Sniff out the truth. The best deceiver takes it all.",
-    borderColor: "border-purple-200/60 dark:border-purple-500/20",
+    borderColor: "border-violet-200/60",
   },
 };
 
@@ -184,7 +184,7 @@ export default function Home() {
             >
               <span className="text-foreground">What's up, </span>
               <span className="relative inline-block">
-                <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-fuchsia-500 to-violet-500 bg-clip-text text-transparent">
                   {user?.firstName || 'Legend'}
                 </span>
                 <motion.span 
@@ -378,7 +378,7 @@ export default function Home() {
       <footer className="relative z-10 border-t border-border/10 px-6 py-6">
         <div className="max-w-5xl mx-auto flex items-center justify-center">
           <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-1">
-            made with <span className="text-emerald-500 dark:text-emerald-400">♥</span> by <span className="font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">Amoli</span>
+            made with <span className="text-fuchsia-500">♥</span> by <span className="font-semibold bg-gradient-to-r from-fuchsia-600 to-violet-600 bg-clip-text text-transparent">Amoli</span>
           </p>
         </div>
       </footer>
@@ -388,7 +388,7 @@ export default function Home() {
         <DialogContent className="max-w-md bg-card/95 backdrop-blur-xl border-border/50">
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-3 text-xl font-bold">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-300 to-teal-300 flex items-center justify-center shadow-lg shadow-teal-300/30 dark:shadow-teal-500/20">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-400 to-violet-400 flex items-center justify-center shadow-lg shadow-fuchsia-300/30">
                 <Crown className="w-5 h-5 text-white" />
               </div>
               How to Host
@@ -406,12 +406,12 @@ export default function Home() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-200/60 to-teal-200/60 dark:from-emerald-500/20 dark:to-teal-500/20 border border-emerald-300/30 dark:border-emerald-500/20 flex items-center justify-center shrink-0">
-                  <step.icon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-fuchsia-100 to-violet-100 border border-fuchsia-200/50 flex items-center justify-center shrink-0">
+                  <step.icon className="w-5 h-5 text-fuchsia-600" />
                 </div>
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
+                    <span className="text-[10px] font-bold text-fuchsia-600 uppercase tracking-widest">
                       Step {index + 1}
                     </span>
                   </div>
@@ -426,7 +426,7 @@ export default function Home() {
               Got It
             </Button>
             <Button 
-              className="flex-1 gap-2 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-teal-300/30 dark:shadow-teal-500/20" 
+              className="flex-1 gap-2 bg-fuchsia-500 text-white shadow-lg shadow-fuchsia-300/30" 
               onClick={handleCloseGuide} 
               data-testid="button-start-hosting"
             >

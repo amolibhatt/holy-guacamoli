@@ -379,7 +379,7 @@ export default function SequenceSqueeze() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="fixed inset-0 bg-gradient-to-br from-teal-500/5 via-transparent to-cyan-500/5 pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-br from-teal-500/5 via-transparent to-teal-500/5 pointer-events-none" />
 
       <AppHeader
         title="Genetic Sort"
@@ -422,7 +422,7 @@ export default function SequenceSqueeze() {
             animate={{ opacity: 1, scale: 1 }}
             className="text-center py-16"
           >
-            <div className="w-28 h-28 mx-auto mb-8 rounded-full bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 flex items-center justify-center shadow-2xl shadow-teal-500/40">
+            <div className="w-28 h-28 mx-auto mb-8 rounded-full bg-teal-500 flex items-center justify-center shadow-2xl shadow-teal-500/40">
               <ListOrdered className="w-14 h-14 text-white" />
             </div>
             <h2 className="text-4xl font-black mb-3">Genetic Sort</h2>
@@ -444,7 +444,7 @@ export default function SequenceSqueeze() {
                   <div className="flex flex-col gap-3 items-center">
                     <Button 
                       size="lg"
-                      className="h-14 px-8 text-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-teal-500/30"
+                      className="h-14 px-8 text-lg bg-teal-500 text-white shadow-lg shadow-teal-500/30"
                       onClick={() => connectWebSocket(true)}
                       data-testid="button-continue-previous"
                     >
@@ -466,7 +466,7 @@ export default function SequenceSqueeze() {
                   <div>
                     <Button 
                       size="lg"
-                      className="h-14 px-8 text-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-teal-500/30"
+                      className="h-14 px-8 text-lg bg-teal-500 text-white shadow-lg shadow-teal-500/30"
                       onClick={() => connectWebSocket(false)}
                       data-testid="button-start-game"
                     >
@@ -486,7 +486,7 @@ export default function SequenceSqueeze() {
             animate={{ opacity: 1, scale: 1 }}
             className="text-center py-12"
           >
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 flex items-center justify-center shadow-xl shadow-teal-500/30">
+            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-teal-500 flex items-center justify-center shadow-xl shadow-teal-500/30">
               <Users className="w-12 h-12 text-white" />
             </div>
             <h2 className="text-3xl font-bold mb-2">Waiting for Players</h2>
@@ -504,7 +504,7 @@ export default function SequenceSqueeze() {
                 <QrCode className="w-4 h-4" />
                 Show QR Code
               </Button>
-              <Badge className="bg-emerald-500 gap-1 text-sm px-3 py-1.5">
+              <Badge className="bg-teal-500 gap-1 text-sm px-3 py-1.5">
                 <Users className="w-3 h-3" />
                 {players.length} player{players.length !== 1 ? 's' : ''} connected
               </Badge>
@@ -519,7 +519,7 @@ export default function SequenceSqueeze() {
                       <Badge key={p.id} variant="secondary" className="gap-1">
                         {p.name}
                         {playerScore !== undefined && playerScore > 0 && (
-                          <span className="text-emerald-500 font-bold ml-1">({playerScore})</span>
+                          <span className="text-teal-500 font-bold ml-1">({playerScore})</span>
                         )}
                       </Badge>
                     );
@@ -535,7 +535,7 @@ export default function SequenceSqueeze() {
 
             <Button 
               size="lg"
-              className="h-14 px-8 text-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-teal-500/30"
+              className="h-14 px-8 text-lg bg-teal-500 text-white shadow-lg shadow-teal-500/30"
               onClick={() => {
                 if (questions.length > 0) {
                   startQuestion(questions[0], 0);
@@ -563,7 +563,7 @@ export default function SequenceSqueeze() {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.2 }}
-                className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-teal-600 via-cyan-600 to-emerald-600"
+                className="fixed inset-0 z-50 flex items-center justify-center bg-teal-600"
               >
                 <div className="text-center text-white">
                   <motion.div
@@ -750,7 +750,7 @@ export default function SequenceSqueeze() {
                       transition={{ delay: idx * 0.2 }}
                       className="flex flex-col items-center"
                     >
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center text-xl font-bold shadow-lg">
+                      <div className="w-14 h-14 rounded-xl bg-teal-500 text-white flex items-center justify-center text-xl font-bold shadow-lg">
                         {letter}
                       </div>
                       <p className="mt-2 text-xs font-medium max-w-20 truncate">{option}</p>
