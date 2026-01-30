@@ -13,6 +13,7 @@ const GAME_CONFIG: Record<string, {
   route: string;
   accentColor: string;
   description: string;
+  tagline?: string;
   players: string;
 }> = {
   blitzgrid: {
@@ -20,6 +21,7 @@ const GAME_CONFIG: Record<string, {
     route: "/host/blitzgrid",
     accentColor: "#e879f9",
     description: "5x5 trivia grid. Race to buzz in and answer first.",
+    tagline: "Think fast. Buzz faster. Dominate the grid.",
     players: "2-8 players",
   },
   sequence_squeeze: {
@@ -113,10 +115,6 @@ export default function Home() {
       <main className="flex-1 px-6 py-12 flex items-center justify-center">
         <div className="w-full max-w-5xl mx-auto">
           
-          {/* Tagline */}
-          <p className="text-center text-white/40 text-sm tracking-widest uppercase mb-8">
-            Think fast. Buzz faster. Dominate the grid.
-          </p>
           
           {/* Game Cards - 3 column grid on large screens */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -186,12 +184,23 @@ export default function Home() {
                     
                     {/* Title */}
                     <h3 
-                      className="text-xl mb-3 text-white"
+                      className="text-xl mb-2 text-white"
                       style={{ fontFamily: 'var(--font-display)' }}
                       data-testid={`text-game-title-${game.slug}`}
                     >
                       {game.displayName}
                     </h3>
+                    
+                    {/* Tagline (if exists) */}
+                    {config.tagline && (
+                      <p 
+                        className="text-xs uppercase tracking-widest mb-3"
+                        style={{ color: config.accentColor }}
+                        data-testid={`text-game-tagline-${game.slug}`}
+                      >
+                        {config.tagline}
+                      </p>
+                    )}
                     
                     {/* Description */}
                     <p 
