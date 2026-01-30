@@ -1371,6 +1371,17 @@ export default function Blitzgrid() {
                     <RotateCcw className="w-4 h-4 mr-2" />
                     Reset Questions
                   </DropdownMenuItem>
+                  {shuffleMode && (
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        handleShufflePlay();
+                      }}
+                      data-testid="button-reshuffle"
+                    >
+                      <Shuffle className="w-4 h-4 mr-2" />
+                      Reshuffle Categories
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem 
                     onClick={() => setShowEndSessionDialog(true)}
                     className="text-red-500 focus:text-red-500"
