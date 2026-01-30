@@ -80,17 +80,17 @@ const GAME_CONFIG: Record<string, {
 
 function GameCardSkeleton() {
   return (
-    <div className="relative flex flex-col p-8 bg-card border-2 border-border rounded-2xl max-w-md w-full overflow-hidden">
-      <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-muted/20 to-transparent rounded-bl-full" />
-      <div className="flex items-start justify-between gap-3 mb-6">
-        <Skeleton className="w-16 h-16 rounded-2xl" />
-        <Skeleton className="w-6 h-6 rounded" />
+    <div className="relative flex flex-col p-5 bg-card border-2 border-border rounded-2xl w-full overflow-hidden">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-muted/20 to-transparent rounded-bl-full" />
+      <div className="flex items-start justify-between gap-2 mb-4">
+        <Skeleton className="w-12 h-12 rounded-xl" />
+        <Skeleton className="w-5 h-5 rounded" />
       </div>
-      <Skeleton className="h-8 w-3/4 mb-3" />
-      <Skeleton className="h-4 w-full mb-2" />
-      <Skeleton className="h-4 w-2/3 mb-6" />
-      <div className="pt-4 border-t border-border/50">
-        <Skeleton className="h-4 w-24" />
+      <Skeleton className="h-6 w-3/4 mb-2" />
+      <Skeleton className="h-4 w-full mb-1" />
+      <Skeleton className="h-4 w-2/3 mb-4" />
+      <div className="pt-3 border-t border-border/50">
+        <Skeleton className="h-4 w-20" />
       </div>
     </div>
   );
@@ -199,7 +199,7 @@ export default function Home() {
           </motion.section>
 
           {isLoadingGames ? (
-            <div className="flex flex-wrap justify-center gap-8 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               {[1, 2, 3].map((i) => (
                 <motion.div
                   key={i}
@@ -242,7 +242,7 @@ export default function Home() {
               </Button>
             </motion.div>
           ) : (
-            <div className="flex flex-wrap justify-center gap-8 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               {gameTypes.filter(g => GAME_CONFIG[g.slug]).map((game, index) => {
                 const config = GAME_CONFIG[game.slug];
                 const Icon = config.icon;
@@ -275,7 +275,7 @@ export default function Home() {
                       perspective: "1000px",
                       transformStyle: "preserve-3d"
                     }}
-                    className={`relative flex flex-col p-8 bg-card border-2 rounded-3xl text-left transition-all duration-300 group overflow-visible max-w-sm w-full ${
+                    className={`relative flex flex-col p-5 bg-card border-2 rounded-2xl text-left transition-all duration-300 group overflow-visible w-full ${
                       isComingSoon 
                         ? 'opacity-50 cursor-not-allowed border-border grayscale' 
                         : 'border-border hover-elevate active-elevate-2'
@@ -291,63 +291,51 @@ export default function Home() {
                       />
                     )}
                     
-                    <div className={`absolute top-0 right-0 w-56 h-56 bg-gradient-to-bl ${config.gradient} ${isComingSoon ? 'opacity-5' : 'opacity-10'} rounded-bl-full transition-opacity duration-300 ${!isComingSoon && isHovered ? 'opacity-20' : ''}`} />
+                    <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${config.gradient} ${isComingSoon ? 'opacity-5' : 'opacity-10'} rounded-bl-full transition-opacity duration-300 ${!isComingSoon && isHovered ? 'opacity-20' : ''}`} />
                     
                     {isComingSoon && (
                       <motion.div 
-                        className="absolute top-4 right-4 px-3 py-1.5 bg-muted/80 backdrop-blur-sm rounded-full text-xs font-semibold text-muted-foreground flex items-center gap-1.5 border border-border/50"
+                        className="absolute top-3 right-3 px-2 py-1 bg-muted/80 backdrop-blur-sm rounded-full text-xs font-medium text-muted-foreground flex items-center gap-1 border border-border/50"
                         initial={{ opacity: 0, x: 10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.9 + index * 0.15 }}
                       >
                         <Clock className="w-3 h-3" />
-                        Coming Soon
+                        Soon
                       </motion.div>
                     )}
                     
-                    <div className="flex items-start justify-between gap-3 mb-6">
+                    <div className="flex items-start justify-between gap-2 mb-4">
                       <motion.div 
-                        className={`w-18 h-18 rounded-2xl bg-gradient-to-br ${config.gradient} ${isComingSoon ? 'opacity-50' : ''} flex items-center justify-center shadow-xl ${config.shadowColor} relative`}
+                        className={`rounded-xl bg-gradient-to-br ${config.gradient} ${isComingSoon ? 'opacity-50' : ''} flex items-center justify-center shadow-lg ${config.shadowColor} relative`}
                         animate={!isComingSoon && isHovered ? { 
                           scale: [1, 1.05, 1],
-                          rotate: [0, 5, -5, 0]
+                          rotate: [0, 3, -3, 0]
                         } : {}}
                         transition={{ duration: 0.6 }}
-                        style={{ width: "72px", height: "72px" }}
+                        style={{ width: "48px", height: "48px" }}
                       >
-                        {isHovered && !isComingSoon && (
-                          <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{ 
-                              duration: 20, 
-                              repeat: Infinity, 
-                              ease: "linear" 
-                            }}
-                            className="absolute inset-0 rounded-2xl border-2 border-white/20"
-                            style={{ borderStyle: "dashed" }}
-                          />
-                        )}
-                        <Icon className="w-9 h-9 text-white drop-shadow-lg" />
+                        <Icon className="w-6 h-6 text-white drop-shadow-lg" />
                       </motion.div>
                       {!isComingSoon && (
                         <motion.div
-                          animate={isHovered ? { x: 4, scale: 1.1 } : { x: 0, scale: 1 }}
+                          animate={isHovered ? { x: 3, scale: 1.1 } : { x: 0, scale: 1 }}
                           transition={{ duration: 0.2 }}
                         >
-                          <ArrowRight className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors" />
+                          <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                         </motion.div>
                       )}
                     </div>
                     
-                    <h3 className={`text-2xl font-bold mb-3 ${isComingSoon ? 'text-foreground/50' : 'text-foreground'}`}>
+                    <h3 className={`text-lg font-bold mb-1 ${isComingSoon ? 'text-foreground/50' : 'text-foreground'}`}>
                       {game.displayName}
                     </h3>
                     
-                    <p className={`mb-6 flex-1 leading-relaxed ${isComingSoon ? 'text-muted-foreground/50' : 'text-muted-foreground'}`}>
+                    <p className={`text-sm mb-4 flex-1 leading-relaxed ${isComingSoon ? 'text-muted-foreground/50' : 'text-muted-foreground'}`}>
                       {game.description}
                     </p>
                     
-                    <div className="pt-4 border-t border-border/50 flex flex-wrap items-center justify-between gap-2">
+                    <div className="pt-3 border-t border-border/50 flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                         <Users className="w-4 h-4" />
                         <span>{config.playerCount}</span>
