@@ -3311,9 +3311,9 @@ export default function Blitzgrid() {
               className="text-center py-4"
             >
               <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-                Let's <span className="bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300 bg-clip-text text-transparent">Get Quizzy</span>
+                Choose Your <span className="bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300 bg-clip-text text-transparent">Battleground</span>
               </h1>
-              <p className="text-muted-foreground mt-2 text-sm">Pick a grid and unleash the chaos</p>
+              <p className="text-muted-foreground mt-2 text-sm">25 squares. One buzzer. Who's got the fastest fingers?</p>
             </motion.div>
 
             {/* Shuffle Play Card - Premium design with animations */}
@@ -3367,8 +3367,8 @@ export default function Blitzgrid() {
                   </h3>
                   <p className="text-sm text-muted-foreground mt-0.5">
                     {playedShuffleCategoryIds.length > 0 
-                      ? `${playedShuffleCategoryIds.length} down, more to go!`
-                      : "Feeling lucky? 5 random categories, infinite chaos"
+                      ? `${playedShuffleCategoryIds.length} grids conquered`
+                      : "Random grid, same buzzer rules. No prep, pure chaos."
                     }
                   </p>
                 </div>
