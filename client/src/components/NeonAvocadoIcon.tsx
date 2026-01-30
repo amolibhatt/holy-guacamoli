@@ -12,9 +12,9 @@ export function NeonAvocadoIcon({
   glitchIntensity = "medium"
 }: NeonAvocadoIconProps) {
   const glitchConfig = {
-    low: { offset: 1, duration: 4 },
-    medium: { offset: 2, duration: 2.5 },
-    high: { offset: 3, duration: 1.5 }
+    low: { offset: 0, duration: 8 },
+    medium: { offset: 0, duration: 6 },
+    high: { offset: 0.5, duration: 4 }
   };
   
   const config = glitchConfig[glitchIntensity];
@@ -201,17 +201,6 @@ export function NeonAvocadoIcon({
         />
       </g>
       
-      <motion.g
-        animate={animate ? {
-          opacity: [0, 0.3, 0],
-          x: [0, config.offset * 2, 0]
-        } : {}}
-        transition={{ duration: 0.15, repeat: Infinity, repeatDelay: 3 }}
-      >
-        <rect x="0" y="25" width="64" height="2" fill="#ec4899" opacity="0.5" />
-        <rect x="0" y="45" width="64" height="1" fill="#14b8a6" opacity="0.4" />
-        <rect x="0" y="60" width="64" height="1.5" fill="#a855f7" opacity="0.3" />
-      </motion.g>
     </motion.svg>
   );
 }
