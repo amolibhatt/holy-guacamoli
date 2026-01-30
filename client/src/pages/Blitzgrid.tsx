@@ -2365,7 +2365,7 @@ export default function Blitzgrid() {
           
           {/* Question Modal */}
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
-            <DialogContent className="max-w-2xl max-h-[90vh] bg-card/98 backdrop-blur-xl border-2 border-slate-200/60 shadow-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] bg-white border-2 border-slate-200/60 shadow-2xl">
               {/* Decorative corner accents */}
               <div className="absolute -top-6 -left-6 w-20 h-20 rounded-full bg-gradient-to-br from-slate-200/30 to-slate-100/10 blur-xl pointer-events-none" />
               <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-gradient-to-br from-slate-200/30 to-slate-100/10 blur-xl pointer-events-none" />
