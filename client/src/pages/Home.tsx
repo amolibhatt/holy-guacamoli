@@ -192,35 +192,23 @@ export default function Home() {
           }}
         />
         
-        {/* Floating particles */}
-        {[...Array(20)].map((_, i) => (
+        {/* Subtle floating particles - white/gray only */}
+        {[...Array(12)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute rounded-full"
+            className="absolute rounded-full bg-white/20"
             style={{
-              width: Math.random() * 4 + 2,
-              height: Math.random() * 4 + 2,
+              width: Math.random() * 2 + 1,
+              height: Math.random() * 2 + 1,
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
-              background: i % 3 === 0 
-                ? 'rgba(236, 72, 153, 0.6)' 
-                : i % 3 === 1 
-                  ? 'rgba(168, 85, 247, 0.6)' 
-                  : 'rgba(57, 255, 20, 0.4)',
-              boxShadow: i % 3 === 0 
-                ? '0 0 10px rgba(236, 72, 153, 0.8)' 
-                : i % 3 === 1 
-                  ? '0 0 10px rgba(168, 85, 247, 0.8)' 
-                  : '0 0 10px rgba(57, 255, 20, 0.6)',
             }}
             animate={{
-              y: [0, -30 - Math.random() * 50, 0],
-              x: [0, (Math.random() - 0.5) * 40, 0],
-              opacity: [0.2, 0.8, 0.2],
-              scale: [1, 1.5, 1],
+              y: [0, -20 - Math.random() * 30, 0],
+              opacity: [0.1, 0.3, 0.1],
             }}
             transition={{
-              duration: 8 + Math.random() * 12,
+              duration: 10 + Math.random() * 10,
               repeat: Infinity,
               delay: Math.random() * 5,
               ease: "easeInOut",
@@ -358,27 +346,18 @@ export default function Home() {
                     }}
                     className="relative group overflow-visible"
                   >
-                    {/* BLOOM GLOW - lights up background with pulse */}
+                    {/* Subtle glow on hover only */}
                     <motion.div
                       className="absolute inset-0 rounded-2xl pointer-events-none"
                       style={{
                         background: `radial-gradient(ellipse at center, ${config.glowColor} 0%, transparent 70%)`,
-                        filter: 'blur(40px)',
-                        transform: 'scale(1.3)',
+                        filter: 'blur(50px)',
+                        transform: 'scale(1.2)',
                       }}
                       animate={{
-                        opacity: isHovered && !isComingSoon 
-                          ? [0.7, 0.9, 0.7] 
-                          : [0.2, 0.35, 0.2],
-                        scale: isHovered && !isComingSoon
-                          ? [1.3, 1.4, 1.3]
-                          : [1.3, 1.35, 1.3],
+                        opacity: isHovered && !isComingSoon ? 0.4 : 0,
                       }}
-                      transition={{ 
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
+                      transition={{ duration: 0.4 }}
                     />
                     
                     <motion.button
