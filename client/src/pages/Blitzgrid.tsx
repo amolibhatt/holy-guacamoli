@@ -2633,7 +2633,7 @@ export default function Blitzgrid() {
               
               {/* All Players for Manual Scoring (after answer revealed) */}
               {showAnswer && players.length > 0 && (
-                <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 mt-4 border border-gray-200 dark:border-transparent">
+                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 mt-4 border border-slate-200 dark:border-transparent">
                   <div className="flex items-center gap-2 mb-3">
                     <Users className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">Manage Points</span>
@@ -2642,7 +2642,7 @@ export default function Blitzgrid() {
                     {players.map(player => (
                       <div 
                         key={player.id}
-                        className="flex items-center justify-between bg-white dark:bg-slate-600/50 rounded-lg px-3 py-2 border border-gray-100 dark:border-transparent"
+                        className="flex items-center justify-between bg-white dark:bg-slate-600/50 rounded-lg px-3 py-2 border border-slate-100 dark:border-transparent"
                       >
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-foreground">{player.name}</span>
