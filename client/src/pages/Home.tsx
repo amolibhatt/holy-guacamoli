@@ -210,9 +210,19 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
           >
-            {/* Hero headline */}
+            {/* Subtitle on top */}
+            <motion.p 
+              className="text-lg md:text-xl text-muted-foreground max-w-md mx-auto mb-3"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.5 }}
+            >
+              Pick your game. Rally your crew.
+            </motion.p>
+            
+            {/* Hero headline on bottom */}
             <motion.h1 
-              className="text-4xl md:text-5xl lg:text-6xl font-black mb-4 uppercase tracking-tight"
+              className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight"
               style={{ 
                 fontFamily: 'var(--font-display)',
                 background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #14b8a6 100%)',
@@ -221,20 +231,10 @@ export default function Home() {
               }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15, duration: 0.5 }}
+              transition={{ delay: 0.25, duration: 0.5 }}
             >
               Let the chaos begin.
             </motion.h1>
-            
-            {/* Subtitle */}
-            <motion.p 
-              className="text-lg md:text-xl text-muted-foreground max-w-md mx-auto"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25, duration: 0.5 }}
-            >
-              Pick your game. Rally your crew.
-            </motion.p>
           </motion.section>
 
           {/* Game Cards Grid */}
