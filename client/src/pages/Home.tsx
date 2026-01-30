@@ -192,11 +192,11 @@ export default function Home() {
           }}
         />
         
-        {/* Floating particles - mix of sizes */}
-        {[...Array(25)].map((_, i) => {
-          const size = i < 5 ? 3 : i < 12 ? 2 : 1;
-          const startX = (i * 17) % 100;
-          const startY = (i * 23) % 100;
+        {/* Floating particles - more visible */}
+        {[...Array(30)].map((_, i) => {
+          const size = i < 8 ? 4 : i < 18 ? 3 : 2;
+          const startX = (i * 13 + 5) % 90 + 5;
+          const startY = (i * 19 + 10) % 80 + 10;
           return (
             <motion.div
               key={i}
@@ -206,18 +206,18 @@ export default function Home() {
                 height: size,
                 left: `${startX}%`,
                 top: `${startY}%`,
-                background: 'rgba(255, 255, 255, 0.4)',
-                boxShadow: size > 2 ? '0 0 4px rgba(255,255,255,0.3)' : 'none',
+                background: 'rgba(255, 255, 255, 0.7)',
+                boxShadow: `0 0 ${size * 2}px rgba(255,255,255,0.5)`,
               }}
               animate={{
-                y: [0, -40 - (i % 3) * 20, 0],
-                x: [0, (i % 2 === 0 ? 15 : -15), 0],
-                opacity: [0.15, 0.4, 0.15],
+                y: [0, -60 - (i % 4) * 25, 0],
+                x: [0, (i % 2 === 0 ? 20 : -20), 0],
+                opacity: [0.3, 0.8, 0.3],
               }}
               transition={{
-                duration: 12 + (i % 5) * 3,
+                duration: 8 + (i % 6) * 2,
                 repeat: Infinity,
-                delay: (i % 8) * 0.8,
+                delay: (i % 10) * 0.5,
                 ease: "easeInOut",
               }}
             />
