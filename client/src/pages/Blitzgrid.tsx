@@ -2746,21 +2746,21 @@ export default function Blitzgrid() {
     const effectiveColor = grid.colorCode?.startsWith('#') ? null : grid.colorCode;
     const colorConfig = getBoardColorConfig(effectiveColor || BOARD_COLORS[(index + colorOffset) % BOARD_COLORS.length]);
     
-    // Get shadow color for hover glow
-    const glowColors: Record<string, string> = {
-      rose: 'hover:shadow-rose-200/50',
-      amber: 'hover:shadow-amber-200/50',
-      emerald: 'hover:shadow-emerald-200/50',
-      sky: 'hover:shadow-sky-200/50',
-      violet: 'hover:shadow-violet-200/50',
-      pink: 'hover:shadow-pink-200/50',
-      orange: 'hover:shadow-orange-200/50',
-      teal: 'hover:shadow-teal-200/50',
-      indigo: 'hover:shadow-indigo-200/50',
-      cyan: 'hover:shadow-cyan-200/50',
+    // Get border and accent colors to match Home page style
+    const borderColors: Record<string, string> = {
+      rose: 'border-rose-200/60',
+      amber: 'border-amber-200/60',
+      emerald: 'border-emerald-200/60',
+      sky: 'border-sky-200/60',
+      violet: 'border-violet-200/60',
+      pink: 'border-pink-200/60',
+      orange: 'border-orange-200/60',
+      teal: 'border-teal-200/60',
+      indigo: 'border-indigo-200/60',
+      cyan: 'border-cyan-200/60',
     };
     const colorName = (effectiveColor || BOARD_COLORS[(index + colorOffset) % BOARD_COLORS.length]) as string;
-    const glowClass = glowColors[colorName] || 'hover:shadow-pink-200/50';
+    const borderClass = borderColors[colorName] || 'border-pink-200/60';
     
     return (
       <motion.button
@@ -2768,7 +2768,7 @@ export default function Blitzgrid() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: index * 0.08 }}
-        whileHover={{ y: -6, scale: 1.02, transition: { duration: 0.2 } }}
+        whileHover={{ y: -6, transition: { duration: 0.2 } }}
         whileTap={{ scale: 0.98 }}
         onClick={() => {
           setSelectedGridId(grid.id);
@@ -2779,22 +2779,25 @@ export default function Blitzgrid() {
           setActiveQuestion(null);
           setShowAnswer(false);
         }}
-        className={`group text-left p-[2px] rounded-2xl bg-gradient-to-br ${colorConfig.header} transition-all duration-300 relative overflow-hidden shadow-lg shadow-black/5 hover:shadow-xl ${glowClass}`}
+        className={`group text-left p-4 rounded-3xl bg-card/80 backdrop-blur-sm border ${borderClass} transition-all duration-300 relative overflow-hidden`}
+        style={{
+          boxShadow: `0 4px 20px -4px ${colorConfig.icon.includes('rose') ? '#fda4af' : colorConfig.icon.includes('amber') ? '#fcd34d' : colorConfig.icon.includes('emerald') ? '#6ee7b7' : colorConfig.icon.includes('sky') ? '#7dd3fc' : colorConfig.icon.includes('violet') ? '#c4b5fd' : '#f9a8d4'}20`
+        }}
         data-testid={`card-grid-${grid.id}`}
       >
-        {/* Glassmorphism inner card */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-[14px] p-4 h-full">
-          <div className="relative flex items-center gap-3 flex-wrap">
-            {/* Gradient icon */}
-            <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${colorConfig.header} flex items-center justify-center shadow-md`}>
-              <Grid3X3 className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-foreground truncate">{grid.name}</h3>
-              <p className="text-xs text-muted-foreground">Ready to play</p>
-            </div>
-            <ChevronRight className={`w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-all ${colorConfig.icon} group-hover:opacity-100 opacity-50`} />
+        {/* Subtle gradient overlay */}
+        <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${colorConfig.light} opacity-30`} />
+        
+        <div className="relative flex items-center gap-3 flex-wrap">
+          {/* Gradient icon */}
+          <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${colorConfig.header} flex items-center justify-center shadow-lg`}>
+            <Grid3X3 className="w-5 h-5 text-white" />
           </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-foreground truncate">{grid.name}</h3>
+            <p className="text-xs text-muted-foreground">Ready to play</p>
+          </div>
+          <ChevronRight className={`w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-all`} />
         </div>
       </motion.button>
     );
@@ -2837,56 +2840,59 @@ export default function Blitzgrid() {
               </h1>
             </motion.div>
 
-            {/* Shuffle Play Card - Premium glassmorphism */}
+            {/* Shuffle Play Card - Matching Home page style */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              whileHover={{ y: -4, scale: 1.01, transition: { duration: 0.2 } }}
-              className="group cursor-pointer p-[2px] rounded-2xl bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-400 shadow-lg shadow-pink-200/30 hover:shadow-xl hover:shadow-pink-300/40 transition-all duration-300"
+              whileHover={{ y: -6, transition: { duration: 0.2 } }}
+              whileTap={{ scale: 0.98 }}
+              className="group cursor-pointer p-5 rounded-3xl bg-card/80 backdrop-blur-sm border border-pink-200/60 transition-all duration-300 relative overflow-hidden"
+              style={{ boxShadow: '0 4px 20px -4px #f9a8d420' }}
               onClick={handleShufflePlay}
               data-testid="card-shuffle-play"
             >
-              <div className="bg-white/95 backdrop-blur-sm rounded-[14px] p-5">
-                <div className="flex items-center gap-4 flex-wrap">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-400 via-pink-400 to-fuchsia-400 flex items-center justify-center shrink-0 shadow-lg shadow-pink-300/30">
-                    {isShuffling ? (
-                      <Loader2 className="w-7 h-7 text-white animate-spin" />
-                    ) : (
-                      <Shuffle className="w-7 h-7 text-white" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-lg text-foreground flex flex-wrap items-center gap-2">
-                      Shuffle Play
-                      <Badge variant="secondary" className="text-xs bg-gradient-to-r from-rose-100 to-pink-100 text-pink-700 border-0">Mix it up</Badge>
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {playedShuffleCategoryIds.length > 0 
-                        ? `${playedShuffleCategoryIds.length} categories played this session`
-                        : "Play with 5 random categories from all your grids"
-                      }
-                    </p>
-                  </div>
-                  {playedShuffleCategoryIds.length > 0 ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="shrink-0 border-pink-300 text-pink-600"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPlayedShuffleCategoryIds([]);
-                        toast({ title: "Shuffle session reset", description: "All categories available again!" });
-                      }}
-                      data-testid="button-reset-shuffle"
-                    >
-                      <RotateCcw className="w-4 h-4 mr-1" />
-                      Reset
-                    </Button>
+              {/* Subtle gradient overlay */}
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-rose-50 via-pink-50 to-fuchsia-50 opacity-40" />
+              
+              <div className="relative flex items-center gap-4 flex-wrap">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-400 via-pink-400 to-fuchsia-400 flex items-center justify-center shrink-0 shadow-lg">
+                  {isShuffling ? (
+                    <Loader2 className="w-7 h-7 text-white animate-spin" />
                   ) : (
-                    <ChevronRight className="w-5 h-5 text-pink-400 group-hover:text-pink-500 group-hover:translate-x-1 transition-all" />
+                    <Shuffle className="w-7 h-7 text-white" />
                   )}
                 </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-lg text-foreground flex flex-wrap items-center gap-2">
+                    Shuffle Play
+                    <Badge variant="secondary" className="text-xs bg-pink-100 text-pink-700 border-0">Mix it up</Badge>
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {playedShuffleCategoryIds.length > 0 
+                      ? `${playedShuffleCategoryIds.length} categories played this session`
+                      : "Play with 5 random categories from all your grids"
+                    }
+                  </p>
+                </div>
+                {playedShuffleCategoryIds.length > 0 ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0 border-pink-300 text-pink-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPlayedShuffleCategoryIds([]);
+                      toast({ title: "Shuffle session reset", description: "All categories available again!" });
+                    }}
+                    data-testid="button-reset-shuffle"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-1" />
+                    Reset
+                  </Button>
+                ) : (
+                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-all" />
+                )}
               </div>
             </motion.div>
 
