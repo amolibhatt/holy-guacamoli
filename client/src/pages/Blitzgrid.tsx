@@ -2421,9 +2421,9 @@ export default function Blitzgrid() {
                 return (
                   <>
                     <DialogHeader className="flex flex-row items-center justify-between gap-2">
-                      {/* Points badge */}
+                      {/* Points badge - uses grid color */}
                       <motion.div 
-                        className="relative overflow-hidden px-4 py-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 shadow-md"
+                        className={`relative overflow-hidden px-4 py-1 rounded-full ${colorConfig.bg} shadow-md`}
                         initial={{ scale: 0.9 }}
                         animate={{ scale: 1 }}
                       >
@@ -2432,7 +2432,7 @@ export default function Blitzgrid() {
                           animate={{ x: ['-100%', '200%'] }}
                           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                         />
-                        <DialogTitle className="text-amber-900 text-lg font-black relative z-10">
+                        <DialogTitle className={`${colorConfig.accentDark} text-lg font-black relative z-10`}>
                           {activeQuestion?.points} pts
                         </DialogTitle>
                       </motion.div>
@@ -2646,7 +2646,7 @@ export default function Blitzgrid() {
                     initial={{ opacity: 0, y: 30, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    className="relative overflow-hidden bg-gradient-to-br from-teal-50 via-emerald-50 to-teal-100 border-2 border-teal-400 rounded-xl p-4 text-center shadow-lg shadow-teal-100"
+                    className={`relative overflow-hidden ${colorConfig.light} border-2 ${colorConfig.dialogBorder} rounded-xl p-4 text-center shadow-lg`}
                   >
                     {/* Shine effect */}
                     <motion.div 
@@ -2659,7 +2659,7 @@ export default function Blitzgrid() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.1 }}
-                      className="text-xs text-teal-600 font-semibold uppercase tracking-wider mb-1"
+                      className={`text-xs ${colorConfig.accent} font-semibold uppercase tracking-wider mb-1`}
                     >
                       Answer
                     </motion.p>
@@ -2667,7 +2667,7 @@ export default function Blitzgrid() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2 }}
-                      className="text-xl font-bold text-teal-800 prose prose-lg max-w-none [&>p]:m-0 relative z-10"
+                      className={`text-xl font-bold ${colorConfig.accentDark} prose prose-lg max-w-none [&>p]:m-0 relative z-10`}
                     >
                       <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
                         {activeQuestion?.correctAnswer || ''}
