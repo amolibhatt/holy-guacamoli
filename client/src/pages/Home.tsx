@@ -411,15 +411,7 @@ export default function Home() {
       <footer className="relative z-10 border-t border-border/10 px-6 py-6">
         <div className="max-w-5xl mx-auto flex items-center justify-center">
           <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-1">
-            Designed & built with
-            <motion.span
-              className="inline-block mx-0.5"
-              animate={{ scale: [1, 1.15, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            >
-              <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-            </motion.span>
-            by <span className="font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent ml-1">Amoli</span>
+            Designed & built by <span className="font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent ml-0.5">Amoli</span>
           </p>
         </div>
       </footer>
