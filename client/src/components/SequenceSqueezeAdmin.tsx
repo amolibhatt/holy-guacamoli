@@ -510,7 +510,7 @@ export function SequenceSqueezeAdmin() {
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-2">No Questions Yet</h3>
             <p className="text-muted-foreground mb-4 max-w-sm mx-auto">
-              Create your first ordering question to start playing Sequence Squeeze!
+              Create your first ordering question to start playing Genetic Sort!
             </p>
             <Button
               onClick={() => setShowForm(true)}

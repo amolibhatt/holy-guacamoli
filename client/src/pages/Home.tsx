@@ -58,7 +58,7 @@ const GAME_CONFIG: Record<string, {
     gradient: "from-emerald-400 via-teal-500 to-cyan-500",
     shadowColor: "shadow-teal-500/30",
     hoverBorder: "hover:border-teal-400/50 hover:shadow-teal-500/20",
-    route: "/host/sequence-squeeze",
+    route: "/host/genetic-sort",
     playerCount: "Multiplayer",
     accentColor: "#14B8A6",
   },

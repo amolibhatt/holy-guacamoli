@@ -288,7 +288,7 @@ export default function SequencePlayer() {
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 flex items-center justify-center shadow-xl">
               <ListOrdered className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">Sequence Squeeze</h1>
+            <h1 className="text-3xl font-bold text-white mb-2">Genetic Sort</h1>
             <p className="text-teal-200">Put it in order, fast!</p>
           </div>
 
