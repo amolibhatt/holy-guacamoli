@@ -2685,13 +2685,7 @@ export default function Blitzgrid() {
           
           <div className="flex-1 min-w-0">
             <h3 className={`font-bold text-lg ${colorConfig.cardTitle} truncate mb-1`}>{grid.name}</h3>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className={`text-sm ${colorConfig.cardSub} flex items-center gap-1`}>
-                <span className="font-medium">{grid.categoryCount || 0}</span> categories
-              </span>
-              <span className={`w-1.5 h-1.5 rounded-full ${colorConfig.bg}`} />
-              <span className={`text-sm ${colorConfig.cardSub}`}>Ready to play</span>
-            </div>
+            <p className={`text-sm ${colorConfig.cardSub}`}>Tap to play</p>
           </div>
           
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${colorConfig.bg} bg-opacity-20 group-hover:bg-opacity-30 transition-all`}>
