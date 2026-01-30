@@ -1399,17 +1399,17 @@ export default function Blitzgrid() {
                         stiffness: 100
                       }}
                       style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
-                      className={`py-3 md:py-4 px-2 rounded-lg text-center ${
+                      className={`py-3 md:py-4 px-2 rounded-xl text-center border ${
                         isRevealed 
-                          ? 'bg-white/95 shadow-lg' 
-                          : 'bg-transparent'
+                          ? `bg-gradient-to-br ${colorConfig.card} shadow-lg` 
+                          : 'bg-transparent border-transparent'
                       }`}
                     >
-                      <span className="font-bold text-xs md:text-sm uppercase tracking-wider block text-gray-800">
+                      <span className={`font-bold text-xs md:text-sm uppercase tracking-wider block ${colorConfig.cardTitle}`}>
                         {category.name}
                       </span>
                       {category.description && (
-                        <span className="text-[10px] md:text-xs block mt-0.5 font-normal text-gray-500">
+                        <span className={`text-[10px] md:text-xs block mt-0.5 font-normal ${colorConfig.cardSub}`}>
                           {category.description}
                         </span>
                       )}
@@ -1445,12 +1445,12 @@ export default function Blitzgrid() {
                         }}
                         style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
                         className={`
-                          w-full h-full rounded-lg font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden
+                          w-full h-full rounded-xl font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden border
                           ${isCellAnswered 
-                            ? 'bg-white/10 backdrop-blur-sm cursor-default border border-white/20' 
+                            ? 'bg-white/10 backdrop-blur-sm cursor-default border-white/20' 
                             : isCategoryRevealed
-                              ? 'bg-gradient-to-br from-white via-white to-gray-50 text-gray-800 cursor-pointer shadow-lg'
-                              : 'bg-transparent cursor-default'
+                              ? `bg-gradient-to-br ${colorConfig.tile} ${colorConfig.tileBorder} ${colorConfig.tileText} cursor-pointer shadow-lg backdrop-blur-sm`
+                              : 'bg-transparent cursor-default border-transparent'
                           }
                         `}
                         onClick={(e) => {
@@ -2662,7 +2662,7 @@ export default function Blitzgrid() {
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
             {activeGrids.map((grid, index) => {
-              const colorConfig = getBoardColorConfig(BOARD_COLORS[index % BOARD_COLORS.length]);
+              const colorConfig = getBoardColorConfig(grid.colorCode);
               return (
                 <motion.button
                   key={grid.id}
