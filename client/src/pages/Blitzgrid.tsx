@@ -34,6 +34,30 @@ interface Player {
   score: number;
   connected: boolean;
 }
+
+interface PlayerGameStats {
+  correctAnswers: number;
+  wrongAnswers: number;
+  totalPoints: number;
+  pointsByCategory: Record<number, number>;
+  currentStreak: number;
+  bestStreak: number;
+  biggestGain: number;
+  lastAnswerTime?: number;
+}
+
+interface GameStats {
+  playerStats: Map<string, PlayerGameStats>;
+  totalQuestions: number;
+  startTime: number;
+  endTime?: number;
+  mvpMoments: Array<{
+    type: 'comeback' | 'streak' | 'sweep' | 'clutch';
+    playerId: string;
+    description: string;
+    value: number;
+  }>;
+}
 import { 
   AlertDialog, AlertDialogAction, AlertDialogCancel, 
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter, 
@@ -160,6 +184,13 @@ export default function Blitzgrid() {
   const [lastScoreChange, setLastScoreChange] = useState<{ playerId: string; playerName: string; points: number } | null>(null);
   const [showGameOver, setShowGameOver] = useState(false);
   const [gameOverPhase, setGameOverPhase] = useState(0);
+  const [gameStats, setGameStats] = useState<GameStats>({
+    playerStats: new Map(),
+    totalQuestions: 0,
+    startTime: Date.now(),
+    mvpMoments: []
+  });
+  const [showDetailedStats, setShowDetailedStats] = useState(false);
   const [gridPickerMode, setGridPickerMode] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -591,7 +622,7 @@ export default function Blitzgrid() {
     }
   }, [clearStoredSession]);
   
-  const updatePlayerScore = useCallback((playerId: string, points: number, trackForUndo = true) => {
+  const updatePlayerScore = useCallback((playerId: string, points: number, trackForUndo = true, categoryId?: number) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
         type: 'host:updateScore',
@@ -601,6 +632,99 @@ export default function Blitzgrid() {
       if (trackForUndo) {
         const player = players.find(p => p.id === playerId);
         setLastScoreChange({ playerId, playerName: player?.name || 'Player', points });
+      }
+      
+      // Track game stats (only for actual gameplay, not undo operations)
+      if (trackForUndo) {
+        setGameStats(prev => {
+          const newPlayerStats = new Map(prev.playerStats);
+          const existing = newPlayerStats.get(playerId) || {
+            correctAnswers: 0,
+            wrongAnswers: 0,
+            totalPoints: 0,
+            pointsByCategory: {},
+            currentStreak: 0,
+            bestStreak: 0,
+            biggestGain: 0
+          };
+          
+          const isCorrect = points > 0;
+          const updated: PlayerGameStats = {
+            ...existing,
+            correctAnswers: existing.correctAnswers + (isCorrect ? 1 : 0),
+            wrongAnswers: existing.wrongAnswers + (!isCorrect && points < 0 ? 1 : 0),
+            totalPoints: existing.totalPoints + points,
+            currentStreak: isCorrect ? existing.currentStreak + 1 : 0,
+            bestStreak: isCorrect ? Math.max(existing.bestStreak, existing.currentStreak + 1) : existing.bestStreak,
+            biggestGain: isCorrect ? Math.max(existing.biggestGain, points) : existing.biggestGain,
+            lastAnswerTime: Date.now()
+          };
+          
+          if (categoryId && isCorrect) {
+            updated.pointsByCategory = {
+              ...existing.pointsByCategory,
+              [categoryId]: (existing.pointsByCategory[categoryId] || 0) + points
+            };
+          }
+          
+          newPlayerStats.set(playerId, updated);
+          
+          // Track MVP moments
+          const newMvpMoments = [...prev.mvpMoments];
+          
+          // Streak achievement (3+ correct in a row)
+          if (updated.currentStreak === 3) {
+            const player = players.find(p => p.id === playerId);
+            newMvpMoments.push({
+              type: 'streak',
+              playerId,
+              description: `${player?.name || 'Player'} is on fire! 3 in a row`,
+              value: 3
+            });
+          } else if (updated.currentStreak === 5) {
+            const player = players.find(p => p.id === playerId);
+            newMvpMoments.push({
+              type: 'streak',
+              playerId,
+              description: `${player?.name || 'Player'} is unstoppable! 5 in a row`,
+              value: 5
+            });
+          }
+          
+          // High-value answer achievement (50 points)
+          if (isCorrect && points >= 50) {
+            const player = players.find(p => p.id === playerId);
+            newMvpMoments.push({
+              type: 'clutch',
+              playerId,
+              description: `${player?.name || 'Player'} nailed the 50-pointer!`,
+              value: points
+            });
+          }
+          
+          // Perfect category sweep (got all 5 questions in a category)
+          if (categoryId && isCorrect) {
+            const catPoints = (existing.pointsByCategory[categoryId] || 0) + points;
+            // Max points per category = 10+20+30+40+50 = 150
+            if (catPoints === 150) {
+              const player = players.find(p => p.id === playerId);
+              const cat = playCategories.find(c => c.id === categoryId);
+              newMvpMoments.push({
+                type: 'sweep',
+                playerId,
+                description: `${player?.name || 'Player'} swept ${cat?.name || 'a category'}!`,
+                value: 150
+              });
+            }
+          }
+          
+          return {
+            ...prev,
+            playerStats: newPlayerStats,
+            totalQuestions: prev.totalQuestions + (isCorrect || points < 0 ? 1 : 0),
+            mvpMoments: newMvpMoments
+          };
+        });
       }
       
       const animTimestamp = Date.now();
@@ -743,6 +867,13 @@ export default function Blitzgrid() {
         setCategoryRevealMode(true);
         setRevealedCategoryCount(0);
         setRevealedCells(new Set());
+        // Reset game stats for new game
+        setGameStats({
+          playerStats: new Map(),
+          totalQuestions: 0,
+          startTime: Date.now(),
+          mvpMoments: []
+        });
         toast({
           title: "Shuffle Play!",
           description: "5 random categories mixed from your grids",
@@ -847,6 +978,14 @@ export default function Blitzgrid() {
     gameOverTimers.current = [];
     setShowGameOver(false);
     setGameOverPhase(0);
+    setShowDetailedStats(false);
+    // Reset game stats
+    setGameStats({
+      playerStats: new Map(),
+      totalQuestions: 0,
+      startTime: Date.now(),
+      mvpMoments: []
+    });
     endSession();
   }, [endSession]);
   
@@ -857,6 +996,7 @@ export default function Blitzgrid() {
     gameOverTimers.current = [];
     setShowGameOver(false);
     setGameOverPhase(0);
+    setShowDetailedStats(false);
     
     // Reset grid-specific state but keep room/players/scores
     setActiveQuestion(null);
@@ -869,6 +1009,14 @@ export default function Blitzgrid() {
     setPlayMode(false);
     setShuffleMode(false);
     setShuffledCategories(null);
+    
+    // Reset game stats for next grid (keep cumulative scores on players)
+    setGameStats({
+      playerStats: new Map(),
+      totalQuestions: 0,
+      startTime: Date.now(),
+      mvpMoments: []
+    });
     
     // Enter grid picker mode - room stays open
     setGridPickerMode(true);
@@ -1244,13 +1392,170 @@ export default function Blitzgrid() {
                       className="flex flex-wrap justify-center gap-2 mb-6"
                     >
                       {restOfPlayers.map((p, i) => (
-                        <div key={p.id} className="bg-card/80 backdrop-blur-sm px-3 py-2 rounded-lg border border-pink-200/60 flex items-center gap-2">
+                        <div key={p.id} className="bg-card/80 backdrop-blur-sm px-3 py-2 rounded-lg border border-slate-200/60 flex items-center gap-2">
                           <span className="text-muted-foreground font-medium">#{i + 4}</span>
                           <span className="text-lg">{PLAYER_AVATARS.find(a => a.id === p.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
                           <span className="text-foreground font-medium">{p.name}</span>
                           <span className="text-muted-foreground">{p.score} pts</span>
                         </div>
                       ))}
+                    </motion.div>
+                  )}
+                  
+                  {/* Detailed Stats Panel */}
+                  {gameOverPhase >= winnerPhase && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: showDetailedStats ? 'auto' : 0 }}
+                      className="overflow-hidden mb-6"
+                    >
+                      <AnimatePresence>
+                        {showDetailedStats && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="bg-card/90 backdrop-blur-sm rounded-2xl p-4 md:p-6 border border-slate-200/60 shadow-lg"
+                          >
+                            <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                              <Zap className="w-5 h-5 text-amber-500" />
+                              Game Stats
+                            </h3>
+                            
+                            {/* Stats Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {[...players].sort((a, b) => b.score - a.score).map((player, idx) => {
+                                const stats = gameStats.playerStats.get(player.id);
+                                const accuracy = stats && stats.correctAnswers + stats.wrongAnswers > 0 
+                                  ? Math.round((stats.correctAnswers / (stats.correctAnswers + stats.wrongAnswers)) * 100) 
+                                  : 0;
+                                
+                                return (
+                                  <motion.div
+                                    key={player.id}
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: idx * 0.1 }}
+                                    className="bg-slate-50/80 rounded-xl p-3 border border-slate-200/60"
+                                  >
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg shadow ${
+                                        idx === 0 ? 'bg-gradient-to-br from-amber-200 to-amber-400 border-2 border-amber-300' : 
+                                        idx === 1 ? 'bg-gradient-to-br from-slate-100 to-slate-300 border-2 border-slate-200' : 
+                                        idx === 2 ? 'bg-gradient-to-br from-amber-400 to-amber-600 border-2 border-amber-500' : 
+                                        'bg-slate-100 border border-slate-200'
+                                      }`}>
+                                        {PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-foreground text-sm truncate">{player.name}</p>
+                                        <p className="text-xs text-muted-foreground">{player.score} points</p>
+                                      </div>
+                                      {idx < 3 && (
+                                        <Badge variant="secondary" className={`text-xs ${
+                                          idx === 0 ? 'bg-amber-100 text-amber-700' : 
+                                          idx === 1 ? 'bg-slate-100 text-slate-700' : 
+                                          'bg-orange-100 text-orange-700'
+                                        }`}>
+                                          #{idx + 1}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    
+                                    {stats ? (
+                                      <div className="space-y-2">
+                                        {/* Accuracy bar */}
+                                        <div className="space-y-1">
+                                          <div className="flex justify-between text-xs">
+                                            <span className="text-muted-foreground">Accuracy</span>
+                                            <span className="font-medium text-foreground">{accuracy}%</span>
+                                          </div>
+                                          <div className="h-2 bg-slate-200/60 rounded-full overflow-hidden">
+                                            <motion.div 
+                                              initial={{ width: 0 }}
+                                              animate={{ width: `${accuracy}%` }}
+                                              transition={{ duration: 0.8, delay: idx * 0.1 }}
+                                              className={`h-full rounded-full ${
+                                                accuracy >= 80 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' :
+                                                accuracy >= 50 ? 'bg-gradient-to-r from-amber-400 to-amber-500' :
+                                                'bg-gradient-to-r from-rose-400 to-rose-500'
+                                              }`}
+                                            />
+                                          </div>
+                                        </div>
+                                        
+                                        {/* Stats row */}
+                                        <div className="flex justify-between text-xs">
+                                          <div className="flex items-center gap-1">
+                                            <Check className="w-3 h-3 text-emerald-500" />
+                                            <span className="text-muted-foreground">{stats.correctAnswers} correct</span>
+                                          </div>
+                                          <div className="flex items-center gap-1">
+                                            <X className="w-3 h-3 text-rose-500" />
+                                            <span className="text-muted-foreground">{stats.wrongAnswers} wrong</span>
+                                          </div>
+                                        </div>
+                                        
+                                        {/* Best streak */}
+                                        {stats.bestStreak >= 2 && (
+                                          <div className="flex items-center gap-1 text-xs">
+                                            <Flame className="w-3 h-3 text-orange-500" />
+                                            <span className="text-muted-foreground">Best streak: {stats.bestStreak} in a row</span>
+                                          </div>
+                                        )}
+                                        
+                                        {/* Biggest gain */}
+                                        {stats.biggestGain > 0 && (
+                                          <div className="flex items-center gap-1 text-xs">
+                                            <Zap className="w-3 h-3 text-amber-500" />
+                                            <span className="text-muted-foreground">Best answer: +{stats.biggestGain} pts</span>
+                                          </div>
+                                        )}
+                                        
+                                        {/* Category breakdown */}
+                                        {Object.keys(stats.pointsByCategory).length > 0 && (
+                                          <div className="pt-2 mt-2 border-t border-slate-200/60">
+                                            <p className="text-xs text-muted-foreground mb-1">Points by category:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {Object.entries(stats.pointsByCategory).map(([catId, pts]) => {
+                                                const cat = playCategories.find(c => c.id === Number(catId));
+                                                return cat ? (
+                                                  <Badge key={catId} variant="secondary" className="text-xs bg-slate-100 text-slate-600">
+                                                    {cat.name.substring(0, 12)}{cat.name.length > 12 ? '...' : ''}: +{pts}
+                                                  </Badge>
+                                                ) : null;
+                                              })}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <p className="text-xs text-muted-foreground">No stats recorded</p>
+                                    )}
+                                  </motion.div>
+                                );
+                              })}
+                            </div>
+                            
+                            {/* MVP Moments */}
+                            {gameStats.mvpMoments.length > 0 && (
+                              <div className="mt-4 pt-4 border-t border-slate-200/60">
+                                <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                                  <Sparkles className="w-4 h-4 text-amber-500" />
+                                  Highlight Moments
+                                </h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {gameStats.mvpMoments.map((moment, i) => (
+                                    <Badge key={i} variant="secondary" className="bg-amber-50 text-amber-700 border-amber-200">
+                                      {moment.description}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </motion.div>
                   )}
 
@@ -1263,22 +1568,34 @@ export default function Blitzgrid() {
                         transition={{ delay: 1 }}
                         className="flex flex-col gap-4 items-center"
                       >
-                        {/* Share Results */}
-                        <Button
-                          size="lg"
-                          variant="secondary"
-                          className="font-bold gap-2"
-                          data-testid="button-share-results"
-                          onClick={() => {
-                            setShowShareModal(true);
-                            setShareImageUrl(null);
-                          }}
-                        >
-                          <Share2 className="w-5 h-5" />
-                          Share Results
-                        </Button>
+                        {/* Stats and Share buttons */}
+                        <div className="flex flex-row gap-3 flex-wrap justify-center">
+                          <Button
+                            size="lg"
+                            variant="outline"
+                            className="font-bold gap-2 border-slate-300"
+                            data-testid="button-view-stats"
+                            onClick={() => setShowDetailedStats(!showDetailedStats)}
+                          >
+                            <Zap className="w-5 h-5 text-amber-500" />
+                            {showDetailedStats ? 'Hide Stats' : 'View Stats'}
+                          </Button>
+                          <Button
+                            size="lg"
+                            variant="secondary"
+                            className="font-bold gap-2"
+                            data-testid="button-share-results"
+                            onClick={() => {
+                              setShowShareModal(true);
+                              setShareImageUrl(null);
+                            }}
+                          >
+                            <Share2 className="w-5 h-5" />
+                            Share Results
+                          </Button>
+                        </div>
                         
-                        <div className="flex flex-row gap-3">
+                        <div className="flex flex-row gap-3 flex-wrap justify-center">
                           <Button
                             size="lg"
                             onClick={continueToNextGrid}
@@ -2219,7 +2536,7 @@ export default function Blitzgrid() {
                                   onClick={() => {
                                     setIsJudging(true);
                                     const pts = activeQuestion?.points || 0;
-                                    updatePlayerScore(buzz.playerId, -pts);
+                                    updatePlayerScore(buzz.playerId, -pts, true, activeQuestion?.categoryId);
                                     sendFeedback(buzz.playerId, false, -pts);
                                     // Remove player from queue
                                     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -2248,7 +2565,7 @@ export default function Blitzgrid() {
                                     setIsJudging(true);
                                     lockBuzzer();
                                     const pts = activeQuestion?.points || 0;
-                                    updatePlayerScore(buzz.playerId, pts);
+                                    updatePlayerScore(buzz.playerId, pts, true, activeQuestion?.categoryId);
                                     sendFeedback(buzz.playerId, true, pts);
                                     handleRevealAnswer();
                                   }}
@@ -2332,7 +2649,7 @@ export default function Blitzgrid() {
                             size="icon"
                             variant="ghost"
                             className="h-7 w-7 text-red-500"
-                            onClick={() => updatePlayerScore(player.id, -(activeQuestion?.points || 0))}
+                            onClick={() => updatePlayerScore(player.id, -(activeQuestion?.points || 0), true, activeQuestion?.categoryId)}
                             data-testid={`button-deduct-${player.id}`}
                           >
                             <Minus className="w-3 h-3" />
@@ -2341,7 +2658,7 @@ export default function Blitzgrid() {
                             size="icon"
                             variant="ghost"
                             className="h-7 w-7 text-teal-500"
-                            onClick={() => updatePlayerScore(player.id, activeQuestion?.points || 0)}
+                            onClick={() => updatePlayerScore(player.id, activeQuestion?.points || 0, true, activeQuestion?.categoryId)}
                             data-testid={`button-award-${player.id}`}
                           >
                             <Plus className="w-3 h-3" />
@@ -2525,6 +2842,13 @@ export default function Blitzgrid() {
                     setRevealedCategoryCount(0);
                     setCategoryRevealMode(true);
                     setActiveQuestion(null);
+                    // Reset game stats for new game
+                    setGameStats({
+                      playerStats: new Map(),
+                      totalQuestions: 0,
+                      startTime: Date.now(),
+                      mvpMoments: []
+                    });
                     setShowAnswer(false);
                   }}
                 >
@@ -2695,6 +3019,13 @@ export default function Blitzgrid() {
       setRevealedCells(new Set());
       setRevealedCategoryCount(0);
       setCategoryRevealMode(true);
+      // Reset game stats for next grid
+      setGameStats({
+        playerStats: new Map(),
+        totalQuestions: 0,
+        startTime: Date.now(),
+        mvpMoments: []
+      });
       setActiveQuestion(null);
       setShowAnswer(false);
       
@@ -2845,6 +3176,13 @@ export default function Blitzgrid() {
           setRevealedCategoryCount(0);
           setCategoryRevealMode(true);
           setActiveQuestion(null);
+          // Reset game stats for new game
+          setGameStats({
+            playerStats: new Map(),
+            totalQuestions: 0,
+            startTime: Date.now(),
+            mvpMoments: []
+          });
           setShowAnswer(false);
         }}
         className={`group text-left p-4 rounded-3xl bg-card/80 backdrop-blur-sm border ${borderClass} transition-all duration-300 relative overflow-hidden`}
