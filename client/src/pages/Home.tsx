@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ArrowRight, Sparkles, PartyPopper, Users, ChevronRight, ListOrdered, Crown, Clock, Brain, Play, Star, Heart, Lock } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, Sparkles, PartyPopper, Users, ChevronRight, ListOrdered, Crown, Clock, Brain, Play, Heart, Lock } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation } from "wouter";
@@ -205,54 +205,35 @@ export default function Home() {
           
           {/* Hero Section */}
           <motion.section 
-            className="text-center mb-12"
+            className="text-center mb-14"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
           >
-            {/* Main heading */}
+            {/* Hero headline */}
             <motion.h1 
-              className="text-5xl md:text-6xl lg:text-7xl font-black mb-5 tracking-tight leading-[1.1]"
+              className="text-4xl md:text-5xl lg:text-6xl font-black mb-4 uppercase tracking-tight"
+              style={{ 
+                fontFamily: 'var(--font-display)',
+                background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #14b8a6 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.5 }}
             >
-              <span className="text-muted-foreground text-lg md:text-xl">What's up, </span>
-              <span className="relative inline-block">
-                <span className="text-foreground text-lg md:text-xl">
-                  {user?.firstName || 'Legend'}
-                </span>
-                <motion.span 
-                  className="absolute -top-1 -right-4 text-base"
-                  animate={{ rotate: [0, 15, 0] }}
-                  transition={{ duration: 0.4, repeat: Infinity, repeatDelay: 5 }}
-                >
-                  <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
-                </motion.span>
-              </span>
+              Let the chaos begin.
             </motion.h1>
             
             {/* Subtitle */}
             <motion.p 
-              className="text-xl md:text-2xl text-muted-foreground font-medium max-w-lg mx-auto"
+              className="text-lg md:text-xl text-muted-foreground max-w-md mx-auto"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25, duration: 0.5 }}
             >
               Pick your game. Rally your crew.
-              <br />
-              <span 
-                  className="block text-4xl md:text-6xl font-black uppercase tracking-tight mt-2"
-                  style={{ 
-                    fontFamily: 'var(--font-display)',
-                    background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #14b8a6 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    textShadow: '0 0 60px rgba(168, 85, 247, 0.5)'
-                  }}
-                >
-                  LET THE CHAOS BEGIN.
-                </span>
             </motion.p>
           </motion.section>
 
