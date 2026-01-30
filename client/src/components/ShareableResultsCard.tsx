@@ -49,8 +49,8 @@ export function ShareableResultsCard({ contestants, onClose }: ShareableResultsC
     ctx.fillRect(0, 0, width, height);
 
     const confettiColors = [
-      "#fda4af", "#f9a8d4", "#f0abfc", "#FFD700", "#FF6B6B", 
-      "#4ADEBC", "#FF8C00", "#00CED1"
+      "#fda4af", "#f9a8d4", "#f0abfc", "#fb7185", "#ec4899", 
+      "#f472b6", "#fce7f3", "#fbcfe8"
     ];
     
     for (let i = 0; i < 150; i++) {
