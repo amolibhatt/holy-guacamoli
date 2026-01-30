@@ -22,7 +22,7 @@ import {
   ChevronRight, ArrowLeft, Play, Loader2,
   AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Medal,
   Volume2, VolumeX, MoreVertical, Settings, Copy, Link2, Share2, Download, Image, Loader2 as LoaderIcon, Clock,
-  Hand, Flame, Laugh, CircleDot, ThumbsUp, Sparkles, Heart, Timer, Zap, Shuffle, Lightbulb
+  Hand, Flame, Laugh, CircleDot, ThumbsUp, Sparkles, Heart, Timer, Zap, Shuffle
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import html2canvas from "html2canvas";
@@ -85,58 +85,6 @@ interface CategoryWithQuestions extends Category {
 }
 
 const POINT_TIERS = [10, 20, 30, 40, 50];
-
-// Hint button component that appears after 5 seconds
-function HintButton({ answer }: { answer: string }) {
-  const [showHintButton, setShowHintButton] = useState(false);
-  const [hintRevealed, setHintRevealed] = useState(false);
-  
-  useEffect(() => {
-    const timer = setTimeout(() => setShowHintButton(true), 5000);
-    return () => clearTimeout(timer);
-  }, []);
-  
-  // Generate hint: first letter + length
-  const generateHint = () => {
-    if (!answer) return '';
-    const cleanAnswer = answer.replace(/[^a-zA-Z0-9\s]/g, '').trim();
-    const firstWord = cleanAnswer.split(' ')[0];
-    const firstLetter = firstWord.charAt(0).toUpperCase();
-    const wordCount = cleanAnswer.split(' ').filter(w => w.length > 0).length;
-    return `${firstLetter}... (${wordCount} word${wordCount > 1 ? 's' : ''}, ${cleanAnswer.length} chars)`;
-  };
-  
-  if (!showHintButton) return null;
-  
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex justify-center mt-3"
-    >
-      {!hintRevealed ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setHintRevealed(true)}
-          className="text-xs text-muted-foreground hover:text-foreground gap-1"
-        >
-          <Lightbulb className="w-3 h-3" />
-          Show Hint
-        </Button>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium"
-        >
-          <Lightbulb className="w-3 h-3 inline mr-1" />
-          {generateHint()}
-        </motion.div>
-      )}
-    </motion.div>
-  );
-}
 
 export default function Blitzgrid() {
   const { toast } = useToast();
@@ -2438,82 +2386,73 @@ export default function Blitzgrid() {
                 
                 return (
                   <>
-                    <DialogHeader className="space-y-3">
-                      {/* Top row: Category pill + Timer */}
-                      <div className="flex items-center justify-between">
-                        {/* Category pill with themed color */}
-                        {category ? (
-                          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${colorTheme.bg} ${colorTheme.border} border text-xs`}>
+                    <DialogHeader className="flex flex-row items-center justify-between gap-2">
+                      {/* Points badge */}
+                      <motion.div 
+                        className="relative overflow-hidden px-4 py-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 shadow-md"
+                        initial={{ scale: 0.9 }}
+                        animate={{ scale: 1 }}
+                      >
+                        <motion.div 
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12"
+                          animate={{ x: ['-100%', '200%'] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        />
+                        <DialogTitle className="text-amber-900 text-lg font-black relative z-10">
+                          {activeQuestion?.points} pts
+                        </DialogTitle>
+                      </motion.div>
+                      
+                      {/* Timer button */}
+                      <Button
+                        variant={timerActive ? "destructive" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          if (timerActive) {
+                            setTimerActive(false);
+                            setTimeLeft(10);
+                          } else {
+                            setTimeLeft(10);
+                            setTimerActive(true);
+                          }
+                        }}
+                        className={`gap-1 ${timerActive ? 'animate-pulse' : ''}`}
+                        data-testid="button-timer"
+                      >
+                        <Timer className="w-4 h-4" />
+                        {timerActive ? (
+                          <span className="font-mono font-bold text-lg min-w-[2ch]">{timeLeft}</span>
+                        ) : (
+                          <span>10s</span>
+                        )}
+                      </Button>
+                    </DialogHeader>
+                    
+                    {/* Question box with category info inside */}
+                    <div className={`py-4 px-4 my-2 ${colorTheme.bg} rounded-lg border ${colorTheme.border}`}>
+                      {/* Category name and description at top of question box */}
+                      {category && (
+                        <div className="text-center mb-3">
+                          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/60 ${colorTheme.border} border text-xs mb-1`}>
                             <div className={`w-2 h-2 rounded-full ${colorTheme.accent}`} />
                             <span className={`${colorTheme.text} font-semibold uppercase tracking-wide`}>
                               {category.name}
                             </span>
                           </div>
-                        ) : <div />}
-                        
-                        {/* Timer button */}
-                        <Button
-                          variant={timerActive ? "destructive" : "outline"}
-                          size="sm"
-                          onClick={() => {
-                            if (timerActive) {
-                              setTimerActive(false);
-                              setTimeLeft(10);
-                            } else {
-                              setTimeLeft(10);
-                              setTimerActive(true);
-                            }
-                          }}
-                          className={`gap-1 ${timerActive ? 'animate-pulse' : ''}`}
-                          data-testid="button-timer"
-                        >
-                          <Timer className="w-4 h-4" />
-                          {timerActive ? (
-                            <span className="font-mono font-bold text-lg min-w-[2ch]">{timeLeft}</span>
-                          ) : (
-                            <span>10s</span>
+                          {category.description && (
+                            <p className="text-muted-foreground text-sm italic">
+                              {category.description}
+                            </p>
                           )}
-                        </Button>
-                      </div>
+                        </div>
+                      )}
                       
-                      {/* Points badge - centered */}
-                      <div className="flex justify-center">
-                        <motion.div 
-                          className="relative overflow-hidden px-5 py-1.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 shadow-md"
-                          initial={{ scale: 0.9 }}
-                          animate={{ scale: 1 }}
-                        >
-                          <motion.div 
-                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12"
-                            animate={{ x: ['-100%', '200%'] }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                          />
-                          <DialogTitle className="text-amber-900 text-xl font-black relative z-10">
-                            {activeQuestion?.points} Points
-                          </DialogTitle>
-                        </motion.div>
-                      </div>
-                    </DialogHeader>
-                    
-                    {/* Question with auto-sizing text */}
-                    <div className={`py-4 px-4 my-2 ${colorTheme.bg} rounded-lg border ${colorTheme.border}`}>
+                      {/* Question text */}
                       <div className={`${textSizeClass} text-center font-medium text-foreground leading-relaxed`}>
                         <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
                           {questionText}
                         </ReactMarkdown>
                       </div>
-                      
-                      {/* Category description if exists */}
-                      {category?.description && (
-                        <p className="text-center text-muted-foreground text-sm mt-3 italic">
-                          {category.description}
-                        </p>
-                      )}
-                      
-                      {/* Hint button - appears after 5 seconds */}
-                      {!showAnswer && (
-                        <HintButton answer={activeQuestion?.correctAnswer || ''} />
-                      )}
                     </div>
                   </>
                 );
