@@ -188,11 +188,16 @@ const ELEMENT_DATA = generateElementData(12);
 const AtmosphericParticles = ({ themeId, glowColor }: { themeId: string; glowColor: string }) => {
   // Different particle configs per theme
   const particleConfigs = {
-    space: { count: 40, type: 'stars' as const },
-    birthday: { count: 25, type: 'sparkles' as const },
-    beach: { count: 15, type: 'bubbles' as const },
-    music: { count: 20, type: 'notes' as const },
-    nature: { count: 18, type: 'leaves' as const },
+    neon: { count: 30, type: 'dots' as const },
+    sunset: { count: 20, type: 'sparkles' as const },
+    aurora: { count: 35, type: 'sparkles' as const },
+    ocean: { count: 25, type: 'bubbles' as const },
+    candy: { count: 20, type: 'sparkles' as const },
+    forest: { count: 18, type: 'leaves' as const },
+    galaxy: { count: 45, type: 'stars' as const },
+    fire: { count: 25, type: 'sparkles' as const },
+    retro: { count: 30, type: 'dots' as const },
+    minimal: { count: 10, type: 'dots' as const },
     default: { count: 20, type: 'dots' as const },
   };
   
@@ -288,110 +293,308 @@ const AtmosphericParticles = ({ themeId, glowColor }: { themeId: string; glowCol
 // Animated theme elements that float around the grid
 const ThemeElements = ({ themeId }: { themeId: string }) => {
   const elements = ELEMENT_DATA.map((data, i) => {
-    const { delay, duration, startX, startY, endY, size, opacity, extraRandom1, extraRandom2, extraRandom3 } = data;
-    
-    const sportsElements = [Trophy, Flag, Award, Target, Medal, Shirt];
-    const SportsIcon = sportsElements[i % sportsElements.length];
-    const sportsColors = ['text-yellow-400', 'text-orange-400', 'text-green-400', 'text-white', 'text-amber-300', 'text-red-400'];
+    const { delay, duration, startX, startY, endY, size, opacity } = data;
     
     switch (themeId) {
-      case 'sports': {
-        // One ball with players kicking it around!
-        if (i === 0) {
-          // The soccer ball - bounces between kick positions
-          return (
-            <motion.div
-              key="ball"
-              className="absolute pointer-events-none z-10"
-              animate={{ 
-                x: ['15vw', '75vw', '50vw', '25vw', '80vw', '10vw', '60vw', '15vw'],
-                y: ['70vh', '30vh', '65vh', '25vh', '55vh', '45vh', '20vh', '70vh'],
-                rotate: [0, 360, 720, 1080, 1440, 1800, 2160, 2520],
-                scale: [1, 1.1, 1, 1.15, 1, 1.1, 1, 1],
-              }}
-              transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", times: [0, 0.14, 0.28, 0.42, 0.56, 0.70, 0.85, 1] }}
-              style={{ opacity: 0.9 }}
-            >
-              {/* Simple clean ball */}
-              <svg width="50" height="50" viewBox="0 0 100 100" style={{ filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.4))' }}>
-                <defs>
-                  <radialGradient id="simpleBallGradient" cx="35%" cy="35%" r="60%">
-                    <stop offset="0%" stopColor="#ffffff"/>
-                    <stop offset="50%" stopColor="#f0f0f0"/>
-                    <stop offset="100%" stopColor="#d0d0d0"/>
-                  </radialGradient>
-                </defs>
-                <circle cx="50" cy="50" r="45" fill="url(#simpleBallGradient)"/>
-                <ellipse cx="38" cy="35" rx="12" ry="8" fill="white" opacity="0.7"/>
-              </svg>
-            </motion.div>
-          );
-        }
-        // Players kicking at different positions
-        const playerPositions = [
-          { x: 12, y: 72, kickDelay: 0, facing: 'right' },
-          { x: 72, y: 32, kickDelay: 2, facing: 'left' },
-          { x: 47, y: 67, kickDelay: 4, facing: 'right' },
-          { x: 22, y: 27, kickDelay: 6, facing: 'left' },
-          { x: 77, y: 57, kickDelay: 8, facing: 'left' },
-          { x: 7, y: 47, kickDelay: 10, facing: 'right' },
-          { x: 57, y: 22, kickDelay: 12, facing: 'left' },
-        ];
-        const playerIndex = (i - 1) % playerPositions.length;
-        if (i > playerPositions.length) return null;
-        const player = playerPositions[playerIndex];
-        const isRight = player.facing === 'right';
-        
+      case 'neon': {
+        // Neon light beams and glowing lines
+        const neonColors = ['#00fff5', '#ff00ff', '#00ff00', '#ffff00', '#ff6b6b'];
+        const color = neonColors[i % neonColors.length];
         return (
           <motion.div
-            key={`player-${i}`}
+            key={i}
             className="absolute pointer-events-none"
-            style={{ left: `${player.x}vw`, top: `${player.y}vh`, transform: isRight ? 'scaleX(1)' : 'scaleX(-1)' }}
+            style={{
+              left: `${startX}vw`,
+              top: `${startY}vh`,
+              width: 2,
+              height: 40 + i * 10,
+              background: `linear-gradient(180deg, ${color} 0%, transparent 100%)`,
+              boxShadow: `0 0 20px 5px ${color}60`,
+              borderRadius: 2,
+            }}
+            animate={{
+              y: [0, 100, 0],
+              opacity: [0.3, 0.8, 0.3],
+              scaleY: [1, 1.5, 1],
+            }}
+            transition={{ duration: duration * 1.5, delay, repeat: Infinity, ease: "easeInOut" }}
+          />
+        );
+      }
+      
+      case 'sunset': {
+        // Floating sun rays and warm orbs
+        const warmColors = ['#ff6b35', '#f7931e', '#ffcc02', '#ff9a9e'];
+        const color = warmColors[i % warmColors.length];
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none rounded-full"
+            style={{
+              left: `${startX}vw`,
+              top: `${startY}vh`,
+              width: size * 2,
+              height: size * 2,
+              background: `radial-gradient(circle, ${color} 0%, transparent 70%)`,
+              filter: 'blur(2px)',
+            }}
+            animate={{
+              x: [0, 30, -20, 0],
+              y: [0, -40, -20, 0],
+              scale: [1, 1.3, 0.9, 1],
+              opacity: [0.4, 0.7, 0.5, 0.4],
+            }}
+            transition={{ duration: duration * 2, delay, repeat: Infinity, ease: "easeInOut" }}
+          />
+        );
+      }
+      
+      case 'aurora': {
+        // Northern lights waves
+        const auroraColors = ['#667eea', '#764ba2', '#00d4ff', '#8E37D7', '#6B8DD6'];
+        const color = auroraColors[i % auroraColors.length];
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none"
+            style={{
+              left: `${startX - 10}vw`,
+              top: `${10 + (i * 8)}vh`,
+              width: '40vw',
+              height: 60,
+              background: `linear-gradient(90deg, transparent 0%, ${color}40 50%, transparent 100%)`,
+              filter: 'blur(20px)',
+              borderRadius: 30,
+            }}
+            animate={{
+              x: [-100, 200, -100],
+              opacity: [0.2, 0.6, 0.2],
+              scaleX: [1, 1.3, 1],
+            }}
+            transition={{ duration: duration * 3, delay: delay * 2, repeat: Infinity, ease: "easeInOut" }}
+          />
+        );
+      }
+      
+      case 'ocean': {
+        // Bubbles rising
+        const bubbleSize = 10 + (i % 4) * 8;
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none rounded-full"
+            style={{
+              left: `${startX}vw`,
+              bottom: '-10vh',
+              width: bubbleSize,
+              height: bubbleSize,
+              background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8) 0%, rgba(144,224,239,0.3) 50%, transparent 100%)',
+              border: '1px solid rgba(255,255,255,0.3)',
+            }}
+            animate={{
+              y: [0, -120 * (1 + i * 0.1)],
+              x: [0, 20 * (i % 2 === 0 ? 1 : -1), 0],
+              opacity: [0, 0.7, 0],
+            }}
+            transition={{ duration: duration * 2, delay, repeat: Infinity, ease: "easeOut" }}
+          />
+        );
+      }
+      
+      case 'candy': {
+        // Sweet floating candy shapes
+        const candyColors = ['#ff9a9e', '#fecfef', '#fad0c4', '#ff6b6b', '#ffd93d'];
+        const color = candyColors[i % candyColors.length];
+        const shapes = ['rounded-full', 'rounded-lg', 'rounded-full'];
+        return (
+          <motion.div
+            key={i}
+            className={`absolute pointer-events-none ${shapes[i % shapes.length]}`}
+            style={{
+              left: `${startX}vw`,
+              top: `${startY}vh`,
+              width: size * 1.5,
+              height: size * 1.5,
+              background: color,
+              boxShadow: `0 4px 15px ${color}50`,
+            }}
+            animate={{
+              y: [0, -30, 0],
+              rotate: [0, 180, 360],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{ duration, delay, repeat: Infinity, ease: "easeInOut" }}
+          />
+        );
+      }
+      
+      case 'forest': {
+        // Falling leaves
+        const leafColors = ['#22c55e', '#84cc16', '#a8e6cf', '#15803d'];
+        const color = leafColors[i % leafColors.length];
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none"
+            style={{ left: `${startX}vw`, top: '-5vh' }}
           >
-            {/* Player silhouette */}
-            <motion.div
-              animate={{ 
-                rotate: [0, 0, -25, 0, 0],
+            <motion.svg
+              width="20" height="25" viewBox="0 0 20 25"
+              animate={{
+                y: [0, 110 * (1 + i * 0.05)],
+                x: [0, 30, -20, 10],
+                rotate: [0, 180, 360, 540],
               }}
-              transition={{ 
-                duration: 16, 
-                delay: player.kickDelay,
-                repeat: Infinity, 
-                times: [0, 0.02, 0.06, 0.10, 1],
-                ease: "easeOut"
-              }}
-              style={{ transformOrigin: 'bottom center' }}
+              transition={{ duration: duration * 2, delay, repeat: Infinity, ease: "linear" }}
+              style={{ opacity: 0.7 }}
             >
-              <svg width="45" height="70" viewBox="0 0 45 70" fill="none" style={{ opacity: 0.7 }}>
-                {/* Head */}
-                <circle cx="22" cy="10" r="8" fill="white"/>
-                {/* Body */}
-                <rect x="17" y="18" width="10" height="22" rx="3" fill="white"/>
-                {/* Left arm */}
-                <rect x="8" y="20" width="9" height="5" rx="2" fill="white"/>
-                {/* Right arm */}
-                <rect x="27" y="20" width="9" height="5" rx="2" fill="white"/>
-                {/* Left leg (standing) */}
-                <rect x="17" y="40" width="5" height="25" rx="2" fill="white"/>
-                {/* Right leg (kicking) */}
-                <motion.rect 
-                  x="23" y="40" width="5" height="25" rx="2" fill="white"
-                  animate={{ rotate: [0, 0, 60, 0, 0] }}
-                  transition={{ 
-                    duration: 16, 
-                    delay: player.kickDelay,
-                    repeat: Infinity, 
-                    times: [0, 0.02, 0.06, 0.10, 1],
-                    ease: "easeOut"
-                  }}
-                  style={{ transformOrigin: 'top center' }}
-                />
-              </svg>
-            </motion.div>
+              <path d="M10,0 Q20,10 10,25 Q0,10 10,0" fill={color}/>
+            </motion.svg>
           </motion.div>
         );
       }
-      case 'birthday': {
+      
+      case 'galaxy': {
+        // Twinkling stars
+        const starSize = 2 + (i % 4) * 2;
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none"
+            style={{
+              left: `${startX}vw`,
+              top: `${startY}vh`,
+              width: starSize,
+              height: starSize,
+              background: i % 3 === 0 ? '#ffd700' : '#fff',
+              borderRadius: '50%',
+              boxShadow: `0 0 ${starSize * 3}px ${starSize}px ${i % 3 === 0 ? '#ffd700' : 'white'}`,
+            }}
+            animate={{
+              opacity: [0.3, 1, 0.3],
+              scale: [1, 1.5, 1],
+            }}
+            transition={{ duration: 1 + (i % 3), delay: delay * 0.5, repeat: Infinity, ease: "easeInOut" }}
+          />
+        );
+      }
+      
+      case 'fire': {
+        // Flames and embers rising
+        const fireColors = ['#f12711', '#f5af19', '#ff6b35', '#ffd93d'];
+        const color = fireColors[i % fireColors.length];
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none rounded-full"
+            style={{
+              left: `${startX}vw`,
+              bottom: '0vh',
+              width: size,
+              height: size * 1.5,
+              background: `radial-gradient(ellipse at bottom, ${color} 0%, transparent 70%)`,
+              filter: 'blur(3px)',
+            }}
+            animate={{
+              y: [0, -100 - i * 10],
+              x: [0, 15 * (i % 2 === 0 ? 1 : -1), 0],
+              opacity: [0.8, 0],
+              scale: [1, 0.3],
+            }}
+            transition={{ duration: duration * 1.5, delay, repeat: Infinity, ease: "easeOut" }}
+          />
+        );
+      }
+      
+      case 'retro': {
+        // Pixel-style blocks and shapes
+        const retroColors = ['#ff00ff', '#00ffff', '#ffff00', '#ff0000', '#00ff00'];
+        const color = retroColors[i % retroColors.length];
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none"
+            style={{
+              left: `${startX}vw`,
+              top: `${startY}vh`,
+              width: 8 + (i % 3) * 4,
+              height: 8 + (i % 3) * 4,
+              background: color,
+              boxShadow: `0 0 10px ${color}`,
+            }}
+            animate={{
+              y: [0, -50, 0],
+              x: [0, 20, -20, 0],
+              rotate: [0, 90, 180, 270, 360],
+            }}
+            transition={{ duration, delay, repeat: Infinity, ease: "linear" }}
+          />
+        );
+      }
+      
+      case 'minimal': {
+        // Subtle floating circles
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none rounded-full"
+            style={{
+              left: `${startX}vw`,
+              top: `${startY}vh`,
+              width: size * 0.8,
+              height: size * 0.8,
+              border: '1px solid rgba(0,0,0,0.1)',
+              background: 'rgba(0,0,0,0.03)',
+            }}
+            animate={{
+              y: [0, -20, 0],
+              opacity: [0.3, 0.5, 0.3],
+            }}
+            transition={{ duration: duration * 2, delay, repeat: Infinity, ease: "easeInOut" }}
+          />
+        );
+      }
+      
+      default: {
+        // Simple sparkles for any unknown theme
+        return (
+          <motion.div
+            key={i}
+            className="absolute pointer-events-none"
+            style={{
+              left: `${startX}vw`,
+              top: `${startY}vh`,
+              width: size,
+              height: size,
+              background: 'rgba(255,255,255,0.5)',
+              borderRadius: '50%',
+              boxShadow: '0 0 10px rgba(255,255,255,0.3)',
+            }}
+            animate={{
+              y: [0, -30, 0],
+              opacity: [0.3, 0.6, 0.3],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{ duration, delay, repeat: Infinity, ease: "easeInOut" }}
+          />
+        );
+      }
+    }
+  });
+  
+  return (
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+      {elements}
+    </div>
+  );
+};
+
+// Placeholder to mark where old theme code was removed
+const OLD_THEMES_REMOVED = true;
+
+// Continue with rest of component - skip to export
+const SKIP_OLD_THEMES = `birthday
         // Birthday cake with flickering candles in the center
         if (i === 0) {
           return (
@@ -1313,7 +1516,7 @@ export default function Blitzgrid() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
       setNewGridName("");
-      setNewGridTheme("birthday");
+      setNewGridTheme("aurora");
       setShowNewGridForm(false);
       toast({ title: "Grid created" });
     },
@@ -1990,7 +2193,7 @@ export default function Blitzgrid() {
       const restPhase = 2;
       
       // Get theme from grid
-      const gridThemeId = grid.theme?.replace('blitzgrid:', '') || 'birthday';
+      const gridThemeId = grid.theme?.replace('blitzgrid:', '') || 'aurora';
       const currentTheme = GRID_THEMES.find(t => t.id === gridThemeId) || GRID_THEMES[0];
       
       // Keyboard handler for reveal mode
@@ -3771,7 +3974,7 @@ export default function Blitzgrid() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-3xl mx-auto">
             {activeGrids.map((grid, index) => {
-              const themeId = grid.theme?.replace('blitzgrid:', '') || 'birthday';
+              const themeId = grid.theme?.replace('blitzgrid:', '') || 'aurora';
               const gridTheme = GRID_THEMES.find(t => t.id === themeId) || GRID_THEMES[1];
               
               return (

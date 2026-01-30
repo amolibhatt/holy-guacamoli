@@ -18,7 +18,7 @@ import {
   ChevronRight, ArrowLeft, Loader2,
   AlertCircle, CheckCircle2, Image, Music, Video,
   Download, Upload, FileSpreadsheet,
-  Trophy, Cake, Umbrella, Briefcase, Dog, Cat, Rocket, Leaf, PartyPopper
+  Zap, Sun, Sparkles, Waves, Candy, TreePine, Star, Flame, Gamepad, Circle, PartyPopper
 } from "lucide-react";
 import { 
   AlertDialog, AlertDialogAction, AlertDialogCancel, 
@@ -75,32 +75,34 @@ interface CategoryWithQuestions extends Category {
 
 const POINT_TIERS = [10, 20, 30, 40, 50];
 
-// Available themes for grids
+// Available themes for grids - matching Blitzgrid.tsx
 const GRID_THEMES = [
-  { id: 'sports', name: 'Football', iconType: 'trophy' as const },
-  { id: 'birthday', name: 'Birthday', iconType: 'cake' as const },
-  { id: 'beach', name: 'Beach', iconType: 'umbrella' as const },
-  { id: 'office', name: 'Office', iconType: 'briefcase' as const },
-  { id: 'dogs', name: 'Dogs', iconType: 'dog' as const },
-  { id: 'cats', name: 'Cats', iconType: 'cat' as const },
-  { id: 'space', name: 'Space', iconType: 'rocket' as const },
-  { id: 'music', name: 'Music', iconType: 'music' as const },
-  { id: 'nature', name: 'Nature', iconType: 'leaf' as const },
+  { id: 'neon', name: 'Neon Nights', iconType: 'zap' as const },
+  { id: 'sunset', name: 'Golden Hour', iconType: 'sun' as const },
+  { id: 'aurora', name: 'Northern Lights', iconType: 'sparkles' as const },
+  { id: 'ocean', name: 'Deep Sea', iconType: 'waves' as const },
+  { id: 'candy', name: 'Sugar Rush', iconType: 'candy' as const },
+  { id: 'forest', name: 'Enchanted', iconType: 'trees' as const },
+  { id: 'galaxy', name: 'Stardust', iconType: 'star' as const },
+  { id: 'fire', name: 'Inferno', iconType: 'flame' as const },
+  { id: 'retro', name: 'Arcade', iconType: 'gamepad' as const },
+  { id: 'minimal', name: 'Clean Slate', iconType: 'circle' as const },
 ] as const;
 
 type ThemeIconType = typeof GRID_THEMES[number]['iconType'];
 
 const ThemeIcon = ({ type, className }: { type: ThemeIconType; className?: string }) => {
   switch (type) {
-    case 'trophy': return <Trophy className={className} />;
-    case 'cake': return <Cake className={className} />;
-    case 'umbrella': return <Umbrella className={className} />;
-    case 'briefcase': return <Briefcase className={className} />;
-    case 'dog': return <Dog className={className} />;
-    case 'cat': return <Cat className={className} />;
-    case 'rocket': return <Rocket className={className} />;
-    case 'music': return <Music className={className} />;
-    case 'leaf': return <Leaf className={className} />;
+    case 'zap': return <Zap className={className} />;
+    case 'sun': return <Sun className={className} />;
+    case 'sparkles': return <Sparkles className={className} />;
+    case 'waves': return <Waves className={className} />;
+    case 'candy': return <Candy className={className} />;
+    case 'trees': return <TreePine className={className} />;
+    case 'star': return <Star className={className} />;
+    case 'flame': return <Flame className={className} />;
+    case 'gamepad': return <Gamepad className={className} />;
+    case 'circle': return <Circle className={className} />;
     default: return <PartyPopper className={className} />;
   }
 };
@@ -114,7 +116,7 @@ export default function BlitzgridAdmin() {
   
   const [showNewGridForm, setShowNewGridForm] = useState(false);
   const [newGridName, setNewGridName] = useState("");
-  const [newGridTheme, setNewGridTheme] = useState("birthday");
+  const [newGridTheme, setNewGridTheme] = useState("aurora");
   const [editingGridId, setEditingGridId] = useState<number | null>(null);
   const [editGridName, setEditGridName] = useState("");
   const [deleteGridId, setDeleteGridId] = useState<number | null>(null);
@@ -155,7 +157,7 @@ export default function BlitzgridAdmin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
       setNewGridName("");
-      setNewGridTheme("birthday");
+      setNewGridTheme("aurora");
       setShowNewGridForm(false);
       toast({ title: "Grid created" });
     },
@@ -646,7 +648,7 @@ export default function BlitzgridAdmin() {
           <div className="flex items-center gap-2 flex-wrap mb-6">
             <span className="text-sm text-muted-foreground" data-testid="text-grid-theme-label">Theme:</span>
             {GRID_THEMES.map(theme => {
-              const currentTheme = grid?.theme?.replace('blitzgrid:', '') || 'birthday';
+              const currentTheme = grid?.theme?.replace('blitzgrid:', '') || 'aurora';
               const isSelected = currentTheme === theme.id;
               return (
                 <button
