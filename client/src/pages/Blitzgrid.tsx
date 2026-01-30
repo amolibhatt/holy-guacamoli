@@ -1070,24 +1070,24 @@ export default function Blitzgrid() {
                         >
                           {/* Player floating above podium */}
                           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: "spring" }} className="mb-1">
-                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center text-3xl md:text-4xl shadow-lg border-4 border-gray-300 bg-gradient-to-br from-slate-500 to-slate-700">
+                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center text-3xl md:text-4xl shadow-lg border-4 border-slate-200 bg-gradient-to-br from-slate-300 to-slate-400">
                               {PLAYER_AVATARS.find(a => a.id === runnerUp.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
                             </div>
                           </motion.div>
-                          {/* Podium with name plate */}
-                          <div className="w-24 md:w-32 h-28 md:h-36 bg-gradient-to-b from-gray-400 to-gray-600 rounded-t-lg flex flex-col items-center justify-between shadow-xl border-t-4 border-gray-300 pt-2 pb-3">
+                          {/* Podium with name plate - Silver theme */}
+                          <div className="w-24 md:w-32 h-28 md:h-36 bg-gradient-to-b from-slate-200 via-slate-300 to-slate-400 rounded-t-lg flex flex-col items-center justify-between shadow-xl border-t-4 border-slate-100 pt-2 pb-3">
                             {/* Name plate */}
-                            <div className="bg-white/90 px-2 py-0.5 rounded shadow-sm">
-                              <div className="text-gray-800 font-bold text-xs md:text-sm truncate max-w-[80px] md:max-w-[110px]" data-testid="text-2nd-place-name">
+                            <div className="bg-white px-2 py-0.5 rounded shadow-sm">
+                              <div className="text-slate-700 font-bold text-xs md:text-sm truncate max-w-[80px] md:max-w-[110px]" data-testid="text-2nd-place-name">
                                 {runnerUp.name}
                               </div>
                             </div>
-                            <div className="text-2xl md:text-3xl font-black text-white drop-shadow" data-testid="text-2nd-place-score">
+                            <div className="text-2xl md:text-3xl font-black text-slate-700 drop-shadow" data-testid="text-2nd-place-score">
                               {runnerUp.score} pts
                             </div>
                             <div className="flex items-center">
-                              <Medal className="w-6 h-6 text-white/80 mr-1" />
-                              <span className="text-3xl md:text-4xl font-black text-white/80">2</span>
+                              <Medal className="w-6 h-6 text-slate-600 mr-1" />
+                              <span className="text-3xl md:text-4xl font-black text-slate-600">2</span>
                             </div>
                           </div>
                         </motion.div>
@@ -1122,7 +1122,7 @@ export default function Blitzgrid() {
                               animate={{ scale: [1, 1.3, 1], opacity: [1, 0, 1] }}
                               transition={{ duration: 1.5, repeat: Infinity }}
                             />
-                            <div className="w-20 h-20 md:w-28 md:h-28 rounded-full flex items-center justify-center text-4xl md:text-5xl shadow-2xl border-4 border-yellow-400 relative z-10 bg-gradient-to-br from-violet-500 to-violet-700">
+                            <div className="w-20 h-20 md:w-28 md:h-28 rounded-full flex items-center justify-center text-4xl md:text-5xl shadow-2xl border-4 border-yellow-400 relative z-10 bg-gradient-to-br from-pink-400 to-rose-500">
                               {PLAYER_AVATARS.find(a => a.id === winner.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
                             </div>
                           </motion.div>
@@ -1163,22 +1163,22 @@ export default function Blitzgrid() {
                         >
                           {/* Player floating above podium */}
                           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: "spring" }} className="mb-1">
-                            <div className="w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-2xl md:text-3xl shadow-lg border-4 border-amber-600 bg-gradient-to-br from-amber-700 to-amber-900">
+                            <div className="w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-2xl md:text-3xl shadow-lg border-4 border-amber-300 bg-gradient-to-br from-amber-400 to-amber-500">
                               {PLAYER_AVATARS.find(a => a.id === thirdPlace.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
                             </div>
                           </motion.div>
-                          {/* Podium with name plate */}
-                          <div className="w-20 md:w-28 h-20 md:h-24 bg-gradient-to-b from-amber-600 to-amber-800 rounded-t-lg flex flex-col items-center justify-between shadow-xl border-t-4 border-amber-500 pt-1 pb-2">
+                          {/* Podium with name plate - Bronze theme */}
+                          <div className="w-20 md:w-28 h-20 md:h-24 bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 rounded-t-lg flex flex-col items-center justify-between shadow-xl border-t-4 border-amber-200 pt-1 pb-2">
                             {/* Name plate */}
-                            <div className="bg-white/90 px-2 py-0.5 rounded shadow-sm">
-                              <div className="text-amber-900 font-bold text-xs truncate max-w-[70px] md:max-w-[100px]" data-testid="text-3rd-place-name">
+                            <div className="bg-white px-2 py-0.5 rounded shadow-sm">
+                              <div className="text-amber-800 font-bold text-xs truncate max-w-[70px] md:max-w-[100px]" data-testid="text-3rd-place-name">
                                 {thirdPlace.name}
                               </div>
                             </div>
-                            <div className="text-lg md:text-xl font-black text-white drop-shadow" data-testid="text-3rd-place-score">
+                            <div className="text-lg md:text-xl font-black text-amber-800 drop-shadow" data-testid="text-3rd-place-score">
                               {thirdPlace.score} pts
                             </div>
-                            <span className="text-2xl md:text-3xl font-black text-white/80">3</span>
+                            <span className="text-2xl md:text-3xl font-black text-amber-700">3</span>
                           </div>
                         </motion.div>
                       )}
@@ -1195,12 +1195,12 @@ export default function Blitzgrid() {
                         >
                           <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.3, repeat: Infinity }} className="text-center">
                             <div className="flex items-center justify-center gap-2">
-                              <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-yellow-400" />
-                              <Trophy className="w-12 h-12 md:w-16 md:h-16 text-yellow-400" />
-                              <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-yellow-400" />
+                              <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-amber-400" />
+                              <Trophy className="w-12 h-12 md:w-16 md:h-16 text-amber-400" />
+                              <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-amber-400" />
                             </div>
                             <motion.p 
-                              className="text-white text-xl md:text-2xl font-bold mt-2"
+                              className="text-foreground text-xl md:text-2xl font-bold mt-2"
                               animate={{ opacity: [1, 0.5, 1] }}
                               transition={{ duration: 0.5, repeat: Infinity }}
                             >
@@ -1220,11 +1220,11 @@ export default function Blitzgrid() {
                       className="flex flex-wrap justify-center gap-2 mb-6"
                     >
                       {restOfPlayers.map((p, i) => (
-                        <div key={p.id} className="bg-white/10 backdrop-blur px-3 py-2 rounded-lg border border-white/20 flex items-center gap-2">
-                          <span className="text-white/60 font-medium">#{i + 4}</span>
+                        <div key={p.id} className="bg-card/80 backdrop-blur-sm px-3 py-2 rounded-lg border border-pink-200/60 flex items-center gap-2">
+                          <span className="text-muted-foreground font-medium">#{i + 4}</span>
                           <span className="text-lg">{PLAYER_AVATARS.find(a => a.id === p.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
-                          <span className="text-white/80 font-medium">{p.name}</span>
-                          <span className="text-white/60">{p.score} pts</span>
+                          <span className="text-foreground font-medium">{p.name}</span>
+                          <span className="text-muted-foreground">{p.score} pts</span>
                         </div>
                       ))}
                     </motion.div>
@@ -1787,7 +1787,7 @@ export default function Blitzgrid() {
                   ref={shareCardRef}
                   className="w-[320px] rounded-xl overflow-hidden shadow-xl"
                   style={{ 
-                    background: playBackground,
+                    background: 'linear-gradient(135deg, #f472b6 0%, #ec4899 30%, #db2777 70%, #be185d 100%)',
                     aspectRatio: '9/16'
                   }}
                 >
@@ -2291,7 +2291,7 @@ export default function Blitzgrid() {
                   <Button 
                     onClick={handleCloseQuestion}
                     variant="outline"
-                    className="border-slate-600 text-white"
+                    className="border-pink-300 text-pink-600"
                     data-testid="button-close-question"
                   >
                     Continue
