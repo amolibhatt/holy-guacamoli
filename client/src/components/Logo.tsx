@@ -103,16 +103,16 @@ export function Logo({ size = "md", variant = "dark" }: LogoProps) {
         whileHover={{ scale: 1.02 }}
       >
         <span className={textColor}>
-          HOLY
+          HOLY{' '}
         </span>
         <motion.span 
-          className="bg-gradient-to-r from-teal-400 via-pink-500 to-purple-500 bg-clip-text text-transparent bg-[length:200%_auto] ml-1"
+          className="bg-gradient-to-r from-teal-400 via-pink-500 to-purple-500 bg-clip-text text-transparent bg-[length:200%_auto]"
           animate={{ 
             backgroundPosition: ['0% center', '100% center', '0% center']
           }}
           transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
         >
-          GUAC
+          GUACAMOLI!
         </motion.span>
       </motion.h1>
     </div>
