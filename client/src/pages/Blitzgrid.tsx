@@ -2390,8 +2390,8 @@ export default function Blitzgrid() {
                     </div>
                   ) : null;
                 })()}
-                {/* Animated shimmer points badge */}
-                <div className="flex justify-center">
+                {/* Points badge and Timer in same row */}
+                <div className="flex items-center justify-center gap-3">
                   <motion.div 
                     className="relative overflow-hidden px-6 py-2 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 shadow-lg"
                     animate={{ 
@@ -2409,6 +2409,28 @@ export default function Blitzgrid() {
                       {activeQuestion?.points} Points
                     </DialogTitle>
                   </motion.div>
+                  <Button
+                    variant={timerActive ? "destructive" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      if (timerActive) {
+                        setTimerActive(false);
+                        setTimeLeft(10);
+                      } else {
+                        setTimeLeft(10);
+                        setTimerActive(true);
+                      }
+                    }}
+                    className={`gap-1 ${timerActive ? 'animate-pulse' : ''}`}
+                    data-testid="button-timer"
+                  >
+                    <Timer className="w-4 h-4" />
+                    {timerActive ? (
+                      <span className="font-mono font-bold text-lg min-w-[2ch]">{timeLeft}</span>
+                    ) : (
+                      <span>10s</span>
+                    )}
+                  </Button>
                 </div>
               </DialogHeader>
               
@@ -2453,32 +2475,6 @@ export default function Blitzgrid() {
                   )}
                 </div>
               )}
-              
-              {/* Timer Button */}
-              <div className="flex justify-center py-2">
-                <Button
-                  variant={timerActive ? "destructive" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    if (timerActive) {
-                      setTimerActive(false);
-                      setTimeLeft(10);
-                    } else {
-                      setTimeLeft(10);
-                      setTimerActive(true);
-                    }
-                  }}
-                  className={`gap-2 ${timerActive ? 'animate-pulse' : ''}`}
-                  data-testid="button-timer"
-                >
-                  <Timer className="w-4 h-4" />
-                  {timerActive ? (
-                    <span className="font-mono font-bold text-lg min-w-[2ch]">{timeLeft}</span>
-                  ) : (
-                    <span>Start 10s Timer</span>
-                  )}
-                </Button>
-              </div>
               
               {/* Buzzer Status + Skip Option */}
               {players.length > 0 && !showAnswer && buzzQueue.length === 0 && (
