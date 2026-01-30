@@ -1645,7 +1645,7 @@ export default function Blitzgrid() {
                         }}
                         onClick={() => setSelectedPlayerId(isSelected ? null : player.id)}
                         className={`relative flex items-center gap-2 rounded-full py-1 pl-1 pr-3 cursor-pointer transition-all ${
-                          isSelected ? 'bg-white/15 ring-2 ring-emerald-400/50' : 'hover:bg-white/10'
+                          isSelected ? 'bg-white/15 ring-2 ring-teal-400/50' : 'hover:bg-white/10'
                         } ${!player.connected ? 'opacity-50' : ''}`}
                       >
                         {/* Score change indicator */}
@@ -1684,10 +1684,10 @@ export default function Blitzgrid() {
                           <span className="text-white font-medium text-xs">{player.name}</span>
                           <motion.span 
                             key={player.score}
-                            initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? '#34d399' : scoreAnim?.delta && scoreAnim.delta < 0 ? '#f87171' : '#34d399' }}
-                            animate={{ scale: 1, color: '#34d399' }}
+                            initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? '#2dd4bf' : scoreAnim?.delta && scoreAnim.delta < 0 ? '#f87171' : '#2dd4bf' }}
+                            animate={{ scale: 1, color: '#2dd4bf' }}
                             transition={{ duration: 0.3 }}
-                            className="text-emerald-400 font-bold text-sm"
+                            className="text-teal-400 font-bold text-sm"
                           >
                             {player.score}
                           </motion.span>
@@ -1712,7 +1712,7 @@ export default function Blitzgrid() {
                               <Button
                                 size="sm"
                                 variant="default"
-                                className="bg-emerald-500"
+                                className="bg-teal-500"
                                 onClick={(e) => { e.stopPropagation(); updatePlayerScore(player.id, 10); }}
                                 data-testid={`button-add-score-${player.id}`}
                               >
@@ -2174,7 +2174,7 @@ export default function Blitzgrid() {
                                 </Button>
                                 <Button
                                   size="sm"
-                                  className="bg-emerald-500 hover:bg-emerald-600 text-white h-8"
+                                  className="bg-teal-500 text-white h-8"
                                   disabled={isJudging}
                                   onClick={() => {
                                     setIsJudging(true);
@@ -2272,7 +2272,7 @@ export default function Blitzgrid() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 text-emerald-500"
+                            className="h-7 w-7 text-teal-500"
                             onClick={() => updatePlayerScore(player.id, activeQuestion?.points || 0)}
                             data-testid={`button-award-${player.id}`}
                           >
