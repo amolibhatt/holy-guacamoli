@@ -8,6 +8,12 @@ Holy GuacAmoli! is a multi-game party platform featuring Blitzgrid (5x5 trivia g
 
 Preferred communication style: Simple, everyday language.
 
+### Design Preferences
+- **Pastel Aesthetic**: User strongly prefers soft pastel colors with multi-color gradients (rose→pink→fuchsia for Blitzgrid, emerald→teal→cyan for Genetic Sort, violet→purple→indigo for PsyOp)
+- **Decorative Elements**: Semi-circle shapes in card corners, layered gradients, soft shadows
+- **Light Theme Only**: App should maintain light theme throughout
+- **Footer Branding**: "made with ♥ by Amoli" using Heart icon (not emoji) with pastel gradient on name
+
 ## System Architecture
 
 ### Frontend Architecture

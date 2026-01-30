@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ArrowRight, Sparkles, PartyPopper, Users, ChevronRight, ListOrdered, Crown, Clock, Brain, Play, Star } from "lucide-react";
+import { Loader2, Grid3X3, ArrowRight, Sparkles, PartyPopper, Users, ChevronRight, ListOrdered, Crown, Clock, Brain, Play, Star, Heart } from "lucide-react";
 import { AvocadoIcon } from "@/components/AvocadoIcon";
 import { AppHeader } from "@/components/AppHeader";
 import { useLocation } from "wouter";
@@ -386,7 +386,7 @@ export default function Home() {
       <footer className="relative z-10 border-t border-border/10 px-6 py-6">
         <div className="max-w-5xl mx-auto flex items-center justify-center">
           <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-1">
-            made with <span className="text-pink-500">♥</span> by <span className="font-semibold bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 bg-clip-text text-transparent">Amoli</span>
+            made with <Heart className="w-4 h-4 text-pink-500 fill-pink-500 inline" /> by <span className="font-semibold bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 bg-clip-text text-transparent">Amoli</span>
           </p>
         </div>
       </footer>

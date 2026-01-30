@@ -16,7 +16,7 @@ import {
   Plus, Trash2, Pencil, Check, X, Grid3X3, ListOrdered, Brain,
   ChevronRight, ArrowLeft, Loader2,
   AlertCircle, CheckCircle2, Image, Music, Video,
-  Download, Upload, FileSpreadsheet,
+  Download, Upload, FileSpreadsheet, Heart,
 } from "lucide-react";
 import { 
   AlertDialog, AlertDialogAction, AlertDialogCancel, 
@@ -580,17 +580,17 @@ export default function BlitzgridAdmin() {
     };
     
     return (
-      <div className="min-h-screen bg-background" data-testid="page-blitzgrid-admin-grid">
+      <div className="min-h-screen bg-background flex flex-col" data-testid="page-blitzgrid-admin-grid">
         <AppHeader 
           title="Blitzgrid Admin" 
           subtitle={grid?.name}
           onBack={() => setSelectedGridId(null)}
         />
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-4 py-6 flex-1">
           
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-bold">{grid?.name || 'Grid'}</h1>
+              <h1 className="text-2xl font-bold"><span className="bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-400 bg-clip-text text-transparent">{grid?.name || 'Grid'}</span></h1>
               <p className="text-muted-foreground text-sm">
                 {gridCategories.length}/5 categories · {grid?.questionCount || 0}/25 questions
               </p>
@@ -836,13 +836,22 @@ export default function BlitzgridAdmin() {
             </div>
           )}
         </div>
+        
+        {/* Footer */}
+        <footer className="border-t border-border/50 px-6 py-6 mt-auto">
+          <div className="max-w-5xl mx-auto flex items-center justify-center">
+            <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-1">
+              made with <Heart className="w-4 h-4 text-pink-500 fill-pink-500 inline" /> by <span className="font-semibold bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 bg-clip-text text-transparent">Amoli</span>
+            </p>
+          </div>
+        </footer>
       </div>
     );
   }
 
   // Grid list view
   return (
-    <div className="min-h-screen bg-background" data-testid="page-blitzgrid-admin">
+    <div className="min-h-screen bg-background flex flex-col" data-testid="page-blitzgrid-admin">
       <AppHeader title="Content Admin" backHref="/" />
       
       <div className="border-b border-border bg-card/50">
@@ -882,10 +891,10 @@ export default function BlitzgridAdmin() {
         </div>
       </div>
       
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-6 flex-1">
         <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold">Blitzgrid Grids</h1>
+            <h1 className="text-2xl font-bold">Blitzgrid <span className="bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-400 bg-clip-text text-transparent">Grids</span></h1>
             <p className="text-muted-foreground text-sm">Create and edit your trivia grids</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -1119,6 +1128,15 @@ export default function BlitzgridAdmin() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Footer */}
+      <footer className="border-t border-border/50 px-6 py-6 mt-auto">
+        <div className="max-w-5xl mx-auto flex items-center justify-center">
+          <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-1">
+            made with <Heart className="w-4 h-4 text-pink-500 fill-pink-500 inline" /> by <span className="font-semibold bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 bg-clip-text text-transparent">Amoli</span>
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
