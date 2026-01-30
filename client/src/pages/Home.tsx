@@ -191,7 +191,7 @@ export default function Home() {
                     
                     {/* Description */}
                     <p 
-                      className="text-white/50 text-sm mb-4 leading-relaxed"
+                      className="text-white/70 text-sm mb-4 leading-relaxed"
                       data-testid={`text-game-description-${game.slug}`}
                     >
                       {config.description}
@@ -199,7 +199,7 @@ export default function Home() {
                     
                     {/* Player count */}
                     <div 
-                      className="flex items-center gap-2 text-white/30 text-xs"
+                      className="flex items-center gap-2 text-white/50 text-xs"
                       data-testid={`text-game-players-${game.slug}`}
                     >
                       <Users className="w-3 h-3" />
