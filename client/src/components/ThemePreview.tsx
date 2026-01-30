@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { 
   Trophy, Cake, Umbrella, Briefcase, Dog, Cat, Rocket, Music, Leaf,
-  Star, Waves, Coffee, Headphones, Bird, Flower2
+  Star
 } from "lucide-react";
 
 interface ThemePreviewProps {
@@ -11,122 +11,74 @@ interface ThemePreviewProps {
 
 const themeConfigs: Record<string, { 
   gradient: string; 
-  elements: Array<{ icon: string; color: string; x: number; y: number; delay: number }>;
+  iconColor: string;
+  glowColor: string;
 }> = {
   sports: {
-    gradient: "from-emerald-600 via-green-500 to-emerald-700",
-    elements: [
-      { icon: "ball", color: "white", x: 20, y: 30, delay: 0 },
-      { icon: "trophy", color: "#fbbf24", x: 70, y: 60, delay: 0.2 },
-    ]
+    gradient: "from-emerald-200 via-emerald-300 to-emerald-400",
+    iconColor: "#065f46",
+    glowColor: "rgba(110, 231, 183, 0.4)"
   },
   birthday: {
-    gradient: "from-pink-400 via-purple-400 to-indigo-400",
-    elements: [
-      { icon: "cake", color: "#fbbf24", x: 50, y: 50, delay: 0 },
-      { icon: "star", color: "#f472b6", x: 20, y: 30, delay: 0.1 },
-      { icon: "star", color: "#a78bfa", x: 80, y: 25, delay: 0.2 },
-    ]
+    gradient: "from-pink-200 via-pink-300 to-pink-400",
+    iconColor: "#9d174d",
+    glowColor: "rgba(249, 168, 212, 0.4)"
   },
   beach: {
-    gradient: "from-cyan-400 via-blue-400 to-teal-300",
-    elements: [
-      { icon: "umbrella", color: "#f97316", x: 60, y: 40, delay: 0 },
-      { icon: "waves", color: "#22d3ee", x: 30, y: 70, delay: 0.15 },
-    ]
+    gradient: "from-cyan-200 via-cyan-300 to-cyan-400",
+    iconColor: "#155e75",
+    glowColor: "rgba(103, 232, 249, 0.4)"
   },
   office: {
-    gradient: "from-slate-600 via-gray-500 to-slate-700",
-    elements: [
-      { icon: "briefcase", color: "#94a3b8", x: 50, y: 45, delay: 0 },
-      { icon: "coffee", color: "#a16207", x: 75, y: 65, delay: 0.1 },
-    ]
+    gradient: "from-slate-200 via-slate-300 to-slate-400",
+    iconColor: "#334155",
+    glowColor: "rgba(148, 163, 184, 0.4)"
   },
   dogs: {
-    gradient: "from-amber-600 via-yellow-500 to-orange-500",
-    elements: [
-      { icon: "dog", color: "#92400e", x: 50, y: 50, delay: 0 },
-      { icon: "bone", color: "white", x: 25, y: 35, delay: 0.2 },
-    ]
+    gradient: "from-amber-200 via-amber-300 to-amber-400",
+    iconColor: "#92400e",
+    glowColor: "rgba(251, 191, 36, 0.4)"
   },
   cats: {
-    gradient: "from-violet-500 via-purple-500 to-fuchsia-500",
-    elements: [
-      { icon: "cat", color: "#1e1b4b", x: 50, y: 50, delay: 0 },
-      { icon: "yarn", color: "#f472b6", x: 75, y: 65, delay: 0.15 },
-    ]
+    gradient: "from-violet-200 via-violet-300 to-violet-400",
+    iconColor: "#5b21b6",
+    glowColor: "rgba(167, 139, 250, 0.4)"
   },
   space: {
-    gradient: "from-indigo-900 via-purple-900 to-slate-900",
-    elements: [
-      { icon: "rocket", color: "#f97316", x: 50, y: 40, delay: 0 },
-      { icon: "star", color: "#fbbf24", x: 20, y: 25, delay: 0.1 },
-      { icon: "star", color: "#22d3ee", x: 80, y: 60, delay: 0.2 },
-    ]
+    gradient: "from-indigo-800 via-indigo-900 to-violet-900",
+    iconColor: "#e0e7ff",
+    glowColor: "rgba(139, 92, 246, 0.4)"
   },
   music: {
-    gradient: "from-rose-500 via-pink-500 to-orange-400",
-    elements: [
-      { icon: "music", color: "white", x: 50, y: 45, delay: 0 },
-      { icon: "headphones", color: "#1e1b4b", x: 25, y: 60, delay: 0.15 },
-    ]
+    gradient: "from-rose-200 via-rose-300 to-rose-400",
+    iconColor: "#9f1239",
+    glowColor: "rgba(251, 113, 133, 0.4)"
   },
   nature: {
-    gradient: "from-green-500 via-emerald-400 to-teal-400",
-    elements: [
-      { icon: "leaf", color: "#166534", x: 50, y: 45, delay: 0 },
-      { icon: "bird", color: "#0284c7", x: 75, y: 30, delay: 0.1 },
-      { icon: "flower", color: "#ec4899", x: 25, y: 65, delay: 0.2 },
-    ]
+    gradient: "from-green-200 via-green-300 to-green-400",
+    iconColor: "#166534",
+    glowColor: "rgba(74, 222, 128, 0.4)"
   },
 };
 
-const renderIcon = (icon: string, color: string, isLarge: boolean = false) => {
-  const iconSize = isLarge ? 20 : 12;
-  const className = isLarge ? "w-5 h-5" : "w-3 h-3";
-  const props = { className, style: { color }, size: iconSize };
+const getIcon = (themeId: string, size: "sm" | "lg" = "sm") => {
+  const iconSize = size === "lg" ? "w-8 h-8" : "w-4 h-4";
+  const config = themeConfigs[themeId];
+  const color = config?.iconColor || "#374151";
   
-  switch (icon) {
-    case "ball":
-      return (
-        <svg width={iconSize} height={iconSize} viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10" fill="white" stroke="#ccc" strokeWidth="1"/>
-          <path d="M12 2 L12 22 M2 12 L22 12" stroke="#ccc" strokeWidth="0.5" opacity="0.5"/>
-        </svg>
-      );
-    case "bone":
-      return (
-        <svg width={iconSize} height={iconSize * 0.5} viewBox="0 0 24 12">
-          <ellipse cx="3" cy="3" rx="3" ry="3" fill="white"/>
-          <ellipse cx="3" cy="9" rx="3" ry="3" fill="white"/>
-          <ellipse cx="21" cy="3" rx="3" ry="3" fill="white"/>
-          <ellipse cx="21" cy="9" rx="3" ry="3" fill="white"/>
-          <rect x="3" y="4" width="18" height="4" fill="white"/>
-        </svg>
-      );
-    case "yarn":
-      return (
-        <svg width={iconSize} height={iconSize} viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10" fill={color}/>
-          <path d="M6 8 Q12 4 18 8 Q12 12 6 8" fill="none" stroke="white" strokeWidth="1" opacity="0.5"/>
-        </svg>
-      );
-    case "trophy": return <Trophy {...props} />;
-    case "cake": return <Cake {...props} />;
-    case "umbrella": return <Umbrella {...props} />;
-    case "briefcase": return <Briefcase {...props} />;
-    case "dog": return <Dog {...props} />;
-    case "cat": return <Cat {...props} />;
-    case "rocket": return <Rocket {...props} />;
+  const props = { className: iconSize, style: { color } };
+  
+  switch (themeId) {
+    case "sports": return <Trophy {...props} />;
+    case "birthday": return <Cake {...props} />;
+    case "beach": return <Umbrella {...props} />;
+    case "office": return <Briefcase {...props} />;
+    case "dogs": return <Dog {...props} />;
+    case "cats": return <Cat {...props} />;
+    case "space": return <Rocket {...props} />;
     case "music": return <Music {...props} />;
-    case "leaf": return <Leaf {...props} />;
-    case "star": return <Star {...props} />;
-    case "waves": return <Waves {...props} />;
-    case "coffee": return <Coffee {...props} />;
-    case "headphones": return <Headphones {...props} />;
-    case "bird": return <Bird {...props} />;
-    case "flower": return <Flower2 {...props} />;
-    default: return null;
+    case "nature": return <Leaf {...props} />;
+    default: return <Star {...props} />;
   }
 };
 
@@ -135,27 +87,24 @@ export function ThemePreview({ themeId, className = "" }: ThemePreviewProps) {
   
   return (
     <div 
-      className={`relative w-10 h-10 rounded-md overflow-hidden bg-gradient-to-br ${config.gradient} ${className}`}
+      className={`relative w-10 h-10 rounded-lg overflow-hidden bg-gradient-to-br ${config.gradient} ${className}`}
+      style={{ boxShadow: `0 4px 12px ${config.glowColor}` }}
     >
-      {config.elements.map((el, idx) => (
+      <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent" />
+      <div className="absolute inset-0 flex items-center justify-center">
         <motion.div
-          key={idx}
-          className="absolute"
-          style={{ left: `${el.x}%`, top: `${el.y}%`, transform: 'translate(-50%, -50%)' }}
           animate={{ 
-            y: [0, -2, 0],
-            scale: [1, 1.1, 1],
+            scale: [1, 1.08, 1],
           }}
           transition={{ 
-            duration: 1.5, 
+            duration: 2, 
             repeat: Infinity, 
-            delay: el.delay,
             ease: "easeInOut"
           }}
         >
-          {renderIcon(el.icon, el.color, false)}
+          {getIcon(themeId, "sm")}
         </motion.div>
-      ))}
+      </div>
     </div>
   );
 }
@@ -165,30 +114,27 @@ export function ThemePreviewLarge({ themeId, className = "" }: ThemePreviewProps
   
   return (
     <motion.div 
-      initial={{ opacity: 0, scale: 0.9 }}
+      initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={`relative w-full h-24 rounded-lg overflow-hidden bg-gradient-to-br ${config.gradient} ${className}`}
+      className={`relative w-full h-24 rounded-xl overflow-hidden bg-gradient-to-br ${config.gradient} ${className}`}
+      style={{ boxShadow: `0 8px 24px ${config.glowColor}` }}
     >
-      {config.elements.map((el, idx) => (
+      <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/20 to-transparent" />
+      <div className="absolute inset-0 flex items-center justify-center">
         <motion.div
-          key={idx}
-          className="absolute"
-          style={{ left: `${el.x}%`, top: `${el.y}%`, transform: 'translate(-50%, -50%)' }}
           animate={{ 
-            y: [0, -6, 0],
-            scale: [1, 1.15, 1],
-            rotate: el.icon === 'star' ? [0, 180, 360] : 0,
+            y: [0, -4, 0],
+            scale: [1, 1.05, 1],
           }}
           transition={{ 
-            duration: 2, 
+            duration: 2.5, 
             repeat: Infinity, 
-            delay: el.delay,
             ease: "easeInOut"
           }}
         >
-          {renderIcon(el.icon, el.color, true)}
+          {getIcon(themeId, "lg")}
         </motion.div>
-      ))}
+      </div>
     </motion.div>
   );
 }
