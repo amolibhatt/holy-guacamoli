@@ -3191,7 +3191,7 @@ export default function Blitzgrid() {
   const myGrids = activeGrids.filter(g => !g.isStarterPack);
 
   // Grid card component - clean design with color accent only on icon
-  const GridCard = ({ grid }: { grid: typeof activeGrids[0] }) => {
+  const GridCard = ({ grid, index }: { grid: typeof activeGrids[0], index: number }) => {
     const effectiveColor = grid.colorCode?.startsWith('#') ? null : grid.colorCode;
     // Use grid ID for stable color assignment (same color in list and gameplay)
     const colorConfig = getBoardColorConfig(effectiveColor || BOARD_COLORS[grid.id % BOARD_COLORS.length]);
@@ -3370,7 +3370,7 @@ export default function Blitzgrid() {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {myGrids.map((grid, index) => (
-                    <GridCard key={grid.id} grid={grid} />
+                    <GridCard key={grid.id} grid={grid} index={index} />
                   ))}
                 </div>
               </motion.section>
@@ -3393,7 +3393,7 @@ export default function Blitzgrid() {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {starterPacks.map((grid, index) => (
-                    <GridCard key={grid.id} grid={grid} />
+                    <GridCard key={grid.id} grid={grid} index={index} />
                   ))}
                 </div>
               </motion.section>
