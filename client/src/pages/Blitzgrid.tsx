@@ -2680,20 +2680,11 @@ export default function Blitzgrid() {
         <div className={`absolute inset-0 rounded-xl ${colorConfig.light} opacity-50 group-hover:opacity-70 transition-opacity`} />
         
         <div className="flex items-center gap-3 flex-wrap relative z-10">
-          <motion.div 
-            className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${colorConfig.bg} shadow-md`}
-            whileHover={{ rotate: 5, scale: 1.05 }}
-          >
-            <Grid3X3 className="w-5 h-5 text-white" />
-          </motion.div>
-          
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-base text-foreground truncate">{grid.name}</h3>
           </div>
           
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-muted/60 group-hover:bg-muted transition-all">
-            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
-          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
         </div>
       </motion.button>
     );
