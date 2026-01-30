@@ -937,14 +937,20 @@ export default function PlayerPage() {
             >
               <motion.div 
                 animate={{ scale: [1, 1.02, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-64 h-64 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex flex-col items-center justify-center mx-auto shadow-xl border-4 border-slate-500/50 relative"
+                transition={{ duration: 3, repeat: Infinity }}
+                className="w-72 h-72 rounded-full bg-gradient-to-br from-slate-500 via-slate-600 to-slate-700 flex flex-col items-center justify-center mx-auto shadow-2xl border-4 border-slate-400/40 relative"
+                style={{ boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25), inset 0 -4px 12px rgba(0,0,0,0.2)' }}
               >
-                <Lock className="w-20 h-20 text-slate-400 mb-2" />
-                <span className="text-slate-400 text-xl font-bold">LOCKED</span>
+                <motion.div
+                  animate={{ opacity: [0.5, 0.8, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Lock className="w-24 h-24 text-slate-300/80 mb-2 drop-shadow-lg" />
+                </motion.div>
+                <span className="text-slate-300 text-2xl font-black tracking-wider">LOCKED</span>
               </motion.div>
-              <h2 className="text-2xl font-bold text-foreground mt-6">You're In!</h2>
-              <p className="text-muted-foreground mt-2 max-w-xs mx-auto">Buzzer will unlock when the host selects a question</p>
+              <h2 className="text-2xl font-bold text-foreground mt-8">You're In!</h2>
+              <p className="text-muted-foreground mt-2 max-w-xs mx-auto text-base">Buzzer unlocks when the host picks a question</p>
             </motion.div>
           ) : (
             <motion.div
@@ -954,33 +960,46 @@ export default function PlayerPage() {
               className="text-center flex flex-col items-center justify-center"
             >
               <motion.button
-                whileTap={{ scale: 0.85 }}
-                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.82 }}
+                whileHover={{ scale: 1.03 }}
                 onClick={handleBuzz}
-                className="w-80 h-80 sm:w-72 sm:h-72 rounded-full gradient-header flex flex-col items-center justify-center shadow-2xl active:shadow-lg transition-all focus:outline-none focus:ring-4 focus:ring-primary/50 relative overflow-visible touch-manipulation"
-                style={{ WebkitTapHighlightColor: 'transparent', minWidth: '280px', minHeight: '280px' }}
+                className="w-80 h-80 sm:w-72 sm:h-72 rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 flex flex-col items-center justify-center shadow-2xl active:shadow-lg transition-all focus:outline-none focus:ring-4 focus:ring-amber-400/50 relative overflow-visible touch-manipulation"
+                style={{ 
+                  WebkitTapHighlightColor: 'transparent', 
+                  minWidth: '280px', 
+                  minHeight: '280px',
+                  boxShadow: '0 25px 60px -12px rgba(251, 191, 36, 0.5), inset 0 -6px 16px rgba(0,0,0,0.15)'
+                }}
                 data-testid="button-buzz"
                 aria-label="Buzz in - tap to answer"
                 role="button"
               >
+                {/* Triple pulse ring effect */}
                 <motion.div
-                  animate={{ scale: [1, 1.4, 1] }}
-                  transition={{ duration: 1.2, repeat: Infinity }}
-                  className="absolute inset-0 rounded-full bg-primary/30 -z-10"
+                  animate={{ scale: [1, 1.5, 1], opacity: [0.4, 0, 0.4] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                  className="absolute inset-0 rounded-full border-4 border-amber-400 -z-10"
                 />
                 <motion.div
-                  animate={{ scale: [1.1, 1.5, 1.1] }}
-                  transition={{ duration: 1.2, repeat: Infinity, delay: 0.3 }}
-                  className="absolute inset-0 rounded-full bg-primary/15 -z-20"
+                  animate={{ scale: [1, 1.7, 1], opacity: [0.3, 0, 0.3] }}
+                  transition={{ duration: 1.5, repeat: Infinity, delay: 0.25 }}
+                  className="absolute inset-0 rounded-full border-4 border-amber-300 -z-20"
                 />
-                <Zap className="w-28 h-28 text-white mb-2" aria-hidden="true" />
-                <span className="text-white text-2xl font-black tracking-wide">BUZZ!</span>
+                <motion.div
+                  animate={{ scale: [1, 1.9, 1], opacity: [0.2, 0, 0.2] }}
+                  transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
+                  className="absolute inset-0 rounded-full border-4 border-amber-200 -z-30"
+                />
+                {/* Inner glow */}
+                <div className="absolute inset-4 rounded-full bg-gradient-to-br from-yellow-300/30 to-transparent" />
+                <Zap className="w-32 h-32 text-white drop-shadow-lg mb-1" aria-hidden="true" />
+                <span className="text-white text-3xl font-black tracking-wider drop-shadow-md">BUZZ!</span>
               </motion.button>
               <motion.p 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="text-primary font-bold mt-6 text-xl"
+                className="text-amber-600 font-bold mt-8 text-xl"
               >
                 Tap fast to answer first!
               </motion.p>

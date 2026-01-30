@@ -47,18 +47,20 @@ const GAME_CONFIG: Record<string, {
   tagline: string;
   description: string;
   borderColor: string;
+  sparkleColors?: string[];
 }> = {
   blitzgrid: {
     icon: Grid3X3,
     gradient: "from-rose-300 via-pink-300 to-fuchsia-300",
-    bgGradient: "from-rose-100/50 via-pink-100/40 to-fuchsia-100/30",
-    shadowColor: "shadow-pink-300/40",
+    bgGradient: "from-rose-100/60 via-pink-100/50 to-fuchsia-100/40",
+    shadowColor: "shadow-pink-300/50",
     route: "/host/blitzgrid",
     accentColor: "#F9A8D4",
     iconBg: "bg-gradient-to-br from-rose-300 via-pink-300 to-fuchsia-300",
     tagline: "The Grid Awaits",
     description: "5 categories. 25 questions. One champion. Race against the clock to decode clues and dominate the board.",
     borderColor: "border-pink-200/60",
+    sparkleColors: ['#fda4af', '#f9a8d4', '#f0abfc'],
   },
   sequence_squeeze: {
     icon: ListOrdered,
@@ -268,8 +270,8 @@ export default function Home() {
                       onClick={() => !isComingSoon && setLocation(config.route)}
                       onMouseEnter={() => setHoveredCard(game.slug)}
                       onMouseLeave={() => setHoveredCard(null)}
-                      whileHover={isComingSoon ? {} : { y: -6, transition: { duration: 0.2 } }}
-                      whileTap={isComingSoon ? {} : { scale: 0.98 }}
+                      whileHover={isComingSoon ? {} : { y: -8, transition: { duration: 0.25, ease: "easeOut" } }}
+                      whileTap={isComingSoon ? {} : { scale: 0.97 }}
                       disabled={isComingSoon}
                       className={`relative flex flex-col p-6 rounded-3xl text-left transition-all duration-300 w-full overflow-hidden border ${
                         isComingSoon 
@@ -278,16 +280,46 @@ export default function Home() {
                       }`}
                       style={{
                         boxShadow: isHovered && !isComingSoon 
-                          ? `0 20px 40px -12px ${config.accentColor}40`
-                          : undefined
+                          ? `0 24px 48px -12px ${config.accentColor}50, 0 12px 24px -8px ${config.accentColor}30`
+                          : `0 4px 20px -4px ${config.accentColor}15`
                       }}
                       data-testid={`button-game-${game.slug}`}
                     >
+                      {/* Floating sparkles on hover for Blitzgrid */}
+                      {config.sparkleColors && isHovered && !isComingSoon && (
+                        <>
+                          {[...Array(6)].map((_, i) => (
+                            <motion.div
+                              key={i}
+                              className="absolute w-1.5 h-1.5 rounded-full pointer-events-none"
+                              style={{ backgroundColor: config.sparkleColors![i % config.sparkleColors!.length] }}
+                              initial={{ 
+                                x: 20 + Math.random() * 200, 
+                                y: 40 + Math.random() * 100,
+                                opacity: 0,
+                                scale: 0
+                              }}
+                              animate={{ 
+                                y: [null, -20 - Math.random() * 40],
+                                opacity: [0, 1, 0],
+                                scale: [0, 1.2, 0]
+                              }}
+                              transition={{ 
+                                duration: 1.5 + Math.random() * 0.5,
+                                delay: i * 0.15,
+                                repeat: Infinity,
+                                ease: "easeOut"
+                              }}
+                            />
+                          ))}
+                        </>
+                      )}
+                      
                       {/* Gradient background on hover */}
                       <motion.div 
                         className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${config.bgGradient}`}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: isHovered && !isComingSoon ? 1 : 0.3 }}
+                        initial={{ opacity: 0.3 }}
+                        animate={{ opacity: isHovered && !isComingSoon ? 1 : 0.4 }}
                         transition={{ duration: 0.3 }}
                       />
                       
