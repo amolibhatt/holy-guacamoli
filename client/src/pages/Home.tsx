@@ -349,17 +349,22 @@ export default function Home() {
                         {config.tagline}
                       </p>
                       
-                      {/* GO indicator */}
+                      {/* GO button with matching glow */}
                       <motion.div 
-                        className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full"
-                        animate={{ 
-                          scale: isHovered && !isComingSoon ? 1.1 : 1,
-                          x: isHovered && !isComingSoon ? -4 : 0
+                        className="absolute bottom-4 right-4 flex items-center gap-2 bg-black/40 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/30"
+                        style={{
+                          boxShadow: isHovered && !isComingSoon
+                            ? `0 0 25px ${config.accentColor}, 0 0 50px ${config.accentColor}60, inset 0 0 15px rgba(255,255,255,0.2)`
+                            : `0 0 15px ${config.accentColor}60, inset 0 0 10px rgba(255,255,255,0.1)`
                         }}
-                        transition={{ duration: 0.15 }}
+                        animate={{ 
+                          scale: isHovered && !isComingSoon ? 1.15 : 1,
+                          x: isHovered && !isComingSoon ? -6 : 0
+                        }}
+                        transition={{ duration: 0.15, type: "spring", stiffness: 300 }}
                       >
-                        <span className="text-xs font-black text-white uppercase tracking-wider">GO</span>
-                        <ArrowRight className="w-4 h-4 text-white" strokeWidth={3} />
+                        <span className="text-sm font-black text-white uppercase tracking-widest">GO</span>
+                        <ArrowRight className="w-5 h-5 text-white" strokeWidth={3} />
                       </motion.div>
                     </motion.button>
                   </motion.div>
