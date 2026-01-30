@@ -21,7 +21,7 @@ import {
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Play, Loader2,
   AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Zap, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Sparkles, Medal,
-  Circle, Waves, Sun, Star, TreePine, Flower2, Leaf, Bird,
+  Circle, Waves, Sun, Star, TreePine, Flower2, Leaf, Bird, Gamepad,
   PartyPopper, Cake, Umbrella, Briefcase, Dog, Cat, Rocket, Music, Palette, Heart, Timer,
   Target, Flag, Award, Dribbble, Shirt, Footprints, Shell, Fish, Gift, Candy, Coffee, Laptop, Headphones, Mic2, Guitar,
   Volume2, VolumeX, MoreVertical, Settings, Copy, Link2, Share2, Download, Image, Loader2 as LoaderIcon, Clock,
@@ -65,61 +65,77 @@ interface CategoryWithQuestions extends Category {
 
 const POINT_TIERS = [10, 20, 30, 40, 50];
 
-// Available themes for grids - matching the app's refined pastel design language
+// Available themes for grids - each with unique visual identity
 const GRID_THEMES = [
   { 
-    id: 'sports', name: 'Game Day', iconType: 'trophy' as const, 
-    background: 'linear-gradient(135deg, #059669 0%, #10b981 40%, #34d399 100%)',
-    overlay: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.3) 0%, transparent 40%)',
-    glow: '#10b981'
+    id: 'neon', name: 'Neon Nights', iconType: 'zap' as const,
+    background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 30%, #16213e 60%, #0f3460 100%)',
+    accent: '#00fff5',
+    glow: '#00fff5',
+    style: 'dark'
   },
   { 
-    id: 'birthday', name: 'Party Time', iconType: 'cake' as const, 
-    background: 'linear-gradient(135deg, #ec4899 0%, #f472b6 50%, #fb7185 100%)',
-    overlay: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.35) 0%, transparent 40%)',
-    glow: '#ec4899'
+    id: 'sunset', name: 'Golden Hour', iconType: 'sun' as const,
+    background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 25%, #ffcc02 50%, #ff6b6b 100%)',
+    accent: '#fff',
+    glow: '#ff6b35',
+    style: 'warm'
   },
   { 
-    id: 'beach', name: 'Beach Vibes', iconType: 'umbrella' as const, 
-    background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #22d3ee 100%)',
-    overlay: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.3) 0%, transparent 40%)',
-    glow: '#06b6d4'
+    id: 'aurora', name: 'Northern Lights', iconType: 'sparkles' as const,
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #6B8DD6 50%, #8E37D7 75%, #00d4ff 100%)',
+    accent: '#fff',
+    glow: '#764ba2',
+    style: 'magical'
   },
   { 
-    id: 'office', name: 'Corporate', iconType: 'briefcase' as const, 
-    background: 'linear-gradient(135deg, #475569 0%, #64748b 50%, #94a3b8 100%)',
-    overlay: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.2) 0%, transparent 40%)',
-    glow: '#64748b'
+    id: 'ocean', name: 'Deep Sea', iconType: 'waves' as const,
+    background: 'linear-gradient(180deg, #0077b6 0%, #023e8a 40%, #03045e 100%)',
+    accent: '#90e0ef',
+    glow: '#0077b6',
+    style: 'cool'
   },
   { 
-    id: 'dogs', name: 'Pawsome', iconType: 'dog' as const, 
-    background: 'linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #fbbf24 100%)',
-    overlay: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.3) 0%, transparent 40%)',
-    glow: '#f59e0b'
+    id: 'candy', name: 'Sugar Rush', iconType: 'candy' as const,
+    background: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 25%, #fecfef 50%, #ff9a9e 75%, #fad0c4 100%)',
+    accent: '#fff',
+    glow: '#ff9a9e',
+    style: 'sweet'
   },
   { 
-    id: 'cats', name: 'Meow Mix', iconType: 'cat' as const, 
-    background: 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 50%, #a78bfa 100%)',
-    overlay: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.25) 0%, transparent 40%)',
-    glow: '#8b5cf6'
+    id: 'forest', name: 'Enchanted', iconType: 'trees' as const,
+    background: 'linear-gradient(135deg, #134e5e 0%, #1a5d3a 50%, #2d5a27 100%)',
+    accent: '#a8e6cf',
+    glow: '#2d5a27',
+    style: 'nature'
   },
   { 
-    id: 'space', name: 'Cosmic', iconType: 'rocket' as const, 
-    background: 'linear-gradient(135deg, #1e1b4b 0%, #3730a3 50%, #6366f1 100%)',
-    overlay: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.15) 0%, transparent 40%)',
-    glow: '#6366f1'
+    id: 'galaxy', name: 'Stardust', iconType: 'star' as const,
+    background: 'linear-gradient(135deg, #0c0c1e 0%, #1a1a3e 25%, #2d1b4e 50%, #1e3a5f 75%, #0c0c1e 100%)',
+    accent: '#ffd700',
+    glow: '#8b5cf6',
+    style: 'cosmic'
   },
   { 
-    id: 'music', name: 'Rockstar', iconType: 'music' as const, 
-    background: 'linear-gradient(135deg, #be123c 0%, #e11d48 50%, #fb7185 100%)',
-    overlay: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.25) 0%, transparent 40%)',
-    glow: '#e11d48'
+    id: 'fire', name: 'Inferno', iconType: 'flame' as const,
+    background: 'linear-gradient(135deg, #f12711 0%, #f5af19 50%, #f12711 100%)',
+    accent: '#fff',
+    glow: '#f5af19',
+    style: 'hot'
   },
   { 
-    id: 'nature', name: 'Wilderness', iconType: 'leaf' as const, 
-    background: 'linear-gradient(135deg, #15803d 0%, #22c55e 50%, #4ade80 100%)',
-    overlay: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.25) 0%, transparent 40%)',
-    glow: '#22c55e'
+    id: 'retro', name: 'Arcade', iconType: 'gamepad' as const,
+    background: 'linear-gradient(135deg, #ff00ff 0%, #00ffff 50%, #ff00ff 100%)',
+    accent: '#fff',
+    glow: '#ff00ff',
+    style: 'retro'
+  },
+  { 
+    id: 'minimal', name: 'Clean Slate', iconType: 'circle' as const,
+    background: 'linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 50%, #ffffff 100%)',
+    accent: '#333',
+    glow: '#999',
+    style: 'minimal'
   },
 ] as const;
 
@@ -128,15 +144,16 @@ type ThemeIconType = typeof GRID_THEMES[number]['iconType'];
 // Map theme icon types to lucide icons
 const ThemeIcon = ({ type, className }: { type: ThemeIconType; className?: string }) => {
   switch (type) {
-    case 'trophy': return <Trophy className={className} />;
-    case 'cake': return <Cake className={className} />;
-    case 'umbrella': return <Umbrella className={className} />;
-    case 'briefcase': return <Briefcase className={className} />;
-    case 'dog': return <Dog className={className} />;
-    case 'cat': return <Cat className={className} />;
-    case 'rocket': return <Rocket className={className} />;
-    case 'music': return <Music className={className} />;
-    case 'leaf': return <Leaf className={className} />;
+    case 'zap': return <Zap className={className} />;
+    case 'sun': return <Sun className={className} />;
+    case 'sparkles': return <Sparkles className={className} />;
+    case 'waves': return <Waves className={className} />;
+    case 'candy': return <Candy className={className} />;
+    case 'trees': return <TreePine className={className} />;
+    case 'star': return <Star className={className} />;
+    case 'flame': return <Flame className={className} />;
+    case 'gamepad': return <Gamepad className={className} />;
+    case 'circle': return <Circle className={className} />;
     default: return <PartyPopper className={className} />;
   }
 };
@@ -1999,7 +2016,7 @@ export default function Blitzgrid() {
           {/* Atmospheric overlay layer */}
           <div 
             className="absolute inset-0 pointer-events-none z-[1]" 
-            style={{ background: currentTheme.overlay }}
+            style={{ background: `radial-gradient(circle at 30% 20%, rgba(255,255,255,0.15) 0%, transparent 40%)` }}
           />
           
           {/* Ambient glow pulse */}
