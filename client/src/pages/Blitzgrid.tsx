@@ -1001,19 +1001,20 @@ export default function Blitzgrid() {
       const thirdPhase = sortedPlayers.length >= 4 ? 3 : 2;
       const restPhase = 2;
       
-      // Dynamic background based on grid color
-      const colorGradients: Record<string, { bg: string; glow: string }> = {
-        violet: { bg: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%)', glow: '#7c3aed' },
-        fuchsia: { bg: 'linear-gradient(135deg, #d946ef 0%, #c026d3 50%, #a21caf 100%)', glow: '#c026d3' },
-        amber: { bg: 'linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)', glow: '#d97706' },
-        teal: { bg: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 50%, #0f766e 100%)', glow: '#0d9488' },
-        sky: { bg: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%)', glow: '#0284c7' },
+      // Dynamic pastel background based on grid color - sophisticated designer look
+      const colorGradients: Record<string, { bg: string; glow: string; accent: string }> = {
+        rose: { bg: 'linear-gradient(135deg, #fff1f2 0%, #fce7f3 30%, #fdf2f8 70%, #fef7ff 100%)', glow: '#f9a8d4', accent: '#fb7185' },
+        violet: { bg: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 30%, #f3e8ff 70%, #faf5ff 100%)', glow: '#c4b5fd', accent: '#8b5cf6' },
+        amber: { bg: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 30%, #fff7ed 70%, #fffaf0 100%)', glow: '#fcd34d', accent: '#f59e0b' },
+        teal: { bg: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 30%, #ecfeff 70%, #f0f9ff 100%)', glow: '#5eead4', accent: '#14b8a6' },
+        sky: { bg: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 30%, #f0fdfa 70%, #f8fafc 100%)', glow: '#7dd3fc', accent: '#0ea5e9' },
       };
       const effectiveColorName = grid?.colorCode?.startsWith('#') ? null : grid?.colorCode;
       const colorName = effectiveColorName || BOARD_COLORS[gridIndex >= 0 ? gridIndex % BOARD_COLORS.length : 0];
-      const gradientConfig = colorGradients[colorName] || colorGradients.violet;
+      const gradientConfig = colorGradients[colorName] || colorGradients.rose;
       const playBackground = gradientConfig.bg;
       const glowColor = gradientConfig.glow;
+      const accentColor = gradientConfig.accent;
       
       // Keyboard handler for reveal mode
       const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -1070,11 +1071,11 @@ export default function Blitzgrid() {
                     transition={{ delay: 0.2 }}
                     className="mb-8"
                   >
-                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">Final Scores</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Final Scores</h2>
                     <div className="flex items-center justify-center gap-2">
-                      <Sparkles className="w-5 h-5 text-yellow-400" />
-                      <span className="text-white/60">Who takes the crown?</span>
-                      <Sparkles className="w-5 h-5 text-yellow-400" />
+                      <Sparkles className="w-5 h-5 text-amber-500" />
+                      <span className="text-gray-500">Who takes the crown?</span>
+                      <Sparkles className="w-5 h-5 text-amber-500" />
                     </div>
                   </motion.div>
 
@@ -1304,11 +1305,11 @@ export default function Blitzgrid() {
             )}
           </AnimatePresence>
           
-          {/* Minimal Header */}
+          {/* Minimal Header - Glassmorphism on light pastel */}
           <motion.div 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="flex items-center justify-between px-4 py-3 bg-black/50 backdrop-blur-md border-b border-white/10"
+            className="flex items-center justify-between px-4 py-3 bg-white/70 backdrop-blur-xl border-b border-black/5 shadow-sm"
           >
             {/* Left: Back + Logo + Grid Name */}
             <div className="flex items-center gap-3">
@@ -1316,14 +1317,14 @@ export default function Blitzgrid() {
                 variant="ghost" 
                 size="icon"
                 onClick={() => { setPlayMode(false); setShuffleMode(false); setShuffledCategories(null); setSelectedGridId(null); }}
-                className="text-white/60 h-9 w-9"
+                className="text-gray-600 h-9 w-9"
                 data-testid="button-exit-play"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
-              <Logo size="md" variant="light" />
+              <Logo size="md" />
               <div className="hidden sm:block">
-                <h1 className="text-sm font-medium text-white/80 tracking-tight">
+                <h1 className="text-sm font-medium text-gray-700 tracking-tight">
                   {shuffleMode ? "Shuffle Play" : grid?.name}
                 </h1>
               </div>
@@ -1338,13 +1339,13 @@ export default function Blitzgrid() {
                   transition={{ type: "spring", delay: 0.2 }}
                   className="flex items-center gap-2"
                 >
-                  <Badge className={`${colorConfig.badge} ${colorConfig.badgeText} font-mono font-bold px-3 py-1.5 border`}>
+                  <Badge className={`${colorConfig.badge} ${colorConfig.badgeText} font-mono font-bold px-3 py-1.5 border shadow-sm`}>
                     {roomCode}
                   </Badge>
                   <Button 
                     size="sm" 
                     onClick={() => setShowQRCode(true)} 
-                    className={`${colorConfig.badge} ${colorConfig.badgeText} hover:bg-white font-medium`}
+                    className={`${colorConfig.badge} ${colorConfig.badgeText} font-medium shadow-sm`}
                     data-testid="button-show-qr"
                   >
                     <QrCode className="w-4 h-4" />
@@ -1354,7 +1355,7 @@ export default function Blitzgrid() {
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="icon" variant="ghost" className="text-white/60" data-testid="button-game-menu">
+                  <Button size="icon" variant="ghost" className="text-gray-600" data-testid="button-game-menu">
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -1422,10 +1423,10 @@ export default function Blitzgrid() {
                 exit={{ y: -50, opacity: 0 }}
                 className="absolute top-16 left-1/2 -translate-x-1/2 z-50"
               >
-                <div className={`${colorConfig.bg} text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2`}>
+                <div className={`bg-white/90 backdrop-blur-xl border border-pink-200/50 text-gray-700 px-4 py-2 rounded-full shadow-lg flex items-center gap-2`}>
                   <span className="text-lg">{PLAYER_AVATARS.find(a => a.id === lastJoinedPlayer.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
                   <span className="font-medium">{lastJoinedPlayer.name} joined!</span>
-                  <UserPlus className="w-4 h-4" />
+                  <UserPlus className="w-4 h-4 text-rose-500" />
                 </div>
               </motion.div>
             )}
@@ -1548,7 +1549,7 @@ export default function Blitzgrid() {
                         className={`
                           w-full h-full rounded-xl font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden border
                           ${isCellAnswered 
-                            ? 'bg-white/10 backdrop-blur-sm cursor-default border-white/20' 
+                            ? 'bg-gray-100/50 backdrop-blur-sm cursor-default border-gray-200/50' 
                             : isCategoryRevealed
                               ? `bg-gradient-to-br ${colorConfig.tile} ${colorConfig.tileBorder} ${colorConfig.tileText} cursor-pointer shadow-lg backdrop-blur-sm`
                               : 'bg-transparent cursor-default border-transparent'
@@ -1570,7 +1571,7 @@ export default function Blitzgrid() {
                             transition={{ type: "spring", stiffness: 200, damping: 15 }}
                             className="flex items-center justify-center"
                           >
-                            <Check className="w-8 h-8 md:w-12 md:h-12 text-white/40" strokeWidth={3} />
+                            <Check className="w-8 h-8 md:w-12 md:h-12 text-gray-300" strokeWidth={3} />
                           </motion.div>
                         ) : (
                           <span>{points}</span>
@@ -1595,7 +1596,7 @@ export default function Blitzgrid() {
                 className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30"
               >
                 <motion.div 
-                  className="bg-black/60 backdrop-blur-md px-6 py-3 rounded-full text-white flex items-center gap-3 shadow-lg border border-white/20"
+                  className="bg-white/90 backdrop-blur-xl px-6 py-3 rounded-full text-gray-700 flex items-center gap-3 shadow-lg border border-gray-200/50"
                   animate={{ scale: [1, 1.02, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
@@ -1605,7 +1606,7 @@ export default function Blitzgrid() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="text-xs border-white/30 text-white hover:bg-white/20"
+                    className="text-xs"
                     onClick={(e) => {
                       e.stopPropagation();
                       skipReveal();
@@ -1618,12 +1619,12 @@ export default function Blitzgrid() {
             )}
           </AnimatePresence>
           
-          {/* Bottom Scoreboard Bar - Clean & Minimal */}
+          {/* Bottom Scoreboard Bar - Glassmorphism on light pastel */}
           <motion.div 
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3, type: "spring" }}
-            className="bg-white/5 backdrop-blur-md border-t border-white/10 px-4 py-2"
+            className="bg-white/70 backdrop-blur-xl border-t border-black/5 px-4 py-2 shadow-sm"
           >
             {players.length > 0 ? (
               <LayoutGroup>
@@ -1645,7 +1646,7 @@ export default function Blitzgrid() {
                         }}
                         onClick={() => setSelectedPlayerId(isSelected ? null : player.id)}
                         className={`relative flex items-center gap-2 rounded-full py-1 pl-1 pr-3 cursor-pointer transition-all ${
-                          isSelected ? 'bg-white/15 ring-2 ring-teal-400/50' : 'hover:bg-white/10'
+                          isSelected ? 'bg-gray-100 ring-2 ring-rose-300/50' : 'hover:bg-gray-50'
                         } ${!player.connected ? 'opacity-50' : ''}`}
                       >
                         {/* Score change indicator */}
@@ -1657,7 +1658,7 @@ export default function Blitzgrid() {
                               exit={{ opacity: 0 }}
                               transition={{ duration: 1, ease: "easeOut" }}
                               className={`absolute -top-6 left-1/2 -translate-x-1/2 font-bold text-sm whitespace-nowrap ${
-                                scoreAnim.delta > 0 ? 'text-emerald-400' : 'text-red-400'
+                                scoreAnim.delta > 0 ? 'text-emerald-600' : 'text-red-500'
                               }`}
                             >
                               {scoreAnim.delta > 0 ? '+' : ''}{scoreAnim.delta}
@@ -1669,25 +1670,25 @@ export default function Blitzgrid() {
                           <motion.div 
                             animate={scoreAnim ? { scale: [1, 1.2, 1] } : {}}
                             transition={{ duration: 0.3 }}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-base ${
-                              idx === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-600' : 
-                              idx === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400' : 
-                              idx === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-800' : 
-                              'bg-gradient-to-br from-sky-400 to-sky-600'
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-base shadow-sm ${
+                              idx === 0 ? 'bg-gradient-to-br from-amber-300 to-amber-500' : 
+                              idx === 1 ? 'bg-gradient-to-br from-slate-200 to-slate-400' : 
+                              idx === 2 ? 'bg-gradient-to-br from-amber-500 to-amber-700' : 
+                              'bg-gradient-to-br from-rose-300 to-rose-500'
                             }`}
                           >
                             {avatarEmoji}
                           </motion.div>
-                          <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-slate-900 ${player.connected ? 'bg-green-500' : 'bg-red-500'}`} />
+                          <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${player.connected ? 'bg-green-500' : 'bg-red-500'}`} />
                         </div>
                         <div className="flex flex-col leading-tight">
-                          <span className="text-white font-medium text-xs">{player.name}</span>
+                          <span className="text-gray-700 font-medium text-xs">{player.name}</span>
                           <motion.span 
                             key={player.score}
-                            initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? '#2dd4bf' : scoreAnim?.delta && scoreAnim.delta < 0 ? '#f87171' : '#2dd4bf' }}
-                            animate={{ scale: 1, color: '#2dd4bf' }}
+                            initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? '#059669' : scoreAnim?.delta && scoreAnim.delta < 0 ? '#dc2626' : '#be185d' }}
+                            animate={{ scale: 1, color: '#be185d' }}
                             transition={{ duration: 0.3 }}
-                            className="text-teal-400 font-bold text-sm"
+                            className="text-rose-600 font-bold text-sm"
                           >
                             {player.score}
                           </motion.span>
@@ -1727,7 +1728,7 @@ export default function Blitzgrid() {
                 </div>
               </LayoutGroup>
             ) : (
-              <div className="flex items-center justify-center gap-2 text-white/40 text-sm py-1">
+              <div className="flex items-center justify-center gap-2 text-gray-400 text-sm py-1">
                 <Users className="w-4 h-4" />
                 <span>Tap room code to invite players</span>
               </div>
