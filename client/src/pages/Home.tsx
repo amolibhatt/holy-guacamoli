@@ -455,9 +455,9 @@ export default function Home() {
               <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
             </div>
             
-            {/* Dedication */}
+            {/* Credit */}
             <p className="text-sm text-muted-foreground">
-              Designed & built with love
+              Designed & built with
               <motion.span
                 className="inline-block mx-1"
                 animate={{ scale: [1, 1.15, 1] }}
@@ -465,7 +465,7 @@ export default function Home() {
               >
                 <Star className="w-4 h-4 text-amber-400 fill-amber-400 inline align-text-bottom" />
               </motion.span>
-              exclusively for <span className="font-semibold text-foreground">Amoli</span>
+              by <span className="font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">Amoli</span>
             </p>
           </div>
         </div>
