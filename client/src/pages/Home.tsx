@@ -270,43 +270,53 @@ export default function Home() {
                       onClick={() => !isComingSoon && setLocation(config.route)}
                       onMouseEnter={() => setHoveredCard(game.slug)}
                       onMouseLeave={() => setHoveredCard(null)}
-                      whileHover={isComingSoon ? {} : { y: -8, transition: { duration: 0.25, ease: "easeOut" } }}
-                      whileTap={isComingSoon ? {} : { scale: 0.97 }}
+                      whileHover={isComingSoon ? {} : { y: -6, scale: 1.02, transition: { duration: 0.2, ease: "easeOut" } }}
+                      whileTap={isComingSoon ? {} : { scale: 0.98 }}
                       disabled={isComingSoon}
-                      className={`relative flex flex-col p-6 rounded-3xl text-left transition-all duration-300 w-full overflow-hidden border ${
+                      className={`relative flex flex-col items-center justify-center p-8 rounded-3xl text-center transition-all duration-300 w-full min-h-[200px] overflow-hidden ${
                         isComingSoon 
-                          ? 'opacity-50 cursor-not-allowed bg-card/40 border-border/30' 
-                          : `bg-card/80 dark:bg-card/60 backdrop-blur-sm ${config.borderColor}`
+                          ? 'opacity-40 cursor-not-allowed' 
+                          : 'cursor-pointer'
                       }`}
                       style={{
                         boxShadow: isHovered && !isComingSoon 
-                          ? `0 24px 48px -12px ${config.accentColor}50, 0 12px 24px -8px ${config.accentColor}30`
-                          : `0 4px 20px -4px ${config.accentColor}15`
+                          ? `0 20px 40px -10px ${config.accentColor}60`
+                          : `0 8px 24px -6px ${config.accentColor}30`
                       }}
                       data-testid={`button-game-${game.slug}`}
                     >
-                      {/* Floating sparkles on hover for Blitzgrid */}
-                      {config.sparkleColors && isHovered && !isComingSoon && (
+                      {/* Full gradient background */}
+                      <motion.div 
+                        className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${config.gradient}`}
+                        animate={{ opacity: isHovered && !isComingSoon ? 1 : 0.85 }}
+                        transition={{ duration: 0.2 }}
+                      />
+                      
+                      {/* Decorative circles */}
+                      <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full" />
+                      <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-white/10 rounded-full" />
+                      
+                      {/* Floating sparkles on hover */}
+                      {isHovered && !isComingSoon && (
                         <>
-                          {[...Array(6)].map((_, i) => (
+                          {[...Array(5)].map((_, i) => (
                             <motion.div
                               key={i}
-                              className="absolute w-1.5 h-1.5 rounded-full pointer-events-none"
-                              style={{ backgroundColor: config.sparkleColors![i % config.sparkleColors!.length] }}
+                              className="absolute w-2 h-2 bg-white/60 rounded-full pointer-events-none"
                               initial={{ 
-                                x: 20 + Math.random() * 200, 
-                                y: 40 + Math.random() * 100,
+                                x: 40 + Math.random() * 120, 
+                                y: 60 + Math.random() * 80,
                                 opacity: 0,
                                 scale: 0
                               }}
                               animate={{ 
-                                y: [null, -20 - Math.random() * 40],
-                                opacity: [0, 1, 0],
-                                scale: [0, 1.2, 0]
+                                y: [null, -30 - Math.random() * 30],
+                                opacity: [0, 0.8, 0],
+                                scale: [0, 1, 0]
                               }}
                               transition={{ 
-                                duration: 1.5 + Math.random() * 0.5,
-                                delay: i * 0.15,
+                                duration: 1.2,
+                                delay: i * 0.1,
                                 repeat: Infinity,
                                 ease: "easeOut"
                               }}
@@ -315,75 +325,55 @@ export default function Home() {
                         </>
                       )}
                       
-                      {/* Gradient background on hover */}
-                      <motion.div 
-                        className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${config.bgGradient}`}
-                        initial={{ opacity: 0.3 }}
-                        animate={{ opacity: isHovered && !isComingSoon ? 1 : 0.4 }}
-                        transition={{ duration: 0.3 }}
-                      />
-                      
                       {/* Coming Soon Badge */}
                       {isComingSoon && (
-                        <div className="absolute top-5 right-5 px-3 py-1.5 bg-muted rounded-full text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex flex-wrap items-center gap-1.5">
+                        <div className="absolute top-4 right-4 px-3 py-1 bg-black/20 backdrop-blur-sm rounded-full text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
                           <Clock className="w-3 h-3" />
                           Soon
                         </div>
                       )}
                       
-                      {/* Card Header */}
-                      <div className="relative flex flex-wrap items-start gap-4 mb-4">
-                        <motion.div 
-                          className={`w-14 h-14 rounded-2xl ${config.iconBg} flex items-center justify-center shadow-lg ${config.shadowColor}`}
-                          animate={isHovered && !isComingSoon ? { 
-                            scale: 1.05, 
-                            rotate: 3
-                          } : { 
-                            scale: 1, 
-                            rotate: 0 
-                          }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <Icon className="w-7 h-7 text-white drop-shadow-sm" />
-                        </motion.div>
-                        
-                        <div className="flex-1 min-w-0 pt-1">
-                          <h3 className="text-xl font-bold text-foreground">
-                            {game.displayName}
-                          </h3>
-                        </div>
-                      </div>
+                      {/* Big centered icon */}
+                      <motion.div 
+                        className="relative w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4 shadow-lg"
+                        animate={isHovered && !isComingSoon ? { 
+                          scale: 1.1, 
+                          rotate: 5,
+                          y: -4
+                        } : { 
+                          scale: 1, 
+                          rotate: 0,
+                          y: 0
+                        }}
+                        transition={{ duration: 0.25, type: "spring", stiffness: 200 }}
+                      >
+                        <Icon className="w-10 h-10 text-white drop-shadow-md" />
+                      </motion.div>
+                      
+                      {/* Game name */}
+                      <h3 className="relative text-2xl font-black text-white drop-shadow-sm mb-1">
+                        {game.displayName}
+                      </h3>
                       
                       {/* Tagline */}
-                      <p className={`relative text-sm font-semibold mb-2 transition-colors duration-300 ${
-                        isHovered && !isComingSoon 
-                          ? 'text-foreground' 
-                          : 'text-muted-foreground'
-                      }`}>
+                      <p className="relative text-sm font-medium text-white/80">
                         {config.tagline}
                       </p>
                       
-                      {/* Description */}
-                      <p className="relative text-sm text-muted-foreground mb-5 leading-relaxed flex-1">
-                        {config.description}
-                      </p>
-                      
-                      {/* Play Button */}
-                      {!isComingSoon && (
-                        <motion.div 
-                          className={`relative flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${
-                            isHovered 
-                              ? `bg-gradient-to-r ${config.gradient} text-white shadow-lg ${config.shadowColor}` 
-                              : 'bg-muted/60 text-foreground'
-                          }`}
-                          animate={isHovered ? { scale: 1.02 } : { scale: 1 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <Play className="w-4 h-4" fill={isHovered ? "currentColor" : "none"} />
-                          <span>Play</span>
-                          <ArrowRight className={`w-4 h-4 transition-transform duration-200 ${isHovered ? 'translate-x-0.5' : ''}`} />
-                        </motion.div>
-                      )}
+                      {/* Play indicator on hover */}
+                      <motion.div 
+                        className="absolute bottom-4 left-1/2 flex items-center gap-1 text-white/90 font-semibold text-sm"
+                        initial={{ opacity: 0, x: "-50%", y: 10 }}
+                        animate={{ 
+                          opacity: isHovered && !isComingSoon ? 1 : 0, 
+                          x: "-50%",
+                          y: isHovered && !isComingSoon ? 0 : 10 
+                        }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Play className="w-4 h-4" fill="currentColor" />
+                        <span>Let's go!</span>
+                      </motion.div>
                     </motion.button>
                   </motion.div>
                 );
