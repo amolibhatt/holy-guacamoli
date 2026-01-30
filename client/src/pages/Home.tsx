@@ -192,29 +192,76 @@ export default function Home() {
           }}
         />
         
-        {/* Subtle floating particles - white/gray only */}
-        {[...Array(12)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute rounded-full bg-white/20"
-            style={{
-              width: Math.random() * 2 + 1,
-              height: Math.random() * 2 + 1,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [0, -20 - Math.random() * 30, 0],
-              opacity: [0.1, 0.3, 0.1],
-            }}
-            transition={{
-              duration: 10 + Math.random() * 10,
-              repeat: Infinity,
-              delay: Math.random() * 5,
-              ease: "easeInOut",
-            }}
-          />
-        ))}
+        {/* Floating particles - mix of sizes */}
+        {[...Array(25)].map((_, i) => {
+          const size = i < 5 ? 3 : i < 12 ? 2 : 1;
+          const startX = (i * 17) % 100;
+          const startY = (i * 23) % 100;
+          return (
+            <motion.div
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                width: size,
+                height: size,
+                left: `${startX}%`,
+                top: `${startY}%`,
+                background: 'rgba(255, 255, 255, 0.4)',
+                boxShadow: size > 2 ? '0 0 4px rgba(255,255,255,0.3)' : 'none',
+              }}
+              animate={{
+                y: [0, -40 - (i % 3) * 20, 0],
+                x: [0, (i % 2 === 0 ? 15 : -15), 0],
+                opacity: [0.15, 0.4, 0.15],
+              }}
+              transition={{
+                duration: 12 + (i % 5) * 3,
+                repeat: Infinity,
+                delay: (i % 8) * 0.8,
+                ease: "easeInOut",
+              }}
+            />
+          );
+        })}
+        
+        {/* Slow pulsing ambient orbs */}
+        <motion.div
+          className="absolute w-96 h-96 rounded-full pointer-events-none"
+          style={{
+            left: '10%',
+            top: '20%',
+            background: 'radial-gradient(circle, rgba(168, 85, 247, 0.08) 0%, transparent 70%)',
+            filter: 'blur(40px)',
+          }}
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.5, 0.3],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        <motion.div
+          className="absolute w-80 h-80 rounded-full pointer-events-none"
+          style={{
+            right: '5%',
+            bottom: '30%',
+            background: 'radial-gradient(circle, rgba(236, 72, 153, 0.06) 0%, transparent 70%)',
+            filter: 'blur(50px)',
+          }}
+          animate={{
+            scale: [1.1, 1, 1.1],
+            opacity: [0.25, 0.4, 0.25],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 2,
+          }}
+        />
       </div>
       
       <AppHeader 
