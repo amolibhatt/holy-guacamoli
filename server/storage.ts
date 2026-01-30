@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameSessionWithDetails, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion } from "@shared/schema";
+import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, psyopQuestions, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameSessionWithDetails, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion, type PsyopQuestion, type InsertPsyopQuestion } from "@shared/schema";
 import { users } from "@shared/models/auth";
 import { eq, and, asc, count, inArray, desc, sql, gte, like } from "drizzle-orm";
 
@@ -165,6 +165,11 @@ export interface IStorage {
   getSequenceQuestions(userId: string, role?: string): Promise<SequenceQuestion[]>;
   createSequenceQuestion(data: InsertSequenceQuestion): Promise<SequenceQuestion>;
   deleteSequenceQuestion(id: number, userId: string, role?: string): Promise<boolean>;
+  
+  // PsyOp
+  getPsyopQuestions(userId: string, role?: string): Promise<PsyopQuestion[]>;
+  createPsyopQuestion(data: InsertPsyopQuestion): Promise<PsyopQuestion>;
+  deletePsyopQuestion(id: number, userId: string, role?: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1522,6 +1527,27 @@ export class DatabaseStorage implements IStorage {
       return !!result;
     }
     const result = await db.delete(sequenceQuestions).where(and(eq(sequenceQuestions.id, id), eq(sequenceQuestions.userId, userId)));
+    return !!result;
+  }
+
+  async getPsyopQuestions(userId: string, role?: string): Promise<PsyopQuestion[]> {
+    if (role === 'super_admin') {
+      return await db.select().from(psyopQuestions).where(eq(psyopQuestions.isActive, true)).orderBy(desc(psyopQuestions.createdAt));
+    }
+    return await db.select().from(psyopQuestions).where(and(eq(psyopQuestions.userId, userId), eq(psyopQuestions.isActive, true))).orderBy(desc(psyopQuestions.createdAt));
+  }
+
+  async createPsyopQuestion(data: InsertPsyopQuestion): Promise<PsyopQuestion> {
+    const [question] = await db.insert(psyopQuestions).values([data] as any).returning();
+    return question;
+  }
+
+  async deletePsyopQuestion(id: number, userId: string, role?: string): Promise<boolean> {
+    if (role === 'super_admin') {
+      const result = await db.delete(psyopQuestions).where(eq(psyopQuestions.id, id));
+      return !!result;
+    }
+    const result = await db.delete(psyopQuestions).where(and(eq(psyopQuestions.id, id), eq(psyopQuestions.userId, userId)));
     return !!result;
   }
 

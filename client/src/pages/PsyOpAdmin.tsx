@@ -1,11 +1,11 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { AppHeader } from "@/components/AppHeader";
-import { SequenceSqueezeAdmin } from "@/components/SequenceSqueezeAdmin";
+import { PsyOpQuestionAdmin } from "@/components/PsyOpQuestionAdmin";
 import { Button } from "@/components/ui/button";
 import { Loader2, Grid3X3, ListOrdered, Eye } from "lucide-react";
 
-export default function GeneticSortAdmin() {
+export default function PsyOpAdmin() {
   const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -23,8 +23,8 @@ export default function GeneticSortAdmin() {
   }
 
   return (
-    <div className="min-h-screen bg-background" data-testid="page-genetic-sort-admin">
-      <div className="fixed inset-0 bg-gradient-to-br from-teal-500/5 via-transparent to-cyan-500/5 pointer-events-none" />
+    <div className="min-h-screen bg-background" data-testid="page-psyop-admin">
+      <div className="fixed inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-fuchsia-500/5 pointer-events-none" />
       
       <AppHeader
         title="Content Admin"
@@ -33,7 +33,7 @@ export default function GeneticSortAdmin() {
 
       <div className="border-b border-border bg-card/50">
         <div className="container mx-auto px-4">
-          <nav className="flex gap-1">
+          <nav className="flex flex-wrap gap-1">
             <Link href="/admin/games">
               <Button 
                 variant="ghost" 
@@ -47,7 +47,7 @@ export default function GeneticSortAdmin() {
             <Link href="/admin/genetic-sort">
               <Button 
                 variant="ghost" 
-                className="relative rounded-none border-b-2 border-primary text-foreground"
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
                 data-testid="tab-genetic-sort"
               >
                 <ListOrdered className="w-4 h-4 mr-2" />
@@ -57,7 +57,7 @@ export default function GeneticSortAdmin() {
             <Link href="/admin/psyop">
               <Button 
                 variant="ghost" 
-                className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
+                className="relative rounded-none border-b-2 border-primary text-foreground"
                 data-testid="tab-psyop"
               >
                 <Eye className="w-4 h-4 mr-2" />
@@ -70,10 +70,10 @@ export default function GeneticSortAdmin() {
 
       <main className="container mx-auto px-4 py-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Genetic Sort Questions</h1>
-          <p className="text-muted-foreground text-sm">Create and manage ordering questions</p>
+          <h1 className="text-2xl font-bold">PsyOp Questions</h1>
+          <p className="text-muted-foreground text-sm">Create fill-in-the-blank facts for the lie-guessing game</p>
         </div>
-        <SequenceSqueezeAdmin />
+        <PsyOpQuestionAdmin />
       </main>
     </div>
   );
