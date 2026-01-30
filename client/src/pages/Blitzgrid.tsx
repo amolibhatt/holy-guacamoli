@@ -2786,7 +2786,7 @@ export default function Blitzgrid() {
     <div className="min-h-screen bg-background flex flex-col" data-testid="page-blitzgrid">
       <AppHeader title="Blitzgrid" backHref="/" showAdminButton adminHref="/admin/games" />
       
-      <div className="flex-1 container mx-auto px-4 py-8 bg-gradient-to-br from-rose-50/80 via-pink-50/60 to-fuchsia-50/80">
+      <div className="flex-1 container mx-auto px-4 py-8">
         {loadingGrids ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 rounded-2xl" />)}
