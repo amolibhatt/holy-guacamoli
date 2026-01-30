@@ -2647,6 +2647,51 @@ export default function Blitzgrid() {
 
   // Filter to only show active grids (ready to play)
   const activeGrids = grids.filter(g => g.isActive);
+  
+  // Separate starter packs from user-created grids
+  const starterPacks = activeGrids.filter(g => g.isStarterPack);
+  const myGrids = activeGrids.filter(g => !g.isStarterPack);
+
+  // Grid card component to avoid duplication
+  const GridCard = ({ grid, index, colorOffset = 0 }: { grid: typeof activeGrids[0], index: number, colorOffset?: number }) => {
+    const effectiveColor = grid.colorCode?.startsWith('#') ? null : grid.colorCode;
+    const colorConfig = getBoardColorConfig(effectiveColor || BOARD_COLORS[(index + colorOffset) % BOARD_COLORS.length]);
+    return (
+      <motion.button
+        key={grid.id}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2, delay: index * 0.05 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => {
+          setSelectedGridId(grid.id);
+          setPlayMode(true);
+          setRevealedCells(new Set());
+          setRevealedCategoryCount(0);
+          setCategoryRevealMode(true);
+          setActiveQuestion(null);
+          setShowAnswer(false);
+        }}
+        className={`group text-left p-5 rounded-2xl bg-gradient-to-br ${colorConfig.card} border hover-elevate transition-all`}
+        data-testid={`card-grid-${grid.id}`}
+      >
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${colorConfig.bg}`}>
+            <Grid3X3 className="w-6 h-6 text-white" />
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <h3 className={`font-semibold text-lg ${colorConfig.cardTitle} truncate`}>{grid.name}</h3>
+            <p className={`text-sm ${colorConfig.cardSub}`}>
+              {grid.categoryCount || 0} categories
+            </p>
+          </div>
+          
+          <ChevronRight className={`w-5 h-5 ${colorConfig.cardIcon}`} />
+        </div>
+      </motion.button>
+    );
+  };
 
   // Main grid list view
   return (
@@ -2673,46 +2718,36 @@ export default function Blitzgrid() {
             </p>
           </motion.div>
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
-            {activeGrids.map((grid, index) => {
-              const effectiveColor = grid.colorCode?.startsWith('#') ? null : grid.colorCode;
-              const colorConfig = getBoardColorConfig(effectiveColor || BOARD_COLORS[index % BOARD_COLORS.length]);
-              return (
-                <motion.button
-                  key={grid.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2, delay: index * 0.05 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setSelectedGridId(grid.id);
-                    setPlayMode(true);
-                    setRevealedCells(new Set());
-                    setRevealedCategoryCount(0);
-                    setCategoryRevealMode(true);
-                    setActiveQuestion(null);
-                    setShowAnswer(false);
-                  }}
-                  className={`group text-left p-5 rounded-2xl bg-gradient-to-br ${colorConfig.card} border hover-elevate transition-all`}
-                  data-testid={`card-grid-${grid.id}`}
-                >
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${colorConfig.bg}`}>
-                      <Grid3X3 className="w-6 h-6 text-white" />
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <h3 className={`font-semibold text-lg ${colorConfig.cardTitle} truncate`}>{grid.name}</h3>
-                      <p className={`text-sm ${colorConfig.cardSub}`}>
-                        {grid.categoryCount || 0} categories
-                      </p>
-                    </div>
-                    
-                    <ChevronRight className={`w-5 h-5 ${colorConfig.cardIcon}`} />
-                  </div>
-                </motion.button>
-              );
-            })}
+          <div className="max-w-4xl mx-auto space-y-10">
+            {/* My Grids Section */}
+            {myGrids.length > 0 && (
+              <section>
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Grid3X3 className="w-5 h-5 text-muted-foreground" />
+                  My Grids
+                </h2>
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {myGrids.map((grid, index) => (
+                    <GridCard key={grid.id} grid={grid} index={index} />
+                  ))}
+                </div>
+              </section>
+            )}
+            
+            {/* Starter Packs Section */}
+            {starterPacks.length > 0 && (
+              <section>
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-muted-foreground" />
+                  Starter Packs
+                </h2>
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {starterPacks.map((grid, index) => (
+                    <GridCard key={grid.id} grid={grid} index={index} colorOffset={myGrids.length} />
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
         )}
       </div>
