@@ -40,33 +40,37 @@ const GAME_CONFIG: Record<string, {
   gradient: string; 
   route: string;
   accentColor: string;
+  glowColor: string;
   tagline: string;
   rotation: number;
   scale: number;
 }> = {
   blitzgrid: {
     icon: Grid3X3,
-    gradient: "from-rose-500 via-pink-500 to-fuchsia-600",
+    gradient: "from-red-600 via-red-500 to-orange-500",
     route: "/host/blitzgrid",
-    accentColor: "#ec4899",
+    accentColor: "#FF0000",
+    glowColor: "rgba(255, 0, 0, 0.6)",
     tagline: "SMASH. BUZZ. WIN.",
     rotation: -2,
     scale: 1.02,
   },
   sequence_squeeze: {
     icon: ListOrdered,
-    gradient: "from-emerald-500 via-teal-500 to-cyan-500",
+    gradient: "from-green-400 via-lime-400 to-emerald-400",
     route: "/host/genetic-sort",
-    accentColor: "#14b8a6",
+    accentColor: "#39FF14",
+    glowColor: "rgba(57, 255, 20, 0.6)",
     tagline: "CHAOS → ORDER",
     rotation: 1,
     scale: 1,
   },
   psyop: {
     icon: Brain,
-    gradient: "from-violet-600 via-purple-600 to-fuchsia-600",
+    gradient: "from-violet-600 via-purple-500 to-fuchsia-500",
     route: "/host/psyop",
     accentColor: "#a855f7",
+    glowColor: "rgba(168, 85, 247, 0.6)",
     tagline: "LIE. DETECT. DESTROY.",
     rotation: -1,
     scale: 1.01,
@@ -169,9 +173,13 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.5 }}
             >
-              <span className="text-foreground">What's up, </span>
+              <span className="text-foreground" style={{ fontFamily: 'var(--font-display)' }}>What's up, </span>
               <span className="relative inline-block">
-                <span className="bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300 bg-clip-text text-transparent">
+                <span 
+                  className="glitch-text bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-500 bg-clip-text text-transparent"
+                  data-text={user?.firstName || 'Legend'}
+                  style={{ fontFamily: 'var(--font-display)' }}
+                >
                   {user?.firstName || 'Legend'}
                 </span>
                 <motion.span 
@@ -251,6 +259,20 @@ export default function Home() {
                     }}
                     className="relative group"
                   >
+                    {/* BLOOM GLOW - lights up background */}
+                    <motion.div
+                      className="absolute -inset-8 rounded-[60px] pointer-events-none"
+                      style={{
+                        background: `radial-gradient(ellipse at center, ${config.glowColor} 0%, transparent 70%)`,
+                        filter: 'blur(30px)',
+                      }}
+                      animate={{
+                        opacity: isHovered && !isComingSoon ? 1 : 0.4,
+                        scale: isHovered && !isComingSoon ? 1.2 : 1,
+                      }}
+                      transition={{ duration: 0.3 }}
+                    />
+                    
                     <motion.button
                       onClick={() => !isComingSoon && setLocation(config.route)}
                       onMouseEnter={() => setHoveredCard(game.slug)}
@@ -431,7 +453,7 @@ export default function Home() {
       <footer className="relative z-10 border-t border-border/10 px-6 py-6">
         <div className="max-w-5xl mx-auto flex items-center justify-center">
           <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-1">
-            made with <Heart className="w-4 h-4 text-pink-500 fill-pink-500 inline" /> by <span className="font-semibold bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 bg-clip-text text-transparent">Amoli</span>
+            made with <Heart className="w-4 h-4 text-pink-500 fill-pink-500 inline" /> by <span className="font-black glitch-text bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-500 bg-clip-text text-transparent" data-text="Amoli" style={{ fontFamily: 'var(--font-display)' }}>Amoli</span>
           </p>
         </div>
       </footer>
