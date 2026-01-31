@@ -2483,12 +2483,19 @@ export default function Blitzgrid() {
           
           {/* Question Modal - Premium glassmorphism design */}
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-[#0d0d12]/98 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl" style={{ boxShadow: '0 0 40px rgba(232, 121, 249, 0.2), 0 0 80px rgba(34, 211, 238, 0.1)' }}>
+            <DialogContent 
+              className="max-w-2xl max-h-[90vh] overflow-y-auto bg-[#0d0d12]/98 backdrop-blur-xl border shadow-2xl rounded-3xl" 
+              style={{ 
+                borderColor: `${neonColorConfig[colorName].border}40`,
+                boxShadow: `0 0 40px ${neonColorConfig[colorName].glow}, 0 0 80px ${neonColorConfig[colorName].glow}` 
+              }}
+            >
               {(() => {
                 // Use the grid's single color for consistency
                 const category = playCategories.find(c => c.id === activeQuestion?.categoryId);
                 const questionText = activeQuestion?.question || '';
                 const questionLength = questionText.length;
+                const neonColor = neonColorConfig[colorName];
                 // Auto-size text based on question length
                 const textSizeClass = questionLength < 50 ? 'text-2xl md:text-3xl' : 
                                       questionLength < 100 ? 'text-xl md:text-2xl' : 
@@ -2496,26 +2503,54 @@ export default function Blitzgrid() {
                 
                 return (
                   <>
-                    <DialogHeader className="flex flex-row items-center justify-between gap-2">
-                      {/* Points badge - uses grid color */}
+                    {/* Header: Category left, Points right */}
+                    <DialogHeader className="flex flex-row items-center justify-between gap-2 pb-0">
+                      {/* Category badge - left side */}
+                      {category && (
+                        <div 
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border"
+                          style={{ 
+                            backgroundColor: `${neonColor.border}15`,
+                            borderColor: `${neonColor.border}50`,
+                          }}
+                        >
+                          <div 
+                            className="w-2 h-2 rounded-full" 
+                            style={{ backgroundColor: neonColor.border }}
+                          />
+                          <span 
+                            className="font-semibold uppercase tracking-wide"
+                            style={{ color: neonColor.text }}
+                          >
+                            {category.name}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Points badge - right side with grid neon color */}
                       <motion.div 
-                        className={`relative overflow-hidden px-4 py-1 rounded-full ${colorConfig.bg} shadow-md`}
+                        className="relative overflow-hidden px-4 py-1.5 rounded-full"
+                        style={{ 
+                          backgroundColor: `${neonColor.border}20`,
+                          border: `2px solid ${neonColor.border}`,
+                          boxShadow: `0 0 15px ${neonColor.glow}`,
+                        }}
                         initial={{ scale: 0.9 }}
                         animate={{ scale: 1 }}
                       >
-                        <motion.div 
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12"
-                          animate={{ x: ['-100%', '200%'] }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        />
-                        <DialogTitle className={`${colorConfig.accentDark} text-lg font-black relative z-10`}>
+                        <DialogTitle 
+                          className="text-lg font-black relative z-10"
+                          style={{ color: neonColor.text, textShadow: `0 0 10px ${neonColor.shadowColor}` }}
+                        >
                           {activeQuestion?.points} pts
                         </DialogTitle>
                       </motion.div>
-                      
-                      {/* Timer button */}
+                    </DialogHeader>
+                    
+                    {/* Timer - centered, prominent when active */}
+                    <div className="flex justify-center py-2">
                       <Button
-                        variant={timerActive ? "destructive" : "outline"}
+                        variant="ghost"
                         size="sm"
                         onClick={() => {
                           if (timerActive) {
@@ -2526,35 +2561,42 @@ export default function Blitzgrid() {
                             setTimerActive(true);
                           }
                         }}
-                        className={`gap-1 ${timerActive ? 'animate-pulse' : ''}`}
+                        className={`gap-2 px-4 ${timerActive ? '' : 'text-white/40'}`}
+                        style={timerActive ? { 
+                          backgroundColor: `${neonColor.border}20`,
+                          color: neonColor.text,
+                          boxShadow: `0 0 20px ${neonColor.glow}`,
+                          border: `1px solid ${neonColor.border}60`,
+                        } : {}}
                         data-testid="button-timer"
                       >
                         <Timer className="w-4 h-4" />
                         {timerActive ? (
-                          <span className="font-mono font-bold text-lg min-w-[2ch]">{timeLeft}</span>
+                          <span 
+                            className="font-mono font-bold text-xl min-w-[2ch] animate-pulse"
+                            style={{ textShadow: `0 0 10px ${neonColor.shadowColor}` }}
+                          >
+                            {timeLeft}
+                          </span>
                         ) : (
-                          <span>10s</span>
+                          <span className="text-sm">Start 10s Timer</span>
                         )}
                       </Button>
-                    </DialogHeader>
+                    </div>
                     
-                    {/* Question box with category info inside */}
-                    <div className="py-4 px-4 my-2 bg-white/5 rounded-lg border border-white/10">
-                      {/* Category name and description at top of question box */}
-                      {category && (
-                        <div className="text-center mb-3">
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-fuchsia-500/10 border border-fuchsia-500/30 text-xs mb-1">
-                            <div className="w-2 h-2 rounded-full bg-fuchsia-500" />
-                            <span className="text-fuchsia-300 font-semibold uppercase tracking-wide">
-                              {category.name}
-                            </span>
-                          </div>
-                          {category.description && (
-                            <p className="text-white/40 text-sm italic">
-                              {category.description}
-                            </p>
-                          )}
-                        </div>
+                    {/* Question box */}
+                    <div 
+                      className="py-6 px-5 my-2 rounded-xl border"
+                      style={{
+                        backgroundColor: `${neonColor.border}08`,
+                        borderColor: `${neonColor.border}30`,
+                      }}
+                    >
+                      {/* Category description if exists */}
+                      {category?.description && (
+                        <p className="text-white/40 text-sm italic text-center mb-3">
+                          {category.description}
+                        </p>
                       )}
                       
                       {/* Question text */}
@@ -2803,7 +2845,7 @@ export default function Blitzgrid() {
                   <Button 
                     onClick={undoLastScore}
                     variant="outline"
-                    className="border-amber-500 text-amber-400"
+                    className="border-white/30 text-white/70"
                     data-testid="button-undo-score"
                   >
                     <RotateCcw className="w-4 h-4 mr-2" /> Undo {lastScoreChange.points > 0 ? '+' : ''}{lastScoreChange.points}
@@ -2815,7 +2857,11 @@ export default function Blitzgrid() {
                       lockBuzzer();
                       handleRevealAnswer();
                     }}
-                    className="bg-amber-500 text-slate-900"
+                    className="text-white font-semibold px-6"
+                    style={{ 
+                      backgroundColor: neonColorConfig[colorName].border,
+                      boxShadow: `0 0 20px ${neonColorConfig[colorName].glow}`,
+                    }}
                     data-testid="button-reveal-answer"
                   >
                     <Eye className="w-4 h-4 mr-2" /> Show Answer
@@ -2824,7 +2870,7 @@ export default function Blitzgrid() {
                   <Button 
                     onClick={handleCloseQuestion}
                     variant="outline"
-                    className="border-slate-300 text-slate-600"
+                    className="border-white/30 text-white"
                     data-testid="button-close-question"
                   >
                     Continue
