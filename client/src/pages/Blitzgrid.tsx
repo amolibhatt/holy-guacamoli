@@ -1687,17 +1687,9 @@ export default function Blitzgrid() {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <Logo size="md" />
-              <div className="hidden sm:block">
-                <h1 
-                  className="text-sm font-black text-white uppercase tracking-wide"
-                  style={{ 
-                    fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                    textShadow: shuffleMode ? '0 0 10px rgba(34, 211, 238, 0.5)' : '0 0 10px rgba(232, 121, 249, 0.5)',
-                  }}
-                >
-                  {shuffleMode ? "Shuffle Play" : grid?.name}
-                </h1>
-              </div>
+              <span className="font-semibold text-muted-foreground hidden sm:inline">
+                | {shuffleMode ? "Shuffle Play" : grid?.name}
+              </span>
             </div>
             
             {/* Right: Room Code + Invite + Settings */}
