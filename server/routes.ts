@@ -4382,6 +4382,53 @@ export async function registerRoutes(
             break;
           }
 
+          case 'sequence:host:adjustPoints': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            const { playerId, delta } = message;
+            if (!playerId || typeof delta !== 'number') break;
+
+            const player = room.players.get(playerId);
+            if (!player) break;
+
+            player.score = Math.max(0, player.score + delta);
+
+            const leaderboard = Array.from(room.players.values())
+              .map(p => ({
+                playerId: p.id,
+                playerName: p.name,
+                playerAvatar: p.avatar,
+                score: p.score,
+                correctAnswers: p.correctAnswers,
+                wrongAnswers: p.wrongAnswers,
+                avgTimeMs: p.correctAnswers > 0 ? Math.round(p.totalTimeMs / p.correctAnswers) : 0,
+                currentStreak: p.currentStreak,
+                bestStreak: p.bestStreak,
+              }))
+              .sort((a, b) => b.score - a.score);
+
+            sendToHost(room, {
+              type: 'sequence:pointsAdjusted',
+              playerId,
+              newScore: player.score,
+              delta,
+              leaderboard,
+            });
+
+            if (player.ws && player.isConnected) {
+              sendToPlayer(player, {
+                type: 'sequence:pointsAdjusted',
+                newScore: player.score,
+                delta,
+              });
+            }
+            break;
+          }
+
           case 'sequence:host:endGame': {
             const mapping = wsToRoom.get(ws);
             if (!mapping || !mapping.isHost) break;

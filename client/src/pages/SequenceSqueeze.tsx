@@ -18,7 +18,7 @@ import {
   ListOrdered, Play, Pause, Users, QrCode, Timer, 
   Trophy, Trash2, Edit, Check, X, Loader2, Clock, Zap,
   ChevronDown, ChevronUp, Sparkles, Crown, RefreshCw, SkipForward,
-  Volume2, VolumeX, Medal, Star, User
+  Volume2, VolumeX, Medal, Star, User, Flame, Plus, Minus, Settings
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { AppHeader } from "@/components/AppHeader";
@@ -78,6 +78,7 @@ export default function SequenceSqueeze() {
   const [winner, setWinner] = useState<WinnerInfo | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [pointsPerRound, setPointsPerRound] = useState(10);
   const submissionsRef = useRef<PlayerSubmission[]>([]);
   const audioRef = useRef<{ [key: string]: HTMLAudioElement }>({});
   const hasAutoStartedRef = useRef(false);
@@ -165,6 +166,7 @@ export default function SequenceSqueeze() {
           setGameState("waiting");
           break;
         case "sequence:player:joined":
+          playAudio("join");
           toast({ title: `${data.playerName} joined!` });
           setPlayers(prev => [...prev.filter(p => p.id !== data.playerId), { 
             id: data.playerId, 
@@ -220,6 +222,8 @@ export default function SequenceSqueeze() {
           }
           if (data.winner) {
             setWinner(data.winner);
+            playAudio("correct");
+            playAudio("winner");
             confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
           } else {
             setWinner(null);
@@ -254,6 +258,14 @@ export default function SequenceSqueeze() {
           setLeaderboard([]);
           toast({ title: "Scores reset!" });
           break;
+        case "sequence:pointsAdjusted":
+          if (data.leaderboard) {
+            setLeaderboard(data.leaderboard);
+          }
+          toast({ 
+            title: data.delta > 0 ? `+${data.delta} points awarded` : `${data.delta} points deducted`,
+          });
+          break;
         case "player:left":
           toast({ title: `${data.playerName} left the game` });
           setPlayers(prev => prev.filter(p => p.id !== data.playerId));
@@ -283,7 +295,7 @@ export default function SequenceSqueeze() {
     return audioContextRef.current;
   }, []);
   
-  const playAudio = useCallback((type: "countdown" | "whoosh" | "buzzer" | "winner") => {
+  const playAudio = useCallback((type: "countdown" | "whoosh" | "buzzer" | "winner" | "join" | "correct") => {
     if (!audioEnabled) return;
     try {
       const ctx = getAudioContext();
@@ -292,6 +304,8 @@ export default function SequenceSqueeze() {
         whoosh: { freqs: [800, 600, 400, 300], type: "sine", duration: 0.08 },
         buzzer: { freqs: [300, 200, 150], type: "sawtooth", duration: 0.15 },
         winner: { freqs: [523, 659, 784, 880, 1047], type: "sine", duration: 0.12 },
+        join: { freqs: [660, 880], type: "sine", duration: 0.08 },
+        correct: { freqs: [523, 659, 784], type: "sine", duration: 0.1 },
       };
       const config = frequencies[type] || frequencies.countdown;
       config.freqs.forEach((freq, i) => {
@@ -507,6 +521,34 @@ export default function SequenceSqueeze() {
                     Waiting for at least 1 player to join...
                   </p>
                 )}
+
+                <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Settings className="w-4 h-4" />
+                      <span>Points per round</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        size="icon" 
+                        variant="outline" 
+                        onClick={() => setPointsPerRound(p => Math.max(5, p - 5))}
+                        data-testid="button-points-decrease"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                      <span className="font-bold text-lg w-8 text-center" data-testid="text-points-per-round">{pointsPerRound}</span>
+                      <Button 
+                        size="icon" 
+                        variant="outline" 
+                        onClick={() => setPointsPerRound(p => Math.min(50, p + 5))}
+                        data-testid="button-points-increase"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Right: Players */}
@@ -534,10 +576,12 @@ export default function SequenceSqueeze() {
                   </Card>
                 ) : (
                   <Card className="p-4" data-testid="card-players">
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <AnimatePresence>
                         {players.map((p, idx) => {
-                          const playerScore = leaderboard.find(l => l.playerId === p.id)?.score;
+                          const playerData = leaderboard.find(l => l.playerId === p.id);
+                          const playerScore = playerData?.score || 0;
+                          const streak = playerData?.currentStreak || 0;
                           return (
                             <motion.div 
                               key={p.id}
@@ -550,18 +594,26 @@ export default function SequenceSqueeze() {
                                 damping: 25,
                                 delay: idx * 0.03
                               }}
-                              className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-950/30 dark:to-teal-950/30 rounded-lg border border-cyan-200/50 dark:border-cyan-800/50"
+                              className="flex flex-col items-center p-3 bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-950/30 dark:to-teal-950/30 rounded-xl border border-cyan-200/50 dark:border-cyan-800/50"
                               data-testid={`player-card-${p.id}`}
                             >
-                              <span className="text-xl">
-                                {p.avatar || <User className="w-5 h-5 text-muted-foreground" />}
-                              </span>
-                              <span className="font-medium text-sm" data-testid={`text-player-name-${p.id}`}>{p.name}</span>
-                              {playerScore !== undefined && playerScore > 0 && (
-                                <Badge variant="secondary" className="text-xs ml-1" data-testid={`text-player-score-${p.id}`}>
-                                  {playerScore}
-                                </Badge>
-                              )}
+                              <div className="text-4xl mb-1">
+                                {p.avatar || <User className="w-10 h-10 text-muted-foreground" />}
+                              </div>
+                              <span className="font-semibold text-sm text-center" data-testid={`text-player-name-${p.id}`}>{p.name}</span>
+                              <div className="flex items-center gap-2 mt-1">
+                                {playerScore > 0 && (
+                                  <Badge variant="secondary" className="text-xs" data-testid={`text-player-score-${p.id}`}>
+                                    {playerScore} pts
+                                  </Badge>
+                                )}
+                                {streak >= 2 && (
+                                  <span className="inline-flex items-center gap-0.5 text-xs text-amber-600">
+                                    <Flame className="w-3 h-3" />
+                                    {streak}
+                                  </span>
+                                )}
+                              </div>
                             </motion.div>
                           );
                         })}
@@ -742,18 +794,28 @@ export default function SequenceSqueeze() {
                   Live Ticker
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {submissions.map((sub) => (
-                    <motion.div
-                      key={sub.playerId}
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-cyan-500/20 border border-cyan-500/40 rounded-full"
-                    >
-                      <span className="font-medium text-sm">{sub.playerName}</span>
-                      <span className="text-xs text-muted-foreground">LOCKED IN!</span>
-                      <span className="text-xs font-mono text-cyan-600 dark:text-cyan-400">({(sub.timeMs / 1000).toFixed(2)}s)</span>
-                    </motion.div>
-                  ))}
+                  {submissions.map((sub) => {
+                    const playerStats = leaderboard.find(l => l.playerId === sub.playerId);
+                    const streak = playerStats?.currentStreak || 0;
+                    return (
+                      <motion.div
+                        key={sub.playerId}
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-cyan-500/20 border border-cyan-500/40 rounded-full"
+                      >
+                        <span className="font-medium text-sm">{sub.playerName}</span>
+                        <span className="text-xs text-muted-foreground">LOCKED IN!</span>
+                        <span className="text-xs font-mono text-cyan-600 dark:text-cyan-400">({(sub.timeMs / 1000).toFixed(2)}s)</span>
+                        {streak >= 2 && (
+                          <span className="inline-flex items-center gap-0.5 text-xs text-amber-600 dark:text-amber-400">
+                            <Flame className="w-3 h-3" />
+                            {streak}
+                          </span>
+                        )}
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -908,7 +970,33 @@ export default function SequenceSqueeze() {
                               <X className="w-3 h-3 text-destructive" />
                             )}
                           </div>
-                          <span className="text-muted-foreground text-xs">{(sub.timeMs / 1000).toFixed(2)}s</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-muted-foreground text-xs mr-2">{(sub.timeMs / 1000).toFixed(2)}s</span>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              onClick={() => ws?.send(JSON.stringify({ 
+                                type: "sequence:host:adjustPoints", 
+                                playerId: sub.playerId, 
+                                delta: pointsPerRound 
+                              }))}
+                              data-testid={`button-award-${sub.playerId}`}
+                            >
+                              <Plus className="w-3 h-3 text-emerald-500" />
+                            </Button>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              onClick={() => ws?.send(JSON.stringify({ 
+                                type: "sequence:host:adjustPoints", 
+                                playerId: sub.playerId, 
+                                delta: -pointsPerRound 
+                              }))}
+                              data-testid={`button-deduct-${sub.playerId}`}
+                            >
+                              <Minus className="w-3 h-3 text-destructive" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                   </div>
