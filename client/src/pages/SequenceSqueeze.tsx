@@ -58,6 +58,7 @@ export default function SequenceSqueeze() {
 
   const [gameState, setGameState] = useState<GameState>("setup");
   const [animationStage, setAnimationStage] = useState<AnimationStage>(null);
+  const [isPaused, setIsPaused] = useState(false);
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<SequenceQuestion | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(1);
@@ -177,11 +178,11 @@ export default function SequenceSqueeze() {
             setCurrentQuestion(prev => prev || data.question);
           }
           playAudio("countdown");
-          setTimeout(() => setAnimationStage("questionDrop"), 2000);
+          setTimeout(() => setAnimationStage("questionDrop"), 1200);
           setTimeout(() => {
             setAnimationStage("optionPulse");
             playAudio("whoosh");
-          }, 3000);
+          }, 2000);
           break;
         case "sequence:answering:started":
           setGameState("playing");
@@ -358,6 +359,14 @@ export default function SequenceSqueeze() {
   const showResults = () => {
     setGameState("results");
   };
+
+  const skipAnimation = useCallback(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "sequence:host:startAnswering" }));
+    }
+    setGameState("playing");
+    setAnimationStage(null);
+  }, [ws]);
 
   const resetGame = useCallback(() => {
     setCurrentQuestion(null);
@@ -574,9 +583,18 @@ export default function SequenceSqueeze() {
                     QUESTION {currentQuestionIndex}/{totalQuestions}
                   </h1>
                   <p className="text-2xl md:text-3xl font-bold opacity-90">
-                    PREPARE YOUR FINGERS
+                    Get Ready...
                   </p>
                 </div>
+                <Button
+                  variant="ghost"
+                  className="absolute bottom-8 right-8 text-white/60"
+                  onClick={skipAnimation}
+                  data-testid="button-skip-animation"
+                >
+                  <SkipForward className="w-4 h-4 mr-2" />
+                  Skip
+                </Button>
               </motion.div>
             )}
             
@@ -595,6 +613,15 @@ export default function SequenceSqueeze() {
                 >
                   {currentQuestion.question}
                 </motion.h2>
+                <Button
+                  variant="ghost"
+                  className="absolute bottom-8 right-8 text-white/60"
+                  onClick={skipAnimation}
+                  data-testid="button-skip-animation"
+                >
+                  <SkipForward className="w-4 h-4 mr-2" />
+                  Skip
+                </Button>
               </motion.div>
             )}
             
@@ -630,6 +657,15 @@ export default function SequenceSqueeze() {
                   })}
                 </div>
                 <p className="text-white/60 mt-6 text-sm">Get ready to tap...</p>
+                <Button
+                  variant="ghost"
+                  className="absolute bottom-8 right-8 text-white/60"
+                  onClick={skipAnimation}
+                  data-testid="button-skip-animation"
+                >
+                  <SkipForward className="w-4 h-4 mr-2" />
+                  Skip
+                </Button>
               </motion.div>
             )}
           </AnimatePresence>
@@ -641,7 +677,7 @@ export default function SequenceSqueeze() {
             animate={{ opacity: 1 }}
             className="space-y-6"
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-3">
                 <Badge variant="outline">Q{currentQuestionIndex}/{totalQuestions}</Badge>
                 <Badge variant="secondary" className="gap-1">
@@ -649,11 +685,38 @@ export default function SequenceSqueeze() {
                   {submissions.length}/{players.length} locked in
                 </Badge>
               </div>
-              <Button size="lg" variant="destructive" onClick={revealAnswer} data-testid="button-force-reveal-top">
-                <Zap className="w-5 h-5 mr-2" />
-                Force Reveal
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button size="lg" variant="outline" onClick={() => setIsPaused(true)} data-testid="button-pause">
+                  <Pause className="w-5 h-5 mr-2" />
+                  Pause
+                </Button>
+                <Button size="lg" variant="destructive" onClick={revealAnswer} data-testid="button-force-reveal-top">
+                  <Zap className="w-5 h-5 mr-2" />
+                  Force Reveal
+                </Button>
+              </div>
             </div>
+            
+            {/* Pause Overlay */}
+            <AnimatePresence>
+              {isPaused && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
+                >
+                  <div className="text-center text-white">
+                    <Pause className="w-20 h-20 mx-auto mb-4 opacity-50" />
+                    <h2 className="text-4xl font-bold mb-6">Game Paused</h2>
+                    <Button size="lg" onClick={() => setIsPaused(false)} data-testid="button-resume">
+                      <Play className="w-5 h-5 mr-2" />
+                      Resume
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
             
             {submissions.length > 0 && (
               <div className="bg-muted/50 rounded-xl p-4 mb-4">
