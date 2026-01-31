@@ -334,7 +334,7 @@ export default function SequenceSqueeze() {
     return shuffled;
   };
 
-  const startQuestion = (question: SequenceQuestion, idx?: number) => {
+  const startQuestion = useCallback((question: SequenceQuestion, idx?: number) => {
     const questionIdx = idx !== undefined ? idx + 1 : currentQuestionIndex;
     setCurrentQuestion(question);
     setSubmissions([]);
@@ -380,7 +380,7 @@ export default function SequenceSqueeze() {
         pointsPerRound,
       }));
     }
-  };
+  }, [ws, pointsPerRound, questions.length, currentQuestionIndex]);
 
   const revealAnswer = useCallback(() => {
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
@@ -416,7 +416,7 @@ export default function SequenceSqueeze() {
       setCurrentQuestion(null);
       setGameState("waiting");
     }
-  }, [ws, currentQuestionIndex, questions]);
+  }, [ws, currentQuestionIndex, questions, startQuestion]);
 
   const resetGame = useCallback(() => {
     setCurrentQuestion(null);
@@ -447,7 +447,7 @@ export default function SequenceSqueeze() {
   }, [ws]);
 
   useEffect(() => {
-    if (gameState === "playing" || gameState === "animating") {
+    if (gameState === "playing" || gameState === "animatedReveal") {
       setElapsedTime(0);
       elapsedTimerRef.current = window.setInterval(() => {
         setElapsedTime(t => t + 100);
