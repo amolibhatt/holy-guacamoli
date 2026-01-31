@@ -1667,26 +1667,27 @@ export default function Blitzgrid() {
             )}
           </AnimatePresence>
           
-          {/* Header - Dark neon gaming style */}
-          <motion.div 
+          {/* Header - Matching AppHeader style */}
+          <motion.header 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="flex items-center justify-between px-4 py-3 bg-[#0a0a0f]/95 backdrop-blur-md border-b border-white/10 relative z-10 overflow-hidden"
+            className="border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-50"
           >
-            {/* Subtle neon gradient accent */}
-            <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-500/5 via-transparent to-cyan-500/5 pointer-events-none" />
+            <div className="px-4 py-3 flex items-center justify-between gap-4 max-w-5xl mx-auto">
             {/* Left: Back + Logo + Grid Name */}
             <div className="flex items-center gap-3">
               <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={() => { setPlayMode(false); setShuffleMode(false); setShuffledCategories(null); setSelectedGridId(null); }}
-                className="text-white/60"
+                className="text-muted-foreground"
                 data-testid="button-exit-play"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
-              <Logo size="md" />
+              <Link href="/">
+                <Logo size="md" />
+              </Link>
               <span className="font-semibold text-muted-foreground hidden sm:inline">
                 | {shuffleMode ? "Shuffle Play" : grid?.name}
               </span>
@@ -1763,9 +1764,11 @@ export default function Blitzgrid() {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+            </div>
+          </motion.header>
             
-            {/* End Session Dialog */}
-            <AlertDialog open={showEndSessionDialog} onOpenChange={setShowEndSessionDialog}>
+          {/* End Session Dialog */}
+          <AlertDialog open={showEndSessionDialog} onOpenChange={setShowEndSessionDialog}>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>End this game session?</AlertDialogTitle>
@@ -1782,7 +1785,6 @@ export default function Blitzgrid() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-          </motion.div>
           
           {/* Join Notification */}
           <AnimatePresence>
