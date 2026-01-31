@@ -291,7 +291,7 @@ export default function PlayerPage() {
         case "room:modeChanged":
           if (data.mode === "sequence") {
             if (data.score !== undefined) setScore(data.score);
-            setLocation(`/play/sortcircuit/${roomCode.toUpperCase()}`);
+            setLocation(`/sortcircuit/${roomCode.toUpperCase()}`);
           }
           break;
         case "psyop:submission:start":
