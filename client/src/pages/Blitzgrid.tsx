@@ -71,7 +71,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Board, Category, Question } from "@shared/schema";
 import { PLAYER_AVATARS } from "@shared/schema";
-import { getBoardColorConfig, BOARD_COLORS } from "@/lib/boardColors";
+import { getBoardColorConfig, BOARD_COLORS, neonColorConfig } from "@/lib/boardColors";
 
 interface GridWithStats extends Board {
   categoryCount: number;
@@ -3190,9 +3190,12 @@ export default function Blitzgrid() {
   const starterPacks = activeGrids.filter(g => g.isStarterPack);
   const myGrids = activeGrids.filter(g => !g.isStarterPack);
 
-  // Grid card component - retro gaming design matching home page
+  // Grid card component - retro gaming design with varied neon colors
   const GridCard = ({ grid, index }: { grid: typeof activeGrids[0], index: number }) => {
     const [isHovered, setIsHovered] = useState(false);
+    // Cycle through neon colors for variety
+    const colorKey = BOARD_COLORS[index % BOARD_COLORS.length];
+    const neonColor = neonColorConfig[colorKey];
     
     return (
       <motion.button
@@ -3219,28 +3222,29 @@ export default function Blitzgrid() {
         }}
         className="group text-left p-5 rounded-xl bg-[#0d0d12] transition-all duration-200"
         style={{
-          border: '1px solid #333',
-          boxShadow: isHovered ? '0 0 20px rgba(232, 121, 249, 0.4), inset 0 0 0 1px #e879f9' : 'none',
+          border: `1px solid ${isHovered ? neonColor.border : '#333'}`,
+          boxShadow: isHovered ? `0 0 20px ${neonColor.glow}, inset 0 0 0 1px ${neonColor.border}` : 'none',
         }}
         data-testid={`card-grid-${grid.id}`}
       >
         <div className="flex items-center gap-3">
-          {/* Icon with glow */}
+          {/* Icon with color-matched glow */}
           <div 
             className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200"
             style={{
-              border: '2px solid #e879f9',
-              boxShadow: isHovered ? '0 0 15px rgba(232, 121, 249, 0.5)' : '0 0 10px rgba(232, 121, 249, 0.3)',
+              border: `2px solid ${neonColor.border}`,
+              boxShadow: isHovered ? `0 0 15px ${neonColor.shadowColor}` : `0 0 8px ${neonColor.glow}`,
             }}
           >
-            <Grid3X3 className="w-5 h-5 text-fuchsia-400" />
+            <Grid3X3 className="w-5 h-5" style={{ color: neonColor.icon }} />
           </div>
           <div className="flex-1 min-w-0">
             <h3 
-              className="font-black text-white truncate uppercase tracking-wide"
+              className="font-black truncate uppercase tracking-wide transition-colors duration-200"
               style={{ 
                 fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                textShadow: isHovered ? '0 0 10px rgba(232, 121, 249, 0.5)' : 'none',
+                color: isHovered ? neonColor.text : '#fff',
+                textShadow: isHovered ? `0 0 12px ${neonColor.shadowColor}` : 'none',
               }}
             >
               {grid.name}
@@ -3249,7 +3253,10 @@ export default function Blitzgrid() {
               <p className="text-xs text-white/50 truncate mt-0.5">{grid.description}</p>
             )}
           </div>
-          <ChevronRight className="w-5 h-5 text-white/30 group-hover:text-fuchsia-400 group-hover:translate-x-0.5 transition-all" />
+          <ChevronRight 
+            className="w-5 h-5 text-white/30 group-hover:translate-x-0.5 transition-all" 
+            style={{ color: isHovered ? neonColor.icon : undefined }}
+          />
         </div>
       </motion.button>
     );

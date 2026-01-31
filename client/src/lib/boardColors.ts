@@ -1,6 +1,51 @@
 export const BOARD_COLORS = ['rose', 'violet', 'amber', 'teal', 'sky'] as const;
 export type BoardColor = typeof BOARD_COLORS[number];
 
+// Neon color palette for dark theme retro gaming aesthetic
+export const neonColorConfig: Record<BoardColor, {
+  border: string;
+  glow: string;
+  text: string;
+  icon: string;
+  shadowColor: string;
+}> = {
+  rose: {
+    border: '#e879f9',
+    glow: 'rgba(232, 121, 249, 0.4)',
+    text: '#f0abfc',
+    icon: '#e879f9',
+    shadowColor: 'rgba(232, 121, 249, 0.5)',
+  },
+  violet: {
+    border: '#a78bfa',
+    glow: 'rgba(167, 139, 250, 0.4)',
+    text: '#c4b5fd',
+    icon: '#a78bfa',
+    shadowColor: 'rgba(167, 139, 250, 0.5)',
+  },
+  amber: {
+    border: '#fbbf24',
+    glow: 'rgba(251, 191, 36, 0.4)',
+    text: '#fcd34d',
+    icon: '#fbbf24',
+    shadowColor: 'rgba(251, 191, 36, 0.5)',
+  },
+  teal: {
+    border: '#2dd4bf',
+    glow: 'rgba(45, 212, 191, 0.4)',
+    text: '#5eead4',
+    icon: '#2dd4bf',
+    shadowColor: 'rgba(45, 212, 191, 0.5)',
+  },
+  sky: {
+    border: '#38bdf8',
+    glow: 'rgba(56, 189, 248, 0.4)',
+    text: '#7dd3fc',
+    icon: '#38bdf8',
+    shadowColor: 'rgba(56, 189, 248, 0.5)',
+  },
+};
+
 export const boardColorConfig: Record<BoardColor, {
   card: string;
   cardTitle: string;
