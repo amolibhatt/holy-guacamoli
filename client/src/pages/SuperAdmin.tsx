@@ -197,7 +197,7 @@ export default function SuperAdmin() {
 
   return (
     <div className="min-h-screen gradient-game">
-      <AppHeader minimal />
+      <AppHeader minimal backHref="/" />
 
       <main className="p-6 max-w-7xl mx-auto">
         <Tabs defaultValue="analytics" className="space-y-6">

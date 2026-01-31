@@ -46,11 +46,26 @@ export function AppHeader({
 
   if (minimal) {
     return (
-      <header className="border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
-        <div className="px-6 py-4 flex items-center justify-between gap-4 max-w-5xl mx-auto">
-          <Link href="/">
-            <Logo size="md" />
-          </Link>
+      <header className="border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-50">
+        <div className="px-4 py-3 flex items-center justify-between gap-4 max-w-5xl mx-auto">
+          <div className="flex items-center gap-3">
+            {backHref && (
+              <Link href={backHref}>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-muted-foreground" 
+                  data-testid="button-back"
+                  aria-label="Go back"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+              </Link>
+            )}
+            <Link href="/">
+              <Logo size="md" />
+            </Link>
+          </div>
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
