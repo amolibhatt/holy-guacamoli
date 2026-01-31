@@ -378,23 +378,19 @@ export default function BlitzgridAdmin() {
         const hasMedia = existingQuestion.imageUrl || existingQuestion.audioUrl || existingQuestion.videoUrl;
         const hasAnswerMedia = existingQuestion.answerImageUrl || existingQuestion.answerAudioUrl || existingQuestion.answerVideoUrl;
         return (
-          <div className="py-3 px-4 bg-muted/20 rounded-lg border border-border/50" data-testid={`question-slot-${existingQuestion.id}`}>
-            <div className="flex items-start gap-4">
-              <div className="w-12 text-center shrink-0">
-                <span className="text-lg font-bold text-primary">{points}</span>
-                <p className="text-[10px] text-muted-foreground uppercase">pts</p>
+          <div className="py-2 px-3 bg-white dark:bg-card border border-border rounded" data-testid={`question-slot-${existingQuestion.id}`}>
+            <div className="flex items-start gap-3">
+              <div className="w-8 text-right shrink-0 pt-0.5">
+                <span className="text-sm font-semibold text-muted-foreground">{points}</span>
               </div>
-              <div className="flex-1 min-w-0 space-y-2">
-                <p className="text-sm leading-relaxed">{existingQuestion.question || <span className="text-muted-foreground italic">Media-only question</span>}</p>
-                <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 dark:bg-green-950/30 px-3 py-1.5 rounded-md">
-                  <Check className="w-4 h-4 shrink-0" />
-                  <span>{existingQuestion.correctAnswer}</span>
-                </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm">{existingQuestion.question || <span className="text-muted-foreground italic">Media only</span>}</p>
+                <p className="text-sm text-muted-foreground mt-1">Answer: {existingQuestion.correctAnswer}</p>
                 {(hasMedia || hasAnswerMedia) && (
-                  <div className="flex gap-2 text-xs text-muted-foreground">
-                    {(existingQuestion.imageUrl || existingQuestion.answerImageUrl) && <span className="flex items-center gap-1"><Image className="w-3 h-3" /> Image</span>}
-                    {(existingQuestion.audioUrl || existingQuestion.answerAudioUrl) && <span className="flex items-center gap-1"><Music className="w-3 h-3" /> Audio</span>}
-                    {(existingQuestion.videoUrl || existingQuestion.answerVideoUrl) && <span className="flex items-center gap-1"><Video className="w-3 h-3" /> Video</span>}
+                  <div className="flex gap-2 text-xs text-muted-foreground mt-1">
+                    {(existingQuestion.imageUrl || existingQuestion.answerImageUrl) && <span className="flex items-center gap-1"><Image className="w-3 h-3" /></span>}
+                    {(existingQuestion.audioUrl || existingQuestion.answerAudioUrl) && <span className="flex items-center gap-1"><Music className="w-3 h-3" /></span>}
+                    {(existingQuestion.videoUrl || existingQuestion.answerVideoUrl) && <span className="flex items-center gap-1"><Video className="w-3 h-3" /></span>}
                   </div>
                 )}
               </div>
@@ -410,110 +406,74 @@ export default function BlitzgridAdmin() {
       const questionValid = formData?.question || hasQuestionMedia;
       
       return (
-        <div className="py-3 px-4 border-2 border-dashed border-primary/30 rounded-lg bg-primary/5 space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 text-center shrink-0">
-              <span className="text-lg font-bold text-primary">{points}</span>
-              <p className="text-[10px] text-muted-foreground uppercase">pts</p>
+        <div className="py-2 px-3 bg-muted/30 border border-border rounded space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="w-8 text-right shrink-0 pt-2">
+              <span className="text-sm font-semibold text-muted-foreground">{points}</span>
             </div>
-            <div className="flex-1">
-              <p className="text-xs font-medium text-muted-foreground mb-1">Question {hasQuestionMedia && <span className="text-green-600">(optional - has media)</span>}</p>
-              <Textarea
-                placeholder="Type your question here..."
-                className="text-sm resize-y min-h-[60px] bg-background"
-                rows={2}
-                data-testid={`input-question-${formKey}`}
-                value={formData?.question || ''}
-                onChange={(e) => setQuestionForms(prev => ({
-                  ...prev,
-                  [formKey]: { ...prev[formKey] || defaultForm, question: e.target.value }
-                }))}
-              />
-              <div className="flex gap-2 mt-2 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1 flex-1">
-                  <Image className="w-3 h-3" />
-                  <Input placeholder="Image URL" className="h-7 text-xs bg-background" value={formData?.imageUrl || ''} onChange={(e) => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, imageUrl: e.target.value } }))} />
-                  <label className="cursor-pointer"><input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, imageUrl: url } })); toast({ title: "Uploaded" }); } catch { toast({ title: "Failed", variant: "destructive" }); } } }} /><Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild><span><Upload className="w-3 h-3" /></span></Button></label>
+            <div className="flex-1 space-y-3">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Question {hasQuestionMedia && "(optional with media)"}</label>
+                <Textarea
+                  placeholder="Question..."
+                  className="text-sm resize-none bg-white dark:bg-card"
+                  rows={2}
+                  data-testid={`input-question-${formKey}`}
+                  value={formData?.question || ''}
+                  onChange={(e) => setQuestionForms(prev => ({
+                    ...prev,
+                    [formKey]: { ...prev[formKey] || defaultForm, question: e.target.value }
+                  }))}
+                />
+                <div className="flex gap-2 mt-1">
+                  <div className="flex items-center gap-1 flex-1">
+                    <Image className="w-3 h-3 text-muted-foreground" />
+                    <Input placeholder="Image URL" className="h-7 text-xs" value={formData?.imageUrl || ''} onChange={(e) => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, imageUrl: e.target.value } }))} />
+                    <label className="cursor-pointer"><input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, imageUrl: url } })); toast({ title: "Uploaded" }); } catch { toast({ title: "Failed", variant: "destructive" }); } } }} /><Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild><span><Upload className="w-3 h-3" /></span></Button></label>
+                  </div>
+                  <div className="flex items-center gap-1 flex-1">
+                    <Music className="w-3 h-3 text-muted-foreground" />
+                    <Input placeholder="Audio URL" className="h-7 text-xs" value={formData?.audioUrl || ''} onChange={(e) => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, audioUrl: e.target.value } }))} />
+                    <label className="cursor-pointer"><input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, audioUrl: url } })); toast({ title: "Uploaded" }); } catch { toast({ title: "Failed", variant: "destructive" }); } } }} /><Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild><span><Upload className="w-3 h-3" /></span></Button></label>
+                  </div>
+                  <div className="flex items-center gap-1 flex-1">
+                    <Video className="w-3 h-3 text-muted-foreground" />
+                    <Input placeholder="Video URL" className="h-7 text-xs" value={formData?.videoUrl || ''} onChange={(e) => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, videoUrl: e.target.value } }))} />
+                    <label className="cursor-pointer"><input type="file" accept="video/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, videoUrl: url } })); toast({ title: "Uploaded" }); } catch { toast({ title: "Failed", variant: "destructive" }); } } }} /><Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild><span><Upload className="w-3 h-3" /></span></Button></label>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 flex-1">
-                  <Music className="w-3 h-3" />
-                  <Input placeholder="Audio URL" className="h-7 text-xs bg-background" value={formData?.audioUrl || ''} onChange={(e) => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, audioUrl: e.target.value } }))} />
-                  <label className="cursor-pointer"><input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, audioUrl: url } })); toast({ title: "Uploaded" }); } catch { toast({ title: "Failed", variant: "destructive" }); } } }} /><Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild><span><Upload className="w-3 h-3" /></span></Button></label>
-                </div>
-                <div className="flex items-center gap-1 flex-1">
-                  <Video className="w-3 h-3" />
-                  <Input placeholder="Video URL" className="h-7 text-xs bg-background" value={formData?.videoUrl || ''} onChange={(e) => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, videoUrl: e.target.value } }))} />
-                  <label className="cursor-pointer"><input type="file" accept="video/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, videoUrl: url } })); toast({ title: "Uploaded" }); } catch { toast({ title: "Failed", variant: "destructive" }); } } }} /><Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild><span><Upload className="w-3 h-3" /></span></Button></label>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Answer</label>
+                <Input
+                  placeholder="Answer..."
+                  className="text-sm bg-white dark:bg-card"
+                  data-testid={`input-answer-${formKey}`}
+                  value={formData?.correctAnswer || ''}
+                  onChange={(e) => setQuestionForms(prev => ({
+                    ...prev,
+                    [formKey]: { ...prev[formKey] || defaultForm, correctAnswer: e.target.value }
+                  }))}
+                />
+                <div className="flex gap-2 mt-1">
+                  <div className="flex items-center gap-1 flex-1">
+                    <Image className="w-3 h-3 text-muted-foreground" />
+                    <Input placeholder="Answer image" className="h-7 text-xs" value={formData?.answerImageUrl || ''} onChange={(e) => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerImageUrl: e.target.value } }))} />
+                    <label className="cursor-pointer"><input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerImageUrl: url } })); toast({ title: "Uploaded" }); } catch { toast({ title: "Failed", variant: "destructive" }); } } }} /><Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild><span><Upload className="w-3 h-3" /></span></Button></label>
+                  </div>
+                  <div className="flex items-center gap-1 flex-1">
+                    <Music className="w-3 h-3 text-muted-foreground" />
+                    <Input placeholder="Answer audio" className="h-7 text-xs" value={formData?.answerAudioUrl || ''} onChange={(e) => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerAudioUrl: e.target.value } }))} />
+                    <label className="cursor-pointer"><input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerAudioUrl: url } })); toast({ title: "Uploaded" }); } catch { toast({ title: "Failed", variant: "destructive" }); } } }} /><Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild><span><Upload className="w-3 h-3" /></span></Button></label>
+                  </div>
+                  <div className="flex items-center gap-1 flex-1">
+                    <Video className="w-3 h-3 text-muted-foreground" />
+                    <Input placeholder="Answer video" className="h-7 text-xs" value={formData?.answerVideoUrl || ''} onChange={(e) => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerVideoUrl: e.target.value } }))} />
+                    <label className="cursor-pointer"><input type="file" accept="video/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerVideoUrl: url } })); toast({ title: "Uploaded" }); } catch { toast({ title: "Failed", variant: "destructive" }); } } }} /><Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild><span><Upload className="w-3 h-3" /></span></Button></label>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          
-          <div className="flex items-start gap-4">
-            <div className="w-12 shrink-0"></div>
-            <div className="flex-1">
-              <p className="text-xs font-medium text-green-600 mb-1">Answer</p>
-              <Textarea
-                placeholder="Type the correct answer..."
-                className="text-sm resize-y bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900"
-                rows={1}
-                data-testid={`input-answer-${formKey}`}
-                value={formData?.correctAnswer || ''}
-                onChange={(e) => setQuestionForms(prev => ({
-                  ...prev,
-                  [formKey]: { ...prev[formKey] || defaultForm, correctAnswer: e.target.value }
-                }))}
-              />
-              <div className="flex gap-2 mt-2 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1 flex-1">
-                  <Image className="w-3 h-3 text-green-500" />
-                  <Input placeholder="Answer image" className="h-7 text-xs bg-background" value={formData?.answerImageUrl || ''} onChange={(e) => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerImageUrl: e.target.value } }))} />
-                  <label className="cursor-pointer"><input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerImageUrl: url } })); toast({ title: "Uploaded" }); } catch { toast({ title: "Failed", variant: "destructive" }); } } }} /><Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild><span><Upload className="w-3 h-3" /></span></Button></label>
-                </div>
-                <div className="flex items-center gap-1 flex-1">
-                  <Music className="w-3 h-3 text-green-500" />
-                  <Input placeholder="Answer audio" className="h-7 text-xs bg-background" value={formData?.answerAudioUrl || ''} onChange={(e) => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerAudioUrl: e.target.value } }))} />
-                  <label className="cursor-pointer"><input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerAudioUrl: url } })); toast({ title: "Uploaded" }); } catch { toast({ title: "Failed", variant: "destructive" }); } } }} /><Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild><span><Upload className="w-3 h-3" /></span></Button></label>
-                </div>
-                <div className="flex items-center gap-1 flex-1">
-                  <Video className="w-3 h-3 text-green-500" />
-                  <Input placeholder="Answer video" className="h-7 text-xs bg-background" value={formData?.answerVideoUrl || ''} onChange={(e) => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerVideoUrl: e.target.value } }))} />
-                  <label className="cursor-pointer"><input type="file" accept="video/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerVideoUrl: url } })); toast({ title: "Uploaded" }); } catch { toast({ title: "Failed", variant: "destructive" }); } } }} /><Button type="button" size="icon" variant="ghost" className="h-7 w-7" asChild><span><Upload className="w-3 h-3" /></span></Button></label>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex justify-end pt-2 border-t">
-            <Button
-              size="sm"
-              className="h-8"
-              onClick={() => {
-                if (questionValid && formData?.correctAnswer) {
-                  saveQuestionMutation.mutate({
-                    categoryId: category.id,
-                    points,
-                    question: formData.question,
-                    correctAnswer: formData.correctAnswer,
-                    options: formData.options || [],
-                    imageUrl: formData.imageUrl || undefined,
-                    audioUrl: formData.audioUrl || undefined,
-                    videoUrl: formData.videoUrl || undefined,
-                    answerImageUrl: formData.answerImageUrl || undefined,
-                    answerAudioUrl: formData.answerAudioUrl || undefined,
-                    answerVideoUrl: formData.answerVideoUrl || undefined,
-                  });
-                  setQuestionForms(prev => {
-                    const newForms = { ...prev };
-                    delete newForms[formKey];
-                    return newForms;
-                  });
-                }
-              }}
-              disabled={!questionValid || !formData?.correctAnswer || saveQuestionMutation.isPending}
-            >
-              {saveQuestionMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Check className="w-3 h-3 mr-1" /> Save</>}
-            </Button>
           </div>
         </div>
       );
@@ -862,23 +822,6 @@ export default function BlitzgridAdmin() {
                                         <Check className="w-3 h-3" />
                                       )}
                                     </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => {
-                                        setEditingCategoryId(null);
-                                        // Clear question forms for this category
-                                        setQuestionForms(prev => {
-                                          const newForms = { ...prev };
-                                          POINT_TIERS.forEach(pts => {
-                                            delete newForms[`${category.id}-${pts}`];
-                                          });
-                                          return newForms;
-                                        });
-                                      }}
-                                    >
-                                      Done
-                                    </Button>
                                   </div>
                                 </div>
                               ) : (
@@ -929,6 +872,64 @@ export default function BlitzgridAdmin() {
                                 {renderQuestionSlot(category, points)}
                               </div>
                             ))}
+                            {editingCategoryId === category.id && (
+                              <div className="flex justify-end gap-2 pt-4 mt-4 border-t">
+                                <Button
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingCategoryId(null);
+                                    setQuestionForms(prev => {
+                                      const newForms = { ...prev };
+                                      POINT_TIERS.forEach(pts => {
+                                        delete newForms[`${category.id}-${pts}`];
+                                      });
+                                      return newForms;
+                                    });
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  onClick={async () => {
+                                    // Save all questions with data
+                                    for (const pts of POINT_TIERS) {
+                                      const formKey = `${category.id}-${pts}`;
+                                      const formData = questionForms[formKey];
+                                      const hasQuestionMedia = formData?.imageUrl || formData?.audioUrl || formData?.videoUrl;
+                                      const questionValid = formData?.question || hasQuestionMedia;
+                                      if (formData && questionValid && formData.correctAnswer) {
+                                        await saveQuestionMutation.mutateAsync({
+                                          categoryId: category.id,
+                                          points: pts,
+                                          question: formData.question,
+                                          correctAnswer: formData.correctAnswer,
+                                          options: formData.options || [],
+                                          imageUrl: formData.imageUrl || undefined,
+                                          audioUrl: formData.audioUrl || undefined,
+                                          videoUrl: formData.videoUrl || undefined,
+                                          answerImageUrl: formData.answerImageUrl || undefined,
+                                          answerAudioUrl: formData.answerAudioUrl || undefined,
+                                          answerVideoUrl: formData.answerVideoUrl || undefined,
+                                        });
+                                      }
+                                    }
+                                    setEditingCategoryId(null);
+                                    setQuestionForms(prev => {
+                                      const newForms = { ...prev };
+                                      POINT_TIERS.forEach(pts => {
+                                        delete newForms[`${category.id}-${pts}`];
+                                      });
+                                      return newForms;
+                                    });
+                                    toast({ title: "Saved" });
+                                  }}
+                                  disabled={saveQuestionMutation.isPending}
+                                >
+                                  {saveQuestionMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                                  Save All
+                                </Button>
+                              </div>
+                            )}
                           </CardContent>
                         </motion.div>
                       )}
