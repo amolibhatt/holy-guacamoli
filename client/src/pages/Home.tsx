@@ -114,6 +114,31 @@ export default function Home() {
       <main className="flex-1 px-4 lg:px-6 py-8 lg:py-12 flex items-center justify-center">
         <div className="w-full max-w-5xl mx-auto">
           
+          {/* Header */}
+          <div className="text-center mb-8 lg:mb-10">
+            <motion.h1 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-3xl lg:text-5xl font-black text-white uppercase tracking-wider mb-3"
+              style={{ 
+                fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                textShadow: '0 0 30px rgba(139, 92, 246, 0.5), 0 0 60px rgba(139, 92, 246, 0.3)',
+              }}
+              data-testid="text-main-title"
+            >
+              Pick Your Game
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-white/50 text-sm lg:text-base"
+              data-testid="text-main-subtitle"
+            >
+              Choose a game mode and start the party
+            </motion.p>
+          </div>
+
           {/* Container frame for game cards */}
           <div className="p-4 lg:p-6 rounded-2xl border border-white/5 bg-white/[0.02]">
             {/* Game Cards - 3 column grid on large screens */}
