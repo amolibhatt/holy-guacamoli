@@ -3186,6 +3186,11 @@ export async function registerRoutes(
     score: number;
     ws: WebSocket;
     isConnected: boolean;
+    correctAnswers: number;
+    wrongAnswers: number;
+    totalTimeMs: number;
+    currentStreak: number;
+    bestStreak: number;
   }
 
   interface SequenceSubmission {
@@ -3347,6 +3352,11 @@ export async function registerRoutes(
                       score: p.score,
                       ws: null as any,
                       isConnected: false,
+                      correctAnswers: 0,
+                      wrongAnswers: 0,
+                      totalTimeMs: 0,
+                      currentStreak: 0,
+                      bestStreak: 0,
                     }])),
                     buzzerLocked: session.buzzerLocked,
                     buzzQueue: [],
@@ -3444,6 +3454,11 @@ export async function registerRoutes(
                 score: 0,
                 ws,
                 isConnected: true,
+                correctAnswers: 0,
+                wrongAnswers: 0,
+                totalTimeMs: 0,
+                currentStreak: 0,
+                bestStreak: 0,
               };
               room.players.set(playerId, player);
               wsToRoom.set(ws, { roomCode: room.code, isHost: false, playerId });
@@ -4039,6 +4054,11 @@ export async function registerRoutes(
                 score: 0,
                 ws,
                 isConnected: true,
+                correctAnswers: 0,
+                wrongAnswers: 0,
+                totalTimeMs: 0,
+                currentStreak: 0,
+                bestStreak: 0,
               };
               room.players.set(playerId, player);
               wsToRoom.set(ws, { roomCode: room.code, isHost: false, playerId });
@@ -4216,6 +4236,24 @@ export async function registerRoutes(
               }
             }
 
+            // Update player statistics
+            for (const sub of submissions) {
+              const player = room.players.get(sub.playerId);
+              if (player) {
+                if (sub.isCorrect) {
+                  player.correctAnswers += 1;
+                  player.totalTimeMs += sub.timeMs;
+                  player.currentStreak += 1;
+                  if (player.currentStreak > player.bestStreak) {
+                    player.bestStreak = player.currentStreak;
+                  }
+                } else {
+                  player.wrongAnswers += 1;
+                  player.currentStreak = 0;
+                }
+              }
+            }
+
             // Award points to winner
             if (winner) {
               const winningPlayer = room.players.get(winner.playerId);
@@ -4224,13 +4262,18 @@ export async function registerRoutes(
               }
             }
 
-            // Build leaderboard
+            // Build leaderboard with stats
             const leaderboard = Array.from(room.players.values())
               .map(p => ({
                 playerId: p.id,
                 playerName: p.name,
                 playerAvatar: p.avatar,
                 score: p.score,
+                correctAnswers: p.correctAnswers,
+                wrongAnswers: p.wrongAnswers,
+                avgTimeMs: p.correctAnswers > 0 ? Math.round(p.totalTimeMs / p.correctAnswers) : 0,
+                currentStreak: p.currentStreak,
+                bestStreak: p.bestStreak,
               }))
               .sort((a, b) => b.score - a.score);
 
@@ -4278,6 +4321,11 @@ export async function registerRoutes(
                 playerName: p.name,
                 playerAvatar: p.avatar,
                 score: p.score,
+                correctAnswers: p.correctAnswers,
+                wrongAnswers: p.wrongAnswers,
+                avgTimeMs: p.correctAnswers > 0 ? Math.round(p.totalTimeMs / p.correctAnswers) : 0,
+                currentStreak: p.currentStreak,
+                bestStreak: p.bestStreak,
               }))
               .sort((a, b) => b.score - a.score);
 
@@ -4347,6 +4395,11 @@ export async function registerRoutes(
                 playerName: p.name,
                 playerAvatar: p.avatar,
                 score: p.score,
+                correctAnswers: p.correctAnswers,
+                wrongAnswers: p.wrongAnswers,
+                avgTimeMs: p.correctAnswers > 0 ? Math.round(p.totalTimeMs / p.correctAnswers) : 0,
+                currentStreak: p.currentStreak,
+                bestStreak: p.bestStreak,
               }))
               .sort((a, b) => b.score - a.score);
 
