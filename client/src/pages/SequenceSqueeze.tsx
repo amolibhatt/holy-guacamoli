@@ -483,8 +483,55 @@ export default function SequenceSqueeze() {
   const joinUrl = `${window.location.origin}/sortcircuit/${roomCode}`;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="fixed inset-0 bg-gradient-to-br from-teal-300/5 via-transparent to-teal-300/5 pointer-events-none" />
+    <div className="min-h-screen bg-slate-900 text-white overflow-hidden">
+      {/* Animated cyber background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-teal-900/80 via-slate-900 to-cyan-900/60" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-500/20 via-transparent to-transparent" />
+        
+        {/* Animated grid lines */}
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: 'linear-gradient(to right, cyan 1px, transparent 1px), linear-gradient(to bottom, cyan 1px, transparent 1px)',
+          backgroundSize: '60px 60px'
+        }} />
+        
+        {/* Floating circuit elements */}
+        {[...Array(8)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 bg-cyan-400 rounded-full"
+            style={{
+              left: `${10 + i * 12}%`,
+              top: `${20 + (i % 3) * 25}%`,
+              boxShadow: '0 0 10px cyan, 0 0 20px cyan'
+            }}
+            animate={{
+              y: [0, -30, 0],
+              opacity: [0.3, 1, 0.3],
+              scale: [1, 1.5, 1]
+            }}
+            transition={{
+              duration: 2 + i * 0.3,
+              repeat: Infinity,
+              delay: i * 0.2
+            }}
+          />
+        ))}
+        
+        {/* Electric arcs */}
+        <motion.div
+          className="absolute top-20 left-10 w-40 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent"
+          animate={{ opacity: [0, 1, 0], x: [0, 100, 200] }}
+          transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
+          style={{ boxShadow: '0 0 10px cyan' }}
+        />
+        <motion.div
+          className="absolute bottom-40 right-20 w-60 h-1 bg-gradient-to-r from-transparent via-teal-400 to-transparent"
+          animate={{ opacity: [0, 1, 0], x: [0, -150, -300] }}
+          transition={{ duration: 4, repeat: Infinity, repeatDelay: 1 }}
+          style={{ boxShadow: '0 0 10px teal' }}
+        />
+      </div>
 
       <AppHeader minimal backHref="/" title="Sort Circuit" />
 
@@ -504,25 +551,85 @@ export default function SequenceSqueeze() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="py-6"
+            className="py-6 relative z-10"
           >
-            {/* Sub-header description */}
-            <p className="text-center text-muted-foreground mb-8" data-testid="text-game-description">
-              Arrange items in the correct order. Fastest correct answer wins!
-            </p>
+            {/* Hero title */}
+            <motion.div 
+              className="text-center mb-8"
+              initial={{ y: -20 }}
+              animate={{ y: 0 }}
+            >
+              <motion.h1 
+                className="text-5xl md:text-6xl font-black mb-2"
+                style={{ 
+                  textShadow: '0 0 20px cyan, 0 0 40px cyan, 0 0 60px teal',
+                  background: 'linear-gradient(to right, #06b6d4, #14b8a6, #22d3ee)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}
+                animate={{ 
+                  textShadow: [
+                    '0 0 20px cyan, 0 0 40px cyan',
+                    '0 0 30px cyan, 0 0 60px teal',
+                    '0 0 20px cyan, 0 0 40px cyan'
+                  ]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                SORT CIRCUIT
+              </motion.h1>
+              <p className="text-cyan-300/80 text-lg">Arrange fast. Win first.</p>
+            </motion.div>
 
             <div className="grid md:grid-cols-2 gap-8 items-start">
               {/* Left: QR Code and Start Button */}
-              <div className="flex flex-col items-center">
-                <div className="bg-white p-4 rounded-2xl shadow-lg" data-testid="container-qr-code">
+              <motion.div 
+                className="flex flex-col items-center"
+                initial={{ x: -50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <div 
+                  className="bg-white p-4 rounded-2xl shadow-2xl relative" 
+                  data-testid="container-qr-code"
+                  style={{ boxShadow: '0 0 30px rgba(6, 182, 212, 0.5)' }}
+                >
                   <QRCodeSVG value={joinUrl} size={200} />
+                  <motion.div 
+                    className="absolute -inset-1 rounded-2xl border-2 border-cyan-400/50"
+                    animate={{ opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
                 </div>
-                <p className="mt-4 text-center">
-                  <span className="text-muted-foreground">Room Code: </span>
-                  <span className="font-mono font-bold text-2xl" data-testid="text-room-code">{roomCode}</span>
-                </p>
-                <p className="text-sm text-muted-foreground mt-1 mb-6" data-testid="text-join-url">
-                  Scan or go to <span className="font-mono">/sortcircuit/{roomCode}</span>
+                
+                {/* Glowing room code */}
+                <motion.div 
+                  className="mt-6 text-center"
+                  animate={{ scale: [1, 1.02, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <p className="text-cyan-300/70 text-sm mb-1">ROOM CODE</p>
+                  <motion.p 
+                    className="font-mono font-black text-5xl tracking-widest"
+                    style={{ 
+                      color: '#22d3ee',
+                      textShadow: '0 0 10px cyan, 0 0 20px cyan, 0 0 30px teal'
+                    }}
+                    data-testid="text-room-code"
+                    animate={{
+                      textShadow: [
+                        '0 0 10px cyan, 0 0 20px cyan',
+                        '0 0 20px cyan, 0 0 40px teal',
+                        '0 0 10px cyan, 0 0 20px cyan'
+                      ]
+                    }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    {roomCode}
+                  </motion.p>
+                </motion.div>
+                <p className="text-sm text-cyan-400/60 mt-2 mb-6" data-testid="text-join-url">
+                  <span className="font-mono">/sortcircuit/{roomCode}</span>
                 </p>
 
                 {/* Smart Start Button */}
@@ -558,14 +665,14 @@ export default function SequenceSqueeze() {
                 </motion.div>
                 
                 {players.length === 0 && (
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-xs text-cyan-400/60 mt-2">
                     Waiting for at least 1 player to join...
                   </p>
                 )}
 
-                <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                <div className="mt-4 p-3 bg-slate-800/50 rounded-lg border border-cyan-500/20">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 text-sm text-cyan-300/70">
                       <Settings className="w-4 h-4" />
                       <span>Points per round</span>
                     </div>
@@ -573,15 +680,17 @@ export default function SequenceSqueeze() {
                       <Button 
                         size="icon" 
                         variant="outline" 
+                        className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
                         onClick={() => setPointsPerRound(p => Math.max(5, p - 5))}
                         data-testid="button-points-decrease"
                       >
                         <Minus className="w-4 h-4" />
                       </Button>
-                      <span className="font-bold text-lg w-8 text-center" data-testid="text-points-per-round">{pointsPerRound}</span>
+                      <span className="font-bold text-lg w-8 text-center text-cyan-300" data-testid="text-points-per-round">{pointsPerRound}</span>
                       <Button 
                         size="icon" 
                         variant="outline" 
+                        className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
                         onClick={() => setPointsPerRound(p => Math.min(50, p + 5))}
                         data-testid="button-points-increase"
                       >
@@ -590,33 +699,41 @@ export default function SequenceSqueeze() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Right: Players */}
-              <div className="flex flex-col">
+              <motion.div 
+                className="flex flex-col"
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
                 <div className="flex items-center gap-2 mb-4">
-                  <Users className="w-5 h-5 text-cyan-500" />
-                  <h2 className="text-xl font-bold" data-testid="text-players-header">Players</h2>
-                  <Badge variant="secondary" className="ml-2" data-testid="badge-player-count">
+                  <Users className="w-5 h-5 text-cyan-400" />
+                  <h2 className="text-xl font-bold text-white" data-testid="text-players-header">Players</h2>
+                  <Badge className="ml-2 bg-cyan-500/30 text-cyan-300 border-cyan-500/50" data-testid="badge-player-count">
                     {players.length} joined
                   </Badge>
                 </div>
 
                 {players.length === 0 ? (
-                  <Card className="p-6 border-dashed" data-testid="card-players-empty">
+                  <div 
+                    className="p-8 border-2 border-dashed border-cyan-500/30 rounded-xl bg-slate-800/50" 
+                    data-testid="card-players-empty"
+                  >
                     <div className="text-center">
-                      <Users className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                      <Users className="w-12 h-12 mx-auto text-cyan-500/30 mb-3" />
                       <motion.p
                         animate={{ opacity: [0.5, 1, 0.5] }}
                         transition={{ duration: 2, repeat: Infinity }}
-                        className="text-muted-foreground text-sm"
+                        className="text-cyan-300/60 text-sm"
                       >
                         Waiting for players to scan and join...
                       </motion.p>
                     </div>
-                  </Card>
+                  </div>
                 ) : (
-                  <Card className="p-4" data-testid="card-players">
+                  <div className="p-4 bg-slate-800/50 rounded-xl border border-cyan-500/30" data-testid="card-players">
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <AnimatePresence>
                         {players.map((p, idx) => {
@@ -635,21 +752,22 @@ export default function SequenceSqueeze() {
                                 damping: 25,
                                 delay: idx * 0.03
                               }}
-                              className="flex flex-col items-center p-3 bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-950/30 dark:to-teal-950/30 rounded-xl border border-cyan-200/50 dark:border-cyan-800/50"
+                              className="flex flex-col items-center p-3 bg-gradient-to-br from-cyan-900/50 to-teal-900/50 rounded-xl border border-cyan-500/30"
+                              style={{ boxShadow: '0 0 10px rgba(6, 182, 212, 0.2)' }}
                               data-testid={`player-card-${p.id}`}
                             >
                               <div className="text-4xl mb-1">
-                                {p.avatar || <User className="w-10 h-10 text-muted-foreground" />}
+                                {p.avatar || <User className="w-10 h-10 text-cyan-400" />}
                               </div>
-                              <span className="font-semibold text-sm text-center" data-testid={`text-player-name-${p.id}`}>{p.name}</span>
+                              <span className="font-semibold text-sm text-center text-white" data-testid={`text-player-name-${p.id}`}>{p.name}</span>
                               <div className="flex items-center gap-2 mt-1">
                                 {playerScore > 0 && (
-                                  <Badge variant="secondary" className="text-xs" data-testid={`text-player-score-${p.id}`}>
+                                  <Badge className="text-xs bg-teal-500/30 text-teal-300 border-teal-500/50" data-testid={`text-player-score-${p.id}`}>
                                     {playerScore} pts
                                   </Badge>
                                 )}
                                 {streak >= 2 && (
-                                  <span className="inline-flex items-center gap-0.5 text-xs text-amber-600">
+                                  <span className="inline-flex items-center gap-0.5 text-xs text-amber-400">
                                     <Flame className="w-3 h-3" />
                                     {streak}
                                   </span>
@@ -661,13 +779,13 @@ export default function SequenceSqueeze() {
                       </AnimatePresence>
                     </div>
                     {leaderboard.length > 0 && leaderboard.some(l => l.score > 0) && (
-                      <p className="text-xs text-muted-foreground mt-3 text-center">
+                      <p className="text-xs text-cyan-400/60 mt-3 text-center">
                         Scores from previous session
                       </p>
                     )}
-                  </Card>
+                  </div>
                 )}
-              </div>
+              </motion.div>
             </div>
           </motion.div>
         )}
@@ -680,21 +798,40 @@ export default function SequenceSqueeze() {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.2 }}
-                className="fixed inset-0 z-50 flex items-center justify-center bg-teal-600"
+                className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-slate-900 via-teal-900 to-cyan-900"
               >
-                <div className="text-center text-white">
+                {/* Animated background grid */}
+                <div className="absolute inset-0 opacity-20" style={{
+                  backgroundImage: 'linear-gradient(to right, cyan 1px, transparent 1px), linear-gradient(to bottom, cyan 1px, transparent 1px)',
+                  backgroundSize: '40px 40px'
+                }} />
+                <div className="text-center text-white relative z-10">
                   <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 0.5, repeat: Infinity }}
+                    animate={{ scale: [1, 1.2, 1], rotate: [0, 5, -5, 0] }}
+                    transition={{ duration: 0.8, repeat: Infinity }}
+                    className="mb-6"
+                    style={{ filter: 'drop-shadow(0 0 30px cyan)' }}
                   >
-                    <Sparkles className="w-16 h-16 mx-auto mb-4" />
+                    <Sparkles className="w-20 h-20 mx-auto text-cyan-400" />
                   </motion.div>
-                  <h1 className="text-5xl md:text-7xl font-black mb-4">
-                    QUESTION {currentQuestionIndex}/{totalQuestions}
-                  </h1>
-                  <p className="text-2xl md:text-3xl font-bold opacity-90">
-                    Get Ready...
-                  </p>
+                  <motion.h1 
+                    className="text-6xl md:text-8xl font-black mb-4"
+                    style={{ 
+                      textShadow: '0 0 30px cyan, 0 0 60px teal',
+                      background: 'linear-gradient(to right, #22d3ee, #14b8a6)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent'
+                    }}
+                  >
+                    Q{currentQuestionIndex}
+                  </motion.h1>
+                  <motion.p 
+                    className="text-3xl md:text-4xl font-bold text-cyan-300"
+                    animate={{ opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  >
+                    INCOMING...
+                  </motion.p>
                 </div>
                 <Button
                   variant="ghost"
@@ -756,17 +893,27 @@ export default function SequenceSqueeze() {
                         initial={{ scale: 0, rotate: -10 }}
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{ delay: i * 0.15, type: "spring", stiffness: 300 }}
-                        className="p-6 bg-gradient-to-br from-emerald-300 via-teal-300 to-cyan-300 rounded-xl text-white text-center shadow-xl"
+                        className="p-6 bg-gradient-to-br from-cyan-900/80 to-teal-900/80 rounded-xl text-white text-center border border-cyan-500/40"
+                        style={{ boxShadow: '0 0 20px rgba(6, 182, 212, 0.3)' }}
                       >
-                        <div className="w-12 h-12 rounded-full bg-white/20 text-white flex items-center justify-center mx-auto mb-3 text-2xl font-black">
+                        <div 
+                          className="w-12 h-12 rounded-full bg-cyan-500/30 text-cyan-300 flex items-center justify-center mx-auto mb-3 text-2xl font-black border border-cyan-400/50"
+                          style={{ textShadow: '0 0 10px cyan' }}
+                        >
                           {letter}
                         </div>
-                        <p className="text-lg font-semibold">{option}</p>
+                        <p className="text-lg font-semibold text-white">{option}</p>
                       </motion.div>
                     );
                   })}
                 </div>
-                <p className="text-white/60 mt-6 text-sm">Get ready to tap...</p>
+                <motion.p 
+                  className="text-cyan-400/80 mt-6 text-sm"
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  Preparing to sequence...
+                </motion.p>
                 <Button
                   variant="ghost"
                   className="absolute bottom-8 right-8 text-white/60"
@@ -785,26 +932,29 @@ export default function SequenceSqueeze() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="space-y-6"
+            className="space-y-6 relative z-10"
           >
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
-                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-teal-500 transition-all duration-300"
+                <div className="flex-1 h-3 bg-slate-800 rounded-full overflow-hidden border border-cyan-500/30">
+                  <motion.div 
+                    className="h-full bg-gradient-to-r from-teal-500 to-cyan-400"
                     style={{ width: `${(currentQuestionIndex / totalQuestions) * 100}%` }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(currentQuestionIndex / totalQuestions) * 100}%` }}
+                    transition={{ duration: 0.5 }}
                   />
                 </div>
-                <span className="text-sm text-muted-foreground">{currentQuestionIndex}/{totalQuestions}</span>
+                <span className="text-sm text-cyan-400 font-mono">{currentQuestionIndex}/{totalQuestions}</span>
               </div>
             </div>
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-3">
-                <Badge variant="outline" className="gap-1 font-mono" data-testid="badge-elapsed-time">
+                <Badge className="gap-1 font-mono bg-slate-800 text-cyan-300 border border-cyan-500/40" data-testid="badge-elapsed-time">
                   <Clock className="w-4 h-4" />
                   {(elapsedTime / 1000).toFixed(1)}s
                 </Badge>
-                <Badge variant="secondary" className="gap-1">
+                <Badge className="gap-1 bg-teal-500/30 text-teal-300 border border-teal-500/40">
                   <Users className="w-4 h-4" />
                   {submissions.length}/{players.length} locked in
                 </Badge>
