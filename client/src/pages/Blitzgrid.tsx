@@ -3349,44 +3349,57 @@ export default function Blitzgrid() {
                 disabled={isShuffling}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center gap-3 px-8 py-4 rounded-full text-black font-black uppercase tracking-wide transition-all"
+                className="inline-flex flex-col items-center gap-2 px-10 py-5 rounded-2xl transition-all"
                 style={{
-                  background: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)',
-                  boxShadow: '0 0 40px rgba(34, 211, 238, 0.4), 0 4px 20px rgba(0, 0, 0, 0.3)',
-                  fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                  background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.15) 0%, rgba(6, 182, 212, 0.08) 100%)',
+                  border: '1px solid rgba(34, 211, 238, 0.3)',
+                  boxShadow: '0 0 30px rgba(34, 211, 238, 0.15)',
                 }}
                 data-testid="button-shuffle-play"
               >
-                {isShuffling ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Shuffle className="w-5 h-5" />
-                )}
-                I'm Feeling Lucky
-              </motion.button>
-              
-              <p className="text-white/30 text-sm mt-3">
-                Randomly picks 5 categories from all your grids
-              </p>
-              
-              {playedShuffleCategoryIds.length > 0 && (
-                <div className="mt-3 flex items-center justify-center gap-3">
-                  <span className="text-white/30 text-xs">{playedShuffleCategoryIds.length} played</span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-cyan-400 h-6 text-xs"
-                    onClick={() => {
-                      setPlayedShuffleCategoryIds([]);
-                      toast({ title: "Reset", description: "All categories available again" });
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-10 h-10 rounded-full flex items-center justify-center"
+                    style={{
+                      background: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)',
+                      boxShadow: '0 0 20px rgba(34, 211, 238, 0.5)',
                     }}
-                    data-testid="button-reset-shuffle"
                   >
-                    <RotateCcw className="w-3 h-3 mr-1" />
-                    Reset
-                  </Button>
+                    {isShuffling ? (
+                      <Loader2 className="w-5 h-5 text-black animate-spin" />
+                    ) : (
+                      <Shuffle className="w-5 h-5 text-black" />
+                    )}
+                  </div>
+                  <span 
+                    className="text-cyan-300 font-black uppercase tracking-wide text-lg"
+                    style={{ 
+                      fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                      textShadow: '0 0 15px rgba(34, 211, 238, 0.5)',
+                    }}
+                  >
+                    I'm Feeling Lucky
+                  </span>
                 </div>
-              )}
+                <span className="text-white/40 text-sm">
+                  Random mix from all your grids
+                </span>
+                {playedShuffleCategoryIds.length > 0 && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-white/30 text-xs">{playedShuffleCategoryIds.length} played</span>
+                    <span 
+                      className="text-cyan-400 text-xs underline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPlayedShuffleCategoryIds([]);
+                        toast({ title: "Reset", description: "All categories available again" });
+                      }}
+                    >
+                      Reset
+                    </span>
+                  </div>
+                )}
+              </motion.button>
             </motion.div>
 
             {/* My Grids Section */}
