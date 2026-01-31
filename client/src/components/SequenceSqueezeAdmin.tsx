@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Plus, Trash2, X, ListOrdered, Sparkles, GripVertical, Lightbulb, Check, Upload, Eye, ChevronDown, Loader2 } from "lucide-react";
+import { Plus, Trash2, X, ListOrdered, Lightbulb, Check, Upload, ChevronDown, Loader2 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { SequenceQuestion } from "@shared/schema";
 
@@ -173,28 +173,23 @@ export function SequenceSqueezeAdmin() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6" data-testid="section-sequence-squeeze-admin">
+    <div className="max-w-3xl mx-auto space-y-6" data-testid="section-sequence-squeeze-admin">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-300 via-teal-300 to-cyan-300 flex items-center justify-center shadow-lg shadow-teal-300/20">
-            <ListOrdered className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-foreground">Sequence Questions</h2>
-            <p className="text-sm text-muted-foreground">{questions.length} questions available</p>
-          </div>
+        <div>
+          <p className="text-muted-foreground">{questions.length} question{questions.length !== 1 ? 's' : ''}</p>
         </div>
         <Button
           onClick={() => setShowForm(!showForm)}
-          variant={showForm ? "secondary" : "default"}
-          className="gap-2"
+          variant={showForm ? "outline" : "default"}
           data-testid="button-toggle-sequence-form"
         >
-          {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          {showForm ? "Cancel" : "Add Question"}
+          {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+          {showForm ? "Cancel" : "New Question"}
         </Button>
       </div>
 
+      {/* Add Question Form */}
       <AnimatePresence>
         {showForm && (
           <motion.div
@@ -202,103 +197,75 @@ export function SequenceSqueezeAdmin() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
           >
-            <Card className="border-teal-200/60 bg-gradient-to-b from-teal-100/30 to-transparent">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Sparkles className="w-5 h-5 text-teal-600" />
-                  New Ordering Question
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <Card>
+              <CardContent className="p-6 space-y-5">
                 <div>
-                  <Label htmlFor="question">Question</Label>
+                  <Label htmlFor="question" className="text-sm font-medium">Question</Label>
                   <Textarea
                     id="question"
-                    placeholder="e.g., Arrange these planets from closest to farthest from the Sun"
+                    placeholder="What should players put in order?"
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
-                    className="mt-1"
+                    className="mt-2 resize-none"
+                    rows={2}
                     data-testid="input-sequence-question"
                   />
                 </div>
 
                 <div>
-                  <Label className="flex items-center gap-2 mb-2">
-                    <GripVertical className="w-4 h-4 text-teal-600" />
-                    Options (enter in correct order)
-                  </Label>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Enter options from first to last. They'll be shuffled when shown to players.
+                  <Label className="text-sm font-medium mb-3 block">Options (in correct order)</Label>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Type options 1st to 4th. Players will see them shuffled.
                   </p>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-sm font-bold shrink-0">1</span>
-                      <Input
-                        placeholder="First in order"
-                        value={option1}
-                        onChange={(e) => setOption1(e.target.value)}
-                        data-testid="input-option-1"
-                      />
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-sm font-bold shrink-0">2</span>
-                      <Input
-                        placeholder="Second in order"
-                        value={option2}
-                        onChange={(e) => setOption2(e.target.value)}
-                        data-testid="input-option-2"
-                      />
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-sm font-bold shrink-0">3</span>
-                      <Input
-                        placeholder="Third in order"
-                        value={option3}
-                        onChange={(e) => setOption3(e.target.value)}
-                        data-testid="input-option-3"
-                      />
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-sm font-bold shrink-0">4</span>
-                      <Input
-                        placeholder="Fourth in order"
-                        value={option4}
-                        onChange={(e) => setOption4(e.target.value)}
-                        data-testid="input-option-4"
-                      />
-                    </div>
+                    {[
+                      { num: 1, value: option1, setter: setOption1, label: "1st" },
+                      { num: 2, value: option2, setter: setOption2, label: "2nd" },
+                      { num: 3, value: option3, setter: setOption3, label: "3rd" },
+                      { num: 4, value: option4, setter: setOption4, label: "4th" },
+                    ].map(({ num, value, setter, label }) => (
+                      <div key={num} className="flex items-center gap-3">
+                        <span className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-sm font-semibold text-muted-foreground shrink-0">
+                          {label}
+                        </span>
+                        <Input
+                          placeholder={`Option ${num}`}
+                          value={value}
+                          onChange={(e) => setter(e.target.value)}
+                          data-testid={`input-option-${num}`}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="hint" className="flex items-center gap-2">
-                    <Lightbulb className="w-4 h-4 text-amber-500" />
+                  <Label htmlFor="hint" className="text-sm font-medium flex items-center gap-2">
+                    <Lightbulb className="w-4 h-4 text-muted-foreground" />
                     Hint (optional)
                   </Label>
                   <Input
                     id="hint"
-                    placeholder="A helpful hint for players"
+                    placeholder="A clue for players"
                     value={hint}
                     onChange={(e) => setHint(e.target.value)}
-                    className="mt-1"
+                    className="mt-2"
                     data-testid="input-hint"
                   />
                 </div>
 
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-3 pt-2">
                   <Button
                     onClick={handleSubmit}
                     disabled={createMutation.isPending}
-                    className="bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 hover:from-emerald-400 hover:via-teal-400 hover:to-cyan-400 gap-2 text-white"
                     data-testid="button-create-sequence-question"
                   >
                     {createMutation.isPending ? (
-                      "Creating..."
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     ) : (
-                      <>
-                        <Plus className="w-4 h-4" /> Create Question
-                      </>
+                      <Check className="w-4 h-4 mr-2" />
                     )}
+                    Save Question
                   </Button>
                   <Button variant="ghost" onClick={resetForm} data-testid="button-cancel-sequence">
                     Cancel
@@ -310,213 +277,154 @@ export function SequenceSqueezeAdmin() {
         )}
       </AnimatePresence>
 
+      {/* Bulk Import */}
       <Collapsible open={bulkImportOpen} onOpenChange={setBulkImportOpen}>
         <CollapsibleTrigger asChild>
           <Button 
             variant="outline" 
-            className="w-full justify-between h-12 px-4 bg-gradient-to-r from-teal-300/10 to-cyan-300/10 border-dashed"
+            className="w-full justify-between"
             data-testid="button-toggle-bulk-import"
           >
             <span className="flex items-center gap-2">
-              <Upload className="w-4 h-4 text-teal-600" />
-              <span className="font-medium">Bulk Import Questions</span>
+              <Upload className="w-4 h-4" />
+              Bulk Import
             </span>
             <ChevronDown className={`w-4 h-4 transition-transform ${bulkImportOpen ? 'rotate-180' : ''}`} />
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-4"
-          >
-            <Card className="border-teal-500/30">
-              <CardContent className="p-4 space-y-4">
-                {!bulkPreviewMode ? (
-                  <>
-                    <div>
-                      <Label className="text-sm font-medium mb-2 block">
-                        Paste questions (one per line)
-                      </Label>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Format: Question | Option A | Option B | Option C | Option D | Order (A,B,C,D) | Hint (optional)
+          <Card className="mt-3">
+            <CardContent className="p-4 space-y-4">
+              {!bulkPreviewMode ? (
+                <>
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Paste questions (one per line)</Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Format: Question | 1st | 2nd | 3rd | 4th | A,B,C,D | Hint
+                    </p>
+                    <textarea
+                      value={bulkImportText}
+                      onChange={(e) => setBulkImportText(e.target.value)}
+                      placeholder="Planets by distance | Mercury | Venus | Earth | Mars | A,B,C,D"
+                      className="w-full h-32 p-3 text-sm rounded-md border border-input bg-background resize-none font-mono"
+                      data-testid="textarea-bulk-import"
+                    />
+                    <div className="flex justify-between items-center mt-3">
+                      <p className="text-xs text-muted-foreground">
+                        {parseBulkImport(bulkImportText).length} valid question(s)
                       </p>
-                      <textarea
-                        value={bulkImportText}
-                        onChange={(e) => setBulkImportText(e.target.value)}
-                        placeholder={`Arrange planets by size | Mercury | Venus | Earth | Mars | A,C,B,D | Smallest to largest\nOrder events chronologically | WW1 | WW2 | Moon Landing | Internet | A,B,C,D`}
-                        className="w-full h-40 p-3 text-sm rounded-md border border-border bg-background resize-none font-mono"
-                        data-testid="textarea-bulk-import"
-                      />
-                      <div className="flex justify-between items-center mt-3">
-                        <p className="text-xs text-muted-foreground">
-                          {parseBulkImport(bulkImportText).length} valid question(s) detected
-                        </p>
-                        <Button
-                          onClick={() => setBulkPreviewMode(true)}
-                          disabled={parseBulkImport(bulkImportText).length === 0}
-                          className="px-6"
-                          data-testid="button-preview-import"
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Preview {parseBulkImport(bulkImportText).length} Question(s)
-                        </Button>
-                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => setBulkPreviewMode(true)}
+                        disabled={parseBulkImport(bulkImportText).length === 0}
+                        data-testid="button-preview-import"
+                      >
+                        Preview
+                      </Button>
                     </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="rounded-lg border border-border overflow-hidden">
-                      <div className="bg-muted/30 px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        Preview Import
-                      </div>
-                      <div className="max-h-64 overflow-y-auto">
-                        <table className="w-full text-sm">
-                          <thead className="bg-muted/20 sticky top-0">
-                            <tr>
-                              <th className="px-3 py-2 text-left font-medium">Question</th>
-                              <th className="px-3 py-2 text-left font-medium">Options</th>
-                              <th className="px-3 py-2 text-left font-medium">Order</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {parseBulkImport(bulkImportText).map((q, idx) => (
-                              <tr key={idx} className="border-t border-border hover:bg-muted/30" data-testid={`preview-row-${idx}`}>
-                                <td className="px-3 py-2 truncate max-w-[200px]" title={q.question}>{q.question}</td>
-                                <td className="px-3 py-2 text-xs text-muted-foreground">
-                                  A: {q.optionA.slice(0, 15)}{q.optionA.length > 15 ? '...' : ''}
-                                </td>
-                                <td className="px-3 py-2 font-mono text-teal-600 text-xs">{q.correctOrder.join('→')}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="rounded-lg border overflow-hidden">
+                    <div className="bg-muted px-3 py-2 text-xs font-medium">Preview</div>
+                    <div className="max-h-48 overflow-y-auto divide-y">
+                      {parseBulkImport(bulkImportText).map((q, idx) => (
+                        <div key={idx} className="px-3 py-2 text-sm" data-testid={`preview-row-${idx}`}>
+                          <p className="font-medium truncate">{q.question}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {q.optionA} → {q.optionB} → {q.optionC} → {q.optionD}
+                          </p>
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex justify-between items-center pt-2">
-                      <p className="text-sm text-muted-foreground">
-                        {parseBulkImport(bulkImportText).length} question(s) will be added
-                      </p>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline"
-                          onClick={() => { setBulkPreviewMode(false); setBulkImportText(""); }}
-                          data-testid="button-cancel-import"
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            const questions = parseBulkImport(bulkImportText);
-                            if (questions.length > 0) {
-                              bulkImportMutation.mutate(questions);
-                            }
-                          }}
-                          disabled={bulkImportMutation.isPending}
-                          className="px-6 bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 hover:from-emerald-400 hover:via-teal-400 hover:to-cyan-400 text-white"
-                          data-testid="button-confirm-import"
-                        >
-                          {bulkImportMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
-                          Confirm Import
-                        </Button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      onClick={() => { setBulkPreviewMode(false); setBulkImportText(""); }}
+                      data-testid="button-cancel-import"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const questions = parseBulkImport(bulkImportText);
+                        if (questions.length > 0) {
+                          bulkImportMutation.mutate(questions);
+                        }
+                      }}
+                      disabled={bulkImportMutation.isPending}
+                      data-testid="button-confirm-import"
+                    >
+                      {bulkImportMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                      Import {parseBulkImport(bulkImportText).length}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
         </CollapsibleContent>
       </Collapsible>
 
+      {/* Questions List */}
       {isLoading ? (
         <div className="text-center py-12">
-          <div className="w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-muted-foreground mt-2">Loading questions...</p>
+          <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
         </div>
       ) : questions.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-teal-100/50 flex items-center justify-center mx-auto mb-4">
-              <ListOrdered className="w-8 h-8 text-teal-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">No Questions Yet</h3>
-            <p className="text-muted-foreground mb-4 max-w-sm mx-auto">
-              Create your first ordering question to start playing Sort Circuit!
+            <ListOrdered className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+            <h3 className="font-semibold mb-1">No questions yet</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Add your first ordering question
             </p>
-            <Button
-              onClick={() => setShowForm(true)}
-              className="bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 hover:from-emerald-400 hover:via-teal-400 hover:to-cyan-400 gap-2 text-white"
-              data-testid="button-create-first-sequence"
-            >
-              <Plus className="w-4 h-4" /> Create First Question
+            <Button onClick={() => setShowForm(true)} data-testid="button-create-first-sequence">
+              <Plus className="w-4 h-4 mr-2" /> Add Question
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
-          <AnimatePresence>
-            {questions.map((q, index) => (
-              <motion.div
-                key={q.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card className="hover-elevate transition-all" data-testid={`card-sequence-question-${q.id}`}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-300/20 to-teal-300/20 flex items-center justify-center shrink-0">
-                        <span className="text-lg font-bold text-teal-600">{index + 1}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground mb-2">{q.question}</p>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div className="flex items-center gap-1">
-                            <span className="font-bold text-muted-foreground">A:</span>
-                            <span className="text-foreground truncate">{q.optionA}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="font-bold text-muted-foreground">B:</span>
-                            <span className="text-foreground truncate">{q.optionB}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="font-bold text-muted-foreground">C:</span>
-                            <span className="text-foreground truncate">{q.optionC}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="font-bold text-muted-foreground">D:</span>
-                            <span className="text-foreground truncate">{q.optionD}</span>
-                          </div>
-                        </div>
-                        <div className="mt-2 flex items-center gap-4">
-                          <span className="text-xs text-teal-600 font-medium">
-                            Order: {(q.correctOrder as string[]).join(" → ")}
-                          </span>
-                          {q.hint && (
-                            <span className="text-xs text-amber-600 flex items-center gap-1">
-                              <Lightbulb className="w-3 h-3" /> {q.hint}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="text-muted-foreground hover:text-destructive shrink-0"
-                        onClick={() => deleteMutation.mutate(q.id)}
-                        disabled={deleteMutation.isPending}
-                        data-testid={`button-delete-sequence-${q.id}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+        <div className="space-y-2">
+          {questions.map((q, index) => (
+            <Card key={q.id} className="hover:bg-muted/30 transition-colors" data-testid={`card-sequence-question-${q.id}`}>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <span className="w-8 h-8 rounded bg-muted flex items-center justify-center text-sm font-medium text-muted-foreground shrink-0">
+                    {index + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium mb-2">{q.question}</p>
+                    <div className="flex flex-wrap gap-2 text-sm">
+                      <span className="px-2 py-1 rounded bg-muted text-muted-foreground">1. {q.optionA}</span>
+                      <span className="px-2 py-1 rounded bg-muted text-muted-foreground">2. {q.optionB}</span>
+                      <span className="px-2 py-1 rounded bg-muted text-muted-foreground">3. {q.optionC}</span>
+                      <span className="px-2 py-1 rounded bg-muted text-muted-foreground">4. {q.optionD}</span>
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                    {q.hint && (
+                      <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                        <Lightbulb className="w-3 h-3" /> {q.hint}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-destructive shrink-0"
+                    onClick={() => deleteMutation.mutate(q.id)}
+                    disabled={deleteMutation.isPending}
+                    data-testid={`button-delete-sequence-${q.id}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
     </div>
