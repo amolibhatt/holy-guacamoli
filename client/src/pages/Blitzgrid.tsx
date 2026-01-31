@@ -2769,7 +2769,7 @@ export default function Blitzgrid() {
               )}
               
               {/* Footer Actions */}
-              <DialogFooter className="flex justify-center gap-3 pt-4 mt-4 border-t border-white/10">
+              <DialogFooter className="flex !justify-center gap-3 pt-4 mt-4 border-t border-white/10 sm:!justify-center">
                 {lastScoreChange && (
                   <Button 
                     onClick={undoLastScore}
