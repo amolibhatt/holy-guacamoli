@@ -16,9 +16,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { 
   ListOrdered, Play, Pause, Users, QrCode, Timer, 
-  Trophy, Plus, Trash2, Edit, Check, X, Loader2, Clock, Zap,
+  Trophy, Trash2, Edit, Check, X, Loader2, Clock, Zap,
   ChevronDown, ChevronUp, Sparkles, Crown, RefreshCw, SkipForward,
-  Volume2, VolumeX, Medal, Star, User, HelpCircle
+  Volume2, VolumeX, Medal, Star, User
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { AppHeader } from "@/components/AppHeader";
@@ -483,104 +483,63 @@ export default function SequenceSqueeze() {
                 )}
               </div>
 
-              {/* Right: Live Crew Grid */}
+              {/* Right: Players */}
               <div className="flex flex-col">
                 <div className="flex items-center gap-2 mb-4">
                   <Users className="w-5 h-5 text-cyan-500" />
-                  <h2 className="text-xl font-bold" data-testid="text-live-crew-header">Live Crew</h2>
-                  {players.length > 0 && (
-                    <Badge variant="secondary" className="ml-2" data-testid="badge-player-count">
-                      {players.length} joined
-                    </Badge>
-                  )}
+                  <h2 className="text-xl font-bold" data-testid="text-players-header">Players</h2>
+                  <Badge variant="secondary" className="ml-2" data-testid="badge-player-count">
+                    {players.length} joined
+                  </Badge>
                 </div>
 
                 {players.length === 0 ? (
-                  <Card className="p-8 border-dashed" data-testid="card-live-crew-empty">
-                    <div className="grid grid-cols-3 gap-3">
-                      {[...Array(6)].map((_, i) => (
-                        <motion.div
-                          key={i}
-                          animate={{ opacity: [0.3, 0.5, 0.3] }}
-                          transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
-                          className="aspect-square rounded-xl bg-muted/50 flex items-center justify-center"
-                          data-testid={`slot-empty-${i}`}
-                        >
-                          <HelpCircle className="w-6 h-6 opacity-30" />
-                        </motion.div>
-                      ))}
+                  <Card className="p-6 border-dashed" data-testid="card-players-empty">
+                    <div className="text-center">
+                      <Users className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                      <motion.p
+                        animate={{ opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className="text-muted-foreground text-sm"
+                      >
+                        Waiting for players to scan and join...
+                      </motion.p>
                     </div>
-                    <motion.p
-                      animate={{ opacity: [0.5, 1, 0.5] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="text-center text-muted-foreground mt-4 text-sm"
-                    >
-                      Waiting for players to scan and join...
-                    </motion.p>
                   </Card>
                 ) : (
-                  <Card className="p-4" data-testid="card-live-crew">
-                    <div className="grid grid-cols-3 gap-3">
+                  <Card className="p-4" data-testid="card-players">
+                    <div className="flex flex-wrap gap-2">
                       <AnimatePresence>
                         {players.map((p, idx) => {
                           const playerScore = leaderboard.find(l => l.playerId === p.id)?.score;
                           return (
                             <motion.div 
                               key={p.id}
-                              initial={{ scale: 0, y: -50, opacity: 0 }}
-                              animate={{ 
-                                scale: 1, 
-                                y: 0, 
-                                opacity: 1,
-                              }}
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
                               exit={{ scale: 0, opacity: 0 }}
                               transition={{ 
                                 type: "spring", 
                                 stiffness: 500, 
-                                damping: 20,
-                                delay: idx * 0.05
+                                damping: 25,
+                                delay: idx * 0.03
                               }}
-                              className="flex flex-col items-center gap-1 p-3 bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-950/30 dark:to-teal-950/30 rounded-xl border border-cyan-200/50 dark:border-cyan-800/50"
+                              className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-950/30 dark:to-teal-950/30 rounded-lg border border-cyan-200/50 dark:border-cyan-800/50"
                               data-testid={`player-card-${p.id}`}
                             >
-                              <motion.span 
-                                className="text-4xl"
-                                initial={{ scale: 0, rotate: -20 }}
-                                animate={{ 
-                                  scale: [0, 1.4, 1],
-                                  rotate: [20, -10, 0]
-                                }}
-                                transition={{ 
-                                  delay: 0.1 + idx * 0.05, 
-                                  duration: 0.5,
-                                  type: "spring",
-                                  stiffness: 300
-                                }}
-                              >
-                                {p.avatar || <User className="w-8 h-8 text-muted-foreground" />}
-                              </motion.span>
-                              <span className="font-medium text-sm truncate max-w-full" data-testid={`text-player-name-${p.id}`}>{p.name}</span>
+                              <span className="text-xl">
+                                {p.avatar || <User className="w-5 h-5 text-muted-foreground" />}
+                              </span>
+                              <span className="font-medium text-sm" data-testid={`text-player-name-${p.id}`}>{p.name}</span>
                               {playerScore !== undefined && playerScore > 0 && (
-                                <Badge variant="secondary" className="text-xs" data-testid={`text-player-score-${p.id}`}>
-                                  {playerScore} pts
+                                <Badge variant="secondary" className="text-xs ml-1" data-testid={`text-player-score-${p.id}`}>
+                                  {playerScore}
                                 </Badge>
                               )}
                             </motion.div>
                           );
                         })}
                       </AnimatePresence>
-                      {/* Empty slots */}
-                      {players.length < 6 && [...Array(Math.max(0, 6 - players.length))].map((_, i) => (
-                        <motion.div
-                          key={`empty-${i}`}
-                          animate={{ opacity: [0.2, 0.4, 0.2] }}
-                          transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
-                          className="aspect-square rounded-xl border-2 border-dashed border-muted flex items-center justify-center"
-                          data-testid={`slot-waiting-${i}`}
-                        >
-                          <Plus className="w-5 h-5 opacity-30" />
-                        </motion.div>
-                      ))}
                     </div>
                     {leaderboard.length > 0 && leaderboard.some(l => l.score > 0) && (
                       <p className="text-xs text-muted-foreground mt-3 text-center">
