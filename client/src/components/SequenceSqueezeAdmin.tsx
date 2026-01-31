@@ -118,27 +118,22 @@ export function SequenceSqueezeAdmin() {
   const parseBulkImport = (text: string): ParsedQuestion[] => {
     const lines = text.split('\n').filter(l => l.trim());
     const parsed: ParsedQuestion[] = [];
-    const validLetters = new Set(['A', 'B', 'C', 'D']);
     
     for (const line of lines) {
       const parts = line.split('|').map(p => p.trim());
-      if (parts.length >= 6) {
-        const [q, a, b, c, d, orderStr, hintStr] = parts;
-        const order = orderStr.split(',').map(o => o.trim().toUpperCase());
+      if (parts.length >= 5) {
+        const [q, a, b, c, d, hintStr] = parts;
         
-        if (q && a && b && c && d && order.length === 4) {
-          const orderSet = new Set(order);
-          if (orderSet.size === 4 && order.every(l => validLetters.has(l))) {
-            parsed.push({
-              question: q,
-              optionA: a,
-              optionB: b,
-              optionC: c,
-              optionD: d,
-              correctOrder: order,
-              hint: hintStr?.trim() || null,
-            });
-          }
+        if (q && a && b && c && d) {
+          parsed.push({
+            question: q,
+            optionA: a,
+            optionB: b,
+            optionC: c,
+            optionD: d,
+            correctOrder: ["A", "B", "C", "D"],
+            hint: hintStr?.trim() || null,
+          });
         }
       }
     }
@@ -300,12 +295,12 @@ export function SequenceSqueezeAdmin() {
                   <div>
                     <Label className="text-sm font-medium mb-2 block">Paste questions (one per line)</Label>
                     <p className="text-xs text-muted-foreground mb-2">
-                      Format: Question | 1st | 2nd | 3rd | 4th | A,B,C,D | Hint
+                      Format: Question | 1st | 2nd | 3rd | 4th | Hint (optional)
                     </p>
                     <textarea
                       value={bulkImportText}
                       onChange={(e) => setBulkImportText(e.target.value)}
-                      placeholder="Planets by distance | Mercury | Venus | Earth | Mars | A,B,C,D"
+                      placeholder="Planets by distance | Mercury | Venus | Earth | Mars | closest to sun"
                       className="w-full h-32 p-3 text-sm rounded-md border border-input bg-background resize-none font-mono"
                       data-testid="textarea-bulk-import"
                     />
