@@ -210,7 +210,7 @@ export const sequenceSubmissions = pgTable("sequence_submissions", {
 export const psyopQuestions = pgTable("psyop_questions", {
   id: serial("id").primaryKey(),
   userId: text("user_id"),
-  factText: text("fact_text").notNull(), // The full fact with [BLANK] placeholder
+  factText: text("fact_text").notNull(), // The full fact with [REDACTED] placeholder
   correctAnswer: text("correct_answer").notNull(), // The actual word that fills the blank
   category: text("category"), // Optional category for organizing questions
   isActive: boolean("is_active").notNull().default(true),
