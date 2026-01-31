@@ -2803,7 +2803,7 @@ export async function registerRoutes(
         return res.status(403).json({ message: "You don't have permission to modify this category" });
       }
       
-      const { points, question, correctAnswer, options, imageUrl, audioUrl, videoUrl } = req.body;
+      const { points, question, correctAnswer, options, imageUrl, audioUrl, videoUrl, answerImageUrl, answerAudioUrl, answerVideoUrl } = req.body;
       
       if (!REQUIRED_POINTS.includes(points)) {
         return res.status(400).json({ message: "Points must be 10, 20, 30, 40, or 50" });
@@ -2830,6 +2830,9 @@ export async function registerRoutes(
           imageUrl: imageUrl?.trim() || null,
           audioUrl: audioUrl?.trim() || null,
           videoUrl: videoUrl?.trim() || null,
+          answerImageUrl: answerImageUrl?.trim() || null,
+          answerAudioUrl: answerAudioUrl?.trim() || null,
+          answerVideoUrl: answerVideoUrl?.trim() || null,
         });
         return res.json(updated);
       }
@@ -2844,6 +2847,9 @@ export async function registerRoutes(
         imageUrl: imageUrl?.trim() || null,
         audioUrl: audioUrl?.trim() || null,
         videoUrl: videoUrl?.trim() || null,
+        answerImageUrl: answerImageUrl?.trim() || null,
+        answerAudioUrl: answerAudioUrl?.trim() || null,
+        answerVideoUrl: answerVideoUrl?.trim() || null,
       });
       
       res.json(newQuestion);

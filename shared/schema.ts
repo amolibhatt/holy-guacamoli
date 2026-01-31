@@ -318,6 +318,9 @@ export const questions = pgTable("questions", {
   imageUrl: text("image_url"),
   audioUrl: text("audio_url"),
   videoUrl: text("video_url"),
+  answerImageUrl: text("answer_image_url"),
+  answerAudioUrl: text("answer_audio_url"),
+  answerVideoUrl: text("answer_video_url"),
 });
 
 export const passwordResetTokens = pgTable("password_reset_tokens", {
