@@ -3224,7 +3224,9 @@ export default function Blitzgrid() {
         className="group text-left p-5 rounded-xl bg-[#0d0d12] transition-all duration-200"
         style={{
           border: `1px solid ${isHovered ? neonColor.border : '#333'}`,
-          boxShadow: isHovered ? `0 0 20px ${neonColor.glow}, inset 0 0 0 1px ${neonColor.border}` : 'none',
+          boxShadow: isHovered 
+            ? `0 0 25px ${neonColor.glow}, 0 0 40px ${neonColor.shadowColor}, inset 0 0 0 1px ${neonColor.border}` 
+            : `0 0 8px ${neonColor.glow}`,
         }}
         data-testid={`card-grid-${grid.id}`}
       >
@@ -3334,7 +3336,7 @@ export default function Blitzgrid() {
             </Link>
           </motion.div>
         ) : (
-          <div className="max-w-4xl mx-auto space-y-8">
+          <div className="max-w-4xl mx-auto space-y-6">
             {/* Hero Section */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -3358,11 +3360,22 @@ export default function Blitzgrid() {
                 data-testid="button-shuffle-play"
               >
                 <div className="flex items-center gap-3">
-                  <div 
+                  <motion.div 
                     className="w-10 h-10 rounded-full flex items-center justify-center"
                     style={{
                       background: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)',
-                      boxShadow: '0 0 20px rgba(34, 211, 238, 0.5)',
+                    }}
+                    animate={{
+                      boxShadow: [
+                        '0 0 15px rgba(34, 211, 238, 0.4)',
+                        '0 0 25px rgba(34, 211, 238, 0.7)',
+                        '0 0 15px rgba(34, 211, 238, 0.4)',
+                      ],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut",
                     }}
                   >
                     {isShuffling ? (
@@ -3370,7 +3383,7 @@ export default function Blitzgrid() {
                     ) : (
                       <Shuffle className="w-5 h-5 text-black" />
                     )}
-                  </div>
+                  </motion.div>
                   <span 
                     className="text-cyan-300 font-black uppercase tracking-wide text-lg"
                     style={{ 
