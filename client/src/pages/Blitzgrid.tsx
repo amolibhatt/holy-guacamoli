@@ -73,7 +73,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Board, Category, Question } from "@shared/schema";
 import { PLAYER_AVATARS } from "@shared/schema";
-import { getBoardColorConfig, BOARD_COLORS, neonColorConfig } from "@/lib/boardColors";
+import { getBoardColorConfig, getBoardColorName, BOARD_COLORS, neonColorConfig, type BoardColor } from "@/lib/boardColors";
 
 interface GridWithStats extends Board {
   categoryCount: number;
@@ -1162,9 +1162,8 @@ export default function Blitzgrid() {
       const restPhase = 2;
       
       // Use same background as grid selection page for unified look
-      const effectiveColorName = grid?.colorCode?.startsWith('#') ? null : grid?.colorCode;
       // Use grid ID for stable color (same as grid cards)
-      const colorName = effectiveColorName || BOARD_COLORS[grid?.id ? grid.id % BOARD_COLORS.length : 0];
+      const colorName = getBoardColorName(grid?.colorCode) || BOARD_COLORS[grid?.id ? grid.id % BOARD_COLORS.length : 0];
       
       // Keyboard handler for reveal mode
       const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -1890,17 +1889,13 @@ export default function Blitzgrid() {
                         perspective: 1000, 
                         transformStyle: 'preserve-3d',
                         background: isRevealed ? '#0d0d12' : 'transparent',
-                        border: isRevealed ? `1px solid ${catNeonColor.border}` : '1px solid transparent',
-                        boxShadow: isRevealed ? `0 0 20px ${catNeonColor.glow}, inset 0 0 15px ${catNeonColor.glow}` : 'none',
+                        border: isRevealed ? `1px solid ${catNeonColor.border}40` : '1px solid transparent',
                       }}
                       className="py-3 md:py-4 px-3 rounded-xl text-center relative overflow-hidden"
                     >
                       <span 
                         className="font-bold text-xs md:text-sm uppercase tracking-wider block relative z-10"
-                        style={{ 
-                          color: catNeonColor.text,
-                          textShadow: isRevealed ? `0 0 10px ${catNeonColor.shadowColor}` : 'none',
-                        }}
+                        style={{ color: catNeonColor.text }}
                       >
                         {category.name}
                       </span>
@@ -1944,11 +1939,8 @@ export default function Blitzgrid() {
                           perspective: 1000, 
                           transformStyle: 'preserve-3d',
                           background: isCategoryRevealed ? '#0d0d12' : 'transparent',
-                          border: isCategoryRevealed ? `1px solid ${isCellAnswered ? '#333' : tileNeonColor.border}` : '1px solid transparent',
-                          boxShadow: isCategoryRevealed && !isCellAnswered 
-                            ? `0 0 12px ${tileNeonColor.glow}` 
-                            : 'none',
-                          color: isCellAnswered ? '#666' : tileNeonColor.text,
+                          border: isCategoryRevealed ? `1px solid ${isCellAnswered ? '#333' : `${tileNeonColor.border}50`}` : '1px solid transparent',
+                          color: isCellAnswered ? '#555' : tileNeonColor.text,
                         }}
                         className={`
                           w-full h-full rounded-xl font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden group
@@ -1960,9 +1952,8 @@ export default function Blitzgrid() {
                         }}
                         disabled={!isClickable}
                         whileHover={isClickable ? { 
-                          scale: 1.04, 
-                          y: -4,
-                          boxShadow: `0 0 25px ${tileNeonColor.glow}, 0 0 40px ${tileNeonColor.shadowColor}`,
+                          scale: 1.02, 
+                          y: -2,
                         } : {}}
                         whileTap={isClickable ? { scale: 0.96 } : {}}
                         data-testid={`cell-${category.id}-${points}`}
@@ -1976,18 +1967,15 @@ export default function Blitzgrid() {
                         )}
                         {isCellAnswered ? (
                           <motion.div
-                            initial={{ scale: 0, rotate: -180 }}
-                            animate={{ scale: 1, rotate: 0 }}
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
                             transition={{ type: "spring", stiffness: 200, damping: 15 }}
                             className="flex items-center justify-center relative z-10"
                           >
-                            <Check className="w-8 h-8 md:w-12 md:h-12 opacity-60" style={{ color: tileNeonColor.icon }} strokeWidth={3} />
+                            <Check className="w-8 h-8 md:w-12 md:h-12 opacity-50" style={{ color: tileNeonColor.icon }} strokeWidth={3} />
                           </motion.div>
                         ) : (
-                          <span 
-                            className="relative z-10"
-                            style={{ textShadow: `0 0 15px ${tileNeonColor.shadowColor}` }}
-                          >
+                          <span className="relative z-10">
                             {points}
                           </span>
                         )}
@@ -2484,11 +2472,7 @@ export default function Blitzgrid() {
           {/* Question Modal - Premium glassmorphism design */}
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
             <DialogContent 
-              className="max-w-2xl max-h-[90vh] overflow-y-auto bg-[#0d0d12]/98 backdrop-blur-xl border shadow-2xl rounded-3xl" 
-              style={{ 
-                borderColor: `${neonColorConfig[colorName].border}40`,
-                boxShadow: `0 0 40px ${neonColorConfig[colorName].glow}, 0 0 80px ${neonColorConfig[colorName].glow}` 
-              }}
+              className="max-w-2xl max-h-[90vh] overflow-y-auto bg-[#0d0d12] backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl"
             >
               {(() => {
                 // Use the grid's single color for consistency
@@ -2503,52 +2487,49 @@ export default function Blitzgrid() {
                 
                 return (
                   <>
-                    {/* Header: Category left, Points right */}
-                    <DialogHeader className="flex flex-row items-center justify-between gap-2 pb-0">
-                      {/* Category badge - left side */}
-                      {category && (
+                    {/* Header row: Category name (simple text) and Points (prominent) */}
+                    <DialogHeader className="pb-2">
+                      <div className="flex items-start justify-between gap-4">
+                        {/* Category - simple text treatment */}
+                        {category && (
+                          <div className="flex-1">
+                            <span className="text-white/50 text-xs uppercase tracking-wider">Category</span>
+                            <DialogTitle className="text-white text-lg font-semibold mt-0.5">
+                              {category.name}
+                            </DialogTitle>
+                            {category.description && (
+                              <p className="text-white/40 text-sm mt-0.5">{category.description}</p>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Points - prominent badge */}
                         <div 
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border"
+                          className="px-4 py-2 rounded-lg text-center min-w-[70px]"
                           style={{ 
                             backgroundColor: `${neonColor.border}15`,
-                            borderColor: `${neonColor.border}50`,
+                            border: `1px solid ${neonColor.border}40`,
                           }}
                         >
-                          <div 
-                            className="w-2 h-2 rounded-full" 
-                            style={{ backgroundColor: neonColor.border }}
-                          />
-                          <span 
-                            className="font-semibold uppercase tracking-wide"
-                            style={{ color: neonColor.text }}
-                          >
-                            {category.name}
+                          <span className="text-2xl font-black" style={{ color: neonColor.text }}>
+                            {activeQuestion?.points}
                           </span>
+                          <span className="text-xs block text-white/50 uppercase">pts</span>
                         </div>
-                      )}
-                      
-                      {/* Points badge - right side with grid neon color */}
-                      <motion.div 
-                        className="relative overflow-hidden px-4 py-1.5 rounded-full"
-                        style={{ 
-                          backgroundColor: `${neonColor.border}20`,
-                          border: `2px solid ${neonColor.border}`,
-                          boxShadow: `0 0 15px ${neonColor.glow}`,
-                        }}
-                        initial={{ scale: 0.9 }}
-                        animate={{ scale: 1 }}
-                      >
-                        <DialogTitle 
-                          className="text-lg font-black relative z-10"
-                          style={{ color: neonColor.text, textShadow: `0 0 10px ${neonColor.shadowColor}` }}
-                        >
-                          {activeQuestion?.points} pts
-                        </DialogTitle>
-                      </motion.div>
+                      </div>
                     </DialogHeader>
                     
-                    {/* Timer - centered, prominent when active */}
-                    <div className="flex justify-center py-2">
+                    {/* Question box - clean design */}
+                    <div className="py-5 px-4 my-3 bg-white/5 rounded-xl border border-white/10">
+                      <div className={`${textSizeClass} text-center font-medium text-white leading-relaxed`}>
+                        <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
+                          {questionText}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                    
+                    {/* Timer - subtle, below question */}
+                    <div className="flex justify-center">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -2561,50 +2542,16 @@ export default function Blitzgrid() {
                             setTimerActive(true);
                           }
                         }}
-                        className={`gap-2 px-4 ${timerActive ? '' : 'text-white/40'}`}
-                        style={timerActive ? { 
-                          backgroundColor: `${neonColor.border}20`,
-                          color: neonColor.text,
-                          boxShadow: `0 0 20px ${neonColor.glow}`,
-                          border: `1px solid ${neonColor.border}60`,
-                        } : {}}
+                        className={`gap-2 px-4 ${timerActive ? 'bg-white/10 text-white' : 'text-white/40'}`}
                         data-testid="button-timer"
                       >
                         <Timer className="w-4 h-4" />
                         {timerActive ? (
-                          <span 
-                            className="font-mono font-bold text-xl min-w-[2ch] animate-pulse"
-                            style={{ textShadow: `0 0 10px ${neonColor.shadowColor}` }}
-                          >
-                            {timeLeft}
-                          </span>
+                          <span className="font-mono font-bold text-lg min-w-[2ch]">{timeLeft}</span>
                         ) : (
-                          <span className="text-sm">Start 10s Timer</span>
+                          <span className="text-sm">10s Timer</span>
                         )}
                       </Button>
-                    </div>
-                    
-                    {/* Question box */}
-                    <div 
-                      className="py-6 px-5 my-2 rounded-xl border"
-                      style={{
-                        backgroundColor: `${neonColor.border}08`,
-                        borderColor: `${neonColor.border}30`,
-                      }}
-                    >
-                      {/* Category description if exists */}
-                      {category?.description && (
-                        <p className="text-white/40 text-sm italic text-center mb-3">
-                          {category.description}
-                        </p>
-                      )}
-                      
-                      {/* Question text */}
-                      <div className={`${textSizeClass} text-center font-medium text-white leading-relaxed`}>
-                        <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
-                          {questionText}
-                        </ReactMarkdown>
-                      </div>
                     </div>
                   </>
                 );
@@ -2758,36 +2705,33 @@ export default function Blitzgrid() {
                 </div>
               )}
               
-              {/* Answer Revealed - dramatic animation */}
+              {/* Answer Revealed - uses grid color */}
               <AnimatePresence>
                 {showAnswer && (
                   <motion.div
-                    initial={{ opacity: 0, y: 30, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    className="relative overflow-hidden bg-emerald-500/10 border border-emerald-400/50 rounded-xl p-4 text-center"
-                    style={{ boxShadow: '0 0 30px rgba(16, 185, 129, 0.2)' }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="relative overflow-hidden rounded-xl p-4 text-center border"
+                    style={{ 
+                      backgroundColor: `${neonColorConfig[colorName].border}10`,
+                      borderColor: `${neonColorConfig[colorName].border}40`,
+                    }}
                   >
-                    {/* Shine effect */}
-                    <motion.div 
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-400/20 to-transparent -skew-x-12"
-                      initial={{ x: '-100%' }}
-                      animate={{ x: '200%' }}
-                      transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }}
-                    />
                     <motion.p 
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: 0.1 }}
-                      className="text-xs text-emerald-400 font-semibold uppercase tracking-wider mb-1"
+                      className="text-xs font-semibold uppercase tracking-wider mb-1"
+                      style={{ color: neonColorConfig[colorName].text }}
                     >
                       Answer
                     </motion.p>
                     <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="text-xl font-bold text-emerald-300 prose prose-lg max-w-none [&>p]:m-0 relative z-10 prose-invert"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.1 }}
+                      className="text-xl font-bold prose prose-lg max-w-none [&>p]:m-0 relative z-10 prose-invert"
+                      style={{ color: neonColorConfig[colorName].text }}
                     >
                       <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
                         {activeQuestion?.correctAnswer || ''}
