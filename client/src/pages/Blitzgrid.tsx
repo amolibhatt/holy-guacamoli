@@ -3358,25 +3358,30 @@ export default function Blitzgrid() {
               </h1>
               <p className="text-white/50 text-lg mb-8">5 categories. 25 questions. One winner.</p>
               
-              {/* Shuffle Play Hero Button */}
-              <Button
-                size="lg"
-                onClick={handleShufflePlay}
-                disabled={isShuffling}
-                className="bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 text-black font-black uppercase tracking-wide"
-                style={{ 
-                  boxShadow: '0 0 30px rgba(34, 211, 238, 0.5), 0 4px 20px rgba(0, 0, 0, 0.3)',
-                  fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                }}
-                data-testid="button-shuffle-play"
-              >
-                {isShuffling ? (
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                ) : (
-                  <Shuffle className="w-5 h-5 mr-2" />
-                )}
-                I'm Feeling Lucky
-              </Button>
+              {/* Shuffle Play Hero Section */}
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10 max-w-md mx-auto">
+                <p className="text-white/60 text-sm mb-4">
+                  Randomly picks 5 categories from all your grids for a surprise mix
+                </p>
+                <Button
+                  size="lg"
+                  onClick={handleShufflePlay}
+                  disabled={isShuffling}
+                  className="w-full bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 text-black font-black uppercase tracking-wide"
+                  style={{ 
+                    boxShadow: '0 0 30px rgba(34, 211, 238, 0.5), 0 4px 20px rgba(0, 0, 0, 0.3)',
+                    fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                  }}
+                  data-testid="button-shuffle-play"
+                >
+                  {isShuffling ? (
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  ) : (
+                    <Shuffle className="w-5 h-5 mr-2" />
+                  )}
+                  I'm Feeling Lucky
+                </Button>
+              </div>
               
               {playedShuffleCategoryIds.length > 0 && (
                 <div className="mt-4 flex items-center justify-center gap-3">
