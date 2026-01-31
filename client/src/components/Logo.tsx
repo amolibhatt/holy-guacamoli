@@ -111,11 +111,6 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
       {/* Avocado flesh - bright lime gradient */}
       <ellipse cx="40" cy="54" rx="18" ry="25" fill={`url(#${id}-flesh)`}/>
       
-      {/* Tiny cute pit */}
-      <ellipse cx="40" cy="66" rx="5" ry="6" fill={`url(#${id}-pit)`}/>
-      
-      {/* Pit highlight */}
-      <ellipse cx="38" cy="64" rx="2" ry="2.5" fill="#BCAAA4" opacity="0.4"/>
       
       {/* Big sparkly eyes */}
       <ellipse cx="32" cy="42" rx="4" ry="5" fill="#1a2e05"/>
@@ -164,21 +159,24 @@ export function Logo({ size = "md" }: LogoProps) {
       >
         {/* Glow layer */}
         <span 
-          className="absolute inset-0 blur-md opacity-50"
+          className="absolute inset-0 blur-md opacity-40"
           aria-hidden="true"
         >
           <span className="text-white">Holy </span>
-          <span style={{ color: '#39FF14' }}>Guac</span>
+          <span style={{ color: '#a3e635' }}>Guac</span>
           <span style={{ color: '#f472b6' }}>Amoli!</span>
         </span>
         
         {/* Main text */}
         <span className="relative">
           <span className="text-white">Holy </span>
-          <span style={{ color: '#39FF14' }}>Guac</span>
-          <span 
-            className="bg-gradient-to-r from-pink-400 via-rose-400 to-pink-300 bg-clip-text text-transparent"
-          >Amoli!</span>
+          <span style={{ color: '#a3e635' }}>Guac</span>
+          <motion.span 
+            className="bg-gradient-to-r from-pink-400 via-rose-300 to-pink-400 bg-clip-text text-transparent inline-block"
+            style={{ backgroundSize: '200% 100%' }}
+            animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          >Amoli!</motion.span>
         </span>
       </h1>
     </motion.div>
