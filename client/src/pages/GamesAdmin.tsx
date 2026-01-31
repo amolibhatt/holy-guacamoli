@@ -266,7 +266,7 @@ export default function GamesAdmin() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <AppHeader minimal />
+      <AppHeader minimal backHref="/" />
       
       {/* Secondary bar with page title */}
       <div className="border-b border-border/30 bg-card/30">

@@ -325,7 +325,7 @@ export default function PsyOpHost() {
     <div className="min-h-screen bg-background" data-testid="page-psyop-host">
       <div className="fixed inset-0 bg-gradient-to-br from-violet-300/5 via-transparent to-purple-300/5 pointer-events-none" />
       
-      <AppHeader minimal />
+      <AppHeader minimal backHref="/" />
       
       {/* Secondary bar with game title */}
       <div className="border-b border-border/30 bg-card/30">

@@ -382,7 +382,7 @@ export default function SequenceSqueeze() {
     <div className="min-h-screen bg-background">
       <div className="fixed inset-0 bg-gradient-to-br from-teal-300/5 via-transparent to-teal-300/5 pointer-events-none" />
 
-      <AppHeader minimal />
+      <AppHeader minimal backHref="/" />
       
       {/* Secondary bar with game title and controls */}
       <div className="border-b border-border/30 bg-card/30">
