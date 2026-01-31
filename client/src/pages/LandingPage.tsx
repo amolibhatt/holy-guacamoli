@@ -145,8 +145,44 @@ export default function LandingPage() {
 
       {/* Right side - Login/Register */}
       <div className="lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 relative z-10" data-testid="section-login">
+        {/* Logic Leaks - scrolling trivia facts */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.07]">
+          <motion.div
+            className="absolute left-0 right-0 text-lime-400 text-xs font-mono whitespace-nowrap"
+            style={{ top: '15%' }}
+            animate={{ x: [0, -1000] }}
+            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          >
+            The first computer bug was an actual moth found in a Harvard computer in 1947 • Honey never spoils • Octopuses have three hearts •
+          </motion.div>
+          <motion.div
+            className="absolute left-0 right-0 text-fuchsia-400 text-xs font-mono whitespace-nowrap"
+            style={{ top: '35%' }}
+            animate={{ x: [-500, 500] }}
+            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+          >
+            Bananas are berries but strawberries aren't • The Eiffel Tower grows 6 inches in summer • Venus is the only planet that spins clockwise •
+          </motion.div>
+          <motion.div
+            className="absolute left-0 right-0 text-lime-400 text-xs font-mono whitespace-nowrap"
+            style={{ top: '55%' }}
+            animate={{ x: [200, -800] }}
+            transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
+          >
+            A group of flamingos is called a flamboyance • The shortest war lasted 38 minutes • Cows have best friends •
+          </motion.div>
+          <motion.div
+            className="absolute left-0 right-0 text-fuchsia-400 text-xs font-mono whitespace-nowrap"
+            style={{ top: '75%' }}
+            animate={{ x: [-200, -1200] }}
+            transition={{ duration: 32, repeat: Infinity, ease: "linear" }}
+          >
+            Sharks are older than trees • A day on Venus is longer than a year on Venus • Wombat poop is cube-shaped •
+          </motion.div>
+        </div>
+
         <motion.div
-          className="w-full max-w-sm"
+          className="w-full max-w-sm relative z-10"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
@@ -164,7 +200,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <Card className="border-lime-500/20 bg-lime-500/5 backdrop-blur-xl">
+          <Card className="border-white/20 bg-white/5 backdrop-blur-2xl shadow-2xl shadow-lime-500/10">
             <CardContent className="pt-4 pb-4">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-2 mb-3 bg-white/5">
@@ -180,7 +216,7 @@ export default function LandingPage() {
                         id="login-email"
                         type="email"
                         placeholder="you@example.com"
-                        className="bg-white/10 border-lime-500/30 text-white placeholder:text-white/40 focus:border-lime-400"
+                        className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-lime-400 rounded-xl h-11"
                         {...loginForm.register("email")}
                         data-testid="input-login-email"
                       />
@@ -194,7 +230,7 @@ export default function LandingPage() {
                         id="login-password"
                         type="password"
                         placeholder="Your password"
-                        className="bg-white/10 border-lime-500/30 text-white placeholder:text-white/40 focus:border-lime-400"
+                        className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-lime-400 rounded-xl h-11"
                         {...loginForm.register("password")}
                         data-testid="input-login-password"
                       />
@@ -238,7 +274,7 @@ export default function LandingPage() {
                         <Input
                           id="register-first-name"
                           placeholder="First"
-                          className="bg-white/10 border-lime-500/30 text-white placeholder:text-white/40 focus:border-lime-400"
+                          className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-lime-400 rounded-xl h-11"
                           {...registerForm.register("firstName")}
                           data-testid="input-register-firstname"
                         />
@@ -248,7 +284,7 @@ export default function LandingPage() {
                         <Input
                           id="register-last-name"
                           placeholder="Last"
-                          className="bg-white/10 border-lime-500/30 text-white placeholder:text-white/40 focus:border-lime-400"
+                          className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-lime-400 rounded-xl h-11"
                           {...registerForm.register("lastName")}
                           data-testid="input-register-lastname"
                         />
@@ -260,7 +296,7 @@ export default function LandingPage() {
                         id="register-email"
                         type="email"
                         placeholder="you@example.com"
-                        className="bg-white/10 border-lime-500/30 text-white placeholder:text-white/40 focus:border-lime-400"
+                        className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-lime-400 rounded-xl h-11"
                         {...registerForm.register("email")}
                         data-testid="input-register-email"
                       />
@@ -274,7 +310,7 @@ export default function LandingPage() {
                         id="register-password"
                         type="password"
                         placeholder="At least 6 characters"
-                        className="bg-white/10 border-lime-500/30 text-white placeholder:text-white/40 focus:border-lime-400"
+                        className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-lime-400 rounded-xl h-11"
                         {...registerForm.register("password")}
                         data-testid="input-register-password"
                       />
