@@ -1,4 +1,4 @@
-export const BOARD_COLORS = ['rose', 'violet', 'amber', 'teal', 'sky'] as const;
+export const BOARD_COLORS = ['rose', 'violet', 'lime', 'teal', 'sky'] as const;
 export type BoardColor = typeof BOARD_COLORS[number];
 
 // Neon color palette for dark theme retro gaming aesthetic
@@ -23,12 +23,12 @@ export const neonColorConfig: Record<BoardColor, {
     icon: '#a78bfa',
     shadowColor: 'rgba(167, 139, 250, 0.5)',
   },
-  amber: {
-    border: '#fbbf24',
-    glow: 'rgba(251, 191, 36, 0.4)',
-    text: '#fcd34d',
-    icon: '#fbbf24',
-    shadowColor: 'rgba(251, 191, 36, 0.5)',
+  lime: {
+    border: '#a3e635',
+    glow: 'rgba(163, 230, 53, 0.4)',
+    text: '#bef264',
+    icon: '#a3e635',
+    shadowColor: 'rgba(163, 230, 53, 0.5)',
   },
   teal: {
     border: '#2dd4bf',
@@ -109,26 +109,26 @@ export const boardColorConfig: Record<BoardColor, {
     accent: 'text-violet-600',
     accentDark: 'text-violet-800',
   },
-  amber: {
-    card: 'from-amber-100/80 via-yellow-100/60 to-orange-100/80 border-amber-200/60',
-    cardTitle: 'text-amber-700',
-    cardSub: 'text-yellow-600',
-    cardIcon: 'text-amber-500',
-    header: 'from-amber-400 via-yellow-400 to-orange-400',
-    tile: 'from-amber-100/90 via-yellow-100/80 to-orange-100/90',
-    tileBorder: 'border-amber-200/60 hover:border-amber-300/80',
-    tileText: 'text-amber-600',
-    progress: 'bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-400',
-    bg: 'bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-400',
-    badge: 'bg-white/90 border-amber-200/50',
-    badgeText: 'text-amber-700',
-    light: 'bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50',
-    lightBorder: 'border-amber-200/50',
-    lightText: 'text-amber-700',
-    icon: 'text-amber-500',
-    dialogBorder: 'border-amber-200/50',
-    accent: 'text-amber-600',
-    accentDark: 'text-amber-800',
+  lime: {
+    card: 'from-lime-100/80 via-green-100/60 to-emerald-100/80 border-lime-200/60',
+    cardTitle: 'text-lime-700',
+    cardSub: 'text-green-600',
+    cardIcon: 'text-lime-500',
+    header: 'from-lime-400 via-green-400 to-emerald-400',
+    tile: 'from-lime-100/90 via-green-100/80 to-emerald-100/90',
+    tileBorder: 'border-lime-200/60 hover:border-lime-300/80',
+    tileText: 'text-lime-600',
+    progress: 'bg-gradient-to-r from-lime-400 via-green-400 to-emerald-400',
+    bg: 'bg-gradient-to-r from-lime-400 via-green-400 to-emerald-400',
+    badge: 'bg-white/90 border-lime-200/50',
+    badgeText: 'text-lime-700',
+    light: 'bg-gradient-to-br from-lime-50 via-green-50 to-emerald-50',
+    lightBorder: 'border-lime-200/50',
+    lightText: 'text-lime-700',
+    icon: 'text-lime-500',
+    dialogBorder: 'border-lime-200/50',
+    accent: 'text-lime-600',
+    accentDark: 'text-lime-800',
   },
   teal: {
     card: 'from-teal-100/80 via-emerald-100/60 to-cyan-100/80 border-teal-200/60',
@@ -176,13 +176,14 @@ export const boardColorConfig: Record<BoardColor, {
 
 const legacyColorMap: Record<string, BoardColor> = {
   cyan: 'teal',
-  orange: 'amber',
-  green: 'teal',
+  orange: 'lime',
+  green: 'lime',
   pink: 'rose',
   fuchsia: 'rose',
   blue: 'sky',
   red: 'rose',
-  yellow: 'amber',
+  yellow: 'lime',
+  amber: 'lime',
   purple: 'violet',
 };
 
