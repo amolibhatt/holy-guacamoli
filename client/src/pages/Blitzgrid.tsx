@@ -1063,7 +1063,7 @@ export default function Blitzgrid() {
   if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <AppHeader minimal backHref="/" />
+        <AppHeader minimal backHref="/" title="Blitzgrid" />
         <div className="container mx-auto px-4 py-8">
           <Skeleton className="h-8 w-48 mb-4" />
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -2944,7 +2944,7 @@ export default function Blitzgrid() {
     
     return (
       <div className="min-h-screen flex flex-col bg-background" data-testid="page-blitzgrid-grid">
-        <AppHeader minimal backHref="/" />
+        <AppHeader minimal backHref="/" title="Blitzgrid" />
         <div className="flex-1 flex flex-col container mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4 shrink-0">
             <div>
@@ -3372,7 +3372,7 @@ export default function Blitzgrid() {
         />
       </div>
       
-      <AppHeader minimal backHref="/" />
+      <AppHeader minimal backHref="/" title="Blitzgrid" />
       
       <div className="flex-1 container mx-auto px-4 py-8 relative z-10">
         {loadingGrids ? (
