@@ -3216,6 +3216,7 @@ export async function registerRoutes(
     sequenceSubmissions?: SequenceSubmission[];
     currentCorrectOrder?: string[];
     questionStartTime?: number;
+    pointsPerRound?: number;
   }
 
   const rooms = new Map<string, Room>();
@@ -4090,6 +4091,7 @@ export async function registerRoutes(
             room.sequenceSubmissions = [];
             room.currentCorrectOrder = data.correctOrder;
             room.questionStartTime = Date.now();
+            room.pointsPerRound = data.pointsPerRound || 10;
             
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
@@ -4254,11 +4256,12 @@ export async function registerRoutes(
               }
             }
 
-            // Award points to winner
+            // Award points to winner (use configured points per round)
+            const pointsToAward = room.pointsPerRound || 10;
             if (winner) {
               const winningPlayer = room.players.get(winner.playerId);
               if (winningPlayer) {
-                winningPlayer.score += 10;
+                winningPlayer.score += pointsToAward;
               }
             }
 

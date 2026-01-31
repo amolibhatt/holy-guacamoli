@@ -375,6 +375,7 @@ export default function SequenceSqueeze() {
         correctOrder: shuffledCorrectOrder,
         questionIndex: questionIdx,
         totalQuestions: questions.length,
+        pointsPerRound,
       }));
     }
   };
@@ -397,6 +398,23 @@ export default function SequenceSqueeze() {
     setGameState("playing");
     setAnimationStage(null);
   }, [ws]);
+
+  const advanceToNextQuestion = useCallback(() => {
+    setSubmissions([]);
+    submissionsRef.current = [];
+    
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "sequence:host:reset" }));
+    }
+    
+    const nextIdx = currentQuestionIndex;
+    if (nextIdx < questions.length) {
+      startQuestion(questions[nextIdx], nextIdx);
+    } else {
+      setCurrentQuestion(null);
+      setGameState("waiting");
+    }
+  }, [ws, currentQuestionIndex, questions]);
 
   const resetGame = useCallback(() => {
     setCurrentQuestion(null);
@@ -880,7 +898,7 @@ export default function SequenceSqueeze() {
                 <h2 className="text-3xl font-black text-amber-600 dark:text-amber-400">FASTEST FINGER!</h2>
                 <p className="text-2xl font-bold mt-2">{winner.playerName}</p>
                 <p className="text-muted-foreground">{(winner.timeMs / 1000).toFixed(2)} seconds</p>
-                <Badge className="mt-2 bg-amber-500">+10 points</Badge>
+                <Badge className="mt-2 bg-amber-500">+{pointsPerRound} points</Badge>
               </motion.div>
             )}
 
@@ -1005,9 +1023,9 @@ export default function SequenceSqueeze() {
             </div>
 
             <div className="flex justify-center gap-3 flex-wrap">
-              <Button onClick={resetGame} data-testid="button-next">
+              <Button onClick={advanceToNextQuestion} data-testid="button-next">
                 <RefreshCw className="w-4 h-4 mr-2" />
-                Next Question
+                {currentQuestionIndex < totalQuestions ? "Next Question" : "Back to Lobby"}
               </Button>
               <Button 
                 variant="outline" 
@@ -1093,8 +1111,8 @@ export default function SequenceSqueeze() {
               )}
             </Card>
             <div className="mt-6 flex justify-center gap-3">
-              <Button onClick={resetGame} data-testid="button-continue">
-                Continue Playing
+              <Button onClick={advanceToNextQuestion} data-testid="button-continue">
+                {currentQuestionIndex < totalQuestions ? "Next Question" : "Back to Lobby"}
               </Button>
               <Button 
                 variant="secondary"
