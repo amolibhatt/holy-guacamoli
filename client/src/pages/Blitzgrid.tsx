@@ -3397,7 +3397,6 @@ export default function Blitzgrid() {
                     Mix it up! Randomly picks 5 categories from all your grids
                   </p>
                 </div>
-                <ChevronRight className="w-6 h-6 text-cyan-400 group-hover:translate-x-1 transition-transform" />
               </div>
               {playedShuffleCategoryIds.length > 0 && (
                 <div className="relative mt-4 pt-4 border-t border-cyan-400/20 flex items-center justify-between">
