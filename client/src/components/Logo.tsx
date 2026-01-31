@@ -16,14 +16,14 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
       xmlns="http://www.w3.org/2000/svg"
       className="shrink-0"
     >
-      {/* Halo - bright yellow gold */}
+      {/* Halo - golden yellow matching the warm tones */}
       <ellipse 
         cx="40" 
         cy="10" 
         rx="15" 
         ry="5" 
         fill="none" 
-        stroke="#FFEB3B" 
+        stroke="#FFD93D" 
         strokeWidth="5"
       />
       
@@ -33,39 +33,39 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
       {/* Right Wing */}
       <ellipse cx="68" cy="44" rx="12" ry="10" fill="white"/>
       
-      {/* Avocado Body - dark green skin */}
-      <ellipse cx="40" cy="52" rx="24" ry="32" fill="#4CAF50"/>
+      {/* Avocado Body - darker green skin */}
+      <ellipse cx="40" cy="52" rx="24" ry="32" fill="#1a5c1a"/>
       
-      {/* Avocado flesh - bright yellow-green */}
-      <ellipse cx="40" cy="54" rx="18" ry="25" fill="#CDDC39"/>
+      {/* Avocado flesh - matches the lime #39FF14 brand color */}
+      <ellipse cx="40" cy="54" rx="18" ry="25" fill="#39FF14"/>
       
-      {/* Pit - warm brown */}
-      <ellipse cx="40" cy="62" rx="10" ry="13" fill="#795548"/>
+      {/* Pit - warm magenta-brown to tie into #BC13FE */}
+      <ellipse cx="40" cy="62" rx="10" ry="13" fill="#8B4570"/>
       
-      {/* Happy closed eyes */}
+      {/* Happy closed eyes - dark green */}
       <path 
         d="M28 40 Q32 35 36 40" 
-        stroke="#2E7D32" 
+        stroke="#0d3d0d" 
         strokeWidth="3" 
         fill="none" 
         strokeLinecap="round"
       />
       <path 
         d="M44 40 Q48 35 52 40" 
-        stroke="#2E7D32" 
+        stroke="#0d3d0d" 
         strokeWidth="3" 
         fill="none" 
         strokeLinecap="round"
       />
       
-      {/* Rosy cheeks */}
-      <ellipse cx="24" cy="46" rx="5" ry="3" fill="#F48FB1" opacity="0.8"/>
-      <ellipse cx="56" cy="46" rx="5" ry="3" fill="#F48FB1" opacity="0.8"/>
+      {/* Rosy cheeks - soft magenta matching brand */}
+      <ellipse cx="24" cy="46" rx="5" ry="3" fill="#BC13FE" opacity="0.4"/>
+      <ellipse cx="56" cy="46" rx="5" ry="3" fill="#BC13FE" opacity="0.4"/>
       
       {/* Smile */}
       <path 
         d="M34 50 Q40 56 46 50" 
-        stroke="#2E7D32" 
+        stroke="#0d3d0d" 
         strokeWidth="2.5" 
         fill="none" 
         strokeLinecap="round"
