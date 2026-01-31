@@ -2560,7 +2560,7 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid grid ID" });
       }
       
-      const { name } = req.body;
+      const { name, description } = req.body;
       
       // Verify ownership
       const board = await storage.getBoard(id, userId);
@@ -2569,9 +2569,12 @@ export async function registerRoutes(
       }
       
       // Build update object
-      const updateData: { name?: string } = {};
+      const updateData: { name?: string; description?: string } = {};
       if (name && typeof name === "string") {
         updateData.name = name.trim();
+      }
+      if (typeof description === "string") {
+        updateData.description = description.trim();
       }
       
       if (Object.keys(updateData).length === 0) {
