@@ -994,22 +994,26 @@ export default function SequenceSqueeze() {
             )}
 
             <div className="text-center">
-              <h2 className="text-xl font-bold mb-2">Correct Order</h2>
-              <div className="flex justify-center gap-3 py-4">
+              <h2 className="text-xl font-bold mb-4 text-white">Correct Order</h2>
+              <div className="flex flex-col gap-3 max-w-md mx-auto">
                 {currentQuestion?.correctOrder && (currentQuestion.correctOrder as string[]).map((letter, idx) => {
                   const option = currentQuestion[`option${letter}` as keyof SequenceQuestion] as string;
+                  const ordinal = ["1st", "2nd", "3rd", "4th"][idx];
                   return (
                     <motion.div
                       key={letter}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.2 }}
-                      className="flex flex-col items-center"
+                      className="flex items-center gap-3 bg-white/5 backdrop-blur-sm rounded-xl p-3 border border-white/10"
                     >
-                      <div className="w-14 h-14 rounded-xl bg-teal-500 text-white flex items-center justify-center text-xl font-bold shadow-lg">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 text-white flex items-center justify-center text-sm font-bold shadow-lg shrink-0">
+                        {ordinal}
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-white/10 text-teal-300 flex items-center justify-center text-sm font-bold shrink-0">
                         {letter}
                       </div>
-                      <p className="mt-2 text-xs font-medium max-w-20 truncate">{option}</p>
+                      <p className="text-white font-medium text-left flex-1">{option}</p>
                     </motion.div>
                   );
                 })}
