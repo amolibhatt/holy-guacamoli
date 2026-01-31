@@ -590,7 +590,7 @@ export default function SequenceSqueeze() {
                   size="lg"
                   className={`h-14 px-8 text-lg w-full ${
                     players.length > 0 
-                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0" 
+                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-0" 
                       : "bg-white/10 text-white/40 border border-white/10"
                   }`}
                   onClick={() => {
