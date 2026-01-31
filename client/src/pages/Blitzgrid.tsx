@@ -3256,10 +3256,6 @@ export default function Blitzgrid() {
               </p>
             )}
           </div>
-          <ChevronRight 
-            className="w-5 h-5 text-white/30 group-hover:translate-x-0.5 transition-all" 
-            style={{ color: isHovered ? neonColor.icon : undefined }}
-          />
         </div>
       </motion.button>
     );
