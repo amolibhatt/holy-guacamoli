@@ -497,22 +497,26 @@ export default function SequenceSqueeze() {
 
             {players.length > 0 && (
               <div className="mb-6">
-                <div className="flex flex-wrap justify-center gap-2">
+                <div className="flex flex-wrap justify-center gap-3">
                   {players.map(p => {
                     const playerScore = leaderboard.find(l => l.playerId === p.id)?.score;
                     return (
-                      <Badge key={p.id} variant="secondary" className="gap-1">
-                        {p.name}
+                      <div 
+                        key={p.id} 
+                        className="flex flex-col items-center gap-1 p-3 bg-card rounded-xl border shadow-sm min-w-[80px]"
+                      >
+                        <span className="text-3xl">{p.avatar || "👤"}</span>
+                        <span className="font-medium text-sm">{p.name}</span>
                         {playerScore !== undefined && playerScore > 0 && (
-                          <span className="text-teal-500 font-bold ml-1">({playerScore})</span>
+                          <span className="text-xs text-teal-600 font-bold">{playerScore} pts</span>
                         )}
-                      </Badge>
+                      </div>
                     );
                   })}
                 </div>
                 {leaderboard.length > 0 && leaderboard.some(l => l.score > 0) && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Scores imported from previous session
+                  <p className="text-xs text-muted-foreground mt-3">
+                    Scores from previous session
                   </p>
                 )}
               </div>
