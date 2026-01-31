@@ -3342,15 +3342,15 @@ export default function Blitzgrid() {
               <p className="text-white/60 mt-2 text-sm">5x5 trivia showdown</p>
             </motion.div>
 
-            {/* Shuffle Play Card - Retro gaming design */}
+            {/* Shuffle Play Card - Unique cyan/teal color */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
               className="group cursor-pointer p-6 rounded-xl bg-[#0d0d12] transition-all duration-200 relative overflow-hidden"
               style={{ 
-                border: '2px solid #e879f9',
-                boxShadow: '0 0 20px rgba(232, 121, 249, 0.3)',
+                border: '2px solid #22d3ee',
+                boxShadow: '0 0 20px rgba(34, 211, 238, 0.3)',
               }}
               onClick={handleShufflePlay}
               data-testid="card-shuffle-play"
@@ -3358,7 +3358,7 @@ export default function Blitzgrid() {
               {/* Animated glow pulse */}
               <motion.div 
                 className="absolute inset-0 rounded-xl"
-                animate={{ boxShadow: ['0 0 15px rgba(232, 121, 249, 0.2)', '0 0 25px rgba(232, 121, 249, 0.4)', '0 0 15px rgba(232, 121, 249, 0.2)'] }}
+                animate={{ boxShadow: ['0 0 15px rgba(34, 211, 238, 0.2)', '0 0 25px rgba(34, 211, 238, 0.4)', '0 0 15px rgba(34, 211, 238, 0.2)'] }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
               
@@ -3371,22 +3371,22 @@ export default function Blitzgrid() {
                   animate={{ y: [0, -8, 0], rotate: [0, 15, 0] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  <Sparkles className="w-5 h-5 text-fuchsia-400" />
+                  <Sparkles className="w-5 h-5 text-cyan-400" />
                 </motion.div>
               </div>
               
               <div className="relative flex items-center gap-4 flex-wrap">
                 <div 
-                  className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 group-hover:shadow-[0_0_20px_rgba(232,121,249,0.6)]"
+                  className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 group-hover:shadow-[0_0_20px_rgba(34,211,238,0.6)]"
                   style={{ 
-                    border: '2px solid #e879f9',
-                    boxShadow: '0 0 15px rgba(232, 121, 249, 0.4)',
+                    border: '2px solid #22d3ee',
+                    boxShadow: '0 0 15px rgba(34, 211, 238, 0.4)',
                   }}
                 >
                   {isShuffling ? (
-                    <Loader2 className="w-7 h-7 text-fuchsia-400 animate-spin" />
+                    <Loader2 className="w-7 h-7 text-cyan-400 animate-spin" />
                   ) : (
-                    <Shuffle className="w-7 h-7 text-fuchsia-400" />
+                    <Shuffle className="w-7 h-7 text-cyan-400" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -3394,11 +3394,11 @@ export default function Blitzgrid() {
                     className="font-black text-lg text-white flex flex-wrap items-center gap-2 uppercase tracking-wide"
                     style={{ 
                       fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                      textShadow: '0 0 10px rgba(232, 121, 249, 0.5)',
+                      textShadow: '0 0 10px rgba(34, 211, 238, 0.5)',
                     }}
                   >
-                    Quick Play
-                    <Badge className="text-xs bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/50">Random</Badge>
+                    Shuffle Play
+                    <Badge className="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/50">Random</Badge>
                   </h3>
                   <p className="text-sm text-white/60 mt-0.5">
                     {playedShuffleCategoryIds.length > 0 
@@ -3411,7 +3411,7 @@ export default function Blitzgrid() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="shrink-0 border-fuchsia-500/50 text-fuchsia-300"
+                    className="shrink-0 border-cyan-500/50 text-cyan-300"
                     onClick={(e) => {
                       e.stopPropagation();
                       setPlayedShuffleCategoryIds([]);
@@ -3423,8 +3423,8 @@ export default function Blitzgrid() {
                     Reset
                   </Button>
                 ) : (
-                  <div className="w-9 h-9 rounded-full bg-fuchsia-500/20 flex items-center justify-center group-hover:bg-fuchsia-500/30 transition-colors">
-                    <ChevronRight className="w-5 h-5 text-fuchsia-400 group-hover:translate-x-0.5 transition-all" />
+                  <div className="w-9 h-9 rounded-full bg-cyan-500/20 flex items-center justify-center group-hover:bg-cyan-500/30 transition-colors">
+                    <ChevronRight className="w-5 h-5 text-cyan-400 group-hover:translate-x-0.5 transition-all" />
                   </div>
                 )}
               </div>
