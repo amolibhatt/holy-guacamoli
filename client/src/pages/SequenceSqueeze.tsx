@@ -42,6 +42,11 @@ interface LeaderboardEntry {
   playerName: string;
   playerAvatar: string;
   score: number;
+  correctAnswers: number;
+  wrongAnswers: number;
+  avgTimeMs: number;
+  currentStreak: number;
+  bestStreak: number;
 }
 
 interface WinnerInfo {
@@ -142,7 +147,12 @@ export default function SequenceSqueeze() {
               playerId: p.playerId,
               playerName: p.playerName,
               playerAvatar: p.playerAvatar,
-              score: p.score,
+              score: p.score || 0,
+              correctAnswers: p.correctAnswers || 0,
+              wrongAnswers: p.wrongAnswers || 0,
+              avgTimeMs: p.avgTimeMs || 0,
+              currentStreak: p.currentStreak || 0,
+              bestStreak: p.bestStreak || 0,
             })));
             toast({ 
               title: "Game ready!", 
@@ -940,30 +950,55 @@ export default function SequenceSqueeze() {
             className="text-center py-8"
           >
             <Trophy className="w-16 h-16 mx-auto text-amber-500 mb-4" />
-            <h2 className="text-3xl font-bold mb-6">Session Leaderboard</h2>
-            <Card className="max-w-md mx-auto p-6">
+            <h2 className="text-3xl font-bold mb-6">Scoreboard</h2>
+            <Card className="max-w-2xl mx-auto p-6">
               {leaderboard.length === 0 ? (
                 <p className="text-muted-foreground">No scores yet</p>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {leaderboard.map((entry, idx) => (
                     <motion.div
                       key={entry.playerId}
                       initial={{ x: -20, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
                       transition={{ delay: idx * 0.1 }}
-                      className={`flex items-center justify-between p-3 rounded-lg ${
+                      className={`p-4 rounded-lg ${
                         idx === 0 ? 'bg-amber-500/20 border-2 border-amber-500' :
                         idx === 1 ? 'bg-slate-400/20 border border-slate-400' :
                         idx === 2 ? 'bg-orange-600/20 border border-orange-600' :
                         'bg-muted/50'
                       }`}
+                      data-testid={`scoreboard-entry-${entry.playerId}`}
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl font-black">{idx + 1}</span>
-                        <span className="font-semibold">{entry.playerName}</span>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl font-black">{idx + 1}</span>
+                          <span className="text-xl font-semibold">{entry.playerName}</span>
+                        </div>
+                        <span className="text-2xl font-bold">{entry.score} pts</span>
                       </div>
-                      <span className="text-xl font-bold">{entry.score} pts</span>
+                      <div className="flex flex-wrap gap-3 text-sm">
+                        <div className="flex items-center gap-1 px-2 py-1 bg-emerald-500/20 rounded">
+                          <Check className="w-3 h-3 text-emerald-500" />
+                          <span>{entry.correctAnswers || 0} correct</span>
+                        </div>
+                        <div className="flex items-center gap-1 px-2 py-1 bg-red-500/20 rounded">
+                          <X className="w-3 h-3 text-red-500" />
+                          <span>{entry.wrongAnswers || 0} wrong</span>
+                        </div>
+                        {entry.avgTimeMs > 0 && (
+                          <div className="flex items-center gap-1 px-2 py-1 bg-blue-500/20 rounded">
+                            <Clock className="w-3 h-3 text-blue-500" />
+                            <span>{(entry.avgTimeMs / 1000).toFixed(1)}s avg</span>
+                          </div>
+                        )}
+                        {entry.bestStreak > 0 && (
+                          <div className="flex items-center gap-1 px-2 py-1 bg-amber-500/20 rounded">
+                            <Zap className="w-3 h-3 text-amber-500" />
+                            <span>{entry.bestStreak} best streak</span>
+                          </div>
+                        )}
+                      </div>
                     </motion.div>
                   ))}
                 </div>
@@ -1004,21 +1039,34 @@ export default function SequenceSqueeze() {
                 <p className="text-xl text-muted-foreground">{leaderboard[0].score} points</p>
               </>
             )}
-            <Card className="max-w-md mx-auto mt-8 p-6">
-              <h3 className="font-semibold mb-4">Final Standings</h3>
-              <div className="space-y-2">
+            <Card className="max-w-2xl mx-auto mt-8 p-6">
+              <h3 className="font-semibold mb-4 text-left">Final Standings</h3>
+              <div className="space-y-3">
                 {leaderboard.map((entry, idx) => (
                   <div
                     key={entry.playerId}
-                    className={`flex items-center justify-between p-2 rounded ${
-                      idx === 0 ? 'bg-amber-500/20' : 'bg-muted/30'
+                    className={`p-3 rounded-lg text-left ${
+                      idx === 0 ? 'bg-amber-500/20 border border-amber-500' : 'bg-muted/30'
                     }`}
+                    data-testid={`final-standings-${entry.playerId}`}
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold">{idx + 1}.</span>
-                      <span>{entry.playerName}</span>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-lg">{idx + 1}.</span>
+                        <span className="font-semibold">{entry.playerName}</span>
+                      </div>
+                      <span className="font-bold text-lg">{entry.score} pts</span>
                     </div>
-                    <span className="font-bold">{entry.score} pts</span>
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      <span className="px-2 py-0.5 bg-emerald-500/20 rounded">{entry.correctAnswers || 0} correct</span>
+                      <span className="px-2 py-0.5 bg-red-500/20 rounded">{entry.wrongAnswers || 0} wrong</span>
+                      {entry.avgTimeMs > 0 && (
+                        <span className="px-2 py-0.5 bg-blue-500/20 rounded">{(entry.avgTimeMs / 1000).toFixed(1)}s avg</span>
+                      )}
+                      {entry.bestStreak > 0 && (
+                        <span className="px-2 py-0.5 bg-amber-500/20 rounded">{entry.bestStreak} streak</span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
