@@ -377,66 +377,56 @@ export default function BlitzgridAdmin() {
         const hasMedia = existingQuestion.imageUrl || existingQuestion.audioUrl || existingQuestion.videoUrl;
         const hasAnswerMedia = existingQuestion.answerImageUrl || existingQuestion.answerAudioUrl || existingQuestion.answerVideoUrl;
         return (
-          <div className="p-3 bg-muted/30 rounded-lg text-sm space-y-2">
+          <div 
+            className="p-3 bg-muted/30 rounded-lg text-sm space-y-2 cursor-pointer hover:bg-muted/50 transition-colors group"
+            onClick={() => setQuestionForms(prev => ({
+              ...prev,
+              [formKey]: {
+                question: existingQuestion.question,
+                correctAnswer: existingQuestion.correctAnswer,
+                options: existingQuestion.options || [],
+                imageUrl: existingQuestion.imageUrl || '',
+                audioUrl: existingQuestion.audioUrl || '',
+                videoUrl: existingQuestion.videoUrl || '',
+                answerImageUrl: existingQuestion.answerImageUrl || '',
+                answerAudioUrl: existingQuestion.answerAudioUrl || '',
+                answerVideoUrl: existingQuestion.answerVideoUrl || '',
+              }
+            }))}
+            data-testid={`question-slot-${existingQuestion.id}`}
+          >
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <Badge variant="outline" className="text-xs shrink-0">{points}pts</Badge>
-                  {hasMedia && (
+                  {(hasMedia || hasAnswerMedia) && (
                     <div className="flex gap-1 shrink-0">
-                      {existingQuestion.imageUrl && <Image className="w-3 h-3 text-blue-500" />}
-                      {existingQuestion.audioUrl && <Music className="w-3 h-3 text-blue-500" />}
-                      {existingQuestion.videoUrl && <Video className="w-3 h-3 text-blue-500" />}
+                      {(existingQuestion.imageUrl || existingQuestion.answerImageUrl) && <Image className="w-3 h-3 text-muted-foreground" />}
+                      {(existingQuestion.audioUrl || existingQuestion.answerAudioUrl) && <Music className="w-3 h-3 text-muted-foreground" />}
+                      {(existingQuestion.videoUrl || existingQuestion.answerVideoUrl) && <Video className="w-3 h-3 text-muted-foreground" />}
                     </div>
                   )}
+                  <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-auto">Click to edit</span>
                 </div>
-                <p className="text-sm font-medium">{existingQuestion.question}</p>
+                <p className="text-sm">{existingQuestion.question}</p>
               </div>
-              <div className="flex gap-1 shrink-0">
-                <Button 
-                  size="icon" 
-                  variant="ghost"
-                  className="h-7 w-7"
-                  onClick={() => setQuestionForms(prev => ({
-                    ...prev,
-                    [formKey]: {
-                      question: existingQuestion.question,
-                      correctAnswer: existingQuestion.correctAnswer,
-                      options: existingQuestion.options || [],
-                      imageUrl: existingQuestion.imageUrl || '',
-                      audioUrl: existingQuestion.audioUrl || '',
-                      videoUrl: existingQuestion.videoUrl || '',
-                      answerImageUrl: existingQuestion.answerImageUrl || '',
-                      answerAudioUrl: existingQuestion.answerAudioUrl || '',
-                      answerVideoUrl: existingQuestion.answerVideoUrl || '',
-                    }
-                  }))}
-                  data-testid={`button-edit-question-${existingQuestion.id}`}
-                >
-                  <Pencil className="w-3 h-3" />
-                </Button>
-                <Button 
-                  size="icon" 
-                  variant="ghost"
-                  className="h-7 w-7"
-                  onClick={() => deleteQuestionMutation.mutate(existingQuestion.id)}
-                  disabled={deleteQuestionMutation.isPending}
-                  data-testid={`button-delete-question-${existingQuestion.id}`}
-                >
-                  <Trash2 className="w-3 h-3 text-destructive" />
-                </Button>
-              </div>
+              <Button 
+                size="icon" 
+                variant="ghost"
+                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteQuestionMutation.mutate(existingQuestion.id);
+                }}
+                disabled={deleteQuestionMutation.isPending}
+                data-testid={`button-delete-question-${existingQuestion.id}`}
+              >
+                <Trash2 className="w-3 h-3 text-destructive" />
+              </Button>
             </div>
             <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 dark:bg-green-950/30 px-2 py-1 rounded">
               <Check className="w-3 h-3 shrink-0" />
-              <span className="truncate font-medium">{existingQuestion.correctAnswer}</span>
-              {hasAnswerMedia && (
-                <div className="flex gap-1 shrink-0 ml-auto">
-                  {existingQuestion.answerImageUrl && <Image className="w-3 h-3 text-green-500" />}
-                  {existingQuestion.answerAudioUrl && <Music className="w-3 h-3 text-green-500" />}
-                  {existingQuestion.answerVideoUrl && <Video className="w-3 h-3 text-green-500" />}
-                </div>
-              )}
+              <span className="truncate">{existingQuestion.correctAnswer}</span>
             </div>
           </div>
         );
