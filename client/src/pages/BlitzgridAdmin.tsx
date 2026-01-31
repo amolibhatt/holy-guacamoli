@@ -518,7 +518,7 @@ export default function BlitzgridAdmin() {
               <Link href="/admin/sort-circuit">
                 <Button 
                   variant="ghost" 
-                  className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
+                  className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                   data-testid="tab-sort-circuit"
                 >
                   <ListOrdered className="w-4 h-4 mr-2" />
@@ -528,7 +528,7 @@ export default function BlitzgridAdmin() {
               <Link href="/admin/psyop">
                 <Button 
                   variant="ghost" 
-                  className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
+                  className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                   data-testid="tab-psyop"
                 >
                   <Brain className="w-4 h-4 mr-2" />
@@ -1056,7 +1056,7 @@ export default function BlitzgridAdmin() {
             <Link href="/admin/sort-circuit">
               <Button 
                 variant="ghost" 
-                className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                 data-testid="tab-sort-circuit"
               >
                 <ListOrdered className="w-4 h-4 mr-2" />
@@ -1066,7 +1066,7 @@ export default function BlitzgridAdmin() {
             <Link href="/admin/psyop">
               <Button 
                 variant="ghost" 
-                className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                 data-testid="tab-psyop"
               >
                 <Brain className="w-4 h-4 mr-2" />

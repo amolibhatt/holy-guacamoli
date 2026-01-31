@@ -581,7 +581,7 @@ export default function PlayerPage() {
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-muted-foreground" />}
           </Button>
-          <Button size="sm" variant="ghost" onClick={handleLeaveGame} className="text-xs text-muted-foreground hover:text-destructive" data-testid="button-leave-game">
+          <Button size="sm" variant="ghost" onClick={handleLeaveGame} className="text-xs text-muted-foreground" data-testid="button-leave-game">
             Leave
           </Button>
         </div>

@@ -34,7 +34,7 @@ export default function SortCircuitAdmin() {
             <Link href="/admin/games">
               <Button 
                 variant="ghost" 
-                className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                 data-testid="tab-blitzgrid"
               >
                 <Grid3X3 className="w-4 h-4 mr-2" />
@@ -54,7 +54,7 @@ export default function SortCircuitAdmin() {
             <Link href="/admin/psyop">
               <Button 
                 variant="ghost" 
-                className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                 data-testid="tab-psyop"
               >
                 <Eye className="w-4 h-4 mr-2" />
