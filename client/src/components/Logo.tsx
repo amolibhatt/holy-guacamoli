@@ -17,10 +17,11 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
       xmlns="http://www.w3.org/2000/svg"
       className="shrink-0"
       animate={{ 
-        rotate: [0, -3, 3, -2, 0],
+        rotate: [0, -4, 4, -3, 3, 0],
+        y: [0, -2, 0, -1, 0],
       }}
       transition={{
-        duration: 2,
+        duration: 2.5,
         repeat: Infinity,
         repeatType: "reverse",
         ease: "easeInOut"
@@ -55,44 +56,57 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
           <stop offset="40%" stopColor="#a3e635" />
           <stop offset="100%" stopColor="#65a30d" />
         </linearGradient>
-        
-        {/* Pit gradient - warm brown */}
-        <radialGradient id={`${id}-pit`} cx="40%" cy="30%" r="60%">
-          <stop offset="0%" stopColor="#A1887F" />
-          <stop offset="100%" stopColor="#5D4037" />
-        </radialGradient>
       </defs>
       
-      {/* Outer glow */}
-      <ellipse cx="40" cy="52" rx="28" ry="36" fill="#39FF14" opacity="0.1" filter={`url(#${id}-glow)`}/>
+      {/* Outer glow - pulsing */}
+      <motion.ellipse 
+        cx="40" cy="52" rx="28" ry="36" 
+        fill="#39FF14" 
+        opacity="0.1" 
+        filter={`url(#${id}-glow)`}
+        animate={{ opacity: [0.05, 0.15, 0.05] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      />
       
-      {/* Party sparkles */}
+      {/* Party sparkles - keeping these! */}
       <motion.circle
-        cx="15" cy="25" r="2"
+        cx="12" cy="22" r="2.5"
         fill="#fbbf24"
-        animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+        animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5], y: [0, -3, 0] }}
         transition={{ duration: 1.5, repeat: Infinity, delay: 0 }}
       />
       <motion.circle
-        cx="65" cy="20" r="1.5"
+        cx="68" cy="18" r="2"
         fill="#f472b6"
-        animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+        animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5], y: [0, -2, 0] }}
         transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
       />
       <motion.circle
-        cx="70" cy="45" r="2"
+        cx="72" cy="48" r="2.5"
         fill="#39FF14"
-        animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+        animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5], x: [0, 2, 0] }}
         transition={{ duration: 1.5, repeat: Infinity, delay: 1 }}
       />
       <motion.circle
-        cx="10" cy="55" r="1.5"
+        cx="8" cy="58" r="2"
         fill="#fbbf24"
-        animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+        animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5], x: [0, -2, 0] }}
         transition={{ duration: 1.5, repeat: Infinity, delay: 0.3 }}
       />
+      <motion.circle
+        cx="25" cy="12" r="1.5"
+        fill="#f472b6"
+        animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+        transition={{ duration: 1.2, repeat: Infinity, delay: 0.8 }}
+      />
+      <motion.circle
+        cx="55" cy="10" r="1.5"
+        fill="#a3e635"
+        animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+        transition={{ duration: 1.2, repeat: Infinity, delay: 1.2 }}
+      />
       
-      {/* Halo - golden shimmer */}
+      {/* Halo - golden shimmer with rotation */}
       <motion.ellipse 
         cx="40" 
         cy="8" 
@@ -101,7 +115,10 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
         fill="none" 
         stroke={`url(#${id}-halo)`}
         strokeWidth="3"
-        animate={{ opacity: [0.7, 1, 0.7] }}
+        animate={{ 
+          opacity: [0.6, 1, 0.6],
+          scaleX: [1, 1.05, 1],
+        }}
         transition={{ duration: 1.5, repeat: Infinity }}
       />
       
@@ -111,17 +128,31 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
       {/* Avocado flesh - bright lime gradient */}
       <ellipse cx="40" cy="54" rx="18" ry="25" fill={`url(#${id}-flesh)`}/>
       
+      {/* Big sparkly eyes with blink */}
+      <motion.g
+        animate={{ scaleY: [1, 1, 0.1, 1, 1] }}
+        transition={{ duration: 3, repeat: Infinity, times: [0, 0.45, 0.5, 0.55, 1] }}
+      >
+        <ellipse cx="32" cy="42" rx="4" ry="5" fill="#1a2e05"/>
+        <ellipse cx="48" cy="42" rx="4" ry="5" fill="#1a2e05"/>
+        {/* Eye sparkles */}
+        <circle cx="33" cy="40" r="1.5" fill="white"/>
+        <circle cx="49" cy="40" r="1.5" fill="white"/>
+      </motion.g>
       
-      {/* Big sparkly eyes */}
-      <ellipse cx="32" cy="42" rx="4" ry="5" fill="#1a2e05"/>
-      <ellipse cx="48" cy="42" rx="4" ry="5" fill="#1a2e05"/>
-      {/* Eye sparkles */}
-      <circle cx="33" cy="40" r="1.5" fill="white"/>
-      <circle cx="49" cy="40" r="1.5" fill="white"/>
-      
-      {/* Rosy cheeks - pink party blush */}
-      <ellipse cx="22" cy="50" rx="5" ry="3" fill="#f472b6" opacity="0.5"/>
-      <ellipse cx="58" cy="50" rx="5" ry="3" fill="#f472b6" opacity="0.5"/>
+      {/* Rosy cheeks - pulsing pink party blush */}
+      <motion.ellipse 
+        cx="22" cy="50" rx="5" ry="3" 
+        fill="#f472b6" 
+        animate={{ opacity: [0.4, 0.6, 0.4] }}
+        transition={{ duration: 1.5, repeat: Infinity }}
+      />
+      <motion.ellipse 
+        cx="58" cy="50" rx="5" ry="3" 
+        fill="#f472b6" 
+        animate={{ opacity: [0.4, 0.6, 0.4] }}
+        transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
+      />
       
       {/* Big happy smile */}
       <path 
@@ -149,7 +180,8 @@ export function Logo({ size = "md" }: LogoProps) {
   return (
     <motion.div 
       className={`flex items-center ${config.gap}`}
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ scale: 1.05 }}
+      transition={{ type: "spring", stiffness: 400 }}
     >
       <HolyAvocado size={config.icon} />
       
