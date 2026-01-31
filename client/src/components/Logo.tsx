@@ -1,8 +1,7 @@
 import { motion } from "framer-motion";
 
 interface LogoProps {
-  size?: "sm" | "md" | "lg" | "compact";
-  showSparkles?: boolean;
+  size?: "sm" | "md" | "lg" | "xl" | "compact";
   variant?: "light" | "dark";
 }
 
@@ -19,17 +18,31 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
       className="shrink-0"
     >
       <defs>
-        {/* Halo gradient - golden shimmer */}
+        {/* Toxic lime glow */}
+        <filter id={`${id}-glow`} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        
+        {/* Halo gradient - toxic lime */}
         <linearGradient id={`${id}-halo`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFE066" />
-          <stop offset="50%" stopColor="#FFD700" />
-          <stop offset="100%" stopColor="#FFA500" />
+          <stop offset="0%" stopColor="#39FF14" />
+          <stop offset="100%" stopColor="#84cc16" />
         </linearGradient>
         
-        {/* Flesh gradient - bright avocado green */}
+        {/* Skin - deep hass green */}
+        <linearGradient id={`${id}-skin`} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#365314" />
+          <stop offset="100%" stopColor="#1a2e05" />
+        </linearGradient>
+        
+        {/* Flesh gradient - toxic lime to avocado */}
         <linearGradient id={`${id}-flesh`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#a3e635" />
-          <stop offset="50%" stopColor="#84cc16" />
+          <stop offset="0%" stopColor="#39FF14" />
+          <stop offset="40%" stopColor="#a3e635" />
           <stop offset="100%" stopColor="#65a30d" />
         </linearGradient>
         
@@ -40,57 +53,57 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
         </radialGradient>
       </defs>
       
-      {/* Halo - golden gradient */}
+      {/* Outer glow */}
+      <ellipse cx="40" cy="52" rx="28" ry="36" fill="#39FF14" opacity="0.15" filter={`url(#${id}-glow)`}/>
+      
+      {/* Halo - toxic lime */}
       <ellipse 
         cx="40" 
-        cy="10" 
-        rx="15" 
-        ry="5" 
+        cy="8" 
+        rx="14" 
+        ry="4" 
         fill="none" 
         stroke={`url(#${id}-halo)`}
-        strokeWidth="4"
+        strokeWidth="3"
       />
       
-      {/* Left Wing */}
-      <ellipse cx="12" cy="44" rx="12" ry="10" fill="white" opacity="0.95"/>
+      {/* Avocado Body - deep hass green skin */}
+      <ellipse cx="40" cy="52" rx="24" ry="32" fill={`url(#${id}-skin)`}/>
       
-      {/* Right Wing */}
-      <ellipse cx="68" cy="44" rx="12" ry="10" fill="white" opacity="0.95"/>
-      
-      {/* Avocado Body - vibrant green skin */}
-      <ellipse cx="40" cy="52" rx="24" ry="32" fill="#4d7c0f"/>
-      
-      {/* Avocado flesh - bright lime gradient */}
+      {/* Avocado flesh - toxic lime gradient */}
       <ellipse cx="40" cy="54" rx="18" ry="25" fill={`url(#${id}-flesh)`}/>
       
       {/* Pit - radial gradient */}
       <ellipse cx="40" cy="62" rx="10" ry="13" fill={`url(#${id}-pit)`}/>
       
+      {/* Pit highlight */}
+      <ellipse cx="37" cy="58" rx="4" ry="5" fill="#BCAAA4" opacity="0.4"/>
+      
       {/* Happy closed eyes */}
       <path 
-        d="M28 40 Q32 35 36 40" 
-        stroke="#365314" 
-        strokeWidth="3" 
+        d="M28 42 Q32 37 36 42" 
+        stroke="#1a2e05" 
+        strokeWidth="2.5" 
         fill="none" 
         strokeLinecap="round"
       />
       <path 
-        d="M44 40 Q48 35 52 40" 
-        stroke="#365314" 
-        strokeWidth="3" 
+        d="M44 42 Q48 37 52 42" 
+        stroke="#1a2e05" 
+        strokeWidth="2.5" 
         fill="none" 
         strokeLinecap="round"
       />
       
-      {/* Rosy cheeks - soft magenta */}
-      <ellipse cx="24" cy="46" rx="5" ry="3" fill="#e879f9" opacity="0.5"/>
-      <ellipse cx="56" cy="46" rx="5" ry="3" fill="#e879f9" opacity="0.5"/>
+      {/* Rosy cheeks - subtle fuchsia accent */}
+      <ellipse cx="24" cy="48" rx="4" ry="2.5" fill="#d946ef" opacity="0.4"/>
+      <ellipse cx="56" cy="48" rx="4" ry="2.5" fill="#d946ef" opacity="0.4"/>
       
       {/* Smile */}
       <path 
-        d="M34 50 Q40 56 46 50" 
-        stroke="#365314" 
-        strokeWidth="2.5" 
+        d="M34 52 Q40 58 46 52" 
+        stroke="#1a2e05" 
+        strokeWidth="2" 
         fill="none" 
         strokeLinecap="round"
       />
@@ -103,6 +116,7 @@ export function Logo({ size = "md" }: LogoProps) {
     sm: { text: "text-lg", icon: 40, gap: "gap-2" },
     md: { text: "text-xl sm:text-2xl", icon: 48, gap: "gap-3" },
     lg: { text: "text-2xl sm:text-3xl", icon: 60, gap: "gap-3" },
+    xl: { text: "text-3xl sm:text-4xl", icon: 72, gap: "gap-4" },
     compact: { text: "text-sm", icon: 32, gap: "gap-1.5" }
   };
 
@@ -121,19 +135,18 @@ export function Logo({ size = "md" }: LogoProps) {
       >
         {/* Glow layer */}
         <span 
-          className="absolute inset-0 blur-sm opacity-50"
+          className="absolute inset-0 blur-md opacity-60"
           aria-hidden="true"
         >
-          <span style={{ color: '#a3e635' }}>Holy </span>
-          <span style={{ color: '#a3e635' }}>Guac</span>
-          <span style={{ color: '#e879f9' }}>Amoli!</span>
+          <span style={{ color: '#39FF14' }}>Holy Guac</span>
+          <span style={{ color: '#d946ef' }}>Amoli!</span>
         </span>
         
         {/* Main text */}
         <span className="relative">
-          <span className="text-white">Holy </span>
+          <span style={{ color: '#39FF14' }}>Holy </span>
           <span style={{ color: '#a3e635' }}>Guac</span>
-          <span style={{ color: '#e879f9' }}>Amoli!</span>
+          <span style={{ color: '#d946ef' }}>Amoli!</span>
         </span>
       </h1>
     </motion.div>
