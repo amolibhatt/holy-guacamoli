@@ -1866,12 +1866,11 @@ export default function Blitzgrid() {
               transition={{ duration: 0.5, ease: "easeOut" }}
               className="h-full flex flex-col gap-3 relative z-10"
             >
-              {/* Category Headers - Each column gets its own neon color */}
+              {/* Category Headers - All use the grid's neon color */}
               <div className="grid gap-2 md:gap-3" style={{ gridTemplateColumns: `repeat(${playCategories.length}, 1fr)` }}>
                 {playCategories.map((category, idx) => {
                   const isRevealed = idx < revealedCategoryCount;
-                  const catColorKey = BOARD_COLORS[idx % BOARD_COLORS.length];
-                  const catNeonColor = neonColorConfig[catColorKey];
+                  const catNeonColor = neonColorConfig[colorName];
                   return (
                     <motion.div 
                       key={category.id} 
@@ -1915,7 +1914,7 @@ export default function Blitzgrid() {
                 })}
               </div>
               
-              {/* Point Grid - Each column uses its own neon color */}
+              {/* Point Grid - All tiles use the grid's neon color */}
               <div className="flex-1 grid gap-2 md:gap-3" style={{ gridTemplateColumns: `repeat(${playCategories.length}, 1fr)`, gridTemplateRows: 'repeat(5, 1fr)' }}>
                 {POINT_TIERS.map((points, rowIdx) => (
                   playCategories.map((category, colIdx) => {
@@ -1924,8 +1923,7 @@ export default function Blitzgrid() {
                     const isCellAnswered = revealedCells.has(cellKey);
                     const isCategoryRevealed = colIdx < revealedCategoryCount;
                     const isClickable = isCategoryRevealed && !isCellAnswered && question && !categoryRevealMode;
-                    const tileColorKey = BOARD_COLORS[colIdx % BOARD_COLORS.length];
-                    const tileNeonColor = neonColorConfig[tileColorKey];
+                    const tileNeonColor = neonColorConfig[colorName];
                     
                     return (
                       <motion.button
