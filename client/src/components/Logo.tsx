@@ -196,7 +196,7 @@ export function Logo({ size = "md" }: LogoProps) {
         >
           <span className="text-white">Holy </span>
           <span style={{ color: '#a3e635' }}>Guac</span>
-          <span style={{ color: '#f472b6' }}>Amoli!</span>
+          <span style={{ color: '#e879f9' }}>Amoli!</span>
         </span>
         
         {/* Main text */}
@@ -204,7 +204,7 @@ export function Logo({ size = "md" }: LogoProps) {
           <span className="text-white">Holy </span>
           <span style={{ color: '#a3e635' }}>Guac</span>
           <motion.span 
-            className="bg-gradient-to-r from-pink-400 via-rose-300 to-pink-400 bg-clip-text text-transparent inline"
+            className="bg-gradient-to-r from-fuchsia-400 via-pink-300 to-fuchsia-400 bg-clip-text text-transparent inline"
             style={{ backgroundSize: '200% 100%' }}
             animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
