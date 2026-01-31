@@ -998,7 +998,6 @@ export default function SequenceSqueeze() {
               <div className="flex flex-col gap-3 max-w-md mx-auto">
                 {currentQuestion?.correctOrder && (currentQuestion.correctOrder as string[]).map((letter, idx) => {
                   const option = currentQuestion[`option${letter}` as keyof SequenceQuestion] as string;
-                  const ordinal = ["1st", "2nd", "3rd", "4th"][idx];
                   return (
                     <motion.div
                       key={letter}
@@ -1007,10 +1006,7 @@ export default function SequenceSqueeze() {
                       transition={{ delay: idx * 0.2 }}
                       className="flex items-center gap-3 bg-white/5 backdrop-blur-sm rounded-xl p-3 border border-white/10"
                     >
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 text-white flex items-center justify-center text-sm font-bold shadow-lg shrink-0">
-                        {ordinal}
-                      </div>
-                      <div className="w-8 h-8 rounded-full bg-white/10 text-teal-300 flex items-center justify-center text-sm font-bold shrink-0">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 text-white flex items-center justify-center text-lg font-bold shadow-lg shrink-0">
                         {letter}
                       </div>
                       <p className="text-white font-medium text-left flex-1">{option}</p>
