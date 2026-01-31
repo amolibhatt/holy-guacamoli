@@ -396,34 +396,21 @@ export default function SequenceSqueeze() {
 
       <AppHeader minimal backHref="/" />
       
-      {/* Secondary bar with game title and controls */}
+      {/* Secondary bar with game title and audio control */}
       <div className="border-b border-border/30 bg-card/30">
         <div className="container mx-auto px-4 py-2 flex items-center justify-between">
           <h1 className="text-lg font-bold text-foreground">Sort Circuit</h1>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                setAudioEnabled(!audioEnabled);
-                if (!audioEnabled) getAudioContext();
-              }}
-              data-testid="button-audio-toggle"
-            >
-              {audioEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5 text-muted-foreground" />}
-            </Button>
-            {roomCode && (
-              <>
-                <Badge variant="outline" className="gap-1.5 px-3 py-1.5 text-sm font-mono">
-                  <span className="text-muted-foreground">Room:</span>
-                  <span className="text-foreground font-bold">{roomCode}</span>
-                </Badge>
-                <Button variant="ghost" size="icon" onClick={() => setShowQR(true)} data-testid="button-qr">
-                  <QrCode className="w-5 h-5" />
-                </Button>
-              </>
-            )}
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setAudioEnabled(!audioEnabled);
+              if (!audioEnabled) getAudioContext();
+            }}
+            data-testid="button-audio-toggle"
+          >
+            {audioEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5 text-muted-foreground" />}
+          </Button>
         </div>
       </div>
 
@@ -469,78 +456,103 @@ export default function SequenceSqueeze() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-12"
+            className="py-8"
           >
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-teal-500 flex items-center justify-center shadow-xl shadow-teal-500/30">
-              <Users className="w-12 h-12 text-white" />
-            </div>
-            <h2 className="text-3xl font-bold mb-2">Waiting for Players</h2>
-            <p className="text-muted-foreground mb-4">
-              Room Code: <span className="font-mono font-bold text-foreground text-xl">{roomCode}</span>
-            </p>
-
-            <div className="flex items-center justify-center gap-4 mb-6">
-              <Button
-                variant="outline"
-                onClick={() => setShowQR(true)}
-                className="gap-2"
-                data-testid="button-show-qr"
-              >
-                <QrCode className="w-4 h-4" />
-                Show QR Code
-              </Button>
-              <Badge className="bg-teal-500 gap-1 text-sm px-3 py-1.5">
-                <Users className="w-3 h-3" />
-                {players.length} player{players.length !== 1 ? 's' : ''} connected
-              </Badge>
-            </div>
-
-            {players.length > 0 && (
-              <div className="mb-6">
-                <div className="flex flex-wrap justify-center gap-3">
-                  {players.map(p => {
-                    const playerScore = leaderboard.find(l => l.playerId === p.id)?.score;
-                    return (
-                      <div 
-                        key={p.id} 
-                        className="flex flex-col items-center gap-1 p-3 bg-card rounded-xl border shadow-sm min-w-[80px]"
-                      >
-                        <span className="text-3xl">{p.avatar || "👤"}</span>
-                        <span className="font-medium text-sm">{p.name}</span>
-                        {playerScore !== undefined && playerScore > 0 && (
-                          <span className="text-xs text-teal-600 font-bold">{playerScore} pts</span>
-                        )}
-                      </div>
-                    );
-                  })}
+            <div className="grid md:grid-cols-2 gap-8 items-start">
+              {/* Left: QR Code */}
+              <div className="flex flex-col items-center">
+                <div className="bg-white p-4 rounded-2xl shadow-lg">
+                  <QRCodeSVG value={joinUrl} size={200} />
                 </div>
-                {leaderboard.length > 0 && leaderboard.some(l => l.score > 0) && (
-                  <p className="text-xs text-muted-foreground mt-3">
-                    Scores from previous session
-                  </p>
-                )}
+                <p className="mt-4 text-center">
+                  <span className="text-muted-foreground">Room Code: </span>
+                  <span className="font-mono font-bold text-2xl">{roomCode}</span>
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Scan or go to <span className="font-mono">/sequence/{roomCode}</span>
+                </p>
               </div>
-            )}
 
-            <Button 
-              size="lg"
-              className="h-14 px-8 text-lg bg-teal-500 text-white shadow-lg shadow-teal-500/30"
-              onClick={() => {
-                if (questions.length > 0) {
-                  startQuestion(questions[0], 0);
-                }
-              }}
-              disabled={players.length === 0 || questions.length === 0}
-              data-testid="button-begin-game"
-            >
-              <Play className="w-6 h-6 mr-2" />
-              Begin Game ({questions.length} questions)
-            </Button>
-            {players.length === 0 && (
-              <p className="text-sm text-muted-foreground mt-3">
-                Waiting for at least 1 player to join...
-              </p>
-            )}
+              {/* Right: Players and controls */}
+              <div className="flex flex-col items-center md:items-start">
+                <div className="flex items-center gap-2 mb-4">
+                  <Users className="w-5 h-5 text-teal-500" />
+                  <h2 className="text-xl font-bold">
+                    {players.length} Player{players.length !== 1 ? 's' : ''} Ready
+                  </h2>
+                </div>
+
+                {players.length === 0 ? (
+                  <div className="text-center md:text-left py-8 w-full">
+                    <motion.p
+                      animate={{ opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="text-muted-foreground"
+                    >
+                      Waiting for players to scan and join...
+                    </motion.p>
+                  </div>
+                ) : (
+                  <div className="mb-6 w-full">
+                    <div className="flex flex-wrap justify-center md:justify-start gap-3">
+                      <AnimatePresence>
+                        {players.map((p, idx) => {
+                          const playerScore = leaderboard.find(l => l.playerId === p.id)?.score;
+                          return (
+                            <motion.div 
+                              key={p.id}
+                              initial={{ scale: 0, rotate: -15, opacity: 0 }}
+                              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                              exit={{ scale: 0, opacity: 0 }}
+                              transition={{ 
+                                type: "spring", 
+                                stiffness: 400, 
+                                damping: 15,
+                                delay: idx * 0.05
+                              }}
+                              className="flex flex-col items-center gap-1 p-3 bg-card rounded-xl border shadow-sm min-w-[80px]"
+                            >
+                              <motion.span 
+                                className="text-4xl"
+                                initial={{ scale: 0 }}
+                                animate={{ scale: [0, 1.3, 1] }}
+                                transition={{ delay: 0.1, duration: 0.4 }}
+                              >
+                                {p.avatar || "👤"}
+                              </motion.span>
+                              <span className="font-medium text-sm">{p.name}</span>
+                              {playerScore !== undefined && playerScore > 0 && (
+                                <span className="text-xs text-teal-600 font-bold">{playerScore} pts</span>
+                              )}
+                            </motion.div>
+                          );
+                        })}
+                      </AnimatePresence>
+                    </div>
+                    {leaderboard.length > 0 && leaderboard.some(l => l.score > 0) && (
+                      <p className="text-xs text-muted-foreground mt-3">
+                        Scores from previous session
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <Button 
+                  size="lg"
+                  className="h-14 px-8 text-lg bg-teal-500 text-white shadow-lg shadow-teal-500/30 w-full md:w-auto"
+                  onClick={() => {
+                    if (questions.length > 0) {
+                      startQuestion(questions[0], 0);
+                    }
+                  }}
+                  disabled={players.length === 0 || questions.length === 0}
+                  data-testid="button-begin-game"
+                >
+                  <Play className="w-6 h-6 mr-2" />
+                  Begin Game ({questions.length} questions)
+                </Button>
+              </div>
+            </div>
           </motion.div>
         )}
 
