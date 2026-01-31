@@ -3345,63 +3345,96 @@ export default function Blitzgrid() {
             >
               <p className="text-white/50 text-lg mb-6">The ultimate trivia showdown</p>
               
-              {/* Shuffle Play Hero */}
+              {/* Shuffle Play Hero - Full Width Bar */}
               <motion.button
                 onClick={handleShufflePlay}
                 disabled={isShuffling}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="inline-flex flex-col items-center gap-2 px-10 py-5 rounded-2xl transition-all"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className="w-full flex items-center justify-between gap-4 p-5 rounded-xl text-left relative overflow-hidden group"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.15) 0%, rgba(6, 182, 212, 0.08) 100%)',
-                  border: '1px solid rgba(34, 211, 238, 0.3)',
-                  boxShadow: '0 0 30px rgba(34, 211, 238, 0.15)',
+                  background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.12) 0%, rgba(6, 182, 212, 0.06) 100%)',
+                  border: '1px solid rgba(34, 211, 238, 0.4)',
                 }}
                 data-testid="button-shuffle-play"
               >
-                <div className="flex items-center gap-3">
+                {/* Animated background pulse */}
+                <motion.div 
+                  className="absolute inset-0 rounded-xl"
+                  animate={{
+                    boxShadow: [
+                      'inset 0 0 20px rgba(34, 211, 238, 0.1), 0 0 20px rgba(34, 211, 238, 0.15)',
+                      'inset 0 0 30px rgba(34, 211, 238, 0.2), 0 0 40px rgba(34, 211, 238, 0.25)',
+                      'inset 0 0 20px rgba(34, 211, 238, 0.1), 0 0 20px rgba(34, 211, 238, 0.15)',
+                    ],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                />
+                {/* Scanning light effect */}
+                <motion.div 
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent"
+                  animate={{
+                    x: ['-100%', '200%'],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    repeatDelay: 1,
+                  }}
+                />
+                
+                <div className="relative flex items-center gap-4">
                   <motion.div 
-                    className="w-10 h-10 rounded-full flex items-center justify-center"
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
                     style={{
                       background: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)',
                     }}
                     animate={{
                       boxShadow: [
-                        '0 0 15px rgba(34, 211, 238, 0.4)',
-                        '0 0 25px rgba(34, 211, 238, 0.7)',
-                        '0 0 15px rgba(34, 211, 238, 0.4)',
+                        '0 0 15px rgba(34, 211, 238, 0.5)',
+                        '0 0 30px rgba(34, 211, 238, 0.8)',
+                        '0 0 15px rgba(34, 211, 238, 0.5)',
                       ],
+                      scale: [1, 1.05, 1],
                     }}
                     transition={{
-                      duration: 2,
+                      duration: 1.5,
                       repeat: Infinity,
                       ease: "easeInOut",
                     }}
                   >
                     {isShuffling ? (
-                      <Loader2 className="w-5 h-5 text-black animate-spin" />
+                      <Loader2 className="w-6 h-6 text-black animate-spin" />
                     ) : (
-                      <Shuffle className="w-5 h-5 text-black" />
+                      <Shuffle className="w-6 h-6 text-black" />
                     )}
                   </motion.div>
-                  <span 
-                    className="text-cyan-300 font-black uppercase tracking-wide text-lg"
-                    style={{ 
-                      fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                      textShadow: '0 0 15px rgba(34, 211, 238, 0.5)',
-                    }}
-                  >
-                    I'm Feeling Lucky
-                  </span>
+                  <div>
+                    <h3 
+                      className="font-black uppercase tracking-wide text-lg text-cyan-300 group-hover:text-cyan-200 transition-colors"
+                      style={{ 
+                        fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                        textShadow: '0 0 15px rgba(34, 211, 238, 0.5)',
+                      }}
+                    >
+                      I'm Feeling Lucky
+                    </h3>
+                    <p className="text-white/40 text-sm">
+                      Random mix from all your grids
+                    </p>
+                  </div>
                 </div>
-                <span className="text-white/40 text-sm">
-                  Random mix from all your grids
-                </span>
-                {playedShuffleCategoryIds.length > 0 && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-white/30 text-xs">{playedShuffleCategoryIds.length} played</span>
+                
+                {playedShuffleCategoryIds.length > 0 ? (
+                  <div className="relative flex items-center gap-3">
+                    <span className="text-white/40 text-sm">{playedShuffleCategoryIds.length} played</span>
                     <span 
-                      className="text-cyan-400 text-xs underline"
+                      className="text-cyan-400 text-sm underline cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
                         setPlayedShuffleCategoryIds([]);
@@ -3410,6 +3443,10 @@ export default function Blitzgrid() {
                     >
                       Reset
                     </span>
+                  </div>
+                ) : (
+                  <div className="relative text-cyan-400/60 text-sm">
+                    Try your luck
                   </div>
                 )}
               </motion.button>
