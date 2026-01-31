@@ -2253,13 +2253,10 @@ export default function Blitzgrid() {
                   <div className="w-full h-full flex flex-col p-6">
                     {/* Header */}
                     <div className="text-center mb-4">
-                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 shadow-sm mb-3">
-                        <Grid3X3 className="w-4 h-4 text-pink-600" />
-                        <span className="text-pink-700 font-bold text-sm tracking-wide">BLITZGRID</span>
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 shadow-sm">
+                        <Grid3X3 className="w-5 h-5 text-pink-600" />
+                        <span className="text-pink-700 font-black text-lg tracking-wide">BLITZGRID</span>
                       </div>
-                      <h2 className="text-xl font-black text-pink-900 leading-tight">
-                        {grid?.name || 'Game Results'}
-                      </h2>
                     </div>
                     
                     {/* Podium visualization for top 3 */}
