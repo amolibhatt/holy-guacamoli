@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Logo } from "@/components/Logo";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2, Grid3X3, ListOrdered, Brain } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,164 +43,82 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="dark h-screen bg-[#0a0a0f] flex flex-col lg:flex-row overflow-hidden" data-testid="container-landing">
-      {/* Animated background elements - avocado greens */}
+    <div className="dark min-h-screen bg-[#0a0a0f] flex items-center justify-center overflow-hidden" data-testid="container-landing">
+      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div 
-          className="absolute top-20 left-10 w-72 h-72 bg-lime-500/15 rounded-full blur-3xl"
+          className="absolute top-20 left-1/4 w-72 h-72 bg-lime-500/15 rounded-full blur-3xl"
           animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
           transition={{ duration: 8, repeat: Infinity }}
         />
         <motion.div 
-          className="absolute bottom-20 right-10 w-96 h-96 bg-green-600/10 rounded-full blur-3xl"
+          className="absolute bottom-20 right-1/4 w-96 h-96 bg-green-600/10 rounded-full blur-3xl"
           animate={{ scale: [1.2, 1, 1.2], opacity: [0.4, 0.2, 0.4] }}
           transition={{ duration: 10, repeat: Infinity }}
         />
         <motion.div 
-          className="absolute top-1/2 left-1/2 w-64 h-64 bg-fuchsia-500/5 rounded-full blur-3xl"
-          animate={{ x: [-50, 50, -50], y: [-30, 30, -30] }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-fuchsia-500/5 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.3, 1] }}
           transition={{ duration: 12, repeat: Infinity }}
         />
       </div>
 
-      {/* Left side - Branding */}
-      <div className="lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 relative z-10" data-testid="section-branding">
+      {/* Logic Leaks - scrolling trivia facts */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.06]">
         <motion.div
-          className="text-center lg:text-left max-w-md"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          className="absolute left-0 right-0 text-lime-400 text-xs font-mono whitespace-nowrap"
+          style={{ top: '10%' }}
+          animate={{ x: [0, -1000] }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
         >
-          {/* Logo */}
-          <div className="flex justify-center lg:justify-start mb-6" data-testid="icon-logo">
-            <Logo size="lg" />
-          </div>
-          
-          <p 
-            className="text-lime-400 text-lg font-bold mb-6 text-center lg:text-left uppercase tracking-widest"
-            style={{ fontFamily: "'Archivo Black', 'Impact', sans-serif" }}
-          >
-            Dip into the fun
-          </p>
-          
-          <p className="text-white/70 mb-6 text-center lg:text-left" data-testid="text-description">
-            The ultimate party game platform for unforgettable game nights.
-          </p>
-
-          {/* Game Preview Tiles */}
-          <div className="space-y-3" data-testid="section-games">
-            <motion.div 
-              className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-rose-500/20 to-fuchsia-500/10 border border-rose-500/30 cursor-pointer"
-              whileHover={{ scale: 1.02, x: 4 }}
-              data-testid="game-blitzgrid"
-            >
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-rose-400 to-fuchsia-500 flex items-center justify-center shrink-0 relative overflow-hidden">
-                <div className="absolute inset-0 grid grid-cols-3 gap-px p-1 opacity-40">
-                  {[...Array(9)].map((_, i) => <div key={i} className="bg-white/60 rounded-sm" />)}
-                </div>
-                <Grid3X3 className="w-5 h-5 text-white relative z-10" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <span className="text-white font-bold block">Blitzgrid</span>
-                <span className="text-white/50 text-xs">Race to claim the 5x5 trivia grid</span>
-              </div>
-            </motion.div>
-
-            <motion.div 
-              className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-emerald-500/20 to-cyan-500/10 border border-emerald-500/30 cursor-pointer"
-              whileHover={{ scale: 1.02, x: 4 }}
-              data-testid="game-sortcircuit"
-            >
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shrink-0 relative overflow-hidden">
-                <div className="absolute inset-0 flex flex-col gap-1 p-2 opacity-40">
-                  {[...Array(4)].map((_, i) => <div key={i} className="bg-white/60 rounded-sm h-1.5" />)}
-                </div>
-                <ListOrdered className="w-5 h-5 text-white relative z-10" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <span className="text-white font-bold block">Sort Circuit</span>
-                <span className="text-white/50 text-xs">Drag items into order - fastest wins</span>
-              </div>
-            </motion.div>
-
-            <motion.div 
-              className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-violet-500/20 to-indigo-500/10 border border-violet-500/30 cursor-pointer"
-              whileHover={{ scale: 1.02, x: 4 }}
-              data-testid="game-psyop"
-            >
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center shrink-0 relative overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center opacity-30">
-                  <span className="text-white text-lg font-bold">[?]</span>
-                </div>
-                <Brain className="w-5 h-5 text-white relative z-10" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <span className="text-white font-bold block">PsyOp</span>
-                <span className="text-white/50 text-xs">Write lies, spot the truth</span>
-              </div>
-            </motion.div>
-          </div>
+          The first computer bug was an actual moth found in a Harvard computer in 1947 • Honey never spoils • Octopuses have three hearts •
+        </motion.div>
+        <motion.div
+          className="absolute left-0 right-0 text-fuchsia-400 text-xs font-mono whitespace-nowrap"
+          style={{ top: '25%' }}
+          animate={{ x: [-500, 500] }}
+          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+        >
+          Bananas are berries but strawberries aren't • The Eiffel Tower grows 6 inches in summer • Venus is the only planet that spins clockwise •
+        </motion.div>
+        <motion.div
+          className="absolute left-0 right-0 text-lime-400 text-xs font-mono whitespace-nowrap"
+          style={{ top: '75%' }}
+          animate={{ x: [200, -800] }}
+          transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
+        >
+          A group of flamingos is called a flamboyance • The shortest war lasted 38 minutes • Cows have best friends •
+        </motion.div>
+        <motion.div
+          className="absolute left-0 right-0 text-fuchsia-400 text-xs font-mono whitespace-nowrap"
+          style={{ top: '90%' }}
+          animate={{ x: [-200, -1200] }}
+          transition={{ duration: 32, repeat: Infinity, ease: "linear" }}
+        >
+          Sharks are older than trees • A day on Venus is longer than a year on Venus • Wombat poop is cube-shaped •
         </motion.div>
       </div>
 
-      {/* Right side - Login/Register */}
-      <div className="lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 relative z-10" data-testid="section-login">
-        {/* Logic Leaks - scrolling trivia facts */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.07]">
-          <motion.div
-            className="absolute left-0 right-0 text-lime-400 text-xs font-mono whitespace-nowrap"
-            style={{ top: '15%' }}
-            animate={{ x: [0, -1000] }}
-            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          >
-            The first computer bug was an actual moth found in a Harvard computer in 1947 • Honey never spoils • Octopuses have three hearts •
-          </motion.div>
-          <motion.div
-            className="absolute left-0 right-0 text-fuchsia-400 text-xs font-mono whitespace-nowrap"
-            style={{ top: '35%' }}
-            animate={{ x: [-500, 500] }}
-            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-          >
-            Bananas are berries but strawberries aren't • The Eiffel Tower grows 6 inches in summer • Venus is the only planet that spins clockwise •
-          </motion.div>
-          <motion.div
-            className="absolute left-0 right-0 text-lime-400 text-xs font-mono whitespace-nowrap"
-            style={{ top: '55%' }}
-            animate={{ x: [200, -800] }}
-            transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
-          >
-            A group of flamingos is called a flamboyance • The shortest war lasted 38 minutes • Cows have best friends •
-          </motion.div>
-          <motion.div
-            className="absolute left-0 right-0 text-fuchsia-400 text-xs font-mono whitespace-nowrap"
-            style={{ top: '75%' }}
-            animate={{ x: [-200, -1200] }}
-            transition={{ duration: 32, repeat: Infinity, ease: "linear" }}
-          >
-            Sharks are older than trees • A day on Venus is longer than a year on Venus • Wombat poop is cube-shaped •
-          </motion.div>
+      {/* Centered Login */}
+      <motion.div
+        className="w-full max-w-md px-6 relative z-10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        {/* Logo */}
+        <div className="flex justify-center mb-4" data-testid="icon-logo">
+          <Logo size="lg" />
         </div>
-
-        <motion.div
-          className="w-full max-w-sm relative z-10"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+        
+        <p 
+          className="text-lime-400 text-lg font-bold mb-8 text-center uppercase tracking-widest"
+          style={{ fontFamily: "'Archivo Black', 'Impact', sans-serif" }}
         >
-          <div className="text-center mb-4">
-            <h2 
-              className="text-2xl font-black text-white tracking-wide uppercase" 
-              style={{ fontFamily: "'Archivo Black', 'Impact', sans-serif" }}
-              data-testid="text-login-title"
-            >
-              Enter the Lab
-            </h2>
-            <p className="text-white/60 text-sm" data-testid="text-login-description">
-              Create your free account to start hosting
-            </p>
-          </div>
+          Dip into the fun
+        </p>
 
-          <Card className="border-white/20 bg-white/5 backdrop-blur-2xl shadow-2xl shadow-lime-500/10">
+        <Card className="border-white/20 bg-white/5 backdrop-blur-2xl shadow-2xl shadow-lime-500/10">
             <CardContent className="pt-4 pb-4">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-2 mb-3 bg-white/5">
@@ -347,8 +265,7 @@ export default function LandingPage() {
           <p className="mt-4 text-center text-white/40 text-xs" data-testid="text-free-notice">
             Players join via QR code - no account needed!
           </p>
-        </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 }
