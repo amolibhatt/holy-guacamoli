@@ -229,19 +229,18 @@ export default function LandingPage() {
           <p className="mt-6 text-center text-white/40 text-xs tracking-wide" data-testid="text-free-notice">
             Players join via QR code &mdash; no account needed
           </p>
+          
+          {/* Footer */}
+          <p className="mt-8 text-center text-white/50 text-sm">
+            made with{' '}
+            <Heart className="inline-block w-4 h-4 text-pink-400 fill-pink-400 mx-0.5" />{' '}
+            by{' '}
+            <span className="bg-gradient-to-r from-pink-400 via-rose-300 to-pink-400 bg-clip-text text-transparent font-semibold">
+              Amoli
+            </span>
+          </p>
       </motion.div>
 
-      {/* Footer */}
-      <footer className="absolute bottom-4 left-0 right-0 text-center z-10">
-        <p className="text-white/50 text-sm">
-          made with{' '}
-          <Heart className="inline-block w-4 h-4 text-pink-400 fill-pink-400 mx-0.5" />{' '}
-          by{' '}
-          <span className="bg-gradient-to-r from-pink-400 via-rose-300 to-pink-400 bg-clip-text text-transparent font-semibold">
-            Amoli
-          </span>
-        </p>
-      </footer>
     </div>
   );
 }

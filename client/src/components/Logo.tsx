@@ -186,12 +186,12 @@ export function Logo({ size = "md" }: LogoProps) {
       <HolyAvocado size={config.icon} />
       
       <h1 
-        className={`${config.text} font-black tracking-tight leading-none relative`}
+        className={`${config.text} font-black tracking-tight leading-none relative whitespace-nowrap`}
         style={{ fontFamily: "'Archivo Black', 'Impact', sans-serif" }}
       >
         {/* Glow layer */}
         <span 
-          className="absolute inset-0 blur-md opacity-40"
+          className="absolute inset-0 blur-md opacity-40 whitespace-nowrap"
           aria-hidden="true"
         >
           <span className="text-white">Holy </span>
@@ -200,11 +200,11 @@ export function Logo({ size = "md" }: LogoProps) {
         </span>
         
         {/* Main text */}
-        <span className="relative">
+        <span className="relative whitespace-nowrap">
           <span className="text-white">Holy </span>
           <span style={{ color: '#a3e635' }}>Guac</span>
           <motion.span 
-            className="bg-gradient-to-r from-pink-400 via-rose-300 to-pink-400 bg-clip-text text-transparent inline-block"
+            className="bg-gradient-to-r from-pink-400 via-rose-300 to-pink-400 bg-clip-text text-transparent inline"
             style={{ backgroundSize: '200% 100%' }}
             animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
