@@ -16,80 +16,57 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
       xmlns="http://www.w3.org/2000/svg"
       className="shrink-0"
     >
-      {/* Halo - bright golden */}
+      {/* Halo - bright yellow gold */}
       <ellipse 
         cx="40" 
-        cy="12" 
-        rx="14" 
+        cy="10" 
+        rx="15" 
         ry="5" 
         fill="none" 
-        stroke="#FFD700" 
-        strokeWidth="4"
-      />
-      <ellipse 
-        cx="40" 
-        cy="12" 
-        rx="14" 
-        ry="5" 
-        fill="none" 
-        stroke="#FFF59D" 
-        strokeWidth="2"
-        opacity="0.7"
+        stroke="#FFEB3B" 
+        strokeWidth="5"
       />
       
-      {/* Left Wing - clean white with definition */}
-      <g transform="translate(-2, 32)">
-        <ellipse cx="16" cy="12" rx="14" ry="8" fill="white"/>
-        <ellipse cx="12" cy="10" rx="8" ry="5" fill="#f8fafc"/>
-        <ellipse cx="18" cy="14" rx="6" ry="4" fill="#f1f5f9"/>
-      </g>
+      {/* Left Wing */}
+      <ellipse cx="12" cy="44" rx="12" ry="10" fill="white"/>
       
       {/* Right Wing */}
-      <g transform="translate(52, 32)">
-        <ellipse cx="14" cy="12" rx="14" ry="8" fill="white"/>
-        <ellipse cx="18" cy="10" rx="8" ry="5" fill="#f8fafc"/>
-        <ellipse cx="12" cy="14" rx="6" ry="4" fill="#f1f5f9"/>
-      </g>
+      <ellipse cx="68" cy="44" rx="12" ry="10" fill="white"/>
       
-      {/* Avocado Body - dark green outer skin */}
-      <ellipse cx="40" cy="52" rx="22" ry="30" fill="#2D5016"/>
+      {/* Avocado Body - dark green skin */}
+      <ellipse cx="40" cy="52" rx="24" ry="32" fill="#4CAF50"/>
       
-      {/* Avocado flesh - bright lime green */}
-      <ellipse cx="40" cy="54" rx="17" ry="24" fill="#A8E063"/>
+      {/* Avocado flesh - bright yellow-green */}
+      <ellipse cx="40" cy="54" rx="18" ry="25" fill="#CDDC39"/>
       
-      {/* Inner gradient for depth */}
-      <ellipse cx="40" cy="52" rx="14" ry="20" fill="#C5F288" opacity="0.6"/>
+      {/* Pit - warm brown */}
+      <ellipse cx="40" cy="62" rx="10" ry="13" fill="#795548"/>
       
-      {/* Pit - rich brown */}
-      <ellipse cx="40" cy="62" rx="9" ry="12" fill="#8B4513"/>
-      {/* Pit highlight */}
-      <ellipse cx="37" cy="58" rx="3" ry="4" fill="#A0522D" opacity="0.7"/>
-      
-      {/* Happy closed eyes - clean arcs */}
+      {/* Happy closed eyes */}
       <path 
-        d="M28 42 Q32 37 36 42" 
-        stroke="#2D5016" 
-        strokeWidth="2.5" 
+        d="M28 40 Q32 35 36 40" 
+        stroke="#2E7D32" 
+        strokeWidth="3" 
         fill="none" 
         strokeLinecap="round"
       />
       <path 
-        d="M44 42 Q48 37 52 42" 
-        stroke="#2D5016" 
-        strokeWidth="2.5" 
+        d="M44 40 Q48 35 52 40" 
+        stroke="#2E7D32" 
+        strokeWidth="3" 
         fill="none" 
         strokeLinecap="round"
       />
       
-      {/* Rosy cheeks - soft pink */}
-      <ellipse cx="25" cy="47" rx="4" ry="3" fill="#FFB7C5" opacity="0.7"/>
-      <ellipse cx="55" cy="47" rx="4" ry="3" fill="#FFB7C5" opacity="0.7"/>
+      {/* Rosy cheeks */}
+      <ellipse cx="24" cy="46" rx="5" ry="3" fill="#F48FB1" opacity="0.8"/>
+      <ellipse cx="56" cy="46" rx="5" ry="3" fill="#F48FB1" opacity="0.8"/>
       
-      {/* Cute smile */}
+      {/* Smile */}
       <path 
-        d="M35 50 Q40 55 45 50" 
-        stroke="#2D5016" 
-        strokeWidth="2" 
+        d="M34 50 Q40 56 46 50" 
+        stroke="#2E7D32" 
+        strokeWidth="2.5" 
         fill="none" 
         strokeLinecap="round"
       />
