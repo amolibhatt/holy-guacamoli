@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { 
   Eye, Play, Users, QrCode, Trophy, Loader2, Check,
-  ChevronDown, ChevronUp, Crown, RefreshCw, ArrowLeft
+  Crown, RefreshCw, ArrowLeft, Shuffle, Folder
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { AppHeader } from "@/components/AppHeader";
@@ -268,13 +268,24 @@ export default function PsyOpHost() {
     }
   }, [currentQuestionIndex, selectedQuestions, startSubmissionPhase]);
 
-  const toggleQuestionSelection = (question: PsyopQuestion) => {
-    setSelectedQuestions(prev => {
-      if (prev.some(q => q.id === question.id)) {
-        return prev.filter(q => q.id !== question.id);
-      }
-      return [...prev, question];
-    });
+  // Get unique categories from questions
+  const categories = [...new Set(questions.map(q => q.category).filter(Boolean))] as string[];
+  
+  // Select questions by category and start room
+  const selectCategoryAndStart = (category: string) => {
+    const categoryQuestions = questions.filter(q => q.category === category);
+    const shuffled = [...categoryQuestions].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, Math.min(5, shuffled.length));
+    setSelectedQuestions(selected);
+    connectWebSocket();
+  };
+  
+  // Shuffle all questions and start room
+  const shuffleAndStart = () => {
+    const shuffled = [...questions].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, Math.min(5, shuffled.length));
+    setSelectedQuestions(selected);
+    connectWebSocket();
   };
 
   const renderFactWithBlank = (text: string, answer?: string, showAnswer = false) => {
@@ -319,19 +330,12 @@ export default function PsyOpHost() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Eye className="w-5 h-5 text-purple-500" />
-                  Select Questions for PsyOp
+                  Start a PsyOp Game
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="mb-4">
-                  <div className="text-sm text-muted-foreground">
-                    {selectedQuestions.length} question{selectedQuestions.length !== 1 ? 's' : ''} selected
-                  </div>
-                </div>
-
+              <CardContent className="space-y-6">
                 {isLoadingQuestions ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-16 w-full" />
+                  <div className="space-y-3">
                     <Skeleton className="h-16 w-full" />
                     <Skeleton className="h-16 w-full" />
                   </div>
@@ -344,36 +348,53 @@ export default function PsyOpHost() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {questions.map((q) => (
-                      <div
-                        key={q.id}
-                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                          selectedQuestions.some(sq => sq.id === q.id)
-                            ? 'border-purple-500 bg-purple-500/10'
-                            : 'border-border hover-elevate'
-                        }`}
-                        onClick={() => toggleQuestionSelection(q)}
-                        data-testid={`question-select-${q.id}`}
-                      >
-                        <div className="text-sm">{renderFactWithBlank(q.factText, q.correctAnswer)}</div>
-                        {q.category && (
-                          <Badge variant="secondary" className="mt-2 text-xs">{q.category}</Badge>
-                        )}
+                  <>
+                    {/* Shuffle All Option */}
+                    <button
+                      onClick={shuffleAndStart}
+                      className="w-full p-4 border-2 border-dashed border-purple-300 rounded-xl hover-elevate active-elevate-2 transition-all text-left group"
+                      data-testid="button-shuffle-all"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center group-hover:bg-purple-500/30 transition-colors">
+                          <Shuffle className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-lg">Shuffle Play</div>
+                          <div className="text-sm text-muted-foreground">5 random questions from all categories</div>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </button>
 
-                <Button 
-                  onClick={() => connectWebSocket()} 
-                  disabled={selectedQuestions.length === 0}
-                  className="w-full gap-2"
-                  data-testid="button-create-room"
-                >
-                  <Play className="w-4 h-4" />
-                  Create Room
-                </Button>
+                    {/* Category Options */}
+                    {categories.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="text-sm font-medium text-muted-foreground">Or pick a category:</div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {categories.map((category) => {
+                            const count = questions.filter(q => q.category === category).length;
+                            return (
+                              <button
+                                key={category}
+                                onClick={() => selectCategoryAndStart(category)}
+                                className="p-4 border rounded-xl hover-elevate active-elevate-2 transition-all text-left"
+                                data-testid={`button-category-${category}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Folder className="w-5 h-5 text-purple-500" />
+                                  <div>
+                                    <div className="font-medium">{category}</div>
+                                    <div className="text-xs text-muted-foreground">{count} question{count !== 1 ? 's' : ''}</div>
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </CardContent>
             </Card>
           </motion.div>
