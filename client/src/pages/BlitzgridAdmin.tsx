@@ -842,26 +842,26 @@ export default function BlitzgridAdmin() {
 
   // Grid list view
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#0a0a0f' }} data-testid="page-blitzgrid-admin">
+    <div className="min-h-screen bg-background flex flex-col" data-testid="page-blitzgrid-admin">
       <AppHeader minimal />
       
-      <div className="border-b border-white/10" style={{ background: 'rgba(13, 13, 18, 0.5)' }}>
+      <div className="border-b border-border bg-card/50">
         <div className="container mx-auto px-4">
           <nav className="flex gap-1">
             <Link href="/admin/games">
               <Button 
                 variant="ghost" 
-                className="relative rounded-none border-b-2 border-fuchsia-500 text-white"
+                className="relative rounded-none border-b-2 border-primary text-foreground"
                 data-testid="tab-blitzgrid"
               >
-                <Grid3X3 className="w-4 h-4 mr-2 text-fuchsia-400" />
+                <Grid3X3 className="w-4 h-4 mr-2" />
                 Blitzgrid
               </Button>
             </Link>
             <Link href="/admin/genetic-sort">
               <Button 
                 variant="ghost" 
-                className="relative rounded-none border-b-2 border-transparent text-white/50 hover:text-white"
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
                 data-testid="tab-genetic-sort"
               >
                 <ListOrdered className="w-4 h-4 mr-2" />
@@ -871,7 +871,7 @@ export default function BlitzgridAdmin() {
             <Link href="/admin/psyop">
               <Button 
                 variant="ghost" 
-                className="relative rounded-none border-b-2 border-transparent text-white/50 hover:text-white"
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
                 data-testid="tab-psyop"
               >
                 <Brain className="w-4 h-4 mr-2" />
@@ -885,8 +885,8 @@ export default function BlitzgridAdmin() {
       <div className="container mx-auto px-4 py-6 flex-1">
         <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold text-white">Blitzgrid <span className="text-fuchsia-400">Grids</span></h1>
-            <p className="text-white/50 text-sm">Create and edit your trivia grids</p>
+            <h1 className="text-2xl font-bold">Blitzgrid Grids</h1>
+            <p className="text-muted-foreground text-sm">Create and edit your trivia grids</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Button
@@ -941,14 +941,14 @@ export default function BlitzgridAdmin() {
               exit={{ opacity: 0, height: 0 }}
               className="mb-4"
             >
-              <div className="rounded-lg border border-white/10 p-3" style={{ background: '#0d0d12' }}>
+              <Card>
+                <CardContent className="py-3">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Input
                       placeholder="Grid name..."
                       value={newGridName}
                       onChange={(e) => setNewGridName(e.target.value)}
                       autoFocus
-                      className="bg-white/5 border-white/20 text-white placeholder:text-white/40"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && newGridName.trim()) {
                           createGridMutation.mutate({ name: newGridName.trim() });
@@ -967,39 +967,41 @@ export default function BlitzgridAdmin() {
                     >
                       {createGridMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
                     </Button>
-                    <Button variant="ghost" className="text-white/60" onClick={() => setShowNewGridForm(false)}>
+                    <Button variant="ghost" onClick={() => setShowNewGridForm(false)}>
                       <X className="w-4 h-4" />
                     </Button>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
             </motion.div>
           )}
         </AnimatePresence>
 
         {loadingGrids ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 bg-white/5" />)}
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-32" />)}
           </div>
         ) : grids.length === 0 ? (
-          <div className="rounded-lg border border-white/10 py-12 text-center" style={{ background: '#0d0d12' }}>
-              <Grid3X3 className="w-12 h-12 text-white/20 mx-auto mb-4" />
-              <h3 className="font-medium mb-2 text-white">No grids yet</h3>
-              <p className="text-white/50 text-sm mb-4">Create your first Blitzgrid</p>
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+              <h3 className="font-medium mb-2">No grids yet</h3>
+              <p className="text-muted-foreground text-sm mb-4">Create your first Blitzgrid</p>
               <Button onClick={() => setShowNewGridForm(true)} data-testid="button-create-first-grid">
                 <Plus className="w-4 h-4 mr-2" /> Create Grid
               </Button>
-          </div>
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {grids.map(grid => (
-              <div
+              <Card
                 key={grid.id}
-                className="rounded-lg border border-white/10 cursor-pointer transition-all hover:border-fuchsia-500/50"
-                style={{ background: '#0d0d12' }}
+                className="hover-elevate cursor-pointer transition-all"
                 onClick={() => setSelectedGridId(grid.id)}
                 data-testid={`card-grid-${grid.id}`}
               >
-                <div className="p-4">
+                <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-3">
                     {editingGridId === grid.id ? (
                       <div className="flex flex-col gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
@@ -1007,7 +1009,7 @@ export default function BlitzgridAdmin() {
                           <Input
                             value={editGridName}
                             onChange={(e) => setEditGridName(e.target.value)}
-                            className="h-8 bg-white/5 border-white/20 text-white"
+                            className="h-8"
                             placeholder="Grid name"
                             autoFocus
                             onKeyDown={(e) => {
@@ -1021,7 +1023,7 @@ export default function BlitzgridAdmin() {
                         <Input
                           value={editGridDescription}
                           onChange={(e) => setEditGridDescription(e.target.value)}
-                          className="h-8 bg-white/5 border-white/20 text-white"
+                          className="h-8"
                           placeholder="Short tagline (optional, ~50 chars)"
                           maxLength={60}
                           onKeyDown={(e) => {
@@ -1061,14 +1063,14 @@ export default function BlitzgridAdmin() {
                     ) : (
                       <>
                         <div className="flex items-center gap-2 min-w-0">
-                          <Grid3X3 className="w-5 h-5 text-fuchsia-400 shrink-0" />
-                          <h3 className="font-semibold truncate text-white">{grid.name}</h3>
+                          <Grid3X3 className="w-5 h-5 text-purple-500 shrink-0" />
+                          <h3 className="font-semibold truncate">{grid.name}</h3>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 text-white/40"
+                            className="h-7 w-7 text-muted-foreground"
                             onClick={(e) => {
                               e.stopPropagation();
                               setEditingGridId(grid.id);
@@ -1082,14 +1084,14 @@ export default function BlitzgridAdmin() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 text-white/40"
+                            className="h-7 w-7 text-muted-foreground"
                             onClick={(e) => {
                               e.stopPropagation();
                               setDeleteGridId(grid.id);
                             }}
                             data-testid={`button-delete-grid-${grid.id}`}
                           >
-                            <Trash2 className="w-3 h-3 text-red-400" />
+                            <Trash2 className="w-3 h-3 text-destructive" />
                           </Button>
                         </div>
                       </>
@@ -1097,21 +1099,21 @@ export default function BlitzgridAdmin() {
                   </div>
                   
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm text-white/50">
+                    <p className="text-sm text-muted-foreground">
                       {grid.categoryCount}/5 categories · {grid.questionCount}/25 questions
                     </p>
                     {grid.isActive ? (
-                      <Badge className="bg-green-500/20 text-green-400 text-xs shrink-0 border border-green-500/30">
+                      <Badge className="bg-green-500/20 text-green-600 text-xs shrink-0">
                         <CheckCircle2 className="w-3 h-3 mr-1" /> Active
                       </Badge>
                     ) : (
-                      <Badge variant="secondary" className="text-xs shrink-0 bg-white/10 text-white/60 border border-white/20">
+                      <Badge variant="secondary" className="text-xs shrink-0">
                         Incomplete
                       </Badge>
                     )}
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}
