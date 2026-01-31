@@ -2766,7 +2766,15 @@ export default function Blitzgrid() {
                             size="icon"
                             variant="ghost"
                             className="h-7 w-7 text-red-400"
-                            onClick={() => updatePlayerScore(player.id, -(activeQuestion?.points || 0), true, activeQuestion?.categoryId)}
+                            onClick={() => {
+                              const points = activeQuestion?.points || 0;
+                              updatePlayerScore(player.id, -points, true, activeQuestion?.categoryId);
+                              toast({
+                                title: `−${points} points`,
+                                description: `Deducted from ${player.name}`,
+                                duration: 2000,
+                              });
+                            }}
                             data-testid={`button-deduct-${player.id}`}
                           >
                             <Minus className="w-3 h-3" />
@@ -2775,7 +2783,15 @@ export default function Blitzgrid() {
                             size="icon"
                             variant="ghost"
                             className="h-7 w-7 text-emerald-400"
-                            onClick={() => updatePlayerScore(player.id, activeQuestion?.points || 0, true, activeQuestion?.categoryId)}
+                            onClick={() => {
+                              const points = activeQuestion?.points || 0;
+                              updatePlayerScore(player.id, points, true, activeQuestion?.categoryId);
+                              toast({
+                                title: `+${points} points`,
+                                description: `Awarded to ${player.name}`,
+                                duration: 2000,
+                              });
+                            }}
                             data-testid={`button-award-${player.id}`}
                           >
                             <Plus className="w-3 h-3" />
