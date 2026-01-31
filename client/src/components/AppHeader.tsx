@@ -46,7 +46,7 @@ export function AppHeader({
 
   if (minimal) {
     return (
-      <header className="border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-50">
+      <header className="border-b border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl sticky top-0 z-50">
         <div className="px-4 py-3 flex items-center justify-between gap-4 max-w-5xl mx-auto">
           <div className="flex items-center gap-3">
             {backHref && (
@@ -141,7 +141,7 @@ export function AppHeader({
   }
 
   return (
-    <header className="border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-50">
+    <header className="border-b border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl sticky top-0 z-50">
       <div className="px-4 py-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           {(backHref || onBack) && (
