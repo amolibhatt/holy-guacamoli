@@ -2085,6 +2085,45 @@ export async function registerRoutes(
     }
   });
 
+  app.put("/api/psyop/questions/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const { factText, correctAnswer, category } = req.body;
+      
+      if (!factText || typeof factText !== 'string' || factText.trim().length === 0) {
+        return res.status(400).json({ message: "Fact text is required" });
+      }
+      if (!factText.includes('[REDACTED]')) {
+        return res.status(400).json({ message: "Fact text must contain [REDACTED] placeholder" });
+      }
+      if (!correctAnswer || typeof correctAnswer !== 'string' || correctAnswer.trim().length === 0) {
+        return res.status(400).json({ message: "Correct answer is required" });
+      }
+      if (factText.length > 500) {
+        return res.status(400).json({ message: "Fact text too long (max 500 chars)" });
+      }
+      if (correctAnswer.length > 100) {
+        return res.status(400).json({ message: "Answer too long (max 100 chars)" });
+      }
+
+      const updated = await storage.updatePsyopQuestion(id, {
+        factText: factText.trim(),
+        correctAnswer: correctAnswer.trim(),
+        category: category?.trim() || null,
+      }, userId, role);
+      
+      if (!updated) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      console.error("Error updating PsyOp question:", err);
+      res.status(500).json({ message: "Failed to update question" });
+    }
+  });
+
   app.delete("/api/psyop/questions/:id", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);

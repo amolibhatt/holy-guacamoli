@@ -16,7 +16,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Loader2, Grid3X3, ListOrdered, Eye, Plus, Trash2, X, 
-  Sparkles, Lightbulb, Check, Upload, ChevronDown, Folder
+  Sparkles, Lightbulb, Check, Upload, ChevronDown, Folder, Pencil
 } from "lucide-react";
 import type { PsyopQuestion } from "@shared/schema";
 
@@ -38,6 +38,7 @@ export default function PsyOpAdmin() {
 
   // Question form
   const [showForm, setShowForm] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<PsyopQuestion | null>(null);
   const [factText, setFactText] = useState("");
   const [correctAnswer, setCorrectAnswer] = useState("");
   
@@ -79,6 +80,25 @@ export default function PsyOpAdmin() {
     },
     onError: (error: Error) => {
       toast({ title: error.message || "Failed to create question", variant: "destructive" });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: { id: number; factText: string; correctAnswer: string; category: string | null }) => {
+      const res = await apiRequest("PUT", `/api/psyop/questions/${data.id}`, data);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to update question");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/psyop/questions"] });
+      toast({ title: "Question updated!" });
+      resetForm();
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message || "Failed to update question", variant: "destructive" });
     },
   });
 
@@ -151,8 +171,16 @@ export default function PsyOpAdmin() {
 
   const resetForm = () => {
     setShowForm(false);
+    setEditingQuestion(null);
     setFactText("");
     setCorrectAnswer("");
+  };
+
+  const startEditing = (question: PsyopQuestion) => {
+    setEditingQuestion(question);
+    setFactText(question.factText);
+    setCorrectAnswer(question.correctAnswer);
+    setShowForm(true);
   };
 
   const handleSubmit = () => {
@@ -168,12 +196,22 @@ export default function PsyOpAdmin() {
       toast({ title: "Please enter the correct answer", variant: "destructive" });
       return;
     }
-    createMutation.mutate({
-      factText,
-      correctAnswer,
-      category: selectedCategory || null,
-      isActive: true,
-    });
+    
+    if (editingQuestion) {
+      updateMutation.mutate({
+        id: editingQuestion.id,
+        factText,
+        correctAnswer,
+        category: editingQuestion.category || selectedCategory || null,
+      });
+    } else {
+      createMutation.mutate({
+        factText,
+        correctAnswer,
+        category: selectedCategory || null,
+        isActive: true,
+      });
+    }
   };
 
   const handleCreateCategory = () => {
@@ -472,7 +510,7 @@ export default function PsyOpAdmin() {
                   <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Sparkles className="w-5 h-5 text-purple-500" />
-                      New Question {selectedCategory && `in ${selectedCategory}`}
+                      {editingQuestion ? 'Edit Question' : `New Question ${selectedCategory ? `in ${selectedCategory}` : ''}`}
                     </CardTitle>
                     <Button
                       variant="ghost"
@@ -529,12 +567,12 @@ export default function PsyOpAdmin() {
                       </Button>
                       <Button
                         onClick={handleSubmit}
-                        disabled={createMutation.isPending}
+                        disabled={createMutation.isPending || updateMutation.isPending}
                         data-testid="button-save-question"
                       >
-                        {createMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                         <Check className="w-4 h-4 mr-2" />
-                        Save Question
+                        {editingQuestion ? 'Update Question' : 'Save Question'}
                       </Button>
                     </div>
                   </CardContent>
@@ -584,16 +622,26 @@ export default function PsyOpAdmin() {
                             <Badge variant="secondary" className="text-xs">{q.category}</Badge>
                           )}
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteMutation.mutate(q.id)}
-                          disabled={deleteMutation.isPending}
-                          className="shrink-0 text-destructive hover:text-destructive"
-                          data-testid={`button-delete-question-${q.id}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <div className="flex gap-1 shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => startEditing(q)}
+                            data-testid={`button-edit-question-${q.id}`}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteMutation.mutate(q.id)}
+                            disabled={deleteMutation.isPending}
+                            className="text-destructive hover:text-destructive"
+                            data-testid={`button-delete-question-${q.id}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

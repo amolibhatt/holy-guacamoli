@@ -170,6 +170,7 @@ export interface IStorage {
   // PsyOp
   getPsyopQuestions(userId: string, role?: string): Promise<PsyopQuestion[]>;
   createPsyopQuestion(data: InsertPsyopQuestion): Promise<PsyopQuestion>;
+  updatePsyopQuestion(id: number, data: Partial<InsertPsyopQuestion>, userId: string, role?: string): Promise<PsyopQuestion | null>;
   deletePsyopQuestion(id: number, userId: string, role?: string): Promise<boolean>;
 }
 
@@ -1545,6 +1546,18 @@ export class DatabaseStorage implements IStorage {
   async createPsyopQuestion(data: InsertPsyopQuestion): Promise<PsyopQuestion> {
     const [question] = await db.insert(psyopQuestions).values([data] as any).returning();
     return question;
+  }
+
+  async updatePsyopQuestion(id: number, data: Partial<InsertPsyopQuestion>, userId: string, role?: string): Promise<PsyopQuestion | null> {
+    const condition = role === 'super_admin' 
+      ? eq(psyopQuestions.id, id)
+      : and(eq(psyopQuestions.id, id), eq(psyopQuestions.userId, userId));
+    
+    const [updated] = await db.update(psyopQuestions)
+      .set(data as any)
+      .where(condition)
+      .returning();
+    return updated || null;
   }
 
   async deletePsyopQuestion(id: number, userId: string, role?: string): Promise<boolean> {
