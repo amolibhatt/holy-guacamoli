@@ -66,8 +66,7 @@ export default function SequencePlayer() {
   
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [selectedSequence, setSelectedSequence] = useState<string[]>([]);
-  const [timeRemaining, setTimeRemaining] = useState(15);
-  const [endTime, setEndTime] = useState<number | null>(null);
+  const [questionStartTime, setQuestionStartTime] = useState<number | null>(null);
   const [correctOrder, setCorrectOrder] = useState<string[] | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [rank, setRank] = useState<number | null>(null);
@@ -129,8 +128,7 @@ export default function SequencePlayer() {
           setCurrentQuestion(data.question);
           setSelectedSequence([]);
           selectedSequenceRef.current = [];
-          setTimeRemaining(15);
-          setEndTime(data.endTime || Date.now() + 15000);
+          setQuestionStartTime(Date.now());
           setPhase("playing");
           setIsCorrect(null);
           setCorrectOrder(null);
@@ -145,8 +143,7 @@ export default function SequencePlayer() {
           }
           setCorrectOrder(data.correctOrder);
           setPhase("revealing");
-          setTimeRemaining(0);
-          setEndTime(null);
+          setQuestionStartTime(null);
           const currentSeq = selectedSequenceRef.current;
           const correct = JSON.stringify(currentSeq) === JSON.stringify(data.correctOrder);
           setIsCorrect(correct);
@@ -236,7 +233,7 @@ export default function SequencePlayer() {
     try { navigator.vibrate?.(30); } catch {}
     
     if (newSequence.length === 4 && wsRef.current?.readyState === WebSocket.OPEN) {
-      const timeMs = endTime ? Math.max(0, 15500 - (endTime - Date.now())) : 15000;
+      const timeMs = questionStartTime ? Date.now() - questionStartTime : 0;
       wsRef.current.send(JSON.stringify({
         type: "sequence:player:submit",
         sequence: newSequence,
@@ -258,21 +255,13 @@ export default function SequencePlayer() {
   };
 
   useEffect(() => {
-    if (phase === "playing" && endTime) {
-      const updateTimer = () => {
-        const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
-        setTimeRemaining(remaining);
-      };
-      updateTimer();
-      timerRef.current = setInterval(updateTimer, 200) as unknown as NodeJS.Timeout;
-    }
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current as unknown as NodeJS.Timeout);
         timerRef.current = null;
       }
     };
-  }, [phase, endTime]);
+  }, []);
 
   useEffect(() => {
     return () => {

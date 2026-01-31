@@ -62,8 +62,6 @@ export default function SequenceSqueeze() {
   const [currentQuestion, setCurrentQuestion] = useState<SequenceQuestion | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(1);
   const [totalQuestions, setTotalQuestions] = useState(1);
-  const [timerSeconds, setTimerSeconds] = useState(15);
-  const [endTime, setEndTime] = useState<number | null>(null);
   const [submissions, setSubmissions] = useState<PlayerSubmission[]>([]);
   const [showQR, setShowQR] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<SequenceQuestion | null>(null);
@@ -179,9 +177,6 @@ export default function SequenceSqueeze() {
         case "sequence:answering:started":
           setGameState("playing");
           setAnimationStage(null);
-          if (data.endTime) {
-            setEndTime(data.endTime);
-          }
           break;
         case "sequence:submission":
           setSubmissions(prev => {
@@ -191,9 +186,6 @@ export default function SequenceSqueeze() {
           });
           break;
         case "sequence:round:started":
-          if (data.endTime) {
-            setEndTime(data.endTime);
-          }
           break;
         case "sequence:reveal:complete":
           setGameState("revealing");
@@ -297,8 +289,6 @@ export default function SequenceSqueeze() {
     setCurrentQuestion(question);
     setSubmissions([]);
     submissionsRef.current = [];
-    setTimerSeconds(15);
-    setEndTime(null);
     setWinner(null);
     setCurrentQuestionIndex(questionIdx);
     setTotalQuestions(questions.length);
@@ -342,20 +332,6 @@ export default function SequenceSqueeze() {
     }
   }, [ws]);
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (gameState === "playing" && endTime) {
-      const updateTimer = () => {
-        const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
-        setTimerSeconds(remaining);
-      };
-      updateTimer();
-      interval = setInterval(updateTimer, 200);
-    }
-    return () => {
-      clearInterval(interval);
-    };
-  }, [gameState, endTime]);
 
   useEffect(() => {
     return () => {

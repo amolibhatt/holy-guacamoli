@@ -3210,6 +3210,7 @@ export async function registerRoutes(
     gameMode?: 'buzzer' | 'psyop' | 'sequence';
     sequenceSubmissions?: SequenceSubmission[];
     currentCorrectOrder?: string[];
+    questionStartTime?: number;
   }
 
   const rooms = new Map<string, Room>();
@@ -4096,6 +4097,8 @@ export async function registerRoutes(
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            room.questionStartTime = Date.now();
+
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
                 sendToPlayer(player, {
@@ -4121,12 +4124,14 @@ export async function registerRoutes(
             const player = room.players.get(mapping.playerId);
             if (!player) break;
 
+            const timeMs = room.questionStartTime ? Date.now() - room.questionStartTime : 0;
+
             const submission: SequenceSubmission = {
               playerId: player.id,
               playerName: player.name,
               playerAvatar: player.avatar,
               sequence: data.sequence,
-              timeMs: data.timeMs,
+              timeMs,
             };
 
             if (!room.sequenceSubmissions) room.sequenceSubmissions = [];
