@@ -2659,11 +2659,12 @@ export default function Blitzgrid() {
                                     const remainingQueue = buzzQueue.slice(1);
                                     if (remainingQueue.length > 0) {
                                       setBuzzQueue(remainingQueue.map((b, i) => ({ ...b, position: i + 1 })));
-                                      setTimeout(() => setIsJudging(false), 300);
                                     } else {
+                                      // All players got it wrong, clear queue but don't auto-reveal
+                                      setBuzzQueue([]);
                                       lockBuzzer();
-                                      handleRevealAnswer();
                                     }
+                                    setTimeout(() => setIsJudging(false), 300);
                                   }}
                                   data-testid={`button-wrong-${buzz.playerId}`}
                                 >
@@ -2679,7 +2680,9 @@ export default function Blitzgrid() {
                                     const pts = activeQuestion?.points || 0;
                                     updatePlayerScore(buzz.playerId, pts, true, activeQuestion?.categoryId);
                                     sendFeedback(buzz.playerId, true, pts);
-                                    handleRevealAnswer();
+                                    // Clear the buzz queue but don't auto-reveal answer
+                                    setBuzzQueue([]);
+                                    setTimeout(() => setIsJudging(false), 300);
                                   }}
                                   data-testid={`button-correct-${buzz.playerId}`}
                                 >
