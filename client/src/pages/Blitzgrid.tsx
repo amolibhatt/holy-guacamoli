@@ -2469,10 +2469,10 @@ export default function Blitzgrid() {
             </DialogContent>
           </Dialog>
           
-          {/* Question Modal - Premium glassmorphism design */}
+          {/* Question Modal - Clean hierarchy design */}
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
             <DialogContent 
-              className="max-w-2xl max-h-[90vh] overflow-y-auto bg-[#0d0d12] backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl"
+              className="max-w-2xl max-h-[90vh] overflow-y-auto bg-[#0d0d12] backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl p-0"
             >
               {(() => {
                 // Use the grid's single color for consistency
@@ -2487,49 +2487,23 @@ export default function Blitzgrid() {
                 
                 return (
                   <>
-                    {/* Header row: Category name (simple text) and Points (prominent) */}
-                    <DialogHeader className="pb-2">
-                      <div className="flex items-start justify-between gap-4">
-                        {/* Category - simple text treatment */}
-                        {category && (
-                          <div className="flex-1">
-                            <span className="text-white/50 text-xs uppercase tracking-wider">Category</span>
-                            <DialogTitle className="text-white text-lg font-semibold mt-0.5">
-                              {category.name}
-                            </DialogTitle>
-                            {category.description && (
-                              <p className="text-white/40 text-sm mt-0.5">{category.description}</p>
-                            )}
-                          </div>
-                        )}
-                        
-                        {/* Points - prominent badge */}
-                        <div 
-                          className="px-4 py-2 rounded-lg text-center min-w-[70px]"
-                          style={{ 
-                            backgroundColor: `${neonColor.border}15`,
-                            border: `1px solid ${neonColor.border}40`,
-                          }}
-                        >
-                          <span className="text-2xl font-black" style={{ color: neonColor.text }}>
-                            {activeQuestion?.points}
-                          </span>
-                          <span className="text-xs block text-white/50 uppercase">pts</span>
-                        </div>
+                    {/* Top bar: Points + Timer - compact utility row */}
+                    <div className="flex items-center justify-between px-5 pt-5 pb-2">
+                      {/* Points badge - left */}
+                      <div 
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+                        style={{ 
+                          backgroundColor: `${neonColor.border}20`,
+                          border: `1px solid ${neonColor.border}50`,
+                        }}
+                      >
+                        <span className="text-lg font-black" style={{ color: neonColor.text }}>
+                          {activeQuestion?.points}
+                        </span>
+                        <span className="text-xs text-white/50 uppercase">pts</span>
                       </div>
-                    </DialogHeader>
-                    
-                    {/* Question box - clean design */}
-                    <div className="py-5 px-4 my-3 bg-white/5 rounded-xl border border-white/10">
-                      <div className={`${textSizeClass} text-center font-medium text-white leading-relaxed`}>
-                        <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
-                          {questionText}
-                        </ReactMarkdown>
-                      </div>
-                    </div>
-                    
-                    {/* Timer - subtle, below question */}
-                    <div className="flex justify-center">
+                      
+                      {/* Timer - right */}
                       <Button
                         variant="ghost"
                         size="sm"
@@ -2542,16 +2516,34 @@ export default function Blitzgrid() {
                             setTimerActive(true);
                           }
                         }}
-                        className={`gap-2 px-4 ${timerActive ? 'bg-white/10 text-white' : 'text-white/40'}`}
+                        className={`gap-1.5 h-8 px-3 rounded-full ${timerActive ? 'bg-white/10 text-white' : 'text-white/40'}`}
                         data-testid="button-timer"
                       >
-                        <Timer className="w-4 h-4" />
+                        <Timer className="w-3.5 h-3.5" />
                         {timerActive ? (
-                          <span className="font-mono font-bold text-lg min-w-[2ch]">{timeLeft}</span>
+                          <span className="font-mono font-bold min-w-[2ch]">{timeLeft}</span>
                         ) : (
-                          <span className="text-sm">10s Timer</span>
+                          <span className="text-xs">Timer</span>
                         )}
                       </Button>
+                    </div>
+                    
+                    {/* Category - subtle label */}
+                    {category && (
+                      <DialogHeader className="px-5 pb-1">
+                        <DialogTitle className="text-white/50 text-sm font-medium">
+                          {category.name}
+                        </DialogTitle>
+                      </DialogHeader>
+                    )}
+                    
+                    {/* Question - THE HERO */}
+                    <div className="px-5 py-6">
+                      <div className={`${textSizeClass} text-center font-semibold text-white leading-relaxed`}>
+                        <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
+                          {questionText}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   </>
                 );
@@ -2559,7 +2551,7 @@ export default function Blitzgrid() {
               
               {/* Media Display */}
               {(activeQuestion?.imageUrl || activeQuestion?.audioUrl || activeQuestion?.videoUrl) && (
-                <div className="flex flex-col items-center gap-3 py-2">
+                <div className="flex flex-col items-center gap-3 px-5 pb-4">
                   {activeQuestion?.imageUrl && (
                     <img 
                       src={activeQuestion.imageUrl} 
@@ -2584,45 +2576,26 @@ export default function Blitzgrid() {
                 </div>
               )}
               
-              {/* Buzzer Status + Skip Option - muted waiting state */}
+              {/* Buzzer Status - inline, compact */}
               {players.length > 0 && !showAnswer && buzzQueue.length === 0 && (
-                <div className="flex items-center justify-between py-2 px-3 bg-white/5 border border-dashed border-white/20 rounded-lg">
+                <div className="mx-5 mb-4 flex items-center justify-center gap-3 py-2 px-4 bg-white/5 border border-white/10 rounded-full">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
-                    <span className="text-white/60 text-sm">Fingers on buzzers...</span>
-                    <span className="text-white/40 text-xs">({players.length} ready)</span>
+                    <span className="text-white/50 text-sm">{players.length} waiting</span>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      lockBuzzer();
-                      handleRevealAnswer();
-                    }}
-                    className="text-white/40 h-7 text-xs"
-                    data-testid="button-skip-reveal"
-                  >
-                    <Eye className="w-3 h-3 mr-1" /> Skip
-                  </Button>
                 </div>
               )}
               
-              {/* Buzz Queue - players who buzzed - neon glow */}
+              {/* Buzz Queue - players who buzzed */}
               {buzzQueue.length > 0 && !showAnswer && (
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="bg-orange-500/10 border border-orange-400/50 rounded-lg p-3"
-                  style={{ boxShadow: '0 0 20px rgba(251, 146, 60, 0.2)' }}
+                  className="mx-5 mb-4 bg-orange-500/10 border border-orange-400/40 rounded-xl p-3"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <motion.div
-                      animate={{ rotate: [0, 15, -15, 0] }}
-                      transition={{ repeat: Infinity, duration: 0.5 }}
-                    >
-                      <Zap className="w-4 h-4 text-orange-400" />
-                    </motion.div>
-                    <span className="text-sm text-orange-300 font-bold">Someone Buzzed!</span>
+                    <Zap className="w-4 h-4 text-orange-400" />
+                    <span className="text-sm text-orange-300 font-semibold">Buzzed</span>
                   </div>
                   <div className="space-y-1.5">
                     {buzzQueue.map((buzz, index) => {
@@ -2700,118 +2673,106 @@ export default function Blitzgrid() {
                 </motion.div>
               )}
               
-              {/* No players yet prompt - compact */}
+              {/* No players yet - subtle hint */}
               {players.length === 0 && !showAnswer && (
-                <div className="flex items-center justify-center gap-2 py-2 text-white/40">
-                  <Users className="w-4 h-4 opacity-50" />
-                  <p className="text-sm">No players yet · Click "Join" for QR code</p>
+                <div className="mx-5 mb-4 flex items-center justify-center gap-2 py-2 text-white/30">
+                  <Users className="w-3.5 h-3.5" />
+                  <p className="text-xs">No players connected</p>
                 </div>
               )}
               
-              {/* Answer Revealed - uses grid color */}
+              {/* Answer Revealed */}
               <AnimatePresence>
                 {showAnswer && (
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="relative overflow-hidden rounded-xl p-4 text-center border"
+                    transition={{ duration: 0.2 }}
+                    className="mx-5 mb-4 rounded-xl p-4 text-center border"
                     style={{ 
-                      backgroundColor: `${neonColorConfig[colorName].border}10`,
-                      borderColor: `${neonColorConfig[colorName].border}40`,
+                      backgroundColor: `${neonColorConfig[colorName].border}15`,
+                      borderColor: `${neonColorConfig[colorName].border}50`,
                     }}
                   >
-                    <motion.p 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="text-xs font-semibold uppercase tracking-wider mb-1"
-                      style={{ color: neonColorConfig[colorName].text }}
+                    <p 
+                      className="text-xs font-medium uppercase tracking-wider mb-2 text-white/50"
                     >
                       Answer
-                    </motion.p>
-                    <motion.div 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.1 }}
-                      className="text-xl font-bold prose prose-lg max-w-none [&>p]:m-0 relative z-10 prose-invert"
+                    </p>
+                    <div 
+                      className="text-xl font-bold prose prose-lg max-w-none [&>p]:m-0 prose-invert"
                       style={{ color: neonColorConfig[colorName].text }}
                     >
                       <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
                         {activeQuestion?.correctAnswer || ''}
                       </ReactMarkdown>
-                    </motion.div>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
               
-              {/* All Players for Manual Scoring (after answer revealed) */}
+              {/* Manual Scoring - inline player chips (after answer revealed) */}
               {showAnswer && players.length > 0 && (
-                <div className="bg-white/5 rounded-lg p-4 mt-4 border border-white/10">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Users className="w-4 h-4 text-white/40" />
-                    <span className="text-sm text-white/40">Manage Points</span>
-                  </div>
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                <div className="mx-5 mb-4">
+                  <div className="flex flex-wrap items-center gap-2">
                     {players.map(player => (
                       <div 
                         key={player.id}
-                        className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2 border border-white/10"
+                        className="flex items-center gap-1 bg-white/5 rounded-full pl-3 pr-1 py-1 border border-white/10"
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-white">{player.name}</span>
-                          <span className="text-sm text-white/40">({player.score} pts)</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 text-red-400"
-                            onClick={() => {
-                              const points = activeQuestion?.points || 0;
-                              updatePlayerScore(player.id, -points, true, activeQuestion?.categoryId);
-                              toast({
-                                title: `−${points} points`,
-                                description: `Deducted from ${player.name}`,
-                                duration: 2000,
-                              });
-                            }}
-                            data-testid={`button-deduct-${player.id}`}
-                          >
-                            <Minus className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 text-emerald-400"
-                            onClick={() => {
-                              const points = activeQuestion?.points || 0;
-                              updatePlayerScore(player.id, points, true, activeQuestion?.categoryId);
-                              toast({
-                                title: `+${points} points`,
-                                description: `Awarded to ${player.name}`,
-                                duration: 2000,
-                              });
-                            }}
-                            data-testid={`button-award-${player.id}`}
-                          >
-                            <Plus className="w-3 h-3" />
-                          </Button>
-                        </div>
+                        <span className="text-sm text-white/80">{player.name}</span>
+                        <span className="text-xs text-white/40">{player.score}</span>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6 text-red-400 rounded-full"
+                          onClick={() => {
+                            const points = activeQuestion?.points || 0;
+                            updatePlayerScore(player.id, -points, true, activeQuestion?.categoryId);
+                            toast({
+                              title: `−${points} pts`,
+                              description: player.name,
+                              duration: 1500,
+                            });
+                          }}
+                          data-testid={`button-deduct-${player.id}`}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6 text-emerald-400 rounded-full"
+                          onClick={() => {
+                            const points = activeQuestion?.points || 0;
+                            updatePlayerScore(player.id, points, true, activeQuestion?.categoryId);
+                            toast({
+                              title: `+${points} pts`,
+                              description: player.name,
+                              duration: 1500,
+                            });
+                          }}
+                          data-testid={`button-award-${player.id}`}
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
               
-              <DialogFooter className="flex gap-2 sm:justify-center mt-4">
+              {/* Footer Actions */}
+              <div className="flex items-center justify-center gap-2 px-5 pb-5 pt-2 border-t border-white/10">
                 {lastScoreChange && (
                   <Button 
                     onClick={undoLastScore}
-                    variant="outline"
-                    className="border-white/30 text-white/70"
+                    variant="ghost"
+                    size="sm"
+                    className="text-white/50"
                     data-testid="button-undo-score"
                   >
-                    <RotateCcw className="w-4 h-4 mr-2" /> Undo {lastScoreChange.points > 0 ? '+' : ''}{lastScoreChange.points}
+                    <RotateCcw className="w-3.5 h-3.5 mr-1.5" /> Undo
                   </Button>
                 )}
                 {!showAnswer ? (
@@ -2823,7 +2784,6 @@ export default function Blitzgrid() {
                     className="text-white font-semibold px-6"
                     style={{ 
                       backgroundColor: neonColorConfig[colorName].border,
-                      boxShadow: `0 0 20px ${neonColorConfig[colorName].glow}`,
                     }}
                     data-testid="button-reveal-answer"
                   >
@@ -2832,14 +2792,16 @@ export default function Blitzgrid() {
                 ) : (
                   <Button 
                     onClick={handleCloseQuestion}
-                    variant="outline"
-                    className="border-white/30 text-white"
+                    className="text-white font-semibold px-6"
+                    style={{ 
+                      backgroundColor: neonColorConfig[colorName].border,
+                    }}
                     data-testid="button-close-question"
                   >
                     Continue
                   </Button>
                 )}
-              </DialogFooter>
+              </div>
             </DialogContent>
           </Dialog>
         </div>
