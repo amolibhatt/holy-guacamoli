@@ -1,4 +1,4 @@
-export const BOARD_COLORS = ['rose', 'violet', 'lime', 'teal', 'sky'] as const;
+export const BOARD_COLORS = ['rose', 'violet', 'lime', 'teal', 'sky', 'orange'] as const;
 export type BoardColor = typeof BOARD_COLORS[number];
 
 // Neon color palette for dark theme retro gaming aesthetic
@@ -43,6 +43,13 @@ export const neonColorConfig: Record<BoardColor, {
     text: '#7dd3fc',
     icon: '#38bdf8',
     shadowColor: 'rgba(56, 189, 248, 0.5)',
+  },
+  orange: {
+    border: '#fb923c',
+    glow: 'rgba(251, 146, 60, 0.4)',
+    text: '#fdba74',
+    icon: '#fb923c',
+    shadowColor: 'rgba(251, 146, 60, 0.5)',
   },
 };
 
@@ -172,18 +179,38 @@ export const boardColorConfig: Record<BoardColor, {
     accent: 'text-sky-600',
     accentDark: 'text-sky-800',
   },
+  orange: {
+    card: 'from-orange-100/80 via-amber-100/60 to-red-100/80 border-orange-200/60',
+    cardTitle: 'text-orange-700',
+    cardSub: 'text-amber-600',
+    cardIcon: 'text-orange-500',
+    header: 'from-orange-400 via-amber-400 to-red-400',
+    tile: 'from-orange-100/90 via-amber-100/80 to-red-100/90',
+    tileBorder: 'border-orange-200/60 hover:border-orange-300/80',
+    tileText: 'text-orange-600',
+    progress: 'bg-gradient-to-r from-orange-400 via-amber-400 to-red-400',
+    bg: 'bg-gradient-to-r from-orange-400 via-amber-400 to-red-400',
+    badge: 'bg-white/90 border-orange-200/50',
+    badgeText: 'text-orange-700',
+    light: 'bg-gradient-to-br from-orange-50 via-amber-50 to-red-50',
+    lightBorder: 'border-orange-200/50',
+    lightText: 'text-orange-700',
+    icon: 'text-orange-500',
+    dialogBorder: 'border-orange-200/50',
+    accent: 'text-orange-600',
+    accentDark: 'text-orange-800',
+  },
 };
 
 const legacyColorMap: Record<string, BoardColor> = {
   cyan: 'teal',
-  orange: 'lime',
   green: 'lime',
   pink: 'rose',
   fuchsia: 'rose',
   blue: 'sky',
-  red: 'rose',
+  red: 'orange',
   yellow: 'lime',
-  amber: 'lime',
+  amber: 'orange',
   purple: 'violet',
 };
 
