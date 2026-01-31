@@ -369,6 +369,13 @@ export default function SequenceSqueeze() {
   }, [ws]);
 
 
+  // Auto-create room on page load (skip intro)
+  useEffect(() => {
+    if (isAuthenticated && !isAuthLoading && !ws && gameState === "setup") {
+      connectWebSocket(false);
+    }
+  }, [isAuthenticated, isAuthLoading, ws, gameState]);
+
   useEffect(() => {
     return () => {
       if (ws) ws.close();
@@ -400,34 +407,12 @@ export default function SequenceSqueeze() {
       <main className="p-6 max-w-5xl mx-auto">
         {gameState === "setup" && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-16"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-center py-20"
           >
-            <p className="text-lg text-muted-foreground mb-8">
-              Arrange items in the correct order. Fastest correct answer wins!
-            </p>
-            
-            {isLoadingQuestions ? (
-              <Skeleton className="h-14 w-48 mx-auto" />
-            ) : questions.length === 0 ? (
-              <p className="text-muted-foreground mb-4">No questions available. Add some in the Admin panel.</p>
-            ) : (
-              <div className="space-y-6">
-                <p className="text-muted-foreground">
-                  {questions.length} question{questions.length !== 1 ? 's' : ''} ready to play
-                </p>
-                <Button 
-                  size="lg"
-                  className="h-14 px-10 text-lg"
-                  onClick={() => connectWebSocket(false)}
-                  data-testid="button-start-game"
-                >
-                  <Play className="w-6 h-6 mr-2" />
-                  Start Game
-                </Button>
-              </div>
-            )}
+            <Loader2 className="w-8 h-8 animate-spin text-teal-500" />
+            <span className="ml-3 text-muted-foreground">Creating room...</span>
           </motion.div>
         )}
 
@@ -435,10 +420,15 @@ export default function SequenceSqueeze() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="py-8"
+            className="py-6"
           >
+            {/* Sub-header description */}
+            <p className="text-center text-muted-foreground mb-8">
+              Arrange items in the correct order. Fastest correct answer wins!
+            </p>
+
             <div className="grid md:grid-cols-2 gap-8 items-start">
-              {/* Left: QR Code */}
+              {/* Left: QR Code and Start Button */}
               <div className="flex flex-col items-center">
                 <div className="bg-white p-4 rounded-2xl shadow-lg">
                   <QRCodeSVG value={joinUrl} size={200} />
@@ -447,89 +437,152 @@ export default function SequenceSqueeze() {
                   <span className="text-muted-foreground">Room Code: </span>
                   <span className="font-mono font-bold text-2xl">{roomCode}</span>
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-sm text-muted-foreground mt-1 mb-6">
                   Scan or go to <span className="font-mono">/sequence/{roomCode}</span>
                 </p>
+
+                {/* Smart Start Button */}
+                <motion.div
+                  animate={players.length > 0 ? {
+                    boxShadow: [
+                      "0 0 0 0 rgba(6, 182, 212, 0)",
+                      "0 0 0 12px rgba(6, 182, 212, 0.3)",
+                      "0 0 0 0 rgba(6, 182, 212, 0)"
+                    ]
+                  } : {}}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                  className="rounded-xl"
+                >
+                  <Button 
+                    size="lg"
+                    className={`h-14 px-8 text-lg w-full transition-all duration-300 ${
+                      players.length > 0 
+                        ? "bg-cyan-500 hover:bg-cyan-600 text-white shadow-lg shadow-cyan-500/40" 
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                    onClick={() => {
+                      if (questions.length > 0) {
+                        startQuestion(questions[0], 0);
+                      }
+                    }}
+                    disabled={players.length === 0 || questions.length === 0}
+                    data-testid="button-begin-game"
+                  >
+                    <Play className="w-6 h-6 mr-2" />
+                    Begin Game ({questions.length} questions)
+                  </Button>
+                </motion.div>
+                
+                {players.length === 0 && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Waiting for at least 1 player to join...
+                  </p>
+                )}
               </div>
 
-              {/* Right: Players and controls */}
-              <div className="flex flex-col items-center md:items-start">
+              {/* Right: Live Crew Grid */}
+              <div className="flex flex-col">
                 <div className="flex items-center gap-2 mb-4">
-                  <Users className="w-5 h-5 text-teal-500" />
-                  <h2 className="text-xl font-bold">
-                    {players.length} Player{players.length !== 1 ? 's' : ''} Ready
-                  </h2>
+                  <Users className="w-5 h-5 text-cyan-500" />
+                  <h2 className="text-xl font-bold">Live Crew</h2>
+                  {players.length > 0 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {players.length} joined
+                    </Badge>
+                  )}
                 </div>
 
                 {players.length === 0 ? (
-                  <div className="text-center md:text-left py-8 w-full">
+                  <Card className="p-8 border-dashed">
+                    <div className="grid grid-cols-3 gap-3">
+                      {[...Array(6)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          animate={{ opacity: [0.3, 0.5, 0.3] }}
+                          transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
+                          className="aspect-square rounded-xl bg-muted/50 flex items-center justify-center"
+                        >
+                          <span className="text-2xl opacity-30">?</span>
+                        </motion.div>
+                      ))}
+                    </div>
                     <motion.p
                       animate={{ opacity: [0.5, 1, 0.5] }}
                       transition={{ duration: 2, repeat: Infinity }}
-                      className="text-muted-foreground"
+                      className="text-center text-muted-foreground mt-4 text-sm"
                     >
                       Waiting for players to scan and join...
                     </motion.p>
-                  </div>
+                  </Card>
                 ) : (
-                  <div className="mb-6 w-full">
-                    <div className="flex flex-wrap justify-center md:justify-start gap-3">
+                  <Card className="p-4">
+                    <div className="grid grid-cols-3 gap-3">
                       <AnimatePresence>
                         {players.map((p, idx) => {
                           const playerScore = leaderboard.find(l => l.playerId === p.id)?.score;
                           return (
                             <motion.div 
                               key={p.id}
-                              initial={{ scale: 0, rotate: -15, opacity: 0 }}
-                              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                              initial={{ scale: 0, y: -50, opacity: 0 }}
+                              animate={{ 
+                                scale: 1, 
+                                y: 0, 
+                                opacity: 1,
+                              }}
                               exit={{ scale: 0, opacity: 0 }}
                               transition={{ 
                                 type: "spring", 
-                                stiffness: 400, 
-                                damping: 15,
+                                stiffness: 500, 
+                                damping: 20,
                                 delay: idx * 0.05
                               }}
-                              className="flex flex-col items-center gap-1 p-3 bg-card rounded-xl border shadow-sm min-w-[80px]"
+                              className="flex flex-col items-center gap-1 p-3 bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-950/30 dark:to-teal-950/30 rounded-xl border border-cyan-200/50 dark:border-cyan-800/50"
                             >
                               <motion.span 
                                 className="text-4xl"
-                                initial={{ scale: 0 }}
-                                animate={{ scale: [0, 1.3, 1] }}
-                                transition={{ delay: 0.1, duration: 0.4 }}
+                                initial={{ scale: 0, rotate: -20 }}
+                                animate={{ 
+                                  scale: [0, 1.4, 1],
+                                  rotate: [20, -10, 0]
+                                }}
+                                transition={{ 
+                                  delay: 0.1 + idx * 0.05, 
+                                  duration: 0.5,
+                                  type: "spring",
+                                  stiffness: 300
+                                }}
                               >
                                 {p.avatar || "👤"}
                               </motion.span>
-                              <span className="font-medium text-sm">{p.name}</span>
+                              <span className="font-medium text-sm truncate max-w-full">{p.name}</span>
                               {playerScore !== undefined && playerScore > 0 && (
-                                <span className="text-xs text-teal-600 font-bold">{playerScore} pts</span>
+                                <Badge variant="secondary" className="text-xs">
+                                  {playerScore} pts
+                                </Badge>
                               )}
                             </motion.div>
                           );
                         })}
                       </AnimatePresence>
+                      {/* Empty slots */}
+                      {players.length < 6 && [...Array(Math.max(0, 6 - players.length))].map((_, i) => (
+                        <motion.div
+                          key={`empty-${i}`}
+                          animate={{ opacity: [0.2, 0.4, 0.2] }}
+                          transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
+                          className="aspect-square rounded-xl border-2 border-dashed border-muted flex items-center justify-center"
+                        >
+                          <span className="text-2xl opacity-30">+</span>
+                        </motion.div>
+                      ))}
                     </div>
                     {leaderboard.length > 0 && leaderboard.some(l => l.score > 0) && (
-                      <p className="text-xs text-muted-foreground mt-3">
+                      <p className="text-xs text-muted-foreground mt-3 text-center">
                         Scores from previous session
                       </p>
                     )}
-                  </div>
+                  </Card>
                 )}
-
-                <Button 
-                  size="lg"
-                  className="h-14 px-8 text-lg bg-teal-500 text-white shadow-lg shadow-teal-500/30 w-full md:w-auto"
-                  onClick={() => {
-                    if (questions.length > 0) {
-                      startQuestion(questions[0], 0);
-                    }
-                  }}
-                  disabled={players.length === 0 || questions.length === 0}
-                  data-testid="button-begin-game"
-                >
-                  <Play className="w-6 h-6 mr-2" />
-                  Begin Game ({questions.length} questions)
-                </Button>
               </div>
             </div>
           </motion.div>
