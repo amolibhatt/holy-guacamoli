@@ -2944,12 +2944,11 @@ export default function Blitzgrid() {
     
     return (
       <div className="min-h-screen flex flex-col bg-background" data-testid="page-blitzgrid-grid">
-        <AppHeader minimal backHref="/" title="Blitzgrid" />
+        <AppHeader minimal backHref="/" title={grid?.name || 'Blitzgrid'} />
         <div className="flex-1 flex flex-col container mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4 shrink-0">
             <div>
-              <h1 className="text-xl font-bold">{grid?.name || 'Grid'}</h1>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-muted-foreground text-sm">
                 {gridCategories.length}/5 categories · {grid?.questionCount || 0}/25 questions
               </p>
             </div>
