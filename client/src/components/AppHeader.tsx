@@ -50,17 +50,18 @@ export function AppHeader({
         <div className="px-4 py-3 flex items-center justify-between gap-4 max-w-5xl mx-auto">
           <div className="flex items-center gap-3">
             {backHref && (
-              <Link href={backHref}>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="text-muted-foreground" 
-                  data-testid="button-back"
-                  aria-label="Go back"
-                >
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-muted-foreground" 
+                data-testid="button-back"
+                aria-label="Go back"
+                asChild
+              >
+                <Link href={backHref}>
                   <ArrowLeft className="w-5 h-5" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             )}
             <Link href="/">
               <Logo size="md" />
@@ -153,17 +154,18 @@ export function AppHeader({
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             ) : (
-              <Link href={backHref!}>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="text-muted-foreground hover:text-foreground" 
-                  data-testid="button-back"
-                  aria-label="Go back"
-                >
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-muted-foreground hover:text-foreground" 
+                data-testid="button-back"
+                aria-label="Go back"
+                asChild
+              >
+                <Link href={backHref!}>
                   <ArrowLeft className="w-5 h-5" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             )
           )}
           <Link href="/">
@@ -200,31 +202,33 @@ export function AppHeader({
           )}
           
           {showAdminButton && (
-            <Link href={adminHref}>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="text-muted-foreground hover:text-foreground" 
-                data-testid="button-admin" 
-                aria-label="Admin settings"
-              >
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-muted-foreground hover:text-foreground" 
+              data-testid="button-admin" 
+              aria-label="Admin settings"
+              asChild
+            >
+              <Link href={adminHref}>
                 <Settings className="w-5 h-5" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           )}
           
           {user?.role === 'super_admin' && (
-            <Link href="/admin/super">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="text-purple-500 hover:text-purple-400" 
-                data-testid="button-super-admin" 
-                aria-label="Super admin panel"
-              >
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-purple-500 hover:text-purple-400" 
+              data-testid="button-super-admin" 
+              aria-label="Super admin panel"
+              asChild
+            >
+              <Link href="/admin/super">
                 <Shield className="w-5 h-5" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           )}
           
           {showLogout && (
