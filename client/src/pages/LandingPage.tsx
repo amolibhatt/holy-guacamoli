@@ -126,7 +126,7 @@ export default function LandingPage() {
                     )}
                     <Button 
                       type="submit" 
-                      className="w-full bg-gradient-to-r from-lime-400 to-emerald-500 hover:from-lime-500 hover:to-emerald-600 text-black font-bold border-0 h-12 rounded-xl mt-2"
+                      className="w-full bg-gradient-to-r from-lime-400 to-emerald-500 text-black font-bold border-0 h-12 rounded-xl mt-2"
                       disabled={isLoggingIn}
                       data-testid="button-login"
                     >
@@ -201,7 +201,7 @@ export default function LandingPage() {
                     )}
                     <Button 
                       type="submit" 
-                      className="w-full bg-gradient-to-r from-lime-400 to-emerald-500 hover:from-lime-500 hover:to-emerald-600 text-black font-bold border-0 h-12 rounded-xl mt-2"
+                      className="w-full bg-gradient-to-r from-lime-400 to-emerald-500 text-black font-bold border-0 h-12 rounded-xl mt-2"
                       disabled={isRegistering}
                       data-testid="button-register"
                     >

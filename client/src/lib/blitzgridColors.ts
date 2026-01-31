@@ -31,7 +31,6 @@ export const BLITZGRID_COLORS = {
   },
   button: {
     primary: 'bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300 text-white',
-    hover: 'hover:from-rose-400 hover:via-pink-400 hover:to-fuchsia-400',
   },
   canvas: {
     gradientStops: ['#fda4af', '#f9a8d4', '#f0abfc'] as const,
