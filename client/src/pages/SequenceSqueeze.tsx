@@ -18,7 +18,7 @@ import {
   ListOrdered, Play, Pause, Users, QrCode, Timer, 
   Trophy, Plus, Trash2, Edit, Check, X, Loader2, Clock, Zap,
   ChevronDown, ChevronUp, Sparkles, Crown, RefreshCw, SkipForward,
-  Volume2, VolumeX, Medal, Star
+  Volume2, VolumeX, Medal, Star, User, HelpCircle
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { AppHeader } from "@/components/AppHeader";
@@ -73,6 +73,7 @@ export default function SequenceSqueeze() {
   const [audioEnabled, setAudioEnabled] = useState(true);
   const submissionsRef = useRef<PlayerSubmission[]>([]);
   const audioRef = useRef<{ [key: string]: HTMLAudioElement }>({});
+  const hasAutoStartedRef = useRef(false);
 
   const { data: questions = [], isLoading: isLoadingQuestions } = useQuery<SequenceQuestion[]>({
     queryKey: ["/api/sequence-squeeze/questions"],
@@ -249,6 +250,7 @@ export default function SequenceSqueeze() {
     socket.onclose = () => {
       setRoomCode(null);
       setGameState("setup");
+      hasAutoStartedRef.current = false;
     };
 
     setWs(socket);
@@ -371,10 +373,11 @@ export default function SequenceSqueeze() {
 
   // Auto-create room on page load (skip intro)
   useEffect(() => {
-    if (isAuthenticated && !isAuthLoading && !ws && gameState === "setup") {
+    if (isAuthenticated && !isAuthLoading && !ws && gameState === "setup" && !hasAutoStartedRef.current) {
+      hasAutoStartedRef.current = true;
       connectWebSocket(false);
     }
-  }, [isAuthenticated, isAuthLoading, ws, gameState]);
+  }, [isAuthenticated, isAuthLoading, ws, gameState, connectWebSocket]);
 
   useEffect(() => {
     return () => {
@@ -423,21 +426,21 @@ export default function SequenceSqueeze() {
             className="py-6"
           >
             {/* Sub-header description */}
-            <p className="text-center text-muted-foreground mb-8">
+            <p className="text-center text-muted-foreground mb-8" data-testid="text-game-description">
               Arrange items in the correct order. Fastest correct answer wins!
             </p>
 
             <div className="grid md:grid-cols-2 gap-8 items-start">
               {/* Left: QR Code and Start Button */}
               <div className="flex flex-col items-center">
-                <div className="bg-white p-4 rounded-2xl shadow-lg">
+                <div className="bg-white p-4 rounded-2xl shadow-lg" data-testid="container-qr-code">
                   <QRCodeSVG value={joinUrl} size={200} />
                 </div>
                 <p className="mt-4 text-center">
                   <span className="text-muted-foreground">Room Code: </span>
-                  <span className="font-mono font-bold text-2xl">{roomCode}</span>
+                  <span className="font-mono font-bold text-2xl" data-testid="text-room-code">{roomCode}</span>
                 </p>
-                <p className="text-sm text-muted-foreground mt-1 mb-6">
+                <p className="text-sm text-muted-foreground mt-1 mb-6" data-testid="text-join-url">
                   Scan or go to <span className="font-mono">/sequence/{roomCode}</span>
                 </p>
 
@@ -457,7 +460,7 @@ export default function SequenceSqueeze() {
                     size="lg"
                     className={`h-14 px-8 text-lg w-full transition-all duration-300 ${
                       players.length > 0 
-                        ? "bg-cyan-500 hover:bg-cyan-600 text-white shadow-lg shadow-cyan-500/40" 
+                        ? "bg-cyan-500 text-white shadow-lg shadow-cyan-500/40" 
                         : "bg-muted text-muted-foreground"
                     }`}
                     onClick={() => {
@@ -484,16 +487,16 @@ export default function SequenceSqueeze() {
               <div className="flex flex-col">
                 <div className="flex items-center gap-2 mb-4">
                   <Users className="w-5 h-5 text-cyan-500" />
-                  <h2 className="text-xl font-bold">Live Crew</h2>
+                  <h2 className="text-xl font-bold" data-testid="text-live-crew-header">Live Crew</h2>
                   {players.length > 0 && (
-                    <Badge variant="secondary" className="ml-2">
+                    <Badge variant="secondary" className="ml-2" data-testid="badge-player-count">
                       {players.length} joined
                     </Badge>
                   )}
                 </div>
 
                 {players.length === 0 ? (
-                  <Card className="p-8 border-dashed">
+                  <Card className="p-8 border-dashed" data-testid="card-live-crew-empty">
                     <div className="grid grid-cols-3 gap-3">
                       {[...Array(6)].map((_, i) => (
                         <motion.div
@@ -501,8 +504,9 @@ export default function SequenceSqueeze() {
                           animate={{ opacity: [0.3, 0.5, 0.3] }}
                           transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
                           className="aspect-square rounded-xl bg-muted/50 flex items-center justify-center"
+                          data-testid={`slot-empty-${i}`}
                         >
-                          <span className="text-2xl opacity-30">?</span>
+                          <HelpCircle className="w-6 h-6 opacity-30" />
                         </motion.div>
                       ))}
                     </div>
@@ -515,7 +519,7 @@ export default function SequenceSqueeze() {
                     </motion.p>
                   </Card>
                 ) : (
-                  <Card className="p-4">
+                  <Card className="p-4" data-testid="card-live-crew">
                     <div className="grid grid-cols-3 gap-3">
                       <AnimatePresence>
                         {players.map((p, idx) => {
@@ -537,6 +541,7 @@ export default function SequenceSqueeze() {
                                 delay: idx * 0.05
                               }}
                               className="flex flex-col items-center gap-1 p-3 bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-950/30 dark:to-teal-950/30 rounded-xl border border-cyan-200/50 dark:border-cyan-800/50"
+                              data-testid={`player-card-${p.id}`}
                             >
                               <motion.span 
                                 className="text-4xl"
@@ -552,11 +557,11 @@ export default function SequenceSqueeze() {
                                   stiffness: 300
                                 }}
                               >
-                                {p.avatar || "👤"}
+                                {p.avatar || <User className="w-8 h-8 text-muted-foreground" />}
                               </motion.span>
-                              <span className="font-medium text-sm truncate max-w-full">{p.name}</span>
+                              <span className="font-medium text-sm truncate max-w-full" data-testid={`text-player-name-${p.id}`}>{p.name}</span>
                               {playerScore !== undefined && playerScore > 0 && (
-                                <Badge variant="secondary" className="text-xs">
+                                <Badge variant="secondary" className="text-xs" data-testid={`text-player-score-${p.id}`}>
                                   {playerScore} pts
                                 </Badge>
                               )}
@@ -571,8 +576,9 @@ export default function SequenceSqueeze() {
                           animate={{ opacity: [0.2, 0.4, 0.2] }}
                           transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
                           className="aspect-square rounded-xl border-2 border-dashed border-muted flex items-center justify-center"
+                          data-testid={`slot-waiting-${i}`}
                         >
-                          <span className="text-2xl opacity-30">+</span>
+                          <Plus className="w-5 h-5 opacity-30" />
                         </motion.div>
                       ))}
                     </div>
