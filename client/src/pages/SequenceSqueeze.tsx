@@ -439,46 +439,19 @@ export default function SequenceSqueeze() {
             ) : questions.length === 0 ? (
               <p className="text-muted-foreground mb-4">No questions available. Add some in the Admin panel.</p>
             ) : (
-              <div className="space-y-4">
-                <Badge variant="secondary" className="text-base px-4 py-2">
-                  {questions.length} question{questions.length !== 1 ? 's' : ''} ready
-                </Badge>
-                
-                {localStorage.getItem("buzzer-room-code") ? (
-                  <div className="flex flex-col gap-3 items-center">
-                    <Button 
-                      size="lg"
-                      className="h-14 px-8 text-lg bg-teal-500 text-white shadow-lg shadow-teal-500/30"
-                      onClick={() => connectWebSocket(true)}
-                      data-testid="button-continue-previous"
-                    >
-                      <Play className="w-6 h-6 mr-2" />
-                      Continue Previous Session
-                    </Button>
-                    <p className="text-sm text-muted-foreground">
-                      Players and scores will carry over
-                    </p>
-                    <Button 
-                      variant="outline"
-                      onClick={() => connectWebSocket(false)}
-                      data-testid="button-start-fresh"
-                    >
-                      Start Fresh Game
-                    </Button>
-                  </div>
-                ) : (
-                  <div>
-                    <Button 
-                      size="lg"
-                      className="h-14 px-8 text-lg bg-teal-500 text-white shadow-lg shadow-teal-500/30"
-                      onClick={() => connectWebSocket(false)}
-                      data-testid="button-start-game"
-                    >
-                      <Play className="w-6 h-6 mr-2" />
-                      Start Game
-                    </Button>
-                  </div>
-                )}
+              <div className="space-y-6">
+                <p className="text-muted-foreground">
+                  {questions.length} question{questions.length !== 1 ? 's' : ''} ready to play
+                </p>
+                <Button 
+                  size="lg"
+                  className="h-14 px-10 text-lg"
+                  onClick={() => connectWebSocket(false)}
+                  data-testid="button-start-game"
+                >
+                  <Play className="w-6 h-6 mr-2" />
+                  Start Game
+                </Button>
               </div>
             )}
           </motion.div>
