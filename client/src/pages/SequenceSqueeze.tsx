@@ -182,7 +182,7 @@ export default function SequenceSqueeze() {
           setCurrentQuestionIndex(data.questionIndex || 1);
           setTotalQuestions(data.totalQuestions || 1);
           if (data.question) {
-            setCurrentQuestion(data.question);
+            setCurrentQuestion(prev => prev?.correctOrder ? prev : data.question);
           }
           break;
         case "sequence:animatedReveal:started":
@@ -996,7 +996,7 @@ export default function SequenceSqueeze() {
             <div className="text-center">
               <h2 className="text-xl font-bold mb-2">Correct Order</h2>
               <div className="flex justify-center gap-3 py-4">
-                {(currentQuestion.correctOrder as string[]).map((letter, idx) => {
+                {currentQuestion?.correctOrder && (currentQuestion.correctOrder as string[]).map((letter, idx) => {
                   const option = currentQuestion[`option${letter}` as keyof SequenceQuestion] as string;
                   return (
                     <motion.div
