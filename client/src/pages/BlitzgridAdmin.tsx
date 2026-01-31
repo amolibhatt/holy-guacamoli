@@ -329,7 +329,7 @@ export default function BlitzgridAdmin() {
   if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <AppHeader title="Blitzgrid Admin" backHref="/" />
+        <AppHeader minimal />
         <div className="container mx-auto px-4 py-8">
           <Skeleton className="h-8 w-48 mb-4" />
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -583,11 +583,7 @@ export default function BlitzgridAdmin() {
     
     return (
       <div className="min-h-screen bg-background flex flex-col" data-testid="page-blitzgrid-admin-grid">
-        <AppHeader 
-          title="Blitzgrid Admin" 
-          subtitle={grid?.name}
-          onBack={() => setSelectedGridId(null)}
-        />
+        <AppHeader minimal />
         <div className="container mx-auto px-4 py-6 flex-1">
           
           <div className="flex items-center justify-between mb-4">
@@ -847,7 +843,7 @@ export default function BlitzgridAdmin() {
   // Grid list view
   return (
     <div className="min-h-screen bg-background flex flex-col" data-testid="page-blitzgrid-admin">
-      <AppHeader title="Content Admin" backHref="/" />
+      <AppHeader minimal />
       
       <div className="border-b border-border bg-card/50">
         <div className="container mx-auto px-4">

@@ -157,7 +157,7 @@ export default function GameHistory() {
   if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <AppHeader title="Game History" backHref="/" />
+        <AppHeader minimal />
         <div className="container py-8">
           <LoadingSkeleton />
         </div>
@@ -182,7 +182,7 @@ export default function GameHistory() {
 
   return (
     <div className="min-h-screen bg-background" data-testid="page-game-history">
-      <AppHeader title="Game History" backHref="/" />
+      <AppHeader minimal />
       
       <div className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center justify-between gap-4">

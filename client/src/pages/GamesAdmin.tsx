@@ -266,11 +266,14 @@ export default function GamesAdmin() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <AppHeader
-        title="Game Manager"
-        subtitle="Configure game types"
-        backHref="/admin"
-      />
+      <AppHeader minimal />
+      
+      {/* Secondary bar with page title */}
+      <div className="border-b border-border/30 bg-card/30">
+        <div className="container mx-auto px-4 py-2">
+          <h1 className="text-lg font-bold text-foreground">Game Manager</h1>
+        </div>
+      </div>
 
       <div className="max-w-[1600px] mx-auto p-6">
         <Tabs defaultValue="games" className="space-y-6">
