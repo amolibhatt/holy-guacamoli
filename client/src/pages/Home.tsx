@@ -25,7 +25,7 @@ const GAME_CONFIG: Record<string, {
   },
   sequence_squeeze: {
     icon: ListOrdered,
-    route: "/host/genetic-sort",
+    route: "/host/sort-circuit",
     accentColor: "#22d3ee",
     description: "Put items in the right order before time runs out.",
     players: "2-20 players",

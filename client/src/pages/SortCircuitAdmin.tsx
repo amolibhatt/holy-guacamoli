@@ -5,7 +5,7 @@ import { SequenceSqueezeAdmin } from "@/components/SequenceSqueezeAdmin";
 import { Button } from "@/components/ui/button";
 import { Loader2, Grid3X3, ListOrdered, Eye } from "lucide-react";
 
-export default function GeneticSortAdmin() {
+export default function SortCircuitAdmin() {
   const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -23,7 +23,7 @@ export default function GeneticSortAdmin() {
   }
 
   return (
-    <div className="min-h-screen bg-background" data-testid="page-genetic-sort-admin">
+    <div className="min-h-screen bg-background" data-testid="page-sort-circuit-admin">
       <div className="fixed inset-0 bg-gradient-to-br from-teal-300/5 via-transparent to-teal-300/5 pointer-events-none" />
       
       <AppHeader minimal backHref="/" />
@@ -41,7 +41,7 @@ export default function GeneticSortAdmin() {
                 Blitzgrid
               </Button>
             </Link>
-            <Link href="/admin/genetic-sort">
+            <Link href="/admin/sort-circuit">
               <Button 
                 variant="ghost" 
                 className="relative rounded-none border-b-2 border-primary text-foreground"
