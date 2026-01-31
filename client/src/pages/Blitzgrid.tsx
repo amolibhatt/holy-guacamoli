@@ -3335,71 +3335,73 @@ export default function Blitzgrid() {
           </motion.div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-10">
-            {/* Shuffle Play Hero Card */}
-            <motion.button
+            {/* Shuffle Play - Simple card matching grid style */}
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              onClick={handleShufflePlay}
-              disabled={isShuffling}
-              className="w-full p-8 rounded-2xl text-left relative overflow-hidden group"
-              style={{
-                background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.15) 0%, rgba(6, 182, 212, 0.1) 50%, rgba(34, 211, 238, 0.05) 100%)',
-                border: '2px solid rgba(34, 211, 238, 0.4)',
-                boxShadow: '0 0 40px rgba(34, 211, 238, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-              }}
-              data-testid="button-shuffle-play"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/10 to-cyan-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-              <div className="relative flex items-center gap-6">
-                <div 
-                  className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)',
-                    boxShadow: '0 0 30px rgba(34, 211, 238, 0.5)',
-                  }}
-                >
-                  {isShuffling ? (
-                    <Loader2 className="w-8 h-8 text-black animate-spin" />
-                  ) : (
-                    <Shuffle className="w-8 h-8 text-black" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h2 
-                    className="text-2xl font-black text-cyan-300 uppercase tracking-wide mb-1"
-                    style={{ 
-                      fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                      textShadow: '0 0 20px rgba(34, 211, 238, 0.6)',
+              <motion.button
+                onClick={handleShufflePlay}
+                disabled={isShuffling}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className="w-full text-left p-5 rounded-xl bg-[#0d0d12] transition-all duration-200 group"
+                style={{
+                  border: '1px solid #22d3ee',
+                  boxShadow: '0 0 20px rgba(34, 211, 238, 0.15)',
+                }}
+                data-testid="button-shuffle-play"
+              >
+                <div className="flex items-center gap-4">
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{
+                      border: '2px solid #22d3ee',
+                      boxShadow: '0 0 15px rgba(34, 211, 238, 0.3)',
                     }}
                   >
-                    I'm Feeling Lucky
-                  </h2>
-                  <p className="text-white/60 text-sm">
-                    Mix it up! Randomly picks 5 categories from all your grids
-                  </p>
+                    {isShuffling ? (
+                      <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
+                    ) : (
+                      <Shuffle className="w-6 h-6 text-cyan-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 
+                      className="font-black uppercase tracking-wide text-base text-cyan-300 group-hover:text-cyan-200 transition-colors"
+                      style={{ 
+                        fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                        textShadow: '0 0 12px rgba(34, 211, 238, 0.4)',
+                      }}
+                    >
+                      I'm Feeling Lucky
+                    </h3>
+                    <p className="text-xs text-white/40 mt-1">
+                      Random mix from all your grids
+                    </p>
+                  </div>
                 </div>
-              </div>
+              </motion.button>
               {playedShuffleCategoryIds.length > 0 && (
-                <div className="relative mt-4 pt-4 border-t border-cyan-400/20 flex items-center justify-between">
-                  <span className="text-cyan-400/60 text-sm">{playedShuffleCategoryIds.length} categories played</span>
+                <div className="mt-2 flex items-center justify-center gap-3">
+                  <span className="text-white/30 text-xs">{playedShuffleCategoryIds.length} played</span>
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="text-cyan-400"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    className="text-cyan-400 h-6 text-xs"
+                    onClick={() => {
                       setPlayedShuffleCategoryIds([]);
                       toast({ title: "Reset", description: "All categories available again" });
                     }}
                     data-testid="button-reset-shuffle"
                   >
-                    <RotateCcw className="w-4 h-4 mr-1" />
+                    <RotateCcw className="w-3 h-3 mr-1" />
                     Reset
                   </Button>
                 </div>
               )}
-            </motion.button>
+            </motion.div>
 
             {/* My Grids Section */}
             {myGrids.length > 0 && (
