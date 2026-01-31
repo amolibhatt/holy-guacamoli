@@ -26,11 +26,11 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
           <stop offset="100%" stopColor="#FFA500" />
         </linearGradient>
         
-        {/* Flesh gradient - vibrant lime */}
+        {/* Flesh gradient - matches cyan/teal palette */}
         <linearGradient id={`${id}-flesh`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#76FF03" />
-          <stop offset="50%" stopColor="#64DD17" />
-          <stop offset="100%" stopColor="#AEEA00" />
+          <stop offset="0%" stopColor="#5eead4" />
+          <stop offset="50%" stopColor="#2dd4bf" />
+          <stop offset="100%" stopColor="#14b8a6" />
         </linearGradient>
         
         {/* Pit gradient - warm brown */}
@@ -57,10 +57,10 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
       {/* Right Wing */}
       <ellipse cx="68" cy="44" rx="12" ry="10" fill="white" opacity="0.95"/>
       
-      {/* Avocado Body - solid dark green skin */}
-      <ellipse cx="40" cy="52" rx="24" ry="32" fill="#2D5016"/>
+      {/* Avocado Body - bright teal skin that pops */}
+      <ellipse cx="40" cy="52" rx="24" ry="32" fill="#0d9488"/>
       
-      {/* Avocado flesh - vibrant gradient */}
+      {/* Avocado flesh - lighter teal gradient */}
       <ellipse cx="40" cy="54" rx="18" ry="25" fill={`url(#${id}-flesh)`}/>
       
       {/* Pit - radial gradient */}
@@ -69,27 +69,27 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
       {/* Happy closed eyes */}
       <path 
         d="M28 40 Q32 35 36 40" 
-        stroke="#1B5E20" 
+        stroke="#115e59" 
         strokeWidth="3" 
         fill="none" 
         strokeLinecap="round"
       />
       <path 
         d="M44 40 Q48 35 52 40" 
-        stroke="#1B5E20" 
+        stroke="#115e59" 
         strokeWidth="3" 
         fill="none" 
         strokeLinecap="round"
       />
       
-      {/* Rosy cheeks */}
-      <ellipse cx="24" cy="46" rx="5" ry="3" fill="#F48FB1" opacity="0.6"/>
-      <ellipse cx="56" cy="46" rx="5" ry="3" fill="#F48FB1" opacity="0.6"/>
+      {/* Rosy cheeks - soft magenta matching brand */}
+      <ellipse cx="24" cy="46" rx="5" ry="3" fill="#e879f9" opacity="0.5"/>
+      <ellipse cx="56" cy="46" rx="5" ry="3" fill="#e879f9" opacity="0.5"/>
       
       {/* Smile */}
       <path 
         d="M34 50 Q40 56 46 50" 
-        stroke="#1B5E20" 
+        stroke="#115e59" 
         strokeWidth="2.5" 
         fill="none" 
         strokeLinecap="round"
@@ -124,16 +124,16 @@ export function Logo({ size = "md" }: LogoProps) {
           className="absolute inset-0 blur-sm opacity-50"
           aria-hidden="true"
         >
-          <span style={{ color: '#39FF14' }}>Holy </span>
-          <span style={{ color: '#39FF14' }}>Guac</span>
-          <span style={{ color: '#BC13FE' }}>Amoli!</span>
+          <span style={{ color: '#22d3ee' }}>Holy </span>
+          <span style={{ color: '#22d3ee' }}>Guac</span>
+          <span style={{ color: '#e879f9' }}>Amoli!</span>
         </span>
         
-        {/* Main text - segmented colors */}
+        {/* Main text - matching page palette */}
         <span className="relative">
           <span className="text-white">Holy </span>
-          <span style={{ color: '#39FF14' }}>Guac</span>
-          <span style={{ color: '#BC13FE' }}>Amoli!</span>
+          <span style={{ color: '#22d3ee' }}>Guac</span>
+          <span style={{ color: '#e879f9' }}>Amoli!</span>
         </span>
       </h1>
     </motion.div>
