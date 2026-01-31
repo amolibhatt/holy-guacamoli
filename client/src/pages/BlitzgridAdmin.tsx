@@ -84,6 +84,7 @@ export default function BlitzgridAdmin() {
   const [newGridName, setNewGridName] = useState("");
   const [editingGridId, setEditingGridId] = useState<number | null>(null);
   const [editGridName, setEditGridName] = useState("");
+  const [editGridDescription, setEditGridDescription] = useState("");
   const [deleteGridId, setDeleteGridId] = useState<number | null>(null);
   
   const [questionForms, setQuestionForms] = useState<Record<string, { 
@@ -131,8 +132,8 @@ export default function BlitzgridAdmin() {
   });
 
   const updateGridMutation = useMutation({
-    mutationFn: async ({ id, name }: { id: number; name?: string }) => {
-      return apiRequest('PATCH', `/api/blitzgrid/grids/${id}`, { name });
+    mutationFn: async ({ id, name, description }: { id: number; name?: string; description?: string }) => {
+      return apiRequest('PATCH', `/api/blitzgrid/grids/${id}`, { name, description });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
@@ -1013,43 +1014,61 @@ export default function BlitzgridAdmin() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-3">
                     {editingGridId === grid.id ? (
-                      <div className="flex items-center gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex flex-col gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={editGridName}
+                            onChange={(e) => setEditGridName(e.target.value)}
+                            className="h-8"
+                            placeholder="Grid name"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Escape') {
+                                setEditingGridId(null);
+                              }
+                            }}
+                            data-testid={`input-edit-grid-${grid.id}`}
+                          />
+                        </div>
                         <Input
-                          value={editGridName}
-                          onChange={(e) => setEditGridName(e.target.value)}
+                          value={editGridDescription}
+                          onChange={(e) => setEditGridDescription(e.target.value)}
                           className="h-8"
-                          autoFocus
+                          placeholder="Short tagline (optional, ~50 chars)"
+                          maxLength={60}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' && editGridName.trim()) {
-                              updateGridMutation.mutate({ id: grid.id, name: editGridName.trim() });
-                            } else if (e.key === 'Escape') {
+                            if (e.key === 'Escape') {
                               setEditingGridId(null);
                             }
                           }}
-                          data-testid={`input-edit-grid-${grid.id}`}
+                          data-testid={`input-edit-grid-desc-${grid.id}`}
                         />
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 shrink-0"
-                          onClick={() => {
-                            if (editGridName.trim()) {
-                              updateGridMutation.mutate({ id: grid.id, name: editGridName.trim() });
-                            }
-                          }}
-                          disabled={!editGridName.trim() || updateGridMutation.isPending}
-                          data-testid={`button-save-grid-${grid.id}`}
-                        >
-                          <Check className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 shrink-0"
-                          onClick={() => setEditingGridId(null)}
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              if (editGridName.trim()) {
+                                updateGridMutation.mutate({ 
+                                  id: grid.id, 
+                                  name: editGridName.trim(),
+                                  description: editGridDescription.trim() || undefined
+                                });
+                              }
+                            }}
+                            disabled={!editGridName.trim() || updateGridMutation.isPending}
+                            data-testid={`button-save-grid-${grid.id}`}
+                          >
+                            <Check className="w-3 h-3 mr-1" />
+                            Save
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditingGridId(null)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       <>
@@ -1066,6 +1085,7 @@ export default function BlitzgridAdmin() {
                               e.stopPropagation();
                               setEditingGridId(grid.id);
                               setEditGridName(grid.name);
+                              setEditGridDescription(grid.description === "Blitzgrid" ? "" : (grid.description || ""));
                             }}
                             data-testid={`button-edit-grid-${grid.id}`}
                           >
