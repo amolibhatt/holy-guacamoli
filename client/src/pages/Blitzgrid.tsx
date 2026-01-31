@@ -3350,7 +3350,7 @@ export default function Blitzgrid() {
               >
                 BLITZGRID
               </h1>
-              <p className="text-white/50 text-lg">5 categories. 25 questions. One winner.</p>
+              <p className="text-white/50 text-lg">The ultimate trivia showdown</p>
             </motion.div>
 
             {/* Shuffle Play Hero Card */}
