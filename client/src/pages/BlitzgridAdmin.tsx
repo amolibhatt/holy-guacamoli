@@ -352,7 +352,7 @@ export default function BlitzgridAdmin() {
     return (
       <div className="min-h-screen bg-background">
         <AppHeader minimal backHref="/" title="Blitzgrid Admin" />
-        <div className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto px-4 py-8 w-full">
           <Skeleton className="h-8 w-48 mb-4" />
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-32" />)}
@@ -502,7 +502,7 @@ export default function BlitzgridAdmin() {
         <AppHeader minimal backHref="/" title="Blitzgrid Admin" />
         
         <div className="border-b border-border bg-card/50">
-          <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto px-4 w-full">
             <nav className="flex gap-1">
               <Link href="/admin/games">
                 <Button 
@@ -619,7 +619,7 @@ export default function BlitzgridAdmin() {
           </aside>
           
           {/* Main Content */}
-          <div className="flex-1 p-6 overflow-auto max-w-4xl">
+          <div className="flex-1 p-4 md:p-6 overflow-auto">
             {/* Mobile Grid Selector */}
             <div className="md:hidden mb-4">
               <Select value={String(selectedGridId)} onValueChange={(v) => setSelectedGridId(Number(v))}>
@@ -1039,7 +1039,7 @@ export default function BlitzgridAdmin() {
       <AppHeader minimal backHref="/" title="Blitzgrid Admin" />
       
       <div className="border-b border-border bg-card/50">
-        <div className="container mx-auto px-4">
+        <div className="max-w-6xl mx-auto px-4 w-full">
           <nav className="flex gap-1">
             <Link href="/admin/games">
               <Button 
@@ -1075,7 +1075,7 @@ export default function BlitzgridAdmin() {
         </div>
       </div>
       
-      <div className="container mx-auto px-4 py-6 flex-1">
+      <div className="max-w-6xl mx-auto px-4 py-6 flex-1 w-full">
         <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold">Blitzgrid Grids</h1>

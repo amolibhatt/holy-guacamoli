@@ -184,7 +184,7 @@ export default function GameHistory() {
     <div className="min-h-screen bg-background" data-testid="page-game-history">
       <AppHeader minimal backHref="/" title="Game History" />
       
-      <div className="container mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 py-6 w-full space-y-6">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">Game History</h1>

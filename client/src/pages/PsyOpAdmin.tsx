@@ -29,7 +29,7 @@ export default function PsyOpAdmin() {
       <AppHeader minimal backHref="/" title="PsyOp Admin" />
 
       <div className="border-b border-border bg-card/50">
-        <div className="container mx-auto px-4">
+        <div className="max-w-6xl mx-auto px-4 w-full">
           <nav className="flex flex-wrap gap-1">
             <Link href="/admin/games">
               <Button 
@@ -65,7 +65,7 @@ export default function PsyOpAdmin() {
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="max-w-6xl mx-auto px-4 py-6 w-full">
         <div className="mb-6">
           <h1 className="text-2xl font-bold">PsyOp Questions</h1>
           <p className="text-muted-foreground text-sm">Create fill-in-the-blank facts for the lie-guessing game</p>

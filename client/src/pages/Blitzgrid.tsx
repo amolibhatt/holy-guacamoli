@@ -1064,7 +1064,7 @@ export default function Blitzgrid() {
     return (
       <div className="min-h-screen bg-background">
         <AppHeader minimal backHref="/" title="Blitzgrid" />
-        <div className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto px-4 py-8 w-full">
           <Skeleton className="h-8 w-48 mb-4" />
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-32" />)}
@@ -1673,7 +1673,7 @@ export default function Blitzgrid() {
             animate={{ y: 0, opacity: 1 }}
             className="border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-50"
           >
-            <div className="px-4 py-3 flex items-center justify-between gap-4 max-w-5xl mx-auto">
+            <div className="px-4 py-3 flex items-center justify-between gap-4 max-w-6xl mx-auto w-full">
             {/* Left: Back + Logo + Grid Name */}
             <div className="flex items-center gap-3">
               <Button 
@@ -2939,7 +2939,7 @@ export default function Blitzgrid() {
     return (
       <div className="min-h-screen flex flex-col bg-background" data-testid="page-blitzgrid-grid">
         <AppHeader minimal backHref="/" title={grid?.name || 'Blitzgrid'} />
-        <div className="flex-1 flex flex-col container mx-auto px-4 py-4">
+        <div className="flex-1 flex flex-col max-w-6xl mx-auto px-4 py-4 w-full">
           <div className="flex items-center justify-between mb-4 shrink-0">
             <div>
               <p className="text-muted-foreground text-sm">
@@ -3166,7 +3166,7 @@ export default function Blitzgrid() {
     
     return (
       <div className="min-h-screen bg-background" data-testid="page-blitzgrid-picker">
-        <div className="container mx-auto px-4 py-6">
+        <div className="max-w-6xl mx-auto px-4 py-6 w-full">
           {/* Session Info Banner */}
           <motion.div
             initial={{ y: -20, opacity: 0 }}
@@ -3367,9 +3367,9 @@ export default function Blitzgrid() {
       
       <AppHeader minimal backHref="/" title="Blitzgrid" />
       
-      <div className="flex-1 container mx-auto px-4 py-8 relative z-10">
+      <div className="flex-1 max-w-6xl mx-auto px-4 py-8 relative z-10 w-full">
         {loadingGrids ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map(i => (
               <div key={i} className="h-20 rounded-xl bg-[#0d0d12] border border-white/10 animate-pulse" />
             ))}

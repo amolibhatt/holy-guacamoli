@@ -199,7 +199,7 @@ export default function SuperAdmin() {
     <div className="min-h-screen gradient-game">
       <AppHeader minimal backHref="/" title="Super Admin" />
 
-      <main className="p-6 max-w-7xl mx-auto">
+      <main className="px-4 py-6 max-w-6xl mx-auto w-full">
         <Tabs defaultValue="analytics" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 max-w-md">
             <TabsTrigger value="analytics" className="gap-2">

@@ -312,7 +312,7 @@ export default function PsyOpHost() {
       
 <AppHeader minimal backHref="/" title="PsyOp" />
 
-      <main className="container mx-auto px-4 py-6 max-w-4xl">
+      <main className="max-w-6xl mx-auto px-4 py-6 w-full">
         {gameState === "setup" && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
             <Card>
