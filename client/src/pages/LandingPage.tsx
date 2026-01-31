@@ -76,7 +76,12 @@ export default function LandingPage() {
             <Logo size="lg" />
           </div>
           
-          <p className="text-white/50 text-sm mb-6 text-center lg:text-left">Dip into the fun</p>
+          <p 
+            className="text-lime-400 text-lg font-bold mb-6 text-center lg:text-left uppercase tracking-widest"
+            style={{ fontFamily: "'Archivo Black', 'Impact', sans-serif" }}
+          >
+            Dip into the fun
+          </p>
           
           <p className="text-white/70 mb-6 text-center lg:text-left" data-testid="text-description">
             The ultimate party game platform for unforgettable game nights.
@@ -147,8 +152,12 @@ export default function LandingPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
         >
           <div className="text-center mb-4">
-            <h2 className="text-xl font-bold text-white" data-testid="text-login-title">
-              Ready to Play?
+            <h2 
+              className="text-2xl font-black text-white tracking-wide uppercase" 
+              style={{ fontFamily: "'Archivo Black', 'Impact', sans-serif" }}
+              data-testid="text-login-title"
+            >
+              Enter the Lab
             </h2>
             <p className="text-white/60 text-sm" data-testid="text-login-description">
               Create your free account to start hosting
