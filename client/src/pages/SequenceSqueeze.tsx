@@ -375,6 +375,13 @@ export default function SequenceSqueeze() {
     };
   }, [ws]);
 
+  // Auto-connect to create room immediately when questions are available
+  useEffect(() => {
+    if (!isLoadingQuestions && questions.length > 0 && !ws && gameState === "setup") {
+      connectWebSocket(false);
+    }
+  }, [isLoadingQuestions, questions.length, ws, gameState, connectWebSocket]);
+
   if (isAuthLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
