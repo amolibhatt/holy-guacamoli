@@ -325,14 +325,7 @@ export default function PsyOpHost() {
     <div className="min-h-screen bg-background" data-testid="page-psyop-host">
       <div className="fixed inset-0 bg-gradient-to-br from-violet-300/5 via-transparent to-purple-300/5 pointer-events-none" />
       
-      <AppHeader minimal backHref="/" />
-      
-      {/* Secondary bar with game title */}
-      <div className="border-b border-border/30 bg-card/30">
-        <div className="container mx-auto px-4 py-2 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-foreground">PsyOp</h1>
-        </div>
-      </div>
+<AppHeader minimal backHref="/" title="PsyOp" />
 
       <main className="container mx-auto px-4 py-6 max-w-4xl">
         {gameState === "setup" && (
