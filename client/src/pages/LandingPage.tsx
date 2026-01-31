@@ -75,12 +75,6 @@ export default function LandingPage() {
         <div className="flex justify-center mb-6" data-testid="icon-logo">
           <Logo size="xl" />
         </div>
-        
-        <p 
-          className="text-white/60 text-sm mb-6 text-center tracking-wide"
-        >
-          Party games for everyone
-        </p>
 
         <Card className="border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl shadow-lime-500/5 rounded-2xl">
             <CardContent className="p-6">
