@@ -3250,11 +3250,13 @@ export default function Blitzgrid() {
             >
               {grid.name}
             </h3>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs text-white/40">{grid.categoryCount || 0} categories</span>
-              <span className="text-white/20">·</span>
-              <span className="text-xs text-white/40">{grid.questionCount || 0} questions</span>
-            </div>
+            <p className="text-xs text-white/40 mt-1 truncate">
+              {grid.description && grid.description !== "Blitzgrid" 
+                ? grid.description 
+                : grid.categoryNames?.length 
+                  ? grid.categoryNames.slice(0, 3).join(" · ") + (grid.categoryNames.length > 3 ? " ..." : "")
+                  : "No categories yet"}
+            </p>
           </div>
           <ChevronRight 
             className="w-5 h-5 text-white/30 group-hover:translate-x-0.5 transition-all" 
