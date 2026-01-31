@@ -483,8 +483,7 @@ export default function BlitzgridAdmin() {
       <div className="min-h-screen bg-background flex flex-col" data-testid="page-blitzgrid-admin-grid">
         <AppHeader minimal backHref="/" />
         <div className="border-b bg-muted/30 px-4 py-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-muted-foreground mr-2">Tools:</span>
+          <div className="flex items-center justify-end gap-2 flex-wrap">
             <Button
               variant="outline"
               size="sm"
@@ -845,23 +844,6 @@ export default function BlitzgridAdmin() {
                                       }}
                                       data-testid={`input-edit-category-description-${category.id}`}
                                     />
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      onClick={() => updateCategoryMutation.mutate({ 
-                                        categoryId: category.id, 
-                                        name: editCategoryName.trim() || undefined,
-                                        description: editCategoryDescription.trim() 
-                                      })}
-                                      disabled={updateCategoryMutation.isPending || !editCategoryName.trim()}
-                                      data-testid={`button-save-category-${category.id}`}
-                                    >
-                                      {updateCategoryMutation.isPending ? (
-                                        <Loader2 className="w-3 h-3 animate-spin" />
-                                      ) : (
-                                        <Check className="w-3 h-3" />
-                                      )}
-                                    </Button>
                                   </div>
                                 </div>
                               ) : (
@@ -931,6 +913,14 @@ export default function BlitzgridAdmin() {
                                 </Button>
                                 <Button
                                   onClick={async () => {
+                                    // Save category name/description if changed
+                                    if (editCategoryName.trim()) {
+                                      await updateCategoryMutation.mutateAsync({ 
+                                        categoryId: category.id, 
+                                        name: editCategoryName.trim(),
+                                        description: editCategoryDescription.trim() 
+                                      });
+                                    }
                                     // Save all questions with data
                                     for (const pts of POINT_TIERS) {
                                       const formKey = `${category.id}-${pts}`;
@@ -963,9 +953,9 @@ export default function BlitzgridAdmin() {
                                     });
                                     toast({ title: "Saved" });
                                   }}
-                                  disabled={saveQuestionMutation.isPending}
+                                  disabled={saveQuestionMutation.isPending || updateCategoryMutation.isPending || !editCategoryName.trim()}
                                 >
-                                  {saveQuestionMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                                  {(saveQuestionMutation.isPending || updateCategoryMutation.isPending) ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                                   Save All
                                 </Button>
                               </div>
