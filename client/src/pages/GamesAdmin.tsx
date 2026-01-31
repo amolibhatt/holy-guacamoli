@@ -268,7 +268,7 @@ export default function GamesAdmin() {
     <div className="min-h-screen bg-muted/30">
 <AppHeader minimal backHref="/" title="Game Manager" />
 
-      <div className="max-w-[1600px] mx-auto p-6">
+      <div className="max-w-6xl mx-auto px-4 py-6 w-full">
         <Tabs defaultValue="games" className="space-y-6">
           <TabsList className="grid w-full max-w-2xl grid-cols-4">
             <TabsTrigger value="games" className="gap-2" data-testid="tab-games">

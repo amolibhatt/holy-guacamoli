@@ -528,7 +528,7 @@ export default function SequenceSqueeze() {
 
       <AppHeader minimal backHref="/" title="Sort Circuit" />
 
-      <main className="p-6 max-w-5xl mx-auto">
+      <main className="px-4 py-6 max-w-6xl mx-auto w-full">
         {gameState === "setup" && (
           <motion.div
             initial={{ opacity: 0 }}
