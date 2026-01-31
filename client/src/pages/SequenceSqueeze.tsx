@@ -399,7 +399,7 @@ export default function SequenceSqueeze() {
     return null;
   }
 
-  const joinUrl = `${window.location.origin}/sequence/${roomCode}`;
+  const joinUrl = `${window.location.origin}/sortcircuit/${roomCode}`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -441,7 +441,7 @@ export default function SequenceSqueeze() {
                   <span className="font-mono font-bold text-2xl" data-testid="text-room-code">{roomCode}</span>
                 </p>
                 <p className="text-sm text-muted-foreground mt-1 mb-6" data-testid="text-join-url">
-                  Scan or go to <span className="font-mono">/sequence/{roomCode}</span>
+                  Scan or go to <span className="font-mono">/sortcircuit/{roomCode}</span>
                 </p>
 
                 {/* Smart Start Button */}

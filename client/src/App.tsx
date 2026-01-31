@@ -53,7 +53,7 @@ function Router() {
         <Route path="/admin/sort-circuit" component={SortCircuitAdmin} />
         <Route path="/admin/psyop" component={PsyOpAdmin} />
         <Route path="/host/psyop" component={PsyOpHost} />
-        <Route path="/sequence/:code?" component={SortCircuitPlayer} />
+        <Route path="/sortcircuit/:code?" component={SortCircuitPlayer} />
         <Route path="/host/blitzgrid" component={Blitzgrid} />
         <Route component={NotFound} />
       </Switch>
