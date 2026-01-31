@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Logo } from "@/components/Logo";
 import { motion } from "framer-motion";
-import { Sparkles, Trophy, Loader2, QrCode, Users, Zap, PartyPopper } from "lucide-react";
+import { Sparkles, Loader2, Grid3X3, ListOrdered, Brain } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -82,35 +82,58 @@ export default function LandingPage() {
             The ultimate party game platform for unforgettable game nights.
           </p>
 
-          {/* Features - compact, avocado themed */}
-          <div className="grid grid-cols-2 gap-3" data-testid="section-features">
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-lime-500/10 border border-lime-500/20" data-testid="feature-qr">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-green-600 flex items-center justify-center shrink-0">
-                <QrCode className="w-4 h-4 text-white" />
+          {/* Game Preview Tiles */}
+          <div className="space-y-3" data-testid="section-games">
+            <motion.div 
+              className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-rose-500/20 to-fuchsia-500/10 border border-rose-500/30 cursor-pointer"
+              whileHover={{ scale: 1.02, x: 4 }}
+              data-testid="game-blitzgrid"
+            >
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-rose-400 to-fuchsia-500 flex items-center justify-center shrink-0 relative overflow-hidden">
+                <div className="absolute inset-0 grid grid-cols-3 gap-px p-1 opacity-40">
+                  {[...Array(9)].map((_, i) => <div key={i} className="bg-white/60 rounded-sm" />)}
+                </div>
+                <Grid3X3 className="w-5 h-5 text-white relative z-10" />
               </div>
-              <span className="text-white text-sm font-medium">Instant Join</span>
-            </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-white font-bold block">Blitzgrid</span>
+                <span className="text-white/50 text-xs">Race to claim the 5x5 trivia grid</span>
+              </div>
+            </motion.div>
 
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-lime-500/10 border border-lime-500/20" data-testid="feature-multiplayer">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-green-600 flex items-center justify-center shrink-0">
-                <Users className="w-4 h-4 text-white" />
+            <motion.div 
+              className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-emerald-500/20 to-cyan-500/10 border border-emerald-500/30 cursor-pointer"
+              whileHover={{ scale: 1.02, x: 4 }}
+              data-testid="game-sortcircuit"
+            >
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shrink-0 relative overflow-hidden">
+                <div className="absolute inset-0 flex flex-col gap-1 p-2 opacity-40">
+                  {[...Array(4)].map((_, i) => <div key={i} className="bg-white/60 rounded-sm h-1.5" />)}
+                </div>
+                <ListOrdered className="w-5 h-5 text-white relative z-10" />
               </div>
-              <span className="text-white text-sm font-medium">Multiplayer</span>
-            </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-white font-bold block">Sort Circuit</span>
+                <span className="text-white/50 text-xs">Drag items into order - fastest wins</span>
+              </div>
+            </motion.div>
 
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-lime-500/10 border border-lime-500/20" data-testid="feature-realtime">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-green-600 flex items-center justify-center shrink-0">
-                <Zap className="w-4 h-4 text-white" />
+            <motion.div 
+              className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-violet-500/20 to-indigo-500/10 border border-violet-500/30 cursor-pointer"
+              whileHover={{ scale: 1.02, x: 4 }}
+              data-testid="game-psyop"
+            >
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center shrink-0 relative overflow-hidden">
+                <div className="absolute inset-0 flex items-center justify-center opacity-30">
+                  <span className="text-white text-lg font-bold">[?]</span>
+                </div>
+                <Brain className="w-5 h-5 text-white relative z-10" />
               </div>
-              <span className="text-white text-sm font-medium">Real-time</span>
-            </div>
-
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-fuchsia-500/10 border border-fuchsia-500/20" data-testid="feature-party">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-fuchsia-400 to-fuchsia-600 flex items-center justify-center shrink-0">
-                <PartyPopper className="w-4 h-4 text-white" />
+              <div className="flex-1 min-w-0">
+                <span className="text-white font-bold block">PsyOp</span>
+                <span className="text-white/50 text-xs">Write lies, spot the truth</span>
               </div>
-              <span className="text-white text-sm font-medium">Party Mode</span>
-            </div>
+            </motion.div>
           </div>
         </motion.div>
       </div>
