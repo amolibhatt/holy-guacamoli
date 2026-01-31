@@ -394,25 +394,7 @@ export default function SequenceSqueeze() {
     <div className="min-h-screen bg-background">
       <div className="fixed inset-0 bg-gradient-to-br from-teal-300/5 via-transparent to-teal-300/5 pointer-events-none" />
 
-      <AppHeader minimal backHref="/" />
-      
-      {/* Secondary bar with game title and audio control */}
-      <div className="border-b border-border/30 bg-card/30">
-        <div className="container mx-auto px-4 py-2 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-foreground">Sort Circuit</h1>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              setAudioEnabled(!audioEnabled);
-              if (!audioEnabled) getAudioContext();
-            }}
-            data-testid="button-audio-toggle"
-          >
-            {audioEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5 text-muted-foreground" />}
-          </Button>
-        </div>
-      </div>
+      <AppHeader minimal backHref="/" title="Sort Circuit" />
 
       <main className="p-6 max-w-5xl mx-auto">
         {gameState === "setup" && (
