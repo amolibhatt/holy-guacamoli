@@ -59,6 +59,7 @@ export default function SequenceSqueeze() {
   const [gameState, setGameState] = useState<GameState>("setup");
   const [animationStage, setAnimationStage] = useState<AnimationStage>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const animationTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<SequenceQuestion | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(1);
@@ -178,11 +179,14 @@ export default function SequenceSqueeze() {
             setCurrentQuestion(prev => prev || data.question);
           }
           playAudio("countdown");
-          setTimeout(() => setAnimationStage("questionDrop"), 1200);
-          setTimeout(() => {
+          animationTimeoutsRef.current.forEach(clearTimeout);
+          animationTimeoutsRef.current = [];
+          const t1 = setTimeout(() => setAnimationStage("questionDrop"), 1200);
+          const t2 = setTimeout(() => {
             setAnimationStage("optionPulse");
             playAudio("whoosh");
           }, 2000);
+          animationTimeoutsRef.current = [t1, t2];
           break;
         case "sequence:answering:started":
           setGameState("playing");
@@ -361,6 +365,8 @@ export default function SequenceSqueeze() {
   };
 
   const skipAnimation = useCallback(() => {
+    animationTimeoutsRef.current.forEach(clearTimeout);
+    animationTimeoutsRef.current = [];
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: "sequence:host:startAnswering" }));
     }
@@ -391,6 +397,7 @@ export default function SequenceSqueeze() {
   useEffect(() => {
     return () => {
       if (ws) ws.close();
+      animationTimeoutsRef.current.forEach(clearTimeout);
     };
   }, [ws]);
 
