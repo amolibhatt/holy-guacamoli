@@ -2487,31 +2487,61 @@ export default function Blitzgrid() {
                 
                 return (
                   <>
-                    {/* Header: Category info */}
-                    <DialogHeader className="pb-3">
-                      <DialogTitle className="text-white text-lg font-semibold">
-                        {category?.name || 'Question'}
-                      </DialogTitle>
-                      {category?.description && (
-                        <p className="text-white/40 text-sm mt-0.5">{category.description}</p>
-                      )}
-                    </DialogHeader>
-                    
-                    {/* Points badge - prominent, centered */}
-                    <div className="flex justify-center pb-4">
-                      <div 
-                        className="flex items-center gap-2 px-5 py-2 rounded-full"
-                        style={{ 
-                          backgroundColor: `${neonColor.border}25`,
-                          border: `2px solid ${neonColor.border}60`,
-                        }}
-                      >
-                        <span className="text-2xl font-black" style={{ color: neonColor.text }}>
-                          {activeQuestion?.points}
-                        </span>
-                        <span className="text-sm text-white/60 uppercase tracking-wide">points</span>
+                    {/* Header: Category + Points + Timer */}
+                    <DialogHeader className="pb-4 pr-10">
+                      <div className="flex items-start justify-between gap-3">
+                        {/* Category info - left side */}
+                        <div className="flex-1 min-w-0">
+                          <DialogTitle className="text-white text-lg font-semibold">
+                            {category?.name || 'Question'}
+                          </DialogTitle>
+                          {category?.description && (
+                            <p className="text-white/40 text-sm mt-0.5 line-clamp-2">{category.description}</p>
+                          )}
+                        </div>
+                        
+                        {/* Timer + Points - right side */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {/* Timer */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (timerActive) {
+                                setTimerActive(false);
+                                setTimeLeft(10);
+                              } else {
+                                setTimeLeft(10);
+                                setTimerActive(true);
+                              }
+                            }}
+                            className={`gap-1.5 h-9 px-3 rounded-lg ${timerActive ? 'bg-white/15 text-white' : 'text-white/40 border border-white/20'}`}
+                            data-testid="button-timer"
+                          >
+                            <Timer className="w-4 h-4" />
+                            {timerActive ? (
+                              <span className="font-mono font-bold text-base min-w-[2ch]">{timeLeft}</span>
+                            ) : (
+                              <span className="text-sm">10s</span>
+                            )}
+                          </Button>
+                          
+                          {/* Points badge */}
+                          <div 
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+                            style={{ 
+                              backgroundColor: `${neonColor.border}25`,
+                              border: `2px solid ${neonColor.border}60`,
+                            }}
+                          >
+                            <span className="text-xl font-black" style={{ color: neonColor.text }}>
+                              {activeQuestion?.points}
+                            </span>
+                            <span className="text-xs text-white/50 uppercase">pts</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    </DialogHeader>
                     
                     {/* Question - THE HERO */}
                     <div className="py-8 px-2">
@@ -2739,77 +2769,46 @@ export default function Blitzgrid() {
               )}
               
               {/* Footer Actions */}
-              <DialogFooter className="flex-col gap-3 pt-4 mt-4 border-t border-white/10 sm:flex-col">
-                {/* Timer row */}
-                {!showAnswer && (
-                  <div className="flex justify-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        if (timerActive) {
-                          setTimerActive(false);
-                          setTimeLeft(10);
-                        } else {
-                          setTimeLeft(10);
-                          setTimerActive(true);
-                        }
-                      }}
-                      className={`gap-2 h-9 px-4 rounded-full ${timerActive ? 'bg-white/10 text-white' : 'text-white/50 border border-white/20'}`}
-                      data-testid="button-timer"
-                    >
-                      <Timer className="w-4 h-4" />
-                      {timerActive ? (
-                        <span className="font-mono font-bold text-lg min-w-[2ch]">{timeLeft}</span>
-                      ) : (
-                        <span className="text-sm">Start 10s Timer</span>
-                      )}
-                    </Button>
-                  </div>
+              <DialogFooter className="flex justify-center gap-3 pt-4 mt-4 border-t border-white/10">
+                {lastScoreChange && (
+                  <Button 
+                    onClick={undoLastScore}
+                    variant="ghost"
+                    size="sm"
+                    className="text-white/50"
+                    data-testid="button-undo-score"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 mr-1.5" /> Undo
+                  </Button>
                 )}
-                
-                {/* Action buttons row */}
-                <div className="flex justify-center gap-2">
-                  {lastScoreChange && (
-                    <Button 
-                      onClick={undoLastScore}
-                      variant="ghost"
-                      size="sm"
-                      className="text-white/50"
-                      data-testid="button-undo-score"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5 mr-1.5" /> Undo
-                    </Button>
-                  )}
-                  {!showAnswer ? (
-                    <Button 
-                      onClick={() => {
-                        lockBuzzer();
-                        handleRevealAnswer();
-                      }}
-                      size="lg"
-                      className="text-white font-semibold px-8"
-                      style={{ 
-                        backgroundColor: neonColorConfig[colorName].border,
-                      }}
-                      data-testid="button-reveal-answer"
-                    >
-                      <Eye className="w-4 h-4 mr-2" /> Show Answer
-                    </Button>
-                  ) : (
-                    <Button 
-                      onClick={handleCloseQuestion}
-                      size="lg"
-                      className="text-white font-semibold px-8"
-                      style={{ 
-                        backgroundColor: neonColorConfig[colorName].border,
-                      }}
-                      data-testid="button-close-question"
-                    >
-                      Continue
-                    </Button>
-                  )}
-                </div>
+                {!showAnswer ? (
+                  <Button 
+                    onClick={() => {
+                      lockBuzzer();
+                      handleRevealAnswer();
+                    }}
+                    size="lg"
+                    className="text-white font-semibold px-8"
+                    style={{ 
+                      backgroundColor: neonColorConfig[colorName].border,
+                    }}
+                    data-testid="button-reveal-answer"
+                  >
+                    <Eye className="w-4 h-4 mr-2" /> Show Answer
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={handleCloseQuestion}
+                    size="lg"
+                    className="text-white font-semibold px-8"
+                    style={{ 
+                      backgroundColor: neonColorConfig[colorName].border,
+                    }}
+                    data-testid="button-close-question"
+                  >
+                    Continue
+                  </Button>
+                )}
               </DialogFooter>
             </DialogContent>
           </Dialog>
