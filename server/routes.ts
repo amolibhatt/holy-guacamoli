@@ -2484,13 +2484,18 @@ export async function registerRoutes(
       
       const boards = Array.from(allBoardsMap.values()).filter(b => b.theme === "blitzgrid" || b.theme.startsWith("blitzgrid:"));
       
-      // Enhance with category counts and active status
+      // Enhance with category counts, names, and active status
       const gridsWithStats = await Promise.all(boards.map(async (board) => {
         const boardCategories = await storage.getBoardCategories(board.id);
         let totalQuestions = 0;
         let activeCategoryCount = 0;
+        const categoryNames: string[] = [];
         
         for (const bc of boardCategories) {
+          const category = await storage.getCategory(bc.categoryId);
+          if (category) {
+            categoryNames.push(category.name);
+          }
           const questions = await storage.getQuestionsForCategory(bc.categoryId);
           totalQuestions += questions.length;
           // A category is active if it has all 5 point tiers (10,20,30,40,50)
@@ -2504,6 +2509,7 @@ export async function registerRoutes(
           ...board,
           categoryCount: boardCategories.length,
           questionCount: totalQuestions,
+          categoryNames,
           isActive: boardCategories.length === 5 && activeCategoryCount === 5,
         };
       }));
