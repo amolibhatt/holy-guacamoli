@@ -3341,10 +3341,7 @@ export default function Blitzgrid() {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center"
             >
-              <p className="text-white/50 text-sm mb-4 -mt-2">The ultimate trivia showdown</p>
-              
               {/* Shuffle Play Hero - Full Width Bar */}
               <motion.button
                 onClick={handleShufflePlay}
