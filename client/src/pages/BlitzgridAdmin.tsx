@@ -583,28 +583,109 @@ export default function BlitzgridAdmin() {
     
     return (
       <div className="min-h-screen bg-background flex flex-col" data-testid="page-blitzgrid-admin-grid">
-        <AppHeader minimal backHref="/" />
+        <AppHeader minimal backHref="/admin/games" />
         <div className="container mx-auto px-4 py-6 flex-1">
           
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-2xl font-bold"><span className="bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300 bg-clip-text text-transparent">{grid?.name || 'Grid'}</span></h1>
-              <p className="text-muted-foreground text-sm">
-                {gridCategories.length}/5 categories · {grid?.questionCount || 0}/25 questions
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {grid?.isActive ? (
-                <Badge className="bg-green-500/20 text-green-600">
-                  <CheckCircle2 className="w-3 h-3 mr-1" /> Ready to Play
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="text-amber-600">
-                  <AlertCircle className="w-3 h-3 mr-1" /> Incomplete
-                </Badge>
-              )}
-            </div>
-          </div>
+          {/* Grid Details Section */}
+          <Card className="mb-6">
+            <CardContent className="py-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Grid3X3 className="w-5 h-5 text-purple-500 shrink-0" />
+                    {editingGridId === selectedGridId ? (
+                      <Input
+                        value={editGridName}
+                        onChange={(e) => setEditGridName(e.target.value)}
+                        className="text-lg font-bold"
+                        placeholder="Grid name"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') setEditingGridId(null);
+                          if (e.key === 'Enter') {
+                            updateGridMutation.mutate({ 
+                              id: selectedGridId, 
+                              name: editGridName.trim(), 
+                              description: editGridDescription.trim() || "Blitzgrid" 
+                            });
+                          }
+                        }}
+                        data-testid="input-edit-grid-name"
+                      />
+                    ) : (
+                      <h1 className="text-2xl font-bold">{grid?.name || 'Grid'}</h1>
+                    )}
+                  </div>
+                  {editingGridId === selectedGridId ? (
+                    <Input
+                      value={editGridDescription}
+                      onChange={(e) => setEditGridDescription(e.target.value)}
+                      placeholder="Short tagline (optional)"
+                      maxLength={60}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') setEditingGridId(null);
+                      }}
+                      data-testid="input-edit-grid-desc"
+                    />
+                  ) : (
+                    <p className="text-muted-foreground text-sm">
+                      {grid?.description && grid.description !== "Blitzgrid" ? grid.description : "No description"}
+                    </p>
+                  )}
+                  <p className="text-sm text-muted-foreground">
+                    {gridCategories.length}/5 categories · {grid?.questionCount || 0}/25 questions
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {editingGridId === selectedGridId ? (
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          updateGridMutation.mutate({ 
+                            id: selectedGridId, 
+                            name: editGridName.trim(), 
+                            description: editGridDescription.trim() || "Blitzgrid" 
+                          });
+                        }}
+                        disabled={!editGridName.trim() || updateGridMutation.isPending}
+                        data-testid="button-save-grid"
+                      >
+                        {updateGridMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1" /> Save</>}
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditingGridId(null)}>
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setEditingGridId(selectedGridId);
+                          setEditGridName(grid?.name || '');
+                          setEditGridDescription(grid?.description === "Blitzgrid" ? "" : (grid?.description || ""));
+                        }}
+                        data-testid="button-edit-grid"
+                      >
+                        <Pencil className="w-4 h-4 mr-1" /> Edit
+                      </Button>
+                      {grid?.isActive ? (
+                        <Badge className="bg-green-500/20 text-green-600">
+                          <CheckCircle2 className="w-3 h-3 mr-1" /> Ready to Play
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-amber-600">
+                          <AlertCircle className="w-3 h-3 mr-1" /> Incomplete
+                        </Badge>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           
           {/* New Category Form */}
           {gridCategories.length < 5 && (
