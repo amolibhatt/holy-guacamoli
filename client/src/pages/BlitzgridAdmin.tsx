@@ -372,64 +372,34 @@ export default function BlitzgridAdmin() {
       const formData = questionForms[formKey];
       const isEditing = !!formData;
       
-      if (existingQuestion && !isEditing) {
+      const isCategoryEditing = editingCategoryId === category.id;
+      
+      if (existingQuestion && !isEditing && !isCategoryEditing) {
         const hasMedia = existingQuestion.imageUrl || existingQuestion.audioUrl || existingQuestion.videoUrl;
         const hasAnswerMedia = existingQuestion.answerImageUrl || existingQuestion.answerAudioUrl || existingQuestion.answerVideoUrl;
         return (
-          <div 
-            className="p-3 bg-muted/30 rounded-lg text-sm space-y-2 cursor-pointer hover:bg-muted/50 transition-colors group"
-            onClick={() => setQuestionForms(prev => ({
-              ...prev,
-              [formKey]: {
-                question: existingQuestion.question,
-                correctAnswer: existingQuestion.correctAnswer,
-                options: existingQuestion.options || [],
-                imageUrl: existingQuestion.imageUrl || '',
-                audioUrl: existingQuestion.audioUrl || '',
-                videoUrl: existingQuestion.videoUrl || '',
-                answerImageUrl: existingQuestion.answerImageUrl || '',
-                answerAudioUrl: existingQuestion.answerAudioUrl || '',
-                answerVideoUrl: existingQuestion.answerVideoUrl || '',
-              }
-            }))}
-            data-testid={`question-slot-${existingQuestion.id}`}
-          >
-            <div className="flex items-start justify-between gap-2">
+          <div className="p-2 bg-muted/30 rounded-lg text-sm" data-testid={`question-slot-${existingQuestion.id}`}>
+            <div className="flex items-start gap-2">
+              <Badge variant="outline" className="text-xs shrink-0 mt-0.5">{points}pts</Badge>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="outline" className="text-xs shrink-0">{points}pts</Badge>
-                  {(hasMedia || hasAnswerMedia) && (
-                    <div className="flex gap-1 shrink-0">
-                      {(existingQuestion.imageUrl || existingQuestion.answerImageUrl) && <Image className="w-3 h-3 text-muted-foreground" />}
-                      {(existingQuestion.audioUrl || existingQuestion.answerAudioUrl) && <Music className="w-3 h-3 text-muted-foreground" />}
-                      {(existingQuestion.videoUrl || existingQuestion.answerVideoUrl) && <Video className="w-3 h-3 text-muted-foreground" />}
-                    </div>
-                  )}
-                  <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-auto">Click to edit</span>
+                <p className="text-sm">{existingQuestion.question || <span className="text-muted-foreground italic">Media only</span>}</p>
+                <div className="flex items-center gap-2 text-xs text-green-600 mt-1">
+                  <Check className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{existingQuestion.correctAnswer}</span>
                 </div>
-                <p className="text-sm">{existingQuestion.question}</p>
               </div>
-              <Button 
-                size="icon" 
-                variant="ghost"
-                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteQuestionMutation.mutate(existingQuestion.id);
-                }}
-                disabled={deleteQuestionMutation.isPending}
-                data-testid={`button-delete-question-${existingQuestion.id}`}
-              >
-                <Trash2 className="w-3 h-3 text-destructive" />
-              </Button>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 dark:bg-green-950/30 px-2 py-1 rounded">
-              <Check className="w-3 h-3 shrink-0" />
-              <span className="truncate">{existingQuestion.correctAnswer}</span>
+              {(hasMedia || hasAnswerMedia) && (
+                <div className="flex gap-1 shrink-0">
+                  {(existingQuestion.imageUrl || existingQuestion.answerImageUrl) && <Image className="w-3 h-3 text-muted-foreground" />}
+                  {(existingQuestion.audioUrl || existingQuestion.answerAudioUrl) && <Music className="w-3 h-3 text-muted-foreground" />}
+                  {(existingQuestion.videoUrl || existingQuestion.answerVideoUrl) && <Video className="w-3 h-3 text-muted-foreground" />}
+                </div>
+              )}
             </div>
           </div>
         );
       }
+      
       
       const defaultForm = { question: '', correctAnswer: '', options: [], imageUrl: '', audioUrl: '', videoUrl: '', answerImageUrl: '', answerAudioUrl: '', answerVideoUrl: '' };
       const hasQuestionMedia = formData?.imageUrl || formData?.audioUrl || formData?.videoUrl;
@@ -437,24 +407,8 @@ export default function BlitzgridAdmin() {
       const questionValid = formData?.question || hasQuestionMedia;
       
       return (
-        <div className="p-3 border border-dashed rounded-lg bg-card/50 space-y-4">
-          <div className="flex items-center justify-between">
-            <Badge variant="outline" className="text-xs font-semibold">{points} points</Badge>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-6 text-xs text-muted-foreground"
-              onClick={() => {
-                setQuestionForms(prev => {
-                  const newForms = { ...prev };
-                  delete newForms[formKey];
-                  return newForms;
-                });
-              }}
-            >
-              <X className="w-3 h-3 mr-1" /> Cancel
-            </Button>
-          </div>
+        <div className="p-3 border border-dashed rounded-lg bg-card/50 space-y-3">
+          <Badge variant="outline" className="text-xs font-semibold">{points} points</Badge>
           
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground block">Question {hasQuestionMedia && "(optional with media)"}</label>
@@ -899,11 +853,21 @@ export default function BlitzgridAdmin() {
                                       )}
                                     </Button>
                                     <Button
-                                      size="icon"
+                                      size="sm"
                                       variant="ghost"
-                                      onClick={() => setEditingCategoryId(null)}
+                                      onClick={() => {
+                                        setEditingCategoryId(null);
+                                        // Clear question forms for this category
+                                        setQuestionForms(prev => {
+                                          const newForms = { ...prev };
+                                          POINT_TIERS.forEach(pts => {
+                                            delete newForms[`${category.id}-${pts}`];
+                                          });
+                                          return newForms;
+                                        });
+                                      }}
                                     >
-                                      <X className="w-3 h-3" />
+                                      Done
                                     </Button>
                                   </div>
                                 </div>
@@ -923,6 +887,25 @@ export default function BlitzgridAdmin() {
                                       setEditingCategoryId(category.id);
                                       setEditCategoryName(category.name);
                                       setEditCategoryDescription(category.description || '');
+                                      // Pre-populate all question forms for this category
+                                      const newForms: Record<string, any> = {};
+                                      POINT_TIERS.forEach(pts => {
+                                        const q = category.questions?.find(q => q.points === pts);
+                                        if (q) {
+                                          newForms[`${category.id}-${pts}`] = {
+                                            question: q.question,
+                                            correctAnswer: q.correctAnswer,
+                                            options: q.options || [],
+                                            imageUrl: q.imageUrl || '',
+                                            audioUrl: q.audioUrl || '',
+                                            videoUrl: q.videoUrl || '',
+                                            answerImageUrl: q.answerImageUrl || '',
+                                            answerAudioUrl: q.answerAudioUrl || '',
+                                            answerVideoUrl: q.answerVideoUrl || '',
+                                          };
+                                        }
+                                      });
+                                      setQuestionForms(prev => ({ ...prev, ...newForms }));
                                     }}
                                     data-testid={`button-edit-category-${category.id}`}
                                   >
