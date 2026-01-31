@@ -639,6 +639,36 @@ export default function BlitzgridAdmin() {
                   )}
                 </div>
               </div>
+              <div className="flex items-center gap-2 pt-3 mt-3 border-t flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadTemplate}
+                  data-testid="button-download-template-detail"
+                >
+                  <FileSpreadsheet className="w-4 h-4 mr-1" /> Template
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExport}
+                  disabled={isExporting || grids.length === 0}
+                  data-testid="button-export-grids-detail"
+                >
+                  {isExporting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
+                  Export
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isImporting}
+                  data-testid="button-import-grids-detail"
+                >
+                  {isImporting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Upload className="w-4 h-4 mr-1" />}
+                  Import
+                </Button>
+              </div>
             </CardContent>
           </Card>
           
