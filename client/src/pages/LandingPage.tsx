@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AnimatedLogo } from "@/components/AvocadoIcon";
+import { Logo } from "@/components/Logo";
 import { motion } from "framer-motion";
 import { Sparkles, Trophy, Loader2, QrCode, Users, Zap, PartyPopper } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -71,24 +71,11 @@ export default function LandingPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          {/* Logo with glow */}
+          {/* Logo */}
           <div className="flex justify-center lg:justify-start mb-6" data-testid="icon-logo">
-            <div className="relative">
-              <motion.div
-                className="absolute -inset-3 bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 rounded-full blur-xl opacity-50"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-              />
-              <div className="relative">
-                <AnimatedLogo size="xl" showText={false} />
-              </div>
-            </div>
+            <Logo size="lg" />
           </div>
           
-          {/* Title */}
-          <h1 className="text-3xl lg:text-4xl font-black text-white tracking-tight mb-2 text-center lg:text-left">
-            Holy <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">Guac</span><span className="bg-gradient-to-r from-pink-400 via-purple-400 to-violet-400 bg-clip-text text-transparent">Amoli</span>!
-          </h1>
           <p className="text-white/50 text-sm mb-6 text-center lg:text-left">Dip into the fun</p>
           
           <p className="text-white/70 mb-6 text-center lg:text-left" data-testid="text-description">
