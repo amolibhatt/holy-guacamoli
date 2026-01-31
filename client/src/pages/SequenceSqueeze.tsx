@@ -498,7 +498,7 @@ export default function SequenceSqueeze() {
                     data-testid="button-begin-game"
                   >
                     <Play className="w-6 h-6 mr-2" />
-                    Begin Game ({questions.length} questions)
+                    Begin Game
                   </Button>
                 </motion.div>
                 
