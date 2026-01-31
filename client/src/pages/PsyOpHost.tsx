@@ -11,8 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { 
-  Eye, Play, Users, QrCode, Timer, Trophy, Loader2, Clock,
-  ChevronDown, ChevronUp, Crown, RefreshCw, SkipForward, ArrowLeft
+  Eye, Play, Users, QrCode, Trophy, Loader2, Check,
+  ChevronDown, ChevronUp, Crown, RefreshCw, ArrowLeft
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { AppHeader } from "@/components/AppHeader";
@@ -59,9 +59,7 @@ export default function PsyOpHost() {
   const [currentQuestion, setCurrentQuestion] = useState<PsyopQuestion | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedQuestions, setSelectedQuestions] = useState<PsyopQuestion[]>([]);
-  const [timerSeconds, setTimerSeconds] = useState(30);
-  const [endTime, setEndTime] = useState<number | null>(null);
-  const [timeLeft, setTimeLeft] = useState(0);
+  // No timers - game advances when everyone has submitted/voted
   const [submissions, setSubmissions] = useState<PlayerSubmission[]>([]);
   const [voteOptions, setVoteOptions] = useState<VoteOption[]>([]);
   const [votes, setVotes] = useState<PlayerVote[]>([]);
@@ -69,34 +67,11 @@ export default function PsyOpHost() {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [players, setPlayers] = useState<{ id: string; name: string; avatar?: string }[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  
-  const moveToVotingRef = useRef<() => void>(() => {});
-  const moveToRevealingRef = useRef<() => void>(() => {});
 
   const { data: questions = [], isLoading: isLoadingQuestions } = useQuery<PsyopQuestion[]>({
     queryKey: ["/api/psyop/questions"],
     enabled: isAuthenticated,
   });
-
-  useEffect(() => {
-    if (!endTime) return;
-    
-    const interval = setInterval(() => {
-      const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
-      setTimeLeft(remaining);
-      
-      if (remaining <= 0) {
-        clearInterval(interval);
-        if (gameState === "submitting") {
-          moveToVotingRef.current();
-        } else if (gameState === "voting") {
-          moveToRevealingRef.current();
-        }
-      }
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [endTime, gameState]);
 
   const connectWebSocket = useCallback(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -189,18 +164,14 @@ export default function PsyOpHost() {
     setVoteOptions([]);
     setGameState("submitting");
     
-    const deadline = Date.now() + timerSeconds * 1000;
-    setEndTime(deadline);
-    
     ws?.send(JSON.stringify({
       type: "psyop:start:submission",
       question: {
         id: question.id,
         factText: question.factText,
       },
-      deadline,
     }));
-  }, [timerSeconds, ws]);
+  }, [ws]);
 
   const moveToVoting = useCallback(() => {
     if (!currentQuestion) return;
@@ -220,19 +191,14 @@ export default function PsyOpHost() {
     setVoteOptions(shuffled);
     setGameState("voting");
     
-    const deadline = Date.now() + timerSeconds * 1000;
-    setEndTime(deadline);
-    
     ws?.send(JSON.stringify({
       type: "psyop:start:voting",
       options: shuffled.map(o => ({ id: o.id, text: o.text })),
-      deadline,
     }));
-  }, [currentQuestion, submissions, timerSeconds, ws]);
+  }, [currentQuestion, submissions, ws]);
 
   const moveToRevealing = useCallback(() => {
     setGameState("revealing");
-    setEndTime(null);
     
     const scores: Record<string, number> = {};
     
@@ -277,14 +243,19 @@ export default function PsyOpHost() {
     }));
   }, [votes, voteOptions, players, currentQuestion, ws]);
 
-  // Keep refs updated with latest callbacks to avoid stale closures in timer
+  // Auto-advance when all players have submitted their lies
   useEffect(() => {
-    moveToVotingRef.current = moveToVoting;
-  }, [moveToVoting]);
-  
+    if (gameState === "submitting" && players.length > 0 && submissions.length === players.length) {
+      moveToVoting();
+    }
+  }, [gameState, players.length, submissions.length, moveToVoting]);
+
+  // Auto-advance when all players have voted
   useEffect(() => {
-    moveToRevealingRef.current = moveToRevealing;
-  }, [moveToRevealing]);
+    if (gameState === "voting" && players.length > 0 && votes.length === players.length) {
+      moveToRevealing();
+    }
+  }, [gameState, players.length, votes.length, moveToRevealing]);
 
   const nextQuestion = useCallback(() => {
     const nextIndex = currentQuestionIndex + 1;
@@ -307,13 +278,13 @@ export default function PsyOpHost() {
   };
 
   const renderFactWithBlank = (text: string, answer?: string, showAnswer = false) => {
-    const parts = text.split('[BLANK]');
+    const parts = text.split('[REDACTED]');
     if (parts.length < 2) return text;
     return (
       <span>
         {parts[0]}
         <span className={`px-3 py-1 mx-1 rounded-lg font-bold ${showAnswer ? 'bg-green-500/30 text-green-600 dark:text-green-400' : 'bg-purple-500/20 text-purple-600 dark:text-purple-400'}`}>
-          {showAnswer && answer ? answer : '______'}
+          {showAnswer && answer ? answer : '[REDACTED]'}
         </span>
         {parts[1]}
       </span>
@@ -352,23 +323,9 @@ export default function PsyOpHost() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                <div className="mb-4">
                   <div className="text-sm text-muted-foreground">
                     {selectedQuestions.length} question{selectedQuestions.length !== 1 ? 's' : ''} selected
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <label className="text-sm">Timer:</label>
-                    <select 
-                      value={timerSeconds} 
-                      onChange={(e) => setTimerSeconds(parseInt(e.target.value))}
-                      className="px-2 py-1 border rounded bg-background"
-                      data-testid="select-timer"
-                    >
-                      <option value={15}>15s</option>
-                      <option value={30}>30s</option>
-                      <option value={45}>45s</option>
-                      <option value={60}>60s</option>
-                    </select>
                   </div>
                 </div>
 
@@ -498,15 +455,10 @@ export default function PsyOpHost() {
                   <Badge variant="outline">
                     Question {currentQuestionIndex + 1} of {selectedQuestions.length}
                   </Badge>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    <span className={`font-mono text-lg ${timeLeft <= 5 ? 'text-destructive' : ''}`}>
-                      {timeLeft}s
-                    </span>
-                  </div>
+                  <Badge variant="secondary">
+                    {gameState === "submitting" ? "Write your lie" : "Find the truth"}
+                  </Badge>
                 </div>
-
-                <Progress value={(timeLeft / timerSeconds) * 100} className="h-2" />
 
                 <div className="text-center py-6">
                   <div className="text-2xl font-medium leading-relaxed">
@@ -516,58 +468,65 @@ export default function PsyOpHost() {
 
                 {gameState === "submitting" && (
                   <div className="border-t pt-4">
-                    <div className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Waiting for lies... ({submissions.length}/{players.length})
+                    <div className="text-sm text-muted-foreground mb-3">
+                      Waiting for all players to submit... ({submissions.length}/{players.length})
                     </div>
+                    <Progress value={(submissions.length / players.length) * 100} className="h-2 mb-4" />
                     <div className="flex flex-wrap gap-2">
-                      {players.map(p => (
-                        <Badge 
-                          key={p.id} 
-                          variant={submissions.some(s => s.playerId === p.id) ? "default" : "outline"}
-                        >
-                          {p.name} {submissions.some(s => s.playerId === p.id) && '✓'}
-                        </Badge>
-                      ))}
+                      {players.map(p => {
+                        const hasSubmitted = submissions.some(s => s.playerId === p.id);
+                        return (
+                          <Badge 
+                            key={p.id} 
+                            variant={hasSubmitted ? "default" : "outline"}
+                            className="gap-1"
+                          >
+                            {hasSubmitted && <Check className="w-3 h-3" />}
+                            {p.name}
+                            {hasSubmitted && " ...Dipped!"}
+                          </Badge>
+                        );
+                      })}
                     </div>
-                    <Button 
-                      onClick={moveToVoting} 
-                      variant="outline" 
-                      className="mt-4 gap-2"
-                      disabled={submissions.length === 0}
-                      data-testid="button-skip-to-voting"
-                    >
-                      <SkipForward className="w-4 h-4" />
-                      Skip to Voting
-                    </Button>
+                    {submissions.length > 0 && submissions.length < players.length && (
+                      <Button 
+                        onClick={moveToVoting} 
+                        variant="outline" 
+                        className="mt-4 gap-2"
+                        data-testid="button-force-voting"
+                      >
+                        Continue with {submissions.length} submission{submissions.length !== 1 ? 's' : ''}
+                      </Button>
+                    )}
                   </div>
                 )}
 
                 {gameState === "voting" && (
                   <div className="border-t pt-4 space-y-3">
-                    <div className="text-sm font-medium mb-2">Vote for what you think is the truth:</div>
+                    <div className="text-sm font-medium mb-2">Which one is the truth?</div>
                     {voteOptions.map((option, i) => (
                       <div 
                         key={option.id}
                         className="p-3 border rounded-lg bg-card/50"
                       >
-                        <span className="font-bold mr-2">{String.fromCharCode(65 + i)}.</span>
+                        <span className="font-bold mr-2 text-purple-600 dark:text-purple-400">{String.fromCharCode(65 + i)}.</span>
                         {option.text}
                       </div>
                     ))}
-                    <div className="text-sm text-muted-foreground flex items-center gap-2 mt-4">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      {votes.length} vote{votes.length !== 1 ? 's' : ''} received
+                    <div className="text-sm text-muted-foreground mt-4">
+                      Waiting for all votes... ({votes.length}/{players.length})
                     </div>
-                    <Button 
-                      onClick={moveToRevealing} 
-                      variant="outline" 
-                      className="gap-2"
-                      data-testid="button-reveal-answer"
-                    >
-                      <SkipForward className="w-4 h-4" />
-                      Reveal Answer
-                    </Button>
+                    <Progress value={(votes.length / players.length) * 100} className="h-2" />
+                    {votes.length > 0 && votes.length < players.length && (
+                      <Button 
+                        onClick={moveToRevealing} 
+                        variant="outline" 
+                        className="mt-4 gap-2"
+                        data-testid="button-force-reveal"
+                      >
+                        Reveal with {votes.length} vote{votes.length !== 1 ? 's' : ''}
+                      </Button>
+                    )}
                   </div>
                 )}
               </CardContent>

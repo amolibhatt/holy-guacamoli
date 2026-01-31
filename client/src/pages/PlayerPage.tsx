@@ -79,7 +79,7 @@ export default function PlayerPage() {
   const [psyopPhase, setPsyopPhase] = useState<"idle" | "submitting" | "voting" | "revealed">("idle");
   const [psyopQuestion, setPsyopQuestion] = useState<{ id: number; factText: string } | null>(null);
   const [psyopOptions, setPsyopOptions] = useState<Array<{ id: string; text: string }>>([]);
-  const [psyopDeadline, setPsyopDeadline] = useState<number | null>(null);
+  // No timers in PsyOp - game waits for everyone
   const [psyopSubmitted, setPsyopSubmitted] = useState(false);
   const [psyopVoted, setPsyopVoted] = useState(false);
   const [psyopLieText, setPsyopLieText] = useState("");
@@ -302,14 +302,12 @@ export default function PlayerPage() {
           setFeedback(null);
           setPsyopPhase("submitting");
           setPsyopQuestion(data.question);
-          setPsyopDeadline(data.deadline);
           setPsyopSubmitted(false);
           break;
         case "psyop:voting:start":
           setGameMode("psyop");
           setPsyopPhase("voting");
           setPsyopOptions(data.options || []);
-          setPsyopDeadline(data.deadline);
           setPsyopVoted(false);
           break;
         case "psyop:revealed":
@@ -685,13 +683,13 @@ export default function PlayerPage() {
               <Card className="border-purple-500/30">
                 <div className="p-6 space-y-4">
                   <div className="text-center">
-                    <h2 className="text-lg font-bold mb-2">Fill in the blank:</h2>
+                    <h2 className="text-lg font-bold mb-2">Write a believable lie:</h2>
                     <p className="text-xl leading-relaxed">
-                      {psyopQuestion.factText.includes('[BLANK]') ? (
+                      {psyopQuestion.factText.includes('[REDACTED]') ? (
                         <>
-                          {psyopQuestion.factText.split('[BLANK]')[0]}
-                          <span className="px-2 py-1 mx-1 rounded bg-purple-500/20 text-purple-600 dark:text-purple-400 font-bold">______</span>
-                          {psyopQuestion.factText.split('[BLANK]')[1]}
+                          {psyopQuestion.factText.split('[REDACTED]')[0]}
+                          <span className="px-2 py-1 mx-1 rounded bg-purple-500/20 text-purple-600 dark:text-purple-400 font-bold">[REDACTED]</span>
+                          {psyopQuestion.factText.split('[REDACTED]')[1]}
                         </>
                       ) : psyopQuestion.factText}
                     </p>

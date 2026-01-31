@@ -112,7 +112,7 @@ export function PsyOpQuestionAdmin() {
       const parts = line.split('|').map(p => p.trim());
       if (parts.length >= 2) {
         const [fact, answer, cat] = parts;
-        if (fact && answer && fact.includes('[BLANK]')) {
+        if (fact && answer && fact.includes('[REDACTED]')) {
           parsed.push({
             factText: fact,
             correctAnswer: answer,
@@ -136,8 +136,8 @@ export function PsyOpQuestionAdmin() {
       toast({ title: "Please enter the fact text", variant: "destructive" });
       return;
     }
-    if (!factText.includes('[BLANK]')) {
-      toast({ title: "Fact must contain [BLANK] placeholder", variant: "destructive" });
+    if (!factText.includes('[REDACTED]')) {
+      toast({ title: "Fact must contain [REDACTED] placeholder", variant: "destructive" });
       return;
     }
     if (!correctAnswer) {
@@ -153,13 +153,13 @@ export function PsyOpQuestionAdmin() {
   };
 
   const renderFactWithBlank = (text: string, answer?: string) => {
-    const parts = text.split('[BLANK]');
+    const parts = text.split('[REDACTED]');
     if (parts.length < 2) return text;
     return (
       <span>
         {parts[0]}
         <span className="px-2 py-0.5 mx-1 rounded bg-purple-500/20 text-purple-600 dark:text-purple-400 font-semibold">
-          {answer || '______'}
+          {answer || '[REDACTED]'}
         </span>
         {parts[1]}
       </span>
@@ -199,13 +199,13 @@ export function PsyOpQuestionAdmin() {
               <div className="space-y-2">
                 <Label>Paste questions (one per line)</Label>
                 <div className="text-xs text-muted-foreground space-y-1">
-                  <p>Format: <code className="bg-muted px-1 rounded">fact with [BLANK] | answer | category (optional)</code></p>
-                  <p>Example: <code className="bg-muted px-1 rounded">The [BLANK] is the largest planet in our solar system | Jupiter | Science</code></p>
+                  <p>Format: <code className="bg-muted px-1 rounded">fact with [REDACTED] | answer | category (optional)</code></p>
+                  <p>Example: <code className="bg-muted px-1 rounded">The [REDACTED] is the largest planet in our solar system | Jupiter | Science</code></p>
                 </div>
                 <Textarea
                   value={bulkImportText}
                   onChange={(e) => setBulkImportText(e.target.value)}
-                  placeholder="The Eiffel Tower is located in [BLANK] | Paris | Geography&#10;A group of [BLANK] is called a pride | lions | Animals"
+                  placeholder="The Eiffel Tower is located in [REDACTED] | Paris | Geography&#10;A group of [REDACTED] is called a pride | lions | Animals"
                   rows={6}
                   className="font-mono text-sm"
                   data-testid="textarea-bulk-import"
@@ -285,17 +285,17 @@ export function PsyOpQuestionAdmin() {
                 <div className="space-y-2">
                   <Label htmlFor="fact-text">
                     Fact Text
-                    <span className="text-muted-foreground text-xs ml-2">(use [BLANK] for the hidden word)</span>
+                    <span className="text-muted-foreground text-xs ml-2">(use [REDACTED] for the hidden word)</span>
                   </Label>
                   <Textarea
                     id="fact-text"
                     value={factText}
                     onChange={(e) => setFactText(e.target.value)}
-                    placeholder="The [BLANK] is the largest mammal on Earth"
+                    placeholder="The [REDACTED] is the largest mammal on Earth"
                     rows={3}
                     data-testid="input-fact-text"
                   />
-                  {factText && factText.includes('[BLANK]') && (
+                  {factText && factText.includes('[REDACTED]') && (
                     <div className="text-sm p-2 bg-muted rounded-md">
                       <span className="text-muted-foreground">Preview: </span>
                       {renderFactWithBlank(factText, correctAnswer || undefined)}

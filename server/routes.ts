@@ -2058,8 +2058,8 @@ export async function registerRoutes(
       if (!factText || typeof factText !== 'string' || factText.trim().length === 0) {
         return res.status(400).json({ message: "Fact text is required" });
       }
-      if (!factText.includes('[BLANK]')) {
-        return res.status(400).json({ message: "Fact text must contain [BLANK] placeholder" });
+      if (!factText.includes('[REDACTED]')) {
+        return res.status(400).json({ message: "Fact text must contain [REDACTED] placeholder" });
       }
       if (!correctAnswer || typeof correctAnswer !== 'string' || correctAnswer.trim().length === 0) {
         return res.status(400).json({ message: "Correct answer is required" });
@@ -2119,8 +2119,8 @@ export async function registerRoutes(
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
         try {
-          if (!q.factText || !q.factText.includes('[BLANK]')) {
-            results.errors.push(`Row ${i + 1}: Missing [BLANK] placeholder`);
+          if (!q.factText || !q.factText.includes('[REDACTED]')) {
+            results.errors.push(`Row ${i + 1}: Missing [REDACTED] placeholder`);
             continue;
           }
           if (!q.correctAnswer) {
