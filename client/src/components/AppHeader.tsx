@@ -67,10 +67,7 @@ export function AppHeader({
               <Logo size="md" />
             </Link>
             {title && (
-              <>
-                <span className="text-muted-foreground">/</span>
-                <span className="font-semibold">{title}</span>
-              </>
+              <span className="font-semibold text-muted-foreground">| {title}</span>
             )}
           </div>
 
