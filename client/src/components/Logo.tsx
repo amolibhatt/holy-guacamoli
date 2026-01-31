@@ -26,13 +26,7 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
           <stop offset="100%" stopColor="#FFA500" />
         </linearGradient>
         
-        {/* Skin gradient - rich forest green */}
-        <linearGradient id={`${id}-skin`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#2E7D32" />
-          <stop offset="100%" stopColor="#1B5E20" />
-        </linearGradient>
-        
-        {/* Flesh gradient - vibrant lime to yellow-green */}
+        {/* Flesh gradient - vibrant lime */}
         <linearGradient id={`${id}-flesh`} x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#76FF03" />
           <stop offset="50%" stopColor="#64DD17" />
@@ -63,8 +57,8 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
       {/* Right Wing */}
       <ellipse cx="68" cy="44" rx="12" ry="10" fill="white" opacity="0.95"/>
       
-      {/* Avocado Body - gradient skin */}
-      <ellipse cx="40" cy="52" rx="24" ry="32" fill={`url(#${id}-skin)`}/>
+      {/* Avocado Body - solid dark green skin */}
+      <ellipse cx="40" cy="52" rx="24" ry="32" fill="#2D5016"/>
       
       {/* Avocado flesh - vibrant gradient */}
       <ellipse cx="40" cy="54" rx="18" ry="25" fill={`url(#${id}-flesh)`}/>
@@ -127,30 +121,19 @@ export function Logo({ size = "md" }: LogoProps) {
       >
         {/* Glow layer */}
         <span 
-          className="absolute inset-0 blur-md opacity-60"
-          style={{ 
-            background: 'linear-gradient(90deg, #22d3ee 0%, #39FF14 40%, #BC13FE 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}
+          className="absolute inset-0 blur-sm opacity-50"
           aria-hidden="true"
         >
-          Holy GuacAmoli!
+          <span style={{ color: '#39FF14' }}>Holy </span>
+          <span style={{ color: '#39FF14' }}>Guac</span>
+          <span style={{ color: '#BC13FE' }}>Amoli!</span>
         </span>
         
-        {/* Main text with gradient */}
-        <span 
-          className="relative"
-          style={{ 
-            background: 'linear-gradient(90deg, #ffffff 0%, #ffffff 22%, #39FF14 23%, #39FF14 48%, #BC13FE 49%, #BC13FE 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            textShadow: '0 0 30px rgba(57, 255, 20, 0.3), 0 0 60px rgba(188, 19, 254, 0.2)',
-          }}
-        >
-          Holy GuacAmoli!
+        {/* Main text - segmented colors */}
+        <span className="relative">
+          <span className="text-white">Holy </span>
+          <span style={{ color: '#39FF14' }}>Guac</span>
+          <span style={{ color: '#BC13FE' }}>Amoli!</span>
         </span>
       </h1>
     </motion.div>
