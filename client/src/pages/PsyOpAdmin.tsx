@@ -52,7 +52,7 @@ export default function PsyOpAdmin() {
   });
 
   // Get unique categories
-  const categories = [...new Set(questions.map(q => q.category).filter(Boolean))] as string[];
+  const categories = Array.from(new Set(questions.map(q => q.category).filter(Boolean))) as string[];
   
   // Filter questions by selected category
   const filteredQuestions = selectedCategory 
