@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -3230,17 +3231,17 @@ export default function Blitzgrid() {
         <div className="flex items-center gap-3">
           {/* Icon with color-matched glow */}
           <div 
-            className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200"
+            className="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200"
             style={{
               border: `2px solid ${neonColor.border}`,
               boxShadow: isHovered ? `0 0 15px ${neonColor.shadowColor}` : `0 0 8px ${neonColor.glow}`,
             }}
           >
-            <Grid3X3 className="w-5 h-5" style={{ color: neonColor.icon }} />
+            <Grid3X3 className="w-6 h-6" style={{ color: neonColor.icon }} />
           </div>
           <div className="flex-1 min-w-0">
             <h3 
-              className="font-black truncate uppercase tracking-wide transition-colors duration-200"
+              className="font-black truncate uppercase tracking-wide transition-colors duration-200 text-base"
               style={{ 
                 fontFamily: "'Archivo Black', 'Impact', sans-serif",
                 color: isHovered ? neonColor.text : '#fff',
@@ -3249,9 +3250,11 @@ export default function Blitzgrid() {
             >
               {grid.name}
             </h3>
-            {grid.description && (
-              <p className="text-xs text-white/50 truncate mt-0.5">{grid.description}</p>
-            )}
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs text-white/40">{grid.categoryCount || 0} categories</span>
+              <span className="text-white/20">·</span>
+              <span className="text-xs text-white/40">{grid.questionCount || 0} questions</span>
+            </div>
           </div>
           <ChevronRight 
             className="w-5 h-5 text-white/30 group-hover:translate-x-0.5 transition-all" 
@@ -3313,107 +3316,74 @@ export default function Blitzgrid() {
               <Grid3X3 className="w-10 h-10 text-white/30" />
             </div>
             <h3 
-              className="text-xl font-black mb-2 text-white uppercase tracking-wide"
-              style={{ fontFamily: "'Archivo Black', 'Impact', sans-serif" }}
+              className="text-2xl font-black mb-3 text-white uppercase tracking-wide"
+              style={{ 
+                fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                textShadow: '0 0 10px rgba(232, 121, 249, 0.3)',
+              }}
             >
               No Grids Yet
             </h3>
-            <p className="text-white/50 max-w-sm mx-auto">
-              Create your first grid in the Admin panel
+            <p className="text-white/50 max-w-sm mx-auto mb-6">
+              Time to build your first trivia battleground
             </p>
+            <Link href="/admin/games">
+              <Button
+                className="bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white font-bold uppercase tracking-wide"
+                data-testid="button-create-first-grid"
+              >
+                <Grid3X3 className="w-4 h-4 mr-2" />
+                Create Your First Grid
+              </Button>
+            </Link>
           </motion.div>
         ) : (
-          <div className="max-w-4xl mx-auto space-y-8">
-            {/* Hero section */}
+          <div className="max-w-4xl mx-auto space-y-10">
+            {/* Hero section with big title and shuffle play button */}
             <motion.div 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center py-4"
+              className="text-center py-6"
             >
               <h1 
-                className="text-3xl md:text-4xl font-black text-white tracking-tight uppercase"
+                className="text-5xl md:text-6xl font-black text-white tracking-tight uppercase mb-3"
                 style={{ 
                   fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                  textShadow: '0 0 10px rgba(232, 121, 249, 0.5), 0 0 20px rgba(232, 121, 249, 0.3), 0 0 30px rgba(232, 121, 249, 0.2)',
+                  textShadow: '0 0 20px rgba(232, 121, 249, 0.6), 0 0 40px rgba(232, 121, 249, 0.4), 0 0 60px rgba(232, 121, 249, 0.2)',
                 }}
               >
-                Select <span style={{ color: '#e879f9' }}>Grid</span>
+                BLITZGRID
               </h1>
-              <p className="text-white/60 mt-2 text-sm">5x5 trivia showdown</p>
-            </motion.div>
-
-            {/* Shuffle Play Card - Unique cyan/teal color */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="group cursor-pointer p-6 rounded-xl bg-[#0d0d12] transition-all duration-200 relative overflow-hidden"
-              style={{ 
-                border: '2px solid #22d3ee',
-                boxShadow: '0 0 20px rgba(34, 211, 238, 0.3)',
-              }}
-              onClick={handleShufflePlay}
-              data-testid="card-shuffle-play"
-            >
-              {/* Animated glow pulse */}
-              <motion.div 
-                className="absolute inset-0 rounded-xl"
-                animate={{ boxShadow: ['0 0 15px rgba(34, 211, 238, 0.2)', '0 0 25px rgba(34, 211, 238, 0.4)', '0 0 15px rgba(34, 211, 238, 0.2)'] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
+              <p className="text-white/50 text-lg mb-8">5 categories. 25 questions. One winner.</p>
               
-              {/* Shimmer effect on hover */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
+              {/* Shuffle Play Hero Button */}
+              <Button
+                size="lg"
+                onClick={handleShufflePlay}
+                disabled={isShuffling}
+                className="bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 text-black font-black uppercase tracking-wide"
+                style={{ 
+                  boxShadow: '0 0 30px rgba(34, 211, 238, 0.5), 0 4px 20px rgba(0, 0, 0, 0.3)',
+                  fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                }}
+                data-testid="button-shuffle-play"
+              >
+                {isShuffling ? (
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                ) : (
+                  <Shuffle className="w-5 h-5 mr-2" />
+                )}
+                I'm Feeling Lucky
+              </Button>
               
-              {/* Floating sparkles */}
-              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <motion.div
-                  animate={{ y: [0, -8, 0], rotate: [0, 15, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <Sparkles className="w-5 h-5 text-cyan-400" />
-                </motion.div>
-              </div>
-              
-              <div className="relative flex items-center gap-4 flex-wrap">
-                <div 
-                  className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 group-hover:shadow-[0_0_20px_rgba(34,211,238,0.6)]"
-                  style={{ 
-                    border: '2px solid #22d3ee',
-                    boxShadow: '0 0 15px rgba(34, 211, 238, 0.4)',
-                  }}
-                >
-                  {isShuffling ? (
-                    <Loader2 className="w-7 h-7 text-cyan-400 animate-spin" />
-                  ) : (
-                    <Shuffle className="w-7 h-7 text-cyan-400" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 
-                    className="font-black text-lg text-white flex flex-wrap items-center gap-2 uppercase tracking-wide"
-                    style={{ 
-                      fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                      textShadow: '0 0 10px rgba(34, 211, 238, 0.5)',
-                    }}
-                  >
-                    Shuffle Play
-                    <Badge className="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/50">Random</Badge>
-                  </h3>
-                  <p className="text-sm text-white/60 mt-0.5">
-                    {playedShuffleCategoryIds.length > 0 
-                      ? `${playedShuffleCategoryIds.length} played`
-                      : "Jump into a random grid"
-                    }
-                  </p>
-                </div>
-                {playedShuffleCategoryIds.length > 0 ? (
+              {playedShuffleCategoryIds.length > 0 && (
+                <div className="mt-4 flex items-center justify-center gap-3">
+                  <span className="text-white/40 text-sm">{playedShuffleCategoryIds.length} played</span>
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="shrink-0 border-cyan-500/50 text-cyan-300"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    variant="ghost"
+                    className="text-cyan-400"
+                    onClick={() => {
                       setPlayedShuffleCategoryIds([]);
                       toast({ title: "Reset", description: "All grids available again" });
                     }}
@@ -3422,12 +3392,8 @@ export default function Blitzgrid() {
                     <RotateCcw className="w-4 h-4 mr-1" />
                     Reset
                   </Button>
-                ) : (
-                  <div className="w-9 h-9 rounded-full bg-cyan-500/20 flex items-center justify-center group-hover:bg-cyan-500/30 transition-colors">
-                    <ChevronRight className="w-5 h-5 text-cyan-400 group-hover:translate-x-0.5 transition-all" />
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </motion.div>
 
             {/* My Grids Section */}
@@ -3461,7 +3427,7 @@ export default function Blitzgrid() {
                 <div className="flex items-center gap-4 mb-5">
                   <h2 className="text-sm font-bold text-white/70 uppercase tracking-widest whitespace-nowrap flex flex-wrap items-center gap-2">
                     <Sparkles className="w-4 h-4 text-fuchsia-400" />
-                    Featured
+                    Starter Packs
                   </h2>
                   <div className="flex-1 h-[1px] bg-gradient-to-r from-fuchsia-500/50 via-fuchsia-500/20 to-transparent" />
                 </div>
