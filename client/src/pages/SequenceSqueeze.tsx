@@ -68,6 +68,8 @@ export default function SequenceSqueeze() {
   const animationTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<SequenceQuestion | null>(null);
+  const [shuffledQuestion, setShuffledQuestion] = useState<{ optionA: string; optionB: string; optionC: string; optionD: string } | null>(null);
+  const [shuffledCorrectOrder, setShuffledCorrectOrder] = useState<string[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(1);
   const [totalQuestions, setTotalQuestions] = useState(1);
   const [submissions, setSubmissions] = useState<PlayerSubmission[]>([]);
@@ -361,10 +363,20 @@ export default function SequenceSqueeze() {
       shuffledToOriginal[letters[i]] = opt.letter;
     });
 
-    const shuffledCorrectOrder = question.correctOrder.map(origLetter => {
+    const newShuffledCorrectOrder = question.correctOrder.map(origLetter => {
       const newLetter = letters.find(l => shuffledToOriginal[l] === origLetter);
       return newLetter || origLetter;
     });
+
+    const newShuffledQuestion = {
+      optionA: shuffledOptions[0].text,
+      optionB: shuffledOptions[1].text,
+      optionC: shuffledOptions[2].text,
+      optionD: shuffledOptions[3].text,
+    };
+    
+    setShuffledQuestion(newShuffledQuestion);
+    setShuffledCorrectOrder(newShuffledCorrectOrder);
 
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ 
@@ -372,13 +384,10 @@ export default function SequenceSqueeze() {
         question: {
           id: question.id,
           question: question.question,
-          optionA: shuffledOptions[0].text,
-          optionB: shuffledOptions[1].text,
-          optionC: shuffledOptions[2].text,
-          optionD: shuffledOptions[3].text,
+          ...newShuffledQuestion,
           hint: question.hint,
         },
-        correctOrder: shuffledCorrectOrder,
+        correctOrder: newShuffledCorrectOrder,
         questionIndex: questionIdx,
         totalQuestions: questions.length,
         pointsPerRound,
@@ -937,7 +946,7 @@ export default function SequenceSqueeze() {
               <h2 className="text-3xl font-bold mb-8 text-white">{currentQuestion.question}</h2>
               <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
                 {["A", "B", "C", "D"].map((letter) => {
-                  const option = currentQuestion[`option${letter}` as keyof SequenceQuestion] as string;
+                  const option = shuffledQuestion ? shuffledQuestion[`option${letter}` as keyof typeof shuffledQuestion] : currentQuestion[`option${letter}` as keyof SequenceQuestion] as string;
                   return (
                     <motion.div
                       key={letter}
@@ -996,8 +1005,8 @@ export default function SequenceSqueeze() {
             <div className="text-center">
               <h2 className="text-xl font-bold mb-4 text-white">Correct Order</h2>
               <div className="flex flex-col gap-3 max-w-md mx-auto">
-                {currentQuestion?.correctOrder && (currentQuestion.correctOrder as string[]).map((letter, idx) => {
-                  const option = currentQuestion[`option${letter}` as keyof SequenceQuestion] as string;
+                {shuffledCorrectOrder.length > 0 && shuffledQuestion && shuffledCorrectOrder.map((letter, idx) => {
+                  const option = shuffledQuestion[`option${letter}` as keyof typeof shuffledQuestion] as string;
                   return (
                     <motion.div
                       key={letter}
