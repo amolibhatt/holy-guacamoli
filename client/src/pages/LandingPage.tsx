@@ -43,7 +43,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="dark min-h-screen bg-[#0a0a0f] flex flex-col lg:flex-row overflow-hidden" data-testid="container-landing">
+    <div className="dark h-screen bg-[#0a0a0f] flex flex-col lg:flex-row overflow-hidden" data-testid="container-landing">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div 
@@ -64,129 +64,98 @@ export default function LandingPage() {
       </div>
 
       {/* Left side - Branding */}
-      <div className="lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-16 overflow-y-auto relative z-10" data-testid="section-branding">
+      <div className="lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 relative z-10" data-testid="section-branding">
         <motion.div
-          className="text-center lg:text-left max-w-lg"
+          className="text-center lg:text-left max-w-md"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          {/* Updated Logo */}
-          <div className="flex justify-center lg:justify-start mb-8" data-testid="icon-logo">
-            <motion.div
-              className="flex items-center gap-3"
-              whileHover={{ scale: 1.02 }}
-            >
+          {/* Logo with glow */}
+          <div className="flex justify-center lg:justify-start mb-6" data-testid="icon-logo">
+            <div className="relative">
+              <motion.div
+                className="absolute -inset-3 bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 rounded-full blur-xl opacity-50"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+              />
               <div className="relative">
-                <motion.div
-                  className="absolute -inset-2 bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 rounded-full blur-lg opacity-60"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                />
-                <div className="relative">
-                  <AnimatedLogo size="xl" />
-                </div>
+                <AnimatedLogo size="xl" showText={false} />
               </div>
-              <div>
-                <h1 className="text-3xl lg:text-4xl font-black text-white tracking-tight">
-                  Holy <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">Guac</span><span className="bg-gradient-to-r from-pink-400 via-purple-400 to-violet-400 bg-clip-text text-transparent">Amoli</span>!
-                </h1>
-                <p className="text-sm text-white/50 mt-1">Dip into the fun</p>
-              </div>
-            </motion.div>
+            </div>
           </div>
           
-          <p className="text-white/70 mb-10 text-lg" data-testid="text-description">
-            The ultimate party game platform for unforgettable game nights with friends and family.
+          {/* Title */}
+          <h1 className="text-3xl lg:text-4xl font-black text-white tracking-tight mb-2 text-center lg:text-left">
+            Holy <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">Guac</span><span className="bg-gradient-to-r from-pink-400 via-purple-400 to-violet-400 bg-clip-text text-transparent">Amoli</span>!
+          </h1>
+          <p className="text-white/50 text-sm mb-6 text-center lg:text-left">Dip into the fun</p>
+          
+          <p className="text-white/70 mb-6 text-center lg:text-left" data-testid="text-description">
+            The ultimate party game platform for unforgettable game nights.
           </p>
 
-          {/* Features Grid */}
-          <div className="grid grid-cols-2 gap-4" data-testid="section-features">
-            <motion.div 
-              className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm"
-              whileHover={{ scale: 1.03, backgroundColor: "rgba(255,255,255,0.08)" }}
-              data-testid="feature-qr"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-3">
-                <QrCode className="w-5 h-5 text-white" />
+          {/* Features - compact */}
+          <div className="grid grid-cols-2 gap-3" data-testid="section-features">
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10" data-testid="feature-qr">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
+                <QrCode className="w-4 h-4 text-white" />
               </div>
-              <span className="text-white font-semibold block">Instant Join</span>
-              <span className="text-white/50 text-sm">Scan QR, start playing</span>
-            </motion.div>
+              <span className="text-white text-sm font-medium">Instant Join</span>
+            </div>
 
-            <motion.div 
-              className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm"
-              whileHover={{ scale: 1.03, backgroundColor: "rgba(255,255,255,0.08)" }}
-              data-testid="feature-multiplayer"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center mb-3">
-                <Users className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10" data-testid="feature-multiplayer">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center shrink-0">
+                <Users className="w-4 h-4 text-white" />
               </div>
-              <span className="text-white font-semibold block">Multiplayer</span>
-              <span className="text-white/50 text-sm">Play with friends</span>
-            </motion.div>
+              <span className="text-white text-sm font-medium">Multiplayer</span>
+            </div>
 
-            <motion.div 
-              className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm"
-              whileHover={{ scale: 1.03, backgroundColor: "rgba(255,255,255,0.08)" }}
-              data-testid="feature-realtime"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center mb-3">
-                <Zap className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10" data-testid="feature-realtime">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center shrink-0">
+                <Zap className="w-4 h-4 text-white" />
               </div>
-              <span className="text-white font-semibold block">Real-time</span>
-              <span className="text-white/50 text-sm">Live scores & buzzing</span>
-            </motion.div>
+              <span className="text-white text-sm font-medium">Real-time</span>
+            </div>
 
-            <motion.div 
-              className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm"
-              whileHover={{ scale: 1.03, backgroundColor: "rgba(255,255,255,0.08)" }}
-              data-testid="feature-party"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mb-3">
-                <PartyPopper className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10" data-testid="feature-party">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shrink-0">
+                <PartyPopper className="w-4 h-4 text-white" />
               </div>
-              <span className="text-white font-semibold block">Party Mode</span>
-              <span className="text-white/50 text-sm">Built for celebrations</span>
-            </motion.div>
+              <span className="text-white text-sm font-medium">Party Mode</span>
+            </div>
           </div>
         </motion.div>
       </div>
 
       {/* Right side - Login/Register */}
-      <div className="lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-16 relative z-10" data-testid="section-login">
+      <div className="lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 relative z-10" data-testid="section-login">
         <motion.div
           className="w-full max-w-sm"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <div className="text-center mb-6">
-            <motion.div 
-              className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center"
-              whileHover={{ rotate: 10, scale: 1.05 }}
-            >
-              <Sparkles className="w-8 h-8 text-white" />
-            </motion.div>
-            <h2 className="text-2xl font-bold text-white" data-testid="text-login-title">
+          <div className="text-center mb-4">
+            <h2 className="text-xl font-bold text-white" data-testid="text-login-title">
               Ready to Play?
             </h2>
-            <p className="text-white/60 text-sm mt-1" data-testid="text-login-description">
-              Create your free account and start hosting games in minutes
+            <p className="text-white/60 text-sm" data-testid="text-login-description">
+              Create your free account to start hosting
             </p>
           </div>
 
           <Card className="border-white/10 bg-white/5 backdrop-blur-xl">
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 pb-4">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsList className="grid w-full grid-cols-2 mb-3">
                   <TabsTrigger value="login" data-testid="tab-login">Sign In</TabsTrigger>
                   <TabsTrigger value="register" data-testid="tab-register">Register</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="login">
-                  <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
-                    <div className="space-y-2">
+                  <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-3">
+                    <div className="space-y-1">
                       <Label htmlFor="login-email" className="text-white/80">Email</Label>
                       <Input
                         id="login-email"
@@ -200,7 +169,7 @@ export default function LandingPage() {
                         <p className="text-destructive text-sm">{loginForm.formState.errors.email.message}</p>
                       )}
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <Label htmlFor="login-password" className="text-white/80">Password</Label>
                       <Input
                         id="login-password"
@@ -243,9 +212,9 @@ export default function LandingPage() {
                 </TabsContent>
 
                 <TabsContent value="register">
-                  <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
+                  <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
                         <Label htmlFor="register-first-name" className="text-white/80">First Name</Label>
                         <Input
                           id="register-first-name"
@@ -255,7 +224,7 @@ export default function LandingPage() {
                           data-testid="input-register-firstname"
                         />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-1">
                         <Label htmlFor="register-last-name" className="text-white/80">Last Name</Label>
                         <Input
                           id="register-last-name"
@@ -266,7 +235,7 @@ export default function LandingPage() {
                         />
                       </div>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <Label htmlFor="register-email" className="text-white/80">Email</Label>
                       <Input
                         id="register-email"
@@ -280,7 +249,7 @@ export default function LandingPage() {
                         <p className="text-destructive text-sm">{registerForm.formState.errors.email.message}</p>
                       )}
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <Label htmlFor="register-password" className="text-white/80">Password</Label>
                       <Input
                         id="register-password"
@@ -320,12 +289,9 @@ export default function LandingPage() {
             </CardContent>
           </Card>
 
-          <div className="mt-6 p-4 rounded-xl bg-white/5 border border-white/10 text-center" data-testid="text-free-notice">
-            <p className="text-sm text-white font-medium mb-1">Playing with friends?</p>
-            <p className="text-white/50 text-xs">
-              Players join instantly via QR code or room code - no account needed!
-            </p>
-          </div>
+          <p className="mt-4 text-center text-white/40 text-xs" data-testid="text-free-notice">
+            Players join via QR code - no account needed!
+          </p>
         </motion.div>
       </div>
     </div>
