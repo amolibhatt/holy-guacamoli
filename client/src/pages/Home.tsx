@@ -180,10 +180,13 @@ export default function Home() {
                       />
                     </div>
                     
-                    {/* Title */}
+                    {/* Title with Neon Bleed */}
                     <h3 
-                      className="text-xl lg:text-2xl mb-2 text-white uppercase tracking-wide"
-                      style={{ fontFamily: "'Archivo Black', 'Impact', sans-serif" }}
+                      className="text-xl lg:text-2xl mb-2 text-white uppercase tracking-widest relative"
+                      style={{ 
+                        fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                        textShadow: `0 0 10px ${config.accentColor}80, 0 0 20px ${config.accentColor}40, 0 0 30px ${config.accentColor}20`,
+                      }}
                       data-testid={`text-game-title-${game.slug}`}
                     >
                       {game.displayName}
