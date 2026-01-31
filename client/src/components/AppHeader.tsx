@@ -66,6 +66,12 @@ export function AppHeader({
             <Link href="/">
               <Logo size="md" />
             </Link>
+            {title && (
+              <>
+                <span className="text-muted-foreground">/</span>
+                <span className="font-semibold">{title}</span>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
