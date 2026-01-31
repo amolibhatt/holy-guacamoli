@@ -165,7 +165,7 @@ export function Scoreboard() {
                       )}
 
                       <button
-                        className="opacity-50 hover:opacity-100 transition-opacity relative z-10 hover:text-red-400 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary rounded"
+                        className="opacity-50 hover:opacity-100 transition-opacity relative z-10 hover:text-destructive focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary rounded"
                         onClick={() => removeContestant(contestant.id)}
                         data-testid={`button-remove-${contestant.id}`}
                         aria-label={`Remove ${contestant.name}`}
