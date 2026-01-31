@@ -24,6 +24,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import type { SequenceQuestion, SequenceSession, SequenceSubmission } from "@shared/schema";
+import { PLAYER_AVATARS } from "@shared/schema";
 
 type GameState = "setup" | "waiting" | "animatedReveal" | "playing" | "revealing" | "leaderboard" | "gameComplete" | "results";
 type AnimationStage = "teaser" | "questionDrop" | "optionPulse" | null;
@@ -675,7 +676,7 @@ export default function SequenceSqueeze() {
                               data-testid={`player-card-${p.id}`}
                             >
                               <div className="text-4xl mb-1">
-                                {p.avatar || <User className="w-10 h-10 text-teal-400" />}
+                                {PLAYER_AVATARS.find(a => a.id === p.avatar)?.emoji || <User className="w-10 h-10 text-teal-400" />}
                               </div>
                               <span className="font-semibold text-sm text-center text-white" data-testid={`text-player-name-${p.id}`}>{p.name}</span>
                               <div className="flex items-center gap-2 mt-1">
