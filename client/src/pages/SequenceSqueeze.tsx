@@ -425,9 +425,9 @@ export default function SequenceSqueeze() {
             <div className="w-28 h-28 mx-auto mb-8 rounded-full bg-teal-500 flex items-center justify-center shadow-2xl shadow-teal-500/40">
               <ListOrdered className="w-14 h-14 text-white" />
             </div>
-            <h2 className="text-4xl font-black mb-3">Genetic Sort</h2>
+            <h2 className="text-4xl font-black mb-3">Sort Circuit</h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Put it in order, fast!
+              Arrange fast. Win first.
             </p>
             
             {isLoadingQuestions ? (
@@ -648,20 +648,37 @@ export default function SequenceSqueeze() {
                 <Badge variant="outline">Q{currentQuestionIndex}/{totalQuestions}</Badge>
                 <Badge variant="secondary" className="gap-1">
                   <Users className="w-4 h-4" />
-                  {submissions.length} submitted
+                  {submissions.length}/{players.length} locked in
                 </Badge>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Timer className="w-5 h-5 text-orange-500" />
-                  <span className={`text-3xl font-mono font-bold ${timerSeconds <= 5 ? 'text-red-500 animate-pulse' : 'text-foreground'}`}>
-                    {timerSeconds}s
-                  </span>
-                </div>
-              </div>
+              <Button size="lg" variant="destructive" onClick={revealAnswer} data-testid="button-force-reveal-top">
+                <Zap className="w-5 h-5 mr-2" />
+                Force Reveal
+              </Button>
             </div>
             
-            <Progress value={((15 - timerSeconds) / 15) * 100} className="h-3 bg-muted" />
+            {submissions.length > 0 && (
+              <div className="bg-muted/50 rounded-xl p-4 mb-4">
+                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-cyan-500" />
+                  Live Ticker
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {submissions.map((sub) => (
+                    <motion.div
+                      key={sub.playerId}
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-cyan-500/20 border border-cyan-500/40 rounded-full"
+                    >
+                      <span className="font-medium text-sm">{sub.playerName}</span>
+                      <span className="text-xs text-muted-foreground">LOCKED IN!</span>
+                      <span className="text-xs font-mono text-cyan-600 dark:text-cyan-400">({(sub.timeMs / 1000).toFixed(2)}s)</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <Card className="p-8 text-center bg-gradient-to-br from-card to-muted/50">
               <h2 className="text-3xl font-bold mb-8">{currentQuestion.question}</h2>
@@ -687,27 +704,17 @@ export default function SequenceSqueeze() {
               )}
             </Card>
 
-            <div className="flex justify-center gap-3">
-              <Button size="lg" variant="destructive" onClick={revealAnswer} data-testid="button-reveal">
-                <Zap className="w-5 h-5 mr-2" />
-                Force Reveal Now
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                onClick={() => {
-                  revealAnswer();
-                  const nextIdx = currentQuestionIndex;
-                  if (nextIdx < questions.length) {
-                    setTimeout(() => startQuestion(questions[nextIdx], nextIdx), 3000);
-                  }
-                }}
-                data-testid="button-skip"
-              >
-                <SkipForward className="w-5 h-5 mr-2" />
-                Skip Question
-              </Button>
-            </div>
+            {submissions.length === 0 && (
+              <div className="text-center py-4">
+                <motion.div
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                  className="text-muted-foreground"
+                >
+                  Waiting for players to lock in their sequences...
+                </motion.div>
+              </div>
+            )}
           </motion.div>
         )}
 

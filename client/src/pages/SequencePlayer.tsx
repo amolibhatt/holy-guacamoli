@@ -288,8 +288,8 @@ export default function SequencePlayer() {
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-teal-500 flex items-center justify-center shadow-xl">
               <ListOrdered className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">Genetic Sort</h1>
-            <p className="text-teal-200">Put it in order, fast!</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Sort Circuit</h1>
+            <p className="text-teal-200">Arrange fast. Win first.</p>
           </div>
 
           <form onSubmit={handleJoin} className="space-y-4">
@@ -389,7 +389,7 @@ export default function SequencePlayer() {
               </motion.div>
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">Waiting for host...</h2>
-            <p className="text-teal-200">Get ready to put things in order!</p>
+            <p className="text-teal-200">Get ready to arrange the sequence!</p>
             {myScore > 0 && (
               <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full">
                 <Star className="w-4 h-4 text-amber-400" />
@@ -453,21 +453,10 @@ export default function SequencePlayer() {
               <Badge variant="secondary" className="bg-white/10 text-white gap-1">
                 Q{currentQuestionIndex}/{totalQuestions}
               </Badge>
-              <Badge variant="secondary" className="bg-white/10 text-white">
-                {phase === "submitted" ? "Submitted!" : "Tap in order"}
+              <Badge variant="secondary" className={`${phase === "submitted" ? "bg-cyan-500/30 text-cyan-300 border-cyan-400/50" : "bg-white/10 text-white"}`}>
+                {phase === "submitted" ? "LOCKED IN" : "Tap 1-2-3-4"}
               </Badge>
-              <div className="flex items-center gap-2">
-                <Timer className={`w-5 h-5 ${timeRemaining <= 5 ? 'text-red-400' : 'text-teal-300'}`} />
-                <span className={`text-2xl font-mono font-bold ${timeRemaining <= 5 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
-                  {timeRemaining}s
-                </span>
-              </div>
             </div>
-            
-            <Progress 
-              value={((15 - timeRemaining) / 15) * 100} 
-              className={`h-2 ${timeRemaining <= 5 ? 'bg-red-900/50' : 'bg-white/20'}`}
-            />
 
             <Card className="p-4 bg-white/10 border-white/20">
               <h3 className="text-lg font-semibold text-white text-center mb-4">
@@ -483,6 +472,7 @@ export default function SequencePlayer() {
                 const option = currentQuestion[`option${letter}` as keyof Question] as string;
                 const isSelected = selectedSequence.includes(letter);
                 const position = selectedSequence.indexOf(letter);
+                const circledNumbers = ["①", "②", "③", "④"];
                 
                 return (
                   <motion.button
@@ -490,19 +480,19 @@ export default function SequencePlayer() {
                     onClick={() => handleLetterTap(letter)}
                     disabled={phase === "submitted" || isSelected}
                     whileTap={{ scale: 0.95 }}
-                    className={`relative p-4 rounded-xl transition-all ${
+                    className={`relative p-4 rounded-xl transition-all min-h-[100px] ${
                       isSelected
-                        ? 'bg-teal-500 text-white'
+                        ? 'bg-cyan-500 text-white ring-2 ring-cyan-300'
                         : 'bg-white/10 text-white hover:bg-white/20'
-                    } ${phase === "submitted" ? 'opacity-50' : ''}`}
+                    } ${phase === "submitted" ? 'opacity-60' : ''}`}
                   >
                     {isSelected && (
-                      <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white text-teal-600 flex items-center justify-center text-sm font-bold">
-                        {position + 1}
+                      <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-white text-cyan-600 flex items-center justify-center text-xl font-bold shadow-lg">
+                        {circledNumbers[position]}
                       </div>
                     )}
-                    <div className="text-2xl font-bold mb-1">{letter}</div>
-                    <div className="text-sm opacity-80 truncate">{option}</div>
+                    <div className="text-3xl font-black mb-1">{letter}</div>
+                    <div className="text-sm opacity-90 line-clamp-2">{option}</div>
                   </motion.button>
                 );
               })}
@@ -521,10 +511,10 @@ export default function SequencePlayer() {
 
             {selectedSequence.length > 0 && (
               <div className="text-center">
-                <p className="text-sm text-teal-200 mb-2">Your order:</p>
+                <p className="text-sm text-teal-200 mb-2">Your sequence:</p>
                 <div className="flex justify-center gap-2">
                   {selectedSequence.map((letter, idx) => (
-                    <div key={idx} className="w-10 h-10 rounded-lg bg-teal-500 flex items-center justify-center text-white font-bold">
+                    <div key={idx} className="w-10 h-10 rounded-lg bg-cyan-500 flex items-center justify-center text-white font-bold">
                       {letter}
                     </div>
                   ))}
@@ -544,7 +534,7 @@ export default function SequencePlayer() {
             className="text-center"
           >
             <div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${
-              isCorrect ? 'bg-emerald-500' : 'bg-red-500'
+              isCorrect ? 'bg-cyan-500' : 'bg-red-600'
             }`}>
               {isCorrect ? (
                 <Check className="w-12 h-12 text-white" />
@@ -552,8 +542,8 @@ export default function SequencePlayer() {
                 <X className="w-12 h-12 text-white" />
               )}
             </div>
-            <h2 className={`text-3xl font-bold mb-4 ${isCorrect ? 'text-emerald-400' : 'text-red-400'}`}>
-              {isCorrect ? "Correct!" : "Not quite!"}
+            <h2 className={`text-3xl font-bold mb-4 ${isCorrect ? 'text-cyan-400' : 'text-red-400'}`}>
+              {isCorrect ? "SYSTEM STABLE" : "CIRCUIT BLOWN"}
             </h2>
             
             <div className="mb-4">

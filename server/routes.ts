@@ -3188,6 +3188,15 @@ export async function registerRoutes(
     isConnected: boolean;
   }
 
+  interface SequenceSubmission {
+    playerId: string;
+    playerName: string;
+    playerAvatar?: string;
+    sequence: string[];
+    timeMs: number;
+    isCorrect?: boolean;
+  }
+
   interface Room {
     code: string;
     hostId: string;
@@ -3198,7 +3207,9 @@ export async function registerRoutes(
     boardId: number | null;
     completedQuestions: Set<number>;
     sessionId: number | null;
-    gameMode?: 'buzzer' | 'psyop';
+    gameMode?: 'buzzer' | 'psyop' | 'sequence';
+    sequenceSubmissions?: SequenceSubmission[];
+    currentCorrectOrder?: string[];
   }
 
   const rooms = new Map<string, Room>();
@@ -3942,6 +3953,384 @@ export async function registerRoutes(
                   yourScore: playerScore,
                 });
               }
+            });
+            break;
+          }
+
+          // ==================== SORT CIRCUIT (SEQUENCE) GAME ====================
+          case 'sequence:host:create': {
+            const code = generateRoomCode();
+            const room: Room = {
+              code,
+              hostId: 'anonymous',
+              hostWs: ws,
+              players: new Map(),
+              buzzerLocked: true,
+              buzzQueue: [],
+              boardId: null,
+              completedQuestions: new Set(),
+              sessionId: null,
+              gameMode: 'sequence',
+              sequenceSubmissions: [],
+            };
+            rooms.set(code, room);
+            wsToRoom.set(ws, { roomCode: code, isHost: true });
+            ws.send(JSON.stringify({ type: 'sequence:room:created', code }));
+            console.log(`[WebSocket] Sort Circuit room ${code} created`);
+            break;
+          }
+
+          case 'sequence:host:switchMode': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.gameMode = 'sequence';
+            room.sequenceSubmissions = [];
+            
+            ws.send(JSON.stringify({
+              type: 'sequence:mode:switched',
+              code: room.code,
+              players: getPlayersArray(room),
+            }));
+            console.log(`[WebSocket] Room ${room.code} switched to sequence mode`);
+            break;
+          }
+
+          case 'sequence:player:join': {
+            const code = data.code?.toUpperCase();
+            const room = rooms.get(code);
+            if (!room) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
+              break;
+            }
+
+            const playerId = data.playerId || crypto.randomUUID();
+            const existingPlayer = room.players.get(playerId);
+            
+            if (existingPlayer) {
+              existingPlayer.ws = ws;
+              existingPlayer.isConnected = true;
+              existingPlayer.name = data.name || existingPlayer.name;
+              existingPlayer.avatar = data.avatar || existingPlayer.avatar;
+              wsToRoom.set(ws, { roomCode: room.code, isHost: false, playerId });
+
+              ws.send(JSON.stringify({
+                type: 'sequence:joined',
+                playerId,
+                score: existingPlayer.score,
+              }));
+
+              sendToHost(room, {
+                type: 'sequence:player:joined',
+                playerId,
+                playerName: existingPlayer.name,
+                playerAvatar: existingPlayer.avatar,
+              });
+              console.log(`[WebSocket] Player ${existingPlayer.name} rejoined Sort Circuit room ${room.code}`);
+            } else {
+              const player: RoomPlayer = {
+                id: playerId,
+                name: data.name || 'Player',
+                avatar: data.avatar || 'cat',
+                score: 0,
+                ws,
+                isConnected: true,
+              };
+              room.players.set(playerId, player);
+              wsToRoom.set(ws, { roomCode: room.code, isHost: false, playerId });
+
+              ws.send(JSON.stringify({
+                type: 'sequence:joined',
+                playerId,
+                score: 0,
+              }));
+
+              sendToHost(room, {
+                type: 'sequence:player:joined',
+                playerId,
+                playerName: player.name,
+                playerAvatar: player.avatar,
+              });
+              console.log(`[WebSocket] Player ${player.name} joined Sort Circuit room ${room.code}`);
+            }
+            break;
+          }
+
+          case 'sequence:host:startAnimatedReveal': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.sequenceSubmissions = [];
+            room.currentCorrectOrder = data.correctOrder;
+            
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                sendToPlayer(player, {
+                  type: 'sequence:animatedReveal',
+                  question: data.question,
+                  questionIndex: data.questionIndex,
+                  totalQuestions: data.totalQuestions,
+                });
+              }
+            });
+
+            sendToHost(room, {
+              type: 'sequence:animatedReveal:started',
+              question: data.question,
+              questionIndex: data.questionIndex,
+              totalQuestions: data.totalQuestions,
+            });
+            break;
+          }
+
+          case 'sequence:host:startAnswering': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                sendToPlayer(player, {
+                  type: 'sequence:question:start',
+                  question: data.question,
+                });
+              }
+            });
+
+            sendToHost(room, {
+              type: 'sequence:answering:started',
+            });
+            break;
+          }
+
+          case 'sequence:player:submit': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room || !mapping.playerId) break;
+
+            const player = room.players.get(mapping.playerId);
+            if (!player) break;
+
+            const submission: SequenceSubmission = {
+              playerId: player.id,
+              playerName: player.name,
+              playerAvatar: player.avatar,
+              sequence: data.sequence,
+              timeMs: data.timeMs,
+            };
+
+            if (!room.sequenceSubmissions) room.sequenceSubmissions = [];
+            
+            // Check if player already submitted
+            const existingIdx = room.sequenceSubmissions.findIndex(s => s.playerId === player.id);
+            if (existingIdx >= 0) break; // Already submitted
+            
+            room.sequenceSubmissions.push(submission);
+
+            // Notify host of submission
+            sendToHost(room, {
+              type: 'sequence:submission',
+              submission,
+            });
+
+            // Check if all players have submitted for auto-reveal
+            const connectedPlayers = Array.from(room.players.values()).filter(p => p.isConnected);
+            if (room.sequenceSubmissions.length >= connectedPlayers.length && connectedPlayers.length > 0) {
+              sendToHost(room, {
+                type: 'sequence:allSubmitted',
+              });
+            }
+            break;
+          }
+
+          case 'sequence:host:reveal': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            const correctOrder = data.correctOrder || room.currentCorrectOrder;
+            const submissions = room.sequenceSubmissions || [];
+            
+            // Determine correctness and find winner
+            let winner: { playerId: string; playerName: string; playerAvatar: string; timeMs: number } | null = null;
+            let fastestCorrectTime = Infinity;
+
+            for (const sub of submissions) {
+              sub.isCorrect = JSON.stringify(sub.sequence) === JSON.stringify(correctOrder);
+              if (sub.isCorrect && sub.timeMs < fastestCorrectTime) {
+                fastestCorrectTime = sub.timeMs;
+                winner = {
+                  playerId: sub.playerId,
+                  playerName: sub.playerName,
+                  playerAvatar: sub.playerAvatar || 'cat',
+                  timeMs: sub.timeMs,
+                };
+              }
+            }
+
+            // Award points to winner
+            if (winner) {
+              const winningPlayer = room.players.get(winner.playerId);
+              if (winningPlayer) {
+                winningPlayer.score += 10;
+              }
+            }
+
+            // Build leaderboard
+            const leaderboard = Array.from(room.players.values())
+              .map(p => ({
+                playerId: p.id,
+                playerName: p.name,
+                playerAvatar: p.avatar,
+                score: p.score,
+              }))
+              .sort((a, b) => b.score - a.score);
+
+            // Send reveal to all players
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                const playerSub = submissions.find(s => s.playerId === player.id);
+                const playerRank = playerSub?.isCorrect 
+                  ? submissions.filter(s => s.isCorrect && s.timeMs < playerSub.timeMs).length + 1
+                  : null;
+                
+                sendToPlayer(player, {
+                  type: 'sequence:reveal',
+                  correctOrder,
+                  rank: playerRank,
+                  yourScore: player.score,
+                  leaderboard,
+                  winner: winner ? { ...winner } : null,
+                });
+              }
+            });
+
+            // Send reveal complete to host
+            sendToHost(room, {
+              type: 'sequence:reveal:complete',
+              submissions,
+              winner,
+              leaderboard,
+              currentQuestionIndex: data.currentQuestionIndex,
+              totalQuestions: data.totalQuestions,
+            });
+            break;
+          }
+
+          case 'sequence:host:showLeaderboard': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            const leaderboard = Array.from(room.players.values())
+              .map(p => ({
+                playerId: p.id,
+                playerName: p.name,
+                playerAvatar: p.avatar,
+                score: p.score,
+              }))
+              .sort((a, b) => b.score - a.score);
+
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                sendToPlayer(player, {
+                  type: 'sequence:leaderboard',
+                  leaderboard,
+                  myScore: player.score,
+                });
+              }
+            });
+
+            sendToHost(room, {
+              type: 'sequence:leaderboard',
+              leaderboard,
+            });
+            break;
+          }
+
+          case 'sequence:host:resetScores': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.players.forEach((player) => {
+              player.score = 0;
+              if (player.ws && player.isConnected) {
+                sendToPlayer(player, { type: 'sequence:scoresReset' });
+              }
+            });
+
+            sendToHost(room, { type: 'sequence:scoresReset' });
+            break;
+          }
+
+          case 'sequence:host:reset': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.sequenceSubmissions = [];
+            room.currentCorrectOrder = undefined;
+
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                sendToPlayer(player, { type: 'sequence:reset' });
+              }
+            });
+            break;
+          }
+
+          case 'sequence:host:endGame': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            const leaderboard = Array.from(room.players.values())
+              .map(p => ({
+                playerId: p.id,
+                playerName: p.name,
+                playerAvatar: p.avatar,
+                score: p.score,
+              }))
+              .sort((a, b) => b.score - a.score);
+
+            const globalWinner = leaderboard.length > 0 ? leaderboard[0] : null;
+
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                sendToPlayer(player, {
+                  type: 'sequence:gameComplete',
+                  leaderboard,
+                  winner: globalWinner,
+                  myScore: player.score,
+                });
+              }
+            });
+
+            sendToHost(room, {
+              type: 'sequence:gameComplete',
+              leaderboard,
+              globalWinner,
             });
             break;
           }
