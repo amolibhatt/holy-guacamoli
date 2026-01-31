@@ -72,68 +72,67 @@ export default function LandingPage() {
         transition={{ duration: 0.6 }}
       >
         {/* Logo */}
-        <div className="flex justify-center mb-4" data-testid="icon-logo">
-          <Logo size="lg" />
+        <div className="flex justify-center mb-6" data-testid="icon-logo">
+          <Logo size="xl" />
         </div>
         
         <p 
-          className="text-lime-400 text-lg font-bold mb-8 text-center uppercase tracking-widest"
-          style={{ fontFamily: "'Archivo Black', 'Impact', sans-serif" }}
+          className="text-white/60 text-sm mb-6 text-center tracking-wide"
         >
-          Dip into the fun
+          Party games for everyone
         </p>
 
-        <Card className="border-white/20 bg-white/5 backdrop-blur-2xl shadow-2xl shadow-lime-500/10">
-            <CardContent className="pt-4 pb-4">
+        <Card className="border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl shadow-lime-500/5 rounded-2xl">
+            <CardContent className="p-6">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-2 mb-3 bg-white/5">
-                  <TabsTrigger value="login" data-testid="tab-login">Sign In</TabsTrigger>
-                  <TabsTrigger value="register" data-testid="tab-register">Register</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 mb-5 bg-white/5 h-11 rounded-xl">
+                  <TabsTrigger value="login" className="rounded-lg data-[state=active]:bg-lime-500/20 data-[state=active]:text-lime-400" data-testid="tab-login">Sign In</TabsTrigger>
+                  <TabsTrigger value="register" className="rounded-lg data-[state=active]:bg-lime-500/20 data-[state=active]:text-lime-400" data-testid="tab-register">Register</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="login">
-                  <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="login-email" className="text-white/80">Email</Label>
+                  <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="login-email" className="text-white/70 text-sm">Email</Label>
                       <Input
                         id="login-email"
                         type="email"
                         placeholder="you@example.com"
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-lime-400 rounded-xl h-11"
+                        className="bg-white/10 border-white/15 text-white placeholder:text-white/30 focus:border-lime-400 focus:ring-lime-400/20 rounded-xl h-12"
                         {...loginForm.register("email")}
                         data-testid="input-login-email"
                       />
                       {loginForm.formState.errors.email && (
-                        <p className="text-destructive text-sm">{loginForm.formState.errors.email.message}</p>
+                        <p className="text-destructive text-xs mt-1">{loginForm.formState.errors.email.message}</p>
                       )}
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="login-password" className="text-white/80">Password</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="login-password" className="text-white/70 text-sm">Password</Label>
                       <Input
                         id="login-password"
                         type="password"
                         placeholder="Your password"
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-lime-400 rounded-xl h-11"
+                        className="bg-white/10 border-white/15 text-white placeholder:text-white/30 focus:border-lime-400 focus:ring-lime-400/20 rounded-xl h-12"
                         {...loginForm.register("password")}
                         data-testid="input-login-password"
                       />
                       {loginForm.formState.errors.password && (
-                        <p className="text-destructive text-sm">{loginForm.formState.errors.password.message}</p>
+                        <p className="text-destructive text-xs mt-1">{loginForm.formState.errors.password.message}</p>
                       )}
                     </div>
-                    <div className="text-right">
-                      <Link href="/forgot-password" className="text-sm text-lime-400 hover:text-lime-300 hover:underline" data-testid="link-forgot-password">
+                    <div className="flex justify-end pt-1">
+                      <Link href="/forgot-password" className="text-xs text-white/50 hover:text-lime-400 transition-colors" data-testid="link-forgot-password">
                         Forgot password?
                       </Link>
                     </div>
                     {loginError && (
-                      <p className="text-destructive text-sm" data-testid="text-login-error">
+                      <p className="text-destructive text-sm bg-destructive/10 px-3 py-2 rounded-lg" data-testid="text-login-error">
                         {loginError.message}
                       </p>
                     )}
                     <Button 
                       type="submit" 
-                      className="w-full bg-gradient-to-r from-lime-400 to-green-600 hover:from-lime-500 hover:to-green-700 text-white font-bold border-0"
+                      className="w-full bg-gradient-to-r from-lime-400 to-emerald-500 hover:from-lime-500 hover:to-emerald-600 text-black font-bold border-0 h-12 rounded-xl mt-2"
                       disabled={isLoggingIn}
                       data-testid="button-login"
                     >
@@ -150,65 +149,65 @@ export default function LandingPage() {
                 </TabsContent>
 
                 <TabsContent value="register">
-                  <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
-                        <Label htmlFor="register-first-name" className="text-white/80">First Name</Label>
+                  <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="register-first-name" className="text-white/70 text-sm">First Name</Label>
                         <Input
                           id="register-first-name"
                           placeholder="First"
-                          className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-lime-400 rounded-xl h-11"
+                          className="bg-white/10 border-white/15 text-white placeholder:text-white/30 focus:border-lime-400 focus:ring-lime-400/20 rounded-xl h-12"
                           {...registerForm.register("firstName")}
                           data-testid="input-register-firstname"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="register-last-name" className="text-white/80">Last Name</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="register-last-name" className="text-white/70 text-sm">Last Name</Label>
                         <Input
                           id="register-last-name"
                           placeholder="Last"
-                          className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-lime-400 rounded-xl h-11"
+                          className="bg-white/10 border-white/15 text-white placeholder:text-white/30 focus:border-lime-400 focus:ring-lime-400/20 rounded-xl h-12"
                           {...registerForm.register("lastName")}
                           data-testid="input-register-lastname"
                         />
                       </div>
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="register-email" className="text-white/80">Email</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="register-email" className="text-white/70 text-sm">Email</Label>
                       <Input
                         id="register-email"
                         type="email"
                         placeholder="you@example.com"
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-lime-400 rounded-xl h-11"
+                        className="bg-white/10 border-white/15 text-white placeholder:text-white/30 focus:border-lime-400 focus:ring-lime-400/20 rounded-xl h-12"
                         {...registerForm.register("email")}
                         data-testid="input-register-email"
                       />
                       {registerForm.formState.errors.email && (
-                        <p className="text-destructive text-sm">{registerForm.formState.errors.email.message}</p>
+                        <p className="text-destructive text-xs mt-1">{registerForm.formState.errors.email.message}</p>
                       )}
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="register-password" className="text-white/80">Password</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="register-password" className="text-white/70 text-sm">Password</Label>
                       <Input
                         id="register-password"
                         type="password"
                         placeholder="At least 6 characters"
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-lime-400 rounded-xl h-11"
+                        className="bg-white/10 border-white/15 text-white placeholder:text-white/30 focus:border-lime-400 focus:ring-lime-400/20 rounded-xl h-12"
                         {...registerForm.register("password")}
                         data-testid="input-register-password"
                       />
                       {registerForm.formState.errors.password && (
-                        <p className="text-destructive text-sm">{registerForm.formState.errors.password.message}</p>
+                        <p className="text-destructive text-xs mt-1">{registerForm.formState.errors.password.message}</p>
                       )}
                     </div>
                     {registerError && (
-                      <p className="text-destructive text-sm" data-testid="text-register-error">
+                      <p className="text-destructive text-sm bg-destructive/10 px-3 py-2 rounded-lg" data-testid="text-register-error">
                         {registerError.message}
                       </p>
                     )}
                     <Button 
                       type="submit" 
-                      className="w-full bg-gradient-to-r from-lime-400 to-green-600 hover:from-lime-500 hover:to-green-700 text-white font-bold border-0"
+                      className="w-full bg-gradient-to-r from-lime-400 to-emerald-500 hover:from-lime-500 hover:to-emerald-600 text-black font-bold border-0 h-12 rounded-xl mt-2"
                       disabled={isRegistering}
                       data-testid="button-register"
                     >
@@ -227,8 +226,8 @@ export default function LandingPage() {
             </CardContent>
           </Card>
 
-          <p className="mt-4 text-center text-white/40 text-xs" data-testid="text-free-notice">
-            Players join via QR code - no account needed!
+          <p className="mt-6 text-center text-white/40 text-xs tracking-wide" data-testid="text-free-notice">
+            Players join via QR code &mdash; no account needed
           </p>
       </motion.div>
 
