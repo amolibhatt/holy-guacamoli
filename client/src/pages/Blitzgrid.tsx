@@ -3190,11 +3190,9 @@ export default function Blitzgrid() {
   const starterPacks = activeGrids.filter(g => g.isStarterPack);
   const myGrids = activeGrids.filter(g => !g.isStarterPack);
 
-  // Grid card component - clean design with color accent only on icon
+  // Grid card component - retro gaming design matching home page
   const GridCard = ({ grid, index }: { grid: typeof activeGrids[0], index: number }) => {
-    const effectiveColor = grid.colorCode?.startsWith('#') ? null : grid.colorCode;
-    // Use grid ID for stable color assignment (same color in list and gameplay)
-    const colorConfig = getBoardColorConfig(effectiveColor || BOARD_COLORS[grid.id % BOARD_COLORS.length]);
+    const [isHovered, setIsHovered] = useState(false);
     
     return (
       <motion.button
@@ -3202,8 +3200,8 @@ export default function Blitzgrid() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: index * 0.05 }}
-        whileHover={{ y: -4, transition: { duration: 0.2 } }}
-        whileTap={{ scale: 0.98 }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         onClick={() => {
           setSelectedGridId(grid.id);
           setPlayMode(true);
@@ -3219,21 +3217,39 @@ export default function Blitzgrid() {
           });
           setShowAnswer(false);
         }}
-        className="group text-left p-4 rounded-2xl bg-card border border-slate-200/60 hover:border-slate-300/80 transition-all duration-200 hover:shadow-md"
+        className="group text-left p-5 rounded-xl bg-[#0d0d12] transition-all duration-200"
+        style={{
+          border: '1px solid #333',
+          boxShadow: isHovered ? '0 0 20px rgba(232, 121, 249, 0.4), inset 0 0 0 1px #e879f9' : 'none',
+        }}
         data-testid={`card-grid-${grid.id}`}
       >
         <div className="flex items-center gap-3">
-          {/* Gradient icon - only colored element */}
-          <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colorConfig.header} flex items-center justify-center shadow-sm`}>
-            <Grid3X3 className="w-5 h-5 text-white" />
+          {/* Icon with glow */}
+          <div 
+            className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200"
+            style={{
+              border: '2px solid #e879f9',
+              boxShadow: isHovered ? '0 0 15px rgba(232, 121, 249, 0.5)' : '0 0 10px rgba(232, 121, 249, 0.3)',
+            }}
+          >
+            <Grid3X3 className="w-5 h-5 text-fuchsia-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground truncate">{grid.name}</h3>
+            <h3 
+              className="font-black text-white truncate uppercase tracking-wide"
+              style={{ 
+                fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                textShadow: isHovered ? '0 0 10px rgba(232, 121, 249, 0.5)' : 'none',
+              }}
+            >
+              {grid.name}
+            </h3>
             {grid.description && (
-              <p className="text-xs text-muted-foreground truncate mt-0.5">{grid.description}</p>
+              <p className="text-xs text-white/50 truncate mt-0.5">{grid.description}</p>
             )}
           </div>
-          <ChevronRight className="w-5 h-5 text-muted-foreground/50 group-hover:text-muted-foreground group-hover:translate-x-0.5 transition-all" />
+          <ChevronRight className="w-5 h-5 text-white/30 group-hover:text-fuchsia-400 group-hover:translate-x-0.5 transition-all" />
         </div>
       </motion.button>
     );
@@ -3241,13 +3257,41 @@ export default function Blitzgrid() {
 
   // Main grid list view
   return (
-    <div className="min-h-screen bg-background flex flex-col" data-testid="page-blitzgrid">
-      <AppHeader title="Blitzgrid" backHref="/" showAdminButton adminHref="/admin/games" />
+    <div className="min-h-screen bg-[#0a0a0f] flex flex-col relative" data-testid="page-blitzgrid">
+      {/* Scanline background pattern */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div 
+          className="absolute w-full h-full opacity-[0.03]"
+          style={{
+            background: `repeating-linear-gradient(
+              0deg,
+              transparent,
+              transparent 2px,
+              rgba(255, 255, 255, 0.5) 2px,
+              rgba(255, 255, 255, 0.5) 4px
+            )`,
+          }}
+        />
+        {/* Subtle color gradients - magenta for Blitzgrid */}
+        <div 
+          className="absolute w-full h-full"
+          style={{
+            background: `
+              radial-gradient(ellipse 80% 60% at 50% 0%, rgba(232, 121, 249, 0.08) 0%, transparent 50%),
+              radial-gradient(ellipse 60% 40% at 100% 100%, rgba(168, 85, 247, 0.05) 0%, transparent 50%)
+            `,
+          }}
+        />
+      </div>
       
-      <div className="flex-1 container mx-auto px-4 py-8">
+      <AppHeader minimal />
+      
+      <div className="flex-1 container mx-auto px-4 py-8 relative z-10">
         {loadingGrids ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 rounded-2xl" />)}
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-20 rounded-xl bg-[#0d0d12] border border-white/10 animate-pulse" />
+            ))}
           </div>
         ) : activeGrids.length === 0 ? (
           <motion.div
@@ -3255,11 +3299,19 @@ export default function Blitzgrid() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-16"
           >
-            <div className="w-20 h-20 rounded-3xl bg-muted flex items-center justify-center mx-auto mb-5">
-              <Grid3X3 className="w-10 h-10 text-muted-foreground" />
+            <div 
+              className="w-20 h-20 rounded-xl flex items-center justify-center mx-auto mb-5"
+              style={{ border: '2px solid #333' }}
+            >
+              <Grid3X3 className="w-10 h-10 text-white/30" />
             </div>
-            <h3 className="text-xl font-semibold mb-2 text-foreground">The grid gods are sleeping</h3>
-            <p className="text-muted-foreground max-w-sm mx-auto">
+            <h3 
+              className="text-xl font-black mb-2 text-white uppercase tracking-wide"
+              style={{ fontFamily: "'Archivo Black', 'Impact', sans-serif" }}
+            >
+              The grid gods are sleeping
+            </h3>
+            <p className="text-white/50 max-w-sm mx-auto">
               No quizzes ready yet! Head to Admin to cook up some trivia magic.
             </p>
           </motion.div>
@@ -3271,33 +3323,40 @@ export default function Blitzgrid() {
               animate={{ opacity: 1, y: 0 }}
               className="text-center py-4"
             >
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-                Choose Your <span className="bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300 bg-clip-text text-transparent">Battleground</span>
+              <h1 
+                className="text-3xl md:text-4xl font-black text-white tracking-tight uppercase"
+                style={{ 
+                  fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                  textShadow: '0 0 10px rgba(232, 121, 249, 0.5), 0 0 20px rgba(232, 121, 249, 0.3), 0 0 30px rgba(232, 121, 249, 0.2)',
+                }}
+              >
+                Choose Your <span style={{ color: '#e879f9' }}>Battleground</span>
               </h1>
-              <p className="text-muted-foreground mt-2 text-sm">25 squares. One buzzer. Who's got the fastest fingers?</p>
+              <p className="text-white/60 mt-2 text-sm">25 squares. One buzzer. Who's got the fastest fingers?</p>
             </motion.div>
 
-            {/* Shuffle Play Card - Premium design with animations */}
+            {/* Shuffle Play Card - Retro gaming design */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              whileHover={{ y: -8, transition: { duration: 0.25, ease: "easeOut" } }}
-              whileTap={{ scale: 0.97 }}
-              className="group cursor-pointer p-6 rounded-3xl bg-card/90 backdrop-blur-sm border border-pink-200/60 transition-all duration-300 relative overflow-hidden"
-              style={{ boxShadow: '0 12px 40px -8px rgba(244, 114, 182, 0.25)' }}
+              className="group cursor-pointer p-6 rounded-xl bg-[#0d0d12] transition-all duration-200 relative overflow-hidden"
+              style={{ 
+                border: '2px solid #e879f9',
+                boxShadow: '0 0 20px rgba(232, 121, 249, 0.3)',
+              }}
               onClick={handleShufflePlay}
               data-testid="card-shuffle-play"
             >
-              {/* Animated gradient overlay */}
+              {/* Animated glow pulse */}
               <motion.div 
-                className="absolute inset-0 rounded-3xl bg-gradient-to-br from-rose-100/60 via-pink-100/50 to-fuchsia-100/60"
-                animate={{ opacity: [0.4, 0.6, 0.4] }}
-                transition={{ duration: 3, repeat: Infinity }}
+                className="absolute inset-0 rounded-xl"
+                animate={{ boxShadow: ['0 0 15px rgba(232, 121, 249, 0.2)', '0 0 25px rgba(232, 121, 249, 0.4)', '0 0 15px rgba(232, 121, 249, 0.2)'] }}
+                transition={{ duration: 2, repeat: Infinity }}
               />
               
               {/* Shimmer effect on hover */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
               
               {/* Floating sparkles */}
               <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -3305,28 +3364,36 @@ export default function Blitzgrid() {
                   animate={{ y: [0, -8, 0], rotate: [0, 15, 0] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  <Sparkles className="w-5 h-5 text-pink-400" />
+                  <Sparkles className="w-5 h-5 text-fuchsia-400" />
                 </motion.div>
               </div>
               
               <div className="relative flex items-center gap-4 flex-wrap">
-                <motion.div 
-                  className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-300 via-pink-400 to-fuchsia-400 flex items-center justify-center shrink-0 shadow-lg"
-                  style={{ boxShadow: '0 8px 24px rgba(244, 114, 182, 0.4)' }}
-                  whileHover={{ rotate: 5, scale: 1.05 }}
+                <div 
+                  className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 group-hover:shadow-[0_0_20px_rgba(232,121,249,0.6)]"
+                  style={{ 
+                    border: '2px solid #e879f9',
+                    boxShadow: '0 0 15px rgba(232, 121, 249, 0.4)',
+                  }}
                 >
                   {isShuffling ? (
-                    <Loader2 className="w-7 h-7 text-white animate-spin" />
+                    <Loader2 className="w-7 h-7 text-fuchsia-400 animate-spin" />
                   ) : (
-                    <Shuffle className="w-7 h-7 text-white drop-shadow-sm" />
+                    <Shuffle className="w-7 h-7 text-fuchsia-400" />
                   )}
-                </motion.div>
+                </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-lg text-foreground flex flex-wrap items-center gap-2">
+                  <h3 
+                    className="font-black text-lg text-white flex flex-wrap items-center gap-2 uppercase tracking-wide"
+                    style={{ 
+                      fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                      textShadow: '0 0 10px rgba(232, 121, 249, 0.5)',
+                    }}
+                  >
                     Shuffle Play
-                    <Badge variant="secondary" className="text-xs bg-gradient-to-r from-pink-100 to-fuchsia-100 text-pink-700 border-0 shadow-sm">Random mix</Badge>
+                    <Badge className="text-xs bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/50">Random mix</Badge>
                   </h3>
-                  <p className="text-sm text-muted-foreground mt-0.5">
+                  <p className="text-sm text-white/60 mt-0.5">
                     {playedShuffleCategoryIds.length > 0 
                       ? `${playedShuffleCategoryIds.length} grids conquered`
                       : "Random grid, same buzzer rules. No prep, pure chaos."
@@ -3337,7 +3404,7 @@ export default function Blitzgrid() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="shrink-0 border-pink-300 text-pink-600 hover:bg-pink-50"
+                    className="shrink-0 border-fuchsia-500/50 text-fuchsia-300"
                     onClick={(e) => {
                       e.stopPropagation();
                       setPlayedShuffleCategoryIds([]);
@@ -3349,8 +3416,8 @@ export default function Blitzgrid() {
                     Reset
                   </Button>
                 ) : (
-                  <div className="w-9 h-9 rounded-full bg-white/70 flex items-center justify-center group-hover:bg-white transition-colors shadow-sm">
-                    <ChevronRight className="w-5 h-5 text-pink-500 group-hover:translate-x-0.5 transition-all" />
+                  <div className="w-9 h-9 rounded-full bg-fuchsia-500/20 flex items-center justify-center group-hover:bg-fuchsia-500/30 transition-colors">
+                    <ChevronRight className="w-5 h-5 text-fuchsia-400 group-hover:translate-x-0.5 transition-all" />
                   </div>
                 )}
               </div>
@@ -3363,10 +3430,10 @@ export default function Blitzgrid() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
               >
-                {/* Section header with gradient divider */}
+                {/* Section header */}
                 <div className="flex items-center gap-4 mb-5">
-                  <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider whitespace-nowrap">My Grids</h2>
-                  <div className="flex-1 h-[1px] bg-gradient-to-r from-rose-200 via-pink-200 to-transparent" />
+                  <h2 className="text-sm font-bold text-white/70 uppercase tracking-widest whitespace-nowrap">My Grids</h2>
+                  <div className="flex-1 h-[1px] bg-gradient-to-r from-fuchsia-500/50 via-fuchsia-500/20 to-transparent" />
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {myGrids.map((grid, index) => (
@@ -3383,13 +3450,13 @@ export default function Blitzgrid() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.1 }}
               >
-                {/* Section header with gradient divider */}
+                {/* Section header */}
                 <div className="flex items-center gap-4 mb-5">
-                  <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider whitespace-nowrap flex flex-wrap items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-amber-500" />
+                  <h2 className="text-sm font-bold text-white/70 uppercase tracking-widest whitespace-nowrap flex flex-wrap items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-fuchsia-400" />
                     Starter Packs
                   </h2>
-                  <div className="flex-1 h-[1px] bg-gradient-to-r from-amber-200 via-orange-200 to-transparent" />
+                  <div className="flex-1 h-[1px] bg-gradient-to-r from-fuchsia-500/50 via-fuchsia-500/20 to-transparent" />
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {starterPacks.map((grid, index) => (
@@ -3403,10 +3470,10 @@ export default function Blitzgrid() {
       </div>
       
       {/* Footer */}
-      <footer className="border-t border-border/50 px-6 py-6 mt-auto">
+      <footer className="border-t border-white/5 px-6 py-6 mt-auto relative z-10">
         <div className="max-w-5xl mx-auto flex items-center justify-center">
-          <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-1">
-            made with <Heart className="w-4 h-4 text-pink-500 fill-pink-500 inline" /> by <span className="font-semibold bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 bg-clip-text text-transparent">Amoli</span>
+          <p className="text-sm text-white/40 flex flex-wrap items-center justify-center gap-1">
+            made with <Heart className="w-4 h-4 text-fuchsia-400 fill-fuchsia-400 inline" /> by <span className="font-semibold bg-gradient-to-r from-fuchsia-400 via-pink-400 to-violet-400 bg-clip-text text-transparent">Amoli</span>
           </p>
         </div>
       </footer>
