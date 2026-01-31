@@ -3215,6 +3215,7 @@ export async function registerRoutes(
     gameMode?: 'buzzer' | 'psyop' | 'sequence';
     sequenceSubmissions?: SequenceSubmission[];
     currentCorrectOrder?: string[];
+    currentQuestion?: object;
     questionStartTime?: number;
     pointsPerRound?: number;
   }
@@ -4090,6 +4091,7 @@ export async function registerRoutes(
 
             room.sequenceSubmissions = [];
             room.currentCorrectOrder = data.correctOrder;
+            room.currentQuestion = data.question;
             room.questionStartTime = Date.now();
             room.pointsPerRound = data.pointsPerRound || 10;
             
@@ -4122,6 +4124,8 @@ export async function registerRoutes(
 
             room.sequenceSubmissions = [];
             room.currentCorrectOrder = data.correctOrder;
+            room.currentQuestion = data.question;
+            room.pointsPerRound = data.pointsPerRound || 10;
             
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
@@ -4150,13 +4154,18 @@ export async function registerRoutes(
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            if (!room.currentQuestion) {
+              console.warn(`[WebSocket] startAnswering called but no currentQuestion stored for room ${room.code}`);
+              break;
+            }
+
             room.questionStartTime = Date.now();
 
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
                 sendToPlayer(player, {
                   type: 'sequence:question:start',
-                  question: data.question,
+                  question: room.currentQuestion,
                 });
               }
             });
@@ -4392,7 +4401,7 @@ export async function registerRoutes(
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
-            const { playerId, delta } = message;
+            const { playerId, delta } = data;
             if (!playerId || typeof delta !== 'number') break;
 
             const player = room.players.get(playerId);

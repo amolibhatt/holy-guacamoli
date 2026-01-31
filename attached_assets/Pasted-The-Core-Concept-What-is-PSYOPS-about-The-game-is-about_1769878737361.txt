@@ -1,0 +1,32 @@
+The Core Concept: What is PSYOPS about?
+The game is about Information Warfare. You are given a real, bizarre fact that has been "Redacted" (a word is missing). Your job is to manufacture a lie so believable that your friends vote for it instead of the truth.
+The Slogan: Manufacture the lie. Redact the truth. Control the room.
+1. The Gameplay Workflow (Simple Terms)
+Phase 1: The Briefing (Host Screen)
+The big screen shows a "Redacted Fact."
+Example: "In the 18th century, King George I of England officially hired a man to [REDACTED] for the Royal Court."
+Phase 2: The Disinformation (Player Phones)
+Every player types a "Believable Lie" on their phone to fill that blank.
+Note: The "Amoli Bot" also submits one highly intelligent lie to mess with everyone.
+Phase 3: The Deep State (The Vote)
+The big screen shows all the players' lies + the Amoli Bot lie + the 1 actual truth, all mixed up.
+Everyone uses their phone to pick the one they think is the truth.
+Rule: You cannot vote for your own lie.
+Phase 4: The Aftermath (The Reveal)
+The big screen reveals who wrote what.
++10 points if you find the Truth.
++5 points for every friend you "Gaslit" into picking your lie.
+-10 points if you were dumb enough to pick the Amoli Bot’s lie.
+2. The Category List (The "Intelligence Folders")
+For your Excel sheet, here are 5 "Amoli-Approved" categories for PSYOPS.
+Board	Category	Rule
+Board 4	Redacted History	Weird things humans actually did in the past.
+Board 4	Legal Leaks	Strange laws that are technically still real.
+Board 4	Corporate Scams	Bizarre facts about famous brands.
+Board 4	Biological Bugs	Facts about nature that sound like glitches.
+Board 4	Celebrity Secrets	Unhinged (but true) facts about famous people.
+3. The Shuffle & Memory Logic (Foolproof)
+To keep the game from getting boring, the Shuffle Logic for PSYOPS works like this:
+The Pool: It pulls from your 5 "Intelligence Folders" (Categories).
+The Meld: It merges Global Facts with Personal Facts (if the Admin uploaded their own "Redacted" clues).
+Memory: Once a "Fact" has been played, it is added to the played_history and won't show up again for the rest of the night.
