@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
@@ -24,6 +24,9 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter, 
   AlertDialogHeader, AlertDialogTitle 
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle
+} from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Board, Category, Question } from "@shared/schema";
 
@@ -116,6 +119,13 @@ export default function BlitzgridAdmin() {
     enabled: isAuthenticated,
   });
 
+  // Auto-select first grid when grids load (makes sidebar view the default)
+  useEffect(() => {
+    if (grids.length > 0 && selectedGridId === null) {
+      setSelectedGridId(grids[0].id);
+    }
+  }, [grids, selectedGridId]);
+
   const { data: gridCategories = [], isLoading: loadingCategories } = useQuery<CategoryWithQuestions[]>({
     queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'],
     enabled: !!selectedGridId,
@@ -123,12 +133,17 @@ export default function BlitzgridAdmin() {
 
   const createGridMutation = useMutation({
     mutationFn: async ({ name }: { name: string }) => {
-      return apiRequest('POST', '/api/blitzgrid/grids', { name });
+      const result = await apiRequest('POST', '/api/blitzgrid/grids', { name });
+      return result.json();
     },
-    onSuccess: () => {
+    onSuccess: (newGrid) => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
       setNewGridName("");
       setShowNewGridForm(false);
+      // Select the newly created grid
+      if (newGrid?.id) {
+        setSelectedGridId(newGrid.id);
+      }
       toast({ title: "Grid created" });
     },
     onError: () => {
@@ -1392,6 +1407,41 @@ export default function BlitzgridAdmin() {
           </div>
         )}
       </div>
+
+      <Dialog open={showNewGridForm} onOpenChange={setShowNewGridForm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Grid</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <Input
+              placeholder="Grid name..."
+              value={newGridName}
+              onChange={(e) => setNewGridName(e.target.value)}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newGridName.trim()) {
+                  createGridMutation.mutate({ name: newGridName.trim() });
+                }
+              }}
+              data-testid="input-grid-name-dialog"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => { setShowNewGridForm(false); setNewGridName(""); }}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => createGridMutation.mutate({ name: newGridName.trim() })}
+                disabled={!newGridName.trim() || createGridMutation.isPending}
+                data-testid="button-create-grid-dialog"
+              >
+                {createGridMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Create Grid
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={deleteGridId !== null} onOpenChange={(open) => !open && setDeleteGridId(null)}>
         <AlertDialogContent>
