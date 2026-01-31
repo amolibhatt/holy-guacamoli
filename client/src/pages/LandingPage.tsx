@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnimatedLogo } from "@/components/AvocadoIcon";
 import { motion } from "framer-motion";
-import { Sparkles, Trophy, Loader2, Zap, Smartphone, Volume2 } from "lucide-react";
+import { Sparkles, Trophy, Loader2, Grid3X3, ListOrdered, Brain } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -56,47 +56,69 @@ export default function LandingPage() {
             <AnimatedLogo size="xl" showText />
           </div>
           
-          <p className="text-muted-foreground mb-6" data-testid="text-description">
-            The ultimate party game platform. Host trivia nights, quiz games, and competitions with friends buzzing in from their phones!
+          <p className="text-muted-foreground mb-8" data-testid="text-description">
+            The ultimate party game platform. Three unique games, endless fun with friends!
           </p>
 
-          {/* Features Grid */}
-          <div className="grid grid-cols-2 gap-3 text-left" data-testid="section-features">
-            <div className="flex items-start gap-2 p-2 rounded-lg bg-card/50" data-testid="feature-buzzer">
-              <div className="w-8 h-8 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
-                <Smartphone className="w-4 h-4 text-primary" />
+          {/* Games Showcase */}
+          <div className="space-y-3" data-testid="section-games">
+            <motion.div 
+              className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-rose-500/20 via-pink-500/20 to-fuchsia-500/20 border border-rose-500/30"
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              data-testid="game-blitzgrid"
+            >
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-rose-500 to-fuchsia-500 flex items-center justify-center shrink-0">
+                <Grid3X3 className="w-6 h-6 text-white" />
               </div>
               <div>
-                <span className="text-foreground text-sm font-medium block">Phone Buzzers</span>
-                <span className="text-muted-foreground text-xs">Join via QR code</span>
+                <span className="text-foreground font-bold block">Blitzgrid</span>
+                <span className="text-muted-foreground text-sm">5x5 trivia grid - race the clock, claim the grid!</span>
               </div>
+            </motion.div>
+
+            <motion.div 
+              className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-cyan-500/20 border border-emerald-500/30"
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              data-testid="game-sortcircuit"
+            >
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shrink-0">
+                <ListOrdered className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <span className="text-foreground font-bold block">Sort Circuit</span>
+                <span className="text-muted-foreground text-sm">Arrange 4 options in order - fastest wins!</span>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-violet-500/20 via-purple-500/20 to-indigo-500/20 border border-violet-500/30"
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              data-testid="game-psyop"
+            >
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center shrink-0">
+                <Brain className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <span className="text-foreground font-bold block">PsyOp</span>
+                <span className="text-muted-foreground text-sm">Write lies, spot the truth - outsmart everyone!</span>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Quick info */}
+          <div className="mt-6 flex items-center justify-center lg:justify-start gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Trophy className="w-3 h-3" />
+              <span>Live scores</span>
             </div>
-            <div className="flex items-start gap-2 p-2 rounded-lg bg-card/50" data-testid="feature-realtime">
-              <div className="w-8 h-8 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
-                <Zap className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <span className="text-foreground text-sm font-medium block">Real-time Buzzing</span>
-                <span className="text-muted-foreground text-xs">Instant responses</span>
-              </div>
+            <div className="flex items-center gap-1">
+              <span>QR join</span>
             </div>
-            <div className="flex items-start gap-2 p-2 rounded-lg bg-card/50" data-testid="feature-scoreboard">
-              <div className="w-8 h-8 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
-                <Trophy className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <span className="text-foreground text-sm font-medium block">Live Scores</span>
-                <span className="text-muted-foreground text-xs">Track progress</span>
-              </div>
-            </div>
-            <div className="flex items-start gap-2 p-2 rounded-lg bg-card/50" data-testid="feature-sounds">
-              <div className="w-8 h-8 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
-                <Volume2 className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <span className="text-foreground text-sm font-medium block">Sound Effects</span>
-                <span className="text-muted-foreground text-xs">Immersive gameplay</span>
-              </div>
+            <div className="flex items-center gap-1">
+              <span>No app needed</span>
             </div>
           </div>
         </motion.div>
