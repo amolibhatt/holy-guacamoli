@@ -382,14 +382,13 @@ export default function SequenceSqueeze() {
     <div className="min-h-screen bg-background">
       <div className="fixed inset-0 bg-gradient-to-br from-teal-300/5 via-transparent to-teal-300/5 pointer-events-none" />
 
-      <AppHeader
-        title="Genetic Sort"
-        subtitle="Put it in order, fast!"
-        backHref="/"
-        showAdminButton
-        adminHref="/admin/genetic-sort"
-        rightContent={
-          <>
+      <AppHeader minimal />
+      
+      {/* Secondary bar with game title and controls */}
+      <div className="border-b border-border/30 bg-card/30">
+        <div className="container mx-auto px-4 py-2 flex items-center justify-between">
+          <h1 className="text-lg font-bold text-foreground">Genetic Sort</h1>
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
@@ -412,9 +411,9 @@ export default function SequenceSqueeze() {
                 </Button>
               </>
             )}
-          </>
-        }
-      />
+          </div>
+        </div>
+      </div>
 
       <main className="p-6 max-w-5xl mx-auto">
         {gameState === "setup" && (

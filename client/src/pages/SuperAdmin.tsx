@@ -197,16 +197,7 @@ export default function SuperAdmin() {
 
   return (
     <div className="min-h-screen gradient-game">
-      <AppHeader
-        title="Super Admin"
-        subtitle="Platform Management"
-        backHref="/"
-        rightContent={
-          <Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/30">
-            Super Admin
-          </Badge>
-        }
-      />
+      <AppHeader minimal />
 
       <main className="p-6 max-w-7xl mx-auto">
         <Tabs defaultValue="analytics" className="space-y-6">
