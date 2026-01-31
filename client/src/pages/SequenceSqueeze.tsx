@@ -621,7 +621,7 @@ export default function SequenceSqueeze() {
                       <Button 
                         size="icon" 
                         variant="outline" 
-                        className="border-white/20 text-white/70 hover:bg-white/10"
+                        className="border-white/20 text-white/70"
                         onClick={() => setPointsPerRound(p => Math.max(5, p - 5))}
                         data-testid="button-points-decrease"
                       >
@@ -631,7 +631,7 @@ export default function SequenceSqueeze() {
                       <Button 
                         size="icon" 
                         variant="outline" 
-                        className="border-white/20 text-white/70 hover:bg-white/10"
+                        className="border-white/20 text-white/70"
                         onClick={() => setPointsPerRound(p => Math.min(50, p + 5))}
                         data-testid="button-points-increase"
                       >

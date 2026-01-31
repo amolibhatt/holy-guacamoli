@@ -257,7 +257,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
                   variant="outline"
                   size="lg"
                   onClick={handleUndo}
-                  className="bg-white/20 border-white/40 text-white hover:bg-white/30 gap-2"
+                  className="bg-white/20 border-white/40 text-white gap-2"
                   data-testid="button-undo-award"
                 >
                   <Undo2 className="w-5 h-5" />
@@ -291,7 +291,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
             variant="outline"
             onClick={() => startTimer(10)}
             disabled={isTimerRunning}
-            className="border-background/40 text-background bg-background/20 hover:bg-background/30 dark:border-white/40 dark:text-white dark:bg-transparent dark:hover:bg-white/20"
+            className="border-background/40 text-background bg-background/20 dark:border-white/40 dark:text-white dark:bg-transparent"
           >
             <Timer className="w-4 h-4 mr-2" />
             10s
@@ -312,7 +312,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
             <Button
               variant="outline"
               onClick={stopTimer}
-              className="border-red-500 text-red-600 bg-red-100 hover:bg-red-200 dark:border-red-400/50 dark:text-red-300 dark:bg-transparent dark:hover:bg-red-500/20"
+              className="border-red-500 text-red-600 bg-red-100 dark:border-red-400/50 dark:text-red-300 dark:bg-transparent"
             >
               Stop
             </Button>
@@ -326,8 +326,8 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
               setShowAnswer(!showAnswer);
             }}
             className={showAnswer 
-              ? "bg-amber-500 text-white hover:bg-amber-600 border-2 border-amber-400 font-bold shadow-md" 
-              : "bg-emerald-500 text-white hover:bg-emerald-600 border-2 border-emerald-400 font-bold shadow-lg"
+              ? "bg-amber-500 text-white border-2 border-amber-400 font-bold shadow-md" 
+              : "bg-emerald-500 text-white border-2 border-emerald-400 font-bold shadow-lg"
             }
             data-testid="button-toggle-answer"
           >
@@ -436,7 +436,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
                   <Button
                     size="sm"
                     onClick={() => handleAward(contestant.id, contestant.name)}
-                    className="flex-1 bg-primary hover:bg-primary/90 text-white font-medium"
+                    className="flex-1 bg-primary text-white font-medium"
                     data-testid={`button-award-${contestant.id}`}
                   >
                     <CheckCircle2 className="w-4 h-4 mr-1" />
@@ -467,7 +467,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
             variant="ghost" 
             size="sm"
             onClick={handleNoAnswer}
-            className="text-muted-foreground hover:text-foreground hover:bg-white/10"
+            className="text-muted-foreground"
             data-testid="button-close-question"
           >
             <X className="w-4 h-4 mr-1" />

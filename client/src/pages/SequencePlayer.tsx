@@ -490,7 +490,7 @@ export default function SequencePlayer() {
             {selectedSequence.length > 0 && selectedSequence.length < 4 && phase === "playing" && (
               <Button 
                 variant="outline" 
-                className="w-full border-white/20 text-white hover:bg-white/10"
+                className="w-full border-white/20 text-white"
                 onClick={resetSelection}
               >
                 <RotateCcw className="w-4 h-4 mr-2" />

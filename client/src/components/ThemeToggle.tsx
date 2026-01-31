@@ -25,7 +25,7 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={toggle}
-      className="text-muted-foreground hover:text-foreground"
+      className="text-muted-foreground"
       data-testid="button-theme-toggle"
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >

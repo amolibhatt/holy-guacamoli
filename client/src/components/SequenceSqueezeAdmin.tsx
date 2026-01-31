@@ -409,7 +409,7 @@ export function SequenceSqueezeAdmin() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="text-muted-foreground hover:text-destructive shrink-0"
+                    className="text-destructive shrink-0"
                     onClick={() => deleteMutation.mutate(q.id)}
                     disabled={deleteMutation.isPending}
                     data-testid={`button-delete-sequence-${q.id}`}

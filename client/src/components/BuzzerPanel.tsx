@@ -441,7 +441,7 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
                 }
               }}
               title="Create new room"
-              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               data-testid="button-new-room"
               aria-label="Create new room"
             >
