@@ -10,90 +10,86 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
   return (
     <svg 
       width={size} 
-      height={size} 
-      viewBox="0 0 64 72" 
+      height={size * 1.1} 
+      viewBox="0 0 80 88" 
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"
       className="shrink-0"
     >
-      {/* Halo */}
+      {/* Halo - bright golden */}
       <ellipse 
-        cx="32" 
-        cy="10" 
-        rx="12" 
-        ry="4" 
+        cx="40" 
+        cy="12" 
+        rx="14" 
+        ry="5" 
         fill="none" 
-        stroke="#fcd34d" 
-        strokeWidth="3"
+        stroke="#FFD700" 
+        strokeWidth="4"
+      />
+      <ellipse 
+        cx="40" 
+        cy="12" 
+        rx="14" 
+        ry="5" 
+        fill="none" 
+        stroke="#FFF59D" 
+        strokeWidth="2"
+        opacity="0.7"
       />
       
-      {/* Left Wing */}
-      <g transform="translate(2, 28)">
-        <path 
-          d="M12 8 Q6 4 2 8 Q-2 12 2 16 Q6 20 10 16 Q8 12 12 8" 
-          fill="white" 
-          stroke="#e5e7eb" 
-          strokeWidth="1"
-        />
-        <path 
-          d="M10 10 Q6 8 4 10 Q2 12 4 14 Q6 16 8 14" 
-          fill="white" 
-          stroke="#e5e7eb" 
-          strokeWidth="0.5"
-        />
+      {/* Left Wing - clean white with definition */}
+      <g transform="translate(-2, 32)">
+        <ellipse cx="16" cy="12" rx="14" ry="8" fill="white"/>
+        <ellipse cx="12" cy="10" rx="8" ry="5" fill="#f8fafc"/>
+        <ellipse cx="18" cy="14" rx="6" ry="4" fill="#f1f5f9"/>
       </g>
       
       {/* Right Wing */}
-      <g transform="translate(50, 28) scale(-1, 1)">
-        <path 
-          d="M12 8 Q6 4 2 8 Q-2 12 2 16 Q6 20 10 16 Q8 12 12 8" 
-          fill="white" 
-          stroke="#e5e7eb" 
-          strokeWidth="1"
-        />
-        <path 
-          d="M10 10 Q6 8 4 10 Q2 12 4 14 Q6 16 8 14" 
-          fill="white" 
-          stroke="#e5e7eb" 
-          strokeWidth="0.5"
-        />
+      <g transform="translate(52, 32)">
+        <ellipse cx="14" cy="12" rx="14" ry="8" fill="white"/>
+        <ellipse cx="18" cy="10" rx="8" ry="5" fill="#f8fafc"/>
+        <ellipse cx="12" cy="14" rx="6" ry="4" fill="#f1f5f9"/>
       </g>
       
-      {/* Avocado Body - outer dark green */}
-      <ellipse cx="32" cy="42" rx="18" ry="24" fill="#4a7c23"/>
+      {/* Avocado Body - dark green outer skin */}
+      <ellipse cx="40" cy="52" rx="22" ry="30" fill="#2D5016"/>
       
-      {/* Avocado Body - inner light green */}
-      <ellipse cx="32" cy="44" rx="14" ry="19" fill="#c7e5a0"/>
+      {/* Avocado flesh - bright lime green */}
+      <ellipse cx="40" cy="54" rx="17" ry="24" fill="#A8E063"/>
       
-      {/* Pit */}
-      <ellipse cx="32" cy="52" rx="8" ry="10" fill="#8b5a2b"/>
-      <ellipse cx="30" cy="50" rx="2" ry="3" fill="#a0724a" opacity="0.6"/>
+      {/* Inner gradient for depth */}
+      <ellipse cx="40" cy="52" rx="14" ry="20" fill="#C5F288" opacity="0.6"/>
       
-      {/* Happy closed eyes - curved lines */}
+      {/* Pit - rich brown */}
+      <ellipse cx="40" cy="62" rx="9" ry="12" fill="#8B4513"/>
+      {/* Pit highlight */}
+      <ellipse cx="37" cy="58" rx="3" ry="4" fill="#A0522D" opacity="0.7"/>
+      
+      {/* Happy closed eyes - clean arcs */}
       <path 
-        d="M24 36 Q26 33 28 36" 
-        stroke="#4a7c23" 
-        strokeWidth="2" 
+        d="M28 42 Q32 37 36 42" 
+        stroke="#2D5016" 
+        strokeWidth="2.5" 
         fill="none" 
         strokeLinecap="round"
       />
       <path 
-        d="M36 36 Q38 33 40 36" 
-        stroke="#4a7c23" 
-        strokeWidth="2" 
+        d="M44 42 Q48 37 52 42" 
+        stroke="#2D5016" 
+        strokeWidth="2.5" 
         fill="none" 
         strokeLinecap="round"
       />
       
-      {/* Rosy cheeks */}
-      <circle cx="22" cy="40" r="3" fill="#ffb6c1" opacity="0.5"/>
-      <circle cx="42" cy="40" r="3" fill="#ffb6c1" opacity="0.5"/>
+      {/* Rosy cheeks - soft pink */}
+      <ellipse cx="25" cy="47" rx="4" ry="3" fill="#FFB7C5" opacity="0.7"/>
+      <ellipse cx="55" cy="47" rx="4" ry="3" fill="#FFB7C5" opacity="0.7"/>
       
-      {/* Small smile */}
+      {/* Cute smile */}
       <path 
-        d="M29 43 Q32 46 35 43" 
-        stroke="#4a7c23" 
-        strokeWidth="1.5" 
+        d="M35 50 Q40 55 45 50" 
+        stroke="#2D5016" 
+        strokeWidth="2" 
         fill="none" 
         strokeLinecap="round"
       />
@@ -103,10 +99,10 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
 
 export function Logo({ size = "md" }: LogoProps) {
   const sizeConfig = {
-    sm: { text: "text-lg", icon: 36, gap: "gap-2" },
-    md: { text: "text-xl sm:text-2xl", icon: 44, gap: "gap-2" },
-    lg: { text: "text-2xl sm:text-3xl", icon: 56, gap: "gap-3" },
-    compact: { text: "text-sm", icon: 28, gap: "gap-1" }
+    sm: { text: "text-lg", icon: 40, gap: "gap-2" },
+    md: { text: "text-xl sm:text-2xl", icon: 48, gap: "gap-2" },
+    lg: { text: "text-2xl sm:text-3xl", icon: 60, gap: "gap-3" },
+    compact: { text: "text-sm", icon: 32, gap: "gap-1" }
   };
 
   const config = sizeConfig[size];
