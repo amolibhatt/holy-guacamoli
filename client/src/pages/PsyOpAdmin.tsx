@@ -45,10 +45,10 @@ export default function PsyOpAdmin() {
               <Button 
                 variant="ghost" 
                 className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
-                data-testid="tab-genetic-sort"
+                data-testid="tab-sort-circuit"
               >
                 <ListOrdered className="w-4 h-4 mr-2" />
-                Genetic Sort
+                Sort Circuit
               </Button>
             </Link>
             <Link href="/admin/psyop">

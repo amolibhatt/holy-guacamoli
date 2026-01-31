@@ -45,10 +45,10 @@ export default function GeneticSortAdmin() {
               <Button 
                 variant="ghost" 
                 className="relative rounded-none border-b-2 border-primary text-foreground"
-                data-testid="tab-genetic-sort"
+                data-testid="tab-sort-circuit"
               >
                 <ListOrdered className="w-4 h-4 mr-2" />
-                Genetic Sort
+                Sort Circuit
               </Button>
             </Link>
             <Link href="/admin/psyop">
@@ -67,7 +67,7 @@ export default function GeneticSortAdmin() {
 
       <main className="container mx-auto px-4 py-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Genetic Sort Questions</h1>
+          <h1 className="text-2xl font-bold">Sort Circuit Questions</h1>
           <p className="text-muted-foreground text-sm">Create and manage ordering questions</p>
         </div>
         <SequenceSqueezeAdmin />

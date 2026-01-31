@@ -387,7 +387,7 @@ export default function SequenceSqueeze() {
       {/* Secondary bar with game title and controls */}
       <div className="border-b border-border/30 bg-card/30">
         <div className="container mx-auto px-4 py-2 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-foreground">Genetic Sort</h1>
+          <h1 className="text-lg font-bold text-foreground">Sort Circuit</h1>
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"

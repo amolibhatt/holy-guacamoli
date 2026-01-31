@@ -22,7 +22,7 @@ const MODE_LABELS: Record<GameMode, string> = {
   jeopardy: "Jeopardy (Multi-Board)",
   heads_up: "Heads Up",
   board: "Board Game",
-  sequence: "Genetic Sort",
+  sequence: "Sort Circuit",
   blitzgrid: "Blitzgrid",
 };
 
