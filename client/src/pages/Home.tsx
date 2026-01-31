@@ -41,7 +41,7 @@ const GAME_CONFIG: Record<string, {
 
 function GameCardSkeleton() {
   return (
-    <div className="flex flex-col items-center justify-center p-6 lg:p-8 bg-[#0d0d12] border border-[#333] rounded-xl animate-pulse min-h-[200px] lg:min-h-[280px]">
+    <div className="flex flex-col items-center justify-center p-6 lg:p-8 bg-[#0d0d12] border border-white/10 rounded-xl animate-pulse min-h-[200px] lg:min-h-[280px]">
       <div className="w-14 h-14 lg:w-16 lg:h-16 rounded-xl bg-white/10 mb-4 lg:mb-6" />
       <div className="h-6 w-28 lg:w-32 bg-white/10 rounded mb-2 lg:mb-3" />
       <div className="h-4 w-36 lg:w-40 bg-white/5 rounded mb-2" />
