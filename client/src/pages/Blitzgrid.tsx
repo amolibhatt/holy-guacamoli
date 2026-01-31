@@ -2714,6 +2714,35 @@ export default function Blitzgrid() {
                         {activeQuestion?.correctAnswer || ''}
                       </ReactMarkdown>
                     </div>
+                    
+                    {/* Answer Media */}
+                    {(activeQuestion?.answerImageUrl || activeQuestion?.answerAudioUrl || activeQuestion?.answerVideoUrl) && (
+                      <div className="flex flex-col items-center gap-3 mt-4">
+                        {activeQuestion?.answerImageUrl && (
+                          <img 
+                            src={activeQuestion.answerImageUrl} 
+                            alt="Answer media"
+                            className="max-w-full max-h-48 md:max-h-64 rounded-lg object-contain shadow-lg"
+                          />
+                        )}
+                        {activeQuestion?.answerVideoUrl && (
+                          <video 
+                            src={activeQuestion.answerVideoUrl}
+                            controls
+                            autoPlay
+                            className="max-w-full max-h-48 md:max-h-64 rounded-lg shadow-lg"
+                          />
+                        )}
+                        {activeQuestion?.answerAudioUrl && (
+                          <audio 
+                            src={activeQuestion.answerAudioUrl}
+                            controls
+                            autoPlay
+                            className="w-full max-w-sm"
+                          />
+                        )}
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

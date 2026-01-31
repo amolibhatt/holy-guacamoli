@@ -95,6 +95,9 @@ export default function BlitzgridAdmin() {
     imageUrl?: string;
     audioUrl?: string;
     videoUrl?: string;
+    answerImageUrl?: string;
+    answerAudioUrl?: string;
+    answerVideoUrl?: string;
   }>>({});
   
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
@@ -209,7 +212,7 @@ export default function BlitzgridAdmin() {
   });
 
   const saveQuestionMutation = useMutation({
-    mutationFn: async ({ categoryId, points, question, correctAnswer, options, imageUrl, audioUrl, videoUrl }: { 
+    mutationFn: async ({ categoryId, points, question, correctAnswer, options, imageUrl, audioUrl, videoUrl, answerImageUrl, answerAudioUrl, answerVideoUrl }: { 
       categoryId: number; 
       points: number; 
       question: string; 
@@ -218,9 +221,12 @@ export default function BlitzgridAdmin() {
       imageUrl?: string;
       audioUrl?: string;
       videoUrl?: string;
+      answerImageUrl?: string;
+      answerAudioUrl?: string;
+      answerVideoUrl?: string;
     }) => {
       return apiRequest('POST', `/api/blitzgrid/categories/${categoryId}/questions`, { 
-        points, question, correctAnswer, options, imageUrl, audioUrl, videoUrl 
+        points, question, correctAnswer, options, imageUrl, audioUrl, videoUrl, answerImageUrl, answerAudioUrl, answerVideoUrl 
       });
     },
     onSuccess: (_, variables) => {
@@ -379,6 +385,9 @@ export default function BlitzgridAdmin() {
                     imageUrl: existingQuestion.imageUrl || '',
                     audioUrl: existingQuestion.audioUrl || '',
                     videoUrl: existingQuestion.videoUrl || '',
+                    answerImageUrl: existingQuestion.answerImageUrl || '',
+                    answerAudioUrl: existingQuestion.answerAudioUrl || '',
+                    answerVideoUrl: existingQuestion.answerVideoUrl || '',
                   }
                 }))}
               >
@@ -398,7 +407,7 @@ export default function BlitzgridAdmin() {
         );
       }
       
-      const defaultForm = { question: '', correctAnswer: '', options: [], imageUrl: '', audioUrl: '', videoUrl: '' };
+      const defaultForm = { question: '', correctAnswer: '', options: [], imageUrl: '', audioUrl: '', videoUrl: '', answerImageUrl: '', answerAudioUrl: '', answerVideoUrl: '' };
       return (
         <div className="space-y-2 p-2 border border-dashed rounded">
           <div className="flex items-start gap-2">
@@ -549,6 +558,128 @@ export default function BlitzgridAdmin() {
               </label>
             </div>
           </div>
+          
+          {/* Answer Media Section */}
+          <div className="border-t pt-2 mt-2">
+            <p className="text-xs text-muted-foreground mb-2">Answer Media (shown when revealing answer)</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1 flex-1 min-w-[180px]">
+                <Image className="w-3 h-3 text-green-500 shrink-0" />
+                <Input
+                  placeholder="Answer Image URL"
+                  className="h-7 text-xs flex-1"
+                  data-testid={`input-answer-image-url-${formKey}`}
+                  value={formData?.answerImageUrl || ''}
+                  onChange={(e) => setQuestionForms(prev => ({
+                    ...prev,
+                    [formKey]: { ...prev[formKey] || defaultForm, answerImageUrl: e.target.value }
+                  }))}
+                />
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        try {
+                          const url = await uploadFile(file);
+                          setQuestionForms(prev => ({
+                            ...prev,
+                            [formKey]: { ...prev[formKey] || defaultForm, answerImageUrl: url }
+                          }));
+                          toast({ title: "Answer image uploaded" });
+                        } catch (err) {
+                          toast({ title: "Upload failed", variant: "destructive" });
+                        }
+                      }
+                    }}
+                  />
+                  <Button type="button" size="icon" variant="ghost" asChild>
+                    <span><Upload className="w-4 h-4" /></span>
+                  </Button>
+                </label>
+              </div>
+              <div className="flex items-center gap-1 flex-1 min-w-[180px]">
+                <Music className="w-3 h-3 text-green-500 shrink-0" />
+                <Input
+                  placeholder="Answer Audio URL"
+                  className="h-7 text-xs flex-1"
+                  data-testid={`input-answer-audio-url-${formKey}`}
+                  value={formData?.answerAudioUrl || ''}
+                  onChange={(e) => setQuestionForms(prev => ({
+                    ...prev,
+                    [formKey]: { ...prev[formKey] || defaultForm, answerAudioUrl: e.target.value }
+                  }))}
+                />
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        try {
+                          const url = await uploadFile(file);
+                          setQuestionForms(prev => ({
+                            ...prev,
+                            [formKey]: { ...prev[formKey] || defaultForm, answerAudioUrl: url }
+                          }));
+                          toast({ title: "Answer audio uploaded" });
+                        } catch (err) {
+                          toast({ title: "Upload failed", variant: "destructive" });
+                        }
+                      }
+                    }}
+                  />
+                  <Button type="button" size="icon" variant="ghost" asChild>
+                    <span><Upload className="w-4 h-4" /></span>
+                  </Button>
+                </label>
+              </div>
+              <div className="flex items-center gap-1 flex-1 min-w-[180px]">
+                <Video className="w-3 h-3 text-green-500 shrink-0" />
+                <Input
+                  placeholder="Answer Video URL"
+                  className="h-7 text-xs flex-1"
+                  data-testid={`input-answer-video-url-${formKey}`}
+                  value={formData?.answerVideoUrl || ''}
+                  onChange={(e) => setQuestionForms(prev => ({
+                    ...prev,
+                    [formKey]: { ...prev[formKey] || defaultForm, answerVideoUrl: e.target.value }
+                  }))}
+                />
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="video/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        try {
+                          const url = await uploadFile(file);
+                          setQuestionForms(prev => ({
+                            ...prev,
+                            [formKey]: { ...prev[formKey] || defaultForm, answerVideoUrl: url }
+                          }));
+                          toast({ title: "Answer video uploaded" });
+                        } catch (err) {
+                          toast({ title: "Upload failed", variant: "destructive" });
+                        }
+                      }
+                    }}
+                  />
+                  <Button type="button" size="icon" variant="ghost" asChild>
+                    <span><Upload className="w-4 h-4" /></span>
+                  </Button>
+                </label>
+              </div>
+            </div>
+          </div>
+          
           <div className="flex justify-end">
             <Button
               size="sm"
@@ -564,6 +695,9 @@ export default function BlitzgridAdmin() {
                     imageUrl: formData.imageUrl || undefined,
                     audioUrl: formData.audioUrl || undefined,
                     videoUrl: formData.videoUrl || undefined,
+                    answerImageUrl: formData.answerImageUrl || undefined,
+                    answerAudioUrl: formData.answerAudioUrl || undefined,
+                    answerVideoUrl: formData.answerVideoUrl || undefined,
                   });
                   setQuestionForms(prev => {
                     const newForms = { ...prev };
