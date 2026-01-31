@@ -400,7 +400,7 @@ export function PsyOpQuestionAdmin() {
                       size="icon"
                       onClick={() => deleteMutation.mutate(q.id)}
                       disabled={deleteMutation.isPending}
-                      className="shrink-0 text-destructive hover:text-destructive"
+                      className="shrink-0 text-destructive"
                       data-testid={`button-delete-question-${q.id}`}
                     >
                       <Trash2 className="w-4 h-4" />

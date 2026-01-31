@@ -439,7 +439,7 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
                   size="lg"
                   variant="outline"
                   onClick={handleClose}
-                  className="border-white/30 text-white hover:bg-white/10"
+                  className="border-white/30 text-white"
                   data-testid="button-close-victory"
                 >
                   Close
@@ -470,7 +470,7 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
                   size="icon"
                   variant="ghost"
                   onClick={() => setShowShareCard(false)}
-                  className="absolute -top-12 right-0 text-white/70 hover:text-white hover:bg-white/10"
+                  className="absolute -top-12 right-0 text-white/70"
                   data-testid="button-close-share-modal"
                   aria-label="Close share modal"
                 >
@@ -484,7 +484,7 @@ export function VictoryScreen({ onClose }: VictoryScreenProps) {
                   <Button
                     variant="ghost"
                     onClick={() => setShowShareCard(false)}
-                    className="text-white/70 hover:text-white"
+                    className="text-white/70"
                     data-testid="button-back-to-results"
                   >
                     Back to Results

@@ -185,7 +185,7 @@ export function Scoreboard() {
             variant="ghost"
             size="icon"
             onClick={toggleSound}
-            className="text-muted-foreground hover:text-foreground hover:bg-foreground/10 focus-visible:ring-2 focus-visible:ring-primary"
+            className="text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary"
             data-testid="button-toggle-sound"
             aria-label={soundEnabled ? "Mute sounds" : "Unmute sounds"}
             aria-pressed={soundEnabled}
@@ -200,7 +200,7 @@ export function Scoreboard() {
                   variant="ghost"
                   size="icon"
                   onClick={handleUndo}
-                  className="text-blue-400/70 hover:text-blue-400 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary"
+                  className="text-blue-400 focus-visible:ring-2 focus-visible:ring-primary"
                   data-testid="button-undo-score"
                   aria-label="Undo last score change"
                 >
@@ -211,7 +211,7 @@ export function Scoreboard() {
                 variant="ghost"
                 size="icon"
                 onClick={endGame}
-                className="text-yellow-400/70 hover:text-yellow-400 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary"
+                className="text-yellow-400 focus-visible:ring-2 focus-visible:ring-primary"
                 data-testid="button-end-game"
                 aria-label="End game and show results"
               >
@@ -225,7 +225,7 @@ export function Scoreboard() {
                   variant="ghost" 
                   size="icon"
                   onClick={resetGame} 
-                  className="text-muted-foreground hover:text-foreground hover:bg-foreground/10 focus-visible:ring-2 focus-visible:ring-primary"
+                  className="text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary"
                   data-testid="button-reset-game"
                   aria-label="Reset game scores"
                 >

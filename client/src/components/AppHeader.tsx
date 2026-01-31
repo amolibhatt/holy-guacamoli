@@ -149,7 +149,7 @@ export function AppHeader({
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="text-muted-foreground hover:text-foreground" 
+                className="text-muted-foreground" 
                 data-testid="button-back"
                 aria-label="Go back"
                 onClick={onBack}
@@ -160,7 +160,7 @@ export function AppHeader({
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="text-muted-foreground hover:text-foreground" 
+                className="text-muted-foreground" 
                 data-testid="button-back"
                 aria-label="Go back"
                 asChild
@@ -195,7 +195,7 @@ export function AppHeader({
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-muted-foreground hover:text-primary" 
+              className="text-muted-foreground" 
               onClick={onHelpClick}
               data-testid="button-help"
               aria-label="Help"
@@ -208,7 +208,7 @@ export function AppHeader({
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-muted-foreground hover:text-foreground" 
+              className="text-muted-foreground" 
               data-testid="button-admin" 
               aria-label="Admin settings"
               asChild
@@ -223,7 +223,7 @@ export function AppHeader({
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-purple-500 hover:text-purple-400" 
+              className="text-purple-500" 
               data-testid="button-super-admin" 
               aria-label="Super admin panel"
               asChild
@@ -238,7 +238,7 @@ export function AppHeader({
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-muted-foreground hover:text-destructive" 
+              className="text-destructive" 
               data-testid="button-logout"
               onClick={() => logout()}
               disabled={isLoggingOut}
