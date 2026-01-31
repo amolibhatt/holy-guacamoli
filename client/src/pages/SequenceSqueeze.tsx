@@ -483,10 +483,34 @@ export default function SequenceSqueeze() {
   const joinUrl = `${window.location.origin}/sortcircuit/${roomCode}`;
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 overflow-hidden">
-      {/* Subtle dark background */}
+    <div 
+      className="min-h-screen overflow-hidden flex flex-col relative bg-[#0a0a0f] text-white" 
+      style={{
+        background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px)'
+      }}
+    >
+      {/* Subtle neon corner gradients */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-900" />
+        <div className="absolute top-0 left-0 w-64 h-64 bg-teal-500/5 blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 bg-cyan-500/5 blur-3xl" />
+        <div className="absolute -top-20 -left-20 w-40 h-40 rounded-full bg-gradient-to-br from-teal-500/15 to-transparent blur-2xl" />
+        <div className="absolute -bottom-16 -right-16 w-32 h-32 rounded-full bg-gradient-to-br from-cyan-500/15 to-transparent blur-2xl" />
+        {/* Floating particles */}
+        <motion.div 
+          className="absolute top-1/4 right-[15%] w-2 h-2 rounded-full bg-teal-400/30"
+          animate={{ y: [0, -20, 0], opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 4, repeat: Infinity }}
+        />
+        <motion.div 
+          className="absolute top-1/3 left-[10%] w-1.5 h-1.5 rounded-full bg-cyan-400/30"
+          animate={{ y: [0, -15, 0], opacity: [0.2, 0.5, 0.2] }}
+          transition={{ duration: 3, repeat: Infinity, delay: 1 }}
+        />
+        <motion.div 
+          className="absolute bottom-1/4 right-[20%] w-1 h-1 rounded-full bg-teal-400/40"
+          animate={{ y: [0, -10, 0], opacity: [0.3, 0.7, 0.3] }}
+          transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
+        />
       </div>
 
       <AppHeader minimal backHref="/" title="Sort Circuit" />
@@ -511,10 +535,17 @@ export default function SequenceSqueeze() {
           >
             {/* Hero title */}
             <div className="text-center mb-8">
-              <h1 className="text-4xl md:text-5xl font-bold text-slate-100 mb-2">
+              <h1 
+                className="text-4xl md:text-5xl font-black mb-2"
+                style={{
+                  background: 'linear-gradient(135deg, #14b8a6, #06b6d4, #22d3ee)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}
+              >
                 Sort Circuit
               </h1>
-              <p className="text-slate-400 text-lg">Arrange fast. Win first.</p>
+              <p className="text-white/60 text-lg">Arrange fast. Win first.</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 items-start">
@@ -529,15 +560,15 @@ export default function SequenceSqueeze() {
                 
                 {/* Room code */}
                 <div className="mt-6 text-center">
-                  <p className="text-slate-500 text-sm mb-1 uppercase tracking-wide">Room Code</p>
+                  <p className="text-white/50 text-sm mb-1 uppercase tracking-wide">Room Code</p>
                   <p 
-                    className="font-mono font-bold text-4xl tracking-widest text-slate-100"
+                    className="font-mono font-bold text-4xl tracking-widest text-white"
                     data-testid="text-room-code"
                   >
                     {roomCode}
                   </p>
                 </div>
-                <p className="text-sm text-slate-500 mt-2 mb-6" data-testid="text-join-url">
+                <p className="text-sm text-white/40 mt-2 mb-6" data-testid="text-join-url">
                   <span className="font-mono">/sortcircuit/{roomCode}</span>
                 </p>
 
@@ -546,8 +577,8 @@ export default function SequenceSqueeze() {
                   size="lg"
                   className={`h-14 px-8 text-lg w-full ${
                     players.length > 0 
-                      ? "bg-teal-600 hover:bg-teal-700 text-white" 
-                      : "bg-slate-700 text-slate-400"
+                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0" 
+                      : "bg-white/10 text-white/40 border border-white/10"
                   }`}
                   onClick={() => {
                     if (questions.length > 0) {
@@ -562,14 +593,14 @@ export default function SequenceSqueeze() {
                 </Button>
                 
                 {players.length === 0 && (
-                  <p className="text-xs text-slate-500 mt-2">
+                  <p className="text-xs text-white/40 mt-2">
                     Waiting for at least 1 player to join...
                   </p>
                 )}
 
-                <div className="mt-4 p-3 bg-slate-800 rounded-lg border border-slate-700">
+                <div className="mt-4 p-3 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-slate-400">
+                    <div className="flex items-center gap-2 text-sm text-white/60">
                       <Settings className="w-4 h-4" />
                       <span>Points per round</span>
                     </div>
@@ -577,17 +608,17 @@ export default function SequenceSqueeze() {
                       <Button 
                         size="icon" 
                         variant="outline" 
-                        className="border-slate-600 text-slate-300"
+                        className="border-white/20 text-white/70 hover:bg-white/10"
                         onClick={() => setPointsPerRound(p => Math.max(5, p - 5))}
                         data-testid="button-points-decrease"
                       >
                         <Minus className="w-4 h-4" />
                       </Button>
-                      <span className="font-bold text-lg w-8 text-center text-slate-100" data-testid="text-points-per-round">{pointsPerRound}</span>
+                      <span className="font-bold text-lg w-8 text-center text-white" data-testid="text-points-per-round">{pointsPerRound}</span>
                       <Button 
                         size="icon" 
                         variant="outline" 
-                        className="border-slate-600 text-slate-300"
+                        className="border-white/20 text-white/70 hover:bg-white/10"
                         onClick={() => setPointsPerRound(p => Math.min(50, p + 5))}
                         data-testid="button-points-increase"
                       >
@@ -601,27 +632,27 @@ export default function SequenceSqueeze() {
               {/* Right: Players */}
               <div className="flex flex-col">
                 <div className="flex items-center gap-2 mb-4">
-                  <Users className="w-5 h-5 text-slate-400" />
-                  <h2 className="text-xl font-bold text-slate-100" data-testid="text-players-header">Players</h2>
-                  <Badge variant="secondary" className="ml-2" data-testid="badge-player-count">
+                  <Users className="w-5 h-5 text-teal-400" />
+                  <h2 className="text-xl font-bold text-white" data-testid="text-players-header">Players</h2>
+                  <Badge className="ml-2 bg-white/10 text-white/70 border border-white/20" data-testid="badge-player-count">
                     {players.length} joined
                   </Badge>
                 </div>
 
                 {players.length === 0 ? (
                   <div 
-                    className="p-8 border-2 border-dashed border-slate-700 rounded-xl bg-slate-800" 
+                    className="p-8 border-2 border-dashed border-white/10 rounded-xl bg-white/5 backdrop-blur-sm" 
                     data-testid="card-players-empty"
                   >
                     <div className="text-center">
-                      <Users className="w-12 h-12 mx-auto text-slate-600 mb-3" />
-                      <p className="text-slate-500 text-sm">
+                      <Users className="w-12 h-12 mx-auto text-white/20 mb-3" />
+                      <p className="text-white/40 text-sm">
                         Waiting for players to scan and join...
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="p-4 bg-slate-800 rounded-xl border border-slate-700" data-testid="card-players">
+                  <div className="p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10" data-testid="card-players">
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <AnimatePresence>
                         {players.map((p, idx) => {
@@ -640,21 +671,21 @@ export default function SequenceSqueeze() {
                                 damping: 25,
                                 delay: idx * 0.03
                               }}
-                              className="flex flex-col items-center p-3 bg-slate-700 rounded-xl border border-slate-600"
+                              className="flex flex-col items-center p-3 bg-white/5 rounded-xl border border-white/10"
                               data-testid={`player-card-${p.id}`}
                             >
                               <div className="text-4xl mb-1">
-                                {p.avatar || <User className="w-10 h-10 text-slate-400" />}
+                                {p.avatar || <User className="w-10 h-10 text-teal-400" />}
                               </div>
-                              <span className="font-semibold text-sm text-center text-slate-100" data-testid={`text-player-name-${p.id}`}>{p.name}</span>
+                              <span className="font-semibold text-sm text-center text-white" data-testid={`text-player-name-${p.id}`}>{p.name}</span>
                               <div className="flex items-center gap-2 mt-1">
                                 {playerScore > 0 && (
-                                  <Badge variant="secondary" className="text-xs" data-testid={`text-player-score-${p.id}`}>
+                                  <Badge className="text-xs bg-teal-500/20 text-teal-300 border border-teal-400/30" data-testid={`text-player-score-${p.id}`}>
                                     {playerScore} pts
                                   </Badge>
                                 )}
                                 {streak >= 2 && (
-                                  <span className="inline-flex items-center gap-0.5 text-xs text-amber-500">
+                                  <span className="inline-flex items-center gap-0.5 text-xs text-amber-400">
                                     <Flame className="w-3 h-3" />
                                     {streak}
                                   </span>
@@ -666,7 +697,7 @@ export default function SequenceSqueeze() {
                       </AnimatePresence>
                     </div>
                     {leaderboard.length > 0 && leaderboard.some(l => l.score > 0) && (
-                      <p className="text-xs text-slate-500 mt-3 text-center">
+                      <p className="text-xs text-white/40 mt-3 text-center">
                         Scores from previous session
                       </p>
                     )}
@@ -685,20 +716,32 @@ export default function SequenceSqueeze() {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.2 }}
-                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900"
+                className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0f]"
               >
-                <div className="text-center text-white">
+                {/* Neon gradient overlay */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-teal-500/10 blur-3xl" />
+                  <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-cyan-500/10 blur-3xl" />
+                </div>
+                <div className="text-center text-white relative z-10">
                   <motion.div
                     animate={{ scale: [1, 1.1, 1] }}
                     transition={{ duration: 0.5, repeat: Infinity }}
                     className="mb-6"
                   >
-                    <Sparkles className="w-16 h-16 mx-auto text-teal-500" />
+                    <Sparkles className="w-16 h-16 mx-auto text-cyan-400" />
                   </motion.div>
-                  <h1 className="text-5xl md:text-7xl font-bold text-slate-100 mb-4">
+                  <h1 
+                    className="text-5xl md:text-7xl font-black mb-4"
+                    style={{
+                      background: 'linear-gradient(135deg, #14b8a6, #06b6d4)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent'
+                    }}
+                  >
                     Question {currentQuestionIndex}
                   </h1>
-                  <p className="text-2xl md:text-3xl text-slate-400">
+                  <p className="text-2xl md:text-3xl text-white/60">
                     Get Ready...
                   </p>
                 </div>
@@ -720,7 +763,7 @@ export default function SequenceSqueeze() {
                 initial={{ y: -100, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
+                className="fixed inset-0 z-50 flex flex-col items-center justify-start pt-20 bg-[#0a0a0f]"
               >
                 <motion.h2
                   initial={{ scale: 0.5 }}
@@ -762,17 +805,17 @@ export default function SequenceSqueeze() {
                         initial={{ scale: 0, rotate: -10 }}
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{ delay: i * 0.15, type: "spring", stiffness: 300 }}
-                        className="p-6 bg-slate-800 rounded-xl text-white text-center border border-slate-700"
+                        className="p-6 bg-white/5 backdrop-blur-sm rounded-xl text-white text-center border border-white/10"
                       >
-                        <div className="w-12 h-12 rounded-full bg-slate-700 text-slate-300 flex items-center justify-center mx-auto mb-3 text-2xl font-bold">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 text-white flex items-center justify-center mx-auto mb-3 text-2xl font-bold">
                           {letter}
                         </div>
-                        <p className="text-lg font-semibold text-slate-100">{option}</p>
+                        <p className="text-lg font-semibold text-white">{option}</p>
                       </motion.div>
                     );
                   })}
                 </div>
-                <p className="text-slate-500 mt-6 text-sm">
+                <p className="text-white/50 mt-6 text-sm">
                   Preparing to sequence...
                 </p>
                 <Button
@@ -797,25 +840,25 @@ export default function SequenceSqueeze() {
           >
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
-                <div className="flex-1 h-3 bg-slate-700 rounded-full overflow-hidden">
+                <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden">
                   <motion.div 
-                    className="h-full bg-teal-600"
+                    className="h-full bg-gradient-to-r from-teal-500 to-cyan-500"
                     style={{ width: `${(currentQuestionIndex / totalQuestions) * 100}%` }}
                     initial={{ width: 0 }}
                     animate={{ width: `${(currentQuestionIndex / totalQuestions) * 100}%` }}
                     transition={{ duration: 0.5 }}
                   />
                 </div>
-                <span className="text-sm text-slate-400 font-mono">{currentQuestionIndex}/{totalQuestions}</span>
+                <span className="text-sm text-white/60 font-mono">{currentQuestionIndex}/{totalQuestions}</span>
               </div>
             </div>
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-3">
-                <Badge variant="secondary" className="gap-1 font-mono" data-testid="badge-elapsed-time">
+                <Badge className="gap-1 font-mono bg-white/10 text-white/70 border border-white/20" data-testid="badge-elapsed-time">
                   <Clock className="w-4 h-4" />
                   {(elapsedTime / 1000).toFixed(1)}s
                 </Badge>
-                <Badge variant="secondary" className="gap-1">
+                <Badge className="gap-1 bg-teal-500/20 text-teal-300 border border-teal-400/30">
                   <Users className="w-4 h-4" />
                   {submissions.length}/{players.length} locked in
                 </Badge>
@@ -854,9 +897,9 @@ export default function SequenceSqueeze() {
             </AnimatePresence>
             
             {submissions.length > 0 && (
-              <div className="bg-slate-800 rounded-xl p-4 mb-4 border border-slate-700">
-                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2 text-slate-300">
-                  <Zap className="w-4 h-4 text-teal-500" />
+              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 mb-4 border border-white/10">
+                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2 text-white/80">
+                  <Zap className="w-4 h-4 text-cyan-400" />
                   Live Ticker
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -868,11 +911,11 @@ export default function SequenceSqueeze() {
                         key={sub.playerId}
                         initial={{ scale: 0, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-700 border border-slate-600 rounded-full"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full"
                       >
-                        <span className="font-medium text-sm text-slate-100">{sub.playerName}</span>
-                        <span className="text-xs text-slate-400">LOCKED IN!</span>
-                        <span className="text-xs font-mono text-teal-400">({(sub.timeMs / 1000).toFixed(2)}s)</span>
+                        <span className="font-medium text-sm text-white">{sub.playerName}</span>
+                        <span className="text-xs text-white/50">LOCKED IN!</span>
+                        <span className="text-xs font-mono text-cyan-400">({(sub.timeMs / 1000).toFixed(2)}s)</span>
                         {streak >= 2 && (
                           <span className="inline-flex items-center gap-0.5 text-xs text-amber-500">
                             <Flame className="w-3 h-3" />
@@ -886,8 +929,8 @@ export default function SequenceSqueeze() {
               </div>
             )}
 
-            <div className="p-8 text-center bg-slate-800 rounded-xl border border-slate-700">
-              <h2 className="text-3xl font-bold mb-8 text-slate-100">{currentQuestion.question}</h2>
+            <div className="p-8 text-center bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+              <h2 className="text-3xl font-bold mb-8 text-white">{currentQuestion.question}</h2>
               <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
                 {["A", "B", "C", "D"].map((letter) => {
                   const option = currentQuestion[`option${letter}` as keyof SequenceQuestion] as string;
@@ -895,24 +938,24 @@ export default function SequenceSqueeze() {
                     <motion.div
                       key={letter}
                       whileHover={{ scale: 1.02 }}
-                      className="p-6 bg-slate-700 rounded-xl border border-slate-600"
+                      className="p-6 bg-white/5 rounded-xl border border-white/10"
                     >
-                      <div className="w-12 h-12 rounded-full bg-teal-600 text-white flex items-center justify-center mx-auto mb-3 text-xl font-bold">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 text-white flex items-center justify-center mx-auto mb-3 text-xl font-bold">
                         {letter}
                       </div>
-                      <p className="text-lg font-medium text-slate-100">{option}</p>
+                      <p className="text-lg font-medium text-white">{option}</p>
                     </motion.div>
                   );
                 })}
               </div>
               {currentQuestion.hint && (
-                <p className="mt-6 text-slate-400 italic">Hint: {currentQuestion.hint}</p>
+                <p className="mt-6 text-white/50 italic">Hint: {currentQuestion.hint}</p>
               )}
             </div>
 
             {submissions.length === 0 && (
               <div className="text-center py-4">
-                <p className="text-slate-500">
+                <p className="text-white/40">
                   Waiting for players to lock in their sequences...
                 </p>
               </div>
