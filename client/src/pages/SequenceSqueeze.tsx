@@ -421,12 +421,8 @@ export default function SequenceSqueeze() {
             animate={{ opacity: 1, scale: 1 }}
             className="text-center py-16"
           >
-            <div className="w-28 h-28 mx-auto mb-8 rounded-full bg-teal-500 flex items-center justify-center shadow-2xl shadow-teal-500/40">
-              <ListOrdered className="w-14 h-14 text-white" />
-            </div>
-            <h2 className="text-4xl font-black mb-3">Sort Circuit</h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Arrange fast. Win first.
+              Arrange items in the correct order. Fastest correct answer wins!
             </p>
             
             {isLoadingQuestions ? (
