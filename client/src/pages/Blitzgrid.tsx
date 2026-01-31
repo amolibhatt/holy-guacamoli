@@ -2472,7 +2472,7 @@ export default function Blitzgrid() {
           {/* Question Modal - Clean hierarchy design */}
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
             <DialogContent 
-              className="max-w-2xl max-h-[90vh] overflow-y-auto bg-[#0d0d12] backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl p-0"
+              className="max-w-2xl max-h-[90vh] overflow-y-auto bg-[#0d0d12] backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl"
             >
               {(() => {
                 // Use the grid's single color for consistency
@@ -2487,58 +2487,64 @@ export default function Blitzgrid() {
                 
                 return (
                   <>
-                    {/* Top bar: Points + Timer - compact utility row */}
-                    <div className="flex items-center justify-between px-5 pt-5 pb-2">
-                      {/* Points badge - left */}
-                      <div 
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-                        style={{ 
-                          backgroundColor: `${neonColor.border}20`,
-                          border: `1px solid ${neonColor.border}50`,
-                        }}
-                      >
-                        <span className="text-lg font-black" style={{ color: neonColor.text }}>
-                          {activeQuestion?.points}
-                        </span>
-                        <span className="text-xs text-white/50 uppercase">pts</span>
+                    {/* Header: Category + Points + Timer */}
+                    <DialogHeader className="pb-4 border-b border-white/10">
+                      <div className="flex items-start justify-between gap-4">
+                        {/* Category info */}
+                        <div className="flex-1 min-w-0">
+                          <DialogTitle className="text-white text-lg font-semibold">
+                            {category?.name || 'Question'}
+                          </DialogTitle>
+                          {category?.description && (
+                            <p className="text-white/40 text-sm mt-0.5 line-clamp-2">{category.description}</p>
+                          )}
+                        </div>
+                        
+                        {/* Points + Timer */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {/* Timer button */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (timerActive) {
+                                setTimerActive(false);
+                                setTimeLeft(10);
+                              } else {
+                                setTimeLeft(10);
+                                setTimerActive(true);
+                              }
+                            }}
+                            className={`gap-1.5 h-8 px-3 rounded-lg ${timerActive ? 'bg-white/10 text-white' : 'text-white/40'}`}
+                            data-testid="button-timer"
+                          >
+                            <Timer className="w-3.5 h-3.5" />
+                            {timerActive ? (
+                              <span className="font-mono font-bold min-w-[2ch]">{timeLeft}</span>
+                            ) : (
+                              <span className="text-xs">10s</span>
+                            )}
+                          </Button>
+                          
+                          {/* Points badge */}
+                          <div 
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg"
+                            style={{ 
+                              backgroundColor: `${neonColor.border}20`,
+                              border: `1px solid ${neonColor.border}50`,
+                            }}
+                          >
+                            <span className="text-lg font-black" style={{ color: neonColor.text }}>
+                              {activeQuestion?.points}
+                            </span>
+                            <span className="text-xs text-white/50">pts</span>
+                          </div>
+                        </div>
                       </div>
-                      
-                      {/* Timer - right */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          if (timerActive) {
-                            setTimerActive(false);
-                            setTimeLeft(10);
-                          } else {
-                            setTimeLeft(10);
-                            setTimerActive(true);
-                          }
-                        }}
-                        className={`gap-1.5 h-8 px-3 rounded-full ${timerActive ? 'bg-white/10 text-white' : 'text-white/40'}`}
-                        data-testid="button-timer"
-                      >
-                        <Timer className="w-3.5 h-3.5" />
-                        {timerActive ? (
-                          <span className="font-mono font-bold min-w-[2ch]">{timeLeft}</span>
-                        ) : (
-                          <span className="text-xs">Timer</span>
-                        )}
-                      </Button>
-                    </div>
-                    
-                    {/* Category - subtle label */}
-                    {category && (
-                      <DialogHeader className="px-5 pb-1">
-                        <DialogTitle className="text-white/50 text-sm font-medium">
-                          {category.name}
-                        </DialogTitle>
-                      </DialogHeader>
-                    )}
+                    </DialogHeader>
                     
                     {/* Question - THE HERO */}
-                    <div className="px-5 py-6">
+                    <div className="py-8 px-2">
                       <div className={`${textSizeClass} text-center font-semibold text-white leading-relaxed`}>
                         <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
                           {questionText}
@@ -2763,7 +2769,7 @@ export default function Blitzgrid() {
               )}
               
               {/* Footer Actions */}
-              <div className="flex items-center justify-center gap-2 px-5 pb-5 pt-2 border-t border-white/10">
+              <DialogFooter className="pt-4 mt-4 border-t border-white/10">
                 {lastScoreChange && (
                   <Button 
                     onClick={undoLastScore}
@@ -2801,7 +2807,7 @@ export default function Blitzgrid() {
                     Continue
                   </Button>
                 )}
-              </div>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
