@@ -9,28 +9,38 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
   const id = `avocado-${Math.random().toString(36).slice(2, 9)}`;
   
   return (
-    <svg 
+    <motion.svg 
       width={size} 
       height={size * 1.1} 
       viewBox="0 0 80 88" 
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"
       className="shrink-0"
+      animate={{ 
+        rotate: [0, -3, 3, -2, 0],
+      }}
+      transition={{
+        duration: 2,
+        repeat: Infinity,
+        repeatType: "reverse",
+        ease: "easeInOut"
+      }}
     >
       <defs>
-        {/* Toxic lime glow */}
+        {/* Sparkle filter */}
         <filter id={`${id}-glow`} x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feGaussianBlur stdDeviation="2" result="blur"/>
           <feMerge>
             <feMergeNode in="blur"/>
             <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
         
-        {/* Halo gradient - toxic lime */}
+        {/* Halo gradient - golden party */}
         <linearGradient id={`${id}-halo`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#39FF14" />
-          <stop offset="100%" stopColor="#84cc16" />
+          <stop offset="0%" stopColor="#fbbf24" />
+          <stop offset="50%" stopColor="#f59e0b" />
+          <stop offset="100%" stopColor="#fbbf24" />
         </linearGradient>
         
         {/* Skin - deep hass green */}
@@ -39,7 +49,7 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
           <stop offset="100%" stopColor="#1a2e05" />
         </linearGradient>
         
-        {/* Flesh gradient - toxic lime to avocado */}
+        {/* Flesh gradient - bright lime */}
         <linearGradient id={`${id}-flesh`} x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#39FF14" />
           <stop offset="40%" stopColor="#a3e635" />
@@ -54,10 +64,36 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
       </defs>
       
       {/* Outer glow */}
-      <ellipse cx="40" cy="52" rx="28" ry="36" fill="#39FF14" opacity="0.15" filter={`url(#${id}-glow)`}/>
+      <ellipse cx="40" cy="52" rx="28" ry="36" fill="#39FF14" opacity="0.1" filter={`url(#${id}-glow)`}/>
       
-      {/* Halo - toxic lime */}
-      <ellipse 
+      {/* Party sparkles */}
+      <motion.circle
+        cx="15" cy="25" r="2"
+        fill="#fbbf24"
+        animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+        transition={{ duration: 1.5, repeat: Infinity, delay: 0 }}
+      />
+      <motion.circle
+        cx="65" cy="20" r="1.5"
+        fill="#f472b6"
+        animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+        transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
+      />
+      <motion.circle
+        cx="70" cy="45" r="2"
+        fill="#39FF14"
+        animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+        transition={{ duration: 1.5, repeat: Infinity, delay: 1 }}
+      />
+      <motion.circle
+        cx="10" cy="55" r="1.5"
+        fill="#fbbf24"
+        animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+        transition={{ duration: 1.5, repeat: Infinity, delay: 0.3 }}
+      />
+      
+      {/* Halo - golden shimmer */}
+      <motion.ellipse 
         cx="40" 
         cy="8" 
         rx="14" 
@@ -65,49 +101,42 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
         fill="none" 
         stroke={`url(#${id}-halo)`}
         strokeWidth="3"
+        animate={{ opacity: [0.7, 1, 0.7] }}
+        transition={{ duration: 1.5, repeat: Infinity }}
       />
       
       {/* Avocado Body - deep hass green skin */}
       <ellipse cx="40" cy="52" rx="24" ry="32" fill={`url(#${id}-skin)`}/>
       
-      {/* Avocado flesh - toxic lime gradient */}
+      {/* Avocado flesh - bright lime gradient */}
       <ellipse cx="40" cy="54" rx="18" ry="25" fill={`url(#${id}-flesh)`}/>
       
-      {/* Pit - smaller */}
-      <ellipse cx="40" cy="64" rx="7" ry="9" fill={`url(#${id}-pit)`}/>
+      {/* Tiny cute pit */}
+      <ellipse cx="40" cy="66" rx="5" ry="6" fill={`url(#${id}-pit)`}/>
       
       {/* Pit highlight */}
-      <ellipse cx="38" cy="61" rx="2.5" ry="3" fill="#BCAAA4" opacity="0.4"/>
+      <ellipse cx="38" cy="64" rx="2" ry="2.5" fill="#BCAAA4" opacity="0.4"/>
       
-      {/* Happy closed eyes */}
+      {/* Big sparkly eyes */}
+      <ellipse cx="32" cy="42" rx="4" ry="5" fill="#1a2e05"/>
+      <ellipse cx="48" cy="42" rx="4" ry="5" fill="#1a2e05"/>
+      {/* Eye sparkles */}
+      <circle cx="33" cy="40" r="1.5" fill="white"/>
+      <circle cx="49" cy="40" r="1.5" fill="white"/>
+      
+      {/* Rosy cheeks - pink party blush */}
+      <ellipse cx="22" cy="50" rx="5" ry="3" fill="#f472b6" opacity="0.5"/>
+      <ellipse cx="58" cy="50" rx="5" ry="3" fill="#f472b6" opacity="0.5"/>
+      
+      {/* Big happy smile */}
       <path 
-        d="M28 42 Q32 37 36 42" 
+        d="M32 54 Q40 62 48 54" 
         stroke="#1a2e05" 
         strokeWidth="2.5" 
         fill="none" 
         strokeLinecap="round"
       />
-      <path 
-        d="M44 42 Q48 37 52 42" 
-        stroke="#1a2e05" 
-        strokeWidth="2.5" 
-        fill="none" 
-        strokeLinecap="round"
-      />
-      
-      {/* Rosy cheeks - warm peach */}
-      <ellipse cx="24" cy="48" rx="4" ry="2.5" fill="#fbbf24" opacity="0.35"/>
-      <ellipse cx="56" cy="48" rx="4" ry="2.5" fill="#fbbf24" opacity="0.35"/>
-      
-      {/* Smile */}
-      <path 
-        d="M34 52 Q40 58 46 52" 
-        stroke="#1a2e05" 
-        strokeWidth="2" 
-        fill="none" 
-        strokeLinecap="round"
-      />
-    </svg>
+    </motion.svg>
   );
 }
 
@@ -139,7 +168,8 @@ export function Logo({ size = "md" }: LogoProps) {
           aria-hidden="true"
         >
           <span className="text-white">Holy </span>
-          <span style={{ color: '#39FF14' }}>GuacAmoli!</span>
+          <span style={{ color: '#39FF14' }}>Guac</span>
+          <span style={{ color: '#f472b6' }}>Amoli!</span>
         </span>
         
         {/* Main text */}
@@ -147,7 +177,7 @@ export function Logo({ size = "md" }: LogoProps) {
           <span className="text-white">Holy </span>
           <span style={{ color: '#39FF14' }}>Guac</span>
           <span 
-            className="bg-gradient-to-r from-lime-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent"
+            className="bg-gradient-to-r from-pink-400 via-rose-400 to-pink-300 bg-clip-text text-transparent"
           >Amoli!</span>
         </span>
       </h1>
