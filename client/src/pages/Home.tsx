@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Grid3X3, ListOrdered, Brain, Users } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
+import { AppFooter } from "@/components/AppFooter";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import LandingPage from "./LandingPage";
@@ -217,6 +218,8 @@ export default function Home() {
 
         </div>
       </main>
+      
+      <AppFooter />
     </div>
   );
 }

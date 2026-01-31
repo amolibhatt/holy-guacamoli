@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { AppHeader } from "@/components/AppHeader";
+import { AppFooter } from "@/components/AppFooter";
 import type { SequenceQuestion, SequenceSession, SequenceSubmission } from "@shared/schema";
 
 type GameState = "setup" | "waiting" | "animatedReveal" | "playing" | "revealing" | "leaderboard" | "gameComplete" | "results";
@@ -996,6 +997,8 @@ export default function SequenceSqueeze() {
           </div>
         </DialogContent>
       </Dialog>
+      
+      <AppFooter />
     </div>
   );
 }

@@ -14,6 +14,7 @@ import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
+import { AppFooter } from "@/components/AppFooter";
 import { ListOrdered } from "lucide-react";
 import type { Game, Board, HeadsUpDeck, HeadsUpCard, GameMode } from "@shared/schema";
 
@@ -852,6 +853,8 @@ export default function GamesAdmin() {
           </TabsContent>
         </Tabs>
       </div>
+      
+      <AppFooter />
     </div>
   );
 }
