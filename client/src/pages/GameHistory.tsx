@@ -171,7 +171,7 @@ export default function GameHistory() {
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
             <p>Please log in to view game history.</p>
-            <Link href="/login">
+            <Link href="/">
               <Button className="mt-4">Go to Login</Button>
             </Link>
           </CardContent>
