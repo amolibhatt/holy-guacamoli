@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Logo } from "@/components/Logo";
 import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { Loader2, Heart } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -63,41 +63,6 @@ export default function LandingPage() {
         />
       </div>
 
-      {/* Logic Leaks - scrolling trivia facts */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.06]">
-        <motion.div
-          className="absolute left-0 right-0 text-lime-400 text-xs font-mono whitespace-nowrap"
-          style={{ top: '10%' }}
-          animate={{ x: [0, -1000] }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-        >
-          The first computer bug was an actual moth found in a Harvard computer in 1947 • Honey never spoils • Octopuses have three hearts •
-        </motion.div>
-        <motion.div
-          className="absolute left-0 right-0 text-fuchsia-400 text-xs font-mono whitespace-nowrap"
-          style={{ top: '25%' }}
-          animate={{ x: [-500, 500] }}
-          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-        >
-          Bananas are berries but strawberries aren't • The Eiffel Tower grows 6 inches in summer • Venus is the only planet that spins clockwise •
-        </motion.div>
-        <motion.div
-          className="absolute left-0 right-0 text-lime-400 text-xs font-mono whitespace-nowrap"
-          style={{ top: '75%' }}
-          animate={{ x: [200, -800] }}
-          transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
-        >
-          A group of flamingos is called a flamboyance • The shortest war lasted 38 minutes • Cows have best friends •
-        </motion.div>
-        <motion.div
-          className="absolute left-0 right-0 text-fuchsia-400 text-xs font-mono whitespace-nowrap"
-          style={{ top: '90%' }}
-          animate={{ x: [-200, -1200] }}
-          transition={{ duration: 32, repeat: Infinity, ease: "linear" }}
-        >
-          Sharks are older than trees • A day on Venus is longer than a year on Venus • Wombat poop is cube-shaped •
-        </motion.div>
-      </div>
 
       {/* Centered Login */}
       <motion.div
@@ -266,6 +231,18 @@ export default function LandingPage() {
             Players join via QR code - no account needed!
           </p>
       </motion.div>
+
+      {/* Footer */}
+      <footer className="absolute bottom-4 left-0 right-0 text-center z-10">
+        <p className="text-white/50 text-sm">
+          made with{' '}
+          <Heart className="inline-block w-4 h-4 text-pink-400 fill-pink-400 mx-0.5" />{' '}
+          by{' '}
+          <span className="bg-gradient-to-r from-pink-400 via-rose-300 to-pink-400 bg-clip-text text-transparent font-semibold">
+            Amoli
+          </span>
+        </p>
+      </footer>
     </div>
   );
 }
