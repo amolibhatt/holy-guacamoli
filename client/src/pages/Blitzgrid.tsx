@@ -3250,13 +3250,11 @@ export default function Blitzgrid() {
             >
               {grid.name}
             </h3>
-            <p className="text-xs text-white/40 mt-1 truncate">
-              {grid.description && grid.description !== "Blitzgrid" 
-                ? grid.description 
-                : grid.categoryNames?.length 
-                  ? grid.categoryNames.slice(0, 3).join(" · ") + (grid.categoryNames.length > 3 ? " ..." : "")
-                  : "No categories yet"}
-            </p>
+            {grid.description && grid.description !== "Blitzgrid" && (
+              <p className="text-xs text-white/40 mt-1 truncate">
+                {grid.description}
+              </p>
+            )}
           </div>
           <ChevronRight 
             className="w-5 h-5 text-white/30 group-hover:translate-x-0.5 transition-all" 
@@ -3341,14 +3339,14 @@ export default function Blitzgrid() {
           </motion.div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-10">
-            {/* Hero section with big title and shuffle play button */}
+            {/* Hero section with big title */}
             <motion.div 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center py-6"
+              className="text-center py-4"
             >
               <h1 
-                className="text-5xl md:text-6xl font-black text-white tracking-tight uppercase mb-3"
+                className="text-5xl md:text-6xl font-black text-white tracking-tight uppercase mb-2"
                 style={{ 
                   fontFamily: "'Archivo Black', 'Impact', sans-serif",
                   textShadow: '0 0 20px rgba(232, 121, 249, 0.6), 0 0 40px rgba(232, 121, 249, 0.4), 0 0 60px rgba(232, 121, 249, 0.2)',
@@ -3356,43 +3354,66 @@ export default function Blitzgrid() {
               >
                 BLITZGRID
               </h1>
-              <p className="text-white/50 text-lg mb-8">5 categories. 25 questions. One winner.</p>
-              
-              {/* Shuffle Play Hero Section */}
-              <div className="bg-white/5 rounded-xl p-6 border border-white/10 max-w-md mx-auto">
-                <p className="text-white/60 text-sm mb-4">
-                  Randomly picks 5 categories from all your grids for a surprise mix
-                </p>
-                <Button
-                  size="lg"
-                  onClick={handleShufflePlay}
-                  disabled={isShuffling}
-                  className="w-full bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 text-black font-black uppercase tracking-wide"
-                  style={{ 
-                    boxShadow: '0 0 30px rgba(34, 211, 238, 0.5), 0 4px 20px rgba(0, 0, 0, 0.3)',
-                    fontFamily: "'Archivo Black', 'Impact', sans-serif",
+              <p className="text-white/50 text-lg">5 categories. 25 questions. One winner.</p>
+            </motion.div>
+
+            {/* Shuffle Play Hero Card */}
+            <motion.button
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              onClick={handleShufflePlay}
+              disabled={isShuffling}
+              className="w-full p-8 rounded-2xl text-left relative overflow-hidden group"
+              style={{
+                background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.15) 0%, rgba(6, 182, 212, 0.1) 50%, rgba(34, 211, 238, 0.05) 100%)',
+                border: '2px solid rgba(34, 211, 238, 0.4)',
+                boxShadow: '0 0 40px rgba(34, 211, 238, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+              }}
+              data-testid="button-shuffle-play"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/10 to-cyan-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+              <div className="relative flex items-center gap-6">
+                <div 
+                  className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)',
+                    boxShadow: '0 0 30px rgba(34, 211, 238, 0.5)',
                   }}
-                  data-testid="button-shuffle-play"
                 >
                   {isShuffling ? (
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    <Loader2 className="w-8 h-8 text-black animate-spin" />
                   ) : (
-                    <Shuffle className="w-5 h-5 mr-2" />
+                    <Shuffle className="w-8 h-8 text-black" />
                   )}
-                  I'm Feeling Lucky
-                </Button>
+                </div>
+                <div className="flex-1">
+                  <h2 
+                    className="text-2xl font-black text-cyan-300 uppercase tracking-wide mb-1"
+                    style={{ 
+                      fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                      textShadow: '0 0 20px rgba(34, 211, 238, 0.6)',
+                    }}
+                  >
+                    I'm Feeling Lucky
+                  </h2>
+                  <p className="text-white/60 text-sm">
+                    Mix it up! Randomly picks 5 categories from all your grids
+                  </p>
+                </div>
+                <ChevronRight className="w-6 h-6 text-cyan-400 group-hover:translate-x-1 transition-transform" />
               </div>
-              
               {playedShuffleCategoryIds.length > 0 && (
-                <div className="mt-4 flex items-center justify-center gap-3">
-                  <span className="text-white/40 text-sm">{playedShuffleCategoryIds.length} played</span>
+                <div className="relative mt-4 pt-4 border-t border-cyan-400/20 flex items-center justify-between">
+                  <span className="text-cyan-400/60 text-sm">{playedShuffleCategoryIds.length} categories played</span>
                   <Button
                     size="sm"
                     variant="ghost"
                     className="text-cyan-400"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setPlayedShuffleCategoryIds([]);
-                      toast({ title: "Reset", description: "All grids available again" });
+                      toast({ title: "Reset", description: "All categories available again" });
                     }}
                     data-testid="button-reset-shuffle"
                   >
@@ -3401,7 +3422,7 @@ export default function Blitzgrid() {
                   </Button>
                 </div>
               )}
-            </motion.div>
+            </motion.button>
 
             {/* My Grids Section */}
             {myGrids.length > 0 && (
