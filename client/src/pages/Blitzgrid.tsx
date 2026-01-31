@@ -3337,9 +3337,9 @@ export default function Blitzgrid() {
                   textShadow: '0 0 10px rgba(232, 121, 249, 0.5), 0 0 20px rgba(232, 121, 249, 0.3), 0 0 30px rgba(232, 121, 249, 0.2)',
                 }}
               >
-                Choose Your <span style={{ color: '#e879f9' }}>Battleground</span>
+                Pick Your <span style={{ color: '#e879f9' }}>Poison</span>
               </h1>
-              <p className="text-white/60 mt-2 text-sm">25 squares. One buzzer. Who's got the fastest fingers?</p>
+              <p className="text-white/60 mt-2 text-sm">25 squares of chaos. Buzzers at the ready. May the fastest thumb win.</p>
             </motion.div>
 
             {/* Shuffle Play Card - Retro gaming design */}
@@ -3397,13 +3397,13 @@ export default function Blitzgrid() {
                       textShadow: '0 0 10px rgba(232, 121, 249, 0.5)',
                     }}
                   >
-                    Shuffle Play
-                    <Badge className="text-xs bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/50">Random mix</Badge>
+                    Chaos Mode
+                    <Badge className="text-xs bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/50">Surprise me</Badge>
                   </h3>
                   <p className="text-sm text-white/60 mt-0.5">
                     {playedShuffleCategoryIds.length > 0 
-                      ? `${playedShuffleCategoryIds.length} grids conquered`
-                      : "Random grid, same buzzer rules. No prep, pure chaos."
+                      ? `${playedShuffleCategoryIds.length} grids demolished. Keep the streak alive!`
+                      : "No peeking, no prep. Just vibes and victory (or humiliation)."
                     }
                   </p>
                 </div>
@@ -3415,7 +3415,7 @@ export default function Blitzgrid() {
                     onClick={(e) => {
                       e.stopPropagation();
                       setPlayedShuffleCategoryIds([]);
-                      toast({ title: "Deck reshuffled!", description: "All categories back in the mix" });
+                      toast({ title: "Fresh start!", description: "All grids back in the mystery box" });
                     }}
                     data-testid="button-reset-shuffle"
                   >
@@ -3439,7 +3439,7 @@ export default function Blitzgrid() {
               >
                 {/* Section header */}
                 <div className="flex items-center gap-4 mb-5">
-                  <h2 className="text-sm font-bold text-white/70 uppercase tracking-widest whitespace-nowrap">My Grids</h2>
+                  <h2 className="text-sm font-bold text-white/70 uppercase tracking-widest whitespace-nowrap">Your Creations</h2>
                   <div className="flex-1 h-[1px] bg-gradient-to-r from-fuchsia-500/50 via-fuchsia-500/20 to-transparent" />
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -3461,7 +3461,7 @@ export default function Blitzgrid() {
                 <div className="flex items-center gap-4 mb-5">
                   <h2 className="text-sm font-bold text-white/70 uppercase tracking-widest whitespace-nowrap flex flex-wrap items-center gap-2">
                     <Sparkles className="w-4 h-4 text-fuchsia-400" />
-                    Starter Packs
+                    Ready to Rumble
                   </h2>
                   <div className="flex-1 h-[1px] bg-gradient-to-r from-fuchsia-500/50 via-fuchsia-500/20 to-transparent" />
                 </div>
