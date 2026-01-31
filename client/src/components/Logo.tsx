@@ -73,11 +73,11 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
       {/* Avocado flesh - toxic lime gradient */}
       <ellipse cx="40" cy="54" rx="18" ry="25" fill={`url(#${id}-flesh)`}/>
       
-      {/* Pit - radial gradient */}
-      <ellipse cx="40" cy="62" rx="10" ry="13" fill={`url(#${id}-pit)`}/>
+      {/* Pit - smaller */}
+      <ellipse cx="40" cy="64" rx="7" ry="9" fill={`url(#${id}-pit)`}/>
       
       {/* Pit highlight */}
-      <ellipse cx="37" cy="58" rx="4" ry="5" fill="#BCAAA4" opacity="0.4"/>
+      <ellipse cx="38" cy="61" rx="2.5" ry="3" fill="#BCAAA4" opacity="0.4"/>
       
       {/* Happy closed eyes */}
       <path 
@@ -95,9 +95,9 @@ function HolyAvocado({ size = 40 }: { size?: number }) {
         strokeLinecap="round"
       />
       
-      {/* Rosy cheeks - subtle fuchsia accent */}
-      <ellipse cx="24" cy="48" rx="4" ry="2.5" fill="#d946ef" opacity="0.4"/>
-      <ellipse cx="56" cy="48" rx="4" ry="2.5" fill="#d946ef" opacity="0.4"/>
+      {/* Rosy cheeks - warm peach */}
+      <ellipse cx="24" cy="48" rx="4" ry="2.5" fill="#fbbf24" opacity="0.35"/>
+      <ellipse cx="56" cy="48" rx="4" ry="2.5" fill="#fbbf24" opacity="0.35"/>
       
       {/* Smile */}
       <path 
@@ -135,18 +135,20 @@ export function Logo({ size = "md" }: LogoProps) {
       >
         {/* Glow layer */}
         <span 
-          className="absolute inset-0 blur-md opacity-60"
+          className="absolute inset-0 blur-md opacity-50"
           aria-hidden="true"
         >
-          <span style={{ color: '#39FF14' }}>Holy Guac</span>
-          <span style={{ color: '#d946ef' }}>Amoli!</span>
+          <span className="text-white">Holy </span>
+          <span style={{ color: '#39FF14' }}>GuacAmoli!</span>
         </span>
         
         {/* Main text */}
         <span className="relative">
-          <span style={{ color: '#39FF14' }}>Holy </span>
-          <span style={{ color: '#a3e635' }}>Guac</span>
-          <span style={{ color: '#d946ef' }}>Amoli!</span>
+          <span className="text-white">Holy </span>
+          <span style={{ color: '#39FF14' }}>Guac</span>
+          <span 
+            className="bg-gradient-to-r from-lime-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent"
+          >Amoli!</span>
         </span>
       </h1>
     </motion.div>
