@@ -261,7 +261,7 @@ export default function PsyOpAdmin() {
             <Link href="/admin/games">
               <Button 
                 variant="ghost" 
-                className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                 data-testid="tab-blitzgrid"
               >
                 <Grid3X3 className="w-4 h-4 mr-2" />
@@ -271,7 +271,7 @@ export default function PsyOpAdmin() {
             <Link href="/admin/sort-circuit">
               <Button 
                 variant="ghost" 
-                className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                 data-testid="tab-sort-circuit"
               >
                 <ListOrdered className="w-4 h-4 mr-2" />
@@ -636,7 +636,7 @@ export default function PsyOpAdmin() {
                             size="icon"
                             onClick={() => deleteMutation.mutate(q.id)}
                             disabled={deleteMutation.isPending}
-                            className="text-destructive hover:text-destructive"
+                            className="text-destructive"
                             data-testid={`button-delete-question-${q.id}`}
                           >
                             <Trash2 className="w-4 h-4" />
