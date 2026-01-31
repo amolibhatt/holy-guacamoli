@@ -214,6 +214,9 @@ export default function SequenceSqueeze() {
             return newSubmissions;
           });
           break;
+        case "sequence:allSubmitted":
+          socket.send(JSON.stringify({ type: "sequence:host:reveal" }));
+          break;
         case "sequence:round:started":
           break;
         case "sequence:reveal:complete":
