@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { AppHeader } from "@/components/AppHeader";
+import { AppFooter } from "@/components/AppFooter";
 import type { PsyopQuestion } from "@shared/schema";
 
 type GameState = "setup" | "waiting" | "submitting" | "voting" | "revealing" | "leaderboard" | "finished";
@@ -651,6 +652,8 @@ export default function PsyOpHost() {
           </motion.div>
         )}
       </main>
+      
+      <AppFooter />
     </div>
   );
 }
