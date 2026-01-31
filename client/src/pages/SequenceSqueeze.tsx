@@ -284,6 +284,15 @@ export default function SequenceSqueeze() {
     } catch {}
   }, [audioEnabled, getAudioContext]);
 
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
   const startQuestion = (question: SequenceQuestion, idx?: number) => {
     const questionIdx = idx !== undefined ? idx + 1 : currentQuestionIndex;
     setCurrentQuestion(question);
@@ -293,19 +302,38 @@ export default function SequenceSqueeze() {
     setCurrentQuestionIndex(questionIdx);
     setTotalQuestions(questions.length);
 
+    const originalOptions = [
+      { letter: "A", text: question.optionA },
+      { letter: "B", text: question.optionB },
+      { letter: "C", text: question.optionC },
+      { letter: "D", text: question.optionD },
+    ];
+    const shuffledOptions = shuffleArray(originalOptions);
+    
+    const shuffledToOriginal: Record<string, string> = {};
+    const letters = ["A", "B", "C", "D"];
+    shuffledOptions.forEach((opt, i) => {
+      shuffledToOriginal[letters[i]] = opt.letter;
+    });
+
+    const shuffledCorrectOrder = question.correctOrder.map(origLetter => {
+      const newLetter = letters.find(l => shuffledToOriginal[l] === origLetter);
+      return newLetter || origLetter;
+    });
+
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ 
         type: "sequence:host:startQuestion", 
         question: {
           id: question.id,
           question: question.question,
-          optionA: question.optionA,
-          optionB: question.optionB,
-          optionC: question.optionC,
-          optionD: question.optionD,
+          optionA: shuffledOptions[0].text,
+          optionB: shuffledOptions[1].text,
+          optionC: shuffledOptions[2].text,
+          optionD: shuffledOptions[3].text,
           hint: question.hint,
         },
-        correctOrder: question.correctOrder,
+        correctOrder: shuffledCorrectOrder,
         questionIndex: questionIdx,
         totalQuestions: questions.length,
       }));
