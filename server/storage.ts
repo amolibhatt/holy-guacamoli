@@ -1583,9 +1583,9 @@ export class DatabaseStorage implements IStorage {
         displayName: "PsyOp",
         description: "Mind games and psychological challenges. Can you outsmart your opponents?",
         icon: "brain",
-        status: "coming_soon" as const,
-        hostEnabled: false,
-        playerEnabled: false,
+        status: "active" as const,
+        hostEnabled: true,
+        playerEnabled: true,
         sortOrder: 3,
       },
     ];
