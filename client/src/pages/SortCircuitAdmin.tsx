@@ -26,7 +26,7 @@ export default function SortCircuitAdmin() {
     <div className="min-h-screen bg-background" data-testid="page-sort-circuit-admin">
       <div className="fixed inset-0 bg-gradient-to-br from-teal-300/5 via-transparent to-teal-300/5 pointer-events-none" />
       
-      <AppHeader minimal backHref="/" />
+      <AppHeader minimal backHref="/" title="Sort Circuit Admin" />
 
       <div className="border-b border-border bg-card/50">
         <div className="container mx-auto px-4">
