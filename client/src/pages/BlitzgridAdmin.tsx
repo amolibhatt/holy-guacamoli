@@ -500,6 +500,44 @@ export default function BlitzgridAdmin() {
     return (
       <div className="min-h-screen bg-background flex flex-col" data-testid="page-blitzgrid-admin-grid">
         <AppHeader minimal backHref="/" />
+        
+        <div className="border-b border-border bg-card/50">
+          <div className="container mx-auto px-4">
+            <nav className="flex gap-1">
+              <Link href="/admin/games">
+                <Button 
+                  variant="ghost" 
+                  className="relative rounded-none border-b-2 border-primary text-foreground"
+                  data-testid="tab-blitzgrid"
+                >
+                  <Grid3X3 className="w-4 h-4 mr-2" />
+                  Blitzgrid
+                </Button>
+              </Link>
+              <Link href="/admin/sort-circuit">
+                <Button 
+                  variant="ghost" 
+                  className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
+                  data-testid="tab-sort-circuit"
+                >
+                  <ListOrdered className="w-4 h-4 mr-2" />
+                  Sort Circuit
+                </Button>
+              </Link>
+              <Link href="/admin/psyop">
+                <Button 
+                  variant="ghost" 
+                  className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
+                  data-testid="tab-psyop"
+                >
+                  <Brain className="w-4 h-4 mr-2" />
+                  PsyOp
+                </Button>
+              </Link>
+            </nav>
+          </div>
+        </div>
+        
         <div className="border-b bg-muted/30 px-4 py-2">
           <div className="flex items-center justify-end gap-2 flex-wrap">
             <Button
