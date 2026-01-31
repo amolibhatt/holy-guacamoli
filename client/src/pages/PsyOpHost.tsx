@@ -269,7 +269,7 @@ export default function PsyOpHost() {
   }, [currentQuestionIndex, selectedQuestions, startSubmissionPhase]);
 
   // Get unique categories from questions
-  const categories = [...new Set(questions.map(q => q.category).filter(Boolean))] as string[];
+  const categories = Array.from(new Set(questions.map(q => q.category).filter(Boolean))) as string[];
   
   // Select questions by category and start room
   const selectCategoryAndStart = (category: string) => {
