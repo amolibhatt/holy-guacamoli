@@ -2244,18 +2244,22 @@ export default function Blitzgrid() {
               <div className="flex justify-center py-4">
                 <div 
                   ref={shareCardRef}
-                  className="w-[300px] rounded-2xl overflow-hidden shadow-2xl"
+                  className="w-[300px] rounded-2xl overflow-hidden shadow-2xl relative"
                   style={{ 
-                    background: 'linear-gradient(160deg, #fdf2f8 0%, #fbcfe8 25%, #f9a8d4 50%, #f472b6 75%, #ec4899 100%)',
+                    background: '#0a0a0f',
                     aspectRatio: '4/5'
                   }}
                 >
-                  <div className="w-full h-full flex flex-col p-6">
+                  {/* Neon glow effects */}
+                  <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-fuchsia-500/20 blur-3xl" />
+                  <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-cyan-500/20 blur-3xl" />
+                  
+                  <div className="w-full h-full flex flex-col p-6 relative z-10">
                     {/* Header */}
                     <div className="text-center mb-4">
-                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 shadow-sm">
-                        <Grid3X3 className="w-5 h-5 text-pink-600" />
-                        <span className="text-pink-700 font-black text-lg tracking-wide">BLITZGRID</span>
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-fuchsia-500/50" style={{ background: 'rgba(217, 70, 239, 0.15)' }}>
+                        <Grid3X3 className="w-5 h-5 text-fuchsia-400" />
+                        <span className="text-fuchsia-300 font-black text-lg tracking-wide">BLITZGRID</span>
                       </div>
                     </div>
                     
@@ -2275,10 +2279,10 @@ export default function Blitzgrid() {
                             {top3[1] && (
                               <div className="flex flex-col items-center w-[80px]">
                                 <div className="text-2xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[1].avatar)?.emoji || '👤'}</div>
-                                <div className="text-xs font-bold text-pink-800 truncate max-w-[75px] mb-1">{top3[1].name}</div>
-                                <div className="w-full h-[70px] bg-gradient-to-b from-slate-200 to-slate-400 rounded-t-lg flex flex-col items-center justify-center shadow-md">
-                                  <span className="text-2xl font-black text-slate-700">2</span>
-                                  <span className="text-xs font-bold text-slate-600">{top3[1].score} pts</span>
+                                <div className="text-xs font-bold text-white truncate max-w-[75px] mb-1">{top3[1].name}</div>
+                                <div className="w-full h-[70px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(148, 163, 184, 0.6)', boxShadow: '0 0 15px rgba(148, 163, 184, 0.3)' }}>
+                                  <span className="text-2xl font-black text-slate-300">2</span>
+                                  <span className="text-xs font-bold text-slate-400">{top3[1].score} pts</span>
                                 </div>
                               </div>
                             )}
@@ -2286,13 +2290,13 @@ export default function Blitzgrid() {
                             {/* 1st Place */}
                             {top3[0] && (
                               <div className="flex flex-col items-center w-[90px]">
-                                <Crown className="w-6 h-6 text-yellow-500 mb-0.5" />
+                                <Crown className="w-6 h-6 text-yellow-400 mb-0.5" style={{ filter: 'drop-shadow(0 0 6px rgba(250, 204, 21, 0.6))' }} />
                                 <div className="text-3xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[0].avatar)?.emoji || '👤'}</div>
-                                <div className="text-sm font-bold text-pink-800 truncate max-w-[85px] mb-1">{top3[0].name}</div>
-                                <div className="w-full h-[90px] bg-gradient-to-b from-yellow-300 to-yellow-500 rounded-t-lg flex flex-col items-center justify-center shadow-lg">
-                                  <Trophy className="w-5 h-5 text-yellow-800 mb-0.5" />
-                                  <span className="text-3xl font-black text-yellow-800">1</span>
-                                  <span className="text-sm font-bold text-yellow-800">{top3[0].score} pts</span>
+                                <div className="text-sm font-bold text-yellow-300 truncate max-w-[85px] mb-1">{top3[0].name}</div>
+                                <div className="w-full h-[90px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(250, 204, 21, 0.8)', boxShadow: '0 0 25px rgba(250, 204, 21, 0.4)' }}>
+                                  <Trophy className="w-5 h-5 text-yellow-400 mb-0.5" />
+                                  <span className="text-3xl font-black text-yellow-300">1</span>
+                                  <span className="text-sm font-bold text-yellow-400">{top3[0].score} pts</span>
                                 </div>
                               </div>
                             )}
@@ -2301,10 +2305,10 @@ export default function Blitzgrid() {
                             {top3[2] && (
                               <div className="flex flex-col items-center w-[80px]">
                                 <div className="text-2xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[2].avatar)?.emoji || '👤'}</div>
-                                <div className="text-xs font-bold text-pink-800 truncate max-w-[75px] mb-1">{top3[2].name}</div>
-                                <div className="w-full h-[55px] bg-gradient-to-b from-amber-400 to-amber-600 rounded-t-lg flex flex-col items-center justify-center shadow-md">
-                                  <span className="text-2xl font-black text-amber-900">3</span>
-                                  <span className="text-xs font-bold text-amber-800">{top3[2].score} pts</span>
+                                <div className="text-xs font-bold text-white truncate max-w-[75px] mb-1">{top3[2].name}</div>
+                                <div className="w-full h-[55px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(251, 146, 60, 0.6)', boxShadow: '0 0 15px rgba(251, 146, 60, 0.3)' }}>
+                                  <span className="text-2xl font-black text-orange-300">3</span>
+                                  <span className="text-xs font-bold text-orange-400">{top3[2].score} pts</span>
                                 </div>
                               </div>
                             )}
@@ -2314,10 +2318,10 @@ export default function Blitzgrid() {
                           {others.length > 0 && (
                             <div className="flex justify-center gap-2 mt-2">
                               {others.map((p, i) => (
-                                <div key={p.id} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/60 rounded-full text-xs">
-                                  <span className="font-bold text-pink-700">#{i + 4}</span>
-                                  <span className="text-pink-800 font-medium truncate max-w-[60px]">{p.name}</span>
-                                  <span className="text-pink-600 font-bold">{p.score}</span>
+                                <div key={p.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border border-white/20" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                                  <span className="font-bold text-white/50">#{i + 4}</span>
+                                  <span className="text-white font-medium truncate max-w-[60px]">{p.name}</span>
+                                  <span className="text-white/60 font-bold">{p.score}</span>
                                 </div>
                               ))}
                             </div>
@@ -2328,14 +2332,14 @@ export default function Blitzgrid() {
                     
                     {/* Footer */}
                     <div className="text-center mt-auto pt-4">
-                      <p className="text-pink-900/60 text-xs mb-1">
+                      <p className="text-white/40 text-xs mb-1">
                         {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </p>
-                      <p className="text-pink-800 font-black text-sm flex items-center justify-center gap-1">
+                      <p className="text-white/60 font-bold text-sm flex items-center justify-center gap-1">
                         <span>made with</span>
-                        <Heart className="w-3.5 h-3.5 text-pink-500 fill-pink-500" />
+                        <Heart className="w-3.5 h-3.5 text-fuchsia-400 fill-fuchsia-400" />
                         <span>by</span>
-                        <span className="bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 bg-clip-text text-transparent">Amoli</span>
+                        <span className="text-fuchsia-400 font-black">Amoli</span>
                       </p>
                     </div>
                   </div>
