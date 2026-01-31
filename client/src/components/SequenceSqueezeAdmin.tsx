@@ -26,11 +26,10 @@ export function SequenceSqueezeAdmin() {
   const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [question, setQuestion] = useState("");
-  const [optionA, setOptionA] = useState("");
-  const [optionB, setOptionB] = useState("");
-  const [optionC, setOptionC] = useState("");
-  const [optionD, setOptionD] = useState("");
-  const [correctOrder, setCorrectOrder] = useState<string[]>([]);
+  const [option1, setOption1] = useState("");
+  const [option2, setOption2] = useState("");
+  const [option3, setOption3] = useState("");
+  const [option4, setOption4] = useState("");
   const [hint, setHint] = useState("");
   
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
@@ -149,51 +148,28 @@ export function SequenceSqueezeAdmin() {
   const resetForm = () => {
     setShowForm(false);
     setQuestion("");
-    setOptionA("");
-    setOptionB("");
-    setOptionC("");
-    setOptionD("");
-    setCorrectOrder([]);
+    setOption1("");
+    setOption2("");
+    setOption3("");
+    setOption4("");
     setHint("");
   };
 
-  const handleOrderClick = (letter: string) => {
-    if (correctOrder.includes(letter)) {
-      setCorrectOrder(correctOrder.filter((l) => l !== letter));
-    } else if (correctOrder.length < 4) {
-      setCorrectOrder([...correctOrder, letter]);
-    }
-  };
-
   const handleSubmit = () => {
-    if (!question || !optionA || !optionB || !optionC || !optionD) {
+    if (!question || !option1 || !option2 || !option3 || !option4) {
       toast({ title: "Please fill in all options", variant: "destructive" });
-      return;
-    }
-    if (correctOrder.length !== 4) {
-      toast({ title: "Please set the correct order for all 4 options", variant: "destructive" });
       return;
     }
     createMutation.mutate({
       question,
-      optionA,
-      optionB,
-      optionC,
-      optionD,
-      correctOrder,
+      optionA: option1,
+      optionB: option2,
+      optionC: option3,
+      optionD: option4,
+      correctOrder: ["A", "B", "C", "D"],
       hint: hint || null,
       isActive: true,
     });
-  };
-
-  const getOptionLabel = (letter: string) => {
-    switch (letter) {
-      case "A": return optionA || "Option A";
-      case "B": return optionB || "Option B";
-      case "C": return optionC || "Option C";
-      case "D": return optionD || "Option D";
-      default: return letter;
-    }
   };
 
   return (
@@ -246,96 +222,52 @@ export function SequenceSqueezeAdmin() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="optionA">Option A</Label>
-                    <Input
-                      id="optionA"
-                      placeholder="First option"
-                      value={optionA}
-                      onChange={(e) => setOptionA(e.target.value)}
-                      className="mt-1"
-                      data-testid="input-option-a"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="optionB">Option B</Label>
-                    <Input
-                      id="optionB"
-                      placeholder="Second option"
-                      value={optionB}
-                      onChange={(e) => setOptionB(e.target.value)}
-                      className="mt-1"
-                      data-testid="input-option-b"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="optionC">Option C</Label>
-                    <Input
-                      id="optionC"
-                      placeholder="Third option"
-                      value={optionC}
-                      onChange={(e) => setOptionC(e.target.value)}
-                      className="mt-1"
-                      data-testid="input-option-c"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="optionD">Option D</Label>
-                    <Input
-                      id="optionD"
-                      placeholder="Fourth option"
-                      value={optionD}
-                      onChange={(e) => setOptionD(e.target.value)}
-                      className="mt-1"
-                      data-testid="input-option-d"
-                    />
-                  </div>
-                </div>
-
                 <div>
-                  <Label className="flex items-center gap-2">
+                  <Label className="flex items-center gap-2 mb-2">
                     <GripVertical className="w-4 h-4 text-teal-600" />
-                    Set Correct Order (click options in order)
+                    Options (enter in correct order)
                   </Label>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Click the options in the correct sequence. Click again to remove.
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Enter options from first to last. They'll be shuffled when shown to players.
                   </p>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {["A", "B", "C", "D"].map((letter) => {
-                      const orderIndex = correctOrder.indexOf(letter);
-                      const isSelected = orderIndex !== -1;
-                      return (
-                        <Button
-                          key={letter}
-                          type="button"
-                          variant={isSelected ? "default" : "outline"}
-                          className={`relative min-w-[120px] justify-start gap-2 ${
-                            isSelected ? "bg-teal-600 hover:bg-teal-700" : ""
-                          }`}
-                          onClick={() => handleOrderClick(letter)}
-                          data-testid={`button-order-${letter.toLowerCase()}`}
-                        >
-                          {isSelected && (
-                            <span className="absolute -top-2 -left-2 w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-bold shadow">
-                              {orderIndex + 1}
-                            </span>
-                          )}
-                          <span className="font-bold">{letter}:</span>
-                          <span className="truncate text-sm">
-                            {getOptionLabel(letter).slice(0, 20)}
-                            {getOptionLabel(letter).length > 20 ? "..." : ""}
-                          </span>
-                        </Button>
-                      );
-                    })}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-sm font-bold shrink-0">1</span>
+                      <Input
+                        placeholder="First in order"
+                        value={option1}
+                        onChange={(e) => setOption1(e.target.value)}
+                        data-testid="input-option-1"
+                      />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-sm font-bold shrink-0">2</span>
+                      <Input
+                        placeholder="Second in order"
+                        value={option2}
+                        onChange={(e) => setOption2(e.target.value)}
+                        data-testid="input-option-2"
+                      />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-sm font-bold shrink-0">3</span>
+                      <Input
+                        placeholder="Third in order"
+                        value={option3}
+                        onChange={(e) => setOption3(e.target.value)}
+                        data-testid="input-option-3"
+                      />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-sm font-bold shrink-0">4</span>
+                      <Input
+                        placeholder="Fourth in order"
+                        value={option4}
+                        onChange={(e) => setOption4(e.target.value)}
+                        data-testid="input-option-4"
+                      />
+                    </div>
                   </div>
-                  {correctOrder.length === 4 && (
-                    <p className="text-sm text-teal-600 mt-2 flex items-center gap-1">
-                      <Check className="w-4 h-4" />
-                      Order set: {correctOrder.join(" → ")}
-                    </p>
-                  )}
                 </div>
 
                 <div>
