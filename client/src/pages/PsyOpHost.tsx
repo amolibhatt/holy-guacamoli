@@ -69,6 +69,9 @@ export default function PsyOpHost() {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [players, setPlayers] = useState<{ id: string; name: string; avatar?: string }[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  
+  const moveToVotingRef = useRef<() => void>(() => {});
+  const moveToRevealingRef = useRef<() => void>(() => {});
 
   const { data: questions = [], isLoading: isLoadingQuestions } = useQuery<PsyopQuestion[]>({
     queryKey: ["/api/psyop/questions"],
@@ -85,9 +88,9 @@ export default function PsyOpHost() {
       if (remaining <= 0) {
         clearInterval(interval);
         if (gameState === "submitting") {
-          moveToVoting();
+          moveToVotingRef.current();
         } else if (gameState === "voting") {
-          moveToRevealing();
+          moveToRevealingRef.current();
         }
       }
     }, 100);
@@ -114,11 +117,13 @@ export default function PsyOpHost() {
             localStorage.setItem("psyop-room-code", data.code);
             break;
           case "player:joined":
-            setPlayers(prev => {
-              if (prev.some(p => p.id === data.playerId)) return prev;
-              return [...prev, { id: data.playerId, name: data.playerName, avatar: data.playerAvatar }];
-            });
-            toast({ title: `${data.playerName} joined!` });
+            if (data.player) {
+              setPlayers(prev => {
+                if (prev.some(p => p.id === data.player.id)) return prev;
+                return [...prev, { id: data.player.id, name: data.player.name, avatar: data.player.avatar }];
+              });
+              toast({ title: `${data.player.name} joined!` });
+            }
             break;
           case "player:left":
             setPlayers(prev => prev.filter(p => p.id !== data.playerId));
@@ -271,6 +276,15 @@ export default function PsyOpHost() {
       scores,
     }));
   }, [votes, voteOptions, players, currentQuestion, ws]);
+
+  // Keep refs updated with latest callbacks to avoid stale closures in timer
+  useEffect(() => {
+    moveToVotingRef.current = moveToVoting;
+  }, [moveToVoting]);
+  
+  useEffect(() => {
+    moveToRevealingRef.current = moveToRevealing;
+  }, [moveToRevealing]);
 
   const nextQuestion = useCallback(() => {
     const nextIndex = currentQuestionIndex + 1;
