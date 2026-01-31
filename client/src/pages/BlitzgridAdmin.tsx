@@ -499,6 +499,7 @@ export default function BlitzgridAdmin() {
     
     return (
       <div className="min-h-screen bg-background flex flex-col" data-testid="page-blitzgrid-admin-grid">
+        <div className="fixed inset-0 bg-gradient-to-br from-rose-300/5 via-transparent to-fuchsia-300/5 pointer-events-none" />
         <AppHeader minimal backHref="/" title="Blitzgrid Admin" />
         
         <div className="border-b border-border bg-card/50">
@@ -1036,6 +1037,7 @@ export default function BlitzgridAdmin() {
   // Grid list view
   return (
     <div className="min-h-screen bg-background flex flex-col" data-testid="page-blitzgrid-admin">
+      <div className="fixed inset-0 bg-gradient-to-br from-rose-300/5 via-transparent to-fuchsia-300/5 pointer-events-none" />
       <AppHeader minimal backHref="/" title="Blitzgrid Admin" />
       
       <div className="border-b border-border bg-card/50">
