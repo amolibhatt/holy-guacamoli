@@ -79,9 +79,11 @@ export default function SequenceSqueeze() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [pointsPerRound, setPointsPerRound] = useState(10);
+  const [elapsedTime, setElapsedTime] = useState(0);
   const submissionsRef = useRef<PlayerSubmission[]>([]);
   const audioRef = useRef<{ [key: string]: HTMLAudioElement }>({});
   const hasAutoStartedRef = useRef(false);
+  const elapsedTimerRef = useRef<number | null>(null);
 
   const { data: questions = [], isLoading: isLoadingQuestions } = useQuery<SequenceQuestion[]>({
     queryKey: ["/api/sequence-squeeze/questions"],
@@ -440,8 +442,29 @@ export default function SequenceSqueeze() {
     return () => {
       if (ws) ws.close();
       animationTimeoutsRef.current.forEach(clearTimeout);
+      if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
     };
   }, [ws]);
+
+  useEffect(() => {
+    if (gameState === "playing" || gameState === "animating") {
+      setElapsedTime(0);
+      elapsedTimerRef.current = window.setInterval(() => {
+        setElapsedTime(t => t + 100);
+      }, 100);
+    } else {
+      if (elapsedTimerRef.current) {
+        clearInterval(elapsedTimerRef.current);
+        elapsedTimerRef.current = null;
+      }
+    }
+    return () => {
+      if (elapsedTimerRef.current) {
+        clearInterval(elapsedTimerRef.current);
+        elapsedTimerRef.current = null;
+      }
+    };
+  }, [gameState]);
 
 
   if (isAuthLoading) {
@@ -764,9 +787,23 @@ export default function SequenceSqueeze() {
             animate={{ opacity: 1 }}
             className="space-y-6"
           >
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-teal-500 transition-all duration-300"
+                    style={{ width: `${(currentQuestionIndex / totalQuestions) * 100}%` }}
+                  />
+                </div>
+                <span className="text-sm text-muted-foreground">{currentQuestionIndex}/{totalQuestions}</span>
+              </div>
+            </div>
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-3">
-                <Badge variant="outline">Q{currentQuestionIndex}/{totalQuestions}</Badge>
+                <Badge variant="outline" className="gap-1 font-mono" data-testid="badge-elapsed-time">
+                  <Clock className="w-4 h-4" />
+                  {(elapsedTime / 1000).toFixed(1)}s
+                </Badge>
                 <Badge variant="secondary" className="gap-1">
                   <Users className="w-4 h-4" />
                   {submissions.length}/{players.length} locked in
