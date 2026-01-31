@@ -41,7 +41,7 @@ export default function PsyOpAdmin() {
                 Blitzgrid
               </Button>
             </Link>
-            <Link href="/admin/genetic-sort">
+            <Link href="/admin/sort-circuit">
               <Button 
                 variant="ghost" 
                 className="relative rounded-none border-b-2 border-transparent text-muted-foreground hover:text-foreground"
