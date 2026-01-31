@@ -3290,7 +3290,7 @@ export default function Blitzgrid() {
         />
       </div>
       
-      <AppHeader minimal />
+      <AppHeader title="BLITZGRID" backHref="/" showAdminButton adminHref="/admin/games" />
       
       <div className="flex-1 container mx-auto px-4 py-8 relative z-10">
         {loadingGrids ? (
@@ -3335,24 +3335,6 @@ export default function Blitzgrid() {
           </motion.div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-10">
-            {/* Hero section with big title */}
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center py-4"
-            >
-              <h1 
-                className="text-5xl md:text-6xl font-black text-white tracking-tight uppercase mb-2"
-                style={{ 
-                  fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                  textShadow: '0 0 20px rgba(232, 121, 249, 0.6), 0 0 40px rgba(232, 121, 249, 0.4), 0 0 60px rgba(232, 121, 249, 0.2)',
-                }}
-              >
-                BLITZGRID
-              </h1>
-              <p className="text-white/50 text-lg">The ultimate trivia showdown</p>
-            </motion.div>
-
             {/* Shuffle Play Hero Card */}
             <motion.button
               initial={{ opacity: 0, y: 20 }}
