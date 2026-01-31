@@ -482,6 +482,46 @@ export default function BlitzgridAdmin() {
     return (
       <div className="min-h-screen bg-background flex flex-col" data-testid="page-blitzgrid-admin-grid">
         <AppHeader minimal backHref="/" />
+        <div className="border-b bg-muted/30 px-4 py-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm text-muted-foreground mr-2">Tools:</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadTemplate}
+              data-testid="button-download-template-top"
+            >
+              <FileSpreadsheet className="w-4 h-4 mr-1" /> Template
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              disabled={isExporting || grids.length === 0}
+              data-testid="button-export-grids-top"
+            >
+              {isExporting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
+              Export
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isImporting}
+              data-testid="button-import-grids-top"
+            >
+              {isImporting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Upload className="w-4 h-4 mr-1" />}
+              Import
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleImport}
+              className="hidden"
+            />
+          </div>
+        </div>
         <div className="flex flex-1">
           {/* Grid Sidebar */}
           <aside className="w-64 border-r border-border bg-card/50 p-4 shrink-0 hidden md:block">
@@ -638,36 +678,6 @@ export default function BlitzgridAdmin() {
                     </>
                   )}
                 </div>
-              </div>
-              <div className="flex items-center gap-2 pt-3 mt-3 border-t flex-wrap">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownloadTemplate}
-                  data-testid="button-download-template-detail"
-                >
-                  <FileSpreadsheet className="w-4 h-4 mr-1" /> Template
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExport}
-                  disabled={isExporting || grids.length === 0}
-                  data-testid="button-export-grids-detail"
-                >
-                  {isExporting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
-                  Export
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isImporting}
-                  data-testid="button-import-grids-detail"
-                >
-                  {isImporting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Upload className="w-4 h-4 mr-1" />}
-                  Import
-                </Button>
               </div>
             </CardContent>
           </Card>
