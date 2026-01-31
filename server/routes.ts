@@ -1874,7 +1874,7 @@ export async function registerRoutes(
 
 
   // ============================================
-  // Genetic Sort Routes
+  // Sort Circuit Routes
   // ============================================
   
   app.get("/api/sequence-squeeze/questions", isAuthenticated, async (req, res) => {
