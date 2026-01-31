@@ -4060,6 +4060,37 @@ export async function registerRoutes(
             break;
           }
 
+          case 'sequence:host:startQuestion': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.sequenceSubmissions = [];
+            room.currentCorrectOrder = data.correctOrder;
+            room.questionStartTime = Date.now();
+            
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                sendToPlayer(player, {
+                  type: 'sequence:question:start',
+                  question: data.question,
+                  questionIndex: data.questionIndex,
+                  totalQuestions: data.totalQuestions,
+                });
+              }
+            });
+
+            sendToHost(room, {
+              type: 'sequence:question:started',
+              question: data.question,
+              questionIndex: data.questionIndex,
+              totalQuestions: data.totalQuestions,
+            });
+            break;
+          }
+
           case 'sequence:host:startAnimatedReveal': {
             const mapping = wsToRoom.get(ws);
             if (!mapping || !mapping.isHost) break;

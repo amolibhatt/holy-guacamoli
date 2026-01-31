@@ -159,6 +159,14 @@ export default function SequenceSqueeze() {
             avatar: data.playerAvatar 
           }]);
           break;
+        case "sequence:question:started":
+          setGameState("playing");
+          setCurrentQuestionIndex(data.questionIndex || 1);
+          setTotalQuestions(data.totalQuestions || 1);
+          if (data.question) {
+            setCurrentQuestion(data.question);
+          }
+          break;
         case "sequence:animatedReveal:started":
           setGameState("animatedReveal");
           setAnimationStage("teaser");
