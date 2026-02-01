@@ -18,14 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -208,6 +201,10 @@ export default function SuperAdmin() {
   const [gridSearch, setGridSearch] = useState("");
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
+  const [announcementType, setAnnouncementType] = useState<"info" | "warning" | "success">("info");
+  const [isExporting, setIsExporting] = useState(false);
+  const [sequenceSearch, setSequenceSearch] = useState("");
+  const [psyopSearch, setPsyopSearch] = useState("");
   const [activeTab, setActiveTab] = useState("dashboard");
 
   const { data: stats, isLoading: isLoadingStats } = useQuery<PlatformStats>({
@@ -405,6 +402,7 @@ export default function SuperAdmin() {
   });
 
   const handleExportData = async () => {
+    setIsExporting(true);
     try {
       const response = await apiRequest('GET', '/api/super-admin/export');
       const blob = new Blob([JSON.stringify(response, null, 2)], { type: 'application/json' });
@@ -417,6 +415,8 @@ export default function SuperAdmin() {
       toast({ title: "Data exported successfully" });
     } catch {
       toast({ title: "Export failed", variant: "destructive" });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -752,7 +752,8 @@ export default function SuperAdmin() {
                             return (
                               u.email.toLowerCase().includes(searchLower) ||
                               u.firstName?.toLowerCase().includes(searchLower) ||
-                              u.lastName?.toLowerCase().includes(searchLower)
+                              u.lastName?.toLowerCase().includes(searchLower) ||
+                              u.username?.toLowerCase().includes(searchLower)
                             );
                           });
                           
@@ -787,9 +788,24 @@ export default function SuperAdmin() {
                                       <div className="text-xs text-muted-foreground">Games</div>
                                     </div>
                                     {u.role !== 'super_admin' && (
-                                      <Button variant="ghost" size="icon" onClick={() => setDeleteUserId(u.id)} data-testid={`button-delete-user-${u.id}`}>
-                                        <Trash2 className="w-4 h-4 text-destructive" />
-                                      </Button>
+                                      <>
+                                        <Select
+                                          value={u.role || 'user'}
+                                          onValueChange={(role) => updateUserRoleMutation.mutate({ userId: u.id, role })}
+                                          disabled={updateUserRoleMutation.isPending}
+                                        >
+                                          <SelectTrigger className="w-[90px] h-8" data-testid={`select-role-${u.id}`}>
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="user">User</SelectItem>
+                                            <SelectItem value="admin">Admin</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                        <Button variant="ghost" size="icon" onClick={() => setDeleteUserId(u.id)} data-testid={`button-delete-user-${u.id}`}>
+                                          <Trash2 className="w-4 h-4 text-destructive" />
+                                        </Button>
+                                      </>
                                     )}
                                   </div>
                                 </div>
@@ -1118,7 +1134,7 @@ export default function SuperAdmin() {
                                                     <Star className={`w-4 h-4 ${isStarterPack ? 'fill-current' : ''}`} />
                                                   </Button>
                                                   <Link href={`/admin?game=${board.id}`}>
-                                                    <Button variant="ghost" size="icon">
+                                                    <Button variant="ghost" size="icon" data-testid={`button-edit-grid-${board.id}`}>
                                                       <Pencil className="w-4 h-4" />
                                                     </Button>
                                                   </Link>
@@ -1142,9 +1158,19 @@ export default function SuperAdmin() {
                                   
                                   {gameType.slug === 'sequence_squeeze' && (
                                     <div className="space-y-3">
-                                      <div className="flex items-center justify-between gap-4">
+                                      <div className="flex items-center justify-between gap-4 flex-wrap">
                                         <h4 className="font-medium text-foreground">Sort Circuit Questions</h4>
                                         <div className="flex items-center gap-2">
+                                          <div className="relative">
+                                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                            <Input
+                                              placeholder="Search questions..."
+                                              value={sequenceSearch}
+                                              onChange={(e) => setSequenceSearch(e.target.value)}
+                                              className="pl-8 h-8 w-[160px] text-sm"
+                                              data-testid="input-sequence-search"
+                                            />
+                                          </div>
                                           <Button
                                             variant="outline"
                                             size="icon"
@@ -1161,13 +1187,28 @@ export default function SuperAdmin() {
                                         <div className="space-y-2">
                                           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
                                         </div>
-                                      ) : sequenceQuestions.length === 0 ? (
-                                        <div className="text-center py-6 text-muted-foreground">
-                                          No questions created yet.
-                                        </div>
-                                      ) : (
+                                      ) : (() => {
+                                        const filteredSequence = sequenceQuestions.filter((q) => {
+                                          if (!sequenceSearch.trim()) return true;
+                                          const searchLower = sequenceSearch.toLowerCase();
+                                          return (
+                                            q.question.toLowerCase().includes(searchLower) ||
+                                            q.creator?.username?.toLowerCase().includes(searchLower) ||
+                                            q.creator?.email?.toLowerCase().includes(searchLower)
+                                          );
+                                        });
+                                        
+                                        if (filteredSequence.length === 0) {
+                                          return (
+                                            <div className="text-center py-6 text-muted-foreground">
+                                              {sequenceSearch ? `No questions match "${sequenceSearch}"` : 'No questions created yet.'}
+                                            </div>
+                                          );
+                                        }
+                                        
+                                        return (
                                         <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                                          {sequenceQuestions.map((q) => (
+                                          {filteredSequence.map((q) => (
                                             <div key={q.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border">
                                               <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 flex-wrap">
@@ -1203,15 +1244,26 @@ export default function SuperAdmin() {
                                             </div>
                                           ))}
                                         </div>
-                                      )}
+                                        );
+                                      })()}
                                     </div>
                                   )}
 
                                   {gameType.slug === 'psyop' && (
                                     <div className="space-y-3">
-                                      <div className="flex items-center justify-between gap-4">
+                                      <div className="flex items-center justify-between gap-4 flex-wrap">
                                         <h4 className="font-medium text-foreground">PsyOp Questions</h4>
                                         <div className="flex items-center gap-2">
+                                          <div className="relative">
+                                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                            <Input
+                                              placeholder="Search questions..."
+                                              value={psyopSearch}
+                                              onChange={(e) => setPsyopSearch(e.target.value)}
+                                              className="pl-8 h-8 w-[160px] text-sm"
+                                              data-testid="input-psyop-search"
+                                            />
+                                          </div>
                                           <Button
                                             variant="outline"
                                             size="icon"
@@ -1228,13 +1280,29 @@ export default function SuperAdmin() {
                                         <div className="space-y-2">
                                           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
                                         </div>
-                                      ) : psyopQuestions.length === 0 ? (
-                                        <div className="text-center py-6 text-muted-foreground">
-                                          No questions created yet.
-                                        </div>
-                                      ) : (
+                                      ) : (() => {
+                                        const filteredPsyop = psyopQuestions.filter((q) => {
+                                          if (!psyopSearch.trim()) return true;
+                                          const searchLower = psyopSearch.toLowerCase();
+                                          return (
+                                            q.factText.toLowerCase().includes(searchLower) ||
+                                            q.category?.toLowerCase().includes(searchLower) ||
+                                            q.creator?.username?.toLowerCase().includes(searchLower) ||
+                                            q.creator?.email?.toLowerCase().includes(searchLower)
+                                          );
+                                        });
+                                        
+                                        if (filteredPsyop.length === 0) {
+                                          return (
+                                            <div className="text-center py-6 text-muted-foreground">
+                                              {psyopSearch ? `No questions match "${psyopSearch}"` : 'No questions created yet.'}
+                                            </div>
+                                          );
+                                        }
+                                        
+                                        return (
                                         <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                                          {psyopQuestions.map((q) => (
+                                          {filteredPsyop.map((q) => (
                                             <div key={q.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border">
                                               <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 flex-wrap">
@@ -1273,7 +1341,8 @@ export default function SuperAdmin() {
                                             </div>
                                           ))}
                                         </div>
-                                      )}
+                                        );
+                                      })()}
                                     </div>
                                   )}
                                 </div>
@@ -1373,14 +1442,16 @@ export default function SuperAdmin() {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => updateModerationMutation.mutate({ boardId: board.id, data: { moderationStatus: 'approved' } })}
+                                disabled={updateModerationMutation.isPending}
                                 data-testid={`button-approve-board-${board.id}`}
                               >
-                                Approve
+                                {updateModerationMutation.isPending ? '...' : 'Approve'}
                               </Button>
                               <Button
                                 size="sm"
                                 variant="destructive"
                                 onClick={() => setDeleteBoardId(board.id)}
+                                disabled={deleteBoardMutation.isPending}
                                 data-testid={`button-delete-flagged-${board.id}`}
                               >
                                 Remove
@@ -1413,10 +1484,20 @@ export default function SuperAdmin() {
                       onChange={(e) => setAnnouncementMessage(e.target.value)}
                       data-testid="input-announcement-message"
                     />
+                    <Select value={announcementType} onValueChange={(v: "info" | "warning" | "success") => setAnnouncementType(v)}>
+                      <SelectTrigger data-testid="select-announcement-type">
+                        <SelectValue placeholder="Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="info">Info</SelectItem>
+                        <SelectItem value="warning">Warning</SelectItem>
+                        <SelectItem value="success">Success</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <Button
                       className="w-full"
                       disabled={!announcementTitle || !announcementMessage || createAnnouncementMutation.isPending}
-                      onClick={() => createAnnouncementMutation.mutate({ title: announcementTitle, message: announcementMessage })}
+                      onClick={() => createAnnouncementMutation.mutate({ title: announcementTitle, message: announcementMessage, type: announcementType })}
                       data-testid="button-send-announcement"
                     >
                       <Send className="w-4 h-4 mr-2" />
@@ -1463,10 +1544,15 @@ export default function SuperAdmin() {
                       className="w-full"
                       variant="outline"
                       onClick={handleExportData}
+                      disabled={isExporting}
                       data-testid="button-export-data"
                     >
-                      <Download className="w-4 h-4 mr-2" />
-                      Export All Data (JSON)
+                      {isExporting ? (
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4 mr-2" />
+                      )}
+                      {isExporting ? 'Exporting...' : 'Export All Data (JSON)'}
                     </Button>
                   </CardContent>
                 </Card>
