@@ -289,7 +289,7 @@ export default function SuperAdmin() {
                     const isExpanded = expandedGameSlug === gameType.slug;
                     const GameIcon = getGameIcon(gameType.slug);
                     const gradient = getGameGradient(gameType.slug);
-                    const status = (gameType as any).status || 'active';
+                    const status = gameType.status || 'active';
                     
                     return (
                       <Card key={gameType.id} className={`transition-all ${isExpanded ? 'border-primary' : ''}`}>

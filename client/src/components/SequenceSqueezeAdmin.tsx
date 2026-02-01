@@ -170,7 +170,7 @@ export function SequenceSqueezeAdmin() {
   return (
     <div className="max-w-3xl mx-auto space-y-6" data-testid="section-sequence-squeeze-admin">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-muted-foreground">{questions.length} question{questions.length !== 1 ? 's' : ''}</p>
         </div>
@@ -304,7 +304,7 @@ export function SequenceSqueezeAdmin() {
                       className="w-full h-32 p-3 text-sm rounded-md border border-input bg-background resize-none font-mono"
                       data-testid="textarea-bulk-import"
                     />
-                    <div className="flex justify-between items-center mt-3">
+                    <div className="flex justify-between items-center gap-4 mt-3">
                       <p className="text-xs text-muted-foreground">
                         {parseBulkImport(bulkImportText).length} valid question(s)
                       </p>

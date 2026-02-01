@@ -119,7 +119,7 @@ function LoadingSkeleton() {
       {[1, 2, 3, 4, 5, 6].map(i => (
         <Card key={i}>
           <CardHeader className="pb-3">
-            <div className="flex justify-between">
+            <div className="flex justify-between gap-4">
               <Skeleton className="h-6 w-32" />
               <Skeleton className="h-5 w-20" />
             </div>

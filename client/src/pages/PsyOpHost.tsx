@@ -131,7 +131,7 @@ export default function PsyOpHost() {
     };
 
     socket.onclose = () => {
-      console.log("WebSocket closed");
+      // WebSocket closed
     };
 
     socket.onerror = (err) => {
