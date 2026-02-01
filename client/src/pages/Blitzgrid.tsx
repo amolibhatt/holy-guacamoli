@@ -3409,7 +3409,7 @@ export default function Blitzgrid() {
             </Link>
           </motion.div>
         ) : (
-          <div className="max-w-4xl mx-auto space-y-6">
+          <div className="space-y-6">
             {/* Hero Section */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -3419,9 +3419,7 @@ export default function Blitzgrid() {
               <motion.button
                 onClick={handleShufflePlay}
                 disabled={isShuffling}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                className="w-full flex items-center justify-between gap-4 p-5 rounded-xl text-left relative overflow-hidden group"
+                className="w-full flex items-center justify-between gap-4 p-5 rounded-xl text-left relative overflow-hidden group hover-elevate"
                 style={{
                   background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.12) 0%, rgba(6, 182, 212, 0.06) 100%)',
                   border: '1px solid rgba(34, 211, 238, 0.4)',
