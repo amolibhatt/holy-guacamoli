@@ -68,6 +68,7 @@ export default function SuperAdmin() {
   const [deleteBoardId, setDeleteBoardId] = useState<number | null>(null);
   const [expandedGameSlug, setExpandedGameSlug] = useState<string | null>(null);
   const [userSearch, setUserSearch] = useState("");
+  const [gridSearch, setGridSearch] = useState("");
 
   const { data: stats, isLoading: isLoadingStats } = useQuery<PlatformStats>({
     queryKey: ['/api/super-admin/stats'],
@@ -201,7 +202,7 @@ export default function SuperAdmin() {
 
       <main className="px-4 py-6 max-w-6xl mx-auto w-full">
         <Tabs defaultValue="analytics" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-md">
+          <TabsList className="grid w-full grid-cols-4 max-w-lg">
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Analytics</span>
@@ -209,6 +210,10 @@ export default function SuperAdmin() {
             <TabsTrigger value="games" className="gap-2">
               <Gamepad2 className="w-4 h-4" />
               <span className="hidden sm:inline">Games</span>
+            </TabsTrigger>
+            <TabsTrigger value="grids" className="gap-2">
+              <Grid3X3 className="w-4 h-4" />
+              <span className="hidden sm:inline">Grids</span>
             </TabsTrigger>
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4" />
@@ -221,7 +226,19 @@ export default function SuperAdmin() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <h2 className="text-2xl font-bold text-foreground mb-4">Platform Overview</h2>
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <h2 className="text-2xl font-bold text-foreground">Platform Overview</h2>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
+                  }}
+                  data-testid="button-refresh-analytics"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+              </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <StatCard
@@ -466,6 +483,140 @@ export default function SuperAdmin() {
                   )}
                 </div>
               )}
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="grids" className="space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+                <h2 className="text-2xl font-bold text-foreground">All Grids</h2>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search grids..."
+                      value={gridSearch}
+                      onChange={(e) => setGridSearch(e.target.value)}
+                      className="pl-9 w-[200px]"
+                      data-testid="input-grid-search"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
+                    }}
+                    data-testid="button-refresh-grids"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </Button>
+                  <Badge variant="secondary">{allBoards.length} grids</Badge>
+                </div>
+              </div>
+
+              {isLoadingBoards ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : allBoards.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    No grids created yet.
+                  </CardContent>
+                </Card>
+              ) : (() => {
+                const filteredGrids = allBoards.filter((board) => {
+                  if (!gridSearch.trim()) return true;
+                  const searchLower = gridSearch.toLowerCase();
+                  return (
+                    board.name.toLowerCase().includes(searchLower) ||
+                    board.ownerEmail?.toLowerCase().includes(searchLower) ||
+                    board.ownerName?.toLowerCase().includes(searchLower)
+                  );
+                });
+                
+                if (filteredGrids.length === 0) {
+                  return (
+                    <Card>
+                      <CardContent className="py-8 text-center text-muted-foreground">
+                        No grids match "{gridSearch}"
+                      </CardContent>
+                    </Card>
+                  );
+                }
+                
+                return (
+                  <div className="space-y-2">
+                    {filteredGrids.map((board) => {
+                      const isComplete = board.categoryCount >= 5 && board.questionCount >= 25;
+                      const isStarterPack = board.isStarterPack ?? false;
+                      return (
+                        <Card key={board.id} className="hover-elevate">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium text-foreground truncate">{board.name}</span>
+                                  {isComplete ? (
+                                    <Badge className="bg-green-500/20 text-green-600 text-xs">Complete</Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-amber-600 text-xs">
+                                      {board.categoryCount}/5 categories, {board.questionCount}/25 questions
+                                    </Badge>
+                                  )}
+                                  {isStarterPack && (
+                                    <Badge className="bg-amber-500/20 text-amber-600 text-xs">
+                                      <Star className="w-3 h-3 mr-1" />
+                                      Starter
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  Owner: {board.ownerName || board.ownerEmail || 'Unknown'}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant={isStarterPack ? "default" : "outline"}
+                                  size="icon"
+                                  onClick={() => toggleStarterPackMutation.mutate({ 
+                                    boardId: board.id, 
+                                    isStarterPack: !isStarterPack 
+                                  })}
+                                  disabled={toggleStarterPackMutation.isPending || !isComplete}
+                                  title={!isComplete ? "Grid must be complete" : "Toggle starter pack"}
+                                  data-testid={`button-starter-pack-grid-${board.id}`}
+                                >
+                                  <Star className={`w-4 h-4 ${isStarterPack ? 'fill-current' : ''}`} />
+                                </Button>
+                                <Link href={`/admin?game=${board.id}`}>
+                                  <Button variant="ghost" size="icon">
+                                    <Pencil className="w-4 h-4" />
+                                  </Button>
+                                </Link>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setDeleteBoardId(board.id)}
+                                  data-testid={`button-delete-grid-tab-${board.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </motion.div>
           </TabsContent>
 
