@@ -144,12 +144,13 @@ export default function Home() {
             <motion.h1
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-2xl lg:text-4xl font-bold text-white leading-relaxed"
+              className="text-3xl lg:text-5xl font-black text-white uppercase tracking-wide"
+              style={{ 
+                fontFamily: "'Archivo Black', 'Impact', sans-serif",
+              }}
               data-testid="text-main-title"
             >
-              <span className="block">Pick a game.</span>
-              <span className="block">Rally your crew.</span>
-              <span className="block text-white/70">Let the chaos begin.</span>
+              Choose Your Chaos
             </motion.h1>
           </div>
 
