@@ -722,6 +722,15 @@ export default function BlitzgridAdmin() {
                       >
                         <Pencil className="w-4 h-4 mr-1" /> Edit
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setDeleteGridId(selectedGridId)}
+                        data-testid="button-delete-selected-grid"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" /> Delete
+                      </Button>
                       {grid?.isActive ? (
                         <Badge className="bg-green-500/20 text-green-600 dark:text-green-400">
                           <CheckCircle2 className="w-3 h-3 mr-1" /> Ready to Play
