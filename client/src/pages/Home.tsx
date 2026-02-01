@@ -8,33 +8,38 @@ import { useAuth } from "@/hooks/use-auth";
 import LandingPage from "./LandingPage";
 import type { GameType } from "@shared/schema";
 import { motion } from "framer-motion";
+import { AvocadoIcon } from "@/components/AvocadoIcon";
 
 const GAME_CONFIG: Record<string, { 
   icon: typeof Grid3X3; 
   route: string;
   accentColor: string;
-  description: string;
+  tagline: string;
+  howItWorks: string;
   players: string;
 }> = {
   blitzgrid: {
     icon: Grid3X3,
     route: "/host/blitzgrid",
     accentColor: "#e879f9",
-    description: "Think fast. Buzz faster. Dominate the grid.",
+    tagline: "5x5 Trivia Showdown",
+    howItWorks: "Pick categories, buzz in to answer, steal points from rivals. First to clear the grid wins!",
     players: "2-8 players",
   },
   sequence_squeeze: {
     icon: ListOrdered,
     route: "/host/sort-circuit",
     accentColor: "#22d3ee",
-    description: "Put items in the right order before time runs out.",
+    tagline: "Race to Rank",
+    howItWorks: "Drag items into the correct order before time runs out. Fastest correct answer wins the round!",
     players: "2-20 players",
   },
   psyop: {
     icon: Brain,
     route: "/host/psyop",
     accentColor: "#8b5cf6",
-    description: "Spot the liar hiding among your friends.",
+    tagline: "Bluff & Detect",
+    howItWorks: "One player lies, everyone else tells the truth. Vote to catch the faker and earn points!",
     players: "3-10 players",
   },
 };
@@ -112,26 +117,47 @@ export default function Home() {
           
           {/* Header */}
           <div className="text-center mb-8 lg:mb-10">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mb-4 flex justify-center"
+            >
+              <AvocadoIcon className="w-16 h-16 lg:w-20 lg:h-20" animate showParticles />
+            </motion.div>
             <motion.h1 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-3xl lg:text-5xl font-black text-white uppercase tracking-wider mb-3"
+              className="text-3xl lg:text-5xl font-black text-white uppercase tracking-wider mb-2"
               style={{ 
                 fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                textShadow: '0 0 30px rgba(139, 92, 246, 0.5), 0 0 60px rgba(139, 92, 246, 0.3)',
+                textShadow: '0 0 30px rgba(163, 230, 53, 0.5), 0 0 60px rgba(163, 230, 53, 0.3)',
               }}
               data-testid="text-main-title"
             >
-              Pick Your Game
+              Holy GuacAmoli!
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.15 }}
+              className="text-xl lg:text-2xl font-bold mb-3"
+              style={{
+                background: 'linear-gradient(90deg, #a3e635, #22d3ee, #e879f9)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+              data-testid="text-tagline"
+            >
+              Party games that hit different
+            </motion.p>
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.25 }}
               className="text-white/50 text-sm lg:text-base"
               data-testid="text-main-subtitle"
             >
-              Choose a game mode and start the party
+              Pick a game, scan to join, let the chaos begin
             </motion.p>
           </div>
 
@@ -204,7 +230,7 @@ export default function Home() {
                     
                     {/* Title with Neon Bleed */}
                     <h3 
-                      className="text-xl lg:text-2xl mb-2 text-white uppercase tracking-widest relative"
+                      className="text-xl lg:text-2xl mb-1 text-white uppercase tracking-widest relative"
                       style={{ 
                         fontFamily: "'Archivo Black', 'Impact', sans-serif",
                         textShadow: `0 0 10px ${config.accentColor}80, 0 0 20px ${config.accentColor}40, 0 0 30px ${config.accentColor}20`,
@@ -214,12 +240,21 @@ export default function Home() {
                       {game.displayName}
                     </h3>
                     
-                    {/* Description */}
+                    {/* Tagline */}
                     <p 
-                      className="text-white/70 text-sm mb-4 leading-relaxed"
+                      className="text-xs uppercase tracking-wider mb-3 font-semibold"
+                      style={{ color: config.accentColor }}
+                      data-testid={`text-game-tagline-${game.slug}`}
+                    >
+                      {config.tagline}
+                    </p>
+                    
+                    {/* How it works */}
+                    <p 
+                      className="text-white/60 text-sm mb-4 leading-relaxed"
                       data-testid={`text-game-description-${game.slug}`}
                     >
-                      {config.description}
+                      {config.howItWorks}
                     </p>
                     
                     {/* Player count */}
