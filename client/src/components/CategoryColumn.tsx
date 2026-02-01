@@ -58,10 +58,6 @@ function FlipCard({ scoreValue, question, isCompleted, categoryId, onSelect, del
       onMouseLeave={() => setIsHovered(false)}
     >
       <motion.button
-        whileHover={hasQuestion && !isCompleted && !prefersReducedMotion ? { 
-          scale: 1.03
-        } : undefined}
-        whileTap={hasQuestion && !isCompleted && !prefersReducedMotion ? { scale: 0.97 } : undefined}
         className={`
           w-full h-full flex items-center justify-center rounded-xl font-black text-xl sm:text-2xl lg:text-3xl transition-all relative overflow-hidden
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background
