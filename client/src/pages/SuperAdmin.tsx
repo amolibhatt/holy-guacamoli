@@ -308,7 +308,7 @@ export default function SuperAdmin() {
                             aria-expanded={isExpanded}
                             data-testid={`game-row-${gameType.slug}`}
                           >
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between gap-4">
                               <div className="flex items-center gap-4">
                                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br ${gradient}`}>
                                   <GameIcon className="w-6 h-6 text-white" />
@@ -368,7 +368,7 @@ export default function SuperAdmin() {
                                   
                                   {gameType.slug === 'blitzgrid' && (
                                     <div className="space-y-3">
-                                      <div className="flex items-center justify-between">
+                                      <div className="flex items-center justify-between gap-4">
                                         <h4 className="font-medium text-foreground">All Grids</h4>
                                         <Badge variant="secondary">{allBoards.length} total</Badge>
                                       </div>
@@ -385,7 +385,7 @@ export default function SuperAdmin() {
                                             const isComplete = board.categoryCount >= 5 && board.questionCount >= 25;
                                             const isStarterPack = board.isStarterPack ?? false;
                                             return (
-                                              <div key={board.id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
+                                              <div key={board.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border">
                                                 <div className="flex-1 min-w-0">
                                                   <div className="flex items-center gap-2 flex-wrap">
                                                     <span className="font-medium truncate">{board.name}</span>
@@ -410,7 +410,7 @@ export default function SuperAdmin() {
                                                 <div className="flex items-center gap-2">
                                                   <Button
                                                     variant={isStarterPack ? "default" : "outline"}
-                                                    size="sm"
+                                                    size="icon"
                                                     onClick={() => toggleStarterPackMutation.mutate({ 
                                                       boardId: board.id, 
                                                       isStarterPack: !isStarterPack 
@@ -419,20 +419,20 @@ export default function SuperAdmin() {
                                                     title={!isComplete ? "Grid must be complete" : "Toggle starter pack"}
                                                     data-testid={`button-starter-pack-${board.id}`}
                                                   >
-                                                    <Star className={`w-3 h-3 ${isStarterPack ? 'fill-current' : ''}`} />
+                                                    <Star className={`w-4 h-4 ${isStarterPack ? 'fill-current' : ''}`} />
                                                   </Button>
                                                   <Link href={`/admin?game=${board.id}`}>
-                                                    <Button variant="ghost" size="sm">
-                                                      <Pencil className="w-3 h-3" />
+                                                    <Button variant="ghost" size="icon">
+                                                      <Pencil className="w-4 h-4" />
                                                     </Button>
                                                   </Link>
                                                   <Button
                                                     variant="ghost"
-                                                    size="sm"
+                                                    size="icon"
                                                     onClick={() => setDeleteBoardId(board.id)}
                                                     data-testid={`button-delete-grid-${board.id}`}
                                                   >
-                                                    <Trash2 className="w-3 h-3 text-destructive" />
+                                                    <Trash2 className="w-4 h-4 text-destructive" />
                                                   </Button>
                                                 </div>
                                               </div>
@@ -540,7 +540,7 @@ export default function SuperAdmin() {
                     {filteredUsers.map((u) => (
                       <Card key={u.id} className="hover-elevate">
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                               <span className="text-lg font-bold text-primary">
