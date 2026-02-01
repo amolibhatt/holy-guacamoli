@@ -158,9 +158,9 @@ export default function GameHistory() {
     return (
       <div className="min-h-screen bg-background">
         <AppHeader minimal backHref="/" title="Game History" />
-        <div className="container py-8">
+        <main className="max-w-6xl mx-auto px-4 py-6 w-full">
           <LoadingSkeleton />
-        </div>
+        </main>
       </div>
     );
   }
