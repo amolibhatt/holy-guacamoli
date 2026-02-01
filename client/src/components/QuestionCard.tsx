@@ -310,8 +310,9 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
           )}
           {isTimerRunning && (
             <Button
-              variant="destructive"
+              variant="outline"
               onClick={stopTimer}
+              className="border-destructive text-destructive"
             >
               Stop
             </Button>
