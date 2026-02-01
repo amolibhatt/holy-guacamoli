@@ -63,7 +63,7 @@ const GAME_CONFIG: Record<string, {
     route: "/host/psyop",
     accentColor: "#8b5cf6",
     tagline: "Bluff & Detect",
-    howItWorks: "Spot the liar among your friends.",
+    howItWorks: "Write fake answers to fool friends. Find the truth.",
     players: "3-10 players",
   },
 };
