@@ -275,6 +275,9 @@ export type BoardVisibility = typeof BOARD_VISIBILITIES[number];
 export const SOURCE_GROUPS = ["A", "B", "C", "D", "E"] as const;
 export type SourceGroup = typeof SOURCE_GROUPS[number];
 
+export const MODERATION_STATUSES = ["approved", "pending", "flagged", "hidden"] as const;
+export type ModerationStatus = typeof MODERATION_STATUSES[number];
+
 export const boards = pgTable("boards", {
   id: serial("id").primaryKey(),
   userId: text("user_id"),
@@ -287,6 +290,11 @@ export const boards = pgTable("boards", {
   colorCode: text("color_code").default("#6366f1"),
   sortOrder: integer("sort_order").notNull().default(0),
   isStarterPack: boolean("is_starter_pack").notNull().default(false),
+  isFeatured: boolean("is_featured").notNull().default(false),
+  moderationStatus: text("moderation_status").$type<ModerationStatus>().default("approved"),
+  moderatedBy: text("moderated_by"),
+  moderatedAt: timestamp("moderated_at"),
+  flagReason: text("flag_reason"),
 });
 
 export const categories = pgTable("categories", {
@@ -718,3 +726,18 @@ export type VerifyAnswerResponse = {
   correctAnswer: string;
   points: number;
 };
+
+// Admin Announcements table for broadcasts
+export const adminAnnouncements = pgTable("admin_announcements", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull().$type<"info" | "warning" | "success">().default("info"),
+  createdBy: text("created_by").notNull(),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertAdminAnnouncementSchema = createInsertSchema(adminAnnouncements).omit({ id: true, createdAt: true });
+export type AdminAnnouncement = typeof adminAnnouncements.$inferSelect;
+export type InsertAdminAnnouncement = z.infer<typeof insertAdminAnnouncementSchema>;

@@ -77,6 +77,10 @@ Preferred communication style: Simple, everyday language.
 - **Super Admin Starter Packs**: Super admin can promote any complete grid to "starter pack" status via toggle in SuperAdmin > All Grids tab. Starter packs are automatically copied to new users on signup, giving them ready-to-play content. Uses isStarterPack boolean on boards table.
 - **Fun Interactive Themes**: 9 playful themes (Sports, Birthday, Beach, Office, Dogs, Cats, Space, Music, Nature) each with animated floating elements - trophies, balloons, waves, paw prints, stars, music notes, trees, etc. Theme elements animate continuously during gameplay.
 - **Excel Import/Export**: Blitzgrid grids can be exported to and imported from Excel (.xlsx) files. Template includes sample data and instructions sheet. Row-based format with columns: Grid Name, Grid Description, Category Name, Category Description, Points, Question, Answer, Options (pipe-delimited), Image URL, Audio URL, Video URL.
+- **Enhanced Super Admin Dashboard**: Comprehensive admin dashboard with 6 tabs: Analytics (DAU/WAU/MAU, session stats, player counts), Games (enable/disable, status management), Grids (all grids with moderation), Users (role management, activity tracking), System (database stats, flagged content moderation), Actions (broadcast announcements, data export). All endpoints protected by isSuperAdmin middleware.
+- **Admin Announcements**: Broadcast system for super admins to send platform-wide announcements with title, message, type (info/warning/success), and optional expiration.
+- **Content Moderation**: Boards can be flagged (moderationStatus), featured (isFeatured), with tracking of moderatedBy and moderatedAt timestamps.
+- **User Activity Tracking**: lastLoginAt field on users table, activity API showing games hosted and recent sessions.
 
 ### Known Security Notes
 - **Express v4 Vulnerabilities**: npm audit shows 3 HIGH severity vulnerabilities in express/qs/body-parser. Express v5 upgrade was attempted but reverted due to breaking changes in path-to-regexp (route syntax like `:param(*)` no longer works). Will revisit when upstream compatibility improves.
