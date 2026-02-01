@@ -69,7 +69,7 @@ function FlipCard({ scoreValue, question, isCompleted, categoryId, onSelect, del
             ? 'bg-muted text-muted-foreground/30 cursor-not-allowed border border-border' 
             : isCompleted 
               ? 'completed-cell text-primary/50 cursor-not-allowed border border-primary/20' 
-              : 'bg-card text-primary cursor-pointer border-2 border-primary/50 shadow-lg shadow-primary/20 hover:shadow-xl hover:border-primary/70'
+              : 'bg-card text-primary cursor-pointer border-2 border-primary/50 shadow-lg shadow-primary/20 hover-elevate'
           }
         `}
         onClick={handleClick}

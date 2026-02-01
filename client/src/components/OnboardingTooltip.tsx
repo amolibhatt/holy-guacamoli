@@ -132,13 +132,15 @@ export function OnboardingTooltip({ steps, storageKey, onComplete }: OnboardingT
           }}
           data-testid="onboarding-tooltip"
         >
-          <button
+          <Button
+            size="icon"
+            variant="ghost"
             onClick={() => handleDismiss(true)}
-            className="absolute top-2 right-2 text-muted-foreground hover:text-foreground transition-colors"
+            className="absolute top-2 right-2"
             data-testid="button-dismiss-onboarding"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
           
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="w-4 h-4 text-primary" />
