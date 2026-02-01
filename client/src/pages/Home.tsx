@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ListOrdered, Brain, Users, Check, HelpCircle, ArrowRight } from "lucide-react";
+import { Loader2, Grid3X3, ListOrdered, Brain, Users } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { useLocation } from "wouter";
@@ -42,93 +42,6 @@ const GAME_CONFIG: Record<string, {
     players: "3-10 players",
   },
 };
-
-function GameplayPreview({ slug, color }: { slug: string; color: string }) {
-  if (slug === 'blitzgrid') {
-    return (
-      <div 
-        className="grid grid-cols-3 gap-0.5 mb-3 opacity-60"
-        data-testid="preview-blitzgrid"
-      >
-        {[...Array(9)].map((_, i) => (
-          <div 
-            key={i} 
-            className="w-2.5 h-2.5 rounded-sm"
-            style={{ 
-              backgroundColor: [0, 4, 8].includes(i) ? color : 'rgba(255,255,255,0.2)',
-              boxShadow: [0, 4, 8].includes(i) ? `0 0 4px ${color}` : 'none'
-            }}
-          />
-        ))}
-      </div>
-    );
-  }
-  
-  if (slug === 'sequence_squeeze') {
-    return (
-      <div 
-        className="flex items-center gap-1 mb-3 opacity-60"
-        data-testid="preview-sort-circuit"
-      >
-        {['C', 'A', 'B'].map((letter, i) => (
-          <div 
-            key={i}
-            className="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center"
-            style={{ 
-              border: `1px solid ${color}`,
-              color: color,
-              boxShadow: `0 0 4px ${color}40`
-            }}
-          >
-            {letter}
-          </div>
-        ))}
-        <ArrowRight className="w-3 h-3 mx-0.5" style={{ color: 'rgba(255,255,255,0.4)' }} />
-        {['A', 'B', 'C'].map((letter, i) => (
-          <div 
-            key={i}
-            className="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center"
-            style={{ 
-              backgroundColor: `${color}30`,
-              border: `1px solid ${color}`,
-              color: color,
-            }}
-          >
-            {letter}
-          </div>
-        ))}
-      </div>
-    );
-  }
-  
-  if (slug === 'psyop') {
-    return (
-      <div 
-        className="flex items-center gap-1 mb-3 opacity-60"
-        data-testid="preview-psyop"
-      >
-        {[true, true, false].map((isCheck, i) => (
-          <div 
-            key={i}
-            className="w-5 h-5 rounded-full flex items-center justify-center"
-            style={{ 
-              border: `1px solid ${!isCheck ? color : 'rgba(255,255,255,0.3)'}`,
-              boxShadow: !isCheck ? `0 0 6px ${color}` : 'none'
-            }}
-          >
-            {isCheck ? (
-              <Check className="w-2.5 h-2.5" style={{ color: 'rgba(255,255,255,0.5)' }} />
-            ) : (
-              <HelpCircle className="w-2.5 h-2.5" style={{ color }} />
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  }
-  
-  return null;
-}
 
 function GameCardSkeleton() {
   return (
@@ -290,9 +203,6 @@ export default function Home() {
                         style={{ color: config.accentColor }}
                       />
                     </div>
-                    
-                    {/* Gameplay preview hint */}
-                    <GameplayPreview slug={game.slug} color={config.accentColor} />
                     
                     {/* Title with Neon Bleed */}
                     <h3 
