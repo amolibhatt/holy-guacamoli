@@ -1517,11 +1517,21 @@ export async function registerRoutes(
 
   app.get("/api/super-admin/users", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
-      const users = await storage.getAllUsersWithStats();
+      const users = await storage.getAllUsersDetailed();
       res.json(users);
     } catch (err) {
       console.error("Error getting users:", err);
       res.status(500).json({ message: "Failed to get users" });
+    }
+  });
+
+  app.get("/api/super-admin/sessions", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const sessions = await storage.getAllGameSessionsDetailed();
+      res.json(sessions);
+    } catch (err) {
+      console.error("Error getting sessions:", err);
+      res.status(500).json({ message: "Failed to get sessions" });
     }
   });
 

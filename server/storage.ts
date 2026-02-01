@@ -1948,6 +1948,161 @@ export class DatabaseStorage implements IStorage {
       questions: allQuestions,
     };
   }
+
+  // === COMPREHENSIVE USER & SESSION TRACKING ===
+
+  async getAllUsersDetailed() {
+    const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
+    
+    const usersDetailed = await Promise.all(allUsers.map(async (user) => {
+      // Get boards owned
+      const userBoards = await db.select({ 
+        id: boards.id, 
+        name: boards.name,
+        theme: boards.theme,
+        createdAt: boards.createdAt
+      }).from(boards).where(eq(boards.userId, user.id));
+
+      // Get sessions hosted by this user
+      const hostedSessions = await db.select({
+        id: gameSessions.id,
+        code: gameSessions.code,
+        state: gameSessions.state,
+        currentMode: gameSessions.currentMode,
+        createdAt: gameSessions.createdAt,
+        updatedAt: gameSessions.updatedAt,
+      }).from(gameSessions)
+        .where(eq(gameSessions.hostId, user.id))
+        .orderBy(desc(gameSessions.createdAt));
+
+      // Get player counts and winners for each hosted session
+      const sessionsWithPlayers = await Promise.all(hostedSessions.map(async (session) => {
+        const players = await db.select({
+          id: sessionPlayers.id,
+          name: sessionPlayers.name,
+          avatar: sessionPlayers.avatar,
+          score: sessionPlayers.score,
+          isConnected: sessionPlayers.isConnected,
+          joinedAt: sessionPlayers.joinedAt,
+        }).from(sessionPlayers)
+          .where(eq(sessionPlayers.sessionId, session.id))
+          .orderBy(desc(sessionPlayers.score));
+
+        const winner = players.length > 0 ? players[0] : null;
+        
+        return {
+          ...session,
+          playerCount: players.length,
+          players: players.slice(0, 5), // Top 5 players
+          winner: winner && winner.score > 0 ? winner : null,
+        };
+      }));
+
+      const { password, ...safeUser } = user;
+      return {
+        ...safeUser,
+        boardCount: userBoards.length,
+        boards: userBoards.slice(0, 5), // Recent 5 boards
+        gamesHosted: hostedSessions.length,
+        recentSessions: sessionsWithPlayers.slice(0, 10), // Recent 10 sessions
+      };
+    }));
+
+    return usersDetailed;
+  }
+
+  async getAllGameSessionsDetailed() {
+    const sessions = await db.select({
+      id: gameSessions.id,
+      code: gameSessions.code,
+      hostId: gameSessions.hostId,
+      currentMode: gameSessions.currentMode,
+      state: gameSessions.state,
+      createdAt: gameSessions.createdAt,
+      updatedAt: gameSessions.updatedAt,
+    }).from(gameSessions)
+      .orderBy(desc(gameSessions.createdAt))
+      .limit(100);
+
+    const sessionsDetailed = await Promise.all(sessions.map(async (session) => {
+      // Get host info
+      const [host] = await db.select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+      }).from(users).where(eq(users.id, session.hostId));
+
+      // Get all players
+      const players = await db.select({
+        id: sessionPlayers.id,
+        name: sessionPlayers.name,
+        avatar: sessionPlayers.avatar,
+        score: sessionPlayers.score,
+        isConnected: sessionPlayers.isConnected,
+        joinedAt: sessionPlayers.joinedAt,
+      }).from(sessionPlayers)
+        .where(eq(sessionPlayers.sessionId, session.id))
+        .orderBy(desc(sessionPlayers.score));
+
+      // Determine winner (highest score, if ended)
+      const winner = players.length > 0 && players[0].score > 0 ? players[0] : null;
+
+      return {
+        ...session,
+        host: host || { id: session.hostId, username: 'Unknown', email: null },
+        players,
+        playerCount: players.length,
+        winner,
+      };
+    }));
+
+    return sessionsDetailed;
+  }
+
+  async getUserDetailedActivity(userId: string) {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (!user) return null;
+
+    // Get all sessions hosted
+    const hostedSessions = await db.select().from(gameSessions)
+      .where(eq(gameSessions.hostId, userId))
+      .orderBy(desc(gameSessions.createdAt));
+
+    // Get detailed info for each session
+    const sessionsWithDetails = await Promise.all(hostedSessions.map(async (session) => {
+      const players = await db.select().from(sessionPlayers)
+        .where(eq(sessionPlayers.sessionId, session.id))
+        .orderBy(desc(sessionPlayers.score));
+
+      const completedQuestions = await db.select({ count: count() })
+        .from(sessionCompletedQuestions)
+        .where(eq(sessionCompletedQuestions.sessionId, session.id));
+
+      return {
+        ...session,
+        players,
+        questionsCompleted: completedQuestions[0]?.count ?? 0,
+        winner: players.length > 0 && players[0].score > 0 ? players[0] : null,
+      };
+    }));
+
+    // Get boards created
+    const userBoards = await db.select().from(boards)
+      .where(eq(boards.userId, userId))
+      .orderBy(desc(boards.createdAt));
+
+    const { password, ...safeUser } = user;
+    return {
+      user: safeUser,
+      sessions: sessionsWithDetails,
+      boards: userBoards,
+      stats: {
+        totalGamesHosted: hostedSessions.length,
+        totalBoards: userBoards.length,
+        totalPlayersHosted: sessionsWithDetails.reduce((sum, s) => sum + s.players.length, 0),
+      }
+    };
+  }
 }
 
 export const storage = new DatabaseStorage();
