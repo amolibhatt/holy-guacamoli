@@ -205,6 +205,7 @@ export default function SuperAdmin() {
   const [isExporting, setIsExporting] = useState(false);
   const [sequenceSearch, setSequenceSearch] = useState("");
   const [psyopSearch, setPsyopSearch] = useState("");
+  const [blitzgridSearch, setBlitzgridSearch] = useState("");
   const [activeTab, setActiveTab] = useState("dashboard");
 
   const { data: stats, isLoading: isLoadingStats } = useQuery<PlatformStats>({
@@ -354,6 +355,7 @@ export default function SuperAdmin() {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/announcements'] });
       setAnnouncementTitle("");
       setAnnouncementMessage("");
+      setAnnouncementType("info");
       toast({ title: "Announcement sent" });
     },
     onError: () => {
@@ -577,7 +579,45 @@ export default function SuperAdmin() {
                 />
               </div>
 
-              <h3 className="text-xl font-semibold text-foreground mt-8 mb-4">User Engagement (Active Users)</h3>
+              <h3 className="text-xl font-semibold text-foreground mt-8 mb-4 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-amber-500" />
+                Live Activity
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                {isLoadingRoomStats ? (
+                  [1, 2, 3].map((i) => (
+                    <Card key={i}>
+                      <CardContent className="p-4">
+                        <Skeleton className="h-8 w-16 mb-1" />
+                        <Skeleton className="h-3 w-20" />
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <>
+                    <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
+                      <CardContent className="p-4 text-center">
+                        <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">{roomStats?.activeRooms ?? 0}</p>
+                        <p className="text-sm text-muted-foreground">Active Rooms</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20">
+                      <CardContent className="p-4 text-center">
+                        <p className="text-3xl font-bold text-pink-600 dark:text-pink-400">{roomStats?.sessionsToday ?? 0}</p>
+                        <p className="text-sm text-muted-foreground">Sessions Today</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20">
+                      <CardContent className="p-4 text-center">
+                        <p className="text-3xl font-bold text-violet-600 dark:text-violet-400">{roomStats?.playersToday ?? 0}</p>
+                        <p className="text-sm text-muted-foreground">Players Today</p>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+              </div>
+
+              <h3 className="text-xl font-semibold text-foreground mb-4">User Engagement (Active Users)</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {isLoadingAnalytics ? (
                   [1, 2, 3].map((i) => (
@@ -763,53 +803,127 @@ export default function SuperAdmin() {
                           
                           return (
                             <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                              {filteredUsers.slice(0, 20).map((u) => (
-                                <div key={u.id} className="p-3 rounded-lg border bg-muted/30 flex items-center justify-between gap-4" data-testid={`user-row-${u.id}`}>
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white font-bold">
-                                      {u.firstName?.[0] || u.email[0].toUpperCase()}
-                                    </div>
-                                    <div>
-                                      <div className="flex items-center gap-2">
-                                        <span className="font-medium">{u.firstName || 'User'} {u.lastName || ''}</span>
-                                        {u.role === 'super_admin' && <Badge className="bg-purple-500/20 text-purple-600 text-xs"><Shield className="w-3 h-3 mr-1" />Super</Badge>}
-                                        {u.role === 'admin' && <Badge className="bg-blue-500/20 text-blue-600 text-xs">Admin</Badge>}
+                              {filteredUsers.slice(0, 20).map((u) => {
+                                const isUserExpanded = expandedUserId === u.id;
+                                return (
+                                <div key={u.id} className="rounded-lg border bg-muted/30" data-testid={`user-row-${u.id}`}>
+                                  <div 
+                                    className="p-3 flex items-center justify-between gap-4 cursor-pointer hover-elevate"
+                                    onClick={() => setExpandedUserId(isUserExpanded ? null : u.id)}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white font-bold">
+                                        {u.firstName?.[0] || u.email[0].toUpperCase()}
                                       </div>
-                                      <div className="text-xs text-muted-foreground">{u.email} • Last login: {formatRelativeDate(u.lastLoginAt)}</div>
+                                      <div>
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-medium">{u.firstName || 'User'} {u.lastName || ''}</span>
+                                          {u.role === 'super_admin' && <Badge className="bg-purple-500/20 text-purple-600 text-xs"><Shield className="w-3 h-3 mr-1" />Super</Badge>}
+                                          {u.role === 'admin' && <Badge className="bg-blue-500/20 text-blue-600 text-xs">Admin</Badge>}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">{u.email} • Last login: {formatRelativeDate(u.lastLoginAt)}</div>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-sm">
+                                      <div className="text-center">
+                                        <div className="font-bold">{u.boardCount}</div>
+                                        <div className="text-xs text-muted-foreground">Grids</div>
+                                      </div>
+                                      <div className="text-center">
+                                        <div className="font-bold">{u.gamesHosted}</div>
+                                        <div className="text-xs text-muted-foreground">Games</div>
+                                      </div>
+                                      {u.role !== 'super_admin' && (
+                                        <>
+                                          <Select
+                                            value={u.role || 'user'}
+                                            onValueChange={(role) => updateUserRoleMutation.mutate({ userId: u.id, role })}
+                                            disabled={updateUserRoleMutation.isPending}
+                                          >
+                                            <SelectTrigger className="w-[90px] h-8" data-testid={`select-role-${u.id}`} onClick={(e) => e.stopPropagation()}>
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="user">User</SelectItem>
+                                              <SelectItem value="admin">Admin</SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeleteUserId(u.id); }} data-testid={`button-delete-user-${u.id}`}>
+                                            <Trash2 className="w-4 h-4 text-destructive" />
+                                          </Button>
+                                        </>
+                                      )}
+                                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isUserExpanded ? 'rotate-180' : ''}`} />
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-4 text-sm">
-                                    <div className="text-center">
-                                      <div className="font-bold">{u.boardCount}</div>
-                                      <div className="text-xs text-muted-foreground">Grids</div>
-                                    </div>
-                                    <div className="text-center">
-                                      <div className="font-bold">{u.gamesHosted}</div>
-                                      <div className="text-xs text-muted-foreground">Games</div>
-                                    </div>
-                                    {u.role !== 'super_admin' && (
-                                      <>
-                                        <Select
-                                          value={u.role || 'user'}
-                                          onValueChange={(role) => updateUserRoleMutation.mutate({ userId: u.id, role })}
-                                          disabled={updateUserRoleMutation.isPending}
-                                        >
-                                          <SelectTrigger className="w-[90px] h-8" data-testid={`select-role-${u.id}`}>
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="user">User</SelectItem>
-                                            <SelectItem value="admin">Admin</SelectItem>
-                                          </SelectContent>
-                                        </Select>
-                                        <Button variant="ghost" size="icon" onClick={() => setDeleteUserId(u.id)} data-testid={`button-delete-user-${u.id}`}>
-                                          <Trash2 className="w-4 h-4 text-destructive" />
-                                        </Button>
-                                      </>
+                                  <AnimatePresence>
+                                    {isUserExpanded && (
+                                      <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="overflow-hidden"
+                                      >
+                                        <div className="p-3 pt-0 border-t bg-background/50">
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                                            <div>
+                                              <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
+                                                <Grid3X3 className="w-4 h-4 text-rose-500" />
+                                                Grids ({u.boards?.length || 0})
+                                              </h5>
+                                              {u.boards?.length > 0 ? (
+                                                <div className="space-y-1">
+                                                  {u.boards.slice(0, 5).map((b) => (
+                                                    <div key={b.id} className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm">
+                                                      <span className="truncate">{b.name}</span>
+                                                      <span className="text-xs text-muted-foreground">{formatRelativeDate(b.createdAt)}</span>
+                                                    </div>
+                                                  ))}
+                                                  {u.boards.length > 5 && (
+                                                    <p className="text-xs text-muted-foreground text-center">+{u.boards.length - 5} more</p>
+                                                  )}
+                                                </div>
+                                              ) : (
+                                                <p className="text-xs text-muted-foreground">No grids yet</p>
+                                              )}
+                                            </div>
+                                            <div>
+                                              <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
+                                                <Play className="w-4 h-4 text-emerald-500" />
+                                                Recent Sessions ({u.recentSessions?.length || 0})
+                                              </h5>
+                                              {u.recentSessions?.length > 0 ? (
+                                                <div className="space-y-1">
+                                                  {u.recentSessions.slice(0, 5).map((s) => {
+                                                    const winner = s.players?.length > 0 
+                                                      ? s.players.reduce((max, p) => p.score > max.score ? p : max, s.players[0])
+                                                      : null;
+                                                    return (
+                                                      <div key={s.id} className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm gap-2">
+                                                        <Badge variant={s.state === 'active' ? 'default' : 'secondary'} className={`text-xs ${s.state === 'active' ? 'bg-green-500' : ''}`}>
+                                                          {s.code}
+                                                        </Badge>
+                                                        <span className="flex-1 text-xs text-muted-foreground">
+                                                          {s.playerCount} players
+                                                          {winner && ` • Winner: ${winner.name}`}
+                                                        </span>
+                                                        <span className="text-xs text-muted-foreground">{formatRelativeDate(s.createdAt)}</span>
+                                                      </div>
+                                                    );
+                                                  })}
+                                                </div>
+                                              ) : (
+                                                <p className="text-xs text-muted-foreground">No sessions yet</p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </motion.div>
                                     )}
-                                  </div>
+                                  </AnimatePresence>
                                 </div>
-                              ))}
+                              );})}
                               {filteredUsers.length > 20 && (
                                 <p className="text-center text-muted-foreground text-sm py-2">
                                   Showing 20 of {filteredUsers.length} users
@@ -1153,6 +1267,85 @@ export default function SuperAdmin() {
                                         </div>
                                         );
                                       })()}
+                                      
+                                      <div className="mt-6 pt-4 border-t">
+                                        <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
+                                          <h4 className="font-medium text-foreground">All Questions</h4>
+                                          <div className="flex items-center gap-2">
+                                            <div className="relative">
+                                              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                              <Input
+                                                placeholder="Search questions..."
+                                                value={blitzgridSearch}
+                                                onChange={(e) => setBlitzgridSearch(e.target.value)}
+                                                className="pl-8 h-8 w-[160px] text-sm"
+                                                data-testid="input-blitzgrid-search"
+                                              />
+                                            </div>
+                                            <Button
+                                              variant="outline"
+                                              size="icon"
+                                              className="h-8 w-8"
+                                              onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/blitzgrid'] })}
+                                              data-testid="button-refresh-blitzgrid-questions"
+                                            >
+                                              <RefreshCw className="w-3.5 h-3.5" />
+                                            </Button>
+                                            <Badge variant="secondary">{blitzgridQuestions.length} total</Badge>
+                                          </div>
+                                        </div>
+                                        
+                                        {isLoadingBlitzgridQuestions ? (
+                                          <div className="space-y-2">
+                                            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
+                                          </div>
+                                        ) : (() => {
+                                          const filteredBlitzgrid = blitzgridQuestions.filter((q) => {
+                                            if (!blitzgridSearch.trim()) return true;
+                                            const searchLower = blitzgridSearch.toLowerCase();
+                                            return (
+                                              q.question.toLowerCase().includes(searchLower) ||
+                                              q.category?.name?.toLowerCase().includes(searchLower) ||
+                                              q.board?.name?.toLowerCase().includes(searchLower) ||
+                                              q.creator?.username?.toLowerCase().includes(searchLower) ||
+                                              q.creator?.email?.toLowerCase().includes(searchLower)
+                                            );
+                                          });
+                                          
+                                          if (filteredBlitzgrid.length === 0) {
+                                            return (
+                                              <div className="text-center py-6 text-muted-foreground">
+                                                {blitzgridSearch ? `No questions match "${blitzgridSearch}"` : 'No questions created yet.'}
+                                              </div>
+                                            );
+                                          }
+                                          
+                                          return (
+                                          <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                                            {filteredBlitzgrid.slice(0, 50).map((q) => (
+                                              <div key={q.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border">
+                                                <div className="flex-1 min-w-0">
+                                                  <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="font-medium truncate">{q.question}</span>
+                                                    <Badge variant="outline" className="text-xs">{q.points}pts</Badge>
+                                                  </div>
+                                                  <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1 flex-wrap">
+                                                    {q.board && <span>{q.board.name}</span>}
+                                                    {q.category && <span>• {q.category.name}</span>}
+                                                    <span>• {q.creator?.username || q.creator?.email || 'System'}</span>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            ))}
+                                            {filteredBlitzgrid.length > 50 && (
+                                              <p className="text-center text-muted-foreground text-sm py-2">
+                                                Showing 50 of {filteredBlitzgrid.length} questions
+                                              </p>
+                                            )}
+                                          </div>
+                                          );
+                                        })()}
+                                      </div>
                                     </div>
                                   )}
                                   
@@ -1174,12 +1367,13 @@ export default function SuperAdmin() {
                                           <Button
                                             variant="outline"
                                             size="icon"
+                                            className="h-8 w-8"
                                             onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/sequence'] })}
                                             data-testid="button-refresh-sequence-questions"
                                           >
-                                            <RefreshCw className="w-4 h-4" />
+                                            <RefreshCw className="w-3.5 h-3.5" />
                                           </Button>
-                                          <Badge variant="secondary">{sequenceQuestions.length} questions</Badge>
+                                          <Badge variant="secondary">{sequenceQuestions.length} total</Badge>
                                         </div>
                                       </div>
                                       
@@ -1267,12 +1461,13 @@ export default function SuperAdmin() {
                                           <Button
                                             variant="outline"
                                             size="icon"
+                                            className="h-8 w-8"
                                             onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/psyop'] })}
                                             data-testid="button-refresh-psyop-questions"
                                           >
-                                            <RefreshCw className="w-4 h-4" />
+                                            <RefreshCw className="w-3.5 h-3.5" />
                                           </Button>
-                                          <Badge variant="secondary">{psyopQuestions.length} questions</Badge>
+                                          <Badge variant="secondary">{psyopQuestions.length} total</Badge>
                                         </div>
                                       </div>
                                       
@@ -1511,13 +1706,22 @@ export default function SuperAdmin() {
                         {announcements.map((a) => (
                           <div key={a.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium truncate">{a.title}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium truncate">{a.title}</p>
+                                <Badge 
+                                  variant={a.type === 'warning' ? 'destructive' : a.type === 'success' ? 'default' : 'secondary'}
+                                  className={`text-xs ${a.type === 'success' ? 'bg-green-500' : ''}`}
+                                >
+                                  {a.type}
+                                </Badge>
+                              </div>
                               <p className="text-xs text-muted-foreground">{new Date(a.createdAt).toLocaleDateString()}</p>
                             </div>
                             <Button
                               size="icon"
                               variant="ghost"
                               onClick={() => deleteAnnouncementMutation.mutate(a.id)}
+                              disabled={deleteAnnouncementMutation.isPending}
                               data-testid={`button-delete-announcement-${a.id}`}
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1571,7 +1775,7 @@ export default function SuperAdmin() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteUserMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteUserMutation.isPending} data-testid="button-cancel-delete-user">Cancel</AlertDialogCancel>
             <Button
               variant="destructive"
               disabled={deleteUserMutation.isPending}
@@ -1581,6 +1785,7 @@ export default function SuperAdmin() {
                   deleteUserMutation.mutate(deleteUserId);
                 }
               }}
+              data-testid="button-confirm-delete-user"
             >
               {deleteUserMutation.isPending ? 'Deleting...' : 'Delete'}
             </Button>
@@ -1597,7 +1802,7 @@ export default function SuperAdmin() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteBoardMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteBoardMutation.isPending} data-testid="button-cancel-delete-grid">Cancel</AlertDialogCancel>
             <Button
               variant="destructive"
               disabled={deleteBoardMutation.isPending}
@@ -1607,6 +1812,7 @@ export default function SuperAdmin() {
                   deleteBoardMutation.mutate(deleteBoardId);
                 }
               }}
+              data-testid="button-confirm-delete-grid"
             >
               {deleteBoardMutation.isPending ? 'Deleting...' : 'Delete'}
             </Button>
