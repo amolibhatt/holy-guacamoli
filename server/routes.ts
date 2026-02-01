@@ -2034,6 +2034,74 @@ export async function registerRoutes(
     }
   });
 
+  // === GAME QUESTIONS ===
+
+  app.get("/api/super-admin/questions/sequence", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const questions = await storage.getAllSequenceQuestionsWithCreators();
+      res.json(questions);
+    } catch (err) {
+      console.error("Error getting sequence questions:", err);
+      res.status(500).json({ message: "Failed to get sequence questions" });
+    }
+  });
+
+  app.get("/api/super-admin/questions/psyop", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const questions = await storage.getAllPsyopQuestionsWithCreators();
+      res.json(questions);
+    } catch (err) {
+      console.error("Error getting psyop questions:", err);
+      res.status(500).json({ message: "Failed to get psyop questions" });
+    }
+  });
+
+  app.get("/api/super-admin/questions/blitzgrid", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const questions = await storage.getAllBlitzgridQuestionsWithCreators();
+      res.json(questions);
+    } catch (err) {
+      console.error("Error getting blitzgrid questions:", err);
+      res.status(500).json({ message: "Failed to get blitzgrid questions" });
+    }
+  });
+
+  app.patch("/api/super-admin/questions/sequence/:id/starter-pack", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const questionId = parseInt(req.params.id);
+      if (isNaN(questionId) || questionId <= 0) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+      const { isStarterPack } = req.body;
+      if (typeof isStarterPack !== 'boolean') {
+        return res.status(400).json({ message: "isStarterPack must be a boolean" });
+      }
+      const updated = await storage.toggleSequenceQuestionStarterPack(questionId, isStarterPack);
+      res.json(updated);
+    } catch (err) {
+      console.error("Error toggling sequence starter pack:", err);
+      res.status(500).json({ message: "Failed to toggle starter pack" });
+    }
+  });
+
+  app.patch("/api/super-admin/questions/psyop/:id/starter-pack", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const questionId = parseInt(req.params.id);
+      if (isNaN(questionId) || questionId <= 0) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+      const { isStarterPack } = req.body;
+      if (typeof isStarterPack !== 'boolean') {
+        return res.status(400).json({ message: "isStarterPack must be a boolean" });
+      }
+      const updated = await storage.togglePsyopQuestionStarterPack(questionId, isStarterPack);
+      res.json(updated);
+    } catch (err) {
+      console.error("Error toggling psyop starter pack:", err);
+      res.status(500).json({ message: "Failed to toggle starter pack" });
+    }
+  });
+
   // Game Types (public - for hosts and players)
   app.get("/api/game-types", async (req, res) => {
     try {

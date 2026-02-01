@@ -177,6 +177,7 @@ export const sequenceQuestions = pgTable("sequence_questions", {
   correctOrder: jsonb("correct_order").$type<string[]>().notNull(), // e.g. ["C", "D", "B", "A"]
   hint: text("hint"),
   isActive: boolean("is_active").notNull().default(true),
+  isStarterPack: boolean("is_starter_pack").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -214,6 +215,7 @@ export const psyopQuestions = pgTable("psyop_questions", {
   correctAnswer: text("correct_answer").notNull(), // The actual word that fills the blank
   category: text("category"), // Optional category for organizing questions
   isActive: boolean("is_active").notNull().default(true),
+  isStarterPack: boolean("is_starter_pack").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
