@@ -147,7 +147,7 @@ export function OnboardingTooltip({ steps, storageKey, onComplete }: OnboardingT
           
           <p className="text-sm text-muted-foreground mb-4">{step.content}</p>
           
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex gap-1">
               {steps.map((_, i) => (
                 <div

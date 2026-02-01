@@ -586,7 +586,6 @@ export default function Blitzgrid() {
       if (shouldReconnect.current && reconnectAttempts.current < 10) {
         const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts.current), 30000);
         reconnectAttempts.current++;
-        console.log(`[WS] Reconnecting in ${delay}ms (attempt ${reconnectAttempts.current})`);
         reconnectTimeout.current = setTimeout(() => {
           connectWebSocket();
         }, delay);
@@ -3071,7 +3070,7 @@ export default function Blitzgrid() {
                         className="cursor-pointer py-3"
                         onClick={() => setSelectedCategoryId(isExpanded ? null : category.id)}
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-4">
                           <div className="flex items-center gap-3">
                             <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                             <div>

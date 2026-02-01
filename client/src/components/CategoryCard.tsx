@@ -52,7 +52,7 @@ export function CategoryCard({ category, index }: CategoryCardProps) {
               {category.description}
             </p>
             
-            <div className="flex items-center justify-between mt-auto pt-4 border-t border-border/50">
+            <div className="flex items-center justify-between gap-2 mt-auto pt-4 border-t border-border/50">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Start Quiz
               </span>
