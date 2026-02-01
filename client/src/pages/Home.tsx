@@ -153,15 +153,6 @@ export default function Home() {
             >
               Let's Play
             </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="text-white/50 text-sm lg:text-base"
-              data-testid="text-main-subtitle"
-            >
-              Tap a game and get the party started
-            </motion.p>
           </div>
 
           {/* Game Cards - 3 column grid on large screens */}
@@ -217,8 +208,20 @@ export default function Home() {
                   >
                     {/* Badge */}
                     {config.badge && (
-                      <div 
+                      <motion.div 
                         className="absolute top-3 right-3 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                        animate={{
+                          boxShadow: [
+                            `0 0 5px ${config.accentColor}40`,
+                            `0 0 15px ${config.accentColor}60`,
+                            `0 0 5px ${config.accentColor}40`,
+                          ],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }}
                         style={{ 
                           backgroundColor: `${config.accentColor}20`,
                           color: config.accentColor,
@@ -227,7 +230,7 @@ export default function Home() {
                         data-testid={`badge-${game.slug}`}
                       >
                         {config.badge}
-                      </div>
+                      </motion.div>
                     )}
                     
                     {/* Icon */}
@@ -268,27 +271,19 @@ export default function Home() {
                     
                     {/* Tagline */}
                     <p 
-                      className="text-xs uppercase tracking-wider mb-3 font-semibold"
+                      className="text-xs uppercase tracking-wider mb-4 font-semibold"
                       style={{ color: config.accentColor }}
                       data-testid={`text-game-tagline-${game.slug}`}
                     >
                       {config.tagline}
                     </p>
                     
-                    {/* How it works */}
-                    <p 
-                      className="text-white/60 text-sm mb-4 leading-relaxed"
-                      data-testid={`text-game-description-${game.slug}`}
-                    >
-                      {config.howItWorks}
-                    </p>
-                    
                     {/* Player count */}
                     <div 
-                      className="flex items-center gap-2 text-white/50 text-xs"
+                      className="flex items-center gap-1.5 text-white/40 text-[10px]"
                       data-testid={`text-game-players-${game.slug}`}
                     >
-                      <Users className="w-3 h-3" />
+                      <Users className="w-2.5 h-2.5" />
                       <span>{config.players}</span>
                     </div>
                   </motion.button>
