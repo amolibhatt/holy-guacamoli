@@ -340,7 +340,7 @@ export default function SuperAdmin() {
                                       <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>
                                     )}
                                     {status === 'active' && (
-                                      <Badge className="bg-green-500/20 text-green-600 border-green-500/30 text-xs">Active</Badge>
+                                      <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30 text-xs">Active</Badge>
                                     )}
                                   </div>
                                   <p className="text-sm text-muted-foreground">{gameType.description || 'No description'}</p>
@@ -407,14 +407,14 @@ export default function SuperAdmin() {
                                                   <div className="flex items-center gap-2 flex-wrap">
                                                     <span className="font-medium truncate">{board.name}</span>
                                                     {isComplete ? (
-                                                      <Badge className="bg-green-500/20 text-green-600 text-xs">Complete</Badge>
+                                                      <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 text-xs">Complete</Badge>
                                                     ) : (
-                                                      <Badge variant="outline" className="text-amber-600 text-xs">
+                                                      <Badge variant="outline" className="text-amber-600 dark:text-amber-400 text-xs">
                                                         {board.categoryCount}/5 categories
                                                       </Badge>
                                                     )}
                                                     {isStarterPack && (
-                                                      <Badge className="bg-amber-500/20 text-amber-600 text-xs">
+                                                      <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs">
                                                         <Star className="w-3 h-3 mr-1" />
                                                         Starter
                                                       </Badge>
@@ -564,14 +564,14 @@ export default function SuperAdmin() {
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="font-medium text-foreground truncate">{board.name}</span>
                                   {isComplete ? (
-                                    <Badge className="bg-green-500/20 text-green-600 text-xs">Complete</Badge>
+                                    <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 text-xs">Complete</Badge>
                                   ) : (
-                                    <Badge variant="outline" className="text-amber-600 text-xs">
+                                    <Badge variant="outline" className="text-amber-600 dark:text-amber-400 text-xs">
                                       {board.categoryCount}/5 categories, {board.questionCount}/25 questions
                                     </Badge>
                                   )}
                                   {isStarterPack && (
-                                    <Badge className="bg-amber-500/20 text-amber-600 text-xs">
+                                    <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs">
                                       <Star className="w-3 h-3 mr-1" />
                                       Starter
                                     </Badge>
@@ -704,7 +704,7 @@ export default function SuperAdmin() {
                                   {u.firstName} {u.lastName}
                                 </span>
                                 {u.role === 'super_admin' && (
-                                  <Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/30 text-xs">
+                                  <Badge variant="outline" className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30 text-xs">
                                     Super Admin
                                   </Badge>
                                 )}

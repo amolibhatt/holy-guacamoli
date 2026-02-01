@@ -269,7 +269,7 @@ export function PsyOpQuestionAdmin() {
             <Card className="border-purple-500/30">
               <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-purple-500" />
+                  <Sparkles className="w-5 h-5 text-purple-500 dark:text-purple-400" />
                   New PsyOp Question
                 </CardTitle>
                 <Button

@@ -643,7 +643,7 @@ export default function BlitzgridAdmin() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 space-y-3">
                     <div className="flex items-center gap-2">
-                      <Grid3X3 className="w-5 h-5 text-purple-500 shrink-0" />
+                      <Grid3X3 className="w-5 h-5 text-fuchsia-500 dark:text-fuchsia-400 shrink-0" />
                       {editingGridId === selectedGridId ? (
                         <Input
                           value={editGridName}
@@ -723,11 +723,11 @@ export default function BlitzgridAdmin() {
                         <Pencil className="w-4 h-4 mr-1" /> Edit
                       </Button>
                       {grid?.isActive ? (
-                        <Badge className="bg-green-500/20 text-green-600">
+                        <Badge className="bg-green-500/20 text-green-600 dark:text-green-400">
                           <CheckCircle2 className="w-3 h-3 mr-1" /> Ready to Play
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-amber-600">
+                        <Badge variant="outline" className="text-amber-600 dark:text-amber-400">
                           <AlertCircle className="w-3 h-3 mr-1" /> Incomplete
                         </Badge>
                       )}
@@ -835,9 +835,9 @@ export default function BlitzgridAdmin() {
                         </div>
                         <div className="flex items-center gap-2">
                           {category.questionCount >= 5 ? (
-                            <Badge className="bg-green-500/20 text-green-600 text-xs">Complete</Badge>
+                            <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 text-xs">Complete</Badge>
                           ) : (
-                            <Badge variant="outline" className="text-amber-600 text-xs">
+                            <Badge variant="outline" className="text-amber-600 dark:text-amber-400 text-xs">
                               {5 - category.questionCount} needed
                             </Badge>
                           )}
@@ -1258,7 +1258,7 @@ export default function BlitzgridAdmin() {
                     ) : (
                       <>
                         <div className="flex items-center gap-2 min-w-0">
-                          <Grid3X3 className="w-5 h-5 text-purple-500 shrink-0" />
+                          <Grid3X3 className="w-5 h-5 text-fuchsia-500 dark:text-fuchsia-400 shrink-0" />
                           <h3 className="font-semibold truncate">{grid.name}</h3>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
@@ -1298,7 +1298,7 @@ export default function BlitzgridAdmin() {
                       {grid.categoryCount}/5 categories · {grid.questionCount}/25 questions
                     </p>
                     {grid.isActive ? (
-                      <Badge className="bg-green-500/20 text-green-600 text-xs shrink-0">
+                      <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 text-xs shrink-0">
                         <CheckCircle2 className="w-3 h-3 mr-1" /> Active
                       </Badge>
                     ) : (
