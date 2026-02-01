@@ -1960,7 +1960,6 @@ export class DatabaseStorage implements IStorage {
         id: boards.id, 
         name: boards.name,
         theme: boards.theme,
-        createdAt: boards.createdAt
       }).from(boards).where(eq(boards.userId, user.id));
 
       // Get sessions hosted by this user
@@ -2028,7 +2027,8 @@ export class DatabaseStorage implements IStorage {
       // Get host info
       const [host] = await db.select({
         id: users.id,
-        username: users.username,
+        firstName: users.firstName,
+        lastName: users.lastName,
         email: users.email,
       }).from(users).where(eq(users.id, session.hostId));
 
@@ -2088,8 +2088,7 @@ export class DatabaseStorage implements IStorage {
 
     // Get boards created
     const userBoards = await db.select().from(boards)
-      .where(eq(boards.userId, userId))
-      .orderBy(desc(boards.createdAt));
+      .where(eq(boards.userId, userId));
 
     const { password, ...safeUser } = user;
     return {
@@ -2126,7 +2125,8 @@ export class DatabaseStorage implements IStorage {
       if (q.userId) {
         const [user] = await db.select({
           id: users.id,
-          username: users.username,
+          firstName: users.firstName,
+          lastName: users.lastName,
           email: users.email,
         }).from(users).where(eq(users.id, q.userId));
         creator = user || null;
@@ -2155,7 +2155,8 @@ export class DatabaseStorage implements IStorage {
       if (q.userId) {
         const [user] = await db.select({
           id: users.id,
-          username: users.username,
+          firstName: users.firstName,
+          lastName: users.lastName,
           email: users.email,
         }).from(users).where(eq(users.id, q.userId));
         creator = user || null;
@@ -2177,9 +2178,7 @@ export class DatabaseStorage implements IStorage {
       audioUrl: questions.audioUrl,
       videoUrl: questions.videoUrl,
       categoryId: questions.categoryId,
-      createdAt: questions.createdAt,
     }).from(questions)
-      .orderBy(desc(questions.createdAt))
       .limit(500);
 
     const questionsWithDetails = await Promise.all(allQuestions.map(async (q) => {
@@ -2210,7 +2209,8 @@ export class DatabaseStorage implements IStorage {
             if (b?.userId) {
               const [user] = await db.select({
                 id: users.id,
-                username: users.username,
+                firstName: users.firstName,
+                lastName: users.lastName,
                 email: users.email,
               }).from(users).where(eq(users.id, b.userId));
               creator = user || null;
