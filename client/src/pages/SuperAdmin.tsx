@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Users, BarChart3, Shield, ArrowLeft,
   Trash2, MoreHorizontal, Pencil,
-  TrendingUp, Gamepad2, Clock, Activity, Heart,
-  ListOrdered, Grid3X3,
+  TrendingUp, Gamepad2, Clock, Activity,
+  ListOrdered, Grid3X3, Search, RefreshCw,
   ChevronRight, Star, ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import type { GameStatus } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -66,6 +67,7 @@ export default function SuperAdmin() {
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [deleteBoardId, setDeleteBoardId] = useState<number | null>(null);
   const [expandedGameSlug, setExpandedGameSlug] = useState<string | null>(null);
+  const [userSearch, setUserSearch] = useState("");
 
   const { data: stats, isLoading: isLoadingStats } = useQuery<PlatformStats>({
     queryKey: ['/api/super-admin/stats'],
@@ -179,7 +181,7 @@ export default function SuperAdmin() {
     switch (slug) {
       case 'blitzgrid': return Grid3X3;
       case 'sequence_squeeze': return ListOrdered;
-      case 'double_dip': return Heart;
+      case 'psyop': return Shield;
       default: return Gamepad2;
     }
   };
@@ -188,12 +190,12 @@ export default function SuperAdmin() {
     switch (slug) {
       case 'blitzgrid': return 'from-rose-300 via-pink-300 to-fuchsia-300';
       case 'sequence_squeeze': return 'from-emerald-300 via-teal-300 to-cyan-300';
-      case 'double_dip': return 'from-rose-300 via-pink-300 to-fuchsia-300';
-      default: return 'from-violet-300 via-purple-300 to-indigo-300';
+      case 'psyop': return 'from-violet-300 via-purple-300 to-indigo-300';
+      default: return 'from-amber-300 via-yellow-300 to-orange-300';
     }
   };
 
-  const blitzgrids = allBoards.filter((b: any) => b.theme === 'blitzgrid' || b.isBlitzgrid);
+  const blitzgrids = allBoards.filter((b) => b.theme === 'blitzgrid' || (b as any).isBlitzgrid);
 
   return (
     <div className="min-h-screen gradient-game">
@@ -295,7 +297,7 @@ export default function SuperAdmin() {
                       <Card key={gameType.id} className={`transition-all ${isExpanded ? 'border-primary' : ''}`}>
                         <CardContent className="p-0">
                           <div 
-                            className="p-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                            className="p-4 cursor-pointer hover-elevate transition-colors rounded-lg"
                             onClick={() => setExpandedGameSlug(isExpanded ? null : gameType.slug)}
                             role="button"
                             tabIndex={0}
@@ -381,7 +383,7 @@ export default function SuperAdmin() {
                                         </div>
                                       ) : (
                                         <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                                          {allBoards.map((board: any) => {
+                                          {allBoards.map((board) => {
                                             const isComplete = board.categoryCount >= 5 && board.questionCount >= 25;
                                             const isStarterPack = board.isStarterPack ?? false;
                                             return (
@@ -474,9 +476,32 @@ export default function SuperAdmin() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
                 <h2 className="text-2xl font-bold text-foreground">User Management</h2>
-                <Badge variant="secondary">{allUsers.length} users</Badge>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search users..."
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      className="pl-9 w-[200px]"
+                      data-testid="input-user-search"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/users'] });
+                      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
+                    }}
+                    data-testid="button-refresh-users"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </Button>
+                  <Badge variant="secondary">{allUsers.length} users</Badge>
+                </div>
               </div>
 
               {isLoadingUsers ? (
@@ -493,7 +518,17 @@ export default function SuperAdmin() {
                 </Card>
               ) : (
                 <div className="space-y-3">
-                  {allUsers.map((u) => (
+                  {allUsers
+                    .filter((u) => {
+                      if (!userSearch.trim()) return true;
+                      const searchLower = userSearch.toLowerCase();
+                      return (
+                        u.email.toLowerCase().includes(searchLower) ||
+                        u.firstName?.toLowerCase().includes(searchLower) ||
+                        u.lastName?.toLowerCase().includes(searchLower)
+                      );
+                    })
+                    .map((u) => (
                     <Card key={u.id} className="hover-elevate">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
