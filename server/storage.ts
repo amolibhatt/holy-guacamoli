@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, psyopQuestions, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameSessionWithDetails, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion, type PsyopQuestion, type InsertPsyopQuestion } from "@shared/schema";
+import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, psyopQuestions, adminAnnouncements, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameSessionWithDetails, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion, type PsyopQuestion, type InsertPsyopQuestion, type AdminAnnouncement, type InsertAdminAnnouncement, type ModerationStatus } from "@shared/schema";
 import { users } from "@shared/models/auth";
 import { eq, and, asc, count, inArray, desc, sql, gte, like } from "drizzle-orm";
 
@@ -1703,6 +1703,250 @@ export class DatabaseStorage implements IStorage {
     }));
 
     return gridsWithOwners;
+  }
+
+  // === ENHANCED SUPER ADMIN ANALYTICS ===
+  
+  async getDetailedAnalytics() {
+    const now = new Date();
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
+    
+    const oneWeekAgo = new Date(now);
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    
+    const oneMonthAgo = new Date(now);
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    const [dauResult] = await db.select({ count: sql<number>`COUNT(DISTINCT ${gameSessions.hostId})` })
+      .from(gameSessions)
+      .where(gte(gameSessions.createdAt, today));
+    
+    const [wauResult] = await db.select({ count: sql<number>`COUNT(DISTINCT ${gameSessions.hostId})` })
+      .from(gameSessions)
+      .where(gte(gameSessions.createdAt, oneWeekAgo));
+    
+    const [mauResult] = await db.select({ count: sql<number>`COUNT(DISTINCT ${gameSessions.hostId})` })
+      .from(gameSessions)
+      .where(gte(gameSessions.createdAt, oneMonthAgo));
+
+    const [weeklyPlayersResult] = await db.select({ count: count() })
+      .from(sessionPlayers)
+      .where(gte(sessionPlayers.joinedAt, oneWeekAgo));
+
+    const recentSessions = await db.select({ id: gameSessions.id })
+      .from(gameSessions)
+      .where(gte(gameSessions.createdAt, oneMonthAgo));
+    
+    let avgPlayersPerSession = 0;
+    if (recentSessions.length > 0) {
+      const sessionIds = recentSessions.map(s => s.id);
+      const [playerCount] = await db.select({ count: count() })
+        .from(sessionPlayers)
+        .where(inArray(sessionPlayers.sessionId, sessionIds));
+      avgPlayersPerSession = Math.round((playerCount?.count ?? 0) / recentSessions.length * 10) / 10;
+    }
+
+    const [activeSessions] = await db.select({ count: count() })
+      .from(gameSessions)
+      .where(eq(gameSessions.state, 'active'));
+    
+    const [endedSessions] = await db.select({ count: count() })
+      .from(gameSessions)
+      .where(eq(gameSessions.state, 'ended'));
+
+    return {
+      dau: dauResult?.count ?? 0,
+      wau: wauResult?.count ?? 0,
+      mau: mauResult?.count ?? 0,
+      weeklyPlayers: weeklyPlayersResult?.count ?? 0,
+      avgPlayersPerSession,
+      activeSessions: activeSessions?.count ?? 0,
+      endedSessions: endedSessions?.count ?? 0,
+      totalSessionsThisMonth: recentSessions.length,
+    };
+  }
+
+  async getTopGames() {
+    const sessionsByBoard = await db.select({
+      boardId: gameSessions.currentBoardId,
+      count: count(),
+    })
+      .from(gameSessions)
+      .where(sql`${gameSessions.currentBoardId} IS NOT NULL`)
+      .groupBy(gameSessions.currentBoardId)
+      .orderBy(desc(count()))
+      .limit(10);
+
+    const topBoards = await Promise.all(
+      sessionsByBoard.map(async (s) => {
+        if (!s.boardId) return null;
+        const [board] = await db.select().from(boards).where(eq(boards.id, s.boardId));
+        return board ? { ...board, sessionCount: s.count } : null;
+      })
+    );
+
+    return topBoards.filter(Boolean);
+  }
+
+  async getRoomStats() {
+    const now = new Date();
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
+    
+    const [todaySessions] = await db.select({ count: count() })
+      .from(gameSessions)
+      .where(gte(gameSessions.createdAt, today));
+    
+    const [todayPlayers] = await db.select({ count: count() })
+      .from(sessionPlayers)
+      .where(gte(sessionPlayers.joinedAt, today));
+
+    const [activeSessions] = await db.select({ count: count() })
+      .from(gameSessions)
+      .where(eq(gameSessions.state, 'active'));
+
+    return {
+      sessionsToday: todaySessions?.count ?? 0,
+      playersToday: todayPlayers?.count ?? 0,
+      activeRooms: activeSessions?.count ?? 0,
+    };
+  }
+
+  // === USER MANAGEMENT ===
+  
+  async updateUserRole(userId: string, role: string) {
+    const [updated] = await db.update(users)
+      .set({ role, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return updated;
+  }
+
+  async getUserActivity(userId: string) {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (!user) return null;
+
+    const [hostedSessions] = await db.select({ count: count() })
+      .from(gameSessions)
+      .where(eq(gameSessions.hostId, userId));
+
+    const recentSessions = await db.select()
+      .from(gameSessions)
+      .where(eq(gameSessions.hostId, userId))
+      .orderBy(desc(gameSessions.createdAt))
+      .limit(5);
+
+    return {
+      userId,
+      lastLoginAt: user.lastLoginAt,
+      gamesHosted: hostedSessions?.count ?? 0,
+      recentSessions,
+    };
+  }
+
+  async updateLastLogin(userId: string) {
+    await db.update(users)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  // === CONTENT MODERATION ===
+  
+  async updateBoardModeration(boardId: number, data: { 
+    moderationStatus?: ModerationStatus; 
+    isFeatured?: boolean;
+    flagReason?: string;
+    moderatedBy?: string;
+  }) {
+    const updateData: any = { ...data };
+    if (data.moderationStatus || data.isFeatured !== undefined) {
+      updateData.moderatedAt = new Date();
+    }
+    
+    const [updated] = await db.update(boards)
+      .set(updateData)
+      .where(eq(boards.id, boardId))
+      .returning();
+    return updated;
+  }
+
+  async getFeaturedBoards() {
+    return await db.select().from(boards)
+      .where(eq(boards.isFeatured, true))
+      .orderBy(desc(boards.id));
+  }
+
+  async getFlaggedBoards() {
+    return await db.select().from(boards)
+      .where(eq(boards.moderationStatus, 'flagged'))
+      .orderBy(desc(boards.id));
+  }
+
+  // === ANNOUNCEMENTS ===
+  
+  async createAnnouncement(data: InsertAdminAnnouncement): Promise<AdminAnnouncement> {
+    const [announcement] = await db.insert(adminAnnouncements).values(data).returning();
+    return announcement;
+  }
+
+  async getActiveAnnouncements(): Promise<AdminAnnouncement[]> {
+    const now = new Date();
+    return await db.select().from(adminAnnouncements)
+      .where(sql`${adminAnnouncements.expiresAt} IS NULL OR ${adminAnnouncements.expiresAt} > ${now}`)
+      .orderBy(desc(adminAnnouncements.createdAt))
+      .limit(10);
+  }
+
+  async deleteAnnouncement(id: number) {
+    await db.delete(adminAnnouncements).where(eq(adminAnnouncements.id, id));
+  }
+
+  // === SYSTEM HEALTH ===
+  
+  async getDatabaseStats() {
+    const [userCount] = await db.select({ count: count() }).from(users);
+    const [boardCount] = await db.select({ count: count() }).from(boards);
+    const [categoryCount] = await db.select({ count: count() }).from(categories);
+    const [questionCount] = await db.select({ count: count() }).from(questions);
+    const [sessionCount] = await db.select({ count: count() }).from(gameSessions);
+    const [playerCount] = await db.select({ count: count() }).from(sessionPlayers);
+    const [gameTypeCount] = await db.select({ count: count() }).from(gameTypes);
+
+    return {
+      users: userCount?.count ?? 0,
+      boards: boardCount?.count ?? 0,
+      categories: categoryCount?.count ?? 0,
+      questions: questionCount?.count ?? 0,
+      sessions: sessionCount?.count ?? 0,
+      players: playerCount?.count ?? 0,
+      gameTypes: gameTypeCount?.count ?? 0,
+    };
+  }
+
+  // === EXPORT ===
+  
+  async exportPlatformData() {
+    const allUsers = await db.select({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      role: users.role,
+      createdAt: users.createdAt,
+    }).from(users);
+
+    const allBoards = await db.select().from(boards);
+    const allCategories = await db.select().from(categories);
+    const allQuestions = await db.select().from(questions);
+
+    return {
+      exportedAt: new Date().toISOString(),
+      users: allUsers,
+      boards: allBoards,
+      categories: allCategories,
+      questions: allQuestions,
+    };
   }
 }
 

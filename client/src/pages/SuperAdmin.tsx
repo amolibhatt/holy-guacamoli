@@ -7,7 +7,9 @@ import {
   Trash2, MoreHorizontal, Pencil,
   TrendingUp, Gamepad2, Clock, Activity,
   ListOrdered, Grid3X3, Search, RefreshCw,
-  ChevronRight, Star, ChevronDown
+  ChevronRight, Star, ChevronDown, Database,
+  Megaphone, Flag, Heart, AlertTriangle,
+  Download, Send, UserCheck, Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,6 +63,43 @@ interface BoardWithOwner extends Board {
   categoryCount: number;
 }
 
+interface DetailedAnalytics {
+  dau: number;
+  wau: number;
+  mau: number;
+  weeklyPlayers: number;
+  avgPlayersPerSession: number;
+  activeSessions: number;
+  endedSessions: number;
+  totalSessionsThisMonth: number;
+}
+
+interface RoomStats {
+  sessionsToday: number;
+  playersToday: number;
+  activeRooms: number;
+}
+
+interface DatabaseStats {
+  users: number;
+  boards: number;
+  categories: number;
+  questions: number;
+  sessions: number;
+  players: number;
+  gameTypes: number;
+}
+
+interface Announcement {
+  id: number;
+  title: string;
+  message: string;
+  type: string;
+  createdBy: string;
+  createdAt: string;
+  expiresAt: string | null;
+}
+
 export default function SuperAdmin() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { toast } = useToast();
@@ -69,6 +108,9 @@ export default function SuperAdmin() {
   const [expandedGameSlug, setExpandedGameSlug] = useState<string | null>(null);
   const [userSearch, setUserSearch] = useState("");
   const [gridSearch, setGridSearch] = useState("");
+  const [announcementTitle, setAnnouncementTitle] = useState("");
+  const [announcementMessage, setAnnouncementMessage] = useState("");
+  const [activeTab, setActiveTab] = useState("analytics");
 
   const { data: stats, isLoading: isLoadingStats } = useQuery<PlatformStats>({
     queryKey: ['/api/super-admin/stats'],
@@ -84,6 +126,26 @@ export default function SuperAdmin() {
 
   const { data: gameTypes = [], isLoading: isLoadingGameTypes } = useQuery<GameType[]>({
     queryKey: ['/api/super-admin/game-types'],
+  });
+
+  const { data: detailedAnalytics, isLoading: isLoadingAnalytics } = useQuery<DetailedAnalytics>({
+    queryKey: ['/api/super-admin/analytics'],
+  });
+
+  const { data: roomStats, isLoading: isLoadingRoomStats } = useQuery<RoomStats>({
+    queryKey: ['/api/super-admin/room-stats'],
+  });
+
+  const { data: dbStats, isLoading: isLoadingDbStats } = useQuery<DatabaseStats>({
+    queryKey: ['/api/super-admin/db-stats'],
+  });
+
+  const { data: announcements = [], isLoading: isLoadingAnnouncements } = useQuery<Announcement[]>({
+    queryKey: ['/api/super-admin/announcements'],
+  });
+
+  const { data: flaggedBoards = [], isLoading: isLoadingFlagged } = useQuery<Board[]>({
+    queryKey: ['/api/super-admin/boards/flagged'],
   });
 
   const updateGameTypeMutation = useMutation({
@@ -144,6 +206,78 @@ export default function SuperAdmin() {
     },
   });
 
+  const createAnnouncementMutation = useMutation({
+    mutationFn: async (data: { title: string; message: string; type?: string }) => {
+      await apiRequest('POST', '/api/super-admin/announcements', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/announcements'] });
+      setAnnouncementTitle("");
+      setAnnouncementMessage("");
+      toast({ title: "Announcement sent" });
+    },
+    onError: () => {
+      toast({ title: "Couldn't create announcement", variant: "destructive" });
+    },
+  });
+
+  const deleteAnnouncementMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest('DELETE', `/api/super-admin/announcements/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/announcements'] });
+      toast({ title: "Announcement deleted" });
+    },
+    onError: () => {
+      toast({ title: "Couldn't delete announcement", variant: "destructive" });
+    },
+  });
+
+  const updateModerationMutation = useMutation({
+    mutationFn: async ({ boardId, data }: { boardId: number; data: { moderationStatus?: string; isFeatured?: boolean } }) => {
+      await apiRequest('PATCH', `/api/super-admin/boards/${boardId}/moderation`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards/flagged'] });
+      toast({ title: "Board status updated" });
+    },
+    onError: () => {
+      toast({ title: "Couldn't update board", variant: "destructive" });
+    },
+  });
+
+  const updateUserRoleMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+      await apiRequest('PATCH', `/api/super-admin/users/${userId}/role`, { role });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/users'] });
+      toast({ title: "User role updated" });
+    },
+    onError: () => {
+      toast({ title: "Couldn't update role", variant: "destructive" });
+    },
+  });
+
+  const handleExportData = async () => {
+    try {
+      const response = await fetch('/api/super-admin/export');
+      const data = await response.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `platform-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Data exported successfully" });
+    } catch {
+      toast({ title: "Export failed", variant: "destructive" });
+    }
+  };
+
   if (isAuthLoading) {
     return (
       <div className="min-h-screen gradient-game flex items-center justify-center">
@@ -201,23 +335,31 @@ export default function SuperAdmin() {
       <AppHeader minimal backHref="/" title="Super Admin" />
 
       <main className="px-4 py-6 max-w-6xl mx-auto w-full">
-        <Tabs defaultValue="analytics" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 max-w-lg">
-            <TabsTrigger value="analytics" className="gap-2">
+        <Tabs defaultValue="analytics" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6 max-w-3xl">
+            <TabsTrigger value="analytics" className="gap-2" data-testid="tab-analytics">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
-            <TabsTrigger value="games" className="gap-2">
+            <TabsTrigger value="games" className="gap-2" data-testid="tab-games">
               <Gamepad2 className="w-4 h-4" />
               <span className="hidden sm:inline">Games</span>
             </TabsTrigger>
-            <TabsTrigger value="grids" className="gap-2">
+            <TabsTrigger value="grids" className="gap-2" data-testid="tab-grids">
               <Grid3X3 className="w-4 h-4" />
               <span className="hidden sm:inline">Grids</span>
             </TabsTrigger>
-            <TabsTrigger value="users" className="gap-2">
+            <TabsTrigger value="users" className="gap-2" data-testid="tab-users">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Users</span>
+            </TabsTrigger>
+            <TabsTrigger value="system" className="gap-2" data-testid="tab-system">
+              <Database className="w-4 h-4" />
+              <span className="hidden sm:inline">System</span>
+            </TabsTrigger>
+            <TabsTrigger value="actions" className="gap-2" data-testid="tab-actions">
+              <Zap className="w-4 h-4" />
+              <span className="hidden sm:inline">Actions</span>
             </TabsTrigger>
           </TabsList>
 
@@ -283,6 +425,127 @@ export default function SuperAdmin() {
                   color="from-violet-300 via-purple-300 to-indigo-300"
                   isLoading={isLoadingStats}
                 />
+              </div>
+
+              <h3 className="text-xl font-semibold text-foreground mt-8 mb-4">User Engagement (Active Users)</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {isLoadingAnalytics ? (
+                  [1, 2, 3].map((i) => (
+                    <Card key={i}>
+                      <CardHeader className="pb-2">
+                        <Skeleton className="h-4 w-24" />
+                      </CardHeader>
+                      <CardContent>
+                        <Skeleton className="h-8 w-16 mb-1" />
+                        <Skeleton className="h-3 w-20" />
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <>
+                    <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm text-muted-foreground">Daily Active</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{detailedAnalytics?.dau ?? 0}</p>
+                        <p className="text-xs text-muted-foreground">Hosts today</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm text-muted-foreground">Weekly Active</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-3xl font-bold text-teal-600 dark:text-teal-400">{detailedAnalytics?.wau ?? 0}</p>
+                        <p className="text-xs text-muted-foreground">Last 7 days</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm text-muted-foreground">Monthly Active</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">{detailedAnalytics?.mau ?? 0}</p>
+                        <p className="text-xs text-muted-foreground">Last 30 days</p>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+              </div>
+
+              <h3 className="text-xl font-semibold text-foreground mt-8 mb-4">Session & Player Stats</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                {isLoadingRoomStats ? (
+                  [1, 2, 3, 4].map((i) => (
+                    <Card key={i}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-10 w-10 rounded-lg" />
+                          <div>
+                            <Skeleton className="h-7 w-12 mb-1" />
+                            <Skeleton className="h-4 w-24" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <>
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/30">
+                            <Activity className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold">{roomStats?.sessionsToday ?? 0}</p>
+                            <p className="text-sm text-muted-foreground">Sessions Today</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-900/30">
+                            <Users className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold">{roomStats?.playersToday ?? 0}</p>
+                            <p className="text-sm text-muted-foreground">Players Today</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                            <Gamepad2 className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold">{roomStats?.activeRooms ?? 0}</p>
+                            <p className="text-sm text-muted-foreground">Active Rooms</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-900/30">
+                            <TrendingUp className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold">{detailedAnalytics?.avgPlayersPerSession ?? 0}</p>
+                            <p className="text-sm text-muted-foreground">Avg Players/Session</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
               </div>
             </motion.div>
           </TabsContent>
@@ -744,6 +1007,200 @@ export default function SuperAdmin() {
                   </div>
                 );
               })()}
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="system" className="space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <h2 className="text-2xl font-bold text-foreground mb-6">System Health</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Database className="w-5 h-5 text-teal-500" />
+                      Database Stats
+                    </CardTitle>
+                    <CardDescription>Current table sizes and record counts</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoadingDbStats ? (
+                      <div className="space-y-3">
+                        {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                          <Skeleton key={i} className="h-5 w-full" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {[
+                          { label: 'Users', value: dbStats?.users ?? 0, color: 'text-emerald-600' },
+                          { label: 'Boards', value: dbStats?.boards ?? 0, color: 'text-rose-600' },
+                          { label: 'Categories', value: dbStats?.categories ?? 0, color: 'text-violet-600' },
+                          { label: 'Questions', value: dbStats?.questions ?? 0, color: 'text-amber-600' },
+                          { label: 'Sessions', value: dbStats?.sessions ?? 0, color: 'text-teal-600' },
+                          { label: 'Players', value: dbStats?.players ?? 0, color: 'text-pink-600' },
+                          { label: 'Game Types', value: dbStats?.gameTypes ?? 0, color: 'text-indigo-600' },
+                        ].map((stat) => (
+                          <div key={stat.label} className="flex justify-between items-center">
+                            <span className="text-muted-foreground">{stat.label}</span>
+                            <span className={`font-semibold ${stat.color} dark:opacity-80`}>{stat.value.toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Flag className="w-5 h-5 text-amber-500" />
+                      Flagged Content
+                    </CardTitle>
+                    <CardDescription>Boards requiring moderation review</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoadingFlagged ? (
+                      <div className="space-y-2">
+                        {[1, 2, 3].map((i) => (
+                          <Skeleton key={i} className="h-10 w-full" />
+                        ))}
+                      </div>
+                    ) : flaggedBoards.length === 0 ? (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <UserCheck className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                        <p>No flagged content</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {flaggedBoards.slice(0, 5).map((board) => (
+                          <div key={board.id} className="flex items-center justify-between p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+                            <span className="text-sm font-medium">{board.name}</span>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => updateModerationMutation.mutate({ boardId: board.id, data: { moderationStatus: 'approved' } })}
+                                data-testid={`button-approve-board-${board.id}`}
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => setDeleteBoardId(board.id)}
+                                data-testid={`button-delete-flagged-${board.id}`}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="actions" className="space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <h2 className="text-2xl font-bold text-foreground mb-6">Quick Actions</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Megaphone className="w-5 h-5 text-violet-500" />
+                      Broadcast Announcement
+                    </CardTitle>
+                    <CardDescription>Send a message to all users</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Input
+                      placeholder="Announcement title"
+                      value={announcementTitle}
+                      onChange={(e) => setAnnouncementTitle(e.target.value)}
+                      data-testid="input-announcement-title"
+                    />
+                    <Input
+                      placeholder="Announcement message"
+                      value={announcementMessage}
+                      onChange={(e) => setAnnouncementMessage(e.target.value)}
+                      data-testid="input-announcement-message"
+                    />
+                    <Button
+                      className="w-full"
+                      disabled={!announcementTitle || !announcementMessage || createAnnouncementMutation.isPending}
+                      onClick={() => createAnnouncementMutation.mutate({ title: announcementTitle, message: announcementMessage })}
+                      data-testid="button-send-announcement"
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      {createAnnouncementMutation.isPending ? 'Sending...' : 'Send Announcement'}
+                    </Button>
+                    
+                    {isLoadingAnnouncements ? (
+                      <div className="mt-4 pt-4 border-t space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        {[1, 2].map((i) => (
+                          <Skeleton key={i} className="h-12 w-full" />
+                        ))}
+                      </div>
+                    ) : announcements.length > 0 && (
+                      <div className="mt-4 pt-4 border-t space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">Recent Announcements</p>
+                        {announcements.slice(0, 3).map((a) => (
+                          <div key={a.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                            <div>
+                              <p className="text-sm font-medium">{a.title}</p>
+                              <p className="text-xs text-muted-foreground">{new Date(a.createdAt).toLocaleDateString()}</p>
+                            </div>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => deleteAnnouncementMutation.mutate(a.id)}
+                              data-testid={`button-delete-announcement-${a.id}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Download className="w-5 h-5 text-teal-500" />
+                      Data Export
+                    </CardTitle>
+                    <CardDescription>Export platform data for backup or analysis</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Download a complete snapshot of all users, boards, categories, and questions.
+                    </p>
+                    <Button
+                      className="w-full"
+                      variant="outline"
+                      onClick={handleExportData}
+                      data-testid="button-export-data"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Export All Data (JSON)
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             </motion.div>
           </TabsContent>
         </Tabs>

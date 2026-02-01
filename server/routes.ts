@@ -1849,6 +1849,181 @@ export async function registerRoutes(
     }
   });
 
+  // === ENHANCED SUPER ADMIN ANALYTICS ===
+  
+  app.get("/api/super-admin/analytics", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const analytics = await storage.getDetailedAnalytics();
+      res.json(analytics);
+    } catch (err) {
+      console.error("Error getting analytics:", err);
+      res.status(500).json({ message: "Failed to get analytics" });
+    }
+  });
+
+  app.get("/api/super-admin/top-games", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const topGames = await storage.getTopGames();
+      res.json(topGames);
+    } catch (err) {
+      console.error("Error getting top games:", err);
+      res.status(500).json({ message: "Failed to get top games" });
+    }
+  });
+
+  app.get("/api/super-admin/room-stats", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const roomStats = await storage.getRoomStats();
+      res.json(roomStats);
+    } catch (err) {
+      console.error("Error getting room stats:", err);
+      res.status(500).json({ message: "Failed to get room stats" });
+    }
+  });
+
+  // === USER MANAGEMENT ===
+  
+  app.patch("/api/super-admin/users/:id/role", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { role } = req.body;
+      if (!role || !['host', 'admin', 'super_admin'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      const updated = await storage.updateUserRole(id, role);
+      if (!updated) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      console.error("Error updating user role:", err);
+      res.status(500).json({ message: "Failed to update role" });
+    }
+  });
+
+  app.get("/api/super-admin/users/:id/activity", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const activity = await storage.getUserActivity(id);
+      if (!activity) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(activity);
+    } catch (err) {
+      console.error("Error getting user activity:", err);
+      res.status(500).json({ message: "Failed to get user activity" });
+    }
+  });
+
+  // === CONTENT MODERATION ===
+  
+  app.patch("/api/super-admin/boards/:id/moderation", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const boardId = parseInt(req.params.id);
+      const { moderationStatus, isFeatured, flagReason } = req.body;
+      const updated = await storage.updateBoardModeration(boardId, {
+        moderationStatus,
+        isFeatured,
+        flagReason,
+        moderatedBy: req.session.userId,
+      });
+      if (!updated) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      console.error("Error updating board moderation:", err);
+      res.status(500).json({ message: "Failed to update moderation" });
+    }
+  });
+
+  app.get("/api/super-admin/boards/featured", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const featured = await storage.getFeaturedBoards();
+      res.json(featured);
+    } catch (err) {
+      console.error("Error getting featured boards:", err);
+      res.status(500).json({ message: "Failed to get featured boards" });
+    }
+  });
+
+  app.get("/api/super-admin/boards/flagged", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const flagged = await storage.getFlaggedBoards();
+      res.json(flagged);
+    } catch (err) {
+      console.error("Error getting flagged boards:", err);
+      res.status(500).json({ message: "Failed to get flagged boards" });
+    }
+  });
+
+  // === ANNOUNCEMENTS ===
+  
+  app.post("/api/super-admin/announcements", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const { title, message, type, expiresAt } = req.body;
+      if (!title || !message) {
+        return res.status(400).json({ message: "Title and message are required" });
+      }
+      const announcement = await storage.createAnnouncement({
+        title,
+        message,
+        type: type || 'info',
+        createdBy: req.session.userId!,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+      });
+      res.status(201).json(announcement);
+    } catch (err) {
+      console.error("Error creating announcement:", err);
+      res.status(500).json({ message: "Failed to create announcement" });
+    }
+  });
+
+  app.get("/api/super-admin/announcements", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const announcements = await storage.getActiveAnnouncements();
+      res.json(announcements);
+    } catch (err) {
+      console.error("Error getting announcements:", err);
+      res.status(500).json({ message: "Failed to get announcements" });
+    }
+  });
+
+  app.delete("/api/super-admin/announcements/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteAnnouncement(id);
+      res.json({ message: "Announcement deleted" });
+    } catch (err) {
+      console.error("Error deleting announcement:", err);
+      res.status(500).json({ message: "Failed to delete announcement" });
+    }
+  });
+
+  // === SYSTEM HEALTH ===
+  
+  app.get("/api/super-admin/db-stats", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getDatabaseStats();
+      res.json(stats);
+    } catch (err) {
+      console.error("Error getting DB stats:", err);
+      res.status(500).json({ message: "Failed to get database stats" });
+    }
+  });
+
+  // === EXPORT ===
+  
+  app.get("/api/super-admin/export", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const data = await storage.exportPlatformData();
+      res.json(data);
+    } catch (err) {
+      console.error("Error exporting data:", err);
+      res.status(500).json({ message: "Failed to export data" });
+    }
+  });
+
   // Game Types (public - for hosts and players)
   app.get("/api/game-types", async (req, res) => {
     try {
