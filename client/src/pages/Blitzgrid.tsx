@@ -1756,7 +1756,7 @@ export default function Blitzgrid() {
                   )}
                   <DropdownMenuItem 
                     onClick={() => setShowEndSessionDialog(true)}
-                    className="text-red-500 focus:text-red-500"
+                    className="text-destructive focus:text-destructive"
                   >
                     <Power className="w-4 h-4 mr-2" />
                     End Session
@@ -1779,7 +1779,7 @@ export default function Blitzgrid() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => { setShowEndSessionDialog(false); startGameOverReveal(); }} className="bg-red-600">
+                  <AlertDialogAction onClick={() => { setShowEndSessionDialog(false); startGameOverReveal(); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                     End Session
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -2620,7 +2620,8 @@ export default function Blitzgrid() {
                               <>
                                 <Button
                                   size="sm"
-                                  className="bg-red-500 text-white h-7 text-xs px-2"
+                                  variant="destructive"
+                                  className="h-7 text-xs px-2"
                                   disabled={isJudging}
                                   onClick={() => {
                                     setIsJudging(true);
@@ -2755,7 +2756,7 @@ export default function Blitzgrid() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-6 w-6 text-red-400 rounded-full"
+                          className="h-6 w-6 text-destructive rounded-full"
                           onClick={() => {
                             const points = activeQuestion?.points || 0;
                             updatePlayerScore(player.id, -points, true, activeQuestion?.categoryId);
