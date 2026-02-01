@@ -477,18 +477,14 @@ export default function SuperAdmin() {
 
       <main className="px-4 py-6 max-w-6xl mx-auto w-full">
         <Tabs defaultValue="analytics" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 max-w-3xl">
+          <TabsList className="grid w-full grid-cols-5 max-w-2xl">
             <TabsTrigger value="analytics" className="gap-2" data-testid="tab-analytics">
               <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Analytics</span>
+              <span className="hidden sm:inline">Overview</span>
             </TabsTrigger>
             <TabsTrigger value="games" className="gap-2" data-testid="tab-games">
               <Gamepad2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Games</span>
-            </TabsTrigger>
-            <TabsTrigger value="grids" className="gap-2" data-testid="tab-grids">
-              <Grid3X3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Grids</span>
+              <span className="hidden sm:inline">Content</span>
             </TabsTrigger>
             <TabsTrigger value="users" className="gap-2" data-testid="tab-users">
               <Users className="w-4 h-4" />
@@ -498,13 +494,9 @@ export default function SuperAdmin() {
               <Play className="w-4 h-4" />
               <span className="hidden sm:inline">Sessions</span>
             </TabsTrigger>
-            <TabsTrigger value="system" className="gap-2" data-testid="tab-system">
-              <Database className="w-4 h-4" />
-              <span className="hidden sm:inline">System</span>
-            </TabsTrigger>
-            <TabsTrigger value="actions" className="gap-2" data-testid="tab-actions">
-              <Zap className="w-4 h-4" />
-              <span className="hidden sm:inline">Actions</span>
+            <TabsTrigger value="settings" className="gap-2" data-testid="tab-settings">
+              <Shield className="w-4 h-4" />
+              <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
           </TabsList>
 
@@ -513,8 +505,11 @@ export default function SuperAdmin() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <div className="flex items-center justify-between gap-4 mb-4">
-                <h2 className="text-2xl font-bold text-foreground">Platform Overview</h2>
+              <div className="flex items-center justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Platform Overview</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Real-time stats and engagement metrics</p>
+                </div>
                 <Button
                   variant="outline"
                   size="icon"
@@ -700,7 +695,10 @@ export default function SuperAdmin() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <h2 className="text-2xl font-bold text-foreground mb-6">Game Management</h2>
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-foreground">Game Content</h2>
+                <p className="text-sm text-muted-foreground mt-1">Manage games, view questions, and control starter packs</p>
+              </div>
 
               {isLoadingGameTypes ? (
                 <div className="space-y-4">
@@ -1025,147 +1023,16 @@ export default function SuperAdmin() {
             </motion.div>
           </TabsContent>
 
-          <TabsContent value="grids" className="space-y-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
-                <h2 className="text-2xl font-bold text-foreground">All Grids</h2>
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search grids..."
-                      value={gridSearch}
-                      onChange={(e) => setGridSearch(e.target.value)}
-                      className="pl-9 w-[200px]"
-                      data-testid="input-grid-search"
-                    />
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
-                    }}
-                    data-testid="button-refresh-grids"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                  </Button>
-                  <Badge variant="secondary">{allBoards.length} grids</Badge>
-                </div>
-              </div>
-
-              {isLoadingBoards ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
-                  ))}
-                </div>
-              ) : allBoards.length === 0 ? (
-                <Card>
-                  <CardContent className="py-8 text-center text-muted-foreground">
-                    No grids created yet.
-                  </CardContent>
-                </Card>
-              ) : (() => {
-                const filteredGrids = allBoards.filter((board) => {
-                  if (!gridSearch.trim()) return true;
-                  const searchLower = gridSearch.toLowerCase();
-                  return (
-                    board.name.toLowerCase().includes(searchLower) ||
-                    board.ownerEmail?.toLowerCase().includes(searchLower) ||
-                    board.ownerName?.toLowerCase().includes(searchLower)
-                  );
-                });
-                
-                if (filteredGrids.length === 0) {
-                  return (
-                    <Card>
-                      <CardContent className="py-8 text-center text-muted-foreground">
-                        No grids match "{gridSearch}"
-                      </CardContent>
-                    </Card>
-                  );
-                }
-                
-                return (
-                  <div className="space-y-2">
-                    {filteredGrids.map((board) => {
-                      const isComplete = board.categoryCount >= 5 && board.questionCount >= 25;
-                      const isStarterPack = board.isStarterPack ?? false;
-                      return (
-                        <Card key={board.id} className="hover-elevate">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between gap-4">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-medium text-foreground truncate">{board.name}</span>
-                                  {isComplete ? (
-                                    <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 text-xs">Complete</Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="text-amber-600 dark:text-amber-400 text-xs">
-                                      {board.categoryCount}/5 categories, {board.questionCount}/25 questions
-                                    </Badge>
-                                  )}
-                                  {isStarterPack && (
-                                    <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs">
-                                      <Star className="w-3 h-3 mr-1" />
-                                      Starter
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="text-sm text-muted-foreground mt-1">
-                                  Owner: {board.ownerName || board.ownerEmail || 'Unknown'}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant={isStarterPack ? "default" : "outline"}
-                                  size="icon"
-                                  onClick={() => toggleStarterPackMutation.mutate({ 
-                                    boardId: board.id, 
-                                    isStarterPack: !isStarterPack 
-                                  })}
-                                  disabled={toggleStarterPackMutation.isPending || !isComplete}
-                                  title={!isComplete ? "Grid must be complete" : "Toggle starter pack"}
-                                  data-testid={`button-starter-pack-grid-${board.id}`}
-                                >
-                                  <Star className={`w-4 h-4 ${isStarterPack ? 'fill-current' : ''}`} />
-                                </Button>
-                                <Link href={`/admin?game=${board.id}`}>
-                                  <Button variant="ghost" size="icon">
-                                    <Pencil className="w-4 h-4" />
-                                  </Button>
-                                </Link>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => setDeleteBoardId(board.id)}
-                                  data-testid={`button-delete-grid-tab-${board.id}`}
-                                >
-                                  <Trash2 className="w-4 h-4 text-destructive" />
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
-            </motion.div>
-          </TabsContent>
-
           <TabsContent value="users" className="space-y-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
-                <h2 className="text-2xl font-bold text-foreground">User Management</h2>
+              <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">User Management</h2>
+                  <p className="text-sm text-muted-foreground mt-1">View accounts, activity, and manage roles</p>
+                </div>
                 <div className="flex items-center gap-2">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -1446,8 +1313,11 @@ export default function SuperAdmin() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
-                <h2 className="text-2xl font-bold text-foreground">All Game Sessions</h2>
+              <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Game Sessions</h2>
+                  <p className="text-sm text-muted-foreground mt-1">All multiplayer sessions with player details and scores</p>
+                </div>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
@@ -1581,43 +1451,44 @@ export default function SuperAdmin() {
             </motion.div>
           </TabsContent>
 
-          <TabsContent value="system" className="space-y-6">
+          <TabsContent value="settings" className="space-y-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <h2 className="text-2xl font-bold text-foreground mb-6">System Health</h2>
+              <div className="flex items-center justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Settings & Tools</h2>
+                  <p className="text-sm text-muted-foreground mt-1">System health, announcements, and data management</p>
+                </div>
+              </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
                       <Database className="w-5 h-5 text-teal-500" />
-                      Database Stats
+                      Database Overview
                     </CardTitle>
-                    <CardDescription>Current table sizes and record counts</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {isLoadingDbStats ? (
-                      <div className="space-y-3">
-                        {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                      <div className="space-y-2">
+                        {[1, 2, 3, 4].map((i) => (
                           <Skeleton key={i} className="h-5 w-full" />
                         ))}
                       </div>
                     ) : (
-                      <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
                         {[
-                          { label: 'Users', value: dbStats?.users ?? 0, color: 'text-emerald-600' },
-                          { label: 'Boards', value: dbStats?.boards ?? 0, color: 'text-rose-600' },
-                          { label: 'Categories', value: dbStats?.categories ?? 0, color: 'text-violet-600' },
-                          { label: 'Questions', value: dbStats?.questions ?? 0, color: 'text-amber-600' },
-                          { label: 'Sessions', value: dbStats?.sessions ?? 0, color: 'text-teal-600' },
-                          { label: 'Players', value: dbStats?.players ?? 0, color: 'text-pink-600' },
-                          { label: 'Game Types', value: dbStats?.gameTypes ?? 0, color: 'text-indigo-600' },
+                          { label: 'Users', value: dbStats?.users ?? 0, color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' },
+                          { label: 'Grids', value: dbStats?.boards ?? 0, color: 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300' },
+                          { label: 'Questions', value: dbStats?.questions ?? 0, color: 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' },
+                          { label: 'Sessions', value: dbStats?.sessions ?? 0, color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' },
                         ].map((stat) => (
-                          <div key={stat.label} className="flex justify-between items-center">
-                            <span className="text-muted-foreground">{stat.label}</span>
-                            <span className={`font-semibold ${stat.color} dark:opacity-80`}>{stat.value.toLocaleString()}</span>
+                          <div key={stat.label} className={`p-3 rounded-lg ${stat.color}`}>
+                            <p className="text-2xl font-bold">{stat.value.toLocaleString()}</p>
+                            <p className="text-sm opacity-80">{stat.label}</p>
                           </div>
                         ))}
                       </div>
@@ -1626,31 +1497,30 @@ export default function SuperAdmin() {
                 </Card>
 
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
                       <Flag className="w-5 h-5 text-amber-500" />
                       Flagged Content
                     </CardTitle>
-                    <CardDescription>Boards requiring moderation review</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {isLoadingFlagged ? (
                       <div className="space-y-2">
-                        {[1, 2, 3].map((i) => (
+                        {[1, 2].map((i) => (
                           <Skeleton key={i} className="h-10 w-full" />
                         ))}
                       </div>
                     ) : flaggedBoards.length === 0 ? (
-                      <div className="text-center py-6 text-muted-foreground">
-                        <UserCheck className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                        <p>No flagged content</p>
+                      <div className="text-center py-4 text-muted-foreground">
+                        <UserCheck className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">All content looks good!</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        {flaggedBoards.slice(0, 5).map((board) => (
+                        {flaggedBoards.slice(0, 3).map((board) => (
                           <div key={board.id} className="flex items-center justify-between p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
-                            <span className="text-sm font-medium">{board.name}</span>
-                            <div className="flex gap-2">
+                            <span className="text-sm font-medium truncate flex-1">{board.name}</span>
+                            <div className="flex gap-1">
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -1674,35 +1544,23 @@ export default function SuperAdmin() {
                     )}
                   </CardContent>
                 </Card>
-              </div>
-            </motion.div>
-          </TabsContent>
 
-          <TabsContent value="actions" className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <h2 className="text-2xl font-bold text-foreground mb-6">Quick Actions</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
                       <Megaphone className="w-5 h-5 text-violet-500" />
-                      Broadcast Announcement
+                      Announcements
                     </CardTitle>
-                    <CardDescription>Send a message to all users</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3">
                     <Input
-                      placeholder="Announcement title"
+                      placeholder="Title"
                       value={announcementTitle}
                       onChange={(e) => setAnnouncementTitle(e.target.value)}
                       data-testid="input-announcement-title"
                     />
                     <Input
-                      placeholder="Announcement message"
+                      placeholder="Message"
                       value={announcementMessage}
                       onChange={(e) => setAnnouncementMessage(e.target.value)}
                       data-testid="input-announcement-message"
@@ -1714,23 +1572,17 @@ export default function SuperAdmin() {
                       data-testid="button-send-announcement"
                     >
                       <Send className="w-4 h-4 mr-2" />
-                      {createAnnouncementMutation.isPending ? 'Sending...' : 'Send Announcement'}
+                      {createAnnouncementMutation.isPending ? 'Sending...' : 'Broadcast'}
                     </Button>
                     
                     {isLoadingAnnouncements ? (
-                      <div className="mt-4 pt-4 border-t space-y-2">
-                        <Skeleton className="h-4 w-32" />
-                        {[1, 2].map((i) => (
-                          <Skeleton key={i} className="h-12 w-full" />
-                        ))}
-                      </div>
+                      <Skeleton className="h-12 w-full" />
                     ) : announcements.length > 0 && (
-                      <div className="mt-4 pt-4 border-t space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">Recent Announcements</p>
-                        {announcements.slice(0, 3).map((a) => (
+                      <div className="pt-3 border-t space-y-2">
+                        {announcements.slice(0, 2).map((a) => (
                           <div key={a.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                            <div>
-                              <p className="text-sm font-medium">{a.title}</p>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium truncate">{a.title}</p>
                               <p className="text-xs text-muted-foreground">{new Date(a.createdAt).toLocaleDateString()}</p>
                             </div>
                             <Button
@@ -1749,16 +1601,15 @@ export default function SuperAdmin() {
                 </Card>
 
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
                       <Download className="w-5 h-5 text-teal-500" />
                       Data Export
                     </CardTitle>
-                    <CardDescription>Export platform data for backup or analysis</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3">
                     <p className="text-sm text-muted-foreground">
-                      Download a complete snapshot of all users, boards, categories, and questions.
+                      Download all platform data for backup or analysis.
                     </p>
                     <Button
                       className="w-full"
