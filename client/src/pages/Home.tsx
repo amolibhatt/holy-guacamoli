@@ -45,25 +45,25 @@ const GAME_CONFIG: Record<string, {
     icon: Grid3X3,
     route: "/host/blitzgrid",
     accentColor: "#e879f9",
-    tagline: "Own the Board",
-    howItWorks: "Buzz in, steal points, clear the grid.",
+    tagline: "Trivia Throwdown",
+    howItWorks: "Buzz in. Nail it. Take the points.",
     players: "2-8 players",
-    badge: "Most Popular",
+    badge: "Fan Favorite",
   },
   sequence_squeeze: {
     icon: AbcListIcon,
     route: "/host/sort-circuit",
     accentColor: "#22d3ee",
-    tagline: "Fastest Fingers First",
-    howItWorks: "Drag items in order before time runs out.",
+    tagline: "Speed Sorting",
+    howItWorks: "Put things in order. Fastest wins!",
     players: "2-20 players",
   },
   psyop: {
     icon: Brain,
     route: "/host/psyop",
     accentColor: "#8b5cf6",
-    tagline: "Trust No One",
-    howItWorks: "Write fake answers to fool friends. Find the truth.",
+    tagline: "Lie & Spy",
+    howItWorks: "Make up answers. Fool your friends!",
     players: "3-10 players",
   },
 };
@@ -151,7 +151,7 @@ export default function Home() {
               }}
               data-testid="text-main-title"
             >
-              Pick Your Game
+              Game On
             </motion.h1>
           </div>
 
