@@ -1509,7 +1509,7 @@ export default function Blitzgrid() {
                                       <div className="space-y-2">
                                         {/* Accuracy bar */}
                                         <div className="space-y-1">
-                                          <div className="flex justify-between text-xs">
+                                          <div className="flex justify-between gap-2 text-xs">
                                             <span className="text-white/40">Accuracy</span>
                                             <span className="font-medium text-white">{accuracy}%</span>
                                           </div>
@@ -1528,7 +1528,7 @@ export default function Blitzgrid() {
                                         </div>
                                         
                                         {/* Stats row */}
-                                        <div className="flex justify-between text-xs">
+                                        <div className="flex justify-between gap-2 text-xs">
                                           <div className="flex items-center gap-1">
                                             <Check className="w-3 h-3 text-emerald-400" />
                                             <span className="text-white/40">{stats.correctAnswers} correct</span>
