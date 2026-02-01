@@ -726,7 +726,11 @@ export default function BlitzgridAdmin() {
                         size="sm"
                         variant="outline"
                         className="text-destructive hover:text-destructive"
-                        onClick={() => setDeleteGridId(selectedGridId)}
+                        onClick={() => {
+                          if (selectedGridId) {
+                            setDeleteGridId(selectedGridId);
+                          }
+                        }}
                         data-testid="button-delete-selected-grid"
                       >
                         <Trash2 className="w-4 h-4 mr-1" /> Delete
