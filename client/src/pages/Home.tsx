@@ -16,21 +16,23 @@ const GAME_CONFIG: Record<string, {
   tagline: string;
   howItWorks: string;
   players: string;
+  badge?: string;
 }> = {
   blitzgrid: {
     icon: Grid3X3,
     route: "/host/blitzgrid",
     accentColor: "#e879f9",
     tagline: "5x5 Trivia Showdown",
-    howItWorks: "Pick categories, buzz in to answer, steal points from rivals. First to clear the grid wins!",
+    howItWorks: "Buzz in, steal points, clear the grid.",
     players: "2-8 players",
+    badge: "Most Popular",
   },
   sequence_squeeze: {
     icon: ListOrdered,
     route: "/host/sort-circuit",
     accentColor: "#22d3ee",
     tagline: "Race to Rank",
-    howItWorks: "Drag items into the correct order before time runs out. Fastest correct answer wins the round!",
+    howItWorks: "Drag items in order before time runs out.",
     players: "2-20 players",
   },
   psyop: {
@@ -38,7 +40,7 @@ const GAME_CONFIG: Record<string, {
     route: "/host/psyop",
     accentColor: "#8b5cf6",
     tagline: "Bluff & Detect",
-    howItWorks: "One player lies, everyone else tells the truth. Vote to catch the faker and earn points!",
+    howItWorks: "Spot the liar among your friends.",
     players: "3-10 players",
   },
 };
@@ -140,7 +142,7 @@ export default function Home() {
           </div>
 
           {/* Game Cards - 3 column grid on large screens */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
             {isLoadingGames ? (
               <>
                 <GameCardSkeleton />
@@ -175,7 +177,7 @@ export default function Home() {
                     onMouseLeave={() => setHoveredCard(null)}
                     onClick={() => !isComingSoon && setLocation(config.route)}
                     disabled={isComingSoon}
-                    className={`flex flex-col items-center justify-center text-center p-6 lg:p-8 rounded-xl bg-[#0d0d12] transition-all duration-200 min-h-[200px] lg:min-h-[280px] ${
+                    className={`relative flex flex-col items-center justify-center text-center p-6 lg:p-8 rounded-xl bg-[#0d0d12] transition-all duration-200 min-h-[200px] lg:min-h-[280px] ${
                       isComingSoon 
                         ? 'opacity-40 cursor-not-allowed' 
                         : 'cursor-pointer'
@@ -190,6 +192,21 @@ export default function Home() {
                     }}
                     data-testid={`button-game-${game.slug}`}
                   >
+                    {/* Badge */}
+                    {config.badge && (
+                      <div 
+                        className="absolute top-3 right-3 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                        style={{ 
+                          backgroundColor: `${config.accentColor}20`,
+                          color: config.accentColor,
+                          border: `1px solid ${config.accentColor}40`,
+                        }}
+                        data-testid={`badge-${game.slug}`}
+                      >
+                        {config.badge}
+                      </div>
+                    )}
+                    
                     {/* Icon */}
                     <div 
                       className="w-14 h-14 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center mb-4 lg:mb-6 transition-all duration-200"
