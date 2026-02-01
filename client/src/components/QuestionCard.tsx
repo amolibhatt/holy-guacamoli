@@ -103,7 +103,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
   const { contestants, awardPoints, deductPoints, markQuestionCompleted } = useScore();
   const prefersReducedMotion = useReducedMotion();
 
-  const correctAnswer = (question as any).correctAnswer;
+  const correctAnswer = question.correctAnswer;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

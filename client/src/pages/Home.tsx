@@ -153,7 +153,7 @@ export default function Home() {
               gameTypes.filter(g => GAME_CONFIG[g.slug]).map((game, index) => {
                 const config = GAME_CONFIG[game.slug];
                 const Icon = config.icon;
-                const isComingSoon = (game as any).status === 'coming_soon';
+                const isComingSoon = game.status === 'coming_soon';
                 const isHovered = hoveredCard === game.slug;
 
                 return (
