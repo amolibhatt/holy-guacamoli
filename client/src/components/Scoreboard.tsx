@@ -114,7 +114,7 @@ export function Scoreboard() {
                       <Popover>
                         <PopoverTrigger asChild>
                           <button
-                            className="w-7 h-7 rounded-full flex items-center justify-center text-base relative z-10 hover:ring-2 hover:ring-foreground/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all"
+                            className="w-7 h-7 rounded-full flex items-center justify-center text-base relative z-10 hover-elevate focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all"
                             style={{ 
                               backgroundColor: contestant.color,
                             }}
