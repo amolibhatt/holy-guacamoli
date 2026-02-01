@@ -145,6 +145,56 @@ interface Announcement {
   expiresAt: string | null;
 }
 
+interface QuestionCreator {
+  id: string;
+  username: string;
+  email: string | null;
+}
+
+interface SequenceQuestionWithCreator {
+  id: number;
+  userId: string | null;
+  question: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
+  correctOrder: string[];
+  hint: string | null;
+  isActive: boolean;
+  isStarterPack: boolean;
+  createdAt: string;
+  creator: QuestionCreator | null;
+}
+
+interface PsyopQuestionWithCreator {
+  id: number;
+  userId: string | null;
+  factText: string;
+  correctAnswer: string;
+  category: string | null;
+  isActive: boolean;
+  isStarterPack: boolean;
+  createdAt: string;
+  creator: QuestionCreator | null;
+}
+
+interface BlitzgridQuestionWithCreator {
+  id: number;
+  question: string;
+  options: string[];
+  correctAnswer: string;
+  points: number;
+  imageUrl: string | null;
+  audioUrl: string | null;
+  videoUrl: string | null;
+  categoryId: number | null;
+  createdAt: string;
+  category: { id: number; name: string } | null;
+  board: { id: number; name: string; userId: string | null } | null;
+  creator: QuestionCreator | null;
+}
+
 export default function SuperAdmin() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { toast } = useToast();
@@ -196,6 +246,21 @@ export default function SuperAdmin() {
 
   const { data: allSessions = [], isLoading: isLoadingSessions } = useQuery<DetailedSession[]>({
     queryKey: ['/api/super-admin/sessions'],
+  });
+
+  const { data: sequenceQuestions = [], isLoading: isLoadingSequenceQuestions } = useQuery<SequenceQuestionWithCreator[]>({
+    queryKey: ['/api/super-admin/questions/sequence'],
+    enabled: expandedGameSlug === 'sequence_squeeze',
+  });
+
+  const { data: psyopQuestions = [], isLoading: isLoadingPsyopQuestions } = useQuery<PsyopQuestionWithCreator[]>({
+    queryKey: ['/api/super-admin/questions/psyop'],
+    enabled: expandedGameSlug === 'psyop',
+  });
+
+  const { data: blitzgridQuestions = [], isLoading: isLoadingBlitzgridQuestions } = useQuery<BlitzgridQuestionWithCreator[]>({
+    queryKey: ['/api/super-admin/questions/blitzgrid'],
+    enabled: expandedGameSlug === 'blitzgrid',
   });
 
   const updateGameTypeMutation = useMutation({
@@ -253,6 +318,32 @@ export default function SuperAdmin() {
     },
     onError: () => {
       toast({ title: "Couldn't update starter pack status", description: "Please try again.", variant: "destructive" });
+    },
+  });
+
+  const toggleSequenceStarterPackMutation = useMutation({
+    mutationFn: async ({ questionId, isStarterPack }: { questionId: number; isStarterPack: boolean }) => {
+      await apiRequest('PATCH', `/api/super-admin/questions/sequence/${questionId}/starter-pack`, { isStarterPack });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/sequence'] });
+      toast({ title: "Starter pack status updated" });
+    },
+    onError: () => {
+      toast({ title: "Couldn't update starter pack status", variant: "destructive" });
+    },
+  });
+
+  const togglePsyopStarterPackMutation = useMutation({
+    mutationFn: async ({ questionId, isStarterPack }: { questionId: number; isStarterPack: boolean }) => {
+      await apiRequest('PATCH', `/api/super-admin/questions/psyop/${questionId}/starter-pack`, { isStarterPack });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/psyop'] });
+      toast({ title: "Starter pack status updated" });
+    },
+    onError: () => {
+      toast({ title: "Couldn't update starter pack status", variant: "destructive" });
     },
   });
 
@@ -778,8 +869,139 @@ export default function SuperAdmin() {
                                   )}
                                   
                                   {gameType.slug === 'sequence_squeeze' && (
-                                    <div className="text-center py-4 text-muted-foreground">
-                                      Content is created per-session during gameplay.
+                                    <div className="space-y-3">
+                                      <div className="flex items-center justify-between gap-4">
+                                        <h4 className="font-medium text-foreground">Sort Circuit Questions</h4>
+                                        <div className="flex items-center gap-2">
+                                          <Button
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/sequence'] })}
+                                            data-testid="button-refresh-sequence-questions"
+                                          >
+                                            <RefreshCw className="w-4 h-4" />
+                                          </Button>
+                                          <Badge variant="secondary">{sequenceQuestions.length} questions</Badge>
+                                        </div>
+                                      </div>
+                                      
+                                      {isLoadingSequenceQuestions ? (
+                                        <div className="space-y-2">
+                                          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
+                                        </div>
+                                      ) : sequenceQuestions.length === 0 ? (
+                                        <div className="text-center py-6 text-muted-foreground">
+                                          No questions created yet.
+                                        </div>
+                                      ) : (
+                                        <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                                          {sequenceQuestions.map((q) => (
+                                            <div key={q.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border">
+                                              <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                  <span className="font-medium truncate">{q.question}</span>
+                                                  {q.isStarterPack && (
+                                                    <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs">
+                                                      <Star className="w-3 h-3 mr-1" />
+                                                      Starter
+                                                    </Badge>
+                                                  )}
+                                                  {!q.isActive && (
+                                                    <Badge variant="outline" className="text-xs">Inactive</Badge>
+                                                  )}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
+                                                  <User className="w-3 h-3" />
+                                                  {q.creator?.username || q.creator?.email || 'System'}
+                                                </div>
+                                              </div>
+                                              <Button
+                                                variant={q.isStarterPack ? "default" : "outline"}
+                                                size="icon"
+                                                onClick={() => toggleSequenceStarterPackMutation.mutate({ 
+                                                  questionId: q.id, 
+                                                  isStarterPack: !q.isStarterPack 
+                                                })}
+                                                disabled={toggleSequenceStarterPackMutation.isPending}
+                                                title="Toggle starter pack"
+                                                data-testid={`button-starter-pack-sequence-${q.id}`}
+                                              >
+                                                <Star className={`w-4 h-4 ${q.isStarterPack ? 'fill-current' : ''}`} />
+                                              </Button>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {gameType.slug === 'psyop' && (
+                                    <div className="space-y-3">
+                                      <div className="flex items-center justify-between gap-4">
+                                        <h4 className="font-medium text-foreground">PsyOp Questions</h4>
+                                        <div className="flex items-center gap-2">
+                                          <Button
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/psyop'] })}
+                                            data-testid="button-refresh-psyop-questions"
+                                          >
+                                            <RefreshCw className="w-4 h-4" />
+                                          </Button>
+                                          <Badge variant="secondary">{psyopQuestions.length} questions</Badge>
+                                        </div>
+                                      </div>
+                                      
+                                      {isLoadingPsyopQuestions ? (
+                                        <div className="space-y-2">
+                                          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
+                                        </div>
+                                      ) : psyopQuestions.length === 0 ? (
+                                        <div className="text-center py-6 text-muted-foreground">
+                                          No questions created yet.
+                                        </div>
+                                      ) : (
+                                        <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                                          {psyopQuestions.map((q) => (
+                                            <div key={q.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border">
+                                              <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                  <span className="font-medium truncate">{q.factText}</span>
+                                                  {q.isStarterPack && (
+                                                    <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs">
+                                                      <Star className="w-3 h-3 mr-1" />
+                                                      Starter
+                                                    </Badge>
+                                                  )}
+                                                  {!q.isActive && (
+                                                    <Badge variant="outline" className="text-xs">Inactive</Badge>
+                                                  )}
+                                                  {q.category && (
+                                                    <Badge variant="secondary" className="text-xs">{q.category}</Badge>
+                                                  )}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
+                                                  <User className="w-3 h-3" />
+                                                  {q.creator?.username || q.creator?.email || 'System'}
+                                                </div>
+                                              </div>
+                                              <Button
+                                                variant={q.isStarterPack ? "default" : "outline"}
+                                                size="icon"
+                                                onClick={() => togglePsyopStarterPackMutation.mutate({ 
+                                                  questionId: q.id, 
+                                                  isStarterPack: !q.isStarterPack 
+                                                })}
+                                                disabled={togglePsyopStarterPackMutation.isPending}
+                                                title="Toggle starter pack"
+                                                data-testid={`button-starter-pack-psyop-${q.id}`}
+                                              >
+                                                <Star className={`w-4 h-4 ${q.isStarterPack ? 'fill-current' : ''}`} />
+                                              </Button>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
                                   )}
                                 </div>

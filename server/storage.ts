@@ -2103,6 +2103,143 @@ export class DatabaseStorage implements IStorage {
       }
     };
   }
+
+  async getAllSequenceQuestionsWithCreators() {
+    const allQuestions = await db.select({
+      id: sequenceQuestions.id,
+      userId: sequenceQuestions.userId,
+      question: sequenceQuestions.question,
+      optionA: sequenceQuestions.optionA,
+      optionB: sequenceQuestions.optionB,
+      optionC: sequenceQuestions.optionC,
+      optionD: sequenceQuestions.optionD,
+      correctOrder: sequenceQuestions.correctOrder,
+      hint: sequenceQuestions.hint,
+      isActive: sequenceQuestions.isActive,
+      isStarterPack: sequenceQuestions.isStarterPack,
+      createdAt: sequenceQuestions.createdAt,
+    }).from(sequenceQuestions)
+      .orderBy(desc(sequenceQuestions.createdAt));
+
+    const questionsWithCreators = await Promise.all(allQuestions.map(async (q) => {
+      let creator = null;
+      if (q.userId) {
+        const [user] = await db.select({
+          id: users.id,
+          username: users.username,
+          email: users.email,
+        }).from(users).where(eq(users.id, q.userId));
+        creator = user || null;
+      }
+      return { ...q, creator };
+    }));
+
+    return questionsWithCreators;
+  }
+
+  async getAllPsyopQuestionsWithCreators() {
+    const allQuestions = await db.select({
+      id: psyopQuestions.id,
+      userId: psyopQuestions.userId,
+      factText: psyopQuestions.factText,
+      correctAnswer: psyopQuestions.correctAnswer,
+      category: psyopQuestions.category,
+      isActive: psyopQuestions.isActive,
+      isStarterPack: psyopQuestions.isStarterPack,
+      createdAt: psyopQuestions.createdAt,
+    }).from(psyopQuestions)
+      .orderBy(desc(psyopQuestions.createdAt));
+
+    const questionsWithCreators = await Promise.all(allQuestions.map(async (q) => {
+      let creator = null;
+      if (q.userId) {
+        const [user] = await db.select({
+          id: users.id,
+          username: users.username,
+          email: users.email,
+        }).from(users).where(eq(users.id, q.userId));
+        creator = user || null;
+      }
+      return { ...q, creator };
+    }));
+
+    return questionsWithCreators;
+  }
+
+  async getAllBlitzgridQuestionsWithCreators() {
+    const allQuestions = await db.select({
+      id: questions.id,
+      question: questions.question,
+      options: questions.options,
+      correctAnswer: questions.correctAnswer,
+      points: questions.points,
+      imageUrl: questions.imageUrl,
+      audioUrl: questions.audioUrl,
+      videoUrl: questions.videoUrl,
+      categoryId: questions.categoryId,
+      createdAt: questions.createdAt,
+    }).from(questions)
+      .orderBy(desc(questions.createdAt))
+      .limit(500);
+
+    const questionsWithDetails = await Promise.all(allQuestions.map(async (q) => {
+      let category = null;
+      let board = null;
+      let creator = null;
+
+      if (q.categoryId) {
+        const [cat] = await db.select({
+          id: categories.id,
+          name: categories.name,
+        }).from(categories).where(eq(categories.id, q.categoryId));
+        category = cat || null;
+
+        if (cat) {
+          const [bc] = await db.select({
+            boardId: boardCategories.boardId,
+          }).from(boardCategories).where(eq(boardCategories.categoryId, cat.id));
+          
+          if (bc) {
+            const [b] = await db.select({
+              id: boards.id,
+              name: boards.name,
+              userId: boards.userId,
+            }).from(boards).where(eq(boards.id, bc.boardId));
+            board = b || null;
+
+            if (b?.userId) {
+              const [user] = await db.select({
+                id: users.id,
+                username: users.username,
+                email: users.email,
+              }).from(users).where(eq(users.id, b.userId));
+              creator = user || null;
+            }
+          }
+        }
+      }
+
+      return { ...q, category, board, creator };
+    }));
+
+    return questionsWithDetails;
+  }
+
+  async toggleSequenceQuestionStarterPack(questionId: number, isStarterPack: boolean) {
+    const [updated] = await db.update(sequenceQuestions)
+      .set({ isStarterPack })
+      .where(eq(sequenceQuestions.id, questionId))
+      .returning();
+    return updated;
+  }
+
+  async togglePsyopQuestionStarterPack(questionId: number, isStarterPack: boolean) {
+    const [updated] = await db.update(psyopQuestions)
+      .set({ isStarterPack })
+      .where(eq(psyopQuestions.id, questionId))
+      .returning();
+    return updated;
+  }
 }
 
 export const storage = new DatabaseStorage();

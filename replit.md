@@ -83,6 +83,8 @@ Preferred communication style: Simple, everyday language.
 - **User Activity Tracking**: lastLoginAt field on users table, activity API showing games hosted and recent sessions.
 - **Super Admin Sessions Tab**: Dedicated tab showing all game sessions across the platform with host info, player lists, scores, and winners. Relative timestamps ("2h ago") for intuitive display.
 - **Expandable User Details**: Users tab features expandable rows with last login, grids created, games hosted count, and detailed session history with player names, scores, and winners. Note: Players join games anonymously via QR codes without accounts, so only hosted games (not played games) can be tracked per registered user.
+- **Enhanced Games Tab**: Super admin can see all games with enable/disable status controls. Expanded game views show all questions with creator info for Sort Circuit and PsyOp, and all grids with owner info for Blitzgrid. Starter pack toggles available for all game types.
+- **Per-Game Starter Packs**: isStarterPack field added to sequence_questions and psyop_questions tables. Super admins can mark individual questions as starter pack content that gets copied to new users.
 
 ### Known Security Notes
 - **Express v4 Vulnerabilities**: npm audit shows 3 HIGH severity vulnerabilities in express/qs/body-parser. Express v5 upgrade was attempted but reverted due to breaking changes in path-to-regexp (route syntax like `:param(*)` no longer works). Will revisit when upstream compatibility improves.
