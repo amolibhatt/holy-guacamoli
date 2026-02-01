@@ -146,7 +146,7 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
             >
               <h1 
-                className="text-lg lg:text-xl font-semibold text-white/90 tracking-wide"
+                className="text-sm lg:text-base font-medium text-white/50 tracking-wide"
                 data-testid="text-main-title"
               >
                 Pick a game. Rally your crew.
