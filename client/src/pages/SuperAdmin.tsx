@@ -204,6 +204,7 @@ export default function SuperAdmin() {
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
   const [userSearch, setUserSearch] = useState("");
+  const [sessionSearch, setSessionSearch] = useState("");
   const [gridSearch, setGridSearch] = useState("");
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
@@ -405,9 +406,8 @@ export default function SuperAdmin() {
 
   const handleExportData = async () => {
     try {
-      const response = await fetch('/api/super-admin/export');
-      const data = await response.json();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const response = await apiRequest('GET', '/api/super-admin/export');
+      const blob = new Blob([JSON.stringify(response, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -470,6 +470,21 @@ export default function SuperAdmin() {
       case 'psyop': return 'from-violet-300 via-purple-300 to-indigo-300';
       default: return 'from-amber-300 via-yellow-300 to-orange-300';
     }
+  };
+
+  const formatRelativeDate = (dateStr: string | Date | null) => {
+    if (!dateStr) return 'Never';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
   };
 
   return (
@@ -688,6 +703,7 @@ export default function SuperAdmin() {
                 <CardHeader 
                   className="cursor-pointer hover-elevate"
                   onClick={() => setExpandedUserId(expandedUserId === 'section' ? null : 'section')}
+                  data-testid="section-users-toggle"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -744,25 +760,10 @@ export default function SuperAdmin() {
                             return <p className="text-center text-muted-foreground py-4">No users found</p>;
                           }
                           
-                          const formatDate = (dateStr: string | null) => {
-                            if (!dateStr) return 'Never';
-                            const date = new Date(dateStr);
-                            const now = new Date();
-                            const diffMs = now.getTime() - date.getTime();
-                            const diffMins = Math.floor(diffMs / 60000);
-                            const diffHours = Math.floor(diffMs / 3600000);
-                            const diffDays = Math.floor(diffMs / 86400000);
-                            if (diffMins < 1) return 'Just now';
-                            if (diffMins < 60) return `${diffMins}m ago`;
-                            if (diffHours < 24) return `${diffHours}h ago`;
-                            if (diffDays < 7) return `${diffDays}d ago`;
-                            return date.toLocaleDateString();
-                          };
-                          
                           return (
                             <div className="space-y-2 max-h-[400px] overflow-y-auto">
                               {filteredUsers.slice(0, 20).map((u) => (
-                                <div key={u.id} className="p-3 rounded-lg border bg-muted/30 flex items-center justify-between gap-4">
+                                <div key={u.id} className="p-3 rounded-lg border bg-muted/30 flex items-center justify-between gap-4" data-testid={`user-row-${u.id}`}>
                                   <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white font-bold">
                                       {u.firstName?.[0] || u.email[0].toUpperCase()}
@@ -771,8 +772,9 @@ export default function SuperAdmin() {
                                       <div className="flex items-center gap-2">
                                         <span className="font-medium">{u.firstName || 'User'} {u.lastName || ''}</span>
                                         {u.role === 'super_admin' && <Badge className="bg-purple-500/20 text-purple-600 text-xs"><Shield className="w-3 h-3 mr-1" />Super</Badge>}
+                                        {u.role === 'admin' && <Badge className="bg-blue-500/20 text-blue-600 text-xs">Admin</Badge>}
                                       </div>
-                                      <div className="text-xs text-muted-foreground">{u.email} • Last login: {formatDate(u.lastLoginAt ? String(u.lastLoginAt) : null)}</div>
+                                      <div className="text-xs text-muted-foreground">{u.email} • Last login: {formatRelativeDate(u.lastLoginAt)}</div>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-4 text-sm">
@@ -785,7 +787,7 @@ export default function SuperAdmin() {
                                       <div className="text-xs text-muted-foreground">Games</div>
                                     </div>
                                     {u.role !== 'super_admin' && (
-                                      <Button variant="ghost" size="icon" onClick={() => setDeleteUserId(u.id)}>
+                                      <Button variant="ghost" size="icon" onClick={() => setDeleteUserId(u.id)} data-testid={`button-delete-user-${u.id}`}>
                                         <Trash2 className="w-4 h-4 text-destructive" />
                                       </Button>
                                     )}
@@ -811,6 +813,7 @@ export default function SuperAdmin() {
                 <CardHeader 
                   className="cursor-pointer hover-elevate"
                   onClick={() => setExpandedSessionId(expandedSessionId === 'section' ? null : 'section')}
+                  data-testid="section-sessions-toggle"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -835,67 +838,83 @@ export default function SuperAdmin() {
                       transition={{ duration: 0.2 }}
                     >
                       <CardContent className="pt-0">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Search by code or host..."
+                              value={sessionSearch}
+                              onChange={(e) => setSessionSearch(e.target.value)}
+                              className="pl-9"
+                              data-testid="input-session-search"
+                            />
+                          </div>
+                        </div>
+                        
                         {isLoadingSessions ? (
                           <div className="space-y-2">
                             {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
                           </div>
-                        ) : allSessions.length === 0 ? (
-                          <p className="text-center text-muted-foreground py-4">No sessions yet</p>
-                        ) : (
-                          <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                            {allSessions.slice(0, 20).map((session) => {
-                              const formatDate = (dateStr: string) => {
-                                const date = new Date(dateStr);
-                                const now = new Date();
-                                const diffMs = now.getTime() - date.getTime();
-                                const diffMins = Math.floor(diffMs / 60000);
-                                const diffHours = Math.floor(diffMs / 3600000);
-                                const diffDays = Math.floor(diffMs / 86400000);
-                                if (diffMins < 1) return 'Just now';
-                                if (diffMins < 60) return `${diffMins}m ago`;
-                                if (diffHours < 24) return `${diffHours}h ago`;
-                                if (diffDays < 7) return `${diffDays}d ago`;
-                                return date.toLocaleDateString();
-                              };
-                              const winner = session.players.reduce((max, p) => p.score > max.score ? p : max, session.players[0]);
-                              
-                              return (
-                                <div key={session.id} className="p-3 rounded-lg border bg-muted/30">
-                                  <div className="flex items-center justify-between gap-4 flex-wrap">
-                                    <div className="flex items-center gap-3">
-                                      <Badge variant={session.state === 'active' ? 'default' : 'secondary'} className={session.state === 'active' ? 'bg-green-500' : ''}>
-                                        {session.code}
-                                      </Badge>
-                                      <span className="text-sm">Host: {session.host?.username || 'Unknown'}</span>
-                                      <Badge variant="outline" className="text-xs capitalize">{session.state}</Badge>
+                        ) : (() => {
+                          const filteredSessions = allSessions.filter((s) => {
+                            if (!sessionSearch.trim()) return true;
+                            const searchLower = sessionSearch.toLowerCase();
+                            return (
+                              s.code.toLowerCase().includes(searchLower) ||
+                              s.host?.username?.toLowerCase().includes(searchLower) ||
+                              s.host?.email?.toLowerCase().includes(searchLower)
+                            );
+                          });
+                          
+                          if (filteredSessions.length === 0) {
+                            return <p className="text-center text-muted-foreground py-4">No sessions found</p>;
+                          }
+                          
+                          return (
+                            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                              {filteredSessions.slice(0, 20).map((session) => {
+                                const winner = session.players.length > 0 
+                                  ? session.players.reduce((max, p) => p.score > max.score ? p : max, session.players[0])
+                                  : null;
+                                
+                                return (
+                                  <div key={session.id} className="p-3 rounded-lg border bg-muted/30" data-testid={`session-row-${session.id}`}>
+                                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                                      <div className="flex items-center gap-3">
+                                        <Badge variant={session.state === 'active' ? 'default' : 'secondary'} className={session.state === 'active' ? 'bg-green-500' : ''}>
+                                          {session.code}
+                                        </Badge>
+                                        <span className="text-sm">Host: {session.host?.username || session.host?.email || 'Unknown'}</span>
+                                        <Badge variant="outline" className="text-xs capitalize">{session.state}</Badge>
+                                      </div>
+                                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                        <span className="flex items-center gap-1">
+                                          <Users className="w-3 h-3" /> {session.playerCount}
+                                        </span>
+                                        <span>{formatRelativeDate(session.createdAt)}</span>
+                                      </div>
                                     </div>
-                                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                      <span className="flex items-center gap-1">
-                                        <Users className="w-3 h-3" /> {session.playerCount}
-                                      </span>
-                                      <span>{formatDate(session.createdAt)}</span>
-                                    </div>
+                                    {winner && (
+                                      <div className="mt-2 pt-2 border-t flex items-center gap-2 flex-wrap">
+                                        <Trophy className="w-4 h-4 text-amber-500" />
+                                        <span className="text-sm font-medium">{winner.name}</span>
+                                        <span className="text-xs text-muted-foreground">({winner.score} pts)</span>
+                                        {session.players.filter(p => p.id !== winner.id).slice(0, 3).map((p) => (
+                                          <Badge key={p.id} variant="secondary" className="text-xs">{p.name}: {p.score}</Badge>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
-                                  {session.players.length > 0 && winner && (
-                                    <div className="mt-2 pt-2 border-t flex items-center gap-2 flex-wrap">
-                                      <Trophy className="w-4 h-4 text-amber-500" />
-                                      <span className="text-sm font-medium">{winner.name}</span>
-                                      <span className="text-xs text-muted-foreground">({winner.score} pts)</span>
-                                      {session.players.slice(1, 4).map((p) => (
-                                        <Badge key={p.id} variant="secondary" className="text-xs">{p.name}: {p.score}</Badge>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                            {allSessions.length > 20 && (
-                              <p className="text-center text-muted-foreground text-sm py-2">
-                                Showing 20 of {allSessions.length} sessions
-                              </p>
-                            )}
-                          </div>
-                        )}
+                                );
+                              })}
+                              {filteredSessions.length > 20 && (
+                                <p className="text-center text-muted-foreground text-sm py-2">
+                                  Showing 20 of {filteredSessions.length} sessions
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </CardContent>
                     </motion.div>
                   )}
@@ -1345,8 +1364,8 @@ export default function SuperAdmin() {
                         <p className="text-sm">All content looks good!</p>
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        {flaggedBoards.slice(0, 3).map((board) => (
+                      <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                        {flaggedBoards.map((board) => (
                           <div key={board.id} className="flex items-center justify-between p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
                             <span className="text-sm font-medium truncate flex-1">{board.name}</span>
                             <div className="flex gap-1">
@@ -1407,8 +1426,8 @@ export default function SuperAdmin() {
                     {isLoadingAnnouncements ? (
                       <Skeleton className="h-12 w-full" />
                     ) : announcements.length > 0 && (
-                      <div className="pt-3 border-t space-y-2">
-                        {announcements.slice(0, 2).map((a) => (
+                      <div className="pt-3 border-t space-y-2 max-h-[150px] overflow-y-auto">
+                        {announcements.map((a) => (
                           <div key={a.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium truncate">{a.title}</p>
