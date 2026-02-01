@@ -231,18 +231,28 @@ export default function Home() {
                     )}
                     
                     {/* Icon */}
-                    <div 
-                      className="w-14 h-14 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center mb-4 lg:mb-6 transition-all duration-200"
+                    <motion.div 
+                      className="w-14 h-14 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center mb-4 lg:mb-6"
+                      animate={{
+                        scale: isHovered && !isComingSoon ? [1, 1.1, 1] : 1,
+                        boxShadow: isHovered && !isComingSoon 
+                          ? `0 0 30px ${config.accentColor}80, 0 0 60px ${config.accentColor}40`
+                          : `0 0 15px ${config.accentColor}30`,
+                      }}
+                      transition={{
+                        scale: { duration: 0.4, repeat: isHovered ? Infinity : 0, repeatDelay: 0.8 },
+                        boxShadow: { duration: 0.2 },
+                      }}
                       style={{
+                        background: `linear-gradient(135deg, ${config.accentColor}30 0%, ${config.accentColor}10 100%)`,
                         border: `2px solid ${config.accentColor}`,
-                        boxShadow: isHovered ? `0 0 25px ${config.accentColor}60` : `0 0 15px ${config.accentColor}30`,
                       }}
                     >
                       <Icon 
                         className="w-6 h-6 lg:w-7 lg:h-7" 
                         style={{ color: config.accentColor }}
                       />
-                    </div>
+                    </motion.div>
                     
                     {/* Title with Neon Bleed */}
                     <h3 
