@@ -141,18 +141,28 @@ export default function Home() {
           
           {/* Header */}
           <div className="text-center mb-8 lg:mb-10">
-            <motion.h1 
+            <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-3xl lg:text-5xl font-black text-white uppercase tracking-wider mb-3"
-              style={{ 
-                fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                textShadow: '0 0 30px rgba(139, 92, 246, 0.5), 0 0 60px rgba(139, 92, 246, 0.3)',
-              }}
-              data-testid="text-main-title"
+              className="space-y-1"
             >
-              Game On
-            </motion.h1>
+              <p className="text-white/60 text-sm lg:text-base uppercase tracking-widest" data-testid="text-subtitle-1">
+                Pick a game
+              </p>
+              <h1 
+                className="text-3xl lg:text-5xl font-black text-white uppercase tracking-wider"
+                style={{ 
+                  fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                  textShadow: '0 0 30px rgba(139, 92, 246, 0.5), 0 0 60px rgba(139, 92, 246, 0.3)',
+                }}
+                data-testid="text-main-title"
+              >
+                Rally Your Crew
+              </h1>
+              <p className="text-white/60 text-sm lg:text-base uppercase tracking-widest" data-testid="text-subtitle-2">
+                Let the chaos begin
+              </p>
+            </motion.div>
           </div>
 
           {/* Game Cards - 3 column grid on large screens */}
