@@ -2948,11 +2948,11 @@ export default function Blitzgrid() {
             </div>
             <div className="flex items-center gap-2">
               {grid?.isActive ? (
-                <Badge variant="secondary" className="text-green-600">
+                <Badge variant="secondary" className="text-green-600 dark:text-green-400">
                   <CheckCircle2 className="w-3 h-3 mr-1" /> Ready
                 </Badge>
               ) : (
-                <Badge variant="outline" className="text-amber-600">
+                <Badge variant="outline" className="text-amber-600 dark:text-amber-400">
                   <AlertCircle className="w-3 h-3 mr-1" /> Incomplete
                 </Badge>
               )}
@@ -3082,9 +3082,9 @@ export default function Blitzgrid() {
                           </div>
                           <div className="flex items-center gap-2">
                             {category.questionCount >= 5 ? (
-                              <Badge variant="secondary" className="text-green-600 text-xs">Complete</Badge>
+                              <Badge variant="secondary" className="text-green-600 dark:text-green-400 text-xs">Complete</Badge>
                             ) : (
-                              <Badge variant="outline" className="text-amber-600 text-xs">
+                              <Badge variant="outline" className="text-amber-600 dark:text-amber-400 text-xs">
                                 {5 - category.questionCount} needed
                               </Badge>
                             )}

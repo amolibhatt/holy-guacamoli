@@ -115,7 +115,7 @@ export function AppHeader({
                 {user?.role === 'super_admin' && (
                   <Link href="/admin/super">
                     <DropdownMenuItem className="cursor-pointer py-2.5" data-testid="menu-super-admin">
-                      <Shield className="w-4 h-4 mr-3 text-purple-500" />
+                      <Shield className="w-4 h-4 mr-3 text-purple-500 dark:text-purple-400" />
                       Super Admin
                     </DropdownMenuItem>
                   </Link>
@@ -223,7 +223,7 @@ export function AppHeader({
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-purple-500" 
+              className="text-purple-500 dark:text-purple-400" 
               data-testid="button-super-admin" 
               aria-label="Super admin panel"
               asChild

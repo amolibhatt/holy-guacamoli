@@ -701,7 +701,7 @@ export default function PlayerPage() {
                         animate={{ scale: [1, 1.1, 1] }}
                         transition={{ duration: 1, repeat: Infinity }}
                       >
-                        <Sparkles className="w-16 h-16 mx-auto text-purple-500 mb-4" />
+                        <Sparkles className="w-16 h-16 mx-auto text-purple-500 dark:text-purple-400 mb-4" />
                       </motion.div>
                       <p className="text-lg font-medium">Lie submitted!</p>
                       <p className="text-muted-foreground text-sm">Waiting for others...</p>
@@ -758,7 +758,7 @@ export default function PlayerPage() {
                     animate={{ rotate: 360 }}
                     transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                   >
-                    <Clock className="w-16 h-16 mx-auto text-purple-500 mb-4" />
+                    <Clock className="w-16 h-16 mx-auto text-purple-500 dark:text-purple-400 mb-4" />
                   </motion.div>
                   <p className="text-lg font-medium">Vote cast!</p>
                   <p className="text-muted-foreground text-sm">Waiting for reveal...</p>
@@ -997,7 +997,7 @@ export default function PlayerPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="text-amber-600 font-bold mt-8 text-xl"
+                className="text-amber-600 dark:text-amber-400 font-bold mt-8 text-xl"
               >
                 Tap fast to answer first!
               </motion.p>

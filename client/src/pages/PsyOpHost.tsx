@@ -329,7 +329,7 @@ export default function PsyOpHost() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Eye className="w-5 h-5 text-purple-500" />
+                  <Eye className="w-5 h-5 text-purple-500 dark:text-purple-400" />
                   Start a PsyOp Game
                 </CardTitle>
               </CardHeader>
@@ -381,7 +381,7 @@ export default function PsyOpHost() {
                                 data-testid={`button-category-${category}`}
                               >
                                 <div className="flex items-center gap-3">
-                                  <Folder className="w-5 h-5 text-purple-500" />
+                                  <Folder className="w-5 h-5 text-purple-500 dark:text-purple-400" />
                                   <div>
                                     <div className="font-medium">{category}</div>
                                     <div className="text-xs text-muted-foreground">{count} question{count !== 1 ? 's' : ''}</div>
