@@ -2080,7 +2080,7 @@ export default function Blitzgrid() {
                               exit={{ opacity: 0 }}
                               transition={{ duration: 1, ease: "easeOut" }}
                               className={`absolute -top-6 left-1/2 -translate-x-1/2 font-bold text-sm whitespace-nowrap ${
-                                scoreAnim.delta > 0 ? 'text-emerald-600' : 'text-red-500'
+                                scoreAnim.delta > 0 ? 'text-emerald-600' : 'text-destructive'
                               }`}
                             >
                               {scoreAnim.delta > 0 ? '+' : ''}{scoreAnim.delta}

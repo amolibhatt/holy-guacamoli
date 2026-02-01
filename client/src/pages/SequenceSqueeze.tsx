@@ -1188,8 +1188,8 @@ export default function SequenceSqueeze() {
                           <Check className="w-3 h-3 text-emerald-500" />
                           <span>{entry.correctAnswers || 0} correct</span>
                         </div>
-                        <div className="flex items-center gap-1 px-2 py-1 bg-red-500/20 rounded">
-                          <X className="w-3 h-3 text-red-500" />
+                        <div className="flex items-center gap-1 px-2 py-1 bg-destructive/20 rounded">
+                          <X className="w-3 h-3 text-destructive" />
                           <span>{entry.wrongAnswers || 0} wrong</span>
                         </div>
                         {entry.avgTimeMs > 0 && (
@@ -1265,7 +1265,7 @@ export default function SequenceSqueeze() {
                     </div>
                     <div className="flex flex-wrap gap-2 text-xs">
                       <span className="px-2 py-0.5 bg-emerald-500/20 rounded">{entry.correctAnswers || 0} correct</span>
-                      <span className="px-2 py-0.5 bg-red-500/20 rounded">{entry.wrongAnswers || 0} wrong</span>
+                      <span className="px-2 py-0.5 bg-destructive/20 rounded">{entry.wrongAnswers || 0} wrong</span>
                       {entry.avgTimeMs > 0 && (
                         <span className="px-2 py-0.5 bg-blue-500/20 rounded">{(entry.avgTimeMs / 1000).toFixed(1)}s avg</span>
                       )}

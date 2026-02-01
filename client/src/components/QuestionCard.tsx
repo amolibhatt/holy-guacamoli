@@ -302,7 +302,7 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
               animate={{ scale: 1 }}
               className={`
                 w-14 h-14 rounded-full flex items-center justify-center font-mono text-2xl font-black border-4
-                ${timer <= 3 ? 'bg-red-500 text-white border-red-300 animate-pulse shadow-lg shadow-red-500/50' : 'bg-background/20 text-background border-background/30 dark:bg-white/20 dark:text-white dark:border-white/30'}
+                ${timer <= 3 ? 'bg-destructive text-destructive-foreground border-destructive/50 animate-pulse shadow-lg shadow-destructive/50' : 'bg-background/20 text-background border-background/30 dark:bg-white/20 dark:text-white dark:border-white/30'}
               `}
             >
               {timer}
@@ -310,9 +310,8 @@ export function QuestionCard({ question, isLocked, onComplete, buzzQueue = [], o
           )}
           {isTimerRunning && (
             <Button
-              variant="outline"
+              variant="destructive"
               onClick={stopTimer}
-              className="border-red-500 text-red-600 bg-red-100 dark:border-red-400/50 dark:text-red-300 dark:bg-transparent"
             >
               Stop
             </Button>
