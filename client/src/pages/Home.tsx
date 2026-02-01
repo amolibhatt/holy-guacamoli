@@ -70,7 +70,7 @@ function GameplayPreview({ slug, color }: { slug: string; color: string }) {
         className="flex items-center gap-1 mb-3 opacity-60"
         data-testid="preview-sort-circuit"
       >
-        {[3, 1, 2].map((num, i) => (
+        {['C', 'A', 'B'].map((letter, i) => (
           <div 
             key={i}
             className="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center"
@@ -80,11 +80,11 @@ function GameplayPreview({ slug, color }: { slug: string; color: string }) {
               boxShadow: `0 0 4px ${color}40`
             }}
           >
-            {num}
+            {letter}
           </div>
         ))}
         <ArrowRight className="w-3 h-3 mx-0.5" style={{ color: 'rgba(255,255,255,0.4)' }} />
-        {[1, 2, 3].map((num, i) => (
+        {['A', 'B', 'C'].map((letter, i) => (
           <div 
             key={i}
             className="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center"
@@ -94,7 +94,7 @@ function GameplayPreview({ slug, color }: { slug: string; color: string }) {
               color: color,
             }}
           >
-            {num}
+            {letter}
           </div>
         ))}
       </div>
