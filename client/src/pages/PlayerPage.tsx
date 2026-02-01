@@ -537,7 +537,7 @@ export default function PlayerPage() {
               {status === "connected" && <><Wifi className="w-4 h-4 text-primary" /> Connected</>}
               {status === "disconnected" && <><WifiOff className="w-4 h-4" /> Not connected</>}
               {status === "reconnecting" && <><RefreshCw className="w-4 h-4 animate-spin text-yellow-500" /> Reconnecting...</>}
-              {status === "error" && <><WifiOff className="w-4 h-4 text-red-500" /> Connection error</>}
+              {status === "error" && <><WifiOff className="w-4 h-4 text-destructive" /> Connection error</>}
             </div>
           </Card>
         </motion.div>
@@ -550,14 +550,14 @@ export default function PlayerPage() {
       <InstallPrompt />
       <FullScreenFlash show={showBuzzFlash} color="bg-amber-400/60" />
       <FullScreenFlash show={showCorrectFlash} color="bg-green-400/60" />
-      <FullScreenFlash show={showWrongFlash} color="bg-red-400/60" />
+      <FullScreenFlash show={showWrongFlash} color="bg-destructive/60" />
       
       <header className="px-4 py-3 flex items-center justify-between bg-card/80 backdrop-blur-xl border-b border-primary/20 shadow-lg" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             {status === "connected" && <Wifi className="w-4 h-4 text-green-500" />}
             {status === "reconnecting" && <RefreshCw className="w-4 h-4 animate-spin text-yellow-500" />}
-            {status === "disconnected" && <WifiOff className="w-4 h-4 text-red-500" />}
+            {status === "disconnected" && <WifiOff className="w-4 h-4 text-destructive" />}
             <span className="font-mono font-bold text-lg text-foreground">{roomCode}</span>
           </div>
         </div>
@@ -652,7 +652,7 @@ export default function PlayerPage() {
       )}
 
       {status === "disconnected" && (
-        <div className="bg-red-500/20 border-b border-red-500/30 px-4 py-3 text-center">
+        <div className="bg-destructive/20 border-b border-destructive/30 px-4 py-3 text-center">
           <p className="text-sm text-foreground mb-2">
             {reconnectAttempts >= 5 
               ? "Couldn't reconnect - tap below to try again" 
@@ -863,8 +863,8 @@ export default function PlayerPage() {
                 </>
               ) : (
                 <>
-                  <XCircle className="w-32 h-32 text-red-400 mx-auto" />
-                  <h2 className="text-4xl font-black text-red-400 mt-4">Wrong</h2>
+                  <XCircle className="w-32 h-32 text-destructive mx-auto" />
+                  <h2 className="text-4xl font-black text-destructive mt-4">Wrong</h2>
                 </>
               )}
             </motion.div>
