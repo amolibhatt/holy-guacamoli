@@ -523,14 +523,17 @@ export default function SuperAdmin() {
                 <Button
                   variant="outline"
                   size="icon"
+                  className="h-8 w-8"
                   onClick={() => {
                     queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
                     queryClient.invalidateQueries({ queryKey: ['/api/super-admin/users'] });
                     queryClient.invalidateQueries({ queryKey: ['/api/super-admin/sessions'] });
+                    queryClient.invalidateQueries({ queryKey: ['/api/super-admin/analytics'] });
+                    queryClient.invalidateQueries({ queryKey: ['/api/super-admin/room-stats'] });
                   }}
                   data-testid="button-refresh-dashboard"
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  <RefreshCw className="w-3.5 h-3.5" />
                 </Button>
               </div>
               
@@ -664,9 +667,9 @@ export default function SuperAdmin() {
                 )}
               </div>
 
-              <h3 className="text-xl font-semibold text-foreground mt-8 mb-4">Session & Player Stats</h3>
+              <h3 className="text-xl font-semibold text-foreground mt-8 mb-4">Session Analytics</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                {isLoadingRoomStats ? (
+                {isLoadingAnalytics ? (
                   [1, 2, 3, 4].map((i) => (
                     <Card key={i}>
                       <CardContent className="pt-6">
@@ -689,8 +692,8 @@ export default function SuperAdmin() {
                             <Activity className="w-5 h-5 text-rose-600 dark:text-rose-400" />
                           </div>
                           <div>
-                            <p className="text-2xl font-bold">{roomStats?.sessionsToday ?? 0}</p>
-                            <p className="text-sm text-muted-foreground">Sessions Today</p>
+                            <p className="text-2xl font-bold">{detailedAnalytics?.activeSessions ?? 0}</p>
+                            <p className="text-sm text-muted-foreground">Active Sessions</p>
                           </div>
                         </div>
                       </CardContent>
@@ -699,11 +702,11 @@ export default function SuperAdmin() {
                       <CardContent className="pt-6">
                         <div className="flex items-center gap-3">
                           <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-900/30">
-                            <Users className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                            <Clock className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                           </div>
                           <div>
-                            <p className="text-2xl font-bold">{roomStats?.playersToday ?? 0}</p>
-                            <p className="text-sm text-muted-foreground">Players Today</p>
+                            <p className="text-2xl font-bold">{detailedAnalytics?.endedSessions ?? 0}</p>
+                            <p className="text-sm text-muted-foreground">Ended Sessions</p>
                           </div>
                         </div>
                       </CardContent>
@@ -712,11 +715,11 @@ export default function SuperAdmin() {
                       <CardContent className="pt-6">
                         <div className="flex items-center gap-3">
                           <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                            <Gamepad2 className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                            <Calendar className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                           </div>
                           <div>
-                            <p className="text-2xl font-bold">{roomStats?.activeRooms ?? 0}</p>
-                            <p className="text-sm text-muted-foreground">Active Rooms</p>
+                            <p className="text-2xl font-bold">{detailedAnalytics?.totalSessionsThisMonth ?? 0}</p>
+                            <p className="text-sm text-muted-foreground">This Month</p>
                           </div>
                         </div>
                       </CardContent>
@@ -743,6 +746,10 @@ export default function SuperAdmin() {
                 <CardHeader 
                   className="cursor-pointer hover-elevate"
                   onClick={() => setExpandedUserId(expandedUserId === 'section' ? null : 'section')}
+                  onKeyDown={(e) => e.key === 'Enter' && setExpandedUserId(expandedUserId === 'section' ? null : 'section')}
+                  tabIndex={0}
+                  role="button"
+                  aria-expanded={expandedUserId === 'section'}
                   data-testid="section-users-toggle"
                 >
                   <div className="flex items-center justify-between">
@@ -789,16 +796,17 @@ export default function SuperAdmin() {
                           const filteredUsers = allUsers.filter((u) => {
                             if (!userSearch.trim()) return true;
                             const searchLower = userSearch.toLowerCase();
+                            const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
                             return (
                               u.email.toLowerCase().includes(searchLower) ||
                               u.firstName?.toLowerCase().includes(searchLower) ||
                               u.lastName?.toLowerCase().includes(searchLower) ||
-                              u.username?.toLowerCase().includes(searchLower)
+                              fullName.includes(searchLower)
                             );
                           });
                           
                           if (filteredUsers.length === 0) {
-                            return <p className="text-center text-muted-foreground py-4">No users found</p>;
+                            return <p className="text-center text-muted-foreground py-6">No users found</p>;
                           }
                           
                           return (
@@ -943,6 +951,10 @@ export default function SuperAdmin() {
                 <CardHeader 
                   className="cursor-pointer hover-elevate"
                   onClick={() => setExpandedSessionId(expandedSessionId === 'section' ? null : 'section')}
+                  onKeyDown={(e) => e.key === 'Enter' && setExpandedSessionId(expandedSessionId === 'section' ? null : 'section')}
+                  tabIndex={0}
+                  role="button"
+                  aria-expanded={expandedSessionId === 'section'}
                   data-testid="section-sessions-toggle"
                 >
                   <div className="flex items-center justify-between">
@@ -997,7 +1009,7 @@ export default function SuperAdmin() {
                           });
                           
                           if (filteredSessions.length === 0) {
-                            return <p className="text-center text-muted-foreground py-4">No sessions found</p>;
+                            return <p className="text-center text-muted-foreground py-6">No sessions found</p>;
                           }
                           
                           return (
@@ -1199,7 +1211,7 @@ export default function SuperAdmin() {
                                         
                                         if (filteredGrids.length === 0) {
                                           return (
-                                            <div className="text-center py-4 text-muted-foreground text-sm">
+                                            <div className="text-center py-6 text-muted-foreground text-sm">
                                               No grids match "{gridSearch}"
                                             </div>
                                           );
