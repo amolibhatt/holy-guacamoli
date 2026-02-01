@@ -1063,12 +1063,12 @@ export default function Blitzgrid() {
     return (
       <div className="min-h-screen bg-background">
         <AppHeader minimal backHref="/" title="Blitzgrid" />
-        <div className="max-w-6xl mx-auto px-4 py-8 w-full">
+        <main className="max-w-6xl mx-auto px-4 py-6 w-full">
           <Skeleton className="h-8 w-48 mb-4" />
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-32" />)}
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -2939,7 +2939,7 @@ export default function Blitzgrid() {
     return (
       <div className="min-h-screen flex flex-col bg-background" data-testid="page-blitzgrid-grid">
         <AppHeader minimal backHref="/" title={grid?.name || 'Blitzgrid'} />
-        <div className="flex-1 flex flex-col max-w-6xl mx-auto px-4 py-4 w-full">
+        <main className="flex-1 flex flex-col max-w-6xl mx-auto px-4 py-6 w-full">
           <div className="flex items-center justify-between mb-4 shrink-0">
             <div>
               <p className="text-muted-foreground text-sm">
@@ -3130,7 +3130,7 @@ export default function Blitzgrid() {
             )}
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -3367,7 +3367,7 @@ export default function Blitzgrid() {
       
       <AppHeader minimal backHref="/" title="Blitzgrid" />
       
-      <div className="flex-1 max-w-6xl mx-auto px-4 py-8 relative z-10 w-full">
+      <main className="flex-1 max-w-6xl mx-auto px-4 py-6 relative z-10 w-full">
         {loadingGrids ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map(i => (
@@ -3566,7 +3566,7 @@ export default function Blitzgrid() {
             )}
           </div>
         )}
-      </div>
+      </main>
       
 <AppFooter />
     </div>
