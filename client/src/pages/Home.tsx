@@ -151,7 +151,7 @@ export default function Home() {
               }}
               data-testid="text-main-title"
             >
-              Let's Play
+              Pick Your Game
             </motion.h1>
           </div>
 
@@ -271,11 +271,19 @@ export default function Home() {
                     
                     {/* Tagline */}
                     <p 
-                      className="text-xs uppercase tracking-wider mb-4 font-semibold"
+                      className="text-xs uppercase tracking-wider mb-2 font-semibold"
                       style={{ color: config.accentColor }}
                       data-testid={`text-game-tagline-${game.slug}`}
                     >
                       {config.tagline}
+                    </p>
+                    
+                    {/* Description */}
+                    <p 
+                      className="text-white/50 text-xs mb-3 leading-relaxed"
+                      data-testid={`text-game-description-${game.slug}`}
+                    >
+                      {config.howItWorks}
                     </p>
                     
                     {/* Player count */}
