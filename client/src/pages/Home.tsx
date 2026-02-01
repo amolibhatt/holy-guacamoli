@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ListOrdered, Brain, Users } from "lucide-react";
+import { Loader2, Grid3X3, ListOrdered, Brain, Users, Check, HelpCircle, ArrowRight } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { useLocation } from "wouter";
@@ -42,6 +42,93 @@ const GAME_CONFIG: Record<string, {
     players: "3-10 players",
   },
 };
+
+function GameplayPreview({ slug, color }: { slug: string; color: string }) {
+  if (slug === 'blitzgrid') {
+    return (
+      <div 
+        className="grid grid-cols-3 gap-0.5 mb-3 opacity-60"
+        data-testid="preview-blitzgrid"
+      >
+        {[...Array(9)].map((_, i) => (
+          <div 
+            key={i} 
+            className="w-2.5 h-2.5 rounded-sm"
+            style={{ 
+              backgroundColor: [0, 4, 8].includes(i) ? color : 'rgba(255,255,255,0.2)',
+              boxShadow: [0, 4, 8].includes(i) ? `0 0 4px ${color}` : 'none'
+            }}
+          />
+        ))}
+      </div>
+    );
+  }
+  
+  if (slug === 'sequence_squeeze') {
+    return (
+      <div 
+        className="flex items-center gap-1 mb-3 opacity-60"
+        data-testid="preview-sort-circuit"
+      >
+        {[3, 1, 2].map((num, i) => (
+          <div 
+            key={i}
+            className="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center"
+            style={{ 
+              border: `1px solid ${color}`,
+              color: color,
+              boxShadow: `0 0 4px ${color}40`
+            }}
+          >
+            {num}
+          </div>
+        ))}
+        <ArrowRight className="w-3 h-3 mx-0.5" style={{ color: 'rgba(255,255,255,0.4)' }} />
+        {[1, 2, 3].map((num, i) => (
+          <div 
+            key={i}
+            className="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center"
+            style={{ 
+              backgroundColor: `${color}30`,
+              border: `1px solid ${color}`,
+              color: color,
+            }}
+          >
+            {num}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  
+  if (slug === 'psyop') {
+    return (
+      <div 
+        className="flex items-center gap-1 mb-3 opacity-60"
+        data-testid="preview-psyop"
+      >
+        {[true, true, false].map((isCheck, i) => (
+          <div 
+            key={i}
+            className="w-5 h-5 rounded-full flex items-center justify-center"
+            style={{ 
+              border: `1px solid ${!isCheck ? color : 'rgba(255,255,255,0.3)'}`,
+              boxShadow: !isCheck ? `0 0 6px ${color}` : 'none'
+            }}
+          >
+            {isCheck ? (
+              <Check className="w-2.5 h-2.5" style={{ color: 'rgba(255,255,255,0.5)' }} />
+            ) : (
+              <HelpCircle className="w-2.5 h-2.5" style={{ color }} />
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  
+  return null;
+}
 
 function GameCardSkeleton() {
   return (
@@ -126,7 +213,7 @@ export default function Home() {
               }}
               data-testid="text-main-title"
             >
-              Pick Your Game
+              Let's Play
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0 }}
@@ -135,14 +222,12 @@ export default function Home() {
               className="text-white/50 text-sm lg:text-base"
               data-testid="text-main-subtitle"
             >
-              Choose a game mode and start the party
+              Tap a game and get the party started
             </motion.p>
           </div>
 
-          {/* Container frame for game cards */}
-          <div className="p-4 lg:p-6 rounded-2xl border border-white/5 bg-white/[0.02]">
-            {/* Game Cards - 3 column grid on large screens */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+          {/* Game Cards - 3 column grid on large screens */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
             {isLoadingGames ? (
               <>
                 <GameCardSkeleton />
@@ -206,6 +291,9 @@ export default function Home() {
                       />
                     </div>
                     
+                    {/* Gameplay preview hint */}
+                    <GameplayPreview slug={game.slug} color={config.accentColor} />
+                    
                     {/* Title with Neon Bleed */}
                     <h3 
                       className="text-xl lg:text-2xl mb-1 text-white uppercase tracking-widest relative"
@@ -247,7 +335,6 @@ export default function Home() {
                 );
               })
             )}
-            </div>
           </div>
 
         </div>
