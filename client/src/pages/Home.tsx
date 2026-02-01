@@ -153,7 +153,7 @@ export default function Home() {
               </h1>
               <p 
                 className="text-2xl lg:text-3xl font-black text-white uppercase tracking-widest mt-1"
-                style={{ fontFamily: "'Archivo Black', 'Impact', sans-serif" }}
+                style={{ fontFamily: "'Archivo Black', sans-serif" }}
                 data-testid="text-subtitle"
               >
                 Let the chaos begin
@@ -267,7 +267,7 @@ export default function Home() {
                     <h3 
                       className="text-xl lg:text-2xl mb-1 text-white uppercase tracking-widest relative"
                       style={{ 
-                        fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                        fontFamily: "'Archivo Black', sans-serif",
                         textShadow: `0 0 10px ${config.accentColor}80, 0 0 20px ${config.accentColor}40, 0 0 30px ${config.accentColor}20`,
                       }}
                       data-testid={`text-game-title-${game.slug}`}
