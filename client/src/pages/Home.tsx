@@ -150,7 +150,7 @@ export default function Home() {
               }}
               data-testid="text-main-title"
             >
-              Choose Your Chaos
+              Pick a game. Rally your crew. Let the chaos begin.
             </motion.h1>
           </div>
 
