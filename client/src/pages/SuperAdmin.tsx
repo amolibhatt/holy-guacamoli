@@ -195,8 +195,6 @@ export default function SuperAdmin() {
     }
   };
 
-  const blitzgrids = allBoards.filter((b) => b.theme === 'blitzgrid' || (b as any).isBlitzgrid);
-
   return (
     <div className="min-h-screen gradient-game">
       <AppHeader minimal backHref="/" title="Super Admin" />
@@ -516,20 +514,31 @@ export default function SuperAdmin() {
                     No users found.
                   </CardContent>
                 </Card>
-              ) : (
-                <div className="space-y-3">
-                  {allUsers
-                    .filter((u) => {
-                      if (!userSearch.trim()) return true;
-                      const searchLower = userSearch.toLowerCase();
-                      return (
-                        u.email.toLowerCase().includes(searchLower) ||
-                        u.firstName?.toLowerCase().includes(searchLower) ||
-                        u.lastName?.toLowerCase().includes(searchLower)
-                      );
-                    })
-                    .map((u) => (
-                    <Card key={u.id} className="hover-elevate">
+              ) : (() => {
+                const filteredUsers = allUsers.filter((u) => {
+                  if (!userSearch.trim()) return true;
+                  const searchLower = userSearch.toLowerCase();
+                  return (
+                    u.email.toLowerCase().includes(searchLower) ||
+                    u.firstName?.toLowerCase().includes(searchLower) ||
+                    u.lastName?.toLowerCase().includes(searchLower)
+                  );
+                });
+                
+                if (filteredUsers.length === 0) {
+                  return (
+                    <Card>
+                      <CardContent className="py-8 text-center text-muted-foreground">
+                        No users match "{userSearch}"
+                      </CardContent>
+                    </Card>
+                  );
+                }
+                
+                return (
+                  <div className="space-y-3">
+                    {filteredUsers.map((u) => (
+                      <Card key={u.id} className="hover-elevate">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -581,8 +590,9 @@ export default function SuperAdmin() {
                       </CardContent>
                     </Card>
                   ))}
-                </div>
-              )}
+                  </div>
+                );
+              })()}
             </motion.div>
           </TabsContent>
         </Tabs>
