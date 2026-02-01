@@ -119,37 +119,23 @@ export default function Home() {
             <motion.h1 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-3xl lg:text-5xl font-black text-white uppercase tracking-wider mb-2"
+              className="text-3xl lg:text-5xl font-black text-white uppercase tracking-wider mb-3"
               style={{ 
                 fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                textShadow: '0 0 30px rgba(163, 230, 53, 0.5), 0 0 60px rgba(163, 230, 53, 0.3)',
+                textShadow: '0 0 30px rgba(139, 92, 246, 0.5), 0 0 60px rgba(139, 92, 246, 0.3)',
               }}
               data-testid="text-main-title"
             >
-              Holy GuacAmoli!
+              Pick Your Game
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.15 }}
-              className="text-xl lg:text-2xl font-bold mb-3"
-              style={{
-                background: 'linear-gradient(90deg, #a3e635, #22d3ee, #e879f9)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-              data-testid="text-tagline"
-            >
-              Party games that hit different
-            </motion.p>
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.25 }}
+              transition={{ delay: 0.2 }}
               className="text-white/50 text-sm lg:text-base"
               data-testid="text-main-subtitle"
             >
-              Pick a game, scan to join, let the chaos begin
+              Choose a game mode and start the party
             </motion.p>
           </div>
 
