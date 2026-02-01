@@ -791,9 +791,30 @@ export default function SuperAdmin() {
                                   
                                   {gameType.slug === 'blitzgrid' && (
                                     <div className="space-y-3">
-                                      <div className="flex items-center justify-between gap-4">
+                                      <div className="flex items-center justify-between gap-4 flex-wrap">
                                         <h4 className="font-medium text-foreground">All Grids</h4>
-                                        <Badge variant="secondary">{allBoards.length} total</Badge>
+                                        <div className="flex items-center gap-2">
+                                          <div className="relative">
+                                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                            <Input
+                                              placeholder="Search grids..."
+                                              value={gridSearch}
+                                              onChange={(e) => setGridSearch(e.target.value)}
+                                              className="pl-8 h-8 w-[160px] text-sm"
+                                              data-testid="input-grid-search"
+                                            />
+                                          </div>
+                                          <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-8 w-8"
+                                            onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] })}
+                                            data-testid="button-refresh-grids"
+                                          >
+                                            <RefreshCw className="w-3.5 h-3.5" />
+                                          </Button>
+                                          <Badge variant="secondary">{allBoards.length} total</Badge>
+                                        </div>
                                       </div>
                                       
                                       {isLoadingBoards ? (
@@ -802,9 +823,28 @@ export default function SuperAdmin() {
                                         <div className="text-center py-6 text-muted-foreground">
                                           No grids created yet.
                                         </div>
-                                      ) : (
+                                      ) : (() => {
+                                        const filteredGrids = allBoards.filter((board) => {
+                                          if (!gridSearch.trim()) return true;
+                                          const searchLower = gridSearch.toLowerCase();
+                                          return (
+                                            board.name.toLowerCase().includes(searchLower) ||
+                                            board.ownerEmail?.toLowerCase().includes(searchLower) ||
+                                            board.ownerName?.toLowerCase().includes(searchLower)
+                                          );
+                                        });
+                                        
+                                        if (filteredGrids.length === 0) {
+                                          return (
+                                            <div className="text-center py-4 text-muted-foreground text-sm">
+                                              No grids match "{gridSearch}"
+                                            </div>
+                                          );
+                                        }
+                                        
+                                        return (
                                         <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                                          {allBoards.map((board) => {
+                                          {filteredGrids.map((board) => {
                                             const isComplete = board.categoryCount >= 5 && board.questionCount >= 25;
                                             const isStarterPack = board.isStarterPack ?? false;
                                             return (
@@ -862,7 +902,8 @@ export default function SuperAdmin() {
                                             );
                                           })}
                                         </div>
-                                      )}
+                                        );
+                                      })()}
                                     </div>
                                   )}
                                   
@@ -1479,16 +1520,18 @@ export default function SuperAdmin() {
                         ))}
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-3 gap-2">
                         {[
                           { label: 'Users', value: dbStats?.users ?? 0, color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' },
                           { label: 'Grids', value: dbStats?.boards ?? 0, color: 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300' },
-                          { label: 'Questions', value: dbStats?.questions ?? 0, color: 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' },
-                          { label: 'Sessions', value: dbStats?.sessions ?? 0, color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' },
+                          { label: 'Categories', value: dbStats?.categories ?? 0, color: 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' },
+                          { label: 'Questions', value: dbStats?.questions ?? 0, color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' },
+                          { label: 'Sessions', value: dbStats?.sessions ?? 0, color: 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300' },
+                          { label: 'Players', value: dbStats?.players ?? 0, color: 'bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300' },
                         ].map((stat) => (
-                          <div key={stat.label} className={`p-3 rounded-lg ${stat.color}`}>
-                            <p className="text-2xl font-bold">{stat.value.toLocaleString()}</p>
-                            <p className="text-sm opacity-80">{stat.label}</p>
+                          <div key={stat.label} className={`p-2 rounded-lg ${stat.color}`}>
+                            <p className="text-xl font-bold">{stat.value.toLocaleString()}</p>
+                            <p className="text-xs opacity-80">{stat.label}</p>
                           </div>
                         ))}
                       </div>
