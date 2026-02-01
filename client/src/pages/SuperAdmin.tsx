@@ -202,11 +202,12 @@ export default function SuperAdmin() {
   const [deleteBoardId, setDeleteBoardId] = useState<number | null>(null);
   const [expandedGameSlug, setExpandedGameSlug] = useState<string | null>(null);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+  const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
   const [userSearch, setUserSearch] = useState("");
   const [gridSearch, setGridSearch] = useState("");
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
-  const [activeTab, setActiveTab] = useState("analytics");
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   const { data: stats, isLoading: isLoadingStats } = useQuery<PlatformStats>({
     queryKey: ['/api/super-admin/stats'],
@@ -476,23 +477,15 @@ export default function SuperAdmin() {
       <AppHeader minimal backHref="/" title="Super Admin" />
 
       <main className="px-4 py-6 max-w-6xl mx-auto w-full">
-        <Tabs defaultValue="analytics" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 max-w-2xl">
-            <TabsTrigger value="analytics" className="gap-2" data-testid="tab-analytics">
+        <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 max-w-md">
+            <TabsTrigger value="dashboard" className="gap-2" data-testid="tab-dashboard">
               <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Overview</span>
+              <span className="hidden sm:inline">Dashboard</span>
             </TabsTrigger>
-            <TabsTrigger value="games" className="gap-2" data-testid="tab-games">
+            <TabsTrigger value="content" className="gap-2" data-testid="tab-content">
               <Gamepad2 className="w-4 h-4" />
               <span className="hidden sm:inline">Content</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="gap-2" data-testid="tab-users">
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Users</span>
-            </TabsTrigger>
-            <TabsTrigger value="sessions" className="gap-2" data-testid="tab-sessions">
-              <Play className="w-4 h-4" />
-              <span className="hidden sm:inline">Sessions</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="gap-2" data-testid="tab-settings">
               <Shield className="w-4 h-4" />
@@ -500,23 +493,25 @@ export default function SuperAdmin() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="analytics" className="space-y-6">
+          <TabsContent value="dashboard" className="space-y-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
               <div className="flex items-center justify-between gap-4 mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-foreground">Platform Overview</h2>
-                  <p className="text-sm text-muted-foreground mt-1">Real-time stats and engagement metrics</p>
+                  <h2 className="text-2xl font-bold text-foreground">Platform Dashboard</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Overview, users, and sessions in one place</p>
                 </div>
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => {
                     queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
+                    queryClient.invalidateQueries({ queryKey: ['/api/super-admin/users'] });
+                    queryClient.invalidateQueries({ queryKey: ['/api/super-admin/sessions'] });
                   }}
-                  data-testid="button-refresh-analytics"
+                  data-testid="button-refresh-dashboard"
                 >
                   <RefreshCw className="w-4 h-4" />
                 </Button>
@@ -687,10 +682,229 @@ export default function SuperAdmin() {
                   </>
                 )}
               </div>
+              
+              {/* Users Section */}
+              <Card className="mt-6">
+                <CardHeader 
+                  className="cursor-pointer hover-elevate"
+                  onClick={() => setExpandedUserId(expandedUserId === 'section' ? null : 'section')}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Users className="w-5 h-5 text-violet-500" />
+                      <div>
+                        <CardTitle className="text-lg">Users</CardTitle>
+                        <CardDescription>Manage accounts and roles</CardDescription>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{allUsers.length} users</Badge>
+                      <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${expandedUserId === 'section' ? 'rotate-180' : ''}`} />
+                    </div>
+                  </div>
+                </CardHeader>
+                <AnimatePresence>
+                  {expandedUserId === 'section' && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <CardContent className="pt-0">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Search users..."
+                              value={userSearch}
+                              onChange={(e) => setUserSearch(e.target.value)}
+                              className="pl-9"
+                              data-testid="input-user-search"
+                            />
+                          </div>
+                        </div>
+                        
+                        {isLoadingUsers ? (
+                          <div className="space-y-2">
+                            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
+                          </div>
+                        ) : (() => {
+                          const filteredUsers = allUsers.filter((u) => {
+                            if (!userSearch.trim()) return true;
+                            const searchLower = userSearch.toLowerCase();
+                            return (
+                              u.email.toLowerCase().includes(searchLower) ||
+                              u.firstName?.toLowerCase().includes(searchLower) ||
+                              u.lastName?.toLowerCase().includes(searchLower)
+                            );
+                          });
+                          
+                          if (filteredUsers.length === 0) {
+                            return <p className="text-center text-muted-foreground py-4">No users found</p>;
+                          }
+                          
+                          const formatDate = (dateStr: string | null) => {
+                            if (!dateStr) return 'Never';
+                            const date = new Date(dateStr);
+                            const now = new Date();
+                            const diffMs = now.getTime() - date.getTime();
+                            const diffMins = Math.floor(diffMs / 60000);
+                            const diffHours = Math.floor(diffMs / 3600000);
+                            const diffDays = Math.floor(diffMs / 86400000);
+                            if (diffMins < 1) return 'Just now';
+                            if (diffMins < 60) return `${diffMins}m ago`;
+                            if (diffHours < 24) return `${diffHours}h ago`;
+                            if (diffDays < 7) return `${diffDays}d ago`;
+                            return date.toLocaleDateString();
+                          };
+                          
+                          return (
+                            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                              {filteredUsers.slice(0, 20).map((u) => (
+                                <div key={u.id} className="p-3 rounded-lg border bg-muted/30 flex items-center justify-between gap-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white font-bold">
+                                      {u.firstName?.[0] || u.email[0].toUpperCase()}
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-medium">{u.firstName || 'User'} {u.lastName || ''}</span>
+                                        {u.role === 'super_admin' && <Badge className="bg-purple-500/20 text-purple-600 text-xs"><Shield className="w-3 h-3 mr-1" />Super</Badge>}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">{u.email} • Last login: {formatDate(u.lastLoginAt ? String(u.lastLoginAt) : null)}</div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-4 text-sm">
+                                    <div className="text-center">
+                                      <div className="font-bold">{u.boardCount}</div>
+                                      <div className="text-xs text-muted-foreground">Grids</div>
+                                    </div>
+                                    <div className="text-center">
+                                      <div className="font-bold">{u.gamesHosted}</div>
+                                      <div className="text-xs text-muted-foreground">Games</div>
+                                    </div>
+                                    {u.role !== 'super_admin' && (
+                                      <Button variant="ghost" size="icon" onClick={() => setDeleteUserId(u.id)}>
+                                        <Trash2 className="w-4 h-4 text-destructive" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                              {filteredUsers.length > 20 && (
+                                <p className="text-center text-muted-foreground text-sm py-2">
+                                  Showing 20 of {filteredUsers.length} users
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </CardContent>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Card>
+              
+              {/* Sessions Section */}
+              <Card className="mt-4">
+                <CardHeader 
+                  className="cursor-pointer hover-elevate"
+                  onClick={() => setExpandedSessionId(expandedSessionId === 'section' ? null : 'section')}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Play className="w-5 h-5 text-emerald-500" />
+                      <div>
+                        <CardTitle className="text-lg">Sessions</CardTitle>
+                        <CardDescription>Recent multiplayer games</CardDescription>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{allSessions.length} sessions</Badge>
+                      <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${expandedSessionId === 'section' ? 'rotate-180' : ''}`} />
+                    </div>
+                  </div>
+                </CardHeader>
+                <AnimatePresence>
+                  {expandedSessionId === 'section' && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <CardContent className="pt-0">
+                        {isLoadingSessions ? (
+                          <div className="space-y-2">
+                            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
+                          </div>
+                        ) : allSessions.length === 0 ? (
+                          <p className="text-center text-muted-foreground py-4">No sessions yet</p>
+                        ) : (
+                          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                            {allSessions.slice(0, 20).map((session) => {
+                              const formatDate = (dateStr: string) => {
+                                const date = new Date(dateStr);
+                                const now = new Date();
+                                const diffMs = now.getTime() - date.getTime();
+                                const diffMins = Math.floor(diffMs / 60000);
+                                const diffHours = Math.floor(diffMs / 3600000);
+                                const diffDays = Math.floor(diffMs / 86400000);
+                                if (diffMins < 1) return 'Just now';
+                                if (diffMins < 60) return `${diffMins}m ago`;
+                                if (diffHours < 24) return `${diffHours}h ago`;
+                                if (diffDays < 7) return `${diffDays}d ago`;
+                                return date.toLocaleDateString();
+                              };
+                              const winner = session.players.reduce((max, p) => p.score > max.score ? p : max, session.players[0]);
+                              
+                              return (
+                                <div key={session.id} className="p-3 rounded-lg border bg-muted/30">
+                                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                                    <div className="flex items-center gap-3">
+                                      <Badge variant={session.state === 'active' ? 'default' : 'secondary'} className={session.state === 'active' ? 'bg-green-500' : ''}>
+                                        {session.code}
+                                      </Badge>
+                                      <span className="text-sm">Host: {session.host?.username || 'Unknown'}</span>
+                                      <Badge variant="outline" className="text-xs capitalize">{session.state}</Badge>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                      <span className="flex items-center gap-1">
+                                        <Users className="w-3 h-3" /> {session.playerCount}
+                                      </span>
+                                      <span>{formatDate(session.createdAt)}</span>
+                                    </div>
+                                  </div>
+                                  {session.players.length > 0 && winner && (
+                                    <div className="mt-2 pt-2 border-t flex items-center gap-2 flex-wrap">
+                                      <Trophy className="w-4 h-4 text-amber-500" />
+                                      <span className="text-sm font-medium">{winner.name}</span>
+                                      <span className="text-xs text-muted-foreground">({winner.score} pts)</span>
+                                      {session.players.slice(1, 4).map((p) => (
+                                        <Badge key={p.id} variant="secondary" className="text-xs">{p.name}: {p.score}</Badge>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            {allSessions.length > 20 && (
+                              <p className="text-center text-muted-foreground text-sm py-2">
+                                Showing 20 of {allSessions.length} sessions
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Card>
             </motion.div>
           </TabsContent>
 
-          <TabsContent value="games" className="space-y-4">
+          <TabsContent value="content" className="space-y-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1059,434 +1273,6 @@ export default function SuperAdmin() {
                       </CardContent>
                     </Card>
                   )}
-                </div>
-              )}
-            </motion.div>
-          </TabsContent>
-
-          <TabsContent value="users" className="space-y-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">User Management</h2>
-                  <p className="text-sm text-muted-foreground mt-1">View accounts, activity, and manage roles</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search users..."
-                      value={userSearch}
-                      onChange={(e) => setUserSearch(e.target.value)}
-                      className="pl-9 w-[200px]"
-                      data-testid="input-user-search"
-                    />
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/users'] });
-                      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
-                    }}
-                    data-testid="button-refresh-users"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                  </Button>
-                  <Badge variant="secondary">{allUsers.length} users</Badge>
-                </div>
-              </div>
-
-              {isLoadingUsers ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-24 w-full" />
-                  ))}
-                </div>
-              ) : allUsers.length === 0 ? (
-                <Card>
-                  <CardContent className="py-8 text-center text-muted-foreground">
-                    No users found.
-                  </CardContent>
-                </Card>
-              ) : (() => {
-                const filteredUsers = allUsers.filter((u) => {
-                  if (!userSearch.trim()) return true;
-                  const searchLower = userSearch.toLowerCase();
-                  return (
-                    u.email.toLowerCase().includes(searchLower) ||
-                    u.firstName?.toLowerCase().includes(searchLower) ||
-                    u.lastName?.toLowerCase().includes(searchLower) ||
-                    u.username?.toLowerCase().includes(searchLower)
-                  );
-                });
-                
-                if (filteredUsers.length === 0) {
-                  return (
-                    <Card>
-                      <CardContent className="py-8 text-center text-muted-foreground">
-                        No users match "{userSearch}"
-                      </CardContent>
-                    </Card>
-                  );
-                }
-                
-                const formatDate = (dateStr: string | null) => {
-                  if (!dateStr) return 'Never';
-                  const date = new Date(dateStr);
-                  const now = new Date();
-                  const diffMs = now.getTime() - date.getTime();
-                  const diffMins = Math.floor(diffMs / 60000);
-                  const diffHours = Math.floor(diffMs / 3600000);
-                  const diffDays = Math.floor(diffMs / 86400000);
-                  
-                  if (diffMins < 1) return 'Just now';
-                  if (diffMins < 60) return `${diffMins}m ago`;
-                  if (diffHours < 24) return `${diffHours}h ago`;
-                  if (diffDays < 7) return `${diffDays}d ago`;
-                  return date.toLocaleDateString();
-                };
-                
-                return (
-                  <div className="space-y-3">
-                    {filteredUsers.map((u) => {
-                      const isExpanded = expandedUserId === u.id;
-                      return (
-                        <Card key={u.id} className="overflow-hidden">
-                          <CardContent className="p-0">
-                            <div 
-                              className="p-4 cursor-pointer hover-elevate"
-                              onClick={() => setExpandedUserId(isExpanded ? null : u.id)}
-                              data-testid={`button-expand-user-${u.id}`}
-                            >
-                              <div className="flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
-                                    {u.firstName?.[0] || u.email[0].toUpperCase()}
-                                  </div>
-                                  <div>
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="font-semibold text-foreground">
-                                        {u.firstName || u.username || 'User'} {u.lastName || ''}
-                                      </span>
-                                      {u.role === 'super_admin' && (
-                                        <Badge className="bg-purple-500/20 text-purple-600 dark:text-purple-400 text-xs">
-                                          <Shield className="w-3 h-3 mr-1" />
-                                          Super Admin
-                                        </Badge>
-                                      )}
-                                      {u.role === 'admin' && (
-                                        <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 text-xs">
-                                          Admin
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <div className="text-sm text-muted-foreground">{u.email}</div>
-                                    <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                                      <span className="flex items-center gap-1">
-                                        <LogIn className="w-3 h-3" />
-                                        Last login: {formatDate(u.lastLoginAt)}
-                                      </span>
-                                      <span className="flex items-center gap-1">
-                                        <Calendar className="w-3 h-3" />
-                                        Joined: {formatDate(u.createdAt)}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                  <div className="flex items-center gap-6 text-sm">
-                                    <div className="text-center">
-                                      <div className="font-bold text-foreground">{u.boardCount}</div>
-                                      <div className="text-xs text-muted-foreground">Grids</div>
-                                    </div>
-                                    <div className="text-center">
-                                      <div className="font-bold text-foreground">{u.gamesHosted}</div>
-                                      <div className="text-xs text-muted-foreground">Games Hosted</div>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                                    {u.role !== 'super_admin' && (
-                                      <DropdownMenu>
-                                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                          <Button variant="ghost" size="icon">
-                                            <MoreHorizontal className="w-4 h-4" />
-                                          </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                          <DropdownMenuItem
-                                            className="text-destructive"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setDeleteUserId(u.id);
-                                            }}
-                                            data-testid={`button-delete-user-${u.id}`}
-                                          >
-                                            <Trash2 className="w-4 h-4 mr-2" />
-                                            Delete User
-                                          </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                      </DropdownMenu>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <AnimatePresence>
-                              {isExpanded && (
-                                <motion.div
-                                  initial={{ height: 0, opacity: 0 }}
-                                  animate={{ height: 'auto', opacity: 1 }}
-                                  exit={{ height: 0, opacity: 0 }}
-                                  transition={{ duration: 0.2 }}
-                                  className="border-t bg-muted/30"
-                                >
-                                  <div className="p-4 space-y-4">
-                                    {u.boards && u.boards.length > 0 && (
-                                      <div>
-                                        <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                                          <Grid3X3 className="w-4 h-4 text-rose-500" />
-                                          Created Grids ({u.boardCount})
-                                        </h4>
-                                        <div className="flex flex-wrap gap-2">
-                                          {u.boards.map((board) => (
-                                            <Badge key={board.id} variant="outline" className="text-xs">
-                                              {board.name}
-                                            </Badge>
-                                          ))}
-                                          {u.boardCount > 5 && (
-                                            <Badge variant="secondary" className="text-xs">
-                                              +{u.boardCount - 5} more
-                                            </Badge>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                    
-                                    {u.recentSessions && u.recentSessions.length > 0 ? (
-                                      <div>
-                                        <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                                          <Play className="w-4 h-4 text-emerald-500" />
-                                          Game Sessions Hosted ({u.gamesHosted})
-                                        </h4>
-                                        <div className="space-y-2">
-                                          {u.recentSessions.map((session) => (
-                                            <div 
-                                              key={session.id} 
-                                              className="p-3 rounded-lg bg-background border"
-                                            >
-                                              <div className="flex items-center justify-between gap-4 flex-wrap">
-                                                <div className="flex items-center gap-3">
-                                                  <Badge 
-                                                    variant={session.state === 'active' ? 'default' : 'secondary'}
-                                                    className={session.state === 'active' ? 'bg-green-500' : ''}
-                                                  >
-                                                    {session.code}
-                                                  </Badge>
-                                                  <span className="text-sm text-muted-foreground capitalize">
-                                                    {session.currentMode || 'Board'} Mode
-                                                  </span>
-                                                  <Badge variant="outline" className="text-xs capitalize">
-                                                    {session.state}
-                                                  </Badge>
-                                                </div>
-                                                <div className="flex items-center gap-4 text-sm">
-                                                  <span className="flex items-center gap-1 text-muted-foreground">
-                                                    <Users className="w-3 h-3" />
-                                                    {session.playerCount} players
-                                                  </span>
-                                                  <span className="text-xs text-muted-foreground">
-                                                    {formatDate(session.createdAt)}
-                                                  </span>
-                                                </div>
-                                              </div>
-                                              
-                                              {session.players.length > 0 && (
-                                                <div className="mt-2 pt-2 border-t">
-                                                  <div className="flex items-center gap-2 flex-wrap">
-                                                    {session.winner && (
-                                                      <div className="flex items-center gap-1 text-sm text-amber-600 dark:text-amber-400">
-                                                        <Trophy className="w-4 h-4" />
-                                                        <span className="font-medium">{session.winner.name}</span>
-                                                        <span className="text-xs">({session.winner.score} pts)</span>
-                                                      </div>
-                                                    )}
-                                                    <div className="flex items-center gap-1">
-                                                      {session.players.slice(session.winner ? 1 : 0, 5).map((player) => (
-                                                        <Badge key={player.id} variant="secondary" className="text-xs">
-                                                          {player.name}: {player.score}
-                                                        </Badge>
-                                                      ))}
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                              )}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <div className="text-sm text-muted-foreground py-2">
-                                        No games hosted yet.
-                                      </div>
-                                    )}
-                                  </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
-            </motion.div>
-          </TabsContent>
-
-          <TabsContent value="sessions" className="space-y-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">Game Sessions</h2>
-                  <p className="text-sm text-muted-foreground mt-1">All multiplayer sessions with player details and scores</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/sessions'] });
-                    }}
-                    data-testid="button-refresh-sessions"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                  </Button>
-                  <Badge variant="secondary">{allSessions.length} sessions</Badge>
-                </div>
-              </div>
-
-              {isLoadingSessions ? (
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Skeleton key={i} className="h-24 w-full" />
-                  ))}
-                </div>
-              ) : allSessions.length === 0 ? (
-                <Card>
-                  <CardContent className="py-8 text-center text-muted-foreground">
-                    No game sessions found.
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  {allSessions.map((session) => {
-                    const formatDate = (dateStr: string) => {
-                      const date = new Date(dateStr);
-                      const now = new Date();
-                      const diffMs = now.getTime() - date.getTime();
-                      const diffMins = Math.floor(diffMs / 60000);
-                      const diffHours = Math.floor(diffMs / 3600000);
-                      const diffDays = Math.floor(diffMs / 86400000);
-                      
-                      if (diffMins < 1) return 'Just now';
-                      if (diffMins < 60) return `${diffMins}m ago`;
-                      if (diffHours < 24) return `${diffHours}h ago`;
-                      if (diffDays < 7) return `${diffDays}d ago`;
-                      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    };
-                    
-                    return (
-                      <Card key={session.id} className="hover-elevate">
-                        <CardContent className="p-4">
-                          <div className="flex flex-col gap-3">
-                            <div className="flex items-center justify-between gap-4 flex-wrap">
-                              <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500">
-                                  <Play className="w-5 h-5 text-white" />
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <Badge 
-                                      variant={session.state === 'active' ? 'default' : 'secondary'}
-                                      className={`text-sm font-mono ${session.state === 'active' ? 'bg-green-500' : ''}`}
-                                    >
-                                      {session.code}
-                                    </Badge>
-                                    <Badge variant="outline" className="text-xs capitalize">
-                                      {session.state}
-                                    </Badge>
-                                    <span className="text-sm text-muted-foreground capitalize">
-                                      {session.currentMode || 'Board'} Mode
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                                    <User className="w-3 h-3" />
-                                    <span>Host: {session.host?.username || session.host?.email || 'Unknown'}</span>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-4 text-sm">
-                                <div className="flex items-center gap-1 text-muted-foreground">
-                                  <Users className="w-4 h-4" />
-                                  <span className="font-medium">{session.playerCount}</span>
-                                  <span className="hidden sm:inline">players</span>
-                                </div>
-                                <div className="flex items-center gap-1 text-muted-foreground">
-                                  <Clock className="w-4 h-4" />
-                                  <span>{formatDate(session.createdAt)}</span>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {session.players.length > 0 && (
-                              <div className="border-t pt-3">
-                                <div className="flex items-start gap-4 flex-wrap">
-                                  {session.winner && (
-                                    <div className="flex items-center gap-2">
-                                      <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                                        <Trophy className="w-4 h-4" />
-                                        <span className="font-semibold">{session.winner.name}</span>
-                                        <span className="text-xs">({session.winner.score} pts)</span>
-                                      </div>
-                                    </div>
-                                  )}
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-xs text-muted-foreground">Players:</span>
-                                    {session.players.slice(0, 8).map((player, idx) => (
-                                      <Badge 
-                                        key={player.id} 
-                                        variant={idx === 0 && player.score > 0 ? 'default' : 'secondary'} 
-                                        className="text-xs"
-                                      >
-                                        {player.name}: {player.score}
-                                        {player.isConnected && (
-                                          <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-green-500" />
-                                        )}
-                                      </Badge>
-                                    ))}
-                                    {session.players.length > 8 && (
-                                      <Badge variant="outline" className="text-xs">
-                                        +{session.players.length - 8} more
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
                 </div>
               )}
             </motion.div>
