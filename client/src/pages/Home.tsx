@@ -144,22 +144,15 @@ export default function Home() {
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-1"
+              className="space-y-0"
             >
-              <p className="text-white/60 text-sm lg:text-base uppercase tracking-widest" data-testid="text-subtitle-1">
+              <p className="text-lg lg:text-xl text-white/80 uppercase tracking-widest" data-testid="text-subtitle-1">
                 Pick a game
               </p>
-              <h1 
-                className="text-3xl lg:text-5xl font-black text-white uppercase tracking-wider"
-                style={{ 
-                  fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                  textShadow: '0 0 30px rgba(139, 92, 246, 0.5), 0 0 60px rgba(139, 92, 246, 0.3)',
-                }}
-                data-testid="text-main-title"
-              >
-                Rally Your Crew
-              </h1>
-              <p className="text-white/60 text-sm lg:text-base uppercase tracking-widest" data-testid="text-subtitle-2">
+              <p className="text-lg lg:text-xl text-white/80 uppercase tracking-widest" data-testid="text-main-title">
+                Rally your crew
+              </p>
+              <p className="text-lg lg:text-xl text-white/80 uppercase tracking-widest" data-testid="text-subtitle-2">
                 Let the chaos begin
               </p>
             </motion.div>
