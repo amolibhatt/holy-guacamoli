@@ -3129,8 +3129,8 @@ export default function Blitzgrid() {
               </div>
             )}
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     );
   }
 
