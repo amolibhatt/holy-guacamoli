@@ -107,8 +107,8 @@ export default function Home() {
       
       <AppHeader minimal />
 
-      <main className="flex-1 flex items-center justify-center">
-        <div className="w-full max-w-6xl mx-auto px-4 py-6">
+      <main className="max-w-6xl mx-auto px-4 py-6 w-full">
+        <div className="w-full">
           
           {/* Header */}
           <div className="text-center mb-8 lg:mb-10">

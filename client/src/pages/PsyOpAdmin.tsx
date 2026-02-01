@@ -292,7 +292,7 @@ export default function PsyOpAdmin() {
         </div>
       </div>
 
-      <div className="flex flex-1 max-w-6xl mx-auto w-full">
+      <div className="flex flex-1">
         {/* Categories Sidebar */}
         <aside className="w-64 border-r border-border bg-card/50 p-4 shrink-0 hidden md:block">
           <div className="flex items-center justify-between mb-4">
