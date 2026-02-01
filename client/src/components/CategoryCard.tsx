@@ -32,20 +32,20 @@ export function CategoryCard({ category, index }: CategoryCardProps) {
       transition={{ delay: index * 0.1, duration: 0.4 }}
     >
       <Link href={`/category/${category.id}`} className="block h-full group">
-        <div className="h-full bg-card rounded-3xl overflow-hidden border border-border shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col">
+        <div className="h-full bg-card rounded-md overflow-hidden border border-border shadow-sm hover-elevate transition-all duration-300 flex flex-col">
           {/* Header/Image Area */}
           <div className={`h-32 ${getGradientClass()} relative overflow-hidden flex items-center justify-center p-6`}>
             {/* Decorative circles */}
             <div className="absolute top-[-20px] right-[-20px] w-24 h-24 bg-white/20 rounded-full blur-xl" />
             <div className="absolute bottom-[-10px] left-[-10px] w-16 h-16 bg-white/10 rounded-full blur-lg" />
             
-            <div className="text-white drop-shadow-md transform group-hover:scale-110 transition-transform duration-500">
+            <div className="text-white drop-shadow-md">
               {getCategoryIcon(category.name)}
             </div>
           </div>
           
           <div className="p-6 flex-1 flex flex-col">
-            <h3 className="text-xl font-display font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
+            <h3 className="text-xl font-display font-bold text-foreground mb-2">
               {category.name}
             </h3>
             <p className="text-muted-foreground text-sm flex-1 mb-6 line-clamp-2">
@@ -56,7 +56,7 @@ export function CategoryCard({ category, index }: CategoryCardProps) {
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Start Quiz
               </span>
-              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-300">
+              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                 <ArrowRight className="w-4 h-4" />
               </div>
             </div>

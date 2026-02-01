@@ -356,7 +356,7 @@ export default function PsyOpHost() {
                       data-testid="button-shuffle-all"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center group-hover:bg-purple-500/30 transition-colors">
+                        <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
                           <Shuffle className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                         </div>
                         <div>

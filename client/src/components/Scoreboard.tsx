@@ -128,7 +128,7 @@ export function Scoreboard() {
                             {AVATAR_COLORS.map((color) => (
                               <button
                                 key={color}
-                                className={`w-6 h-6 rounded-full hover:scale-110 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 transition-transform ${
+                                className={`w-6 h-6 rounded-full hover-elevate focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 transition-colors ${
                                   contestant.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-background' : ''
                                 }`}
                                 style={{ backgroundColor: color }}
