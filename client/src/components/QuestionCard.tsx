@@ -70,7 +70,7 @@ function QuestionContent({ content }: { content: string }) {
               remarkPlugins={[remarkGfm, remarkBreaks]}
               components={{
                 p: ({ children }) => <p className="text-xl lg:text-2xl font-semibold text-foreground leading-relaxed my-2">{children}</p>,
-                strong: ({ children }) => <strong className="text-primary font-bold">{children}</strong>,
+                strong: ({ children }) => <strong className="font-bold">{children}</strong>,
                 em: ({ children }) => <em className="italic">{children}</em>,
                 img: ({ src, alt }) => (
                   <img 

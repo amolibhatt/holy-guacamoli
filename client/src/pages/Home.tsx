@@ -57,10 +57,6 @@ export default function Home() {
 
   const { data: gameTypes = [], isLoading: isLoadingGames } = useQuery<(GameType & { status?: string })[]>({
     queryKey: ['/api/game-types/homepage'],
-    queryFn: async () => {
-      const res = await fetch('/api/game-types/homepage');
-      return res.json();
-    },
     enabled: isAuthenticated,
   });
 
