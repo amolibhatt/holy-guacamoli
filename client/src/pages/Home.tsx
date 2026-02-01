@@ -144,7 +144,7 @@ export default function Home() {
             <motion.h1
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-3xl lg:text-5xl font-black text-white uppercase tracking-wide"
+              className="text-xl lg:text-2xl font-bold text-white tracking-wide"
               style={{ 
                 fontFamily: "'Archivo Black', 'Impact', sans-serif",
               }}
