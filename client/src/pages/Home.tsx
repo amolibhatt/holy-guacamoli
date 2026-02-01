@@ -8,7 +8,6 @@ import { useAuth } from "@/hooks/use-auth";
 import LandingPage from "./LandingPage";
 import type { GameType } from "@shared/schema";
 import { motion } from "framer-motion";
-import { AvocadoIcon } from "@/components/AvocadoIcon";
 
 const GAME_CONFIG: Record<string, { 
   icon: typeof Grid3X3; 
@@ -117,13 +116,6 @@ export default function Home() {
           
           {/* Header */}
           <div className="text-center mb-8 lg:mb-10">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="mb-4 flex justify-center"
-            >
-              <AvocadoIcon className="w-16 h-16 lg:w-20 lg:h-20" animate showParticles />
-            </motion.div>
             <motion.h1 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
