@@ -122,6 +122,19 @@ export default function BlitzgridAdmin() {
       setSelectedGridId(grids[0].id);
     }
   }, [grids, selectedGridId]);
+  
+  // Show loading while grids are loading OR while waiting for auto-selection
+  if (loadingGrids || (grids.length > 0 && selectedGridId === null)) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center" data-testid="page-loading">
+        <div className="fixed inset-0 bg-gradient-to-br from-rose-300/5 via-transparent to-fuchsia-300/5 pointer-events-none" />
+        <Skeleton className="h-8 w-48 mb-4" />
+        <div className="grid gap-4 grid-cols-3">
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 w-32" />)}
+        </div>
+      </div>
+    );
+  }
 
   const { data: gridCategories = [], isLoading: loadingCategories } = useQuery<CategoryWithQuestions[]>({
     queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'],
