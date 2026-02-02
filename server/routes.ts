@@ -2544,7 +2544,7 @@ export async function registerRoutes(
   });
 
   // =====================
-  // Couples API routes
+  // Couples API routes (Permanent Pairing Links)
   // =====================
   
   // Get current user's couple
@@ -2559,63 +2559,99 @@ export async function registerRoutes(
     }
   });
 
-  // Create invite link for pairing
-  app.post("/api/couples/create-invite", isAuthenticated, async (req, res) => {
+  // Get pairing info by token (public - used when clicking pairing link)
+  app.get("/api/couples/pair-info/:token", async (req, res) => {
     try {
-      const userId = req.session.userId!;
-      const { coupleName } = req.body;
+      const { token } = req.params;
+      const user = await storage.getUserByPairingToken(token.toUpperCase());
       
-      // Check if user already has an active couple
-      const existingCouple = await storage.getCouple(userId);
-      if (existingCouple && existingCouple.status === 'active') {
-        return res.status(400).json({ message: "You already have an active partner" });
+      if (!user) {
+        return res.status(404).json({ message: "Invalid pairing link" });
       }
       
-      // Generate 6-character invite code
-      const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      // Check if user A is already paired
+      const existingCouple = await storage.getCouple(user.id);
+      if (existingCouple && existingCouple.status === 'active') {
+        return res.status(400).json({ message: "This person is already paired with someone else" });
+      }
       
-      const couple = await storage.createCouple({
-        user1Id: userId,
-        inviteCode,
-        status: 'pending',
-        coupleName: coupleName?.trim() || null,
-      });
-      
+      // Return minimal info (just first name or email prefix)
+      const displayName = user.firstName || user.email.split('@')[0];
       res.json({ 
-        inviteCode: couple.inviteCode,
-        coupleId: couple.id,
+        valid: true,
+        partnerName: displayName,
+        partnerId: user.id,
       });
     } catch (err) {
-      console.error("Error creating couple invite:", err);
-      res.status(500).json({ message: "Failed to create invite" });
+      console.error("Error getting pair info:", err);
+      res.status(500).json({ message: "Failed to get pairing info" });
     }
   });
 
-  // Join via invite code
-  app.post("/api/couples/join", isAuthenticated, async (req, res) => {
+  // Complete pairing via permanent token (authenticated)
+  app.post("/api/couples/pair/:token", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const { inviteCode } = req.body;
+      const { token } = req.params;
       
-      if (!inviteCode || typeof inviteCode !== 'string') {
-        return res.status(400).json({ message: "Invite code is required" });
+      // Get the user who owns this pairing token
+      const partnerUser = await storage.getUserByPairingToken(token.toUpperCase());
+      if (!partnerUser) {
+        return res.status(400).json({ message: "Invalid pairing link" });
       }
       
-      // Check if user already has an active couple
-      const existingCouple = await storage.getCouple(userId);
-      if (existingCouple && existingCouple.status === 'active') {
-        return res.status(400).json({ message: "You already have an active partner" });
+      // Can't pair with yourself
+      if (partnerUser.id === userId) {
+        return res.status(400).json({ message: "You can't pair with yourself" });
       }
       
-      const couple = await storage.joinCouple(inviteCode.toUpperCase().trim(), userId);
-      if (!couple) {
-        return res.status(400).json({ message: "Invalid or expired invite code" });
+      // Check if current user is already paired
+      const myCouple = await storage.getCouple(userId);
+      if (myCouple && myCouple.status === 'active') {
+        return res.status(400).json({ message: "You're already paired with someone" });
       }
+      
+      // Check if partner is already paired
+      const theirCouple = await storage.getCouple(partnerUser.id);
+      if (theirCouple && theirCouple.status === 'active') {
+        return res.status(400).json({ message: "This person is already paired with someone else" });
+      }
+      
+      // Create the permanent pairing
+      const couple = await storage.createPermanentPair(partnerUser.id, userId);
       
       res.json(couple);
     } catch (err) {
-      console.error("Error joining couple:", err);
-      res.status(500).json({ message: "Failed to join" });
+      console.error("Error completing pairing:", err);
+      res.status(500).json({ message: "Failed to complete pairing" });
+    }
+  });
+
+  // Generate pairing token for existing users who don't have one
+  app.post("/api/couples/generate-token", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // If user already has a pairing token, return it
+      if (user.pairingToken) {
+        return res.json({ pairingToken: user.pairingToken });
+      }
+      
+      // Generate new token
+      const crypto = await import('crypto');
+      const pairingToken = crypto.randomUUID().replace(/-/g, '').substring(0, 12).toUpperCase();
+      
+      await storage.updateUserPairingToken(userId, pairingToken);
+      
+      res.json({ pairingToken });
+    } catch (err) {
+      console.error("Error generating pairing token:", err);
+      res.status(500).json({ message: "Failed to generate pairing token" });
     }
   });
 

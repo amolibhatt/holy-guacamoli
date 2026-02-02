@@ -33,9 +33,13 @@ export const users = pgTable("users", {
   razorpaySubscriptionId: varchar("razorpay_subscription_id"),
   subscriptionExpiresAt: timestamp("subscription_expires_at"),
   lastLoginAt: timestamp("last_login_at"),
+  // Permanent pairing token for Sync or Sink
+  pairingToken: varchar("pairing_token").unique(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_users_pairing_token").on(table.pairingToken),
+]);
 
 // Payments table for transaction history
 export const payments = pgTable("payments", {

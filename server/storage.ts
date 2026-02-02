@@ -1615,6 +1615,21 @@ export class DatabaseStorage implements IStorage {
     return !!result;
   }
 
+  // User methods for pairing
+  async getUser(userId: string): Promise<User | null> {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    return user || null;
+  }
+
+  async getUserByPairingToken(token: string): Promise<User | null> {
+    const [user] = await db.select().from(users).where(eq(users.pairingToken, token));
+    return user || null;
+  }
+
+  async updateUserPairingToken(userId: string, pairingToken: string): Promise<void> {
+    await db.update(users).set({ pairingToken }).where(eq(users.id, userId));
+  }
+
   // Couples for Sync or Sink
   async getCouple(userId: string): Promise<Couple | null> {
     const [couple] = await db.select().from(couples).where(
@@ -1630,6 +1645,20 @@ export class DatabaseStorage implements IStorage {
 
   async createCouple(data: InsertCouple): Promise<Couple> {
     const [couple] = await db.insert(couples).values([data] as any).returning();
+    return couple;
+  }
+
+  async createPermanentPair(user1Id: string, user2Id: string): Promise<Couple> {
+    // Generate a unique invite code for backwards compatibility with the couples table
+    const inviteCode = `PAIR-${Date.now().toString(36).toUpperCase()}`;
+    
+    const [couple] = await db.insert(couples).values([{
+      user1Id,
+      user2Id,
+      inviteCode,
+      status: 'active' as const,
+      pairedAt: new Date(),
+    }] as any).returning();
     return couple;
   }
 
