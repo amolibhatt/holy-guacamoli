@@ -167,17 +167,19 @@ export default function BlitzgridAdmin() {
 
   const deleteGridMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest('DELETE', `/api/blitzgrid/grids/${id}`);
+      await apiRequest('DELETE', `/api/blitzgrid/grids/${id}`);
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (deletedId: number) => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
-      setDeleteGridId(null);
-      if (selectedGridId === deleteGridId) {
+      if (selectedGridId === deletedId) {
         setSelectedGridId(null);
       }
+      setDeleteGridId(null);
       toast({ title: "Grid deleted" });
     },
     onError: () => {
+      setDeleteGridId(null);
       toast({ title: "Couldn't delete grid", variant: "destructive" });
     },
   });
@@ -726,13 +728,7 @@ export default function BlitzgridAdmin() {
                         size="sm"
                         variant="outline"
                         className="text-destructive hover:text-destructive"
-                        onClick={() => {
-                          console.log('Delete button clicked, selectedGridId:', selectedGridId);
-                          if (selectedGridId) {
-                            console.log('Setting deleteGridId to:', selectedGridId);
-                            setDeleteGridId(selectedGridId);
-                          }
-                        }}
+                        onClick={() => selectedGridId && setDeleteGridId(selectedGridId)}
                         data-testid="button-delete-selected-grid"
                       >
                         <Trash2 className="w-4 h-4 mr-1" /> Delete
@@ -1364,10 +1360,7 @@ export default function BlitzgridAdmin() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={deleteGridId !== null} onOpenChange={(open) => {
-        console.log('AlertDialog onOpenChange:', open, 'deleteGridId:', deleteGridId);
-        if (!open) setDeleteGridId(null);
-      }}>
+      <AlertDialog open={deleteGridId !== null} onOpenChange={(open) => !open && setDeleteGridId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this grid?</AlertDialogTitle>
@@ -1378,12 +1371,7 @@ export default function BlitzgridAdmin() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                console.log('AlertDialogAction clicked, deleteGridId:', deleteGridId);
-                if (deleteGridId) {
-                  deleteGridMutation.mutate(deleteGridId);
-                }
-              }}
+              onClick={() => deleteGridId && deleteGridMutation.mutate(deleteGridId)}
               className="bg-destructive text-destructive-foreground"
             >
               Delete
