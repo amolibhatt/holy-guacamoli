@@ -85,12 +85,9 @@ export default function BlitzgridAdmin() {
   const [selectedGridId, setSelectedGridId] = useState<number | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   
-  const [showNewGridForm, setShowNewGridForm] = useState(false);
-  const [newGridName, setNewGridName] = useState("");
   const [editingGridId, setEditingGridId] = useState<number | null>(null);
   const [editGridName, setEditGridName] = useState("");
   const [editGridDescription, setEditGridDescription] = useState("");
-  const [gridToDelete, setGridToDelete] = useState<{ id: number; name: string } | null>(null);
   
   const [questionForms, setQuestionForms] = useState<Record<string, { 
     question: string; 
@@ -131,25 +128,19 @@ export default function BlitzgridAdmin() {
     enabled: !!selectedGridId,
   });
 
-  const [isCreatingGrid, setIsCreatingGrid] = useState(false);
-  
-  const handleCreateGrid = async (name: string) => {
-    if (!name.trim()) return;
-    setIsCreatingGrid(true);
+  const handleAddGrid = async () => {
+    const name = window.prompt("Enter grid name:");
+    if (!name || !name.trim()) return;
     try {
       const result = await apiRequest('POST', '/api/blitzgrid/grids', { name: name.trim() });
       const newGrid = await result.json();
-      queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
-      setNewGridName("");
-      setShowNewGridForm(false);
+      await queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
       if (newGrid?.id) {
         setSelectedGridId(newGrid.id);
       }
       toast({ title: "Grid created" });
     } catch (error) {
       toast({ title: "Couldn't create grid", variant: "destructive" });
-    } finally {
-      setIsCreatingGrid(false);
     }
   };
 
@@ -167,17 +158,17 @@ export default function BlitzgridAdmin() {
     },
   });
 
-  const handleDeleteGrid = async (gridId: number) => {
+  const handleRemoveGrid = async (gridId: number, gridName: string) => {
+    const confirmed = window.confirm(`Delete "${gridName}"? This will unlink all categories.`);
+    if (!confirmed) return;
     try {
       await apiRequest('DELETE', `/api/blitzgrid/grids/${gridId}`);
-      queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
       if (selectedGridId === gridId) {
         setSelectedGridId(null);
       }
-      setGridToDelete(null);
       toast({ title: "Grid deleted" });
     } catch (error) {
-      setGridToDelete(null);
       toast({ title: "Couldn't delete grid", variant: "destructive" });
     }
   };
@@ -587,7 +578,7 @@ export default function BlitzgridAdmin() {
                 size="icon"
                 variant="ghost"
                 className="h-7 w-7"
-                onClick={() => setShowNewGridForm(true)}
+                onClick={handleAddGrid}
                 data-testid="button-add-grid-sidebar"
               >
                 <Plus className="w-4 h-4" />
@@ -726,7 +717,7 @@ export default function BlitzgridAdmin() {
                         size="sm"
                         variant="outline"
                         className="text-destructive hover:text-destructive"
-                        onClick={() => grid && setGridToDelete({ id: grid.id, name: grid.name })}
+                        onClick={() => grid && handleRemoveGrid(grid.id, grid.name)}
                         data-testid="button-delete-selected-grid"
                       >
                         <Trash2 className="w-4 h-4 mr-1" /> Delete
@@ -1129,57 +1120,13 @@ export default function BlitzgridAdmin() {
               className="hidden"
             />
             <Button
-              onClick={() => setShowNewGridForm(true)}
+              onClick={handleAddGrid}
               data-testid="button-new-grid"
             >
               <Plus className="w-4 h-4 mr-2" /> New Grid
             </Button>
           </div>
         </div>
-
-        <AnimatePresence>
-          {showNewGridForm && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mb-4"
-            >
-              <Card>
-                <CardContent className="py-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Input
-                      placeholder="Grid name..."
-                      value={newGridName}
-                      onChange={(e) => setNewGridName(e.target.value)}
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && newGridName.trim()) {
-                          handleCreateGrid(newGridName);
-                        }
-                        if (e.key === 'Escape') {
-                          setShowNewGridForm(false);
-                          setNewGridName("");
-                        }
-                      }}
-                      data-testid="input-grid-name"
-                    />
-                    <Button
-                      onClick={() => handleCreateGrid(newGridName)}
-                      disabled={!newGridName.trim() || isCreatingGrid}
-                      data-testid="button-create-grid"
-                    >
-                      {isCreatingGrid ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
-                    </Button>
-                    <Button variant="ghost" onClick={() => setShowNewGridForm(false)}>
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {loadingGrids ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -1191,7 +1138,7 @@ export default function BlitzgridAdmin() {
               <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
               <h3 className="font-medium mb-2">No grids yet</h3>
               <p className="text-muted-foreground text-sm mb-4">Create your first Blitzgrid</p>
-              <Button onClick={() => setShowNewGridForm(true)} data-testid="button-create-first-grid">
+              <Button onClick={handleAddGrid} data-testid="button-create-first-grid">
                 <Plus className="w-4 h-4 mr-2" /> Create Grid
               </Button>
             </CardContent>
@@ -1291,7 +1238,7 @@ export default function BlitzgridAdmin() {
                             className="h-7 w-7 text-muted-foreground"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setGridToDelete({ id: grid.id, name: grid.name });
+                              handleRemoveGrid(grid.id, grid.name);
                             }}
                             data-testid={`button-delete-grid-${grid.id}`}
                           >
@@ -1323,65 +1270,6 @@ export default function BlitzgridAdmin() {
         )}
       </main>
 
-      <Dialog open={showNewGridForm} onOpenChange={setShowNewGridForm}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Create New Grid</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-4">
-            <Input
-              placeholder="Grid name..."
-              value={newGridName}
-              onChange={(e) => setNewGridName(e.target.value)}
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && newGridName.trim()) {
-                  handleCreateGrid(newGridName);
-                }
-              }}
-              data-testid="input-grid-name-dialog"
-            />
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => { setShowNewGridForm(false); setNewGridName(""); }}>
-                Cancel
-              </Button>
-              <Button
-                onClick={() => handleCreateGrid(newGridName)}
-                disabled={!newGridName.trim() || isCreatingGrid}
-                data-testid="button-create-grid-dialog"
-              >
-                {isCreatingGrid ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Create Grid
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={gridToDelete !== null} onOpenChange={(open) => !open && setGridToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete "{gridToDelete?.name}"?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will delete the grid and unlink all categories. Categories and questions will still exist.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (gridToDelete) {
-                  handleDeleteGrid(gridToDelete.id);
-                }
-              }}
-            >
-              Delete
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      
       <AppFooter />
     </div>
   );
