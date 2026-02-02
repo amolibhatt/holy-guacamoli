@@ -1601,6 +1601,16 @@ export class DatabaseStorage implements IStorage {
         playerEnabled: true,
         sortOrder: 3,
       },
+      {
+        slug: "sync_or_sink",
+        displayName: "Sync or Sink",
+        description: "Duo mode! Partners answer separately, then reveal together. Match answers to score!",
+        icon: "heart-handshake",
+        status: "active" as const,
+        hostEnabled: true,
+        playerEnabled: true,
+        sortOrder: 4,
+      },
     ];
 
     console.log("[SEED] Checking for missing game types...");

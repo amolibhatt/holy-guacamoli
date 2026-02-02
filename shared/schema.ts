@@ -269,6 +269,61 @@ export const psyopVotes = pgTable("psyop_votes", {
   index("idx_psyop_votes_round").on(table.roundId),
 ]);
 
+// Sync or Sink - Couples pairing system
+export const couples = pgTable("couples", {
+  id: serial("id").primaryKey(),
+  user1Id: text("user1_id").notNull(),
+  user2Id: text("user2_id"),
+  inviteCode: text("invite_code").notNull().unique(),
+  status: text("status").notNull().$type<"pending" | "active" | "inactive">().default("pending"),
+  coupleName: text("couple_name"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  pairedAt: timestamp("paired_at"),
+}, (table) => [
+  index("idx_couples_user1").on(table.user1Id),
+  index("idx_couples_user2").on(table.user2Id),
+  index("idx_couples_invite").on(table.inviteCode),
+]);
+
+// Sync or Sink Questions
+export const syncQuestions = pgTable("sync_questions", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id"),
+  questionText: text("question_text").notNull(),
+  category: text("category"),
+  isActive: boolean("is_active").notNull().default(true),
+  isStarterPack: boolean("is_starter_pack").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Sync or Sink Game Sessions
+export const syncSessions = pgTable("sync_sessions", {
+  id: serial("id").primaryKey(),
+  coupleId: integer("couple_id").notNull(),
+  roomCode: text("room_code").notNull().unique(),
+  status: text("status").notNull().$type<"waiting" | "answering" | "revealing" | "finished">().default("waiting"),
+  timerSeconds: integer("timer_seconds").notNull().default(30),
+  currentRoundId: integer("current_round_id"),
+  totalScore: integer("total_score").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Sync or Sink Rounds
+export const syncRounds = pgTable("sync_rounds", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull(),
+  questionId: integer("question_id").notNull(),
+  roundNumber: integer("round_number").notNull(),
+  status: text("status").notNull().$type<"answering" | "revealing" | "complete">().default("answering"),
+  user1Answer: text("user1_answer"),
+  user2Answer: text("user2_answer"),
+  isSync: boolean("is_sync"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  unique().on(table.sessionId, table.roundNumber),
+  index("idx_sync_rounds_session").on(table.sessionId),
+]);
+
 // Board visibility - controls who can see/use the board
 export const BOARD_VISIBILITIES = ["private", "tenant", "public"] as const;
 export type BoardVisibility = typeof BOARD_VISIBILITIES[number];
@@ -697,6 +752,22 @@ export type InsertPsyopSession = z.infer<typeof insertPsyopSessionSchema>;
 export type InsertPsyopRound = z.infer<typeof insertPsyopRoundSchema>;
 export type InsertPsyopSubmission = z.infer<typeof insertPsyopSubmissionSchema>;
 export type InsertPsyopVote = z.infer<typeof insertPsyopVoteSchema>;
+
+// Sync or Sink insert schemas
+export const insertCoupleSchema = createInsertSchema(couples).omit({ id: true, createdAt: true, pairedAt: true });
+export const insertSyncQuestionSchema = createInsertSchema(syncQuestions).omit({ id: true, createdAt: true });
+export const insertSyncSessionSchema = createInsertSchema(syncSessions).omit({ id: true, createdAt: true });
+export const insertSyncRoundSchema = createInsertSchema(syncRounds).omit({ id: true, createdAt: true });
+
+// Sync or Sink types
+export type Couple = typeof couples.$inferSelect;
+export type SyncQuestion = typeof syncQuestions.$inferSelect;
+export type SyncSession = typeof syncSessions.$inferSelect;
+export type SyncRound = typeof syncRounds.$inferSelect;
+export type InsertCouple = z.infer<typeof insertCoupleSchema>;
+export type InsertSyncQuestion = z.infer<typeof insertSyncQuestionSchema>;
+export type InsertSyncSession = z.infer<typeof insertSyncSessionSchema>;
+export type InsertSyncRound = z.infer<typeof insertSyncRoundSchema>;
 
 export type BoardCategoryWithCategory = BoardCategory & { category: Category };
 export type BoardCategoryWithCount = BoardCategoryWithCategory & { questionCount: number; position: number };
