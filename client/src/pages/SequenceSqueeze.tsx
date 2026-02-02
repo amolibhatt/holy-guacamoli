@@ -18,11 +18,12 @@ import {
   ListOrdered, Play, Pause, Users, QrCode, Timer, 
   Trophy, Trash2, Edit, Check, X, Loader2, Clock, Zap,
   ChevronDown, ChevronUp, Sparkles, Crown, RefreshCw, SkipForward,
-  Volume2, VolumeX, Medal, Star, User, Flame, Plus, Minus, Settings
+  Volume2, VolumeX, Medal, Star, User, Flame, Plus, Minus, Settings, HelpCircle
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
+import { GameRulesSheet } from "@/components/GameRules";
 import type { SequenceQuestion, SequenceSession, SequenceSubmission } from "@shared/schema";
 import { PLAYER_AVATARS } from "@shared/schema";
 
@@ -63,6 +64,7 @@ export default function SequenceSqueeze() {
   const { toast } = useToast();
 
   const [gameState, setGameState] = useState<GameState>("setup");
+  const [showRules, setShowRules] = useState(false);
   const [animationStage, setAnimationStage] = useState<AnimationStage>(null);
   const [isPaused, setIsPaused] = useState(false);
   const animationTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
@@ -1325,6 +1327,24 @@ export default function SequenceSqueeze() {
           </div>
         </DialogContent>
       </Dialog>
+      
+      {/* Floating Help Button */}
+      <Button
+        variant="outline"
+        size="icon"
+        className="fixed bottom-20 right-4 z-40 rounded-full shadow-lg bg-background/80 backdrop-blur-sm"
+        onClick={() => setShowRules(true)}
+        title="How to Play"
+        data-testid="button-rules-sequence"
+      >
+        <HelpCircle className="w-5 h-5" />
+      </Button>
+      
+      <GameRulesSheet 
+        gameSlug="sequence_squeeze" 
+        open={showRules} 
+        onOpenChange={setShowRules} 
+      />
       
       <AppFooter />
     </div>

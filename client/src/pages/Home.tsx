@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, Brain, Users } from "lucide-react";
+import { Loader2, Grid3X3, Brain, Users, Info } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
+import { GameRulesSheet } from "@/components/GameRules";
 
 // Custom ABC icon for Sort Circuit
 function AbcListIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
@@ -83,6 +84,7 @@ export default function Home() {
   const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const [rulesGameSlug, setRulesGameSlug] = useState<string | null>(null);
 
   const { data: gameTypes = [], isLoading: isLoadingGames } = useQuery<(GameType & { status?: string })[]>({
     queryKey: ['/api/game-types/homepage'],
@@ -212,6 +214,19 @@ export default function Home() {
                     }}
                     data-testid={`button-game-${game.slug}`}
                   >
+                    {/* Info Button - How to Play */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setRulesGameSlug(game.slug);
+                      }}
+                      className="absolute top-3 left-3 p-1.5 rounded-full bg-white/5 hover:bg-white/15 transition-colors z-10"
+                      title="How to Play"
+                      data-testid={`button-rules-${game.slug}`}
+                    >
+                      <Info className="w-4 h-4 text-white/50 hover:text-white/80" />
+                    </button>
+                    
                     {/* Badge */}
                     {config.badge && (
                       <motion.div 
@@ -308,6 +323,12 @@ export default function Home() {
 
         </div>
       </main>
+      
+      <GameRulesSheet 
+        gameSlug={rulesGameSlug} 
+        open={rulesGameSlug !== null} 
+        onOpenChange={(open) => !open && setRulesGameSlug(null)} 
+      />
       
       <AppFooter />
     </div>
