@@ -162,8 +162,8 @@ export default function Home() {
             </motion.div>
           </div>
 
-          {/* Game Cards - 3 column grid on large screens */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
+          {/* Game Cards - 2 column grid on medium+ screens */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
             {isLoadingGames ? (
               <>
                 <GameCardSkeleton />
@@ -287,7 +287,7 @@ export default function Home() {
                     
                     {/* How to Play - Inline */}
                     <p 
-                      className="text-white/50 text-xs mb-3 leading-relaxed line-clamp-3"
+                      className="text-white/50 text-xs mb-3 leading-relaxed"
                       data-testid={`text-game-description-${game.slug}`}
                     >
                       {GAME_RULES[game.slug]?.overview || config.howItWorks}
