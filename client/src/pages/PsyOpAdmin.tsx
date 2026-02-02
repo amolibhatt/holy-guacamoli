@@ -47,6 +47,13 @@ export default function PsyOpAdmin() {
   const [bulkImportText, setBulkImportText] = useState("");
   const [bulkPreviewMode, setBulkPreviewMode] = useState(false);
 
+  // AI Chat
+  const [showAiChat, setShowAiChat] = useState(false);
+  const [aiMessages, setAiMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([]);
+  const [aiInput, setAiInput] = useState("");
+  const [aiGeneratedQuestions, setAiGeneratedQuestions] = useState<{factText: string, correctAnswer: string, category?: string}[]>([]);
+  const [savingQuestionIdx, setSavingQuestionIdx] = useState<number | null>(null);
+
   const { data: questions = [], isLoading } = useQuery<PsyopQuestion[]>({
     queryKey: ["/api/psyop/questions"],
   });
@@ -148,6 +155,51 @@ export default function PsyOpAdmin() {
       toast({ title: error.message || "Failed to import questions", variant: "destructive" });
     },
   });
+
+  const aiChatMutation = useMutation({
+    mutationFn: async (messages: {role: 'user' | 'assistant', content: string}[]) => {
+      const res = await apiRequest("POST", "/api/psyop/questions/chat", { messages });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "AI request failed");
+      }
+      return res.json();
+    },
+    onSuccess: (data: { reply: string, questions: {factText: string, correctAnswer: string, category?: string}[] }) => {
+      setAiMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
+      if (data.questions?.length > 0) {
+        setAiGeneratedQuestions(data.questions);
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message || "AI request failed", variant: "destructive" });
+    },
+  });
+
+  const handleAiSend = () => {
+    if (!aiInput.trim()) return;
+    const newMessages = [...aiMessages, { role: 'user' as const, content: aiInput }];
+    setAiMessages(newMessages);
+    setAiInput("");
+    setAiGeneratedQuestions([]);
+    aiChatMutation.mutate(newMessages);
+  };
+
+  const saveAiQuestion = async (q: {factText: string, correctAnswer: string, category?: string}, idx: number) => {
+    setSavingQuestionIdx(idx);
+    try {
+      await createMutation.mutateAsync({
+        factText: q.factText,
+        correctAnswer: q.correctAnswer,
+        category: q.category || selectedCategory || null,
+        isActive: true,
+      });
+      setAiGeneratedQuestions(prev => prev.filter((_, i) => i !== idx));
+    } catch (e) {
+      // Error handled by mutation
+    }
+    setSavingQuestionIdx(null);
+  };
 
   const parseBulkImport = (text: string): ParsedQuestion[] => {
     const lines = text.split('\n').filter(l => l.trim());
@@ -490,6 +542,101 @@ export default function PsyOpAdmin() {
                     >
                       {bulkImportMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                       Import {parseBulkImport(bulkImportText).length} Questions
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* AI Assistant */}
+          <Collapsible open={showAiChat} onOpenChange={setShowAiChat} className="mb-6">
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full gap-2 border-purple-500/30 bg-purple-500/10" data-testid="button-ai-assistant">
+                <Sparkles className="w-4 h-4 text-purple-400" />
+                AI Assistant
+                <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${showAiChat ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-4">
+              <Card className="border-purple-500/30 bg-purple-500/10">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-purple-400">
+                      <Sparkles className="w-5 h-5" />
+                      <span className="font-semibold">AI Assistant</span>
+                    </div>
+                    {aiMessages.length > 0 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => { setAiMessages([]); setAiGeneratedQuestions([]); }}
+                        className="text-xs text-muted-foreground"
+                      >
+                        Clear chat
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {aiMessages.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Tell me what kind of facts you want. Try: "Give me 5 science facts" or "Make some Bollywood trivia"
+                    </p>
+                  ) : (
+                    <div className="max-h-48 overflow-y-auto space-y-2 text-sm">
+                      {aiMessages.map((msg, i) => (
+                        <div key={i} className={`p-2 rounded ${msg.role === 'user' ? 'bg-purple-500/20 ml-8' : 'bg-muted mr-8'}`}>
+                          {msg.content}
+                        </div>
+                      ))}
+                      {aiChatMutation.isPending && (
+                        <div className="p-2 rounded bg-muted mr-8 flex items-center gap-2 text-muted-foreground">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Thinking...
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {aiGeneratedQuestions.length > 0 && (
+                    <div className="space-y-2 border-t border-purple-500/20 pt-3">
+                      <p className="text-xs font-medium text-purple-400">Generated Questions (click to save):</p>
+                      {aiGeneratedQuestions.map((q, idx) => (
+                        <div key={idx} className="p-2 bg-muted rounded border border-border text-sm flex items-start gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium">{renderFactWithBlank(q.factText, q.correctAnswer)}</p>
+                            {q.category && <p className="text-xs text-muted-foreground mt-1">Category: {q.category}</p>}
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => saveAiQuestion(q, idx)}
+                            disabled={savingQuestionIdx === idx}
+                            className="shrink-0"
+                            data-testid={`button-save-ai-question-${idx}`}
+                          >
+                            {savingQuestionIdx === idx ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Ask for questions..."
+                      value={aiInput}
+                      onChange={(e) => setAiInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAiSend()}
+                      className="flex-1"
+                      data-testid="input-ai-chat"
+                    />
+                    <Button
+                      onClick={handleAiSend}
+                      disabled={!aiInput.trim() || aiChatMutation.isPending}
+                      className="bg-gradient-to-r from-purple-500 to-violet-500 text-white border-0"
+                      data-testid="button-send-ai"
+                    >
+                      <Sparkles className="w-4 h-4" />
                     </Button>
                   </div>
                 </CardContent>
