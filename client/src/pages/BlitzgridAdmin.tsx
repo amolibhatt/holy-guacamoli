@@ -141,22 +141,6 @@ export default function BlitzgridAdmin() {
     enabled: !!selectedGridId,
   });
 
-  const handleAddGrid = async () => {
-    const name = window.prompt("Enter grid name:");
-    if (!name || !name.trim()) return;
-    try {
-      const result = await apiRequest('POST', '/api/blitzgrid/grids', { name: name.trim() });
-      const newGrid = await result.json();
-      await queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
-      if (newGrid?.id) {
-        setSelectedGridId(newGrid.id);
-      }
-      toast({ title: "Grid created" });
-    } catch (error) {
-      toast({ title: "Couldn't create grid", variant: "destructive" });
-    }
-  };
-
   const updateGridMutation = useMutation({
     mutationFn: async ({ id, name, description }: { id: number; name?: string; description?: string }) => {
       return apiRequest('PATCH', `/api/blitzgrid/grids/${id}`, { name, description });
@@ -170,21 +154,6 @@ export default function BlitzgridAdmin() {
       toast({ title: "Couldn't update grid", variant: "destructive" });
     },
   });
-
-  const handleRemoveGrid = async (gridId: number, gridName: string) => {
-    const confirmed = window.confirm(`Delete "${gridName}"? This will unlink all categories.`);
-    if (!confirmed) return;
-    try {
-      await apiRequest('DELETE', `/api/blitzgrid/grids/${gridId}`);
-      await queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
-      if (selectedGridId === gridId) {
-        setSelectedGridId(null);
-      }
-      toast({ title: "Grid deleted" });
-    } catch (error) {
-      toast({ title: "Couldn't delete grid", variant: "destructive" });
-    }
-  };
 
   const removeCategoryMutation = useMutation({
     mutationFn: async ({ gridId, categoryId }: { gridId: number; categoryId: number }) => {
@@ -587,15 +556,6 @@ export default function BlitzgridAdmin() {
           <aside className="w-64 border-r border-border bg-card/50 p-4 shrink-0 hidden md:block">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-sm text-muted-foreground">Grids</h2>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7"
-                onClick={handleAddGrid}
-                data-testid="button-add-grid-sidebar"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
             </div>
             <div className="space-y-1">
               {grids.map(g => (
@@ -725,15 +685,6 @@ export default function BlitzgridAdmin() {
                         data-testid="button-edit-grid"
                       >
                         <Pencil className="w-4 h-4 mr-1" /> Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => grid && handleRemoveGrid(grid.id, grid.name)}
-                        data-testid="button-delete-selected-grid"
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" /> Delete
                       </Button>
                       {grid?.isActive ? (
                         <Badge className="bg-green-500/20 text-green-600 dark:text-green-400">
@@ -1132,12 +1083,6 @@ export default function BlitzgridAdmin() {
               onChange={handleImport}
               className="hidden"
             />
-            <Button
-              onClick={handleAddGrid}
-              data-testid="button-new-grid"
-            >
-              <Plus className="w-4 h-4 mr-2" /> New Grid
-            </Button>
           </div>
         </div>
 
@@ -1150,10 +1095,7 @@ export default function BlitzgridAdmin() {
             <CardContent className="py-12 text-center">
               <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
               <h3 className="font-medium mb-2">No grids yet</h3>
-              <p className="text-muted-foreground text-sm mb-4">Create your first Blitzgrid</p>
-              <Button onClick={handleAddGrid} data-testid="button-create-first-grid">
-                <Plus className="w-4 h-4 mr-2" /> Create Grid
-              </Button>
+              <p className="text-muted-foreground text-sm">Use the Super Admin dashboard to create grids</p>
             </CardContent>
           </Card>
         ) : (
@@ -1244,18 +1186,6 @@ export default function BlitzgridAdmin() {
                             data-testid={`button-edit-grid-${grid.id}`}
                           >
                             <Pencil className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 text-muted-foreground"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveGrid(grid.id, grid.name);
-                            }}
-                            data-testid={`button-delete-grid-${grid.id}`}
-                          >
-                            <Trash2 className="w-3 h-3 text-destructive" />
                           </Button>
                         </div>
                       </>
