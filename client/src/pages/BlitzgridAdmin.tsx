@@ -727,7 +727,9 @@ export default function BlitzgridAdmin() {
                         variant="outline"
                         className="text-destructive hover:text-destructive"
                         onClick={() => {
+                          console.log('Delete button clicked, selectedGridId:', selectedGridId);
                           if (selectedGridId) {
+                            console.log('Setting deleteGridId to:', selectedGridId);
                             setDeleteGridId(selectedGridId);
                           }
                         }}
@@ -1362,7 +1364,10 @@ export default function BlitzgridAdmin() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={deleteGridId !== null} onOpenChange={(open) => !open && setDeleteGridId(null)}>
+      <AlertDialog open={deleteGridId !== null} onOpenChange={(open) => {
+        console.log('AlertDialog onOpenChange:', open, 'deleteGridId:', deleteGridId);
+        if (!open) setDeleteGridId(null);
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this grid?</AlertDialogTitle>
@@ -1373,7 +1378,12 @@ export default function BlitzgridAdmin() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deleteGridId && deleteGridMutation.mutate(deleteGridId)}
+              onClick={() => {
+                console.log('AlertDialogAction clicked, deleteGridId:', deleteGridId);
+                if (deleteGridId) {
+                  deleteGridMutation.mutate(deleteGridId);
+                }
+              }}
               className="bg-destructive text-destructive-foreground"
             >
               Delete
