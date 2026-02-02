@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Crown, Sparkles, Zap, PartyPopper, ArrowLeft, Loader2 } from "lucide-react";
@@ -180,12 +179,37 @@ export default function Pricing() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-pink-50 to-amber-50">
-      <div className="container max-w-5xl mx-auto px-4 py-12">
+    <div className="min-h-screen bg-[#0a0a0f] flex flex-col">
+      {/* Background effects matching home page */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div 
+          className="absolute w-full h-full opacity-[0.03]"
+          style={{
+            background: `repeating-linear-gradient(
+              0deg,
+              transparent,
+              transparent 2px,
+              rgba(255, 255, 255, 0.5) 2px,
+              rgba(255, 255, 255, 0.5) 4px
+            )`,
+          }}
+        />
+        <div 
+          className="absolute w-full h-full"
+          style={{
+            background: `
+              radial-gradient(ellipse 80% 60% at 50% 0%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+              radial-gradient(ellipse 60% 40% at 100% 100%, rgba(251, 191, 36, 0.06) 0%, transparent 50%)
+            `,
+          }}
+        />
+      </div>
+
+      <div className="container max-w-5xl mx-auto px-4 py-12 relative z-10">
         <Button
           variant="ghost"
           onClick={() => setLocation("/")}
-          className="mb-8"
+          className="mb-8 text-white/70 hover:text-white"
           data-testid="button-back-home"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -193,10 +217,10 @@ export default function Pricing() {
         </Button>
 
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent mb-4">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-400 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent mb-4">
             Choose Your Plan
           </h1>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="text-white/50 text-lg max-w-2xl mx-auto">
             Unlock unlimited games and premium features for unforgettable party experiences
           </p>
         </div>
@@ -208,10 +232,10 @@ export default function Pricing() {
             const isLoading = loadingPlan === plan.id;
 
             return (
-              <Card
+              <div
                 key={plan.id}
-                className={`relative overflow-hidden bg-gradient-to-br ${plan.gradient} ${plan.borderColor} border-2 ${
-                  plan.popular ? "ring-2 ring-amber-400 shadow-lg scale-105" : ""
+                className={`relative overflow-hidden rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 ${
+                  plan.popular ? "ring-2 ring-amber-400/50 scale-105" : ""
                 }`}
                 data-testid={`card-plan-${plan.id}`}
               >
@@ -225,26 +249,26 @@ export default function Pricing() {
 
                 {plan.savings && (
                   <div className="absolute top-4 left-4">
-                    <Badge variant="secondary" className="bg-green-100 text-green-700">
+                    <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30">
                       {plan.savings}
                     </Badge>
                   </div>
                 )}
 
-                <CardHeader className="pb-4">
+                <div className="p-6 pb-4">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg bg-white/50">
-                      <Icon className="w-6 h-6 text-violet-600" />
+                    <div className="p-2 rounded-lg bg-white/10">
+                      <Icon className="w-6 h-6 text-violet-400" />
                     </div>
-                    <CardTitle className="text-xl">{plan.name}</CardTitle>
+                    <h3 className="text-xl font-bold text-white">{plan.name}</h3>
                   </div>
-                  <CardDescription>{plan.description}</CardDescription>
-                </CardHeader>
+                  <p className="text-white/50 text-sm">{plan.description}</p>
+                </div>
 
-                <CardContent>
+                <div className="px-6 pb-4">
                   <div className="mb-6">
-                    <span className="text-4xl font-bold">₹{plan.price}</span>
-                    <span className="text-muted-foreground">
+                    <span className="text-4xl font-bold text-white">₹{plan.price}</span>
+                    <span className="text-white/50">
                       /{plan.period}
                     </span>
                   </div>
@@ -252,17 +276,17 @@ export default function Pricing() {
                   <ul className="space-y-3">
                     {plan.features.map((feature, idx) => (
                       <li key={idx} className="flex items-start gap-2">
-                        <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm">{feature}</span>
+                        <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm text-white/70">{feature}</span>
                       </li>
                     ))}
                   </ul>
-                </CardContent>
+                </div>
 
-                <CardFooter>
+                <div className="p-6 pt-4">
                   <Button
-                    className="w-full"
-                    variant={plan.buttonVariant}
+                    className={`w-full ${plan.popular ? 'bg-amber-500 hover:bg-amber-600 text-white' : ''}`}
+                    variant={plan.popular ? "default" : "outline"}
                     disabled={isCurrent || isLoading}
                     onClick={() => handleSubscribe(plan.id)}
                     data-testid={`button-subscribe-${plan.id}`}
@@ -281,14 +305,14 @@ export default function Pricing() {
                       </>
                     )}
                   </Button>
-                </CardFooter>
-              </Card>
+                </div>
+              </div>
             );
           })}
         </div>
 
         <div className="mt-12 text-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-white/40">
             Secure payments powered by Razorpay. Cancel anytime.
           </p>
         </div>
