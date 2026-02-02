@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Plus, Trash2, X, ListOrdered, Lightbulb, Check, Upload, ChevronDown, Loader2 } from "lucide-react";
+import { Plus, Trash2, X, ListOrdered, Lightbulb, Check, Upload, ChevronDown, Loader2, Sparkles } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { SequenceQuestion } from "@shared/schema";
 
@@ -35,6 +35,10 @@ export function SequenceSqueezeAdmin() {
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [bulkImportText, setBulkImportText] = useState("");
   const [bulkPreviewMode, setBulkPreviewMode] = useState(false);
+  
+  const [aiGenerateOpen, setAiGenerateOpen] = useState(false);
+  const [aiTopic, setAiTopic] = useState("");
+  const [aiCount, setAiCount] = useState(3);
 
   const { data: questions = [], isLoading } = useQuery<SequenceQuestion[]>({
     queryKey: ["/api/sequence-squeeze/questions"],
@@ -115,6 +119,34 @@ export function SequenceSqueezeAdmin() {
     },
   });
 
+  const aiGenerateMutation = useMutation({
+    mutationFn: async (data: { topic: string; count: number }) => {
+      const res = await apiRequest("POST", "/api/sequence-squeeze/questions/generate", data);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to generate questions");
+      }
+      return res.json();
+    },
+    onSuccess: (data: { success: number; errors: string[] }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sequence-squeeze/questions"] });
+      setAiTopic("");
+      setAiGenerateOpen(false);
+      if (data.errors.length > 0) {
+        toast({ 
+          title: `Generated ${data.success} question(s)`, 
+          description: `${data.errors.length} error(s)`,
+          variant: "destructive" 
+        });
+      } else {
+        toast({ title: `Generated ${data.success} question(s)!` });
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message || "Failed to generate questions", variant: "destructive" });
+    },
+  });
+
   const parseBulkImport = (text: string): ParsedQuestion[] => {
     const lines = text.split('\n').filter(l => l.trim());
     const parsed: ParsedQuestion[] = [];
@@ -170,19 +202,92 @@ export function SequenceSqueezeAdmin() {
   return (
     <div className="max-w-3xl mx-auto space-y-6" data-testid="section-sequence-squeeze-admin">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <p className="text-muted-foreground">{questions.length} question{questions.length !== 1 ? 's' : ''}</p>
         </div>
-        <Button
-          onClick={() => setShowForm(!showForm)}
-          variant={showForm ? "outline" : "default"}
-          data-testid="button-toggle-sequence-form"
-        >
-          {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-          {showForm ? "Cancel" : "New Question"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setAiGenerateOpen(!aiGenerateOpen)}
+            variant={aiGenerateOpen ? "outline" : "secondary"}
+            data-testid="button-ai-generate"
+          >
+            {aiGenerateOpen ? <X className="w-4 h-4 mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+            {aiGenerateOpen ? "Cancel" : "AI Generate"}
+          </Button>
+          <Button
+            onClick={() => setShowForm(!showForm)}
+            variant={showForm ? "outline" : "default"}
+            data-testid="button-toggle-sequence-form"
+          >
+            {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+            {showForm ? "Cancel" : "New Question"}
+          </Button>
+        </div>
       </div>
+
+      {/* AI Generate Form */}
+      <AnimatePresence>
+        {aiGenerateOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+          >
+            <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center gap-2 text-purple-700">
+                  <Sparkles className="w-5 h-5" />
+                  <span className="font-semibold">AI Question Generator</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Enter a topic and AI will generate ordering questions for you.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Input
+                    placeholder="e.g., Marvel movies, World capitals, Olympic sports..."
+                    value={aiTopic}
+                    onChange={(e) => setAiTopic(e.target.value)}
+                    className="flex-1"
+                    data-testid="input-ai-topic"
+                  />
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm text-muted-foreground whitespace-nowrap">Count:</Label>
+                    <select 
+                      value={aiCount} 
+                      onChange={(e) => setAiCount(Number(e.target.value))}
+                      className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                      data-testid="select-ai-count"
+                    >
+                      {[1, 2, 3, 4, 5].map(n => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => aiGenerateMutation.mutate({ topic: aiTopic, count: aiCount })}
+                  disabled={!aiTopic.trim() || aiGenerateMutation.isPending}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0"
+                  data-testid="button-generate-ai-questions"
+                >
+                  {aiGenerateMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Generate Questions
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Add Question Form */}
       <AnimatePresence>

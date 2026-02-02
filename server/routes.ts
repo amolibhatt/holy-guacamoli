@@ -2294,6 +2294,135 @@ export async function registerRoutes(
     }
   });
 
+  // AI-generated Sort Circuit questions
+  app.post("/api/sequence-squeeze/questions/generate", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { topic, count = 3 } = req.body;
+      
+      if (!topic || typeof topic !== 'string' || topic.trim().length === 0) {
+        return res.status(400).json({ message: "Topic is required" });
+      }
+      
+      const questionCount = Math.min(Math.max(1, Number(count)), 5);
+      
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ message: "AI service not configured" });
+      }
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a trivia game question generator for a game called "Sort Circuit" where players must put 4 items in the correct order. Generate ordering/ranking questions where there's a clear, factual correct order.
+
+Examples of good question types:
+- Chronological: historical events, movie releases, inventions
+- Rankings: populations, heights, distances, speeds, temperatures
+- Sequences: steps in a process, stages of development
+- Numerical order: dates, sizes, quantities
+
+Each question needs:
+- A clear question asking players to order items
+- 4 distinct items (A, B, C, D) that have a definitive order
+- The items should be listed in their CORRECT order (A=1st, B=2nd, C=3rd, D=4th)
+- An optional hint
+
+Return JSON array with this exact format:
+[
+  {
+    "question": "Order these countries by population (largest to smallest)",
+    "optionA": "China",
+    "optionB": "India", 
+    "optionC": "USA",
+    "optionD": "Indonesia",
+    "hint": "Think about the most populous continent"
+  }
+]
+
+Keep options SHORT (max 50 chars each). Questions should be fun and educational.`
+            },
+            {
+              role: 'user',
+              content: `Generate ${questionCount} Sort Circuit ordering questions about: ${topic.trim()}`
+            }
+          ],
+          temperature: 0.8,
+          max_tokens: 1500
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('OpenAI API error:', error);
+        return res.status(500).json({ message: "Failed to generate questions" });
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+      
+      if (!content) {
+        return res.status(500).json({ message: "No response from AI" });
+      }
+
+      // Parse JSON from response (handle markdown code blocks)
+      let questions;
+      try {
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) {
+          throw new Error('No JSON array found');
+        }
+        questions = JSON.parse(jsonMatch[0]);
+      } catch (parseErr) {
+        console.error('Failed to parse AI response:', content);
+        return res.status(500).json({ message: "Failed to parse AI response" });
+      }
+
+      // Validate and save questions
+      const results = { success: 0, questions: [] as any[], errors: [] as string[] };
+      
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
+        try {
+          if (!q.question || !q.optionA || !q.optionB || !q.optionC || !q.optionD) {
+            results.errors.push(`Question ${i + 1}: Missing required fields`);
+            continue;
+          }
+
+          const saved = await storage.createSequenceQuestion({
+            userId,
+            question: q.question.trim().slice(0, 500),
+            optionA: q.optionA.trim().slice(0, 200),
+            optionB: q.optionB.trim().slice(0, 200),
+            optionC: q.optionC.trim().slice(0, 200),
+            optionD: q.optionD.trim().slice(0, 200),
+            correctOrder: ['A', 'B', 'C', 'D'],
+            hint: q.hint?.trim()?.slice(0, 200) || null,
+            isActive: true,
+          });
+          
+          results.questions.push(saved);
+          results.success++;
+        } catch (err) {
+          results.errors.push(`Question ${i + 1}: Failed to save`);
+        }
+      }
+
+      res.json(results);
+    } catch (err) {
+      console.error("Error generating AI questions:", err);
+      res.status(500).json({ message: "Failed to generate questions" });
+    }
+  });
+
   // PsyOp API routes
   app.get("/api/psyop/questions", isAuthenticated, async (req, res) => {
     try {
