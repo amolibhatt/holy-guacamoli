@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ArrowLeft, Settings, Shield, LogOut, HelpCircle, User, ChevronDown } from "lucide-react";
+import { ArrowLeft, Settings, Shield, LogOut, HelpCircle, User, ChevronDown, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import {
   DropdownMenu,
@@ -117,6 +117,22 @@ export function AppHeader({
                     <DropdownMenuItem className="cursor-pointer py-2.5" data-testid="menu-super-admin">
                       <Shield className="w-4 h-4 mr-3 text-purple-500 dark:text-purple-400" />
                       Super Admin
+                    </DropdownMenuItem>
+                  </Link>
+                )}
+                
+                <DropdownMenuSeparator className="my-1" />
+                
+                {user?.subscriptionPlan === 'pro' || user?.subscriptionPlan === 'party_pack' ? (
+                  <div className="flex items-center gap-2 px-2 py-2 text-sm text-amber-500">
+                    <Crown className="w-4 h-4" />
+                    <span className="font-medium">Pro Member</span>
+                  </div>
+                ) : (
+                  <Link href="/pricing">
+                    <DropdownMenuItem className="cursor-pointer py-2.5 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30 text-amber-700 dark:text-amber-400" data-testid="menu-upgrade">
+                      <Crown className="w-4 h-4 mr-3" />
+                      Upgrade to Pro
                     </DropdownMenuItem>
                   </Link>
                 )}

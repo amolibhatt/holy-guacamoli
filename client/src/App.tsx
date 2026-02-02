@@ -23,6 +23,7 @@ const PsyOpAdmin = lazy(() => import("@/pages/PsyOpAdmin"));
 const PsyOpHost = lazy(() => import("@/pages/PsyOpHost"));
 const GameHistory = lazy(() => import("@/pages/GameHistory"));
 const Blitzgrid = lazy(() => import("@/pages/Blitzgrid"));
+const Pricing = lazy(() => import("@/pages/Pricing"));
 
 function PageLoader() {
   return (
@@ -55,6 +56,7 @@ function Router() {
         <Route path="/host/psyop" component={PsyOpHost} />
         <Route path="/sortcircuit/:code?" component={SortCircuitPlayer} />
         <Route path="/host/blitzgrid" component={Blitzgrid} />
+        <Route path="/pricing" component={Pricing} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
