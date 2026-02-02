@@ -1371,7 +1371,12 @@ export default function BlitzgridAdmin() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deleteGridId && deleteGridMutation.mutate(deleteGridId)}
+              onClick={(e) => {
+                e.preventDefault();
+                if (deleteGridId) {
+                  deleteGridMutation.mutate(deleteGridId);
+                }
+              }}
               className="bg-destructive text-destructive-foreground"
             >
               Delete
