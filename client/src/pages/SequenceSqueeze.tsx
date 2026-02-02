@@ -84,6 +84,8 @@ export default function SequenceSqueeze() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [pointsPerRound, setPointsPerRound] = useState(10);
+  const [questionsToPlay, setQuestionsToPlay] = useState<number | null>(null);
+  const [gameQuestions, setGameQuestions] = useState<SequenceQuestion[]>([]);
   const [elapsedTime, setElapsedTime] = useState(0);
   const submissionsRef = useRef<PlayerSubmission[]>([]);
   const audioRef = useRef<{ [key: string]: HTMLAudioElement }>({});
@@ -349,7 +351,6 @@ export default function SequenceSqueeze() {
     submissionsRef.current = [];
     setWinner(null);
     setCurrentQuestionIndex(questionIdx);
-    setTotalQuestions(questions.length);
 
     const originalOptions = [
       { letter: "A", text: question.optionA },
@@ -391,11 +392,11 @@ export default function SequenceSqueeze() {
         },
         correctOrder: newShuffledCorrectOrder,
         questionIndex: questionIdx,
-        totalQuestions: questions.length,
+        totalQuestions: totalQuestions,
         pointsPerRound,
       }));
     }
-  }, [ws, pointsPerRound, questions.length, currentQuestionIndex]);
+  }, [ws, pointsPerRound, totalQuestions, currentQuestionIndex]);
 
   const revealAnswer = useCallback(() => {
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
@@ -425,13 +426,13 @@ export default function SequenceSqueeze() {
     }
     
     const nextIdx = currentQuestionIndex;
-    if (nextIdx < questions.length) {
-      startQuestion(questions[nextIdx], nextIdx);
+    if (nextIdx < gameQuestions.length) {
+      startQuestion(gameQuestions[nextIdx], nextIdx);
     } else {
       setCurrentQuestion(null);
       setGameState("waiting");
     }
-  }, [ws, currentQuestionIndex, questions, startQuestion]);
+  }, [ws, currentQuestionIndex, gameQuestions, startQuestion]);
 
   const resetGame = useCallback(() => {
     setCurrentQuestion(null);
@@ -552,7 +553,7 @@ export default function SequenceSqueeze() {
             <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
               <div className="flex items-center gap-3">
                 <Badge className="bg-teal-500/20 text-teal-300 border-teal-500/30">
-                  {questions.length} questions
+                  {questionsToPlay ?? questions.length} of {questions.length} questions
                 </Badge>
                 <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30">
                   {pointsPerRound} pts/round
@@ -592,7 +593,11 @@ export default function SequenceSqueeze() {
                   }`}
                   onClick={() => {
                     if (questions.length > 0) {
-                      startQuestion(questions[0], 0);
+                      const count = questionsToPlay ?? questions.length;
+                      const shuffled = [...questions].sort(() => Math.random() - 0.5).slice(0, count);
+                      setGameQuestions(shuffled);
+                      setTotalQuestions(shuffled.length);
+                      startQuestion(shuffled[0], 0);
                     }
                   }}
                   disabled={players.length === 0 || questions.length === 0}
@@ -609,7 +614,39 @@ export default function SequenceSqueeze() {
                 )}
 
                 {/* Settings inline */}
-                <div className="mt-4 pt-4 border-t border-white/10 w-full">
+                <div className="mt-4 pt-4 border-t border-white/10 w-full space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm text-white/50">Questions</span>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-7 w-7 text-white/60"
+                        onClick={() => setQuestionsToPlay(q => {
+                          const current = q ?? questions.length;
+                          return Math.max(1, current - 1);
+                        })}
+                        data-testid="button-questions-decrease"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </Button>
+                      <span className="font-bold text-lg w-8 text-center text-white" data-testid="text-questions-count">
+                        {questionsToPlay ?? questions.length}
+                      </span>
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-7 w-7 text-white/60"
+                        onClick={() => setQuestionsToPlay(q => {
+                          const current = q ?? questions.length;
+                          return Math.min(questions.length, current + 1);
+                        })}
+                        data-testid="button-questions-increase"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm text-white/50">Points/round</span>
                     <div className="flex items-center gap-2">
