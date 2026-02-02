@@ -223,24 +223,3 @@ export const PLAYER_ONBOARDING_STEPS: TooltipStep[] = [
     position: "bottom"
   }
 ];
-
-export const COUPLES_ONBOARDING_STEPS: TooltipStep[] = [
-  {
-    target: "[data-testid='tab-today']",
-    title: "Daily Questions",
-    content: "Answer today's questions to see how well you and your partner match. New questions every day!",
-    position: "bottom"
-  },
-  {
-    target: "[data-testid='tab-vault']",
-    title: "The Vault",
-    content: "Browse past answers and save your favorites. Great for revisiting special moments.",
-    position: "bottom"
-  },
-  {
-    target: "[data-testid='tab-journey']",
-    title: "Your Journey",
-    content: "See your relationship timeline with milestones, streaks, and compatibility insights.",
-    position: "bottom"
-  }
-];

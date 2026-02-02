@@ -69,7 +69,7 @@ Preferred communication style: Simple, everyday language.
 - **Bulk Import Validation**: Enhanced with length limits, board-specific point values, max 50 items per import
 - **Analytics Improvements**: Server-side validation, 10% log sampling, event batching
 - **AI Fallback**: Rate-limit detection, empty answer handling with 30% scoring
-- **Buzzkill and Double Dip Removed**: Removed Buzzkill trivia and Double Dip couples game to focus on Blitzgrid and Sort Circuit
+- **Buzzkill, Double Dip, and Sync or Sink Removed**: Removed these game modes to focus on core games (Blitzgrid, Sort Circuit, PsyOp)
 - **Drag-and-Drop Category Reordering**: Categories can be reordered within a board by dragging category tabs
 - **Auto-Save Drafts**: Work-in-progress questions are saved to localStorage per category, cleared on successful save or when all fields are empty
 - **Improved Admin Navigation**: Hierarchical sidebar shows categories nested under boards (expandable tree), breadcrumb navigation shows current location (Board > Category), clearer completion indicators at each level
@@ -92,7 +92,6 @@ Preferred communication style: Simple, everyday language.
 ### Planned Features (Schema Ready, UI Pending)
 - **Mirror Mechanic**: Prediction phase for multiple choice questions (questionType, options, prediction fields)
 - **Time Capsule**: Future-locked questions that unlock after specified days (isFutureLocked, unlockAfterDays fields)
-- **AI Debrief**: Gap analysis when partners have significantly different answers
 
 ### WebSocket Architecture
 - **Server**: WebSocket for real-time multiplayer game communication

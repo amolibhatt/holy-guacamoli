@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, Brain, Users, Clock, HeartHandshake } from "lucide-react";
+import { Loader2, Grid3X3, Brain, Users, Clock } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { GAME_RULES } from "@/components/GameRules";
 
@@ -66,15 +66,6 @@ const GAME_CONFIG: Record<string, {
     tagline: "Lie & Spy",
     howItWorks: "Make up answers. Fool your friends!",
     players: "3-10 players",
-  },
-  sync_or_sink: {
-    icon: HeartHandshake,
-    route: "/host/sync-or-sink",
-    accentColor: "#f472b6",
-    tagline: "Couples Mode",
-    howItWorks: "Answer separately. Reveal together. Match to win!",
-    players: "2 players",
-    badge: "New!",
   },
 };
 
