@@ -116,26 +116,6 @@ export default function BlitzgridAdmin() {
     enabled: isAuthenticated,
   });
 
-  // Auto-select first grid when grids load (makes sidebar view the default)
-  useEffect(() => {
-    if (grids.length > 0 && selectedGridId === null) {
-      setSelectedGridId(grids[0].id);
-    }
-  }, [grids, selectedGridId]);
-  
-  // Show loading while grids are loading OR while waiting for auto-selection
-  if (loadingGrids || (grids.length > 0 && selectedGridId === null)) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center" data-testid="page-loading">
-        <div className="fixed inset-0 bg-gradient-to-br from-rose-300/5 via-transparent to-fuchsia-300/5 pointer-events-none" />
-        <Skeleton className="h-8 w-48 mb-4" />
-        <div className="grid gap-4 grid-cols-3">
-          {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 w-32" />)}
-        </div>
-      </div>
-    );
-  }
-
   const { data: gridCategories = [], isLoading: loadingCategories } = useQuery<CategoryWithQuestions[]>({
     queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'],
     enabled: !!selectedGridId,
@@ -247,6 +227,13 @@ export default function BlitzgridAdmin() {
     },
   });
 
+  // Auto-select first grid when grids load (makes sidebar view the default)
+  useEffect(() => {
+    if (grids.length > 0 && selectedGridId === null) {
+      setSelectedGridId(grids[0].id);
+    }
+  }, [grids, selectedGridId]);
+
   const handleExport = async () => {
     setIsExporting(true);
     try {
@@ -321,16 +308,15 @@ export default function BlitzgridAdmin() {
     }
   };
 
-  if (isAuthLoading) {
+  // Show loading while auth or grids are loading OR while waiting for auto-selection
+  if (isAuthLoading || loadingGrids || (grids.length > 0 && selectedGridId === null)) {
     return (
-      <div className="min-h-screen bg-background">
-        <AppHeader minimal backHref="/" title="Blitzgrid Admin" />
-        <main className="max-w-4xl mx-auto px-4 py-6 w-full">
-          <Skeleton className="h-8 w-48 mb-4" />
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-32" />)}
-          </div>
-        </main>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center" data-testid="page-loading">
+        <div className="fixed inset-0 bg-gradient-to-br from-rose-300/5 via-transparent to-fuchsia-300/5 pointer-events-none" />
+        <Skeleton className="h-8 w-48 mb-4" />
+        <div className="grid gap-4 grid-cols-3">
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 w-32" />)}
+        </div>
       </div>
     );
   }
