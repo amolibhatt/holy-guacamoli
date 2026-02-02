@@ -548,10 +548,19 @@ export default function SequenceSqueeze() {
             animate={{ opacity: 1, scale: 1 }}
             className="py-6 relative z-10"
           >
-            {/* Hero title */}
-            <div className="text-center mb-8">
+            {/* Hero title with animated icon */}
+            <div className="text-center mb-10">
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                className="inline-block mb-4"
+              >
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-teal-500/30">
+                  <ListOrdered className="w-8 h-8 text-white" />
+                </div>
+              </motion.div>
               <h1 
-                className="text-4xl md:text-5xl font-black mb-2"
+                className="text-4xl md:text-6xl font-black mb-3"
                 style={{
                   background: 'linear-gradient(135deg, #14b8a6, #06b6d4, #22d3ee)',
                   WebkitBackgroundClip: 'text',
@@ -561,83 +570,127 @@ export default function SequenceSqueeze() {
                 Sort Circuit
               </h1>
               <p className="text-white/60 text-lg">Arrange fast. Win first.</p>
+              
+              {/* Game stats */}
+              <div className="flex items-center justify-center gap-4 mt-4">
+                <Badge className="bg-teal-500/20 text-teal-300 border-teal-500/30 px-3 py-1">
+                  <ListOrdered className="w-3 h-3 mr-1" />
+                  {questions.length} questions
+                </Badge>
+                <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 px-3 py-1">
+                  <Trophy className="w-3 h-3 mr-1" />
+                  {pointsPerRound} pts/round
+                </Badge>
+              </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 items-start">
-              {/* Left: QR Code and Start Button */}
+              {/* Left: Join Section */}
               <div className="flex flex-col items-center">
-                <div 
-                  className="bg-white p-4 rounded-xl shadow-lg" 
-                  data-testid="container-qr-code"
+                {/* QR Code with glow effect */}
+                <motion.div 
+                  className="relative"
+                  animate={{ scale: [1, 1.02, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                 >
-                  <QRCodeSVG value={joinUrl} size={200} />
-                </div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-teal-500/30 to-cyan-500/30 blur-xl rounded-3xl" />
+                  <div 
+                    className="relative bg-white p-5 rounded-2xl shadow-2xl" 
+                    data-testid="container-qr-code"
+                  >
+                    <QRCodeSVG value={joinUrl} size={180} />
+                  </div>
+                </motion.div>
                 
-                {/* Room code */}
-                <div className="mt-6 text-center">
-                  <p className="text-white/50 text-sm mb-1 uppercase tracking-wide">Room Code</p>
+                {/* Scan to join label */}
+                <motion.div 
+                  className="mt-4 flex items-center gap-2 text-teal-400"
+                  animate={{ y: [0, -4, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  <QrCode className="w-4 h-4" />
+                  <span className="text-sm font-medium">Scan to join</span>
+                </motion.div>
+                
+                {/* Room code with copy effect */}
+                <div className="mt-4 p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 w-full max-w-xs">
+                  <p className="text-white/50 text-xs mb-1 uppercase tracking-wider text-center">Room Code</p>
                   <p 
-                    className="font-mono font-bold text-4xl tracking-widest text-white"
+                    className="font-mono font-black text-4xl tracking-[0.3em] text-center text-white"
                     data-testid="text-room-code"
                   >
                     {roomCode}
                   </p>
+                  <p className="text-xs text-white/30 mt-2 text-center font-mono" data-testid="text-join-url">
+                    /sortcircuit/{roomCode}
+                  </p>
                 </div>
-                <p className="text-sm text-white/40 mt-2 mb-6" data-testid="text-join-url">
-                  <span className="font-mono">/sortcircuit/{roomCode}</span>
-                </p>
 
                 {/* Start Button */}
-                <Button 
-                  size="lg"
-                  className={`h-14 px-8 text-lg w-full ${
-                    players.length > 0 
-                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-0" 
-                      : "bg-white/10 text-white/40 border border-white/10"
-                  }`}
-                  onClick={() => {
-                    if (questions.length > 0) {
-                      startQuestion(questions[0], 0);
-                    }
-                  }}
-                  disabled={players.length === 0 || questions.length === 0}
-                  data-testid="button-begin-game"
+                <motion.div 
+                  className="w-full max-w-xs mt-6"
+                  whileHover={players.length > 0 ? { scale: 1.02 } : {}}
+                  whileTap={players.length > 0 ? { scale: 0.98 } : {}}
                 >
-                  <Play className="w-6 h-6 mr-2" />
-                  Begin Game
-                </Button>
+                  <Button 
+                    size="lg"
+                    className={`h-14 text-lg w-full relative overflow-hidden ${
+                      players.length > 0 
+                        ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-0 shadow-lg shadow-teal-500/30" 
+                        : "bg-white/5 text-white/30 border border-white/10"
+                    }`}
+                    onClick={() => {
+                      if (questions.length > 0) {
+                        startQuestion(questions[0], 0);
+                      }
+                    }}
+                    disabled={players.length === 0 || questions.length === 0}
+                    data-testid="button-begin-game"
+                  >
+                    {players.length > 0 && (
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0"
+                        animate={{ x: ["-100%", "100%"] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                      />
+                    )}
+                    <Play className="w-6 h-6 mr-2 relative z-10" />
+                    <span className="relative z-10">Begin Game</span>
+                  </Button>
+                </motion.div>
                 
                 {players.length === 0 && (
-                  <p className="text-xs text-white/40 mt-2">
+                  <p className="text-xs text-white/40 mt-3 text-center">
                     Waiting for at least 1 player to join...
                   </p>
                 )}
 
-                <div className="mt-4 p-3 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10">
-                  <div className="flex items-center justify-between">
+                {/* Settings */}
+                <div className="mt-6 p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 w-full max-w-xs">
+                  <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2 text-sm text-white/60">
                       <Settings className="w-4 h-4" />
-                      <span>Points per round</span>
+                      <span>Points/round</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button 
                         size="icon" 
                         variant="outline" 
-                        className="border-white/20 text-white/70"
+                        className="h-8 w-8 border-white/20 text-white/70"
                         onClick={() => setPointsPerRound(p => Math.max(5, p - 5))}
                         data-testid="button-points-decrease"
                       >
-                        <Minus className="w-4 h-4" />
+                        <Minus className="w-3 h-3" />
                       </Button>
-                      <span className="font-bold text-lg w-8 text-center text-white" data-testid="text-points-per-round">{pointsPerRound}</span>
+                      <span className="font-bold text-xl w-10 text-center text-white" data-testid="text-points-per-round">{pointsPerRound}</span>
                       <Button 
                         size="icon" 
                         variant="outline" 
-                        className="border-white/20 text-white/70"
+                        className="h-8 w-8 border-white/20 text-white/70"
                         onClick={() => setPointsPerRound(p => Math.min(50, p + 5))}
                         data-testid="button-points-increase"
                       >
-                        <Plus className="w-4 h-4" />
+                        <Plus className="w-3 h-3" />
                       </Button>
                     </div>
                   </div>
@@ -646,54 +699,76 @@ export default function SequenceSqueeze() {
 
               {/* Right: Players */}
               <div className="flex flex-col">
-                <div className="flex items-center gap-2 mb-4">
-                  <Users className="w-5 h-5 text-teal-400" />
-                  <h2 className="text-xl font-bold text-white" data-testid="text-players-header">Players</h2>
-                  <Badge className="ml-2 bg-white/10 text-white/70 border border-white/20" data-testid="badge-player-count">
+                <div className="flex items-center justify-between gap-2 mb-4">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-teal-400" />
+                    <h2 className="text-xl font-bold text-white" data-testid="text-players-header">Players</h2>
+                  </div>
+                  <Badge 
+                    className={`px-3 py-1 ${
+                      players.length > 0 
+                        ? "bg-teal-500/20 text-teal-300 border-teal-500/30" 
+                        : "bg-white/10 text-white/50 border-white/20"
+                    }`} 
+                    data-testid="badge-player-count"
+                  >
                     {players.length} joined
                   </Badge>
                 </div>
 
                 {players.length === 0 ? (
-                  <div 
-                    className="p-8 border-2 border-dashed border-white/10 rounded-xl bg-white/5 backdrop-blur-sm" 
+                  <motion.div 
+                    className="p-8 border-2 border-dashed border-white/20 rounded-2xl bg-gradient-to-br from-white/5 to-white/0" 
                     data-testid="card-players-empty"
+                    animate={{ borderColor: ["rgba(255,255,255,0.1)", "rgba(20,184,166,0.3)", "rgba(255,255,255,0.1)"] }}
+                    transition={{ duration: 3, repeat: Infinity }}
                   >
                     <div className="text-center">
-                      <Users className="w-12 h-12 mx-auto text-white/20 mb-3" />
+                      <motion.div
+                        animate={{ y: [0, -5, 0], opacity: [0.3, 0.6, 0.3] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        <Users className="w-16 h-16 mx-auto text-teal-500/40 mb-4" />
+                      </motion.div>
+                      <p className="text-white/60 font-medium mb-2">
+                        No players yet
+                      </p>
                       <p className="text-white/40 text-sm">
-                        Waiting for players to scan and join...
+                        Share the QR code or room code to invite players
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
                 ) : (
-                  <div className="p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10" data-testid="card-players">
+                  <div className="p-4 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10" data-testid="card-players">
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <AnimatePresence>
                         {players.map((p, idx) => {
                           const playerData = leaderboard.find(l => l.playerId === p.id);
                           const playerScore = playerData?.score || 0;
                           const streak = playerData?.currentStreak || 0;
+                          const avatarData = PLAYER_AVATARS.find(a => a.id === p.avatar);
                           return (
                             <motion.div 
                               key={p.id}
-                              initial={{ scale: 0, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
+                              initial={{ scale: 0, opacity: 0, rotate: -10 }}
+                              animate={{ scale: 1, opacity: 1, rotate: 0 }}
                               exit={{ scale: 0, opacity: 0 }}
                               transition={{ 
                                 type: "spring", 
-                                stiffness: 500, 
-                                damping: 25,
-                                delay: idx * 0.03
+                                stiffness: 400, 
+                                damping: 20,
+                                delay: idx * 0.05
                               }}
-                              className="flex flex-col items-center p-3 bg-white/5 rounded-xl border border-white/10"
+                              className="flex flex-col items-center p-4 bg-gradient-to-br from-white/10 to-white/5 rounded-xl border border-white/10 hover:border-teal-500/30 transition-colors"
                               data-testid={`player-card-${p.id}`}
                             >
-                              <div className="text-4xl mb-1">
-                                {PLAYER_AVATARS.find(a => a.id === p.avatar)?.emoji || <User className="w-10 h-10 text-teal-400" />}
+                              <div className="text-4xl mb-2">
+                                {avatarData?.emoji || <User className="w-10 h-10 text-teal-400" />}
                               </div>
-                              <span className="font-semibold text-sm text-center text-white" data-testid={`text-player-name-${p.id}`}>{p.name}</span>
-                              <div className="flex items-center gap-2 mt-1">
+                              <span className="font-semibold text-sm text-center text-white truncate max-w-full" data-testid={`text-player-name-${p.id}`}>
+                                {p.name}
+                              </span>
+                              <div className="flex items-center gap-2 mt-2">
                                 {playerScore > 0 && (
                                   <Badge className="text-xs bg-teal-500/20 text-teal-300 border border-teal-400/30" data-testid={`text-player-score-${p.id}`}>
                                     {playerScore} pts
@@ -712,11 +787,31 @@ export default function SequenceSqueeze() {
                       </AnimatePresence>
                     </div>
                     {leaderboard.length > 0 && leaderboard.some(l => l.score > 0) && (
-                      <p className="text-xs text-white/40 mt-3 text-center">
+                      <p className="text-xs text-white/40 mt-4 text-center">
                         Scores from previous session
                       </p>
                     )}
                   </div>
+                )}
+
+                {/* Quick tips when no players */}
+                {players.length === 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="mt-4 p-4 bg-teal-500/10 rounded-xl border border-teal-500/20"
+                  >
+                    <div className="flex items-start gap-3">
+                      <HelpCircle className="w-5 h-5 text-teal-400 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-teal-300 mb-1">How to play</p>
+                        <p className="text-xs text-white/50">
+                          Players race to arrange 4 items in the correct order. Fastest correct answer wins the round!
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
                 )}
               </div>
             </div>
