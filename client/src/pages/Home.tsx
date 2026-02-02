@@ -137,7 +137,7 @@ export default function Home() {
       
       <AppHeader minimal />
 
-      <main className="max-w-6xl mx-auto px-4 py-6 w-full">
+      <main className="max-w-4xl mx-auto px-4 py-6 w-full">
         <div className="w-full">
           
           {/* Header */}

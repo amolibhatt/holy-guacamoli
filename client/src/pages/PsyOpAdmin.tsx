@@ -256,7 +256,7 @@ export default function PsyOpAdmin() {
       <AppHeader minimal backHref="/" title="PsyOp Admin" />
 
       <div className="border-b border-border bg-card/50">
-        <div className="max-w-6xl mx-auto px-4 w-full">
+        <div className="max-w-4xl mx-auto px-4 w-full">
           <nav className="flex flex-wrap gap-1">
             <Link href="/admin/games">
               <Button 
