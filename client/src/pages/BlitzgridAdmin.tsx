@@ -90,7 +90,7 @@ export default function BlitzgridAdmin() {
   const [editingGridId, setEditingGridId] = useState<number | null>(null);
   const [editGridName, setEditGridName] = useState("");
   const [editGridDescription, setEditGridDescription] = useState("");
-  const [deleteGridId, setDeleteGridId] = useState<number | null>(null);
+  const [gridToDelete, setGridToDelete] = useState<{ id: number; name: string } | null>(null);
   
   const [questionForms, setQuestionForms] = useState<Record<string, { 
     question: string; 
@@ -165,24 +165,20 @@ export default function BlitzgridAdmin() {
     },
   });
 
-  const deleteGridMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest('DELETE', `/api/blitzgrid/grids/${id}`);
-      return id;
-    },
-    onSuccess: (deletedId: number) => {
+  const handleDeleteGrid = async (gridId: number) => {
+    try {
+      await apiRequest('DELETE', `/api/blitzgrid/grids/${gridId}`);
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
-      if (selectedGridId === deletedId) {
+      if (selectedGridId === gridId) {
         setSelectedGridId(null);
       }
-      setDeleteGridId(null);
+      setGridToDelete(null);
       toast({ title: "Grid deleted" });
-    },
-    onError: () => {
-      setDeleteGridId(null);
+    } catch (error) {
+      setGridToDelete(null);
       toast({ title: "Couldn't delete grid", variant: "destructive" });
-    },
-  });
+    }
+  };
 
   const removeCategoryMutation = useMutation({
     mutationFn: async ({ gridId, categoryId }: { gridId: number; categoryId: number }) => {
@@ -728,7 +724,7 @@ export default function BlitzgridAdmin() {
                         size="sm"
                         variant="outline"
                         className="text-destructive hover:text-destructive"
-                        onClick={() => selectedGridId && setDeleteGridId(selectedGridId)}
+                        onClick={() => grid && setGridToDelete({ id: grid.id, name: grid.name })}
                         data-testid="button-delete-selected-grid"
                       >
                         <Trash2 className="w-4 h-4 mr-1" /> Delete
@@ -1293,7 +1289,7 @@ export default function BlitzgridAdmin() {
                             className="h-7 w-7 text-muted-foreground"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setDeleteGridId(grid.id);
+                              setGridToDelete({ id: grid.id, name: grid.name });
                             }}
                             data-testid={`button-delete-grid-${grid.id}`}
                           >
@@ -1360,27 +1356,26 @@ export default function BlitzgridAdmin() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={deleteGridId !== null} onOpenChange={(open) => !open && setDeleteGridId(null)}>
+      <AlertDialog open={gridToDelete !== null} onOpenChange={(open) => !open && setGridToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this grid?</AlertDialogTitle>
+            <AlertDialogTitle>Delete "{gridToDelete?.name}"?</AlertDialogTitle>
             <AlertDialogDescription>
               This will delete the grid and unlink all categories. Categories and questions will still exist.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                if (deleteGridId) {
-                  deleteGridMutation.mutate(deleteGridId);
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (gridToDelete) {
+                  handleDeleteGrid(gridToDelete.id);
                 }
               }}
-              className="bg-destructive text-destructive-foreground"
             >
               Delete
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
