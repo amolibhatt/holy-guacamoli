@@ -500,7 +500,7 @@ export default function SequenceSqueeze() {
 
   return (
     <div 
-      className="min-h-screen overflow-hidden flex flex-col relative bg-[#0a0a0f] text-white" 
+      className="h-screen overflow-hidden flex flex-col relative bg-[#0a0a0f] text-white" 
       style={{
         background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px)'
       }}
@@ -531,7 +531,7 @@ export default function SequenceSqueeze() {
 
       <AppHeader minimal backHref="/" title="Sort Circuit" />
 
-      <main className="px-4 py-6 max-w-6xl mx-auto w-full">
+      <main className="flex-1 flex flex-col min-h-0 px-4 py-4 max-w-6xl mx-auto w-full">
         {gameState === "setup" && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -545,38 +545,26 @@ export default function SequenceSqueeze() {
 
         {gameState === "waiting" && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="py-6 relative z-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex-1 flex flex-col min-h-0 relative z-10"
           >
-            {/* Compact header with stats */}
-            <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-              <div className="flex items-center gap-3">
-                <Badge className="bg-teal-500/20 text-teal-300 border-teal-500/30">
-                  {questionsToPlay ?? questions.length} of {questions.length} questions
-                </Badge>
-                <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30">
-                  {pointsPerRound} pts/round
-                </Badge>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6 items-start">
+            <div className="flex-1 flex flex-col md:flex-row gap-4 min-h-0">
               {/* Left: Join Section */}
-              <div className="flex flex-col items-center p-6 bg-white/5 rounded-2xl border border-white/10">
+              <div className="flex flex-col items-center justify-center p-4 bg-white/5 rounded-xl border border-white/10 md:w-80 shrink-0">
                 {/* QR Code */}
                 <div 
-                  className="bg-white p-4 rounded-xl" 
+                  className="bg-white p-3 rounded-lg" 
                   data-testid="container-qr-code"
                 >
-                  <QRCodeSVG value={joinUrl} size={160} />
+                  <QRCodeSVG value={joinUrl} size={120} />
                 </div>
                 
                 {/* Room code */}
-                <div className="mt-4 text-center">
-                  <p className="text-white/40 text-xs uppercase tracking-wide mb-1">Room Code</p>
+                <div className="mt-3 text-center">
+                  <p className="text-white/40 text-[10px] uppercase tracking-wide">Room Code</p>
                   <p 
-                    className="font-mono font-black text-3xl tracking-widest text-white"
+                    className="font-mono font-black text-2xl tracking-widest text-white"
                     data-testid="text-room-code"
                   >
                     {roomCode}
@@ -585,8 +573,7 @@ export default function SequenceSqueeze() {
 
                 {/* Start Button */}
                 <Button 
-                  size="lg"
-                  className={`h-12 text-base w-full mt-4 ${
+                  className={`h-10 text-sm w-full mt-3 ${
                     players.length > 0 
                       ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-0" 
                       : "bg-white/5 text-white/30 border border-white/10"
@@ -603,44 +590,36 @@ export default function SequenceSqueeze() {
                   disabled={players.length === 0 || questions.length === 0}
                   data-testid="button-begin-game"
                 >
-                  <Play className="w-5 h-5 mr-2" />
+                  <Play className="w-4 h-4 mr-1" />
                   Begin Game
                 </Button>
                 
                 {players.length === 0 && (
-                  <p className="text-xs text-white/40 mt-2">
-                    Waiting for players...
-                  </p>
+                  <p className="text-[10px] text-white/40 mt-1">Waiting for players...</p>
                 )}
 
-                {/* Settings inline */}
-                <div className="mt-4 pt-4 border-t border-white/10 w-full space-y-3">
+                {/* Settings */}
+                <div className="mt-3 pt-3 border-t border-white/10 w-full space-y-2">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm text-white/50">Questions</span>
-                    <div className="flex items-center gap-2">
+                    <span className="text-xs text-white/50">Questions</span>
+                    <div className="flex items-center gap-1">
                       <Button 
                         size="icon" 
                         variant="ghost" 
-                        className="h-7 w-7 text-white/60"
-                        onClick={() => setQuestionsToPlay(q => {
-                          const current = q ?? questions.length;
-                          return Math.max(1, current - 1);
-                        })}
+                        className="h-6 w-6 text-white/60"
+                        onClick={() => setQuestionsToPlay(q => Math.max(1, (q ?? questions.length) - 1))}
                         data-testid="button-questions-decrease"
                       >
                         <Minus className="w-3 h-3" />
                       </Button>
-                      <span className="font-bold text-lg w-8 text-center text-white" data-testid="text-questions-count">
+                      <span className="font-bold text-sm w-6 text-center text-white" data-testid="text-questions-count">
                         {questionsToPlay ?? questions.length}
                       </span>
                       <Button 
                         size="icon" 
                         variant="ghost" 
-                        className="h-7 w-7 text-white/60"
-                        onClick={() => setQuestionsToPlay(q => {
-                          const current = q ?? questions.length;
-                          return Math.min(questions.length, current + 1);
-                        })}
+                        className="h-6 w-6 text-white/60"
+                        onClick={() => setQuestionsToPlay(q => Math.min(questions.length, (q ?? questions.length) + 1))}
                         data-testid="button-questions-increase"
                       >
                         <Plus className="w-3 h-3" />
@@ -648,22 +627,22 @@ export default function SequenceSqueeze() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm text-white/50">Points/round</span>
-                    <div className="flex items-center gap-2">
+                    <span className="text-xs text-white/50">Points</span>
+                    <div className="flex items-center gap-1">
                       <Button 
                         size="icon" 
                         variant="ghost" 
-                        className="h-7 w-7 text-white/60"
+                        className="h-6 w-6 text-white/60"
                         onClick={() => setPointsPerRound(p => Math.max(5, p - 5))}
                         data-testid="button-points-decrease"
                       >
                         <Minus className="w-3 h-3" />
                       </Button>
-                      <span className="font-bold text-lg w-8 text-center text-white" data-testid="text-points-per-round">{pointsPerRound}</span>
+                      <span className="font-bold text-sm w-6 text-center text-white" data-testid="text-points-per-round">{pointsPerRound}</span>
                       <Button 
                         size="icon" 
                         variant="ghost" 
-                        className="h-7 w-7 text-white/60"
+                        className="h-6 w-6 text-white/60"
                         onClick={() => setPointsPerRound(p => Math.min(50, p + 5))}
                         data-testid="button-points-increase"
                       >
@@ -675,14 +654,14 @@ export default function SequenceSqueeze() {
               </div>
 
               {/* Right: Players */}
-              <div className="flex flex-col p-6 bg-white/5 rounded-2xl border border-white/10">
-                <div className="flex items-center justify-between gap-2 mb-4">
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2" data-testid="text-players-header">
+              <div className="flex-1 flex flex-col min-h-0 p-4 bg-white/5 rounded-xl border border-white/10">
+                <div className="flex items-center justify-between gap-2 mb-3 shrink-0">
+                  <h2 className="text-sm font-bold text-white flex items-center gap-2" data-testid="text-players-header">
                     <Users className="w-4 h-4 text-teal-400" />
                     Players
                   </h2>
                   <Badge 
-                    className={`${
+                    className={`text-xs ${
                       players.length > 0 
                         ? "bg-teal-500/20 text-teal-300 border-teal-500/30" 
                         : "bg-white/10 text-white/50 border-white/20"
@@ -695,57 +674,56 @@ export default function SequenceSqueeze() {
 
                 {players.length === 0 ? (
                   <div 
-                    className="py-8 text-center" 
+                    className="flex-1 flex flex-col items-center justify-center" 
                     data-testid="card-players-empty"
                   >
-                    <Users className="w-10 h-10 mx-auto text-white/20 mb-2" />
-                    <p className="text-white/40 text-sm">
-                      Waiting for players to join...
-                    </p>
+                    <Users className="w-8 h-8 text-white/20 mb-2" />
+                    <p className="text-white/40 text-xs">Waiting for players...</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2" data-testid="card-players">
-                    <AnimatePresence>
-                      {players.map((p, idx) => {
-                        const playerData = leaderboard.find(l => l.playerId === p.id);
-                        const playerScore = playerData?.score || 0;
-                        const streak = playerData?.currentStreak || 0;
-                        const avatarData = PLAYER_AVATARS.find(a => a.id === p.avatar);
-                        return (
-                          <motion.div 
-                            key={p.id}
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0, opacity: 0 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                            className="flex flex-col items-center p-3 bg-white/5 rounded-xl border border-white/10"
-                            data-testid={`player-card-${p.id}`}
-                          >
-                            <div className="text-3xl mb-1">
-                              {avatarData?.emoji || <User className="w-8 h-8 text-teal-400" />}
-                            </div>
-                            <span className="font-medium text-xs text-center text-white truncate max-w-full" data-testid={`text-player-name-${p.id}`}>
-                              {p.name}
-                            </span>
-                            {(playerScore > 0 || streak >= 2) && (
-                              <div className="flex items-center gap-1 mt-1">
-                                {playerScore > 0 && (
-                                  <span className="text-xs text-teal-300" data-testid={`text-player-score-${p.id}`}>
-                                    {playerScore}pts
-                                  </span>
-                                )}
-                                {streak >= 2 && (
-                                  <span className="inline-flex items-center text-xs text-amber-400">
-                                    <Flame className="w-3 h-3" />
-                                    {streak}
-                                  </span>
-                                )}
+                  <div className="flex-1 overflow-auto min-h-0" data-testid="card-players">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      <AnimatePresence>
+                        {players.map((p) => {
+                          const playerData = leaderboard.find(l => l.playerId === p.id);
+                          const playerScore = playerData?.score || 0;
+                          const streak = playerData?.currentStreak || 0;
+                          const avatarData = PLAYER_AVATARS.find(a => a.id === p.avatar);
+                          return (
+                            <motion.div 
+                              key={p.id}
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              exit={{ scale: 0, opacity: 0 }}
+                              className="flex flex-col items-center p-2 bg-white/5 rounded-lg border border-white/10"
+                              data-testid={`player-card-${p.id}`}
+                            >
+                              <div className="text-2xl">
+                                {avatarData?.emoji || <User className="w-6 h-6 text-teal-400" />}
                               </div>
-                            )}
-                          </motion.div>
-                        );
-                      })}
-                    </AnimatePresence>
+                              <span className="font-medium text-[10px] text-center text-white truncate w-full" data-testid={`text-player-name-${p.id}`}>
+                                {p.name}
+                              </span>
+                              {(playerScore > 0 || streak >= 2) && (
+                                <div className="flex items-center gap-1">
+                                  {playerScore > 0 && (
+                                    <span className="text-[10px] text-teal-300" data-testid={`text-player-score-${p.id}`}>
+                                      {playerScore}
+                                    </span>
+                                  )}
+                                  {streak >= 2 && (
+                                    <span className="inline-flex items-center text-[10px] text-amber-400">
+                                      <Flame className="w-2 h-2" />
+                                      {streak}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </motion.div>
+                          );
+                        })}
+                      </AnimatePresence>
+                    </div>
                   </div>
                 )}
               </div>
