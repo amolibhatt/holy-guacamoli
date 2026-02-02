@@ -313,12 +313,13 @@ export default function Blitzgrid() {
   // Delete grid mutation
   const deleteGridMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest('DELETE', `/api/blitzgrid/grids/${id}`);
+      await apiRequest('DELETE', `/api/blitzgrid/grids/${id}`);
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (deletedId: number) => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
       setDeleteGridId(null);
-      if (selectedGridId === deleteGridId) {
+      if (selectedGridId === deletedId) {
         setSelectedGridId(null);
       }
       toast({ title: "Grid deleted" });
