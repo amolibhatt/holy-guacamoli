@@ -240,12 +240,9 @@ export function SequenceSqueezeAdmin() {
                   <Sparkles className="w-5 h-5" />
                   <span className="font-semibold">AI Question Generator</span>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Enter a topic and AI will generate ordering questions for you.
-                </p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Input
-                    placeholder="e.g., Marvel movies, World capitals, Olympic sports..."
+                    placeholder="Topic (optional) - leave blank for random"
                     value={aiTopic}
                     onChange={(e) => setAiTopic(e.target.value)}
                     className="flex-1"
@@ -266,8 +263,8 @@ export function SequenceSqueezeAdmin() {
                   </div>
                 </div>
                 <Button
-                  onClick={() => aiGenerateMutation.mutate({ topic: aiTopic, count: aiCount })}
-                  disabled={!aiTopic.trim() || aiGenerateMutation.isPending}
+                  onClick={() => aiGenerateMutation.mutate({ topic: aiTopic || "random fun topics", count: aiCount })}
+                  disabled={aiGenerateMutation.isPending}
                   className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0"
                   data-testid="button-generate-ai-questions"
                 >
