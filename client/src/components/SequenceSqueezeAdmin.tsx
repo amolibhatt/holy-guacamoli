@@ -255,10 +255,10 @@ export function SequenceSqueezeAdmin() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
           >
-            <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
+            <Card className="border-purple-500/30 bg-purple-500/10">
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-purple-700">
+                  <div className="flex items-center gap-2 text-purple-400">
                     <Sparkles className="w-5 h-5" />
                     <span className="font-semibold">AI Assistant</span>
                   </div>
@@ -281,12 +281,12 @@ export function SequenceSqueezeAdmin() {
                 ) : (
                   <div className="max-h-48 overflow-y-auto space-y-2 text-sm">
                     {aiMessages.map((msg, i) => (
-                      <div key={i} className={`p-2 rounded ${msg.role === 'user' ? 'bg-purple-100 ml-8' : 'bg-white mr-8'}`}>
+                      <div key={i} className={`p-2 rounded ${msg.role === 'user' ? 'bg-purple-500/20 ml-8' : 'bg-muted mr-8'}`}>
                         {msg.content}
                       </div>
                     ))}
                     {aiChatMutation.isPending && (
-                      <div className="p-2 rounded bg-white mr-8 flex items-center gap-2 text-muted-foreground">
+                      <div className="p-2 rounded bg-muted mr-8 flex items-center gap-2 text-muted-foreground">
                         <Loader2 className="w-3 h-3 animate-spin" />
                         Thinking...
                       </div>
@@ -295,10 +295,10 @@ export function SequenceSqueezeAdmin() {
                 )}
 
                 {aiGeneratedQuestions.length > 0 && (
-                  <div className="space-y-2 border-t pt-3">
-                    <p className="text-xs font-medium text-purple-700">Generated Questions (click to save):</p>
+                  <div className="space-y-2 border-t border-purple-500/20 pt-3">
+                    <p className="text-xs font-medium text-purple-400">Generated Questions (click to save):</p>
                     {aiGeneratedQuestions.map((q, idx) => (
-                      <div key={idx} className="p-2 bg-white rounded border text-sm flex items-start gap-2">
+                      <div key={idx} className="p-2 bg-muted rounded border border-border text-sm flex items-start gap-2">
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{q.question}</p>
                           <p className="text-xs text-muted-foreground">{q.optionA} → {q.optionB} → {q.optionC} → {q.optionD}</p>
