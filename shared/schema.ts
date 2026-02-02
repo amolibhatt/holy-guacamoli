@@ -269,6 +269,26 @@ export const psyopVotes = pgTable("psyop_votes", {
   index("idx_psyop_votes_round").on(table.roundId),
 ]);
 
+// TimeWarp Game - era-filtered image guessing game
+export const TIME_WARP_ERAS = ["past", "present", "future"] as const;
+export type TimeWarpEra = typeof TIME_WARP_ERAS[number];
+
+export const timeWarpQuestions = pgTable("time_warp_questions", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  imageUrl: text("image_url").notNull(),
+  era: text("era").notNull().$type<TimeWarpEra>(),
+  answer: text("answer").notNull(),
+  hint: text("hint"),
+  category: text("category"),
+  isActive: boolean("is_active").notNull().default(true),
+  isStarterPack: boolean("is_starter_pack").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_time_warp_user").on(table.userId),
+  index("idx_time_warp_era").on(table.era),
+]);
+
 // Board visibility - controls who can see/use the board
 export const BOARD_VISIBILITIES = ["private", "tenant", "public"] as const;
 export type BoardVisibility = typeof BOARD_VISIBILITIES[number];
@@ -637,6 +657,7 @@ export const insertPsyopSessionSchema = createInsertSchema(psyopSessions).omit({
 export const insertPsyopRoundSchema = createInsertSchema(psyopRounds).omit({ id: true, createdAt: true });
 export const insertPsyopSubmissionSchema = createInsertSchema(psyopSubmissions).omit({ id: true, submittedAt: true });
 export const insertPsyopVoteSchema = createInsertSchema(psyopVotes).omit({ id: true, submittedAt: true });
+export const insertTimeWarpQuestionSchema = createInsertSchema(timeWarpQuestions).omit({ id: true, createdAt: true });
 
 export type Board = typeof boards.$inferSelect;
 export type Category = typeof categories.$inferSelect;
@@ -697,6 +718,8 @@ export type InsertPsyopSession = z.infer<typeof insertPsyopSessionSchema>;
 export type InsertPsyopRound = z.infer<typeof insertPsyopRoundSchema>;
 export type InsertPsyopSubmission = z.infer<typeof insertPsyopSubmissionSchema>;
 export type InsertPsyopVote = z.infer<typeof insertPsyopVoteSchema>;
+export type TimeWarpQuestion = typeof timeWarpQuestions.$inferSelect;
+export type InsertTimeWarpQuestion = z.infer<typeof insertTimeWarpQuestionSchema>;
 
 export type BoardCategoryWithCategory = BoardCategory & { category: Category };
 export type BoardCategoryWithCount = BoardCategoryWithCategory & { questionCount: number; position: number };

@@ -67,6 +67,15 @@ const GAME_CONFIG: Record<string, {
     howItWorks: "Make up answers. Fool your friends!",
     players: "3-10 players",
   },
+  timewarp: {
+    icon: Clock,
+    route: "/timewarp/host",
+    accentColor: "#f59e0b",
+    tagline: "Time Travel Trivia",
+    howItWorks: "Guess era-filtered images. Halfway through, order reverses!",
+    players: "2-10 players",
+    badge: "New",
+  },
 };
 
 function GameCardSkeleton() {

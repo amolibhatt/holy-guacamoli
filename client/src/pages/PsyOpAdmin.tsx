@@ -16,7 +16,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Loader2, Grid3X3, ListOrdered, Eye, Plus, Trash2, X, 
-  Sparkles, Lightbulb, Check, Upload, ChevronDown, Folder, Pencil
+  Sparkles, Lightbulb, Check, Upload, ChevronDown, Folder, Pencil, Clock
 } from "lucide-react";
 import type { PsyopQuestion } from "@shared/schema";
 
@@ -338,6 +338,16 @@ export default function PsyOpAdmin() {
               >
                 <Eye className="w-4 h-4 mr-2" />
                 PsyOp
+              </Button>
+            </Link>
+            <Link href="/admin/timewarp">
+              <Button 
+                variant="ghost" 
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
+                data-testid="tab-timewarp"
+              >
+                <Clock className="w-4 h-4 mr-2" />
+                Time Warp
               </Button>
             </Link>
           </nav>
