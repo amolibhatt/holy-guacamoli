@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, Brain, Users, Info } from "lucide-react";
+import { Loader2, Grid3X3, Brain, Users, Clock } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
-import { GameRulesSheet } from "@/components/GameRules";
+import { GAME_RULES } from "@/components/GameRules";
 
 // Custom ABC icon for Sort Circuit
 function AbcListIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
@@ -84,7 +84,6 @@ export default function Home() {
   const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-  const [rulesGameSlug, setRulesGameSlug] = useState<string | null>(null);
 
   const { data: gameTypes = [], isLoading: isLoadingGames } = useQuery<(GameType & { status?: string })[]>({
     queryKey: ['/api/game-types/homepage'],
@@ -214,19 +213,6 @@ export default function Home() {
                     }}
                     data-testid={`button-game-${game.slug}`}
                   >
-                    {/* How to Play Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setRulesGameSlug(game.slug);
-                      }}
-                      className="absolute top-3 left-3 px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 transition-colors z-10 flex items-center gap-1.5"
-                      data-testid={`button-rules-${game.slug}`}
-                    >
-                      <Info className="w-3.5 h-3.5 text-white/70" />
-                      <span className="text-xs font-medium text-white/70">How to Play</span>
-                    </button>
-                    
                     {/* Badge */}
                     {config.badge && (
                       <motion.div 
@@ -299,21 +285,27 @@ export default function Home() {
                       {config.tagline}
                     </p>
                     
-                    {/* Description */}
+                    {/* How to Play - Inline */}
                     <p 
-                      className="text-white/50 text-xs mb-3 leading-relaxed"
+                      className="text-white/50 text-xs mb-3 leading-relaxed line-clamp-3"
                       data-testid={`text-game-description-${game.slug}`}
                     >
-                      {config.howItWorks}
+                      {GAME_RULES[game.slug]?.overview || config.howItWorks}
                     </p>
                     
-                    {/* Player count */}
+                    {/* Player count & Duration */}
                     <div 
-                      className="flex items-center gap-1.5 text-white/40 text-[10px]"
+                      className="flex items-center gap-3 text-white/40 text-[10px]"
                       data-testid={`text-game-players-${game.slug}`}
                     >
-                      <Users className="w-2.5 h-2.5" />
-                      <span>{config.players}</span>
+                      <div className="flex items-center gap-1">
+                        <Users className="w-2.5 h-2.5" />
+                        <span>{GAME_RULES[game.slug]?.players || config.players}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5" />
+                        <span>{GAME_RULES[game.slug]?.duration || "15-30 min"}</span>
+                      </div>
                     </div>
                   </motion.button>
                 );
@@ -323,12 +315,6 @@ export default function Home() {
 
         </div>
       </main>
-      
-      <GameRulesSheet 
-        gameSlug={rulesGameSlug} 
-        open={rulesGameSlug !== null} 
-        onOpenChange={(open) => !open && setRulesGameSlug(null)} 
-      />
       
       <AppFooter />
     </div>
