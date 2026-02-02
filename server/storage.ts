@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, psyopQuestions, adminAnnouncements, couples, syncQuestions, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameSessionWithDetails, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion, type PsyopQuestion, type InsertPsyopQuestion, type AdminAnnouncement, type InsertAdminAnnouncement, type ModerationStatus, type Couple, type InsertCouple, type SyncQuestion, type InsertSyncQuestion } from "@shared/schema";
+import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, psyopQuestions, adminAnnouncements, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameSessionWithDetails, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion, type PsyopQuestion, type InsertPsyopQuestion, type AdminAnnouncement, type InsertAdminAnnouncement, type ModerationStatus } from "@shared/schema";
 import { users } from "@shared/models/auth";
 import { eq, and, asc, count, inArray, desc, sql, gte, like } from "drizzle-orm";
 
@@ -172,18 +172,6 @@ export interface IStorage {
   createPsyopQuestion(data: InsertPsyopQuestion): Promise<PsyopQuestion>;
   updatePsyopQuestion(id: number, data: Partial<InsertPsyopQuestion>, userId: string, role?: string): Promise<PsyopQuestion | null>;
   deletePsyopQuestion(id: number, userId: string, role?: string): Promise<boolean>;
-  
-  // Sync or Sink
-  getSyncQuestions(userId: string, role?: string): Promise<SyncQuestion[]>;
-  createSyncQuestion(data: InsertSyncQuestion): Promise<SyncQuestion>;
-  updateSyncQuestion(id: number, data: Partial<InsertSyncQuestion>, userId: string, role?: string): Promise<SyncQuestion | null>;
-  deleteSyncQuestion(id: number, userId: string, role?: string): Promise<boolean>;
-  
-  // Couples
-  getCouple(userId: string): Promise<Couple | null>;
-  getCoupleByInviteCode(code: string): Promise<Couple | null>;
-  createCouple(data: InsertCouple): Promise<Couple>;
-  joinCouple(inviteCode: string, userId: string): Promise<Couple | null>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1581,106 +1569,6 @@ export class DatabaseStorage implements IStorage {
     return !!result;
   }
 
-  // Sync or Sink Questions
-  async getSyncQuestions(userId: string, role?: string): Promise<SyncQuestion[]> {
-    if (role === 'super_admin') {
-      return await db.select().from(syncQuestions).where(eq(syncQuestions.isActive, true)).orderBy(desc(syncQuestions.createdAt));
-    }
-    return await db.select().from(syncQuestions).where(and(eq(syncQuestions.userId, userId), eq(syncQuestions.isActive, true))).orderBy(desc(syncQuestions.createdAt));
-  }
-
-  async createSyncQuestion(data: InsertSyncQuestion): Promise<SyncQuestion> {
-    const [question] = await db.insert(syncQuestions).values([data] as any).returning();
-    return question;
-  }
-
-  async updateSyncQuestion(id: number, data: Partial<InsertSyncQuestion>, userId: string, role?: string): Promise<SyncQuestion | null> {
-    const condition = role === 'super_admin' 
-      ? eq(syncQuestions.id, id)
-      : and(eq(syncQuestions.id, id), eq(syncQuestions.userId, userId));
-    
-    const [updated] = await db.update(syncQuestions)
-      .set(data as any)
-      .where(condition)
-      .returning();
-    return updated || null;
-  }
-
-  async deleteSyncQuestion(id: number, userId: string, role?: string): Promise<boolean> {
-    if (role === 'super_admin') {
-      const result = await db.delete(syncQuestions).where(eq(syncQuestions.id, id));
-      return !!result;
-    }
-    const result = await db.delete(syncQuestions).where(and(eq(syncQuestions.id, id), eq(syncQuestions.userId, userId)));
-    return !!result;
-  }
-
-  // User methods for pairing
-  async getUser(userId: string): Promise<User | null> {
-    const [user] = await db.select().from(users).where(eq(users.id, userId));
-    return user || null;
-  }
-
-  async getUserByPairingToken(token: string): Promise<User | null> {
-    const [user] = await db.select().from(users).where(eq(users.pairingToken, token));
-    return user || null;
-  }
-
-  async updateUserPairingToken(userId: string, pairingToken: string): Promise<void> {
-    await db.update(users).set({ pairingToken }).where(eq(users.id, userId));
-  }
-
-  // Couples for Sync or Sink
-  async getCouple(userId: string): Promise<Couple | null> {
-    const [couple] = await db.select().from(couples).where(
-      sql`${couples.user1Id} = ${userId} OR ${couples.user2Id} = ${userId}`
-    );
-    return couple || null;
-  }
-
-  async getCoupleByInviteCode(code: string): Promise<Couple | null> {
-    const [couple] = await db.select().from(couples).where(eq(couples.inviteCode, code));
-    return couple || null;
-  }
-
-  async createCouple(data: InsertCouple): Promise<Couple> {
-    const [couple] = await db.insert(couples).values([data] as any).returning();
-    return couple;
-  }
-
-  async createPermanentPair(user1Id: string, user2Id: string): Promise<Couple> {
-    // Generate a unique invite code for backwards compatibility with the couples table
-    const inviteCode = `PAIR-${Date.now().toString(36).toUpperCase()}`;
-    
-    const [couple] = await db.insert(couples).values([{
-      user1Id,
-      user2Id,
-      inviteCode,
-      status: 'active' as const,
-      pairedAt: new Date(),
-    }] as any).returning();
-    return couple;
-  }
-
-  async joinCouple(inviteCode: string, userId: string): Promise<Couple | null> {
-    const [couple] = await db.select().from(couples).where(eq(couples.inviteCode, inviteCode));
-    if (!couple || couple.status !== 'pending') {
-      return null;
-    }
-    if (couple.user1Id === userId) {
-      return null; // Can't join your own couple
-    }
-    const [updated] = await db.update(couples)
-      .set({ 
-        user2Id: userId, 
-        status: 'active' as const,
-        pairedAt: new Date(),
-      })
-      .where(eq(couples.id, couple.id))
-      .returning();
-    return updated || null;
-  }
-
   async seedGameTypes(): Promise<void> {
     const requiredGameTypes = [
       {
@@ -1712,16 +1600,6 @@ export class DatabaseStorage implements IStorage {
         hostEnabled: true,
         playerEnabled: true,
         sortOrder: 3,
-      },
-      {
-        slug: "sync_or_sink",
-        displayName: "Sync or Sink",
-        description: "Duo mode! Partners answer separately, then reveal together. Match answers to score!",
-        icon: "heart-handshake",
-        status: "active" as const,
-        hostEnabled: true,
-        playerEnabled: true,
-        sortOrder: 4,
       },
     ];
 
