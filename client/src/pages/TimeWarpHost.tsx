@@ -12,7 +12,7 @@ import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { 
   Loader2, Plus, Trash2, X, Clock, Users, GripVertical,
   Check, ChevronRight, RotateCcw, Image as ImageIcon, Play,
-  ArrowUpDown, Trophy
+  ArrowUpDown, Trophy, Sparkles, Zap
 } from "lucide-react";
 import type { TimeWarpQuestion } from "@shared/schema";
 
@@ -28,6 +28,12 @@ const ERA_FILTERS = {
   past: "sepia brightness-90",
   present: "",
   future: "hue-rotate-180 saturate-150 brightness-110",
+};
+
+const ERA_COLORS = {
+  past: { bg: "from-amber-600 to-orange-700", text: "text-amber-400", glow: "shadow-amber-500/30" },
+  present: { bg: "from-emerald-500 to-teal-600", text: "text-emerald-400", glow: "shadow-emerald-500/30" },
+  future: { bg: "from-violet-600 to-purple-700", text: "text-violet-400", glow: "shadow-violet-500/30" },
 };
 
 export default function TimeWarpHost() {
@@ -161,8 +167,13 @@ export default function TimeWarpHost() {
 
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-amber-950 via-black to-violet-950">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+        >
+          <Clock className="w-12 h-12 text-amber-500" />
+        </motion.div>
       </div>
     );
   }
@@ -175,7 +186,31 @@ export default function TimeWarpHost() {
   // TIME WARP ANIMATION
   if (showReverseAnimation) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-amber-950 via-black to-violet-950 flex items-center justify-center overflow-hidden">
+        {/* Animated background particles */}
+        <div className="absolute inset-0">
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 bg-amber-500 rounded-full"
+              initial={{ 
+                x: Math.random() * window.innerWidth, 
+                y: Math.random() * window.innerHeight,
+                opacity: 0 
+              }}
+              animate={{ 
+                y: [null, -100],
+                opacity: [0, 1, 0],
+              }}
+              transition={{ 
+                duration: 2,
+                delay: i * 0.1,
+                repeat: Infinity,
+              }}
+            />
+          ))}
+        </div>
+        
         <motion.div
           initial={{ scale: 0, rotate: 0 }}
           animate={{ 
@@ -183,25 +218,25 @@ export default function TimeWarpHost() {
             rotate: [0, 360, 720],
           }}
           transition={{ duration: 2.5, ease: "easeInOut" }}
-          className="text-center"
+          className="text-center relative z-10"
         >
           <motion.div
             animate={{
-              textShadow: [
-                "0 0 20px #f59e0b, 0 0 40px #f59e0b",
-                "0 0 60px #8b5cf6, 0 0 120px #8b5cf6",
-                "0 0 20px #f59e0b, 0 0 40px #f59e0b",
+              filter: [
+                "drop-shadow(0 0 20px #f59e0b)",
+                "drop-shadow(0 0 60px #8b5cf6)",
+                "drop-shadow(0 0 20px #f59e0b)",
               ],
             }}
             transition={{ duration: 0.5, repeat: 5 }}
           >
-            <Clock className="w-24 h-24 mx-auto mb-6 text-amber-500" />
+            <Clock className="w-32 h-32 mx-auto mb-6 text-amber-500" />
           </motion.div>
           <motion.h1
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-violet-500 to-amber-400 uppercase tracking-widest"
+            className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-violet-500 to-amber-400 uppercase tracking-widest"
           >
             TIME WARP
           </motion.h1>
@@ -209,7 +244,7 @@ export default function TimeWarpHost() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2 }}
-            className="text-2xl md:text-3xl text-violet-400 mt-4 font-bold"
+            className="text-3xl md:text-4xl text-violet-400 mt-4 font-bold"
           >
             ORDER REVERSED!
           </motion.p>
@@ -217,9 +252,9 @@ export default function TimeWarpHost() {
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 1.8 }}
-            className="mt-6"
+            className="mt-8"
           >
-            <ArrowUpDown className="w-16 h-16 mx-auto text-amber-400 animate-bounce" />
+            <ArrowUpDown className="w-20 h-20 mx-auto text-amber-400 animate-bounce" />
           </motion.div>
         </motion.div>
       </div>
@@ -232,56 +267,121 @@ export default function TimeWarpHost() {
     const winner = sortedPlayers[0];
 
     return (
-      <div className="min-h-screen bg-background" data-testid="page-timewarp-finished">
+      <div className="min-h-screen bg-gradient-to-br from-amber-950 via-black to-violet-950 text-white" data-testid="page-timewarp-finished">
+        {/* Celebratory particles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(30)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-3 h-3 rounded-full"
+              style={{ 
+                background: i % 2 === 0 ? '#f59e0b' : '#8b5cf6',
+                left: `${Math.random() * 100}%`
+              }}
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ 
+                y: window.innerHeight + 20,
+                opacity: [0, 1, 1, 0],
+                rotate: 360,
+              }}
+              transition={{ 
+                duration: 3 + Math.random() * 2,
+                delay: Math.random() * 2,
+                repeat: Infinity,
+              }}
+            />
+          ))}
+        </div>
+
         <AppHeader minimal backHref="/" title="Time Warp - Game Over" />
         
-        <main className="max-w-2xl mx-auto px-4 py-12">
+        <main className="max-w-2xl mx-auto px-4 py-12 relative z-10">
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="text-center mb-8"
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", damping: 10 }}
+            className="text-center mb-10"
           >
-            <Trophy className="w-20 h-20 mx-auto text-amber-500 mb-4" />
-            <h1 className="text-3xl font-bold mb-2">Game Over!</h1>
-            <p className="text-xl text-muted-foreground">
-              {winner.name} wins with {winner.score} points!
+            <div className="relative inline-block">
+              <Trophy className="w-24 h-24 mx-auto text-amber-500 drop-shadow-[0_0_30px_rgba(245,158,11,0.5)]" />
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="absolute -inset-4 bg-amber-500/20 rounded-full blur-xl"
+              />
+            </div>
+            <h1 className="text-4xl font-black mt-6 mb-3 text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-violet-400">
+              Game Over!
+            </h1>
+            <p className="text-2xl text-white/80">
+              <span className="text-amber-400 font-bold">{winner.name}</span> wins with{" "}
+              <span className="text-violet-400 font-bold">{winner.score}</span> points!
             </p>
           </motion.div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Final Scores</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
+          <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 shadow-2xl">
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-500" />
+              Final Scores
+            </h2>
+            <div className="space-y-3">
               {sortedPlayers.map((player, idx) => (
                 <motion.div
                   key={player.id}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -30 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  className={`flex items-center justify-between p-3 rounded-lg ${
-                    idx === 0 ? 'bg-amber-500/20' : 'bg-muted'
+                  transition={{ delay: idx * 0.15 }}
+                  className={`flex items-center justify-between p-4 rounded-xl ${
+                    idx === 0 
+                      ? 'bg-gradient-to-r from-amber-500/30 to-violet-500/30 ring-2 ring-amber-500/50' 
+                      : idx === 1
+                      ? 'bg-white/10'
+                      : idx === 2
+                      ? 'bg-white/5'
+                      : 'bg-white/[0.02]'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl font-bold text-muted-foreground">#{idx + 1}</span>
-                    <span className="font-semibold">{player.name}</span>
+                  <div className="flex items-center gap-4">
+                    <span className={`text-3xl font-black ${
+                      idx === 0 ? 'text-amber-400' : 
+                      idx === 1 ? 'text-gray-300' : 
+                      idx === 2 ? 'text-amber-700' : 'text-white/30'
+                    }`}>
+                      #{idx + 1}
+                    </span>
+                    <span className="font-semibold text-lg">{player.name}</span>
+                    {idx === 0 && <Trophy className="w-5 h-5 text-amber-500" />}
                   </div>
-                  <Badge variant={idx === 0 ? "default" : "secondary"} className="text-lg px-3">
+                  <Badge 
+                    variant="secondary" 
+                    className={`text-lg px-4 py-1 ${
+                      idx === 0 ? 'bg-amber-500 text-black' : ''
+                    }`}
+                  >
                     {player.score} pts
                   </Badge>
                 </motion.div>
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <div className="flex gap-4 mt-8 justify-center">
-            <Button variant="outline" onClick={resetGame} data-testid="button-play-again">
+          <div className="flex gap-4 mt-10 justify-center">
+            <Button 
+              variant="outline" 
+              onClick={resetGame} 
+              className="border-white/20 text-white hover:bg-white/10"
+              data-testid="button-play-again"
+            >
               <RotateCcw className="w-4 h-4 mr-2" />
               Play Again
             </Button>
             <Link href="/">
-              <Button data-testid="button-back-home">Back to Home</Button>
+              <Button 
+                className="bg-gradient-to-r from-amber-500 to-violet-500 hover:from-amber-600 hover:to-violet-600 text-white"
+                data-testid="button-back-home"
+              >
+                Back to Home
+              </Button>
             </Link>
           </div>
         </main>
@@ -292,42 +392,86 @@ export default function TimeWarpHost() {
   // SETUP STATE
   if (gameState === "setup") {
     return (
-      <div className="min-h-screen bg-background" data-testid="page-timewarp-setup">
-        <div className="fixed inset-0 bg-gradient-to-br from-amber-300/5 via-transparent to-violet-300/5 pointer-events-none" />
+      <div className="min-h-screen bg-gradient-to-br from-amber-950 via-black to-violet-950 text-white" data-testid="page-timewarp-setup">
+        {/* Animated background grid */}
+        <div className="fixed inset-0 opacity-20 pointer-events-none">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(245,158,11,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(245,158,11,0.1)_1px,transparent_1px)] bg-[size:50px_50px]" />
+        </div>
+        
+        {/* Floating orbs */}
+        <motion.div
+          animate={{ y: [0, -20, 0], x: [0, 10, 0] }}
+          transition={{ duration: 5, repeat: Infinity }}
+          className="fixed top-20 left-20 w-32 h-32 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"
+        />
+        <motion.div
+          animate={{ y: [0, 20, 0], x: [0, -10, 0] }}
+          transition={{ duration: 7, repeat: Infinity }}
+          className="fixed bottom-20 right-20 w-40 h-40 bg-violet-500/20 rounded-full blur-3xl pointer-events-none"
+        />
         
         <AppHeader minimal backHref="/" title="Time Warp - Setup" />
 
-        <main className="max-w-2xl mx-auto px-4 py-6">
-          <div className="text-center mb-8">
-            <Clock className="w-16 h-16 mx-auto text-amber-500 mb-4" />
-            <h1 className="text-3xl font-bold mb-2">Time Warp</h1>
-            <p className="text-muted-foreground">Add players and arrange the turn order</p>
-          </div>
+        <main className="max-w-2xl mx-auto px-4 py-8 relative z-10">
+          {/* Hero Section */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-10"
+          >
+            <div className="relative inline-block mb-6">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-4 bg-gradient-to-r from-amber-500/30 to-violet-500/30 rounded-full blur-xl"
+              />
+              <Clock className="w-20 h-20 text-amber-500 relative drop-shadow-[0_0_20px_rgba(245,158,11,0.5)]" />
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black mb-3 text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-white to-violet-400">
+              Time Warp
+            </h1>
+            <p className="text-white/60 text-lg">Add players and arrange the turn order</p>
+          </motion.div>
 
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Players ({players.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
+          {/* Players Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-6"
+          >
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 shadow-2xl">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="p-2 bg-amber-500/20 rounded-lg">
+                  <Users className="w-5 h-5 text-amber-500" />
+                </div>
+                <h2 className="text-xl font-bold">Players ({players.length})</h2>
+              </div>
+              
+              <div className="flex gap-3 mb-5">
                 <Input
                   value={newPlayerName}
                   onChange={(e) => setNewPlayerName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
                   placeholder="Enter player name"
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/40"
                   data-testid="input-player-name"
                 />
-                <Button onClick={addPlayer} data-testid="button-add-player">
+                <Button 
+                  onClick={addPlayer} 
+                  className="bg-amber-500 hover:bg-amber-600 text-black"
+                  data-testid="button-add-player"
+                >
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
 
               {players.length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground mb-2">Drag to reorder turn sequence:</p>
+                <div className="space-y-2">
+                  <p className="text-xs text-white/40 mb-3 flex items-center gap-2">
+                    <GripVertical className="w-4 h-4" />
+                    Drag to reorder turn sequence
+                  </p>
                   <Reorder.Group
                     axis="y"
                     values={players}
@@ -338,19 +482,21 @@ export default function TimeWarpHost() {
                       <Reorder.Item
                         key={player.id}
                         value={player}
-                        className="flex items-center gap-2 p-3 bg-muted rounded-lg cursor-grab active:cursor-grabbing"
+                        className="flex items-center gap-3 p-4 bg-white/10 hover:bg-white/15 rounded-xl cursor-grab active:cursor-grabbing transition-colors border border-white/5"
                       >
-                        <GripVertical className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm font-medium text-muted-foreground w-6">#{idx + 1}</span>
+                        <GripVertical className="w-4 h-4 text-white/30" />
+                        <span className="w-8 h-8 flex items-center justify-center bg-gradient-to-br from-amber-500 to-violet-500 rounded-full text-sm font-bold text-black">
+                          {idx + 1}
+                        </span>
                         <span className="flex-1 font-medium">{player.name}</span>
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-8 w-8"
+                          className="h-8 w-8 text-white/50 hover:text-red-400 hover:bg-red-500/20"
                           onClick={() => removePlayer(player.id)}
                           data-testid={`button-remove-player-${idx}`}
                         >
-                          <Trash2 className="w-4 h-4 text-destructive" />
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </Reorder.Item>
                     ))}
@@ -359,84 +505,147 @@ export default function TimeWarpHost() {
               )}
 
               {players.length === 0 && (
-                <p className="text-center text-muted-foreground py-4">
-                  Add at least 2 players to start
-                </p>
+                <div className="text-center py-8 text-white/40">
+                  <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>Add at least 2 players to start</p>
+                </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
 
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ImageIcon className="w-5 h-5" />
-                Questions ({questions.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          {/* Questions Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-8"
+          >
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 shadow-2xl">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="p-2 bg-violet-500/20 rounded-lg">
+                  <ImageIcon className="w-5 h-5 text-violet-500" />
+                </div>
+                <h2 className="text-xl font-bold">Questions ({questions.length})</h2>
+              </div>
+              
               {isLoading ? (
-                <div className="flex justify-center py-4">
-                  <Loader2 className="w-6 h-6 animate-spin" />
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
                 </div>
               ) : questions.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-muted-foreground mb-2">No questions available</p>
+                <div className="text-center py-8">
+                  <ImageIcon className="w-12 h-12 mx-auto mb-3 text-white/30" />
+                  <p className="text-white/40 mb-4">No questions available</p>
                   <Link href="/admin/timewarp">
-                    <Button variant="outline" size="sm">Add Questions</Button>
+                    <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Questions
+                    </Button>
                   </Link>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">
-                  {questions.length} questions ready. Questions will be shuffled at game start.
+                <div className="space-y-3">
+                  <p className="text-white/60">
+                    <span className="text-violet-400 font-bold">{questions.length}</span> questions ready. Questions will be shuffled at game start.
+                  </p>
                   {questions.length >= 4 && (
-                    <span className="block mt-1 text-amber-600 dark:text-amber-400">
-                      ⏰ At question #{Math.floor(questions.length / 2)}, player order will reverse!
-                    </span>
+                    <div className="flex items-center gap-2 p-3 bg-amber-500/10 rounded-lg border border-amber-500/30">
+                      <Zap className="w-5 h-5 text-amber-500 shrink-0" />
+                      <p className="text-sm text-amber-400">
+                        At question #{Math.floor(questions.length / 2)}, player order will reverse!
+                      </p>
+                    </div>
                   )}
-                </p>
+                </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
 
-          <div className="flex gap-4 justify-center">
+          {/* Action Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex gap-4 justify-center"
+          >
             <Link href="/admin/timewarp">
-              <Button variant="outline">Manage Questions</Button>
+              <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                Manage Questions
+              </Button>
             </Link>
             <Button 
               onClick={startGame} 
               disabled={players.length < 2 || questions.length === 0}
-              className="gap-2"
+              className="gap-2 bg-gradient-to-r from-amber-500 to-violet-500 hover:from-amber-600 hover:to-violet-600 text-white shadow-lg shadow-amber-500/25 disabled:opacity-50 disabled:shadow-none"
               data-testid="button-start-game"
             >
               <Play className="w-4 h-4" />
               Start Game
             </Button>
-          </div>
+          </motion.div>
         </main>
       </div>
     );
   }
 
   // PLAYING STATE
+  const eraColors = ERA_COLORS[currentQuestion?.era as keyof typeof ERA_COLORS] || ERA_COLORS.present;
+  
   return (
-    <div className="min-h-screen bg-[#0d0d12] text-white" data-testid="page-timewarp-playing">
-      <div className="flex h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-amber-950 via-black to-violet-950 text-white" data-testid="page-timewarp-playing">
+      {/* Dynamic era-based background glow */}
+      <motion.div
+        key={currentQuestion?.era}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className={`fixed inset-0 pointer-events-none`}
+      >
+        <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-b ${eraColors.bg} opacity-20 blur-[100px] rounded-full`} />
+      </motion.div>
+
+      <div className="flex h-screen relative z-10">
         {/* Main Game Area */}
         <div className="flex-1 flex flex-col p-4 md:p-8">
           {/* Header */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <Clock className="w-8 h-8 text-amber-500" />
+              <div className="p-2 bg-amber-500/20 rounded-xl">
+                <Clock className="w-8 h-8 text-amber-500" />
+              </div>
               <div>
                 <h1 className="text-xl font-bold">Time Warp</h1>
                 <p className="text-sm text-white/50">
                   Question {currentQuestionIdx + 1} of {questionOrder.length}
+                  {currentQuestion?.era && (
+                    <Badge variant="outline" className={`ml-2 ${eraColors.text} border-current text-xs`}>
+                      {currentQuestion.era.toUpperCase()}
+                    </Badge>
+                  )}
                 </p>
               </div>
             </div>
-            <Button variant="ghost" onClick={resetGame} className="text-white/50 hover:text-white">
+            <Button variant="ghost" onClick={resetGame} className="text-white/50 hover:text-white hover:bg-white/10">
               <X className="w-5 h-5" />
             </Button>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="mb-6">
+            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-amber-500 to-violet-500"
+                initial={{ width: 0 }}
+                animate={{ width: `${((currentQuestionIdx + 1) / questionOrder.length) * 100}%` }}
+                transition={{ duration: 0.5 }}
+              />
+            </div>
+            {!hasReversed && midpoint > 0 && (
+              <div className="flex justify-center mt-2">
+                <span className="text-xs text-white/40">
+                  {midpoint - currentQuestionIdx} questions until TIME WARP
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Current Player Spotlight */}
@@ -444,10 +653,10 @@ export default function TimeWarpHost() {
             key={currentPlayer?.id}
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="text-center mb-6"
+            className="text-center mb-8"
           >
-            <p className="text-white/50 text-sm uppercase tracking-wider mb-1">Current Turn</p>
-            <h2 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-violet-400">
+            <p className="text-white/40 text-sm uppercase tracking-widest mb-2">Current Turn</p>
+            <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-white to-violet-400">
               {currentPlayer?.name}
             </h2>
           </motion.div>
@@ -458,48 +667,73 @@ export default function TimeWarpHost() {
               {!showImage ? (
                 <motion.div
                   key="reveal-button"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="text-center"
                 >
-                  <Button
-                    size="lg"
-                    onClick={() => setShowImage(true)}
-                    className="text-xl px-12 py-8 bg-gradient-to-r from-amber-500 to-violet-500 hover:from-amber-600 hover:to-violet-600"
-                    data-testid="button-show-image"
+                  <motion.div
+                    animate={{ 
+                      boxShadow: [
+                        "0 0 30px rgba(245,158,11,0.3)",
+                        "0 0 60px rgba(139,92,246,0.3)",
+                        "0 0 30px rgba(245,158,11,0.3)",
+                      ]
+                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="inline-block rounded-2xl"
                   >
-                    <ImageIcon className="w-6 h-6 mr-3" />
-                    Show Image
-                  </Button>
+                    <Button
+                      size="lg"
+                      onClick={() => setShowImage(true)}
+                      className="text-xl px-16 py-10 bg-gradient-to-r from-amber-500 to-violet-500 hover:from-amber-600 hover:to-violet-600 rounded-2xl"
+                      data-testid="button-show-image"
+                    >
+                      <ImageIcon className="w-8 h-8 mr-4" />
+                      Reveal Image
+                    </Button>
+                  </motion.div>
+                  <p className="mt-4 text-white/40 text-sm">Click to show the mystery image</p>
                 </motion.div>
               ) : (
                 <motion.div
                   key="image"
-                  initial={{ scale: 0.5, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
+                  initial={{ scale: 0.5, opacity: 0, rotateY: 180 }}
+                  animate={{ scale: 1, opacity: 1, rotateY: 0 }}
+                  transition={{ type: "spring", damping: 15 }}
                   className="relative max-w-2xl w-full"
                 >
-                  <div className="rounded-xl overflow-hidden shadow-2xl">
+                  <div className={`rounded-2xl overflow-hidden shadow-2xl ${eraColors.glow} shadow-2xl ring-2 ring-white/10`}>
                     <img
                       src={currentQuestion?.imageUrl}
                       alt="Guess this!"
                       className={`w-full h-auto ${ERA_FILTERS[currentQuestion?.era as keyof typeof ERA_FILTERS] || ''}`}
                     />
                   </div>
-                  {currentQuestion?.hint && (
-                    <p className="text-center mt-4 text-white/60 text-sm">
-                      Hint: {currentQuestion.hint}
-                    </p>
+                  {currentQuestion?.hint && !showAnswer && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-center mt-4"
+                    >
+                      <span className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full text-white/60 text-sm">
+                        <Sparkles className="w-4 h-4" />
+                        Hint: {currentQuestion.hint}
+                      </span>
+                    </motion.div>
                   )}
                   {showAnswer && (
                     <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="absolute inset-0 flex items-center justify-center bg-black/70 rounded-xl"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="absolute inset-0 flex items-center justify-center bg-black/80 rounded-2xl backdrop-blur-sm"
                     >
-                      <p className="text-3xl md:text-4xl font-bold text-amber-400">
-                        {currentQuestion?.answer}
-                      </p>
+                      <div className="text-center">
+                        <Check className="w-16 h-16 mx-auto mb-4 text-emerald-500" />
+                        <p className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-violet-400">
+                          {currentQuestion?.answer}
+                        </p>
+                      </div>
                     </motion.div>
                   )}
                 </motion.div>
@@ -512,13 +746,13 @@ export default function TimeWarpHost() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-wrap gap-4 justify-center mt-6"
+              className="flex flex-wrap gap-4 justify-center mt-8"
             >
               {!showAnswer && (
                 <Button
                   variant="outline"
                   onClick={() => setShowAnswer(true)}
-                  className="border-white/20 text-white"
+                  className="border-white/20 text-white hover:bg-white/10"
                   data-testid="button-reveal-answer"
                 >
                   Reveal Answer
@@ -526,7 +760,7 @@ export default function TimeWarpHost() {
               )}
               <Button
                 onClick={handleCorrect}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shadow-lg shadow-emerald-500/25"
                 data-testid="button-correct"
               >
                 <Check className="w-5 h-5" />
@@ -535,7 +769,7 @@ export default function TimeWarpHost() {
               <Button
                 onClick={handlePass}
                 variant="secondary"
-                className="gap-2"
+                className="gap-2 bg-white/10 hover:bg-white/20 text-white"
                 data-testid="button-pass"
               >
                 <ChevronRight className="w-5 h-5" />
@@ -546,30 +780,30 @@ export default function TimeWarpHost() {
         </div>
 
         {/* Scoreboard Sidebar */}
-        <div className="w-64 bg-white/5 border-l border-white/10 p-4 hidden md:block">
-          <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+        <div className="w-72 bg-white/5 backdrop-blur-sm border-l border-white/10 p-5 hidden md:flex flex-col">
+          <h3 className="font-bold text-lg mb-5 flex items-center gap-2">
             <Trophy className="w-5 h-5 text-amber-500" />
             Scoreboard
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-2 flex-1">
             {[...players].sort((a, b) => b.score - a.score).map((player, idx) => (
               <motion.div
                 key={player.id}
                 layout
-                className={`p-3 rounded-lg ${
+                className={`p-3 rounded-xl transition-all ${
                   player.id === currentPlayer?.id 
-                    ? 'bg-gradient-to-r from-amber-500/20 to-violet-500/20 ring-1 ring-amber-500' 
-                    : 'bg-white/5'
+                    ? 'bg-gradient-to-r from-amber-500/20 to-violet-500/20 ring-2 ring-amber-500/50' 
+                    : 'bg-white/5 hover:bg-white/10'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {idx === 0 && <Trophy className="w-4 h-4 text-amber-500" />}
-                    <span className={player.id === currentPlayer?.id ? 'font-bold' : ''}>
+                    <span className={player.id === currentPlayer?.id ? 'font-bold' : 'text-white/80'}>
                       {player.name}
                     </span>
                   </div>
-                  <Badge variant="secondary" className="text-sm">
+                  <Badge variant="secondary" className={`text-sm ${idx === 0 ? 'bg-amber-500 text-black' : ''}`}>
                     {player.score}
                   </Badge>
                 </div>
@@ -577,13 +811,20 @@ export default function TimeWarpHost() {
             ))}
           </div>
 
-          <div className="mt-6 pt-4 border-t border-white/10">
-            <p className="text-xs text-white/40 mb-2">Turn Order:</p>
+          <div className="mt-auto pt-5 border-t border-white/10">
+            <p className="text-xs text-white/40 mb-3 flex items-center gap-2">
+              <ArrowUpDown className="w-4 h-4" />
+              Turn Order {hasReversed && <Badge variant="outline" className="text-violet-400 border-violet-400/50 text-xs">Reversed!</Badge>}
+            </p>
             <div className="space-y-1">
               {players.map((player, idx) => (
                 <div 
                   key={player.id}
-                  className={`text-sm ${idx === currentPlayerIdx ? 'text-amber-400 font-bold' : 'text-white/40'}`}
+                  className={`text-sm px-2 py-1 rounded ${
+                    idx === currentPlayerIdx 
+                      ? 'bg-amber-500/20 text-amber-400 font-bold' 
+                      : 'text-white/40'
+                  }`}
                 >
                   {idx + 1}. {player.name} {idx === currentPlayerIdx && '←'}
                 </div>
