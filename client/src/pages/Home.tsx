@@ -70,7 +70,7 @@ const GAME_CONFIG: Record<string, {
   timewarp: {
     icon: Clock,
     route: "/timewarp/host",
-    accentColor: "#f59e0b",
+    accentColor: "#06b6d4",
     tagline: "Time Travel Trivia",
     howItWorks: "Guess era-filtered images. Halfway through, order reverses!",
     players: "2-10 players",
