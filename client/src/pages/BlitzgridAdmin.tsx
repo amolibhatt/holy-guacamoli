@@ -14,7 +14,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Plus, Trash2, Pencil, Check, X, Grid3X3, ListOrdered, Brain,
+  Plus, Trash2, Pencil, Check, X, Grid3X3, ListOrdered, Brain, Clock,
   ChevronRight, ArrowLeft, Loader2,
   AlertCircle, CheckCircle2, Image, Music, Video,
   Download, Upload, FileSpreadsheet, Heart, ChevronDown, ChevronUp,
@@ -492,6 +492,16 @@ export default function BlitzgridAdmin() {
                 >
                   <Brain className="w-4 h-4 mr-2" />
                   PsyOp
+                </Button>
+              </Link>
+              <Link href="/admin/timewarp">
+                <Button 
+                  variant="ghost" 
+                  className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
+                  data-testid="tab-timewarp"
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  Time Warp
                 </Button>
               </Link>
             </nav>
@@ -1021,6 +1031,16 @@ export default function BlitzgridAdmin() {
               >
                 <Brain className="w-4 h-4 mr-2" />
                 PsyOp
+              </Button>
+            </Link>
+            <Link href="/admin/timewarp">
+              <Button 
+                variant="ghost" 
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
+                data-testid="tab-timewarp"
+              >
+                <Clock className="w-4 h-4 mr-2" />
+                Time Warp
               </Button>
             </Link>
           </nav>

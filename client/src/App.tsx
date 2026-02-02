@@ -21,6 +21,8 @@ const SortCircuitPlayer = lazy(() => import("@/pages/SequencePlayer"));
 const SortCircuitAdmin = lazy(() => import("@/pages/SortCircuitAdmin"));
 const PsyOpAdmin = lazy(() => import("@/pages/PsyOpAdmin"));
 const PsyOpHost = lazy(() => import("@/pages/PsyOpHost"));
+const TimeWarpAdmin = lazy(() => import("@/pages/TimeWarpAdmin"));
+const TimeWarpHost = lazy(() => import("@/pages/TimeWarpHost"));
 const GameHistory = lazy(() => import("@/pages/GameHistory"));
 const Blitzgrid = lazy(() => import("@/pages/Blitzgrid"));
 const Pricing = lazy(() => import("@/pages/Pricing"));
@@ -54,6 +56,8 @@ function Router() {
         <Route path="/admin/sort-circuit" component={SortCircuitAdmin} />
         <Route path="/admin/psyop" component={PsyOpAdmin} />
         <Route path="/host/psyop" component={PsyOpHost} />
+        <Route path="/admin/timewarp" component={TimeWarpAdmin} />
+        <Route path="/timewarp/host" component={TimeWarpHost} />
         <Route path="/sortcircuit/:code?" component={SortCircuitPlayer} />
         <Route path="/host/blitzgrid" component={Blitzgrid} />
         <Route path="/pricing" component={Pricing} />

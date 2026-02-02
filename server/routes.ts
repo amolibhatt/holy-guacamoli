@@ -2775,6 +2775,122 @@ Be creative! Make facts surprising and fun to guess.`;
     }
   });
 
+  // ==================== TimeWarp API ====================
+  
+  app.get("/api/timewarp/questions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const questions = await storage.getTimeWarpQuestions(userId, role);
+      res.json(questions);
+    } catch (err) {
+      console.error("Error fetching TimeWarp questions:", err);
+      res.status(500).json({ message: "Failed to fetch questions" });
+    }
+  });
+
+  // Zod schema for TimeWarp question creation
+  const createTimeWarpSchema = z.object({
+    imageUrl: z.string().min(1, "Image URL is required"),
+    era: z.enum(["past", "present", "future"], { 
+      errorMap: () => ({ message: "Era must be 'past', 'present', or 'future'" })
+    }),
+    answer: z.string().min(1, "Answer is required"),
+    hint: z.string().optional(),
+    category: z.string().optional(),
+  });
+
+  app.post("/api/timewarp/questions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const parsed = createTimeWarpSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.errors[0].message });
+      }
+      
+      const { imageUrl, era, answer, hint, category } = parsed.data;
+      
+      const question = await storage.createTimeWarpQuestion({
+        userId,
+        imageUrl,
+        era,
+        answer,
+        hint: hint || null,
+        category: category || null,
+        isActive: true,
+      });
+      
+      res.json(question);
+    } catch (err) {
+      console.error("Error creating TimeWarp question:", err);
+      res.status(500).json({ message: "Failed to create question" });
+    }
+  });
+
+  // Zod schema for TimeWarp question updates (all fields optional)
+  const updateTimeWarpSchema = z.object({
+    imageUrl: z.string().min(1).optional(),
+    era: z.enum(["past", "present", "future"], { 
+      errorMap: () => ({ message: "Era must be 'past', 'present', or 'future'" })
+    }).optional(),
+    answer: z.string().min(1).optional(),
+    hint: z.string().optional(),
+    category: z.string().optional(),
+    isActive: z.boolean().optional(),
+  });
+
+  app.put("/api/timewarp/questions/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const id = parseInt(req.params.id);
+      
+      const parsed = updateTimeWarpSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.errors[0].message });
+      }
+      
+      const { imageUrl, era, answer, hint, category, isActive } = parsed.data;
+      
+      const updated = await storage.updateTimeWarpQuestion(id, {
+        imageUrl,
+        era,
+        answer,
+        hint,
+        category,
+        isActive,
+      }, userId, role);
+      
+      if (!updated) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      
+      res.json(updated);
+    } catch (err) {
+      console.error("Error updating TimeWarp question:", err);
+      res.status(500).json({ message: "Failed to update question" });
+    }
+  });
+
+  app.delete("/api/timewarp/questions/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const id = parseInt(req.params.id);
+      
+      const deleted = await storage.deleteTimeWarpQuestion(id, userId, role);
+      if (!deleted) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting TimeWarp question:", err);
+      res.status(500).json({ message: "Failed to delete question" });
+    }
+  });
+
   // Excel Export - Download all boards with categories and questions
   app.get("/api/export/excel", isAuthenticated, async (req, res) => {
     try {

@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, psyopQuestions, adminAnnouncements, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameSessionWithDetails, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion, type PsyopQuestion, type InsertPsyopQuestion, type AdminAnnouncement, type InsertAdminAnnouncement, type ModerationStatus } from "@shared/schema";
+import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, psyopQuestions, timeWarpQuestions, adminAnnouncements, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameSessionWithDetails, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion, type PsyopQuestion, type InsertPsyopQuestion, type TimeWarpQuestion, type InsertTimeWarpQuestion, type AdminAnnouncement, type InsertAdminAnnouncement, type ModerationStatus } from "@shared/schema";
 import { users } from "@shared/models/auth";
 import { eq, and, asc, count, inArray, desc, sql, gte, like } from "drizzle-orm";
 
@@ -172,6 +172,12 @@ export interface IStorage {
   createPsyopQuestion(data: InsertPsyopQuestion): Promise<PsyopQuestion>;
   updatePsyopQuestion(id: number, data: Partial<InsertPsyopQuestion>, userId: string, role?: string): Promise<PsyopQuestion | null>;
   deletePsyopQuestion(id: number, userId: string, role?: string): Promise<boolean>;
+
+  // TimeWarp
+  getTimeWarpQuestions(userId: string, role?: string): Promise<TimeWarpQuestion[]>;
+  createTimeWarpQuestion(data: InsertTimeWarpQuestion): Promise<TimeWarpQuestion>;
+  updateTimeWarpQuestion(id: number, data: Partial<InsertTimeWarpQuestion>, userId: string, role?: string): Promise<TimeWarpQuestion | null>;
+  deleteTimeWarpQuestion(id: number, userId: string, role?: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1569,6 +1575,40 @@ export class DatabaseStorage implements IStorage {
     return !!result;
   }
 
+  // TimeWarp methods
+  async getTimeWarpQuestions(userId: string, role?: string): Promise<TimeWarpQuestion[]> {
+    if (role === 'super_admin') {
+      return await db.select().from(timeWarpQuestions).orderBy(desc(timeWarpQuestions.createdAt));
+    }
+    return await db.select().from(timeWarpQuestions).where(eq(timeWarpQuestions.userId, userId)).orderBy(desc(timeWarpQuestions.createdAt));
+  }
+
+  async createTimeWarpQuestion(data: InsertTimeWarpQuestion): Promise<TimeWarpQuestion> {
+    const [question] = await db.insert(timeWarpQuestions).values([data] as any).returning();
+    return question;
+  }
+
+  async updateTimeWarpQuestion(id: number, data: Partial<InsertTimeWarpQuestion>, userId: string, role?: string): Promise<TimeWarpQuestion | null> {
+    const condition = role === 'super_admin' 
+      ? eq(timeWarpQuestions.id, id)
+      : and(eq(timeWarpQuestions.id, id), eq(timeWarpQuestions.userId, userId));
+    
+    const [updated] = await db.update(timeWarpQuestions)
+      .set(data as any)
+      .where(condition)
+      .returning();
+    return updated || null;
+  }
+
+  async deleteTimeWarpQuestion(id: number, userId: string, role?: string): Promise<boolean> {
+    if (role === 'super_admin') {
+      const result = await db.delete(timeWarpQuestions).where(eq(timeWarpQuestions.id, id)).returning();
+      return result.length > 0;
+    }
+    const result = await db.delete(timeWarpQuestions).where(and(eq(timeWarpQuestions.id, id), eq(timeWarpQuestions.userId, userId))).returning();
+    return result.length > 0;
+  }
+
   async seedGameTypes(): Promise<void> {
     const requiredGameTypes = [
       {
@@ -1600,6 +1640,16 @@ export class DatabaseStorage implements IStorage {
         hostEnabled: true,
         playerEnabled: true,
         sortOrder: 3,
+      },
+      {
+        slug: "timewarp",
+        displayName: "Time Warp",
+        description: "Guess era-filtered images! At the halfway point, player order reverses.",
+        icon: "clock",
+        status: "active" as const,
+        hostEnabled: true,
+        playerEnabled: true,
+        sortOrder: 4,
       },
     ];
 
