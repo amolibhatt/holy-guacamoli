@@ -205,6 +205,9 @@ export function registerAuthRoutes(app: Express): void {
       const hashedPassword = await bcrypt.hash(password, 10);
 
       const role = email === 'amoli.bhatt@gmail.com' ? 'super_admin' : 'host';
+      
+      // Generate permanent pairing token for Sync or Sink
+      const pairingToken = crypto.randomUUID().replace(/-/g, '').substring(0, 12).toUpperCase();
 
       const [newUser] = await db.insert(users).values({
         email,
@@ -212,6 +215,7 @@ export function registerAuthRoutes(app: Express): void {
         firstName: firstName || null,
         lastName: lastName || null,
         role,
+        pairingToken,
       }).returning();
 
       req.session.userId = newUser.id;
