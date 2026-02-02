@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
+import { GameRulesSheet } from "@/components/GameRules";
 import { Logo } from "@/components/Logo";
 import { useScore } from "@/components/ScoreContext";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
@@ -24,7 +25,7 @@ import {
   ChevronRight, ArrowLeft, Play, Loader2,
   AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Medal,
   Volume2, VolumeX, MoreVertical, Settings, Copy, Link2, Share2, Download, Image, Loader2 as LoaderIcon, Clock,
-  Hand, Flame, Laugh, CircleDot, ThumbsUp, Sparkles, Heart, Timer, Zap, Shuffle, Star
+  Hand, Flame, Laugh, CircleDot, ThumbsUp, Sparkles, Heart, Timer, Zap, Shuffle, Star, HelpCircle
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import html2canvas from "html2canvas";
@@ -93,6 +94,7 @@ export default function Blitzgrid() {
   const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
   
   // View state
+  const [showRules, setShowRules] = useState(false);
   const [selectedGridId, setSelectedGridId] = useState<number | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [playMode, setPlayMode] = useState(false);
@@ -3566,7 +3568,25 @@ export default function Blitzgrid() {
         )}
       </main>
       
-<AppFooter />
+      {/* Floating Help Button */}
+      <Button
+        variant="outline"
+        size="icon"
+        className="fixed bottom-20 right-4 z-40 rounded-full shadow-lg bg-background/80 backdrop-blur-sm"
+        onClick={() => setShowRules(true)}
+        title="How to Play"
+        data-testid="button-rules-blitzgrid"
+      >
+        <HelpCircle className="w-5 h-5" />
+      </Button>
+      
+      <GameRulesSheet 
+        gameSlug="blitzgrid" 
+        open={showRules} 
+        onOpenChange={setShowRules} 
+      />
+      
+      <AppFooter />
     </div>
   );
 }

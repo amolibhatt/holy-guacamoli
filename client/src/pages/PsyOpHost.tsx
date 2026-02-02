@@ -12,11 +12,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { 
   Eye, Play, Users, QrCode, Trophy, Loader2, Check,
-  Crown, RefreshCw, ArrowLeft, Shuffle, Folder
+  Crown, RefreshCw, ArrowLeft, Shuffle, Folder, HelpCircle
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
+import { GameRulesSheet } from "@/components/GameRules";
 import type { PsyopQuestion } from "@shared/schema";
 
 type GameState = "setup" | "waiting" | "submitting" | "voting" | "revealing" | "leaderboard" | "finished";
@@ -55,6 +56,7 @@ export default function PsyOpHost() {
   const { toast } = useToast();
 
   const [gameState, setGameState] = useState<GameState>("setup");
+  const [showRules, setShowRules] = useState(false);
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<PsyopQuestion | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -646,6 +648,24 @@ export default function PsyOpHost() {
           </motion.div>
         )}
       </main>
+      
+      {/* Floating Help Button */}
+      <Button
+        variant="outline"
+        size="icon"
+        className="fixed bottom-20 right-4 z-40 rounded-full shadow-lg bg-background/80 backdrop-blur-sm"
+        onClick={() => setShowRules(true)}
+        title="How to Play"
+        data-testid="button-rules-psyop"
+      >
+        <HelpCircle className="w-5 h-5" />
+      </Button>
+      
+      <GameRulesSheet 
+        gameSlug="psyop" 
+        open={showRules} 
+        onOpenChange={setShowRules} 
+      />
       
       <AppFooter />
     </div>
