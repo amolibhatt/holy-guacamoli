@@ -158,7 +158,7 @@ export default function GameHistory() {
     return (
       <div className="min-h-screen bg-background">
         <AppHeader minimal backHref="/" title="Game History" />
-        <main className="max-w-6xl mx-auto px-4 py-6 w-full">
+        <main className="max-w-4xl mx-auto px-4 py-6 w-full">
           <LoadingSkeleton />
         </main>
       </div>
@@ -184,7 +184,7 @@ export default function GameHistory() {
     <div className="min-h-screen bg-background" data-testid="page-game-history">
       <AppHeader minimal backHref="/" title="Game History" />
       
-      <main className="max-w-6xl mx-auto px-4 py-6 w-full space-y-6">
+      <main className="max-w-4xl mx-auto px-4 py-6 w-full space-y-6">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">Game History</h1>

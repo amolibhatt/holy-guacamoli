@@ -29,7 +29,7 @@ export default function SortCircuitAdmin() {
       <AppHeader minimal backHref="/" title="Sort Circuit Admin" />
 
       <div className="border-b border-border bg-card/50">
-        <div className="max-w-6xl mx-auto px-4 w-full">
+        <div className="max-w-4xl mx-auto px-4 w-full">
           <nav className="flex gap-1">
             <Link href="/admin/games">
               <Button 
@@ -65,7 +65,7 @@ export default function SortCircuitAdmin() {
         </div>
       </div>
 
-      <main className="max-w-6xl mx-auto px-4 py-6 w-full">
+      <main className="max-w-4xl mx-auto px-4 py-6 w-full">
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Sort Circuit Questions</h1>
           <p className="text-muted-foreground text-sm">Create and manage ordering questions</p>

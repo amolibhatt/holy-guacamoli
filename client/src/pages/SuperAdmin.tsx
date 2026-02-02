@@ -493,7 +493,7 @@ export default function SuperAdmin() {
     <div className="min-h-screen gradient-game">
       <AppHeader minimal backHref="/" title="Super Admin" />
 
-      <main className="px-4 py-6 max-w-6xl mx-auto w-full">
+      <main className="px-4 py-6 max-w-4xl mx-auto w-full">
         <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 max-w-md">
             <TabsTrigger value="dashboard" className="gap-2" data-testid="tab-dashboard">
