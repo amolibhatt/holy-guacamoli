@@ -2423,6 +2423,107 @@ Keep options SHORT (max 50 chars each). Questions should be fun and educational.
     }
   });
 
+  // Conversational AI for Sort Circuit questions
+  app.post("/api/sequence-squeeze/questions/chat", isAuthenticated, async (req, res) => {
+    try {
+      const { messages } = req.body;
+      
+      if (!Array.isArray(messages) || messages.length === 0) {
+        return res.status(400).json({ message: "Messages required" });
+      }
+      
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ message: "AI service not configured" });
+      }
+
+      const systemPrompt = `You are a friendly assistant helping create "Sort Circuit" game questions. These are ordering/ranking questions where players put 4 items in correct order.
+
+Your job:
+1. Understand what kind of questions the user wants
+2. Generate ordering questions based on their requests
+3. Take feedback and iterate
+
+When you generate questions, ALWAYS include them in a JSON block like this:
+\`\`\`json
+[
+  {
+    "question": "Order these by size (smallest to largest)",
+    "optionA": "Ant",
+    "optionB": "Cat",
+    "optionC": "Elephant",
+    "optionD": "Blue Whale",
+    "hint": "Think about common animals"
+  }
+]
+\`\`\`
+
+Options A→B→C→D must be in CORRECT order. Keep options SHORT (max 50 chars).
+
+If the user just wants to chat or asks for changes, respond conversationally. Only include the JSON block when you're providing actual questions.
+
+Be creative and fun! Make questions engaging and varied.`;
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages.slice(-10) // Keep last 10 messages for context
+          ],
+          temperature: 0.8,
+          max_tokens: 2000
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Groq API error:', error);
+        return res.status(500).json({ message: "Failed to get AI response" });
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content || "";
+      
+      // Try to extract questions from JSON block
+      let questions: any[] = [];
+      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonMatch) {
+        try {
+          questions = JSON.parse(jsonMatch[1]);
+          if (!Array.isArray(questions)) questions = [];
+        } catch (e) {
+          questions = [];
+        }
+      }
+
+      // Clean message by removing JSON blocks for display
+      const cleanMessage = content.replace(/```json[\s\S]*?```/g, '').trim() || 
+        (questions.length > 0 ? `Here are ${questions.length} question(s) for you!` : content);
+
+      res.json({ 
+        message: cleanMessage, 
+        questions: questions.map(q => ({
+          question: q.question || '',
+          optionA: q.optionA || '',
+          optionB: q.optionB || '',
+          optionC: q.optionC || '',
+          optionD: q.optionD || '',
+          correctOrder: ['A', 'B', 'C', 'D'],
+          hint: q.hint || null
+        }))
+      });
+    } catch (err) {
+      console.error("Error in AI chat:", err);
+      res.status(500).json({ message: "Failed to process request" });
+    }
+  });
+
   // PsyOp API routes
   app.get("/api/psyop/questions", isAuthenticated, async (req, res) => {
     try {
