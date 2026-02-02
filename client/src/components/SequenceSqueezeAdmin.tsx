@@ -37,8 +37,10 @@ export function SequenceSqueezeAdmin() {
   const [bulkPreviewMode, setBulkPreviewMode] = useState(false);
   
   const [aiGenerateOpen, setAiGenerateOpen] = useState(false);
-  const [aiTopic, setAiTopic] = useState("");
-  const [aiCount, setAiCount] = useState(3);
+  const [aiMessages, setAiMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const [aiInput, setAiInput] = useState("");
+  const [aiGeneratedQuestions, setAiGeneratedQuestions] = useState<ParsedQuestion[]>([]);
+  const [savingQuestionIdx, setSavingQuestionIdx] = useState<number | null>(null);
 
   const { data: questions = [], isLoading } = useQuery<SequenceQuestion[]>({
     queryKey: ["/api/sequence-squeeze/questions"],
@@ -119,33 +121,52 @@ export function SequenceSqueezeAdmin() {
     },
   });
 
-  const aiGenerateMutation = useMutation({
-    mutationFn: async (data: { topic: string; count: number }) => {
-      const res = await apiRequest("POST", "/api/sequence-squeeze/questions/generate", data);
+  const aiChatMutation = useMutation({
+    mutationFn: async (data: { messages: { role: 'user' | 'assistant'; content: string }[] }) => {
+      const res = await apiRequest("POST", "/api/sequence-squeeze/questions/chat", data);
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.message || "Failed to generate questions");
       }
       return res.json();
     },
-    onSuccess: (data: { success: number; errors: string[] }) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/sequence-squeeze/questions"] });
-      setAiTopic("");
-      setAiGenerateOpen(false);
-      if (data.errors.length > 0) {
-        toast({ 
-          title: `Generated ${data.success} question(s)`, 
-          description: `${data.errors.length} error(s)`,
-          variant: "destructive" 
-        });
-      } else {
-        toast({ title: `Generated ${data.success} question(s)!` });
+    onSuccess: (data: { message: string; questions: ParsedQuestion[] }) => {
+      setAiMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
+      if (data.questions.length > 0) {
+        setAiGeneratedQuestions(data.questions);
       }
     },
     onError: (error: Error) => {
-      toast({ title: error.message || "Failed to generate questions", variant: "destructive" });
+      toast({ title: error.message || "Failed to generate", variant: "destructive" });
     },
   });
+
+  const saveGeneratedQuestion = async (q: ParsedQuestion, idx: number) => {
+    setSavingQuestionIdx(idx);
+    try {
+      await createMutation.mutateAsync({
+        question: q.question,
+        optionA: q.optionA,
+        optionB: q.optionB,
+        optionC: q.optionC,
+        optionD: q.optionD,
+        correctOrder: q.correctOrder,
+        hint: q.hint,
+        isActive: true,
+      });
+      setAiGeneratedQuestions(prev => prev.filter((_, i) => i !== idx));
+    } finally {
+      setSavingQuestionIdx(null);
+    }
+  };
+
+  const handleAiSend = () => {
+    if (!aiInput.trim()) return;
+    const newMessages = [...aiMessages, { role: 'user' as const, content: aiInput }];
+    setAiMessages(newMessages);
+    setAiInput("");
+    aiChatMutation.mutate({ messages: newMessages });
+  };
 
   const parseBulkImport = (text: string): ParsedQuestion[] => {
     const lines = text.split('\n').filter(l => l.trim());
@@ -235,51 +256,85 @@ export function SequenceSqueezeAdmin() {
             exit={{ opacity: 0, height: 0 }}
           >
             <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
-              <CardContent className="p-6 space-y-4">
-                <div className="flex items-center gap-2 text-purple-700">
-                  <Sparkles className="w-5 h-5" />
-                  <span className="font-semibold">AI Question Generator</span>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Input
-                    placeholder="Topic (optional) - leave blank for random"
-                    value={aiTopic}
-                    onChange={(e) => setAiTopic(e.target.value)}
-                    className="flex-1"
-                    data-testid="input-ai-topic"
-                  />
-                  <div className="flex items-center gap-2">
-                    <Label className="text-sm text-muted-foreground whitespace-nowrap">Count:</Label>
-                    <select 
-                      value={aiCount} 
-                      onChange={(e) => setAiCount(Number(e.target.value))}
-                      className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                      data-testid="select-ai-count"
-                    >
-                      {[1, 2, 3, 4, 5].map(n => (
-                        <option key={n} value={n}>{n}</option>
-                      ))}
-                    </select>
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-purple-700">
+                    <Sparkles className="w-5 h-5" />
+                    <span className="font-semibold">AI Assistant</span>
                   </div>
-                </div>
-                <Button
-                  onClick={() => aiGenerateMutation.mutate({ topic: aiTopic || "random fun topics", count: aiCount })}
-                  disabled={aiGenerateMutation.isPending}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0"
-                  data-testid="button-generate-ai-questions"
-                >
-                  {aiGenerateMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Generate Questions
-                    </>
+                  {aiMessages.length > 0 && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => { setAiMessages([]); setAiGeneratedQuestions([]); }}
+                      className="text-xs text-muted-foreground"
+                    >
+                      Clear chat
+                    </Button>
                   )}
-                </Button>
+                </div>
+                
+                {aiMessages.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Tell me what kind of questions you want. Try: "Give me 3 questions about movies" or "Make some funny food questions"
+                  </p>
+                ) : (
+                  <div className="max-h-48 overflow-y-auto space-y-2 text-sm">
+                    {aiMessages.map((msg, i) => (
+                      <div key={i} className={`p-2 rounded ${msg.role === 'user' ? 'bg-purple-100 ml-8' : 'bg-white mr-8'}`}>
+                        {msg.content}
+                      </div>
+                    ))}
+                    {aiChatMutation.isPending && (
+                      <div className="p-2 rounded bg-white mr-8 flex items-center gap-2 text-muted-foreground">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Thinking...
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {aiGeneratedQuestions.length > 0 && (
+                  <div className="space-y-2 border-t pt-3">
+                    <p className="text-xs font-medium text-purple-700">Generated Questions (click to save):</p>
+                    {aiGeneratedQuestions.map((q, idx) => (
+                      <div key={idx} className="p-2 bg-white rounded border text-sm flex items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{q.question}</p>
+                          <p className="text-xs text-muted-foreground">{q.optionA} → {q.optionB} → {q.optionC} → {q.optionD}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => saveGeneratedQuestion(q, idx)}
+                          disabled={savingQuestionIdx === idx}
+                          className="shrink-0"
+                          data-testid={`button-save-ai-question-${idx}`}
+                        >
+                          {savingQuestionIdx === idx ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Ask for questions..."
+                    value={aiInput}
+                    onChange={(e) => setAiInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAiSend()}
+                    className="flex-1"
+                    data-testid="input-ai-chat"
+                  />
+                  <Button
+                    onClick={handleAiSend}
+                    disabled={!aiInput.trim() || aiChatMutation.isPending}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0"
+                    data-testid="button-send-ai"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
