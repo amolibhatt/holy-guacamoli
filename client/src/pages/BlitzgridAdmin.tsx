@@ -131,25 +131,27 @@ export default function BlitzgridAdmin() {
     enabled: !!selectedGridId,
   });
 
-  const createGridMutation = useMutation({
-    mutationFn: async ({ name }: { name: string }) => {
-      const result = await apiRequest('POST', '/api/blitzgrid/grids', { name });
-      return result.json();
-    },
-    onSuccess: (newGrid) => {
+  const [isCreatingGrid, setIsCreatingGrid] = useState(false);
+  
+  const handleCreateGrid = async (name: string) => {
+    if (!name.trim()) return;
+    setIsCreatingGrid(true);
+    try {
+      const result = await apiRequest('POST', '/api/blitzgrid/grids', { name: name.trim() });
+      const newGrid = await result.json();
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
       setNewGridName("");
       setShowNewGridForm(false);
-      // Select the newly created grid
       if (newGrid?.id) {
         setSelectedGridId(newGrid.id);
       }
       toast({ title: "Grid created" });
-    },
-    onError: () => {
+    } catch (error) {
       toast({ title: "Couldn't create grid", variant: "destructive" });
-    },
-  });
+    } finally {
+      setIsCreatingGrid(false);
+    }
+  };
 
   const updateGridMutation = useMutation({
     mutationFn: async ({ id, name, description }: { id: number; name?: string; description?: string }) => {
@@ -1153,7 +1155,7 @@ export default function BlitzgridAdmin() {
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && newGridName.trim()) {
-                          createGridMutation.mutate({ name: newGridName.trim() });
+                          handleCreateGrid(newGridName);
                         }
                         if (e.key === 'Escape') {
                           setShowNewGridForm(false);
@@ -1163,11 +1165,11 @@ export default function BlitzgridAdmin() {
                       data-testid="input-grid-name"
                     />
                     <Button
-                      onClick={() => createGridMutation.mutate({ name: newGridName.trim() })}
-                      disabled={!newGridName.trim() || createGridMutation.isPending}
+                      onClick={() => handleCreateGrid(newGridName)}
+                      disabled={!newGridName.trim() || isCreatingGrid}
                       data-testid="button-create-grid"
                     >
-                      {createGridMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
+                      {isCreatingGrid ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
                     </Button>
                     <Button variant="ghost" onClick={() => setShowNewGridForm(false)}>
                       <X className="w-4 h-4" />
@@ -1334,7 +1336,7 @@ export default function BlitzgridAdmin() {
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && newGridName.trim()) {
-                  createGridMutation.mutate({ name: newGridName.trim() });
+                  handleCreateGrid(newGridName);
                 }
               }}
               data-testid="input-grid-name-dialog"
@@ -1344,11 +1346,11 @@ export default function BlitzgridAdmin() {
                 Cancel
               </Button>
               <Button
-                onClick={() => createGridMutation.mutate({ name: newGridName.trim() })}
-                disabled={!newGridName.trim() || createGridMutation.isPending}
+                onClick={() => handleCreateGrid(newGridName)}
+                disabled={!newGridName.trim() || isCreatingGrid}
                 data-testid="button-create-grid-dialog"
               >
-                {createGridMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                {isCreatingGrid ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Create Grid
               </Button>
             </div>
