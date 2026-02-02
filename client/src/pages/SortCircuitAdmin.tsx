@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { AppHeader } from "@/components/AppHeader";
 import { SequenceSqueezeAdmin } from "@/components/SequenceSqueezeAdmin";
 import { Button } from "@/components/ui/button";
-import { Loader2, Grid3X3, ListOrdered, Eye } from "lucide-react";
+import { Loader2, Grid3X3, ListOrdered, Eye, HeartHandshake } from "lucide-react";
 
 export default function SortCircuitAdmin() {
   const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
@@ -59,6 +59,16 @@ export default function SortCircuitAdmin() {
               >
                 <Eye className="w-4 h-4 mr-2" />
                 PsyOp
+              </Button>
+            </Link>
+            <Link href="/admin/sync-or-sink">
+              <Button 
+                variant="ghost" 
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
+                data-testid="tab-sync-or-sink"
+              >
+                <HeartHandshake className="w-4 h-4 mr-2" />
+                Sync or Sink
               </Button>
             </Link>
           </nav>
