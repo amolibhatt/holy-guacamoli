@@ -2682,6 +2682,99 @@ Be creative and fun! Make questions engaging and varied.`;
     }
   });
 
+  // Conversational AI for PsyOp questions
+  app.post("/api/psyop/questions/chat", isAuthenticated, async (req, res) => {
+    try {
+      const { messages } = req.body;
+      
+      if (!Array.isArray(messages) || messages.length === 0) {
+        return res.status(400).json({ message: "Messages required" });
+      }
+      
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ message: "AI service not configured" });
+      }
+
+      const systemPrompt = `You are a friendly assistant helping create "PsyOp" game questions. PsyOp is a deception game where:
+1. Players see a fact with a [REDACTED] blank
+2. Players submit FAKE answers to fill in the blank
+3. All answers (including the real one) are shown
+4. Players vote on which they think is REAL
+
+Your job:
+1. Understand what kind of facts/questions the user wants
+2. Generate fill-in-the-blank trivia facts
+3. Take feedback and iterate
+
+When you generate questions, ALWAYS include them in a JSON block like this:
+\`\`\`json
+[
+  {
+    "factText": "The [REDACTED] is the largest mammal on Earth",
+    "correctAnswer": "blue whale",
+    "category": "Science"
+  }
+]
+\`\`\`
+
+Rules:
+- factText MUST contain exactly one [REDACTED] placeholder
+- correctAnswer is what fills in the blank
+- Make facts interesting and not too obvious (so fake answers are plausible)
+- Category is optional but helpful for organization
+
+If the user just wants to chat or asks for changes, respond conversationally. Only include the JSON block when you're providing actual questions.
+
+Be creative! Make facts surprising and fun to guess.`;
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages.slice(-10)
+          ],
+          temperature: 0.8,
+          max_tokens: 2000
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Groq API error:', error);
+        return res.status(500).json({ message: "Failed to get AI response" });
+      }
+
+      const data = await response.json() as any;
+      const content = data.choices?.[0]?.message?.content || "";
+      
+      // Try to extract questions from JSON block
+      let questions: any[] = [];
+      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonMatch) {
+        try {
+          questions = JSON.parse(jsonMatch[1]);
+        } catch (e) {
+          // JSON parsing failed, that's ok
+        }
+      }
+      
+      res.json({ 
+        reply: content.replace(/```json[\s\S]*?```/g, '').trim() || "Here are some questions!",
+        questions 
+      });
+    } catch (err) {
+      console.error("Error in PsyOp AI chat:", err);
+      res.status(500).json({ message: "Failed to get AI response" });
+    }
+  });
+
   // Excel Export - Download all boards with categories and questions
   app.get("/api/export/excel", isAuthenticated, async (req, res) => {
     try {
