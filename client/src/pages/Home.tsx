@@ -240,18 +240,26 @@ export default function Home() {
                       </motion.div>
                     )}
                     
-                    {/* Icon */}
+                    {/* Icon with constant pulse */}
                     <motion.div 
-                      className="w-14 h-14 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center mb-4 lg:mb-6"
+                      className="w-14 h-14 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center mb-4 lg:mb-6 relative"
                       animate={{
-                        scale: isHovered && !isComingSoon ? [1, 1.1, 1] : 1,
+                        scale: isHovered && !isComingSoon ? [1, 1.15, 1] : [1, 1.05, 1],
                         boxShadow: isHovered && !isComingSoon 
-                          ? `0 0 30px ${config.accentColor}80, 0 0 60px ${config.accentColor}40`
-                          : `0 0 15px ${config.accentColor}30`,
+                          ? [
+                              `0 0 20px ${config.accentColor}60, 0 0 40px ${config.accentColor}30`,
+                              `0 0 35px ${config.accentColor}80, 0 0 70px ${config.accentColor}50`,
+                              `0 0 20px ${config.accentColor}60, 0 0 40px ${config.accentColor}30`,
+                            ]
+                          : [
+                              `0 0 10px ${config.accentColor}20, 0 0 20px ${config.accentColor}10`,
+                              `0 0 20px ${config.accentColor}40, 0 0 40px ${config.accentColor}20`,
+                              `0 0 10px ${config.accentColor}20, 0 0 20px ${config.accentColor}10`,
+                            ],
                       }}
                       transition={{
-                        scale: { duration: 0.4, repeat: isHovered ? Infinity : 0, repeatDelay: 0.8 },
-                        boxShadow: { duration: 0.2 },
+                        scale: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+                        boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" },
                       }}
                       style={{
                         background: `linear-gradient(135deg, ${config.accentColor}30 0%, ${config.accentColor}10 100%)`,
@@ -262,6 +270,96 @@ export default function Home() {
                         className="w-6 h-6 lg:w-7 lg:h-7" 
                         style={{ color: config.accentColor }}
                       />
+                      
+                      {/* Pulsing ring effect */}
+                      <motion.div
+                        className="absolute inset-0 rounded-xl"
+                        animate={{
+                          opacity: [0.5, 0, 0.5],
+                          scale: [1, 1.4, 1],
+                        }}
+                        transition={{
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: "easeOut",
+                        }}
+                        style={{
+                          border: `1px solid ${config.accentColor}`,
+                        }}
+                      />
+                    </motion.div>
+                    
+                    {/* Hover Preview */}
+                    <motion.div
+                      className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: isHovered && !isComingSoon ? 1 : 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0d0d12]" />
+                      
+                      {/* Game-specific preview animations */}
+                      {game.slug === 'blitzgrid' && (
+                        <div className="absolute top-4 left-4 right-4 grid grid-cols-5 gap-1 opacity-30">
+                          {[...Array(25)].map((_, i) => (
+                            <motion.div
+                              key={i}
+                              className="aspect-square rounded-sm"
+                              style={{ backgroundColor: config.accentColor }}
+                              animate={{
+                                opacity: [0.2, 0.8, 0.2],
+                              }}
+                              transition={{
+                                duration: 1.5,
+                                delay: i * 0.05,
+                                repeat: Infinity,
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      
+                      {game.slug === 'sequence_squeeze' && (
+                        <div className="absolute top-4 left-4 right-4 flex flex-col gap-1 opacity-30">
+                          {[1, 2, 3, 4].map((_, i) => (
+                            <motion.div
+                              key={i}
+                              className="h-3 rounded"
+                              style={{ backgroundColor: config.accentColor }}
+                              animate={{
+                                x: [0, (i % 2 === 0 ? 20 : -20), 0],
+                                opacity: [0.3, 0.7, 0.3],
+                              }}
+                              transition={{
+                                duration: 2,
+                                delay: i * 0.2,
+                                repeat: Infinity,
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      
+                      {game.slug === 'psyop' && (
+                        <div className="absolute top-4 left-4 right-4 flex justify-center gap-2 opacity-30">
+                          {[1, 2, 3].map((_, i) => (
+                            <motion.div
+                              key={i}
+                              className="w-8 h-8 rounded-full"
+                              style={{ backgroundColor: config.accentColor }}
+                              animate={{
+                                scale: [1, 1.3, 1],
+                                opacity: [0.3, 0.7, 0.3],
+                              }}
+                              transition={{
+                                duration: 1.5,
+                                delay: i * 0.3,
+                                repeat: Infinity,
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </motion.div>
                     
                     {/* Title with Neon Bleed */}
