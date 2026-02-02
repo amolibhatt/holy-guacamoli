@@ -21,13 +21,13 @@ export const GAME_RULES: Record<string, GameRulesContent> = {
     players: "2-8 players",
     duration: "15-30 min",
     accentColor: "#e879f9",
-    overview: "A 5x5 trivia grid where players compete to answer questions across 5 categories. Each category has 5 questions worth 10, 20, 30, 40, and 50 points. The host controls the game and awards points.",
+    overview: "A 5x5 trivia grid where players compete across 5 categories. Each category has questions worth 10-50 points. The player who answers correctly gets to pick the next question!",
     howToPlay: [
-      "The host selects a category and point value from the grid",
+      "The host (or player in control) selects a category and point value",
       "The question is revealed to all players",
       "Players buzz in on their phones to answer",
       "The host judges if the answer is correct",
-      "Correct answers earn points, wrong answers may lose points",
+      "The player who answers correctly picks the next question",
       "Play continues until all questions are answered"
     ],
     scoring: [
