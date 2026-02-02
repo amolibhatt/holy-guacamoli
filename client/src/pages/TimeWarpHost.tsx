@@ -173,12 +173,12 @@ export default function TimeWarpHost() {
           transition={{ duration: 2.5, ease: "easeInOut" }}
           className="text-center"
         >
-          <Clock className="w-24 h-24 mx-auto mb-6 text-cyan-500" />
+          <Clock className="w-24 h-24 mx-auto mb-6 text-orange-500" />
           <motion.h1
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="text-4xl md:text-6xl font-black text-cyan-500 uppercase tracking-widest"
+            className="text-4xl md:text-6xl font-black text-orange-500 uppercase tracking-widest"
           >
             TIME WARP
           </motion.h1>
@@ -196,7 +196,7 @@ export default function TimeWarpHost() {
             transition={{ delay: 1.8 }}
             className="mt-6"
           >
-            <ArrowUpDown className="w-16 h-16 mx-auto text-cyan-500 animate-bounce" />
+            <ArrowUpDown className="w-16 h-16 mx-auto text-orange-500 animate-bounce" />
           </motion.div>
         </motion.div>
       </div>
@@ -218,7 +218,7 @@ export default function TimeWarpHost() {
             animate={{ scale: 1 }}
             className="text-center mb-8"
           >
-            <Trophy className="w-20 h-20 mx-auto text-cyan-500 mb-4" />
+            <Trophy className="w-20 h-20 mx-auto text-orange-500 mb-4" />
             <h1 className="text-3xl font-bold mb-2">Game Over!</h1>
             <p className="text-xl text-muted-foreground">
               {winner.name} wins with {winner.score} points!
@@ -237,7 +237,7 @@ export default function TimeWarpHost() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.1 }}
                   className={`flex items-center justify-between p-3 rounded-lg ${
-                    idx === 0 ? 'bg-cyan-500/20' : 'bg-muted'
+                    idx === 0 ? 'bg-orange-500/20' : 'bg-muted'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -279,7 +279,7 @@ export default function TimeWarpHost() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-cyan-500 dark:text-cyan-400" />
+                  <Clock className="w-5 h-5 text-orange-500 dark:text-orange-400" />
                   Start a Time Warp Game
                 </CardTitle>
               </CardHeader>
@@ -299,10 +299,10 @@ export default function TimeWarpHost() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
+                    <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center">
-                          <ImageIcon className="w-5 h-5 text-cyan-500" />
+                        <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                          <ImageIcon className="w-5 h-5 text-orange-500" />
                         </div>
                         <div>
                           <div className="font-semibold">{questions.length} Questions Ready</div>
@@ -315,7 +315,7 @@ export default function TimeWarpHost() {
                     
                     {questions.length >= 4 && (
                       <div className="flex items-center gap-2 p-3 bg-muted rounded-lg text-sm text-muted-foreground">
-                        <Sparkles className="w-4 h-4 text-cyan-500" />
+                        <Sparkles className="w-4 h-4 text-orange-500" />
                         At question #{midpoint}, player order will reverse!
                       </div>
                     )}
@@ -420,7 +420,7 @@ export default function TimeWarpHost() {
         <div className="flex-1 flex flex-col p-4 md:p-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              <Clock className="w-8 h-8 text-cyan-500" />
+              <Clock className="w-8 h-8 text-orange-500" />
               <div>
                 <h1 className="text-xl font-bold">Time Warp</h1>
                 <p className="text-sm text-white/50">
@@ -440,7 +440,7 @@ export default function TimeWarpHost() {
             className="text-center mb-6"
           >
             <p className="text-white/50 text-sm uppercase tracking-wider mb-1">Current Turn</p>
-            <h2 className="text-3xl md:text-4xl font-black text-cyan-400">
+            <h2 className="text-3xl md:text-4xl font-black text-orange-400">
               {currentPlayer?.name}
             </h2>
           </motion.div>
@@ -457,7 +457,7 @@ export default function TimeWarpHost() {
                   <Button
                     size="lg"
                     onClick={() => setShowImage(true)}
-                    className="text-xl px-12 py-8 bg-cyan-600 hover:bg-cyan-700"
+                    className="text-xl px-12 py-8 bg-orange-600 hover:bg-orange-700"
                     data-testid="button-show-image"
                   >
                     <ImageIcon className="w-6 h-6 mr-3" />
@@ -489,7 +489,7 @@ export default function TimeWarpHost() {
                       animate={{ opacity: 1, y: 0 }}
                       className="absolute inset-0 flex items-center justify-center bg-black/70 rounded-xl"
                     >
-                      <p className="text-3xl md:text-4xl font-bold text-cyan-400">
+                      <p className="text-3xl md:text-4xl font-bold text-orange-400">
                         {currentQuestion?.answer}
                       </p>
                     </motion.div>
@@ -538,7 +538,7 @@ export default function TimeWarpHost() {
 
         <div className="w-64 bg-white/5 border-l border-white/10 p-4 hidden md:block">
           <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-cyan-500" />
+            <Trophy className="w-5 h-5 text-orange-500" />
             Scoreboard
           </h3>
           <div className="space-y-2">
@@ -548,13 +548,13 @@ export default function TimeWarpHost() {
                 layout
                 className={`p-3 rounded-lg ${
                   player.id === currentPlayer?.id 
-                    ? 'bg-cyan-500/20 ring-1 ring-cyan-500' 
+                    ? 'bg-orange-500/20 ring-1 ring-orange-500' 
                     : 'bg-white/5'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {idx === 0 && <Trophy className="w-4 h-4 text-cyan-500" />}
+                    {idx === 0 && <Trophy className="w-4 h-4 text-orange-500" />}
                     <span className={player.id === currentPlayer?.id ? 'font-bold' : ''}>
                       {player.name}
                     </span>
@@ -573,7 +573,7 @@ export default function TimeWarpHost() {
               {players.map((player, idx) => (
                 <div 
                   key={player.id}
-                  className={`text-sm ${idx === currentPlayerIdx ? 'text-cyan-400 font-bold' : 'text-white/40'}`}
+                  className={`text-sm ${idx === currentPlayerIdx ? 'text-orange-400 font-bold' : 'text-white/40'}`}
                 >
                   {idx + 1}. {player.name} {idx === currentPlayerIdx && '←'}
                 </div>

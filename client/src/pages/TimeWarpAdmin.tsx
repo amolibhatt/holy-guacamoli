@@ -174,7 +174,7 @@ export default function TimeWarpAdmin() {
 
   return (
     <div className="min-h-screen bg-background" data-testid="page-timewarp-admin">
-      <div className="fixed inset-0 bg-gradient-to-br from-cyan-300/5 via-transparent to-cyan-300/5 pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-br from-orange-300/5 via-transparent to-orange-300/5 pointer-events-none" />
       
       <AppHeader minimal backHref="/" title="Time Warp Admin" />
 
