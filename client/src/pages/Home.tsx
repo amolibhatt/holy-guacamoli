@@ -214,17 +214,17 @@ export default function Home() {
                     }}
                     data-testid={`button-game-${game.slug}`}
                   >
-                    {/* Info Button - How to Play */}
+                    {/* How to Play Button */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setRulesGameSlug(game.slug);
                       }}
-                      className="absolute top-3 left-3 p-1.5 rounded-full bg-white/5 hover:bg-white/15 transition-colors z-10"
-                      title="How to Play"
+                      className="absolute top-3 left-3 px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 transition-colors z-10 flex items-center gap-1.5"
                       data-testid={`button-rules-${game.slug}`}
                     >
-                      <Info className="w-4 h-4 text-white/50 hover:text-white/80" />
+                      <Info className="w-3.5 h-3.5 text-white/70" />
+                      <span className="text-xs font-medium text-white/70">How to Play</span>
                     </button>
                     
                     {/* Badge */}
