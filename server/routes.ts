@@ -2311,14 +2311,14 @@ export async function registerRoutes(
         return res.status(500).json({ message: "AI service not configured" });
       }
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'llama-3.3-70b-versatile',
           messages: [
             {
               role: 'system',
@@ -2362,7 +2362,7 @@ Keep options SHORT (max 50 chars each). Questions should be fun and educational.
 
       if (!response.ok) {
         const error = await response.text();
-        console.error('OpenAI API error:', error);
+        console.error('Groq API error:', error);
         return res.status(500).json({ message: "Failed to generate questions" });
       }
 
