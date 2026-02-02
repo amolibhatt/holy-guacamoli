@@ -2452,6 +2452,173 @@ export async function registerRoutes(
     }
   });
 
+  // =====================
+  // Sync or Sink API routes
+  // =====================
+  
+  // Get all Sync or Sink questions
+  app.get("/api/sync/questions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const questions = await storage.getSyncQuestions(userId, role);
+      res.json(questions);
+    } catch (err) {
+      console.error("Error getting Sync questions:", err);
+      res.status(500).json({ message: "Failed to get questions" });
+    }
+  });
+
+  // Create Sync or Sink question
+  app.post("/api/sync/questions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { questionText, category, isActive } = req.body;
+      
+      if (!questionText || typeof questionText !== 'string' || questionText.trim().length === 0) {
+        return res.status(400).json({ message: "Question text is required" });
+      }
+      if (questionText.length > 500) {
+        return res.status(400).json({ message: "Question too long (max 500 chars)" });
+      }
+
+      const question = await storage.createSyncQuestion({
+        userId,
+        questionText: questionText.trim(),
+        category: category?.trim() || null,
+        isActive: isActive ?? true,
+      });
+      res.json(question);
+    } catch (err) {
+      console.error("Error creating Sync question:", err);
+      res.status(500).json({ message: "Failed to create question" });
+    }
+  });
+
+  // Update Sync or Sink question
+  app.put("/api/sync/questions/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const { questionText, category } = req.body;
+      
+      if (!questionText || typeof questionText !== 'string' || questionText.trim().length === 0) {
+        return res.status(400).json({ message: "Question text is required" });
+      }
+      if (questionText.length > 500) {
+        return res.status(400).json({ message: "Question too long (max 500 chars)" });
+      }
+
+      const updated = await storage.updateSyncQuestion(id, {
+        questionText: questionText.trim(),
+        category: category?.trim() || null,
+      }, userId, role);
+      
+      if (!updated) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      console.error("Error updating Sync question:", err);
+      res.status(500).json({ message: "Failed to update question" });
+    }
+  });
+
+  // Delete Sync or Sink question
+  app.delete("/api/sync/questions/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      
+      const deleted = await storage.deleteSyncQuestion(id, userId, role);
+      if (!deleted) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting Sync question:", err);
+      res.status(500).json({ message: "Failed to delete question" });
+    }
+  });
+
+  // =====================
+  // Couples API routes
+  // =====================
+  
+  // Get current user's couple
+  app.get("/api/couples/me", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const couple = await storage.getCouple(userId);
+      res.json(couple);
+    } catch (err) {
+      console.error("Error getting couple:", err);
+      res.status(500).json({ message: "Failed to get couple" });
+    }
+  });
+
+  // Create invite link for pairing
+  app.post("/api/couples/create-invite", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { coupleName } = req.body;
+      
+      // Check if user already has an active couple
+      const existingCouple = await storage.getCouple(userId);
+      if (existingCouple && existingCouple.status === 'active') {
+        return res.status(400).json({ message: "You already have an active partner" });
+      }
+      
+      // Generate 6-character invite code
+      const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      const couple = await storage.createCouple({
+        user1Id: userId,
+        inviteCode,
+        status: 'pending',
+        coupleName: coupleName?.trim() || null,
+      });
+      
+      res.json({ 
+        inviteCode: couple.inviteCode,
+        coupleId: couple.id,
+      });
+    } catch (err) {
+      console.error("Error creating couple invite:", err);
+      res.status(500).json({ message: "Failed to create invite" });
+    }
+  });
+
+  // Join via invite code
+  app.post("/api/couples/join", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { inviteCode } = req.body;
+      
+      if (!inviteCode || typeof inviteCode !== 'string') {
+        return res.status(400).json({ message: "Invite code is required" });
+      }
+      
+      // Check if user already has an active couple
+      const existingCouple = await storage.getCouple(userId);
+      if (existingCouple && existingCouple.status === 'active') {
+        return res.status(400).json({ message: "You already have an active partner" });
+      }
+      
+      const couple = await storage.joinCouple(inviteCode.toUpperCase().trim(), userId);
+      if (!couple) {
+        return res.status(400).json({ message: "Invalid or expired invite code" });
+      }
+      
+      res.json(couple);
+    } catch (err) {
+      console.error("Error joining couple:", err);
+      res.status(500).json({ message: "Failed to join" });
+    }
+  });
+
   // Excel Export - Download all boards with categories and questions
   app.get("/api/export/excel", isAuthenticated, async (req, res) => {
     try {
