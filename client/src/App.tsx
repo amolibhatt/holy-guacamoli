@@ -21,6 +21,8 @@ const SortCircuitPlayer = lazy(() => import("@/pages/SequencePlayer"));
 const SortCircuitAdmin = lazy(() => import("@/pages/SortCircuitAdmin"));
 const PsyOpAdmin = lazy(() => import("@/pages/PsyOpAdmin"));
 const PsyOpHost = lazy(() => import("@/pages/PsyOpHost"));
+const SyncOrSinkAdmin = lazy(() => import("@/pages/SyncOrSinkAdmin"));
+const SyncOrSinkHost = lazy(() => import("@/pages/SyncOrSinkHost"));
 const GameHistory = lazy(() => import("@/pages/GameHistory"));
 const Blitzgrid = lazy(() => import("@/pages/Blitzgrid"));
 const Pricing = lazy(() => import("@/pages/Pricing"));
@@ -53,6 +55,8 @@ function Router() {
         <Route path="/host/sequence-squeeze" component={SortCircuit} />
         <Route path="/admin/sort-circuit" component={SortCircuitAdmin} />
         <Route path="/admin/psyop" component={PsyOpAdmin} />
+        <Route path="/admin/sync-or-sink" component={SyncOrSinkAdmin} />
+        <Route path="/host/sync-or-sink" component={SyncOrSinkHost} />
         <Route path="/host/psyop" component={PsyOpHost} />
         <Route path="/sortcircuit/:code?" component={SortCircuitPlayer} />
         <Route path="/host/blitzgrid" component={Blitzgrid} />

@@ -17,7 +17,7 @@ import {
   Plus, Trash2, Pencil, Check, X, Grid3X3, ListOrdered, Brain,
   ChevronRight, ArrowLeft, Loader2,
   AlertCircle, CheckCircle2, Image, Music, Video,
-  Download, Upload, FileSpreadsheet, Heart, ChevronDown, ChevronUp,
+  Download, Upload, FileSpreadsheet, Heart, ChevronDown, ChevronUp, HeartHandshake,
 } from "lucide-react";
 import { 
   AlertDialog, AlertDialogAction, AlertDialogCancel, 
@@ -506,6 +506,16 @@ export default function BlitzgridAdmin() {
                 >
                   <Brain className="w-4 h-4 mr-2" />
                   PsyOp
+                </Button>
+              </Link>
+              <Link href="/admin/sync-or-sink">
+                <Button 
+                  variant="ghost" 
+                  className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
+                  data-testid="tab-sync-or-sink"
+                >
+                  <HeartHandshake className="w-4 h-4 mr-2" />
+                  Sync or Sink
                 </Button>
               </Link>
             </nav>
@@ -1035,6 +1045,16 @@ export default function BlitzgridAdmin() {
               >
                 <Brain className="w-4 h-4 mr-2" />
                 PsyOp
+              </Button>
+            </Link>
+            <Link href="/admin/sync-or-sink">
+              <Button 
+                variant="ghost" 
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
+                data-testid="tab-sync-or-sink"
+              >
+                <HeartHandshake className="w-4 h-4 mr-2" />
+                Sync or Sink
               </Button>
             </Link>
           </nav>

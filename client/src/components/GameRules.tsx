@@ -95,6 +95,33 @@ export const GAME_RULES: Record<string, GameRulesContent> = {
       "Match the style/format of typical real answers",
       "Watch for answers that are 'too perfect' - they might be fakes!"
     ]
+  },
+  sync_or_sink: {
+    title: "Sync or Sink",
+    tagline: "Answer separately. Reveal together. Match to win!",
+    players: "2 players (couples/duo)",
+    duration: "15-30 min",
+    accentColor: "#f472b6",
+    overview: "A couples game where partners answer questions separately, then reveal their answers together. The goal is to match - proving how well you know each other!",
+    howToPlay: [
+      "Both partners join the game on their phones",
+      "A question appears on both screens",
+      "Each partner types their answer privately",
+      "When both are ready, answers are revealed simultaneously",
+      "Matching answers earn points!",
+      "Play through all questions and see your sync score"
+    ],
+    scoring: [
+      "Exact match = 10 points",
+      "Close match (similar answer) = 5 points",
+      "No match = 0 points (but hey, you learned something!)",
+      "Bonus points for streaks of matching answers"
+    ],
+    tips: [
+      "Think like your partner, not just yourself",
+      "Consider what THEY would say, not what you'd say",
+      "Some questions are about facts, others about opinions - pay attention!"
+    ]
   }
 };
 
