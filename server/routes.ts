@@ -10,6 +10,7 @@ import fs from "fs";
 import * as XLSX from "xlsx";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import { razorpayRouter } from "./razorpay";
 import { SOURCE_GROUPS, type SourceGroup, type Question } from "@shared/schema";
 
 // Required point values for a category to go LIVE
@@ -106,6 +107,9 @@ export async function registerRoutes(
   // Setup auth BEFORE other routes
   setupAuth(app);
   registerAuthRoutes(app);
+  
+  // Register Razorpay payment routes
+  app.use("/api/razorpay", razorpayRouter);
   
   // Register object storage routes for image uploads
   registerObjectStorageRoutes(app);
