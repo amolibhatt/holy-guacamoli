@@ -1124,6 +1124,106 @@ export default function SequenceSqueeze() {
               </Card>
             </div>
 
+            {/* Everyone's Answers - Full Width */}
+            <Card className="p-4 bg-white/5 border-white/10" data-testid="section-everyones-answers">
+              <h3 className="font-semibold mb-4 flex items-center gap-2 text-white">
+                <Users className="w-4 h-4 text-cyan-400" />
+                Everyone's Answers
+              </h3>
+              {submissions.length === 0 ? (
+                <p className="text-white/50 text-center py-4">No one submitted an answer</p>
+              ) : (
+                <div className="space-y-3">
+                  {submissions
+                    .sort((a, b) => {
+                      if (a.isCorrect && !b.isCorrect) return -1;
+                      if (!a.isCorrect && b.isCorrect) return 1;
+                      return a.timeMs - b.timeMs;
+                    })
+                    .map((sub, idx) => {
+                      const matchCount = sub.sequence.filter((letter, i) => letter === shuffledCorrectOrder[i]).length;
+                      const avatarEmoji = sub.playerAvatar ? PLAYER_AVATARS.find(a => a.id === sub.playerAvatar)?.emoji : null;
+                      return (
+                        <motion.div
+                          key={sub.playerId}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.1 }}
+                          className={`p-3 rounded-xl border ${
+                            sub.isCorrect 
+                              ? 'bg-emerald-500/10 border-emerald-500/30' 
+                              : matchCount >= 3 
+                                ? 'bg-amber-500/10 border-amber-500/30'
+                                : 'bg-white/5 border-white/10'
+                          }`}
+                          data-testid={`player-answer-row-${sub.playerId}`}
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2">
+                              {avatarEmoji ? (
+                                <span className="text-lg">{avatarEmoji}</span>
+                              ) : (
+                                <User className="w-5 h-5 text-white/60" />
+                              )}
+                              <span className="font-semibold text-white">{sub.playerName}</span>
+                              {idx === 0 && sub.isCorrect && (
+                                <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-xs">
+                                  <Crown className="w-3 h-3 mr-1" />
+                                  Winner
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-white/50 font-mono">{(sub.timeMs / 1000).toFixed(2)}s</span>
+                              {sub.isCorrect ? (
+                                <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-xs">
+                                  <Check className="w-3 h-3 mr-1" />
+                                  Correct
+                                </Badge>
+                              ) : matchCount >= 3 ? (
+                                <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-xs">
+                                  So Close! ({matchCount}/4)
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-xs">
+                                  <X className="w-3 h-3 mr-1" />
+                                  {matchCount}/4 correct
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {sub.sequence.map((letter, i) => {
+                              const isPositionCorrect = letter === shuffledCorrectOrder[i];
+                              const option = shuffledQuestion ? shuffledQuestion[`option${letter}` as keyof typeof shuffledQuestion] : "";
+                              return (
+                                <div
+                                  key={i}
+                                  className={`flex-1 p-2 rounded-lg text-center transition-all ${
+                                    isPositionCorrect 
+                                      ? 'bg-emerald-500/30 border border-emerald-500/50' 
+                                      : 'bg-red-500/20 border border-red-500/30'
+                                  }`}
+                                  data-testid={`sequence-cell-${sub.playerId}-${i}`}
+                                  title={option}
+                                >
+                                  <div className={`text-lg font-bold ${isPositionCorrect ? 'text-emerald-300' : 'text-red-300'}`}>
+                                    {letter}
+                                  </div>
+                                  <div className="text-[10px] text-white/50 truncate max-w-[60px]">
+                                    {option}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                </div>
+              )}
+            </Card>
+
             <div className="flex justify-center gap-3 flex-wrap">
               <Button onClick={advanceToNextQuestion} data-testid="button-next">
                 <RefreshCw className="w-4 h-4 mr-2" />
