@@ -13,10 +13,25 @@ declare module "express-session" {
   }
 }
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "",
-});
+// Lazy initialization of Razorpay - only create instance when needed
+let razorpayInstance: Razorpay | null = null;
+
+function getRazorpay(): Razorpay {
+  if (!razorpayInstance) {
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    
+    if (!keyId || !keySecret) {
+      throw new Error("Razorpay credentials not configured. Please add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET secrets.");
+    }
+    
+    razorpayInstance = new Razorpay({
+      key_id: keyId,
+      key_secret: keySecret,
+    });
+  }
+  return razorpayInstance;
+}
 
 // Pricing plans (amounts in paise - 100 paise = ₹1)
 export const PLANS = {
@@ -86,7 +101,7 @@ razorpayRouter.post("/create-order", async (req: Request, res: Response) => {
       },
     };
 
-    const order = await razorpay.orders.create(options);
+    const order = await getRazorpay().orders.create(options);
 
     // Save payment record
     await db.insert(payments).values({
@@ -104,6 +119,8 @@ razorpayRouter.post("/create-order", async (req: Request, res: Response) => {
       amount: order.amount,
       currency: order.currency,
       keyId: process.env.RAZORPAY_KEY_ID,
+      planId,
+      planName: plan.name,
     });
   } catch (error) {
     console.error("Error creating order:", error);
@@ -132,7 +149,31 @@ razorpayRouter.post("/verify-payment", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid signature" });
     }
 
-    const plan = PLANS[planId as keyof typeof PLANS];
+    // Get the payment record to verify it belongs to this user and get the correct plan
+    const [paymentRecord] = await db.select()
+      .from(payments)
+      .where(eq(payments.razorpayOrderId, razorpay_order_id));
+
+    if (!paymentRecord) {
+      return res.status(400).json({ error: "Payment not found" });
+    }
+
+    if (paymentRecord.userId !== userId) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    // Get plan from the payment record (stored at order creation time)
+    const storedPlanType = paymentRecord.plan;
+    
+    // Find the matching PLANS entry
+    let plan: typeof PLANS[keyof typeof PLANS] | undefined;
+    for (const [key, value] of Object.entries(PLANS)) {
+      if (value.plan === storedPlanType) {
+        plan = value;
+        break;
+      }
+    }
+    
     if (!plan) {
       return res.status(400).json({ error: "Invalid plan" });
     }
