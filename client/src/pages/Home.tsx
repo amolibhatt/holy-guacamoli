@@ -320,22 +320,29 @@ export default function Home() {
                       )}
                       
                       {game.slug === 'sequence_squeeze' && (
-                        <div className="absolute top-4 left-4 right-4 flex flex-col gap-1 opacity-30">
-                          {[1, 2, 3, 4].map((_, i) => (
+                        <div className="absolute top-4 left-4 right-4 flex justify-center gap-2 opacity-50">
+                          {['A', 'B', 'C', 'D'].map((letter, i) => (
                             <motion.div
-                              key={i}
-                              className="h-3 rounded"
-                              style={{ backgroundColor: config.accentColor }}
+                              key={letter}
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
+                              style={{ 
+                                backgroundColor: `${config.accentColor}30`,
+                                border: `2px solid ${config.accentColor}`,
+                                color: config.accentColor,
+                              }}
                               animate={{
-                                x: [0, (i % 2 === 0 ? 20 : -20), 0],
-                                opacity: [0.3, 0.7, 0.3],
+                                y: [0, -10, 0, 10, 0],
+                                scale: [1, 1.15, 1, 1.15, 1],
                               }}
                               transition={{
-                                duration: 2,
-                                delay: i * 0.2,
+                                duration: 2.5,
+                                delay: i * 0.15,
                                 repeat: Infinity,
+                                ease: "easeInOut",
                               }}
-                            />
+                            >
+                              {letter}
+                            </motion.div>
                           ))}
                         </div>
                       )}
