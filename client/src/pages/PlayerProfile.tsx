@@ -8,90 +8,91 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
 import { 
   User, Trophy, Star, Sparkles, Zap, Target, 
-  Clock, Brain, Flame, Medal, ArrowLeft
+  Clock, Brain, Flame, Medal, ArrowLeft, Clover, HelpCircle, Wind, Drama, Search, Award, Laugh, Users
 } from "lucide-react";
 import { Link } from "wouter";
 
 const TRAIT_INFO: Record<string, { 
   title: string; 
-  emoji: string; 
+  icon: React.ComponentType<{ className?: string }>; 
   color: string;
   description: string;
 }> = {
   brain_trust: { 
     title: "The Brain Trust", 
-    emoji: "🧠",
+    icon: Brain,
     color: "from-blue-500 to-cyan-500",
     description: "Your trivia knowledge is legendary. Others come to you for answers."
   },
   lucky_guesser: { 
     title: "The Lucky Guesser", 
-    emoji: "🍀",
+    icon: Clover,
     color: "from-green-500 to-emerald-500",
     description: "Fortune favors the bold, and you're the boldest."
   },
   speed_demon: { 
     title: "The Speed Demon", 
-    emoji: "⚡",
+    icon: Zap,
     color: "from-yellow-500 to-amber-500",
     description: "Lightning fast reflexes. You buzz in before others finish reading."
   },
   careful_thinker: { 
     title: "The Careful Thinker", 
-    emoji: "🤔",
+    icon: HelpCircle,
     color: "from-purple-500 to-violet-500",
     description: "Slow and steady wins the race. You think before you answer."
   },
   perfectionist: { 
     title: "The Perfectionist", 
-    emoji: "✨",
+    icon: Target,
     color: "from-pink-500 to-rose-500",
     description: "Close is never good enough. You demand perfection from yourself."
   },
   chaos_agent: { 
     title: "The Chaos Agent", 
-    emoji: "🌪️",
+    icon: Wind,
     color: "from-red-500 to-orange-500",
     description: "You thrive in disorder. Others play to win; you play to play."
   },
   master_manipulator: { 
     title: "The Master Manipulator", 
-    emoji: "🎭",
+    icon: Drama,
     color: "from-indigo-500 to-purple-500",
     description: "Deception is an art, and you're Picasso."
   },
   bs_detector: { 
     title: "The BS Detector", 
-    emoji: "🔍",
+    icon: Search,
     color: "from-teal-500 to-cyan-500",
     description: "Nothing gets past you. You can smell a lie from a mile away."
   },
   honest_abe: { 
     title: "The Honest Abe", 
-    emoji: "🎩",
+    icon: Award,
     color: "from-gray-500 to-slate-500",
     description: "Integrity is your middle name. You play it straight."
   },
   comedy_genius: { 
     title: "The Comedy Genius", 
-    emoji: "😂",
+    icon: Laugh,
     color: "from-amber-500 to-yellow-500",
     description: "You were born to make people laugh. Every game is your stage."
   },
   hivemind: { 
     title: "The Hivemind", 
-    emoji: "🐝",
+    icon: Users,
     color: "from-orange-500 to-amber-500",
     description: "You know what the crowd wants. Your instincts are uncanny."
   },
 };
 
+// Keys match backend game slugs
 const GAME_INFO: Record<string, { name: string; icon: typeof Brain; color: string }> = {
   blitzgrid: { name: "Blitzgrid", icon: Brain, color: "from-rose-400 to-fuchsia-500" },
-  sort_circuit: { name: "Sort Circuit", icon: Target, color: "from-emerald-400 to-cyan-500" },
+  sequence_squeeze: { name: "Sort Circuit", icon: Target, color: "from-emerald-400 to-cyan-500" },
   psyop: { name: "PsyOp", icon: Zap, color: "from-violet-400 to-indigo-500" },
-  past_forward: { name: "Past Forward", icon: Clock, color: "from-amber-400 to-orange-500" },
-  meme_no_harm: { name: "Meme No Harm", icon: Sparkles, color: "from-pink-400 to-rose-500" },
+  timewarp: { name: "Past Forward", icon: Clock, color: "from-amber-400 to-orange-500" },
+  memenoharm: { name: "Meme No Harm", icon: Sparkles, color: "from-pink-400 to-rose-500" },
 };
 
 export default function PlayerProfile() {
@@ -163,7 +164,7 @@ export default function PlayerProfile() {
               <div className="flex flex-col md:flex-row items-center gap-6">
                 {/* Avatar */}
                 <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${traitInfo?.color || 'from-violet-400 to-fuchsia-500'} flex items-center justify-center text-4xl text-white shadow-lg`}>
-                  {traitInfo?.emoji || <User className="w-12 h-12" />}
+                  {traitInfo ? <traitInfo.icon className="w-12 h-12" /> : <User className="w-12 h-12" />}
                 </div>
                 
                 {/* Info */}
@@ -250,7 +251,7 @@ export default function PlayerProfile() {
                     >
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
-                          <span className="text-lg">{info.emoji}</span>
+                          <info.icon className="w-5 h-5" />
                           <span className="font-medium">{info.title}</span>
                         </div>
                         <span className="text-sm text-muted-foreground" data-testid={`text-trait-score-${trait}`}>

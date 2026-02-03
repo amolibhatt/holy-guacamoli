@@ -2,7 +2,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Trophy, Star, User, X, Sparkles } from "lucide-react";
+import { Trophy, Star, User, X, Sparkles, Brain, Clover, Zap, HelpCircle, Target, Wind, Drama, Search, Award, Laugh, Users } from "lucide-react";
+import { useLocation } from "wouter";
 
 interface SaveProgressPromptProps {
   isOpen: boolean;
@@ -15,27 +16,28 @@ interface SaveProgressPromptProps {
   };
 }
 
-const TRAIT_DESCRIPTIONS: Record<string, { title: string; emoji: string }> = {
-  brain_trust: { title: "The Brain Trust", emoji: "🧠" },
-  lucky_guesser: { title: "The Lucky Guesser", emoji: "🍀" },
-  speed_demon: { title: "The Speed Demon", emoji: "⚡" },
-  careful_thinker: { title: "The Careful Thinker", emoji: "🤔" },
-  perfectionist: { title: "The Perfectionist", emoji: "✨" },
-  chaos_agent: { title: "The Chaos Agent", emoji: "🌪️" },
-  master_manipulator: { title: "The Master Manipulator", emoji: "🎭" },
-  bs_detector: { title: "The BS Detector", emoji: "🔍" },
-  honest_abe: { title: "The Honest Abe", emoji: "🎩" },
-  comedy_genius: { title: "The Comedy Genius", emoji: "😂" },
-  hivemind: { title: "The Hivemind", emoji: "🐝" },
+const TRAIT_DESCRIPTIONS: Record<string, { title: string; icon: React.ComponentType<{ className?: string }> }> = {
+  brain_trust: { title: "The Brain Trust", icon: Brain },
+  lucky_guesser: { title: "The Lucky Guesser", icon: Clover },
+  speed_demon: { title: "The Speed Demon", icon: Zap },
+  careful_thinker: { title: "The Careful Thinker", icon: HelpCircle },
+  perfectionist: { title: "The Perfectionist", icon: Target },
+  chaos_agent: { title: "The Chaos Agent", icon: Wind },
+  master_manipulator: { title: "The Master Manipulator", icon: Drama },
+  bs_detector: { title: "The BS Detector", icon: Search },
+  honest_abe: { title: "The Honest Abe", icon: Award },
+  comedy_genius: { title: "The Comedy Genius", icon: Laugh },
+  hivemind: { title: "The Hivemind", icon: Users },
 };
 
 export function SaveProgressPrompt({ isOpen, onClose, stats }: SaveProgressPromptProps) {
+  const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSaveProgress = () => {
     setIsLoading(true);
-    // Redirect to login page - the guest ID will be automatically merged after login
-    window.location.href = "/";
+    // Navigate to login page - the guest ID will be automatically merged after login
+    setLocation("/");
   };
 
   const traitInfo = stats.dominantTrait 
@@ -119,7 +121,9 @@ export function SaveProgressPrompt({ isOpen, onClose, stats }: SaveProgressPromp
                 {/* Personality teaser */}
                 {traitInfo && (
                   <div className="p-4 rounded-lg bg-gradient-to-r from-violet-100 to-fuchsia-100 dark:from-violet-900/30 dark:to-fuchsia-900/30 text-center">
-                    <div className="text-2xl mb-1">{traitInfo.emoji}</div>
+                    <div className="flex justify-center mb-1">
+                      <traitInfo.icon className="w-8 h-8 text-violet-600" />
+                    </div>
                     <div className="font-medium" data-testid="text-personality-trait">
                       Your personality: {traitInfo.title}
                     </div>

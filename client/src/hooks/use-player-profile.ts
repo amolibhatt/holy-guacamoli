@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
 
 const SERVER_GUEST_ID_KEY = "holyguacamoli_server_guest_id";
+const PROFILE_ID_KEY = "holyguacamoli_profile_id";
 const MERGED_FLAG_KEY = "holyguacamoli_merged";
 
 // Store the server-issued guestId (received from /api/player/guest)
@@ -21,6 +22,23 @@ function storeServerGuestId(guestId: string): void {
 function clearStoredServerGuestId(): void {
   if (typeof window !== "undefined") {
     localStorage.removeItem(SERVER_GUEST_ID_KEY);
+  }
+}
+
+function getStoredProfileId(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(PROFILE_ID_KEY);
+}
+
+function storeProfileId(profileId: string): void {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(PROFILE_ID_KEY, profileId);
+  }
+}
+
+function clearStoredProfileId(): void {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(PROFILE_ID_KEY);
   }
 }
 
@@ -109,21 +127,43 @@ export function usePlayerProfile(displayName?: string) {
   }, []);
 
   // Get or create guest profile - server issues guestId
+  // Only create new guest if no existing serverGuestId in localStorage
   const {
     data: guestProfile,
     isLoading: isGuestLoading,
   } = useQuery<FullPlayerProfile>({
-    queryKey: ["/api/player/guest", displayName],
+    queryKey: ["/api/player/guest", serverGuestId, displayName],
     queryFn: async () => {
+      // Check if we have an existing guestId - if so, fetch that profile
+      const existingGuestId = getStoredServerGuestId();
+      const storedProfileId = getStoredProfileId();
+      
+      if (existingGuestId && storedProfileId) {
+        // Try to fetch existing profile first
+        const existingProfile = await fetch(`/api/player/profile/${storedProfileId}`, {
+          credentials: "include",
+        });
+        if (existingProfile.ok) {
+          return existingProfile.json();
+        }
+        // If profile not found, clear stored data and create new
+        clearStoredServerGuestId();
+        clearStoredProfileId();
+      }
+      
+      // Create new guest profile
       const response = await apiRequest("POST", "/api/player/guest", {
         displayName: displayName || `Player_${Date.now().toString(36)}`,
       });
       const profileResponse = await response.json();
       
-      // Store the server-issued guestId
+      // Store the server-issued guestId and profile ID
       if (profileResponse.serverGuestId) {
         storeServerGuestId(profileResponse.serverGuestId);
         setServerGuestId(profileResponse.serverGuestId);
+      }
+      if (profileResponse.id) {
+        storeProfileId(profileResponse.id);
       }
       
       // Fetch full profile after creation
@@ -165,6 +205,7 @@ export function usePlayerProfile(displayName?: string) {
     onSuccess: () => {
       setMergedFlag(); // Mark as merged to prevent re-attempts
       clearStoredServerGuestId();
+      clearStoredProfileId();
       setServerGuestId(null);
       queryClient.invalidateQueries({ queryKey: ["/api/player/me"] });
       queryClient.invalidateQueries({ queryKey: ["/api/player/guest"] });
