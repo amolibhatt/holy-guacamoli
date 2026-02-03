@@ -9,6 +9,7 @@ import path from "path";
 import fs from "fs";
 import * as XLSX from "xlsx";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./auth";
+import { registerReplitAuthRoutes, registerReplitAuthApiRoutes } from "./replit_integrations/auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { razorpayRouter } from "./razorpay";
 import { SOURCE_GROUPS, type SourceGroup, type Question } from "@shared/schema";
@@ -107,6 +108,10 @@ export async function registerRoutes(
   // Setup auth BEFORE other routes
   setupAuth(app);
   registerAuthRoutes(app);
+  
+  // Register Replit Auth routes for social login (Google, GitHub, Apple, X)
+  registerReplitAuthRoutes(app);
+  registerReplitAuthApiRoutes(app);
   
   // Register Razorpay payment routes
   app.use("/api/razorpay", razorpayRouter);
