@@ -44,7 +44,7 @@ export default function TimeWarpAdmin() {
   const [category, setCategory] = useState("");
 
   const { data: questions = [], isLoading } = useQuery<TimeWarpQuestion[]>({
-    queryKey: ["/api/timewarp/questions"],
+    queryKey: ["/api/pastforward/questions"],
   });
 
   const createMutation = useMutation({
@@ -55,7 +55,7 @@ export default function TimeWarpAdmin() {
       hint?: string;
       category?: string;
     }) => {
-      const res = await apiRequest("POST", "/api/timewarp/questions", data);
+      const res = await apiRequest("POST", "/api/pastforward/questions", data);
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.message || "Failed to create question");
@@ -63,7 +63,7 @@ export default function TimeWarpAdmin() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/timewarp/questions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pastforward/questions"] });
       toast({ title: "Question created!" });
       resetForm();
     },
@@ -74,7 +74,7 @@ export default function TimeWarpAdmin() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: { id: number; imageUrl: string; era: string; answer: string; hint?: string; category?: string }) => {
-      const res = await apiRequest("PUT", `/api/timewarp/questions/${data.id}`, data);
+      const res = await apiRequest("PUT", `/api/pastforward/questions/${data.id}`, data);
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.message || "Failed to update question");
@@ -82,7 +82,7 @@ export default function TimeWarpAdmin() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/timewarp/questions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pastforward/questions"] });
       toast({ title: "Question updated!" });
       resetForm();
     },
@@ -93,7 +93,7 @@ export default function TimeWarpAdmin() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await apiRequest("DELETE", `/api/timewarp/questions/${id}`);
+      const res = await apiRequest("DELETE", `/api/pastforward/questions/${id}`);
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.message || "Failed to delete question");
@@ -101,7 +101,7 @@ export default function TimeWarpAdmin() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/timewarp/questions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pastforward/questions"] });
       toast({ title: "Question deleted" });
     },
     onError: (error: Error) => {
@@ -211,7 +211,7 @@ export default function TimeWarpAdmin() {
                 PsyOp
               </Button>
             </Link>
-            <Link href="/admin/timewarp">
+            <Link href="/admin/pastforward">
               <Button 
                 variant="ghost" 
                 className="relative rounded-none border-b-2 border-primary text-foreground"
@@ -232,7 +232,7 @@ export default function TimeWarpAdmin() {
             <p className="text-muted-foreground text-sm">Create era-filtered image guessing questions</p>
           </div>
           <div className="flex gap-2">
-            <Link href="/timewarp/host">
+            <Link href="/pastforward/host">
               <Button variant="outline" size="sm" className="gap-2" data-testid="button-play-timewarp">
                 <Play className="w-4 h-4" />
                 Host Game

@@ -2777,7 +2777,7 @@ Be creative! Make facts surprising and fun to guess.`;
 
   // ==================== TimeWarp API ====================
   
-  app.get("/api/timewarp/questions", isAuthenticated, async (req, res) => {
+  app.get("/api/pastforward/questions", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -2800,7 +2800,7 @@ Be creative! Make facts surprising and fun to guess.`;
     category: z.string().optional(),
   });
 
-  app.post("/api/timewarp/questions", isAuthenticated, async (req, res) => {
+  app.post("/api/pastforward/questions", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;
       
@@ -2840,7 +2840,7 @@ Be creative! Make facts surprising and fun to guess.`;
     isActive: z.boolean().optional(),
   });
 
-  app.put("/api/timewarp/questions/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/pastforward/questions/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -2873,7 +2873,7 @@ Be creative! Make facts surprising and fun to guess.`;
     }
   });
 
-  app.delete("/api/timewarp/questions/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/pastforward/questions/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
