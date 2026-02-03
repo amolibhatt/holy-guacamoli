@@ -23,7 +23,7 @@ import { playWhoosh, playRevealFlip, playPointsAwarded, playCelebration, playWro
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Play, Loader2,
-  AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, Minus, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Medal,
+  AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, User, Minus, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Medal,
   Volume2, VolumeX, MoreVertical, Settings, Copy, Link2, Share2, Download, Image, Loader2 as LoaderIcon, Clock,
   Hand, Flame, Laugh, CircleDot, ThumbsUp, Sparkles, Heart, Timer, Zap, Shuffle, Star, HelpCircle
 } from "lucide-react";
@@ -2070,7 +2070,7 @@ export default function Blitzgrid() {
                         }}
                         onClick={() => setSelectedPlayerId(isSelected ? null : player.id)}
                         className={`relative flex items-center gap-2 rounded-full py-1 pl-1 pr-3 cursor-pointer transition-all ${
-                          isSelected ? 'bg-white/10 ring-2 ring-fuchsia-500/40' : 'hover:bg-white/5'
+                          isSelected ? 'bg-white/10 ring-2 ring-fuchsia-500/40' : 'hover-elevate'
                         } ${!player.connected ? 'opacity-50' : ''}`}
                       >
                         {/* Score change indicator */}
@@ -2274,7 +2274,7 @@ export default function Blitzgrid() {
                             {/* 2nd Place */}
                             {top3[1] && (
                               <div className="flex flex-col items-center w-[80px]">
-                                <div className="text-2xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[1].avatar)?.emoji || '👤'}</div>
+                                <div className="text-2xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[1].avatar)?.emoji || <User className="w-6 h-6" />}</div>
                                 <div className="text-xs font-bold text-white truncate max-w-[75px] mb-1">{top3[1].name}</div>
                                 <div className="w-full h-[70px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(148, 163, 184, 0.6)', boxShadow: '0 0 15px rgba(148, 163, 184, 0.3)' }}>
                                   <span className="text-2xl font-black text-slate-300">2</span>
@@ -2287,7 +2287,7 @@ export default function Blitzgrid() {
                             {top3[0] && (
                               <div className="flex flex-col items-center w-[90px]">
                                 <Crown className="w-6 h-6 text-yellow-400 mb-0.5" style={{ filter: 'drop-shadow(0 0 6px rgba(250, 204, 21, 0.6))' }} />
-                                <div className="text-3xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[0].avatar)?.emoji || '👤'}</div>
+                                <div className="text-3xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[0].avatar)?.emoji || <User className="w-8 h-8" />}</div>
                                 <div className="text-sm font-bold text-yellow-300 truncate max-w-[85px] mb-1">{top3[0].name}</div>
                                 <div className="w-full h-[90px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(250, 204, 21, 0.8)', boxShadow: '0 0 25px rgba(250, 204, 21, 0.4)' }}>
                                   <Trophy className="w-5 h-5 text-yellow-400 mb-0.5" />
@@ -2300,7 +2300,7 @@ export default function Blitzgrid() {
                             {/* 3rd Place */}
                             {top3[2] && (
                               <div className="flex flex-col items-center w-[80px]">
-                                <div className="text-2xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[2].avatar)?.emoji || '👤'}</div>
+                                <div className="text-2xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[2].avatar)?.emoji || <User className="w-6 h-6" />}</div>
                                 <div className="text-xs font-bold text-white truncate max-w-[75px] mb-1">{top3[2].name}</div>
                                 <div className="w-full h-[55px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(251, 146, 60, 0.6)', boxShadow: '0 0 15px rgba(251, 146, 60, 0.3)' }}>
                                   <span className="text-2xl font-black text-orange-300">3</span>
