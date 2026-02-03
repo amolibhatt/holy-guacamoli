@@ -163,65 +163,107 @@ export default function Home() {
       
       <AppHeader minimal />
 
-      <main className="max-w-4xl mx-auto px-4 py-6 w-full">
+      <main className="max-w-5xl mx-auto px-4 py-8 lg:py-12 w-full flex-1">
         <div className="w-full">
           
-          {/* Header */}
-          <div className="text-center mb-8 lg:mb-10">
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <h1 
-                className="text-sm lg:text-base font-medium text-white/50 tracking-wide"
-                data-testid="text-main-title"
-              >
-                Pick a game. Rally your crew.
-              </h1>
-              <p 
-                className="text-2xl lg:text-3xl font-black text-white uppercase tracking-widest mt-1"
-                style={{ fontFamily: "'Archivo Black', sans-serif" }}
-                data-testid="text-subtitle"
-              >
-                Let the chaos begin
-              </p>
-            </motion.div>
-          </div>
-
-          {/* Join a Game Section */}
+          {/* Hero Section */}
           <motion.div 
-            className="mb-8 lg:mb-10"
-            initial={{ opacity: 0, y: 20 }}
+            className="text-center mb-10 lg:mb-14"
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
           >
-            <div className="bg-[#0d0d12] border border-white/10 rounded-xl p-4 lg:p-6">
-              <div className="flex flex-col sm:flex-row items-center gap-3">
-                <div className="flex items-center gap-2 text-white/70 w-full sm:w-auto">
-                  <Play className="w-5 h-5 text-lime-400" />
-                  <span className="text-sm font-medium">Join a Game</span>
+            <h1 
+              className="text-3xl lg:text-5xl font-black text-white mb-3"
+              style={{ fontFamily: "'Archivo Black', sans-serif" }}
+              data-testid="text-main-title"
+            >
+              Game Night Awaits
+            </h1>
+            <p 
+              className="text-white/50 text-base lg:text-lg max-w-md mx-auto"
+              data-testid="text-subtitle"
+            >
+              Join a friend's game or host your own party
+            </p>
+          </motion.div>
+
+          {/* Two Column Layout for Join/Host */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-10 lg:mb-14">
+            
+            {/* Join a Game Card */}
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="relative overflow-hidden"
+            >
+              <div className="bg-gradient-to-br from-lime-500/10 to-emerald-500/5 border border-lime-500/20 rounded-2xl p-6 lg:p-8 h-full">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-lime-500/20 flex items-center justify-center">
+                    <Play className="w-6 h-6 text-lime-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Join a Game</h2>
+                    <p className="text-white/50 text-sm">Enter the code from your host</p>
+                  </div>
                 </div>
-                <div className="flex flex-1 gap-2 w-full">
+                
+                <div className="flex gap-3">
                   <Input
-                    placeholder="Enter game code"
+                    placeholder="ABCD12"
                     value={gameCode}
                     onChange={(e) => setGameCode(e.target.value.toUpperCase())}
                     onKeyDown={(e) => e.key === 'Enter' && handleJoinGame()}
-                    className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30 uppercase tracking-widest text-center font-mono"
+                    className="flex-1 h-14 bg-black/30 border-white/10 text-white text-xl placeholder:text-white/20 uppercase tracking-[0.3em] text-center font-mono rounded-xl"
                     maxLength={6}
                     data-testid="input-game-code"
                   />
                   <Button 
+                    size="lg"
                     onClick={handleJoinGame}
                     disabled={!gameCode.trim()}
-                    className="bg-lime-500 hover:bg-lime-600 text-black font-bold px-6"
+                    className="px-8 bg-lime-500 text-black font-bold rounded-xl"
                     data-testid="button-join-game"
                   >
                     Join
                   </Button>
                 </div>
               </div>
-            </div>
+            </motion.div>
+
+            {/* Host a Game Card */}
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 border border-fuchsia-500/20 rounded-2xl p-6 lg:p-8 h-full">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-fuchsia-500/20 flex items-center justify-center">
+                    <Users className="w-6 h-6 text-fuchsia-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Host a Game</h2>
+                    <p className="text-white/50 text-sm">Pick a game and invite friends</p>
+                  </div>
+                </div>
+                <p className="text-white/40 text-sm">
+                  Choose from {gameTypes.length || 5} party games below. You'll get a code to share with players.
+                </p>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Games Section Header */}
+          <motion.div 
+            className="mb-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <h3 className="text-white/30 text-xs uppercase tracking-widest font-medium">
+              Choose Your Game
+            </h3>
           </motion.div>
 
           {/* Game Cards - 2 column grid on medium+ screens */}
@@ -250,148 +292,102 @@ export default function Home() {
                     animate={{ 
                       opacity: 1, 
                       y: 0,
-                      scale: isHovered && !isComingSoon ? 1.05 : 1,
                     }}
+                    whileHover={{ scale: isComingSoon ? 1 : 1.02, y: isComingSoon ? 0 : -4 }}
+                    whileTap={{ scale: isComingSoon ? 1 : 0.98 }}
                     transition={{ 
-                      delay: index * 0.1,
-                      scale: { duration: 0.2 }
+                      delay: index * 0.08,
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 25
                     }}
                     onMouseEnter={() => setHoveredCard(game.slug)}
                     onMouseLeave={() => setHoveredCard(null)}
                     onClick={() => !isComingSoon && setLocation(config.route)}
                     disabled={isComingSoon}
-                    className={`relative flex flex-col items-center justify-center text-center p-6 lg:p-8 rounded-xl bg-[#0d0d12] transition-all duration-200 min-h-[200px] lg:min-h-[280px] ${
+                    className={`group relative flex flex-col items-start text-left p-5 lg:p-6 rounded-2xl transition-all duration-300 min-h-[180px] ${
                       isComingSoon 
                         ? 'opacity-40 cursor-not-allowed' 
                         : 'cursor-pointer'
                     }`}
                     style={{
+                      background: isHovered && !isComingSoon 
+                        ? `linear-gradient(135deg, ${config.accentColor}15 0%, ${config.accentColor}05 100%)`
+                        : 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
                       border: isHovered && !isComingSoon 
-                        ? `2px solid ${config.accentColor}` 
-                        : '1px solid #333',
+                        ? `1px solid ${config.accentColor}40` 
+                        : '1px solid rgba(255,255,255,0.08)',
                       boxShadow: isHovered && !isComingSoon 
-                        ? `0 0 20px ${config.accentColor}` 
-                        : 'none',
+                        ? `0 8px 32px ${config.accentColor}20, 0 0 0 1px ${config.accentColor}20 inset` 
+                        : '0 4px 16px rgba(0,0,0,0.2)',
                     }}
                     data-testid={`button-game-${game.slug}`}
                   >
                     {/* Badge */}
                     {config.badge && (
-                      <motion.div 
-                        className="absolute top-3 right-3 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
-                        animate={{
-                          boxShadow: [
-                            `0 0 5px ${config.accentColor}40`,
-                            `0 0 15px ${config.accentColor}60`,
-                            `0 0 5px ${config.accentColor}40`,
-                          ],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut",
-                        }}
+                      <div 
+                        className="absolute top-4 right-4 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
                         style={{ 
                           backgroundColor: `${config.accentColor}20`,
                           color: config.accentColor,
-                          border: `1px solid ${config.accentColor}40`,
+                          border: `1px solid ${config.accentColor}30`,
                         }}
                         data-testid={`badge-${game.slug}`}
                       >
                         {config.badge}
-                      </motion.div>
+                      </div>
                     )}
                     
-                    {/* Icon with constant pulse */}
-                    <motion.div 
-                      className="w-14 h-14 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center mb-4 lg:mb-6 relative"
-                      animate={{
-                        scale: isHovered && !isComingSoon ? [1, 1.15, 1] : [1, 1.05, 1],
-                        boxShadow: isHovered && !isComingSoon 
-                          ? [
-                              `0 0 20px ${config.accentColor}60, 0 0 40px ${config.accentColor}30`,
-                              `0 0 35px ${config.accentColor}80, 0 0 70px ${config.accentColor}50`,
-                              `0 0 20px ${config.accentColor}60, 0 0 40px ${config.accentColor}30`,
-                            ]
-                          : [
-                              `0 0 10px ${config.accentColor}20, 0 0 20px ${config.accentColor}10`,
-                              `0 0 20px ${config.accentColor}40, 0 0 40px ${config.accentColor}20`,
-                              `0 0 10px ${config.accentColor}20, 0 0 20px ${config.accentColor}10`,
-                            ],
-                      }}
-                      transition={{
-                        scale: { duration: 2, repeat: Infinity, ease: "easeInOut" },
-                        boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" },
-                      }}
-                      style={{
-                        background: `linear-gradient(135deg, ${config.accentColor}30 0%, ${config.accentColor}10 100%)`,
-                        border: `2px solid ${config.accentColor}`,
-                      }}
-                    >
-                      <Icon 
-                        className="w-6 h-6 lg:w-7 lg:h-7" 
-                        style={{ color: config.accentColor }}
-                      />
-                      
-                      {/* Pulsing ring effect */}
-                      <motion.div
-                        className="absolute inset-0 rounded-xl"
-                        animate={{
-                          opacity: [0.5, 0, 0.5],
-                          scale: [1, 1.4, 1],
-                        }}
-                        transition={{
-                          duration: 3,
-                          repeat: Infinity,
-                          ease: "easeOut",
-                        }}
+                    {/* Header with Icon and Title */}
+                    <div className="flex items-start gap-4 mb-3 w-full">
+                      <div 
+                        className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300"
                         style={{
-                          border: `1px solid ${config.accentColor}`,
+                          background: `linear-gradient(135deg, ${config.accentColor}25 0%, ${config.accentColor}10 100%)`,
+                          boxShadow: isHovered ? `0 0 20px ${config.accentColor}30` : 'none',
                         }}
-                      />
-                    </motion.div>
+                      >
+                        <Icon 
+                          className="w-6 h-6" 
+                          style={{ color: config.accentColor }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 
+                          className="text-lg lg:text-xl font-bold text-white mb-0.5"
+                          data-testid={`text-game-title-${game.slug}`}
+                        >
+                          {game.displayName}
+                        </h3>
+                        <p 
+                          className="text-xs font-medium"
+                          style={{ color: config.accentColor }}
+                          data-testid={`text-game-tagline-${game.slug}`}
+                        >
+                          {config.tagline}
+                        </p>
+                      </div>
+                    </div>
                     
-                    
-                    {/* Title with Neon Bleed */}
-                    <h3 
-                      className="text-xl lg:text-2xl mb-1 text-white uppercase tracking-widest relative"
-                      style={{ 
-                        fontFamily: "'Archivo Black', sans-serif",
-                        textShadow: `0 0 10px ${config.accentColor}80, 0 0 20px ${config.accentColor}40, 0 0 30px ${config.accentColor}20`,
-                      }}
-                      data-testid={`text-game-title-${game.slug}`}
-                    >
-                      {game.displayName}
-                    </h3>
-                    
-                    {/* Tagline */}
+                    {/* Description */}
                     <p 
-                      className="text-xs uppercase tracking-wider mb-2 font-semibold"
-                      style={{ color: config.accentColor }}
-                      data-testid={`text-game-tagline-${game.slug}`}
-                    >
-                      {config.tagline}
-                    </p>
-                    
-                    {/* How to Play - Inline */}
-                    <p 
-                      className="text-white/50 text-xs mb-3 leading-relaxed"
+                      className="text-white/50 text-sm leading-relaxed mb-4 flex-1"
                       data-testid={`text-game-description-${game.slug}`}
                     >
                       {GAME_RULES[game.slug]?.overview || config.howItWorks}
                     </p>
                     
-                    {/* Player count & Duration */}
+                    {/* Footer: Player count & Duration */}
                     <div 
-                      className="flex items-center gap-3 text-white/40 text-[10px]"
+                      className="flex items-center gap-4 text-white/40 text-xs mt-auto"
                       data-testid={`text-game-players-${game.slug}`}
                     >
-                      <div className="flex items-center gap-1">
-                        <Users className="w-2.5 h-2.5" />
+                      <div className="flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5" />
                         <span>{GAME_RULES[game.slug]?.players || config.players}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-2.5 h-2.5" />
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5" />
                         <span>{GAME_RULES[game.slug]?.duration || "15-30 min"}</span>
                       </div>
                     </div>
