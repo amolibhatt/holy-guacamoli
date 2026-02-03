@@ -1,8 +1,5 @@
 import * as client from "openid-client";
 import type { Express, RequestHandler } from "express";
-import session from "express-session";
-import connectPg from "connect-pg-simple";
-import { pool } from "../../db";
 import { authStorage } from "./storage";
 
 const REPLIT_DOMAINS = ["replit.com", "replit.dev", "janeway.replit.dev"];
@@ -24,47 +21,21 @@ let oidcConfig: client.Configuration | null = null;
 async function getOidcConfig(): Promise<client.Configuration> {
   if (oidcConfig) return oidcConfig;
 
-  const issuerUrl = process.env.REPLIT_DEPLOYMENT
-    ? `https://${process.env.REPLIT_DEPLOYMENT_URL}`
-    : `https://${process.env.REPLIT_DEV_DOMAIN}`;
+  const clientId = process.env.REPLIT_DEPLOYMENT
+    ? process.env.REPLIT_DEPLOYMENT_URL
+    : process.env.REPLIT_DEV_DOMAIN;
+
+  if (!clientId) {
+    throw new Error("Missing REPLIT_DEPLOYMENT_URL or REPLIT_DEV_DOMAIN");
+  }
 
   oidcConfig = await client.discovery(
     new URL("https://replit.com/.well-known/openid-configuration"),
-    process.env.REPLIT_DEPLOYMENT_URL || process.env.REPLIT_DEV_DOMAIN || "",
-    undefined,
-    undefined,
-    { execute: [client.allowInsecureRequests] }
+    clientId,
+    undefined
   );
 
   return oidcConfig;
-}
-
-export async function setupReplitAuth(app: Express): Promise<void> {
-  app.set("trust proxy", true);
-
-  const sessionTtl = 7 * 24 * 60 * 60 * 1000;
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
-    pool,
-    createTableIfMissing: true,
-    ttl: sessionTtl,
-    tableName: "sessions",
-  });
-
-  app.use(
-    session({
-      secret: process.env.SESSION_SECRET!,
-      store: sessionStore,
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production" || isReplitDomain(process.env.REPLIT_DEV_DOMAIN || ""),
-        maxAge: sessionTtl,
-        sameSite: "lax",
-      },
-    })
-  );
 }
 
 export function registerReplitAuthRoutes(app: Express): void {
@@ -80,6 +51,14 @@ export function registerReplitAuthRoutes(app: Express): void {
 
       (req.session as any).codeVerifier = codeVerifier;
       (req.session as any).state = state;
+
+      // Explicitly save session to ensure PKCE state persists across redirect
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
 
       const authUrl = client.buildAuthorizationUrl(config, {
         redirect_uri: callbackUrl,
@@ -146,7 +125,7 @@ export function registerReplitAuthRoutes(app: Express): void {
     }
   });
 
-  app.get("/api/logout", (req, res) => {
+  app.get("/api/social-logout", (req, res) => {
     req.session.destroy((err) => {
       if (err) {
         console.error("[REPLIT AUTH] Logout error:", err);
