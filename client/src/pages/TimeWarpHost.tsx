@@ -7,14 +7,16 @@ import { AppFooter } from "@/components/AppFooter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { 
   Loader2, Plus, Trash2, X, Clock, Users, GripVertical,
   Check, ChevronRight, RotateCcw, Image as ImageIcon, Play,
-  ArrowUpDown, Trophy, Sparkles
+  ArrowUpDown, Trophy, Sparkles, Rewind, FastForward, Radio
 } from "lucide-react";
 import type { TimeWarpQuestion } from "@shared/schema";
 
@@ -24,12 +26,43 @@ type Player = {
   score: number;
 };
 
-type GameState = "setup" | "playing" | "finished";
+type GameState = "setup" | "part_intro" | "playing" | "finished";
+type Era = "past" | "present" | "future";
 
 const ERA_FILTERS = {
   past: "sepia brightness-90",
   present: "",
   future: "hue-rotate-180 saturate-150 brightness-110",
+};
+
+const ERA_CONFIG = {
+  past: {
+    title: "Part 1: What Happened?",
+    subtitle: "Guess the person, place, or thing from the PAST",
+    icon: Rewind,
+    color: "amber",
+    bgClass: "bg-amber-500/20",
+    textClass: "text-amber-500",
+    borderClass: "border-amber-500/30",
+  },
+  present: {
+    title: "Part 2: What's Happening?",
+    subtitle: "Guess the person, place, or thing from the PRESENT",
+    icon: Radio,
+    color: "emerald",
+    bgClass: "bg-emerald-500/20",
+    textClass: "text-emerald-500",
+    borderClass: "border-emerald-500/30",
+  },
+  future: {
+    title: "Part 3: What's Going to Happen?",
+    subtitle: "Guess the person, place, or thing from the FUTURE",
+    icon: FastForward,
+    color: "violet",
+    bgClass: "bg-violet-500/20",
+    textClass: "text-violet-500",
+    borderClass: "border-violet-500/30",
+  },
 };
 
 export default function TimeWarpHost() {
@@ -46,17 +79,36 @@ export default function TimeWarpHost() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [hasReversed, setHasReversed] = useState(false);
   const [showReverseAnimation, setShowReverseAnimation] = useState(false);
-  const [questionOrder, setQuestionOrder] = useState<number[]>([]);
+  const [gameQuestions, setGameQuestions] = useState<TimeWarpQuestion[]>([]);
+  const [questionsPerEra, setQuestionsPerEra] = useState<number>(0); // Will be set by useEffect when data loads
+  const [currentEra, setCurrentEra] = useState<Era>("past");
 
-  const { data: questions = [], isLoading } = useQuery<TimeWarpQuestion[]>({
+  const { data: allQuestions = [], isLoading } = useQuery<TimeWarpQuestion[]>({
     queryKey: ["/api/pastforward/questions"],
   });
 
+  const pastQuestions = allQuestions.filter(q => q.era === "past");
+  const presentQuestions = allQuestions.filter(q => q.era === "present");
+  const futureQuestions = allQuestions.filter(q => q.era === "future");
+
+  const maxQuestionsPerEra = Math.min(
+    pastQuestions.length,
+    presentQuestions.length,
+    futureQuestions.length
+  );
+
+  // Clamp questionsPerEra to valid range when data loads or changes
   useEffect(() => {
-    if (questions.length > 0 && questionOrder.length === 0) {
-      setQuestionOrder(questions.map(q => q.id));
+    if (maxQuestionsPerEra > 0) {
+      if (questionsPerEra === 0) {
+        // Initial load - set to reasonable default
+        setQuestionsPerEra(Math.min(3, maxQuestionsPerEra));
+      } else if (questionsPerEra > maxQuestionsPerEra) {
+        // Questions were deleted - clamp down
+        setQuestionsPerEra(maxQuestionsPerEra);
+      }
     }
-  }, [questions, questionOrder.length]);
+  }, [maxQuestionsPerEra, questionsPerEra]);
 
   const addPlayer = () => {
     if (!newPlayerName.trim()) return;
@@ -81,13 +133,29 @@ export default function TimeWarpHost() {
       toast({ title: "Need at least 2 players", variant: "destructive" });
       return;
     }
-    if (questions.length === 0) {
-      toast({ title: "No questions available", variant: "destructive" });
+    if (maxQuestionsPerEra === 0) {
+      toast({ title: "Need questions in all eras", variant: "destructive" });
       return;
     }
-    const shuffled = [...questions.map(q => q.id)].sort(() => Math.random() - 0.5);
-    setQuestionOrder(shuffled);
-    setGameState("playing");
+    if (questionsPerEra <= 0 || questionsPerEra > maxQuestionsPerEra) {
+      toast({ title: "Invalid question count", variant: "destructive" });
+      return;
+    }
+
+    const shufflePick = (arr: TimeWarpQuestion[], count: number) => {
+      const shuffled = [...arr].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, count);
+    };
+
+    const selectedQuestions = [
+      ...shufflePick(pastQuestions, questionsPerEra),
+      ...shufflePick(presentQuestions, questionsPerEra),
+      ...shufflePick(futureQuestions, questionsPerEra),
+    ];
+
+    setGameQuestions(selectedQuestions);
+    setCurrentEra("past");
+    setGameState("part_intro");
     setCurrentPlayerIdx(0);
     setCurrentQuestionIdx(0);
     setShowImage(false);
@@ -95,9 +163,27 @@ export default function TimeWarpHost() {
     setHasReversed(false);
   };
 
-  const currentQuestion = questions.find(q => q.id === questionOrder[currentQuestionIdx]);
+  const startPlaying = () => {
+    setGameState("playing");
+  };
+
+  const currentQuestion = gameQuestions[currentQuestionIdx];
   const currentPlayer = players[currentPlayerIdx];
-  const midpoint = Math.floor(questionOrder.length / 2);
+  const totalQuestions = gameQuestions.length;
+  const midpoint = Math.floor(totalQuestions / 2);
+
+  const getCurrentEraForQuestion = (idx: number): Era => {
+    if (idx < questionsPerEra) return "past";
+    if (idx < questionsPerEra * 2) return "present";
+    return "future";
+  };
+
+  const getQuestionNumberInEra = (idx: number): number => {
+    const era = getCurrentEraForQuestion(idx);
+    if (era === "past") return idx + 1;
+    if (era === "present") return idx - questionsPerEra + 1;
+    return idx - questionsPerEra * 2 + 1;
+  };
 
   const handleCorrect = () => {
     setPlayers(players.map(p => 
@@ -114,12 +200,20 @@ export default function TimeWarpHost() {
   const nextQuestion = () => {
     const nextQIdx = currentQuestionIdx + 1;
     
-    if (nextQIdx === midpoint && !hasReversed && questionOrder.length >= 4) {
+    if (nextQIdx === midpoint && !hasReversed && totalQuestions >= 4) {
       setShowReverseAnimation(true);
       setTimeout(() => {
         setPlayers([...players].reverse());
         setHasReversed(true);
         setShowReverseAnimation(false);
+        
+        const nextEra = getCurrentEraForQuestion(nextQIdx);
+        if (nextEra !== currentEra) {
+          setCurrentEra(nextEra);
+          setGameState("part_intro");
+        } else {
+          setGameState("playing");
+        }
         setCurrentQuestionIdx(nextQIdx);
         setCurrentPlayerIdx(0);
         setShowImage(false);
@@ -128,8 +222,19 @@ export default function TimeWarpHost() {
       return;
     }
 
-    if (nextQIdx >= questionOrder.length) {
+    if (nextQIdx >= totalQuestions) {
       setGameState("finished");
+      return;
+    }
+
+    const nextEra = getCurrentEraForQuestion(nextQIdx);
+    if (nextEra !== currentEra) {
+      setCurrentEra(nextEra);
+      setGameState("part_intro");
+      setCurrentQuestionIdx(nextQIdx);
+      setCurrentPlayerIdx(0);
+      setShowImage(false);
+      setShowAnswer(false);
       return;
     }
 
@@ -147,7 +252,8 @@ export default function TimeWarpHost() {
     setShowImage(false);
     setShowAnswer(false);
     setHasReversed(false);
-    setQuestionOrder([]);
+    setGameQuestions([]);
+    setCurrentEra("past");
   };
 
   if (isAuthLoading) {
@@ -166,7 +272,7 @@ export default function TimeWarpHost() {
   // TIME WARP ANIMATION
   if (showReverseAnimation) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-[#0d0d12] flex items-center justify-center">
         <motion.div
           initial={{ scale: 0, rotate: 0 }}
           animate={{ scale: [0, 1.2, 1], rotate: [0, 360, 720] }}
@@ -186,9 +292,9 @@ export default function TimeWarpHost() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2 }}
-            className="text-2xl md:text-3xl text-muted-foreground mt-4 font-bold"
+            className="text-2xl md:text-3xl text-white/70 mt-4 font-bold"
           >
-            ORDER REVERSED!
+            PLAYER ORDER REVERSED!
           </motion.p>
           <motion.div
             initial={{ opacity: 0, scale: 0 }}
@@ -197,6 +303,78 @@ export default function TimeWarpHost() {
             className="mt-6"
           >
             <ArrowUpDown className="w-16 h-16 mx-auto text-orange-500 animate-bounce" />
+          </motion.div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // PART INTRO
+  if (gameState === "part_intro") {
+    const config = ERA_CONFIG[currentEra];
+    const EraIcon = config.icon;
+
+    return (
+      <div className="min-h-screen bg-[#0d0d12] flex items-center justify-center p-4" data-testid="page-timewarp-part-intro">
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="text-center max-w-lg"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring" }}
+            className={`w-24 h-24 mx-auto mb-6 rounded-full ${config.bgClass} flex items-center justify-center`}
+          >
+            <EraIcon className={`w-12 h-12 ${config.textClass}`} />
+          </motion.div>
+          
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className={`text-3xl md:text-5xl font-black ${config.textClass} mb-4`}
+          >
+            {config.title}
+          </motion.h1>
+          
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="text-xl md:text-2xl text-white/70 mb-8"
+          >
+            {config.subtitle}
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            className="flex items-center justify-center gap-2 text-white/50 mb-8"
+          >
+            <span>{questionsPerEra} questions in this part</span>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1 }}
+          >
+            <Button
+              size="lg"
+              onClick={startPlaying}
+              className={`text-xl px-8 py-6 ${
+                currentEra === "past" ? "bg-amber-600 hover:bg-amber-700" :
+                currentEra === "present" ? "bg-emerald-600 hover:bg-emerald-700" :
+                "bg-violet-600 hover:bg-violet-700"
+              }`}
+              data-testid="button-start-part"
+            >
+              <Play className="w-6 h-6 mr-2" />
+              Start Part {currentEra === "past" ? "1" : currentEra === "present" ? "2" : "3"}
+            </Button>
           </motion.div>
         </motion.div>
       </div>
@@ -270,6 +448,8 @@ export default function TimeWarpHost() {
 
   // SETUP STATE
   if (gameState === "setup") {
+    const canStart = pastQuestions.length > 0 && presentQuestions.length > 0 && futureQuestions.length > 0;
+    
     return (
       <div className="min-h-screen bg-background flex flex-col" data-testid="page-timewarp-setup">
         <AppHeader minimal backHref="/" title="Past Forward" />
@@ -280,7 +460,7 @@ export default function TimeWarpHost() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="w-5 h-5 text-orange-500 dark:text-orange-400" />
-                  Start a Past Forward Game
+                  Game Setup
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -289,36 +469,68 @@ export default function TimeWarpHost() {
                     <Skeleton className="h-16 w-full" />
                     <Skeleton className="h-16 w-full" />
                   </div>
-                ) : questions.length === 0 ? (
+                ) : !canStart ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No questions available</p>
+                    <p className="mb-2">Need questions in all 3 eras to play</p>
+                    <div className="flex flex-wrap gap-2 justify-center mb-4">
+                      <Badge variant={pastQuestions.length > 0 ? "default" : "destructive"}>
+                        Past: {pastQuestions.length}
+                      </Badge>
+                      <Badge variant={presentQuestions.length > 0 ? "default" : "destructive"}>
+                        Present: {presentQuestions.length}
+                      </Badge>
+                      <Badge variant={futureQuestions.length > 0 ? "default" : "destructive"}>
+                        Future: {futureQuestions.length}
+                      </Badge>
+                    </div>
                     <Button onClick={() => setLocation("/admin/pastforward")} className="mt-4" data-testid="button-create-questions">
                       Create Questions
                     </Button>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                          <ImageIcon className="w-5 h-5 text-orange-500" />
-                        </div>
-                        <div>
-                          <div className="font-semibold">{questions.length} Questions Ready</div>
-                          <div className="text-sm text-muted-foreground">
-                            Questions will be shuffled at game start
-                          </div>
-                        </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className={`p-3 rounded-lg ${ERA_CONFIG.past.bgClass} ${ERA_CONFIG.past.borderClass} border text-center`}>
+                        <Rewind className={`w-5 h-5 mx-auto mb-1 ${ERA_CONFIG.past.textClass}`} />
+                        <div className="text-xs text-muted-foreground">Part 1: Past</div>
+                        <div className="font-bold">{pastQuestions.length} Qs</div>
+                      </div>
+                      <div className={`p-3 rounded-lg ${ERA_CONFIG.present.bgClass} ${ERA_CONFIG.present.borderClass} border text-center`}>
+                        <Radio className={`w-5 h-5 mx-auto mb-1 ${ERA_CONFIG.present.textClass}`} />
+                        <div className="text-xs text-muted-foreground">Part 2: Present</div>
+                        <div className="font-bold">{presentQuestions.length} Qs</div>
+                      </div>
+                      <div className={`p-3 rounded-lg ${ERA_CONFIG.future.bgClass} ${ERA_CONFIG.future.borderClass} border text-center`}>
+                        <FastForward className={`w-5 h-5 mx-auto mb-1 ${ERA_CONFIG.future.textClass}`} />
+                        <div className="text-xs text-muted-foreground">Part 3: Future</div>
+                        <div className="font-bold">{futureQuestions.length} Qs</div>
                       </div>
                     </div>
+
+                    <div className="space-y-2">
+                      <Label>Questions per era</Label>
+                      <Select 
+                        value={questionsPerEra.toString()} 
+                        onValueChange={(v) => setQuestionsPerEra(parseInt(v))}
+                      >
+                        <SelectTrigger data-testid="select-questions-per-era">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: maxQuestionsPerEra }, (_, i) => i + 1).map(n => (
+                            <SelectItem key={n} value={n.toString()}>
+                              {n} question{n > 1 ? 's' : ''} per era ({n * 3} total)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     
-                    {questions.length >= 4 && (
-                      <div className="flex items-center gap-2 p-3 bg-muted rounded-lg text-sm text-muted-foreground">
-                        <Sparkles className="w-4 h-4 text-orange-500" />
-                        At question #{midpoint}, player order will reverse!
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg text-sm text-muted-foreground">
+                      <Sparkles className="w-4 h-4 text-orange-500" />
+                      At the midpoint (question #{Math.floor((questionsPerEra * 3) / 2)}), player order will reverse!
+                    </div>
 
                     <Button 
                       variant="outline" 
@@ -397,7 +609,7 @@ export default function TimeWarpHost() {
             <div className="flex justify-center">
               <Button 
                 onClick={startGame} 
-                disabled={players.length < 2 || questions.length === 0}
+                disabled={players.length < 2 || !canStart}
                 className="gap-2"
                 data-testid="button-start-game"
               >
@@ -414,23 +626,34 @@ export default function TimeWarpHost() {
   }
 
   // PLAYING STATE
+  const eraConfig = ERA_CONFIG[currentEra];
+  const EraIcon = eraConfig.icon;
+
   return (
     <div className="min-h-screen bg-[#0d0d12] text-white" data-testid="page-timewarp-playing">
       <div className="flex h-screen">
         <div className="flex-1 flex flex-col p-4 md:p-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              <Clock className="w-8 h-8 text-orange-500" />
+              <div className={`w-10 h-10 rounded-full ${eraConfig.bgClass} flex items-center justify-center`}>
+                <EraIcon className={`w-5 h-5 ${eraConfig.textClass}`} />
+              </div>
               <div>
-                <h1 className="text-xl font-bold">Past Forward</h1>
+                <h1 className={`text-xl font-bold ${eraConfig.textClass}`}>
+                  {eraConfig.title}
+                </h1>
                 <p className="text-sm text-white/50">
-                  Question {currentQuestionIdx + 1} of {questionOrder.length}
+                  Q{getQuestionNumberInEra(currentQuestionIdx)}/{questionsPerEra} • Total: {currentQuestionIdx + 1}/{totalQuestions}
                 </p>
               </div>
             </div>
             <Button variant="ghost" onClick={resetGame} className="text-white/50 hover:text-white">
               <X className="w-5 h-5" />
             </Button>
+          </div>
+
+          <div className={`text-center mb-4 p-3 rounded-lg ${eraConfig.bgClass}`}>
+            <p className="text-lg font-medium text-white/90">{eraConfig.subtitle}</p>
           </div>
 
           <motion.div
@@ -440,7 +663,7 @@ export default function TimeWarpHost() {
             className="text-center mb-6"
           >
             <p className="text-white/50 text-sm uppercase tracking-wider mb-1">Current Turn</p>
-            <h2 className="text-3xl md:text-4xl font-black text-orange-400">
+            <h2 className={`text-3xl md:text-4xl font-black ${eraConfig.textClass}`}>
               {currentPlayer?.name}
             </h2>
           </motion.div>
@@ -457,7 +680,11 @@ export default function TimeWarpHost() {
                   <Button
                     size="lg"
                     onClick={() => setShowImage(true)}
-                    className="text-xl px-12 py-8 bg-orange-600 hover:bg-orange-700"
+                    className={`text-xl px-12 py-8 ${
+                      currentEra === "past" ? "bg-amber-600 hover:bg-amber-700" :
+                      currentEra === "present" ? "bg-emerald-600 hover:bg-emerald-700" :
+                      "bg-violet-600 hover:bg-violet-700"
+                    }`}
                     data-testid="button-show-image"
                   >
                     <ImageIcon className="w-6 h-6 mr-3" />
@@ -489,7 +716,7 @@ export default function TimeWarpHost() {
                       animate={{ opacity: 1, y: 0 }}
                       className="absolute inset-0 flex items-center justify-center bg-black/70 rounded-xl"
                     >
-                      <p className="text-3xl md:text-4xl font-bold text-orange-400">
+                      <p className={`text-3xl md:text-4xl font-bold ${eraConfig.textClass}`}>
                         {currentQuestion?.answer}
                       </p>
                     </motion.div>
@@ -548,7 +775,7 @@ export default function TimeWarpHost() {
                 layout
                 className={`p-3 rounded-lg ${
                   player.id === currentPlayer?.id 
-                    ? 'bg-orange-500/20 ring-1 ring-orange-500' 
+                    ? `${eraConfig.bgClass} ring-1 ring-current ${eraConfig.textClass}` 
                     : 'bg-white/5'
                 }`}
               >
@@ -568,16 +795,30 @@ export default function TimeWarpHost() {
           </div>
 
           <div className="mt-6 pt-4 border-t border-white/10">
-            <p className="text-xs text-white/40 mb-2">Turn Order:</p>
+            <p className="text-xs text-white/40 mb-2">Turn Order{hasReversed ? " (Reversed!)" : ""}:</p>
             <div className="space-y-1">
               {players.map((player, idx) => (
                 <div 
                   key={player.id}
-                  className={`text-sm ${idx === currentPlayerIdx ? 'text-orange-400 font-bold' : 'text-white/40'}`}
+                  className={`text-sm ${idx === currentPlayerIdx ? `${eraConfig.textClass} font-bold` : 'text-white/40'}`}
                 >
                   {idx + 1}. {player.name} {idx === currentPlayerIdx && '←'}
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-white/10">
+            <p className="text-xs text-white/40 mb-2">Progress:</p>
+            <div className="flex gap-1">
+              <div className={`flex-1 h-2 rounded ${currentEra === "past" ? "bg-amber-500" : pastQuestions.length > 0 ? "bg-amber-500/30" : "bg-white/10"}`} />
+              <div className={`flex-1 h-2 rounded ${currentEra === "present" ? "bg-emerald-500" : currentQuestionIdx >= questionsPerEra ? "bg-emerald-500/30" : "bg-white/10"}`} />
+              <div className={`flex-1 h-2 rounded ${currentEra === "future" ? "bg-violet-500" : currentQuestionIdx >= questionsPerEra * 2 ? "bg-violet-500/30" : "bg-white/10"}`} />
+            </div>
+            <div className="flex justify-between text-xs text-white/30 mt-1">
+              <span>Past</span>
+              <span>Present</span>
+              <span>Future</span>
             </div>
           </div>
         </div>
