@@ -3,26 +3,41 @@ import { useAuth } from "./use-auth";
 import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
 
-const GUEST_ID_KEY = "holyguacamoli_guest_id";
+const SERVER_GUEST_ID_KEY = "holyguacamoli_server_guest_id";
+const MERGED_FLAG_KEY = "holyguacamoli_merged";
 
-function generateGuestId(): string {
-  return "guest_" + crypto.randomUUID();
-}
-
-function getStoredGuestId(): string | null {
+// Store the server-issued guestId (received from /api/player/guest)
+function getStoredServerGuestId(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(GUEST_ID_KEY);
+  return localStorage.getItem(SERVER_GUEST_ID_KEY);
 }
 
-function storeGuestId(guestId: string): void {
+function storeServerGuestId(guestId: string): void {
   if (typeof window !== "undefined") {
-    localStorage.setItem(GUEST_ID_KEY, guestId);
+    localStorage.setItem(SERVER_GUEST_ID_KEY, guestId);
   }
 }
 
-function clearStoredGuestId(): void {
+function clearStoredServerGuestId(): void {
   if (typeof window !== "undefined") {
-    localStorage.removeItem(GUEST_ID_KEY);
+    localStorage.removeItem(SERVER_GUEST_ID_KEY);
+  }
+}
+
+function setMergedFlag(): void {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(MERGED_FLAG_KEY, "true");
+  }
+}
+
+function hasMergedFlag(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(MERGED_FLAG_KEY) === "true";
+}
+
+function clearMergedFlag(): void {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(MERGED_FLAG_KEY);
   }
 }
 
@@ -83,39 +98,42 @@ export interface FullPlayerProfile {
 export function usePlayerProfile(displayName?: string) {
   const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
-  const [guestId, setGuestId] = useState<string | null>(null);
+  const [serverGuestId, setServerGuestId] = useState<string | null>(null);
 
-  // Initialize or retrieve guest ID
+  // Initialize from stored server-issued guest ID
   useEffect(() => {
-    let storedGuestId = getStoredGuestId();
-    if (!storedGuestId) {
-      storedGuestId = generateGuestId();
-      storeGuestId(storedGuestId);
+    const storedId = getStoredServerGuestId();
+    if (storedId) {
+      setServerGuestId(storedId);
     }
-    setGuestId(storedGuestId);
   }, []);
 
-  // Get or create guest profile
+  // Get or create guest profile - server issues guestId
   const {
     data: guestProfile,
     isLoading: isGuestLoading,
   } = useQuery<FullPlayerProfile>({
-    queryKey: ["/api/player/guest", guestId, displayName],
+    queryKey: ["/api/player/guest", displayName],
     queryFn: async () => {
-      if (!guestId) throw new Error("No guest ID");
       const response = await apiRequest("POST", "/api/player/guest", {
-        guestId,
-        displayName: displayName || `Player_${guestId.slice(-6)}`,
+        displayName: displayName || `Player_${Date.now().toString(36)}`,
       });
-      const profile = await response.json();
+      const profileResponse = await response.json();
+      
+      // Store the server-issued guestId
+      if (profileResponse.serverGuestId) {
+        storeServerGuestId(profileResponse.serverGuestId);
+        setServerGuestId(profileResponse.serverGuestId);
+      }
+      
       // Fetch full profile after creation
-      const fullProfile = await fetch(`/api/player/profile/${profile.id}`, {
+      const fullProfile = await fetch(`/api/player/profile/${profileResponse.id}`, {
         credentials: "include",
       });
       if (!fullProfile.ok) throw new Error("Failed to fetch profile");
       return fullProfile.json();
     },
-    enabled: !!guestId && !isAuthenticated,
+    enabled: !isAuthenticated,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -137,35 +155,33 @@ export function usePlayerProfile(displayName?: string) {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Merge guest to user mutation
+  // Merge guest to user mutation - server uses session guestId, no client-provided guestId
   const mergeMutation = useMutation({
     mutationFn: async () => {
-      const storedGuestId = getStoredGuestId();
-      if (!storedGuestId) throw new Error("No guest data to merge");
-      
-      const response = await apiRequest("POST", "/api/player/merge", { 
-        guestId: storedGuestId 
-      });
+      // Server uses session-stored guestId, we don't send it
+      const response = await apiRequest("POST", "/api/player/merge", {});
       return response.json();
     },
     onSuccess: () => {
-      clearStoredGuestId();
+      setMergedFlag(); // Mark as merged to prevent re-attempts
+      clearStoredServerGuestId();
+      setServerGuestId(null);
       queryClient.invalidateQueries({ queryKey: ["/api/player/me"] });
       queryClient.invalidateQueries({ queryKey: ["/api/player/guest"] });
     },
   });
 
-  // Auto-merge when user logs in and has guest data
+  // Auto-merge when user logs in and has guest data (idempotent)
   useEffect(() => {
-    if (isAuthenticated && guestId && !mergeMutation.isPending && !mergeMutation.isSuccess) {
-      const storedGuestId = getStoredGuestId();
-      if (storedGuestId) {
-        mergeMutation.mutate();
-      }
+    // Skip if already merged or merge in progress
+    if (hasMergedFlag()) return;
+    
+    if (isAuthenticated && serverGuestId && !mergeMutation.isPending && !mergeMutation.isSuccess) {
+      mergeMutation.mutate();
     }
-  }, [isAuthenticated, guestId]);
+  }, [isAuthenticated, serverGuestId]);
 
-  // Update stats mutation
+  // Update stats mutation - server uses session for ownership verification
   const updateStatsMutation = useMutation({
     mutationFn: async (data: {
       profileId: string;
@@ -183,6 +199,7 @@ export function usePlayerProfile(displayName?: string) {
         pickedWinner?: boolean;
       };
     }) => {
+      // guestId is now stored in session (set when guest profile created), not sent in request
       const response = await apiRequest("POST", "/api/player/stats", data);
       return response.json();
     },
@@ -202,7 +219,7 @@ export function usePlayerProfile(displayName?: string) {
     profile: currentProfile,
     isLoading,
     isGuest: !isAuthenticated,
-    guestId,
+    guestId: serverGuestId, // Server-issued guest ID
     
     // Actions
     updateStats: updateStatsMutation.mutate,

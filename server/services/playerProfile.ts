@@ -151,6 +151,12 @@ export class PlayerProfileService {
     return profile || null;
   }
   
+  // Get profile by guest ID
+  async getProfileByGuestId(guestId: string): Promise<PlayerProfile | null> {
+    const [profile] = await db.select().from(playerProfiles).where(eq(playerProfiles.guestId, guestId)).limit(1);
+    return profile || null;
+  }
+  
   // Get profile by ID
   async getProfileById(profileId: string): Promise<PlayerProfile | null> {
     const [profile] = await db.select().from(playerProfiles).where(eq(playerProfiles.id, profileId)).limit(1);
