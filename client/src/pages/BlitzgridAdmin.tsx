@@ -226,9 +226,15 @@ export default function BlitzgridAdmin() {
     }
   }, [grids, selectedGridId]);
 
-  // Reset selectedCategoryId when switching grids to prevent stale state
+  // Reset all editing state when switching grids to prevent stale state
   useEffect(() => {
     setSelectedCategoryId(null);
+    setEditingGridId(null);
+    setEditingCategoryId(null);
+    setShowNewCategoryForm(false);
+    setNewCategoryName("");
+    setNewCategoryDescription("");
+    setQuestionForms({});
   }, [selectedGridId]);
 
   const handleExport = async () => {
@@ -253,7 +259,7 @@ export default function BlitzgridAdmin() {
 
   const handleDownloadTemplate = async () => {
     try {
-      const response = await fetch('/api/blitzgrid/template');
+      const response = await fetch('/api/blitzgrid/template', { credentials: 'include' });
       if (!response.ok) throw new Error('Template download failed');
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -297,8 +303,8 @@ export default function BlitzgridAdmin() {
       } else if (result.errors?.length > 0) {
         toast({ title: result.errors[0], variant: "destructive" });
       }
-    } catch {
-      toast({ title: "Import failed - check file format", variant: "destructive" });
+    } catch (error: any) {
+      toast({ title: error?.message || "Import failed - check file format", variant: "destructive" });
     } finally {
       setIsImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -644,6 +650,13 @@ export default function BlitzgridAdmin() {
                         maxLength={60}
                         onKeyDown={(e) => {
                           if (e.key === 'Escape') setEditingGridId(null);
+                          if (e.key === 'Enter' && editGridName.trim()) {
+                            updateGridMutation.mutate({ 
+                              id: selectedGridId, 
+                              name: editGridName.trim(), 
+                              description: editGridDescription.trim() || "Blitzgrid" 
+                            });
+                          }
                         }}
                         data-testid="input-edit-grid-desc"
                       />
@@ -656,7 +669,7 @@ export default function BlitzgridAdmin() {
                       {gridCategories.length}/5 categories · {grid?.questionCount || 0}/25 questions
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
                     {editingGridId === selectedGridId ? (
                       <>
                         <Button
@@ -673,7 +686,7 @@ export default function BlitzgridAdmin() {
                         >
                           {updateGridMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1" /> Save</>}
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setEditingGridId(null)}>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingGridId(null)} data-testid="button-cancel-grid-edit">
                           Cancel
                         </Button>
                       </>
@@ -750,7 +763,7 @@ export default function BlitzgridAdmin() {
                         setShowNewCategoryForm(false); 
                         setNewCategoryName(""); 
                         setNewCategoryDescription("");
-                      }}>
+                      }} data-testid="button-cancel-category-create">
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
@@ -797,7 +810,20 @@ export default function BlitzgridAdmin() {
                   <Card key={category.id} className={isExpanded ? 'ring-2 ring-primary/20' : ''}>
                     <CardHeader 
                       className="cursor-pointer py-3"
-                      onClick={() => setSelectedCategoryId(isExpanded ? null : category.id)}
+                      onClick={() => {
+                        // Reset editing state when switching categories
+                        if (!isExpanded && editingCategoryId !== null) {
+                          setEditingCategoryId(null);
+                          setQuestionForms(prev => {
+                            const newForms = { ...prev };
+                            POINT_TIERS.forEach(pts => {
+                              delete newForms[`${editingCategoryId}-${pts}`];
+                            });
+                            return newForms;
+                          });
+                        }
+                        setSelectedCategoryId(isExpanded ? null : category.id);
+                      }}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-3">
@@ -853,6 +879,18 @@ export default function BlitzgridAdmin() {
                                       onChange={(e) => setEditCategoryName(e.target.value)}
                                       autoFocus
                                       className="flex-1 h-8 text-sm font-medium"
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && editCategoryName.trim()) {
+                                          updateCategoryMutation.mutate({ 
+                                            categoryId: category.id, 
+                                            name: editCategoryName.trim(),
+                                            description: editCategoryDescription.trim() 
+                                          });
+                                        }
+                                        if (e.key === 'Escape') {
+                                          setEditingCategoryId(null);
+                                        }
+                                      }}
                                       data-testid={`input-edit-category-name-${category.id}`}
                                     />
                                   </div>
@@ -940,6 +978,7 @@ export default function BlitzgridAdmin() {
                                       return newForms;
                                     });
                                   }}
+                                  data-testid={`button-cancel-category-edit-${category.id}`}
                                 >
                                   Cancel
                                 </Button>
@@ -986,6 +1025,7 @@ export default function BlitzgridAdmin() {
                                     toast({ title: "Saved" });
                                   }}
                                   disabled={saveQuestionMutation.isPending || updateCategoryMutation.isPending || !editCategoryName.trim()}
+                                  data-testid={`button-save-category-${category.id}`}
                                 >
                                   {(saveQuestionMutation.isPending || updateCategoryMutation.isPending) ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                                   Save All
