@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
@@ -15,18 +15,10 @@ import { AppFooter } from "@/components/AppFooter";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, ListOrdered, Brain, Clock,
-  ChevronRight, ArrowLeft, Loader2,
+  ChevronRight, Loader2,
   AlertCircle, CheckCircle2, Image, Music, Video,
-  Download, Upload, FileSpreadsheet, Heart, ChevronDown, ChevronUp, Smile,
+  Download, Upload, FileSpreadsheet, Smile,
 } from "lucide-react";
-import { 
-  AlertDialog, AlertDialogAction, AlertDialogCancel, 
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter, 
-  AlertDialogHeader, AlertDialogTitle 
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle
-} from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Board, Category, Question } from "@shared/schema";
 
@@ -234,6 +226,11 @@ export default function BlitzgridAdmin() {
     }
   }, [grids, selectedGridId]);
 
+  // Reset selectedCategoryId when switching grids to prevent stale state
+  useEffect(() => {
+    setSelectedCategoryId(null);
+  }, [selectedGridId]);
+
   const handleExport = async () => {
     setIsExporting(true);
     try {
@@ -388,24 +385,24 @@ export default function BlitzgridAdmin() {
                   <span className="text-xs text-muted-foreground">Media:</span>
                   <label className="cursor-pointer">
                     <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, imageUrl: url } })); toast({ title: "Image uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
-                    <Button type="button" size="sm" variant={formData?.imageUrl ? "default" : "outline"} className="h-7 text-xs" asChild>
-                      <span><Image className="w-3 h-3 mr-1" />{formData?.imageUrl ? "Image ✓" : "Image"}</span>
+                    <Button type="button" size="sm" variant={formData?.imageUrl ? "default" : "outline"} asChild>
+                      <span><Image className="w-3 h-3 mr-1" />{formData?.imageUrl ? <CheckCircle2 className="w-3 h-3" /> : "Image"}</span>
                     </Button>
                   </label>
                   <label className="cursor-pointer">
                     <input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, audioUrl: url } })); toast({ title: "Audio uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
-                    <Button type="button" size="sm" variant={formData?.audioUrl ? "default" : "outline"} className="h-7 text-xs" asChild>
-                      <span><Music className="w-3 h-3 mr-1" />{formData?.audioUrl ? "Audio ✓" : "Audio"}</span>
+                    <Button type="button" size="sm" variant={formData?.audioUrl ? "default" : "outline"} asChild>
+                      <span><Music className="w-3 h-3 mr-1" />{formData?.audioUrl ? <CheckCircle2 className="w-3 h-3" /> : "Audio"}</span>
                     </Button>
                   </label>
                   <label className="cursor-pointer">
                     <input type="file" accept="video/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, videoUrl: url } })); toast({ title: "Video uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
-                    <Button type="button" size="sm" variant={formData?.videoUrl ? "default" : "outline"} className="h-7 text-xs" asChild>
-                      <span><Video className="w-3 h-3 mr-1" />{formData?.videoUrl ? "Video ✓" : "Video"}</span>
+                    <Button type="button" size="sm" variant={formData?.videoUrl ? "default" : "outline"} asChild>
+                      <span><Video className="w-3 h-3 mr-1" />{formData?.videoUrl ? <CheckCircle2 className="w-3 h-3" /> : "Video"}</span>
                     </Button>
                   </label>
                   {(formData?.imageUrl || formData?.audioUrl || formData?.videoUrl) && (
-                    <Button type="button" size="sm" variant="ghost" className="h-7 text-xs text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, imageUrl: '', audioUrl: '', videoUrl: '' } }))}>
+                    <Button type="button" size="sm" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, imageUrl: '', audioUrl: '', videoUrl: '' } }))}>
                       Clear
                     </Button>
                   )}
@@ -427,24 +424,24 @@ export default function BlitzgridAdmin() {
                   <span className="text-xs text-muted-foreground">Media:</span>
                   <label className="cursor-pointer">
                     <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerImageUrl: url } })); toast({ title: "Image uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
-                    <Button type="button" size="sm" variant={formData?.answerImageUrl ? "default" : "outline"} className="h-7 text-xs" asChild>
-                      <span><Image className="w-3 h-3 mr-1" />{formData?.answerImageUrl ? "Image ✓" : "Image"}</span>
+                    <Button type="button" size="sm" variant={formData?.answerImageUrl ? "default" : "outline"} asChild>
+                      <span><Image className="w-3 h-3 mr-1" />{formData?.answerImageUrl ? <CheckCircle2 className="w-3 h-3" /> : "Image"}</span>
                     </Button>
                   </label>
                   <label className="cursor-pointer">
                     <input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerAudioUrl: url } })); toast({ title: "Audio uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
-                    <Button type="button" size="sm" variant={formData?.answerAudioUrl ? "default" : "outline"} className="h-7 text-xs" asChild>
-                      <span><Music className="w-3 h-3 mr-1" />{formData?.answerAudioUrl ? "Audio ✓" : "Audio"}</span>
+                    <Button type="button" size="sm" variant={formData?.answerAudioUrl ? "default" : "outline"} asChild>
+                      <span><Music className="w-3 h-3 mr-1" />{formData?.answerAudioUrl ? <CheckCircle2 className="w-3 h-3" /> : "Audio"}</span>
                     </Button>
                   </label>
                   <label className="cursor-pointer">
                     <input type="file" accept="video/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerVideoUrl: url } })); toast({ title: "Video uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
-                    <Button type="button" size="sm" variant={formData?.answerVideoUrl ? "default" : "outline"} className="h-7 text-xs" asChild>
-                      <span><Video className="w-3 h-3 mr-1" />{formData?.answerVideoUrl ? "Video ✓" : "Video"}</span>
+                    <Button type="button" size="sm" variant={formData?.answerVideoUrl ? "default" : "outline"} asChild>
+                      <span><Video className="w-3 h-3 mr-1" />{formData?.answerVideoUrl ? <CheckCircle2 className="w-3 h-3" /> : "Video"}</span>
                     </Button>
                   </label>
                   {(formData?.answerImageUrl || formData?.answerAudioUrl || formData?.answerVideoUrl) && (
-                    <Button type="button" size="sm" variant="ghost" className="h-7 text-xs text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerImageUrl: '', answerAudioUrl: '', answerVideoUrl: '' } }))}>
+                    <Button type="button" size="sm" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerImageUrl: '', answerAudioUrl: '', answerVideoUrl: '' } }))}>
                       Clear
                     </Button>
                   )}
@@ -560,7 +557,7 @@ export default function BlitzgridAdmin() {
         <div className="flex flex-1">
           {/* Grid Sidebar */}
           <aside className="w-64 border-r border-border bg-card/50 p-4 shrink-0 hidden md:block">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between gap-2 mb-4">
               <h2 className="font-semibold text-sm text-muted-foreground">Grids</h2>
             </div>
             <div className="space-y-1">
@@ -600,7 +597,9 @@ export default function BlitzgridAdmin() {
                 <SelectContent>
                   {grids.map(g => (
                     <SelectItem key={g.id} value={String(g.id)}>
-                      {g.name} {g.isActive ? '✓' : ''}
+                      <span className="flex items-center gap-1">
+                        {g.name} {g.isActive && <CheckCircle2 className="w-3 h-3 text-green-500" />}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -726,6 +725,13 @@ export default function BlitzgridAdmin() {
                             setNewCategoryName("");
                             setNewCategoryDescription("");
                           }
+                          if (e.key === 'Enter' && newCategoryName.trim() && !createCategoryMutation.isPending) {
+                            createCategoryMutation.mutate({ 
+                              gridId: selectedGridId, 
+                              name: newCategoryName.trim(),
+                              description: newCategoryDescription.trim() || undefined
+                            });
+                          }
                         }}
                         data-testid="input-category-name"
                       />
@@ -793,7 +799,7 @@ export default function BlitzgridAdmin() {
                       className="cursor-pointer py-3"
                       onClick={() => setSelectedCategoryId(isExpanded ? null : category.id)}
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-3">
                           <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                           <div>
@@ -910,7 +916,7 @@ export default function BlitzgridAdmin() {
                                     }}
                                     data-testid={`button-edit-category-${category.id}`}
                                   >
-                                    <Pencil className="w-3 h-3" />
+                                    <Pencil className="w-4 h-4" />
                                   </Button>
                                 </div>
                               )}
