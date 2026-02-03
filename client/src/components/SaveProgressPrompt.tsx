@@ -150,7 +150,7 @@ export function SaveProgressPrompt({ isOpen, onClose, stats }: SaveProgressPromp
                 </div>
                 
                 <p className="text-xs text-center text-muted-foreground">
-                  Sign in with Google, GitHub, Apple, or email
+                  Sign in with Google, GitHub, or email
                 </p>
               </CardContent>
             </Card>
