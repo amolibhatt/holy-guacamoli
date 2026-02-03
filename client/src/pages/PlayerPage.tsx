@@ -575,7 +575,6 @@ export default function PlayerPage() {
             size="icon" 
             variant="ghost" 
             onClick={handleToggleSound}
-            className="h-8 w-8"
             data-testid="button-toggle-sound"
             aria-label={soundEnabled ? "Mute sounds" : "Unmute sounds"}
           >

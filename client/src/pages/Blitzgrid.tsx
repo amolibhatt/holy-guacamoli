@@ -1482,6 +1482,7 @@ export default function Blitzgrid() {
                                     animate={{ opacity: 1, scale: 1 }}
                                     transition={{ delay: idx * 0.1 }}
                                     className="bg-white/5 rounded-xl p-3 border border-white/10"
+                                    data-testid={`game-stats-player-${player.id}`}
                                   >
                                     <div className="flex items-center gap-2 mb-3">
                                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg ${
@@ -2072,6 +2073,7 @@ export default function Blitzgrid() {
                         className={`relative flex items-center gap-2 rounded-full py-1 pl-1 pr-3 cursor-pointer transition-all ${
                           isSelected ? 'bg-white/10 ring-2 ring-fuchsia-500/40' : 'hover-elevate'
                         } ${!player.connected ? 'opacity-50' : ''}`}
+                        data-testid={`player-card-${player.id}`}
                       >
                         {/* Score change indicator */}
                         <AnimatePresence>
@@ -2609,6 +2611,7 @@ export default function Blitzgrid() {
                           className={`flex items-center justify-between rounded-lg px-3 py-1.5 ${
                             index === 0 ? 'bg-orange-500/20 border border-orange-400/60' : 'bg-white/5 border border-white/10'
                           }`}
+                          data-testid={`buzz-queue-item-${buzz.playerId}`}
                         >
                           <div className="flex items-center gap-2">
                             <span className={`text-sm font-bold ${index === 0 ? 'text-orange-400' : 'text-white/40'}`}>
@@ -2758,7 +2761,7 @@ export default function Blitzgrid() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-6 w-6 text-destructive rounded-full"
+                          className="text-destructive rounded-full"
                           onClick={() => {
                             const points = activeQuestion?.points || 0;
                             updatePlayerScore(player.id, -points, true, activeQuestion?.categoryId);
@@ -2770,12 +2773,12 @@ export default function Blitzgrid() {
                           }}
                           data-testid={`button-deduct-${player.id}`}
                         >
-                          <Minus className="w-3 h-3" />
+                          <Minus className="w-4 h-4" />
                         </Button>
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-6 w-6 text-emerald-400 rounded-full"
+                          className="text-emerald-400 rounded-full"
                           onClick={() => {
                             const points = activeQuestion?.points || 0;
                             updatePlayerScore(player.id, points, true, activeQuestion?.categoryId);
@@ -2787,7 +2790,7 @@ export default function Blitzgrid() {
                           }}
                           data-testid={`button-award-${player.id}`}
                         >
-                          <Plus className="w-3 h-3" />
+                          <Plus className="w-4 h-4" />
                         </Button>
                       </div>
                     ))}
@@ -2861,7 +2864,6 @@ export default function Blitzgrid() {
               <Button 
                 size="icon" 
                 variant="ghost"
-                className="h-6 w-6"
                 onClick={() => setQuestionForms(prev => ({
                   ...prev,
                   [formKey]: {
@@ -2870,17 +2872,18 @@ export default function Blitzgrid() {
                     options: existingQuestion.options || [],
                   }
                 }))}
+                data-testid={`button-edit-question-${existingQuestion.id}`}
               >
-                <Pencil className="w-3 h-3" />
+                <Pencil className="w-4 h-4" />
               </Button>
               <Button 
                 size="icon" 
                 variant="ghost"
-                className="h-6 w-6"
                 onClick={() => deleteQuestionMutation.mutate(existingQuestion.id)}
                 disabled={deleteQuestionMutation.isPending}
+                data-testid={`button-delete-question-${existingQuestion.id}`}
               >
-                <Trash2 className="w-3 h-3 text-destructive" />
+                <Trash2 className="w-4 h-4 text-destructive" />
               </Button>
             </div>
           </div>
@@ -3094,7 +3097,6 @@ export default function Blitzgrid() {
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-7 w-7"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (selectedGridId) removeCategoryMutation.mutate({ gridId: selectedGridId, categoryId: category.id });
@@ -3102,7 +3104,7 @@ export default function Blitzgrid() {
                               disabled={removeCategoryMutation.isPending}
                               data-testid={`button-remove-category-${category.id}`}
                             >
-                              <Trash2 className="w-3 h-3 text-destructive" />
+                              <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </div>
                         </div>
