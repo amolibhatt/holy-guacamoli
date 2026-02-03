@@ -105,6 +105,13 @@ export function AppHeader({
                 
                 <DropdownMenuSeparator className="my-1" />
                 
+                <Link href="/profile">
+                  <DropdownMenuItem className="cursor-pointer py-2.5" data-testid="menu-profile">
+                    <User className="w-4 h-4 mr-3" />
+                    My Profile
+                  </DropdownMenuItem>
+                </Link>
+                
                 <Link href={adminHref}>
                   <DropdownMenuItem className="cursor-pointer py-2.5" data-testid="menu-admin">
                     <Settings className="w-4 h-4 mr-3" />
