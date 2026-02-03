@@ -400,7 +400,7 @@ export default function PlayerProfile() {
                   Create an account to keep your personality profile, badges, and stats across devices.
                 </p>
                 <Button 
-                  onClick={() => window.location.href = "/api/login"}
+                  onClick={() => window.location.href = "/"}
                   className="bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600"
                   data-testid="button-create-account"
                 >

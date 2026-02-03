@@ -34,8 +34,8 @@ export function SaveProgressPrompt({ isOpen, onClose, stats }: SaveProgressPromp
 
   const handleSaveProgress = () => {
     setIsLoading(true);
-    // Redirect to auth flow - the guest ID will be automatically merged after login
-    window.location.href = "/api/login";
+    // Redirect to login page - the guest ID will be automatically merged after login
+    window.location.href = "/";
   };
 
   const traitInfo = stats.dominantTrait 
