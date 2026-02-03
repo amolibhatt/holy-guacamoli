@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
-import { Smile, Users, Play, MessageSquare, Image as ImageIcon, Trophy, Crown, ChevronRight, ChevronLeft } from "lucide-react";
+import { Smile, Users, Play, MessageSquare, Image as ImageIcon, Trophy, Crown, ChevronRight, ChevronLeft, Ban } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MemePrompt, MemeImage } from "@shared/schema";
 import { QRCodeSVG } from "qrcode.react";
@@ -21,6 +21,7 @@ interface Player {
   hand: number[];
   submitted: boolean;
   voted: boolean;
+  votedForPlayerId?: string;
 }
 
 interface Submission {
@@ -124,17 +125,46 @@ export default function MemeNoHarmHost() {
   };
 
   const simulateVotes = () => {
+    // Simulate each player voting for a random submission (not their own)
+    const playerVotes: Record<string, string> = {};
+    players.forEach(player => {
+      const otherSubs = submissions.filter(s => s.playerId !== player.id);
+      if (otherSubs.length > 0) {
+        const votedFor = otherSubs[Math.floor(Math.random() * otherSubs.length)];
+        playerVotes[player.id] = votedFor.playerId;
+      }
+    });
+    
+    // Count votes per submission
+    const voteCounts: Record<string, number> = {};
+    Object.values(playerVotes).forEach(votedForId => {
+      voteCounts[votedForId] = (voteCounts[votedForId] || 0) + 1;
+    });
+    
     const updatedSubs = submissions.map(sub => ({
       ...sub,
-      votes: Math.floor(Math.random() * players.length),
+      votes: voteCounts[sub.playerId] || 0,
     }));
     
-    const winner = updatedSubs.reduce((a, b) => a.votes > b.votes ? a : b);
+    // Find the winner (most votes)
+    const maxVotes = Math.max(...updatedSubs.map(s => s.votes));
+    const winnerId = updatedSubs.find(s => s.votes === maxVotes)?.playerId;
     
-    setPlayers(prev => prev.map(p => ({
-      ...p,
-      score: p.score + (p.id === winner.playerId ? 100 : 0) + (updatedSubs.find(s => s.playerId === p.id)?.votes || 0) * 10,
-    })));
+    // Calculate scores:
+    // +10 points for each vote your meme receives
+    // +5 bonus if you voted for the winning meme
+    setPlayers(prev => prev.map(p => {
+      const votesReceived = voteCounts[p.id] || 0;
+      const submitterPoints = votesReceived * 10;
+      const votedForWinner = playerVotes[p.id] === winnerId;
+      const voterBonus = votedForWinner ? 5 : 0;
+      
+      return {
+        ...p,
+        score: p.score + submitterPoints + voterBonus,
+        votedForPlayerId: playerVotes[p.id],
+      };
+    }));
     
     setSubmissions(updatedSubs);
     setPhase("results");
@@ -236,28 +266,46 @@ export default function MemeNoHarmHost() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-            {submissions.map((sub) => (
-              <motion.div
-                key={sub.playerId}
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className={`relative rounded-lg overflow-hidden ${sub.playerId === winner.playerId ? 'ring-4 ring-yellow-400' : ''}`}
-              >
-                <img src={sub.imageUrl} alt="Meme" className="w-full aspect-square object-cover" />
-                <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{sub.playerName}</span>
-                    <span className="text-yellow-400 font-bold">{sub.votes} votes</span>
-                  </div>
-                  {sub.playerId === winner.playerId && (
-                    <div className="flex items-center gap-1 text-yellow-400 text-sm mt-1">
-                      <Trophy className="w-4 h-4" />
-                      Winner!
+            {submissions.map((sub) => {
+              const isCanceled = sub.votes === 0;
+              const isWinner = sub.playerId === winner.playerId;
+              return (
+                <motion.div
+                  key={sub.playerId}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className={`relative rounded-lg overflow-hidden ${isWinner ? 'ring-4 ring-yellow-400' : ''}`}
+                >
+                  <img 
+                    src={sub.imageUrl} 
+                    alt="Meme" 
+                    className={`w-full aspect-square object-cover ${isCanceled ? 'grayscale opacity-60' : ''}`} 
+                  />
+                  {isCanceled && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="bg-red-600/90 text-white px-4 py-2 rounded-lg flex items-center gap-2 transform -rotate-12 shadow-lg">
+                        <Ban className="w-6 h-6" />
+                        <span className="font-bold text-lg">CANCELED</span>
+                      </div>
                     </div>
                   )}
-                </div>
-              </motion.div>
-            ))}
+                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{sub.playerName}</span>
+                      <span className={`font-bold ${isCanceled ? 'text-red-400' : 'text-yellow-400'}`}>
+                        {sub.votes} votes {isCanceled && '(+0 pts)'}
+                      </span>
+                    </div>
+                    {isWinner && (
+                      <div className="flex items-center gap-1 text-yellow-400 text-sm mt-1">
+                        <Trophy className="w-4 h-4" />
+                        Winner! (+{sub.votes * 10} pts)
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
 
           <div className="text-center">
