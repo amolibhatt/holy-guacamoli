@@ -28,6 +28,7 @@ const MemeNoHarmHost = lazy(() => import("@/pages/MemeNoHarmHost"));
 const GameHistory = lazy(() => import("@/pages/GameHistory"));
 const Blitzgrid = lazy(() => import("@/pages/Blitzgrid"));
 const Pricing = lazy(() => import("@/pages/Pricing"));
+const Profile = lazy(() => import("@/pages/Profile"));
 
 function PageLoader() {
   return (
@@ -66,6 +67,7 @@ function Router() {
         <Route path="/sortcircuit/:code?" component={SortCircuitPlayer} />
         <Route path="/host/blitzgrid" component={Blitzgrid} />
         <Route path="/pricing" component={Pricing} />
+        <Route path="/profile" component={Profile} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

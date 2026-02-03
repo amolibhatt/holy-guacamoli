@@ -3045,6 +3045,86 @@ Be creative! Make facts surprising and fun to guess.`;
     }
   });
 
+  // ==================== PLAYER PROFILE ROUTES ====================
+  
+  // Get player profile (for authenticated users)
+  app.get("/api/profile", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const profile = await storage.getPlayerProfile(userId);
+      
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+      
+      res.json(profile);
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+      res.status(500).json({ message: "Failed to fetch profile" });
+    }
+  });
+  
+  // Get all available badges
+  app.get("/api/badges", async (_req, res) => {
+    try {
+      const allBadges = await storage.getAllBadges();
+      res.json(allBadges);
+    } catch (err) {
+      console.error("Error fetching badges:", err);
+      res.status(500).json({ message: "Failed to fetch badges" });
+    }
+  });
+  
+  // Record game played and update stats (called when game ends)
+  const recordGameSchema = z.object({
+    gameSlug: z.string().min(1),
+    sessionCode: z.string().min(1),
+    score: z.coerce.number().int().default(0),
+    placement: z.coerce.number().int().positive().nullable().optional(),
+    playerCount: z.coerce.number().int().positive().default(1),
+  });
+  
+  app.post("/api/profile/record-game", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const parseResult = recordGameSchema.safeParse(req.body);
+      
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid request data",
+          errors: parseResult.error.flatten().fieldErrors
+        });
+      }
+      
+      const { gameSlug, sessionCode, score, placement, playerCount } = parseResult.data;
+      
+      // Record game history
+      await storage.recordGamePlayed({
+        userId,
+        gameSlug,
+        sessionCode,
+        score: score,
+        placement: placement ?? null,
+        playerCount: playerCount,
+      });
+      
+      // Update aggregated stats
+      const won = placement === 1;
+      await storage.updatePlayerGameStats(userId, gameSlug, score || 0, won);
+      
+      // Check and award any new badges
+      const newBadges = await storage.checkAndAwardBadges(userId);
+      
+      res.json({ 
+        success: true, 
+        newBadges: newBadges.map(b => ({ id: b.id, name: b.name, icon: b.icon }))
+      });
+    } catch (err) {
+      console.error("Error recording game:", err);
+      res.status(500).json({ message: "Failed to record game" });
+    }
+  });
+
   // Excel Export - Download all boards with categories and questions
   app.get("/api/export/excel", isAuthenticated, async (req, res) => {
     try {
