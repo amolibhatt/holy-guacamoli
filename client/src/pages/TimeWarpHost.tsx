@@ -210,7 +210,7 @@ export default function TimeWarpHost() {
 
     return (
       <div className="min-h-screen bg-background flex flex-col" data-testid="page-timewarp-finished">
-        <AppHeader minimal backHref="/" title="Time Warp - Game Over" />
+        <AppHeader minimal backHref="/" title="Past Forward - Game Over" />
         
         <main className="max-w-2xl mx-auto px-4 py-12 flex-1 w-full">
           <motion.div
@@ -272,7 +272,7 @@ export default function TimeWarpHost() {
   if (gameState === "setup") {
     return (
       <div className="min-h-screen bg-background flex flex-col" data-testid="page-timewarp-setup">
-        <AppHeader minimal backHref="/" title="Time Warp" />
+        <AppHeader minimal backHref="/" title="Past Forward" />
 
         <main className="max-w-2xl mx-auto px-4 py-6 flex-1 w-full">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
@@ -280,7 +280,7 @@ export default function TimeWarpHost() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="w-5 h-5 text-orange-500 dark:text-orange-400" />
-                  Start a Time Warp Game
+                  Start a Past Forward Game
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -422,7 +422,7 @@ export default function TimeWarpHost() {
             <div className="flex items-center gap-4">
               <Clock className="w-8 h-8 text-orange-500" />
               <div>
-                <h1 className="text-xl font-bold">Time Warp</h1>
+                <h1 className="text-xl font-bold">Past Forward</h1>
                 <p className="text-sm text-white/50">
                   Question {currentQuestionIdx + 1} of {questionOrder.length}
                 </p>
