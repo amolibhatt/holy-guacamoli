@@ -814,7 +814,6 @@ export default function BlitzgridAdmin() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7"
                             onClick={(e) => {
                               e.stopPropagation();
                               removeCategoryMutation.mutate({ gridId: selectedGridId, categoryId: category.id });
@@ -822,7 +821,7 @@ export default function BlitzgridAdmin() {
                             disabled={removeCategoryMutation.isPending}
                             data-testid={`button-remove-category-${category.id}`}
                           >
-                            <Trash2 className="w-3 h-3 text-destructive" />
+                            <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
                         </div>
                       </div>
@@ -1202,7 +1201,7 @@ export default function BlitzgridAdmin() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 text-muted-foreground"
+                            className="text-muted-foreground"
                             onClick={(e) => {
                               e.stopPropagation();
                               setEditingGridId(grid.id);
@@ -1211,7 +1210,7 @@ export default function BlitzgridAdmin() {
                             }}
                             data-testid={`button-edit-grid-${grid.id}`}
                           >
-                            <Pencil className="w-3 h-3" />
+                            <Pencil className="w-4 h-4" />
                           </Button>
                         </div>
                       </>
