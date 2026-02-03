@@ -289,6 +289,85 @@ export const timeWarpQuestions = pgTable("time_warp_questions", {
   index("idx_time_warp_era").on(table.era),
 ]);
 
+// Meme No Harm Game - meme matching and voting party game
+export const memePrompts = pgTable("meme_prompts", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  prompt: text("prompt").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  isStarterPack: boolean("is_starter_pack").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_meme_prompts_user").on(table.userId),
+]);
+
+export const memeImages = pgTable("meme_images", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  imageUrl: text("image_url").notNull(),
+  caption: text("caption"),
+  isActive: boolean("is_active").notNull().default(true),
+  isStarterPack: boolean("is_starter_pack").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_meme_images_user").on(table.userId),
+]);
+
+export const memeSessions = pgTable("meme_sessions", {
+  id: serial("id").primaryKey(),
+  roomCode: text("room_code").notNull().unique(),
+  hostId: text("host_id").notNull(),
+  status: text("status").notNull().$type<"lobby" | "playing" | "voting" | "results" | "finished">().default("lobby"),
+  currentRound: integer("current_round").notNull().default(0),
+  totalRounds: integer("total_rounds").notNull().default(5),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_meme_sessions_code").on(table.roomCode),
+]);
+
+export const memePlayers = pgTable("meme_players", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull(),
+  name: text("name").notNull(),
+  score: integer("score").notNull().default(0),
+  hand: jsonb("hand").$type<number[]>().notNull().default([]),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_meme_players_session").on(table.sessionId),
+]);
+
+export const memeRounds = pgTable("meme_rounds", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull(),
+  roundNumber: integer("round_number").notNull(),
+  promptId: integer("prompt_id").notNull(),
+  status: text("status").notNull().$type<"selecting" | "voting" | "results">().default("selecting"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_meme_rounds_session").on(table.sessionId),
+]);
+
+export const memeSubmissions = pgTable("meme_submissions", {
+  id: serial("id").primaryKey(),
+  roundId: integer("round_id").notNull(),
+  playerId: integer("player_id").notNull(),
+  imageId: integer("image_id").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_meme_submissions_round").on(table.roundId),
+]);
+
+export const memeVotes = pgTable("meme_votes", {
+  id: serial("id").primaryKey(),
+  roundId: integer("round_id").notNull(),
+  voterId: integer("voter_id").notNull(),
+  submissionId: integer("submission_id").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_meme_votes_round").on(table.roundId),
+  unique().on(table.roundId, table.voterId),
+]);
+
 // Board visibility - controls who can see/use the board
 export const BOARD_VISIBILITIES = ["private", "tenant", "public"] as const;
 export type BoardVisibility = typeof BOARD_VISIBILITIES[number];
@@ -720,6 +799,31 @@ export type InsertPsyopSubmission = z.infer<typeof insertPsyopSubmissionSchema>;
 export type InsertPsyopVote = z.infer<typeof insertPsyopVoteSchema>;
 export type TimeWarpQuestion = typeof timeWarpQuestions.$inferSelect;
 export type InsertTimeWarpQuestion = z.infer<typeof insertTimeWarpQuestionSchema>;
+
+// Meme No Harm insert schemas
+export const insertMemePromptSchema = createInsertSchema(memePrompts).omit({ id: true, createdAt: true });
+export const insertMemeImageSchema = createInsertSchema(memeImages).omit({ id: true, createdAt: true });
+export const insertMemeSessionSchema = createInsertSchema(memeSessions).omit({ id: true, createdAt: true });
+export const insertMemePlayerSchema = createInsertSchema(memePlayers).omit({ id: true, createdAt: true });
+export const insertMemeRoundSchema = createInsertSchema(memeRounds).omit({ id: true, createdAt: true });
+export const insertMemeSubmissionSchema = createInsertSchema(memeSubmissions).omit({ id: true, createdAt: true });
+export const insertMemeVoteSchema = createInsertSchema(memeVotes).omit({ id: true, createdAt: true });
+
+// Meme No Harm types
+export type MemePrompt = typeof memePrompts.$inferSelect;
+export type MemeImage = typeof memeImages.$inferSelect;
+export type MemeSession = typeof memeSessions.$inferSelect;
+export type MemePlayer = typeof memePlayers.$inferSelect;
+export type MemeRound = typeof memeRounds.$inferSelect;
+export type MemeSubmission = typeof memeSubmissions.$inferSelect;
+export type MemeVote = typeof memeVotes.$inferSelect;
+export type InsertMemePrompt = z.infer<typeof insertMemePromptSchema>;
+export type InsertMemeImage = z.infer<typeof insertMemeImageSchema>;
+export type InsertMemeSession = z.infer<typeof insertMemeSessionSchema>;
+export type InsertMemePlayer = z.infer<typeof insertMemePlayerSchema>;
+export type InsertMemeRound = z.infer<typeof insertMemeRoundSchema>;
+export type InsertMemeSubmission = z.infer<typeof insertMemeSubmissionSchema>;
+export type InsertMemeVote = z.infer<typeof insertMemeVoteSchema>;
 
 export type BoardCategoryWithCategory = BoardCategory & { category: Category };
 export type BoardCategoryWithCount = BoardCategoryWithCategory & { questionCount: number; position: number };

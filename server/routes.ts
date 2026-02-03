@@ -2891,6 +2891,160 @@ Be creative! Make facts surprising and fun to guess.`;
     }
   });
 
+  // ==================== Meme No Harm API ====================
+  
+  app.get("/api/memenoharm/prompts", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const prompts = await storage.getMemePrompts(userId, role);
+      res.json(prompts);
+    } catch (err) {
+      console.error("Error fetching Meme prompts:", err);
+      res.status(500).json({ message: "Failed to fetch prompts" });
+    }
+  });
+
+  const createMemePromptSchema = z.object({
+    prompt: z.string().min(1, "Prompt is required"),
+  });
+
+  app.post("/api/memenoharm/prompts", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const parsed = createMemePromptSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.errors[0].message });
+      }
+      
+      const prompt = await storage.createMemePrompt({
+        userId,
+        prompt: parsed.data.prompt,
+        isActive: true,
+      });
+      
+      res.json(prompt);
+    } catch (err) {
+      console.error("Error creating Meme prompt:", err);
+      res.status(500).json({ message: "Failed to create prompt" });
+    }
+  });
+
+  app.put("/api/memenoharm/prompts/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const id = parseInt(req.params.id);
+      
+      const updated = await storage.updateMemePrompt(id, req.body, userId, role);
+      
+      if (!updated) {
+        return res.status(404).json({ message: "Prompt not found" });
+      }
+      
+      res.json(updated);
+    } catch (err) {
+      console.error("Error updating Meme prompt:", err);
+      res.status(500).json({ message: "Failed to update prompt" });
+    }
+  });
+
+  app.delete("/api/memenoharm/prompts/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const id = parseInt(req.params.id);
+      
+      const deleted = await storage.deleteMemePrompt(id, userId, role);
+      if (!deleted) {
+        return res.status(404).json({ message: "Prompt not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting Meme prompt:", err);
+      res.status(500).json({ message: "Failed to delete prompt" });
+    }
+  });
+
+  app.get("/api/memenoharm/images", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const images = await storage.getMemeImages(userId, role);
+      res.json(images);
+    } catch (err) {
+      console.error("Error fetching Meme images:", err);
+      res.status(500).json({ message: "Failed to fetch images" });
+    }
+  });
+
+  const createMemeImageSchema = z.object({
+    imageUrl: z.string().min(1, "Image URL is required"),
+    caption: z.string().optional(),
+  });
+
+  app.post("/api/memenoharm/images", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const parsed = createMemeImageSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.errors[0].message });
+      }
+      
+      const image = await storage.createMemeImage({
+        userId,
+        imageUrl: parsed.data.imageUrl,
+        caption: parsed.data.caption || null,
+        isActive: true,
+      });
+      
+      res.json(image);
+    } catch (err) {
+      console.error("Error creating Meme image:", err);
+      res.status(500).json({ message: "Failed to create image" });
+    }
+  });
+
+  app.put("/api/memenoharm/images/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const id = parseInt(req.params.id);
+      
+      const updated = await storage.updateMemeImage(id, req.body, userId, role);
+      
+      if (!updated) {
+        return res.status(404).json({ message: "Image not found" });
+      }
+      
+      res.json(updated);
+    } catch (err) {
+      console.error("Error updating Meme image:", err);
+      res.status(500).json({ message: "Failed to update image" });
+    }
+  });
+
+  app.delete("/api/memenoharm/images/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const id = parseInt(req.params.id);
+      
+      const deleted = await storage.deleteMemeImage(id, userId, role);
+      if (!deleted) {
+        return res.status(404).json({ message: "Image not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting Meme image:", err);
+      res.status(500).json({ message: "Failed to delete image" });
+    }
+  });
+
   // Excel Export - Download all boards with categories and questions
   app.get("/api/export/excel", isAuthenticated, async (req, res) => {
     try {

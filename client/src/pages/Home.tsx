@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, Brain, Users, Clock } from "lucide-react";
+import { Loader2, Grid3X3, Brain, Users, Clock, Smile } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { GAME_RULES } from "@/components/GameRules";
 
@@ -74,6 +74,14 @@ const GAME_CONFIG: Record<string, {
     tagline: "Era Exploration",
     howItWorks: "Guess era-filtered images. Halfway through, order reverses!",
     players: "2-10 players",
+  },
+  memenoharm: {
+    icon: Smile,
+    route: "/memenoharm/host",
+    accentColor: "#22c55e",
+    tagline: "Meme Matchup",
+    howItWorks: "Pick the perfect meme. Vote for the funniest!",
+    players: "3-10 players",
     badge: "New",
   },
 };

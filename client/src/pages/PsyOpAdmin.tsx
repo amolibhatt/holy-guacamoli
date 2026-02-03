@@ -16,7 +16,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Loader2, Grid3X3, ListOrdered, Eye, Plus, Trash2, X, 
-  Sparkles, Lightbulb, Check, Upload, ChevronDown, Folder, Pencil, Clock
+  Sparkles, Lightbulb, Check, Upload, ChevronDown, Folder, Pencil, Clock, Smile
 } from "lucide-react";
 import type { PsyopQuestion } from "@shared/schema";
 
@@ -348,6 +348,16 @@ export default function PsyOpAdmin() {
               >
                 <Clock className="w-4 h-4 mr-2" />
                 Past Forward
+              </Button>
+            </Link>
+            <Link href="/admin/memenoharm">
+              <Button 
+                variant="ghost" 
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
+                data-testid="tab-memenoharm"
+              >
+                <Smile className="w-4 h-4 mr-2" />
+                Meme No Harm
               </Button>
             </Link>
           </nav>
