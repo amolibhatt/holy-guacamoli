@@ -347,7 +347,7 @@ export default function PsyOpAdmin() {
                 data-testid="tab-timewarp"
               >
                 <Clock className="w-4 h-4 mr-2" />
-                Time Warp
+                Past Forward
               </Button>
             </Link>
           </nav>

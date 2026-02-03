@@ -176,7 +176,7 @@ export default function TimeWarpAdmin() {
     <div className="min-h-screen bg-background" data-testid="page-timewarp-admin">
       <div className="fixed inset-0 bg-gradient-to-br from-orange-300/5 via-transparent to-orange-300/5 pointer-events-none" />
       
-      <AppHeader minimal backHref="/" title="Time Warp Admin" />
+      <AppHeader minimal backHref="/" title="Past Forward Admin" />
 
       <div className="border-b border-border bg-card/50">
         <div className="max-w-4xl mx-auto px-4 w-full">
@@ -218,7 +218,7 @@ export default function TimeWarpAdmin() {
                 data-testid="tab-timewarp"
               >
                 <Clock className="w-4 h-4 mr-2" />
-                Time Warp
+                Past Forward
               </Button>
             </Link>
           </nav>
@@ -228,7 +228,7 @@ export default function TimeWarpAdmin() {
       <main className="max-w-4xl mx-auto px-4 py-6 w-full">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold">Time Warp Questions</h1>
+            <h1 className="text-2xl font-bold">Past Forward Questions</h1>
             <p className="text-muted-foreground text-sm">Create era-filtered image guessing questions</p>
           </div>
           <div className="flex gap-2">
