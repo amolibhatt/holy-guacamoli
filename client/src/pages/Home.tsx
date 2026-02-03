@@ -69,7 +69,7 @@ const GAME_CONFIG: Record<string, {
   },
   timewarp: {
     icon: Clock,
-    route: "/timewarp/host",
+    route: "/pastforward/host",
     accentColor: "#f97316",
     tagline: "Era Exploration",
     howItWorks: "Guess era-filtered images. Halfway through, order reverses!",

@@ -61,7 +61,7 @@ export default function SortCircuitAdmin() {
                 PsyOp
               </Button>
             </Link>
-            <Link href="/admin/timewarp">
+            <Link href="/admin/pastforward">
               <Button 
                 variant="ghost" 
                 className="relative rounded-none border-b-2 border-transparent text-muted-foreground"

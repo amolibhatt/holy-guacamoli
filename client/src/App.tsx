@@ -56,8 +56,8 @@ function Router() {
         <Route path="/admin/sort-circuit" component={SortCircuitAdmin} />
         <Route path="/admin/psyop" component={PsyOpAdmin} />
         <Route path="/host/psyop" component={PsyOpHost} />
-        <Route path="/admin/timewarp" component={TimeWarpAdmin} />
-        <Route path="/timewarp/host" component={TimeWarpHost} />
+        <Route path="/admin/pastforward" component={TimeWarpAdmin} />
+        <Route path="/pastforward/host" component={TimeWarpHost} />
         <Route path="/sortcircuit/:code?" component={SortCircuitPlayer} />
         <Route path="/host/blitzgrid" component={Blitzgrid} />
         <Route path="/pricing" component={Pricing} />

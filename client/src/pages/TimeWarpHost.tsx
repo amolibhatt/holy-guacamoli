@@ -49,7 +49,7 @@ export default function TimeWarpHost() {
   const [questionOrder, setQuestionOrder] = useState<number[]>([]);
 
   const { data: questions = [], isLoading } = useQuery<TimeWarpQuestion[]>({
-    queryKey: ["/api/timewarp/questions"],
+    queryKey: ["/api/pastforward/questions"],
   });
 
   useEffect(() => {
@@ -293,7 +293,7 @@ export default function TimeWarpHost() {
                   <div className="text-center py-8 text-muted-foreground">
                     <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p>No questions available</p>
-                    <Button onClick={() => setLocation("/admin/timewarp")} className="mt-4" data-testid="button-create-questions">
+                    <Button onClick={() => setLocation("/admin/pastforward")} className="mt-4" data-testid="button-create-questions">
                       Create Questions
                     </Button>
                   </div>
@@ -323,7 +323,7 @@ export default function TimeWarpHost() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => setLocation("/admin/timewarp")}
+                      onClick={() => setLocation("/admin/pastforward")}
                     >
                       Manage Questions
                     </Button>
