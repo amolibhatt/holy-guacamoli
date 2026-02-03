@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, psyopQuestions, timeWarpQuestions, memePrompts, memeImages, memeSessions, memePlayers, memeRounds, memeSubmissions, memeVotes, adminAnnouncements, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameSessionWithDetails, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion, type PsyopQuestion, type InsertPsyopQuestion, type TimeWarpQuestion, type InsertTimeWarpQuestion, type MemePrompt, type InsertMemePrompt, type MemeImage, type InsertMemeImage, type MemeSession, type InsertMemeSession, type MemePlayer, type InsertMemePlayer, type MemeRound, type InsertMemeRound, type MemeSubmission, type InsertMemeSubmission, type MemeVote, type InsertMemeVote, type AdminAnnouncement, type InsertAdminAnnouncement, type ModerationStatus } from "@shared/schema";
+import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, psyopQuestions, timeWarpQuestions, memePrompts, memeImages, memeSessions, memePlayers, memeRounds, memeSubmissions, memeVotes, adminAnnouncements, playerGameStats, badges, userBadges, playerGameHistory, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameSessionWithDetails, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion, type PsyopQuestion, type InsertPsyopQuestion, type TimeWarpQuestion, type InsertTimeWarpQuestion, type MemePrompt, type InsertMemePrompt, type MemeImage, type InsertMemeImage, type MemeSession, type InsertMemeSession, type MemePlayer, type InsertMemePlayer, type PlayerGameStats, type InsertPlayerGameStats, type Badge, type InsertBadge, type UserBadge, type InsertUserBadge, type PlayerGameHistory, type InsertPlayerGameHistory, type PlayerProfile, type MemeRound, type InsertMemeRound, type MemeSubmission, type InsertMemeSubmission, type MemeVote, type InsertMemeVote, type AdminAnnouncement, type InsertAdminAnnouncement, type ModerationStatus } from "@shared/schema";
 import { users } from "@shared/models/auth";
 import { eq, and, asc, count, inArray, desc, sql, gte, like } from "drizzle-orm";
 
@@ -188,6 +188,17 @@ export interface IStorage {
   createMemeImage(data: InsertMemeImage): Promise<MemeImage>;
   updateMemeImage(id: number, data: Partial<InsertMemeImage>, userId: string, role?: string): Promise<MemeImage | null>;
   deleteMemeImage(id: number, userId: string, role?: string): Promise<boolean>;
+  
+  // Player Profile & Stats
+  getPlayerProfile(userId: string): Promise<PlayerProfile | null>;
+  getPlayerGameStats(userId: string): Promise<PlayerGameStats[]>;
+  updatePlayerGameStats(userId: string, gameSlug: string, score: number, won: boolean): Promise<PlayerGameStats>;
+  getPlayerBadges(userId: string): Promise<(UserBadge & { badge: Badge })[]>;
+  getAllBadges(): Promise<Badge[]>;
+  awardBadge(userId: string, badgeId: number): Promise<UserBadge | null>;
+  getPlayerGameHistory(userId: string, limit?: number): Promise<PlayerGameHistory[]>;
+  recordGamePlayed(data: InsertPlayerGameHistory): Promise<PlayerGameHistory>;
+  checkAndAwardBadges(userId: string): Promise<Badge[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2366,6 +2377,167 @@ export class DatabaseStorage implements IStorage {
       .where(eq(psyopQuestions.id, questionId))
       .returning();
     return updated;
+  }
+
+  // Player Profile & Stats Implementation
+  async getPlayerProfile(userId: string): Promise<PlayerProfile | null> {
+    const [user] = await db.select({
+      id: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      email: users.email,
+    }).from(users).where(eq(users.id, userId));
+    
+    if (!user) return null;
+    
+    const stats = await this.getPlayerGameStats(userId);
+    const badgeData = await this.getPlayerBadges(userId);
+    const recentGames = await this.getPlayerGameHistory(userId, 10);
+    
+    const totals = stats.reduce((acc, s) => ({
+      gamesPlayed: acc.gamesPlayed + s.gamesPlayed,
+      gamesWon: acc.gamesWon + s.gamesWon,
+      totalPoints: acc.totalPoints + s.totalPoints,
+    }), { gamesPlayed: 0, gamesWon: 0, totalPoints: 0 });
+    
+    return {
+      user,
+      gameStats: stats,
+      badges: badgeData,
+      recentGames,
+      totals,
+    };
+  }
+  
+  async getPlayerGameStats(userId: string): Promise<PlayerGameStats[]> {
+    return await db.select().from(playerGameStats).where(eq(playerGameStats.userId, userId));
+  }
+  
+  async updatePlayerGameStats(userId: string, gameSlug: string, score: number, won: boolean): Promise<PlayerGameStats> {
+    const existing = await db.select().from(playerGameStats)
+      .where(and(eq(playerGameStats.userId, userId), eq(playerGameStats.gameSlug, gameSlug)));
+    
+    if (existing.length > 0) {
+      const current = existing[0];
+      const [updated] = await db.update(playerGameStats)
+        .set({
+          gamesPlayed: current.gamesPlayed + 1,
+          gamesWon: current.gamesWon + (won ? 1 : 0),
+          totalPoints: current.totalPoints + score,
+          highestScore: Math.max(current.highestScore, score),
+          lastPlayedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(playerGameStats.id, current.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(playerGameStats).values({
+        userId,
+        gameSlug,
+        gamesPlayed: 1,
+        gamesWon: won ? 1 : 0,
+        totalPoints: score,
+        highestScore: score,
+        lastPlayedAt: new Date(),
+      }).returning();
+      return created;
+    }
+  }
+  
+  async getPlayerBadges(userId: string): Promise<(UserBadge & { badge: Badge })[]> {
+    const results = await db.select()
+      .from(userBadges)
+      .innerJoin(badges, eq(userBadges.badgeId, badges.id))
+      .where(eq(userBadges.userId, userId))
+      .orderBy(desc(userBadges.earnedAt));
+    
+    return results.map(r => ({
+      ...r.user_badges,
+      badge: r.badges,
+    }));
+  }
+  
+  async getAllBadges(): Promise<Badge[]> {
+    return await db.select().from(badges).orderBy(asc(badges.sortOrder));
+  }
+  
+  async awardBadge(userId: string, badgeId: number): Promise<UserBadge | null> {
+    try {
+      const [awarded] = await db.insert(userBadges).values({
+        userId,
+        badgeId,
+      }).returning();
+      return awarded;
+    } catch {
+      return null;
+    }
+  }
+  
+  async getPlayerGameHistory(userId: string, limit: number = 20): Promise<PlayerGameHistory[]> {
+    return await db.select()
+      .from(playerGameHistory)
+      .where(eq(playerGameHistory.userId, userId))
+      .orderBy(desc(playerGameHistory.playedAt))
+      .limit(limit);
+  }
+  
+  async recordGamePlayed(data: InsertPlayerGameHistory): Promise<PlayerGameHistory> {
+    const [record] = await db.insert(playerGameHistory).values(data).returning();
+    return record;
+  }
+  
+  async checkAndAwardBadges(userId: string): Promise<Badge[]> {
+    const stats = await this.getPlayerGameStats(userId);
+    const existingBadges = await this.getPlayerBadges(userId);
+    const existingBadgeIds = new Set(existingBadges.map(b => b.badgeId));
+    const allBadges = await this.getAllBadges();
+    
+    const awardedBadges: Badge[] = [];
+    const totalGamesPlayed = stats.reduce((acc, s) => acc + s.gamesPlayed, 0);
+    const totalGamesWon = stats.reduce((acc, s) => acc + s.gamesWon, 0);
+    
+    for (const badge of allBadges) {
+      if (existingBadgeIds.has(badge.id)) continue;
+      
+      const req = badge.requirement as { type: string; threshold?: number; gameSlug?: string };
+      let shouldAward = false;
+      
+      switch (req.type) {
+        case 'first_game':
+          shouldAward = totalGamesPlayed >= 1;
+          break;
+        case 'games_played':
+          if (req.gameSlug) {
+            const gameStat = stats.find(s => s.gameSlug === req.gameSlug);
+            shouldAward = (gameStat?.gamesPlayed || 0) >= (req.threshold || 0);
+          } else {
+            shouldAward = totalGamesPlayed >= (req.threshold || 0);
+          }
+          break;
+        case 'games_won':
+          if (req.gameSlug) {
+            const gameStat = stats.find(s => s.gameSlug === req.gameSlug);
+            shouldAward = (gameStat?.gamesWon || 0) >= (req.threshold || 0);
+          } else {
+            shouldAward = totalGamesWon >= (req.threshold || 0);
+          }
+          break;
+        case 'total_points':
+          if (req.gameSlug) {
+            const gameStat = stats.find(s => s.gameSlug === req.gameSlug);
+            shouldAward = (gameStat?.totalPoints || 0) >= (req.threshold || 0);
+          }
+          break;
+      }
+      
+      if (shouldAward) {
+        await this.awardBadge(userId, badge.id);
+        awardedBadges.push(badge);
+      }
+    }
+    
+    return awardedBadges;
   }
 }
 
