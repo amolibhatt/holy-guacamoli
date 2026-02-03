@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Logo } from "@/components/Logo";
 import { motion } from "framer-motion";
-import { Loader2, Heart, Chrome, Github, Apple } from "lucide-react";
+import { Loader2, Heart, Chrome, Apple } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -88,10 +88,9 @@ export default function LandingPage() {
                 >
                   <div className="flex items-center gap-2">
                     <Chrome className="h-5 w-5 text-[#4285F4]" />
-                    <Github className="h-5 w-5" />
                     <Apple className="h-5 w-5" />
                   </div>
-                  <span>Continue with Google, GitHub, or Apple</span>
+                  <span>Continue with Google or Apple</span>
                 </Button>
               </div>
 
