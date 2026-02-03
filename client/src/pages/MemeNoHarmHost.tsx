@@ -100,18 +100,44 @@ export default function MemeNoHarmHost() {
   };
 
   const simulateSubmissions = () => {
+    // Each player picks a random meme from their hand
     const subs: Submission[] = players.map(player => {
-      const randomImageId = player.hand[Math.floor(Math.random() * player.hand.length)];
-      const image = images.find(i => i.id === randomImageId);
+      const randomIndex = Math.floor(Math.random() * player.hand.length);
+      const submittedImageId = player.hand[randomIndex];
+      const image = images.find(i => i.id === submittedImageId);
       return {
         playerId: player.id,
         playerName: player.name,
-        imageId: randomImageId,
+        imageId: submittedImageId,
         imageUrl: image?.imageUrl || "",
         votes: 0,
       };
     });
-    setSubmissions(subs);
+    
+    // The Refresh: Replace submitted card with a new random meme
+    // Get all image IDs currently in any player's hand to avoid duplicates
+    const usedImageIds = new Set(players.flatMap(p => p.hand));
+    const availableImages = images.filter(img => !usedImageIds.has(img.id));
+    
+    setPlayers(prev => prev.map(player => {
+      const submittedSub = subs.find(s => s.playerId === player.id);
+      if (!submittedSub) return player;
+      
+      // Remove the submitted card from hand
+      const newHand = player.hand.filter(id => id !== submittedSub.imageId);
+      
+      // Add a new random card from available images
+      if (availableImages.length > 0) {
+        const newCard = availableImages[Math.floor(Math.random() * availableImages.length)];
+        newHand.push(newCard.id);
+      }
+      
+      return { ...player, hand: newHand, submitted: true };
+    }));
+    
+    // Shuffle submissions for anonymous gallery display
+    const shuffledSubs = [...subs].sort(() => Math.random() - 0.5);
+    setSubmissions(shuffledSubs);
     setRevealIndex(0);
     setPhase("reveal");
   };
@@ -261,7 +287,8 @@ export default function MemeNoHarmHost() {
       <div className="min-h-screen bg-[#0d0d12] text-white" data-testid="page-memenoharm-results">
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-green-400 mb-2">Round {currentRound} Results</h2>
+            <p className="text-sm text-white/40 mb-1">Step 6 - Round {currentRound} of {totalRounds}</p>
+            <h2 className="text-2xl font-bold text-green-400 mb-2">The Aftermath</h2>
             <p className="text-white/60">{currentPrompt?.prompt}</p>
           </div>
 
@@ -324,14 +351,19 @@ export default function MemeNoHarmHost() {
       <div className="min-h-screen bg-[#0d0d12] text-white" data-testid="page-memenoharm-voting">
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="text-center mb-8">
-            <h2 className="text-xl font-bold text-green-400 mb-2">Vote for the Best!</h2>
+            <p className="text-sm text-white/40 mb-1">Step 5</p>
+            <h2 className="text-2xl font-bold text-green-400 mb-2">The Vibe Check</h2>
             <p className="text-white/60 text-lg">{currentPrompt?.prompt}</p>
+            <p className="text-white/40 text-sm mt-2">Vote for the funniest meme! (You can't vote for your own)</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-            {submissions.map((sub) => (
-              <div key={sub.playerId} className="rounded-lg overflow-hidden bg-white/5">
+            {submissions.map((sub, index) => (
+              <div key={sub.playerId} className="relative rounded-lg overflow-hidden bg-white/5">
                 <img src={sub.imageUrl} alt="Meme" className="w-full aspect-square object-cover" />
+                <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-green-500 text-white font-bold flex items-center justify-center text-lg">
+                  {index + 1}
+                </div>
               </div>
             ))}
           </div>
@@ -356,8 +388,9 @@ export default function MemeNoHarmHost() {
       <div className="min-h-screen bg-[#0d0d12] text-white" data-testid="page-memenoharm-reveal">
         <div className="max-w-2xl mx-auto px-4 py-8">
           <div className="text-center mb-8">
-            <p className="text-sm text-white/40 mb-2">Round {currentRound} of {totalRounds}</p>
-            <h2 className="text-2xl font-bold text-green-400 mb-4">{currentPrompt?.prompt}</h2>
+            <p className="text-sm text-white/40 mb-1">Step 4 - Round {currentRound} of {totalRounds}</p>
+            <h2 className="text-2xl font-bold text-green-400 mb-2">The Gallery</h2>
+            <p className="text-white/60 text-lg">{currentPrompt?.prompt}</p>
           </div>
 
           <AnimatePresence mode="wait">
@@ -398,8 +431,10 @@ export default function MemeNoHarmHost() {
       <div className="min-h-screen bg-[#0d0d12] text-white" data-testid="page-memenoharm-selecting">
         <div className="max-w-2xl mx-auto px-4 py-8">
           <div className="text-center mb-8">
-            <p className="text-sm text-white/40 mb-2">Round {currentRound} of {totalRounds}</p>
-            <h2 className="text-3xl font-bold text-green-400 mb-4">{currentPrompt?.prompt}</h2>
+            <p className="text-sm text-white/40 mb-1">Steps 2 & 3 - Round {currentRound} of {totalRounds}</p>
+            <h2 className="text-2xl font-bold text-green-400 mb-2">The Briefing</h2>
+            <p className="text-white/60 text-3xl font-bold mt-4 mb-2">{currentPrompt?.prompt}</p>
+            <p className="text-white/40 text-sm">Players: Pick your best meme from your hand!</p>
           </div>
 
           <Card className="bg-white/5 border-white/10 mb-6">
@@ -442,10 +477,12 @@ export default function MemeNoHarmHost() {
         
         <main className="max-w-2xl mx-auto px-4 py-8 flex-1 w-full">
           <div className="text-center mb-8">
-            <h2 className="text-4xl font-mono font-bold tracking-widest text-green-500 mb-2">
+            <p className="text-sm text-muted-foreground mb-1">Step 1</p>
+            <h2 className="text-2xl font-bold text-green-500 mb-4">Enlisting</h2>
+            <div className="text-4xl font-mono font-bold tracking-widest text-green-500 mb-2">
               {roomCode}
-            </h2>
-            <p className="text-muted-foreground">Share this code with players</p>
+            </div>
+            <p className="text-muted-foreground">Join with this code - each player gets 5 random memes!</p>
           </div>
 
           <div className="flex justify-center mb-8">
