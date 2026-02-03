@@ -14,6 +14,7 @@ import {
 } from "@shared/models/auth";
 
 // Badge definitions with requirements
+// Icons are lucide-react icon names to be mapped on frontend
 const BADGE_DEFINITIONS: Record<BadgeType, {
   name: string;
   description: string;
@@ -23,97 +24,97 @@ const BADGE_DEFINITIONS: Record<BadgeType, {
   first_blood: {
     name: "First Blood",
     description: "Win your first game",
-    icon: "🎯",
+    icon: "target",
     requirement: (stats) => stats.gamesWon >= 1,
   },
   trivia_titan: {
     name: "Trivia Titan",
     description: "Answer 50 questions correctly",
-    icon: "🧠",
+    icon: "brain",
     requirement: (stats) => (stats.correctAnswers || 0) >= 50,
   },
   streak_master: {
     name: "Streak Master",
     description: "Get 5 correct answers in a row",
-    icon: "🔥",
+    icon: "flame",
     requirement: () => false, // Tracked separately during gameplay
   },
   category_king: {
     name: "Category King",
     description: "Dominate a single category",
-    icon: "👑",
+    icon: "crown",
     requirement: () => false,
   },
   perfect_order: {
     name: "Perfect Order",
     description: "Complete 10 perfect rounds in Sort Circuit",
-    icon: "✨",
+    icon: "sparkles",
     requirement: (stats) => (stats.perfectRounds || 0) >= 10,
   },
   speed_demon: {
     name: "Speed Demon",
     description: "Buzz in under 500ms",
-    icon: "⚡",
+    icon: "zap",
     requirement: (stats) => (stats.fastestBuzzMs || Infinity) < 500,
   },
   comeback_kid: {
     name: "Comeback Kid",
     description: "Win after being in last place",
-    icon: "🚀",
+    icon: "rocket",
     requirement: () => false,
   },
   master_deceiver: {
     name: "Master Deceiver",
     description: "Fool 20 players in PsyOp",
-    icon: "🎭",
+    icon: "drama",
     requirement: (stats) => (stats.successfulDeceptions || 0) >= 20,
   },
   truth_seeker: {
     name: "Truth Seeker",
     description: "Catch 20 liars in PsyOp",
-    icon: "🔍",
+    icon: "search",
     requirement: (stats) => (stats.caughtLiars || 0) >= 20,
   },
   creative_genius: {
     name: "Creative Genius",
     description: "Create memorable fake answers",
-    icon: "🎨",
+    icon: "palette",
     requirement: () => false,
   },
   meme_lord: {
     name: "Meme Lord",
     description: "Receive 50 votes in Meme No Harm",
-    icon: "😂",
+    icon: "laugh",
     requirement: (stats) => (stats.totalVotesReceived || 0) >= 50,
   },
   people_champion: {
     name: "People's Champion",
     description: "Pick the winning meme 10 times",
-    icon: "🏆",
+    icon: "trophy",
     requirement: (stats) => (stats.correctWinnerPicks || 0) >= 10,
   },
   dark_horse: {
     name: "Dark Horse",
     description: "Win despite low expectations",
-    icon: "🐴",
+    icon: "star",
     requirement: () => false,
   },
   party_starter: {
     name: "Party Starter",
     description: "Play 10 games",
-    icon: "🎉",
+    icon: "party-popper",
     requirement: (stats) => stats.gamesPlayed >= 10,
   },
   loyal_player: {
     name: "Loyal Player",
     description: "Play 50 games total",
-    icon: "💎",
+    icon: "gem",
     requirement: (stats) => stats.gamesPlayed >= 50,
   },
   social_butterfly: {
     name: "Social Butterfly",
     description: "Play all 5 game types",
-    icon: "🦋",
+    icon: "users",
     requirement: () => false,
   },
 };

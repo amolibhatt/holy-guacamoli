@@ -8,9 +8,30 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
 import { 
   User, Trophy, Star, Sparkles, Zap, Target, 
-  Clock, Brain, Flame, Medal, ArrowLeft, Clover, HelpCircle, Wind, Drama, Search, Award, Laugh, Users
+  Clock, Brain, Flame, Medal, ArrowLeft, Clover, HelpCircle, Wind, Drama, Search, Award, Laugh, Users,
+  Crown, Rocket, Palette, Gem, PartyPopper, type LucideIcon
 } from "lucide-react";
 import { Link } from "wouter";
+
+// Map badge icon strings from server to lucide-react components
+const BADGE_ICON_MAP: Record<string, LucideIcon> = {
+  target: Target,
+  brain: Brain,
+  flame: Flame,
+  crown: Crown,
+  sparkles: Sparkles,
+  zap: Zap,
+  rocket: Rocket,
+  drama: Drama,
+  search: Search,
+  palette: Palette,
+  laugh: Laugh,
+  trophy: Trophy,
+  star: Star,
+  "party-popper": PartyPopper,
+  gem: Gem,
+  users: Users,
+};
 
 const TRAIT_INFO: Record<string, { 
   title: string; 
@@ -291,22 +312,27 @@ export default function PlayerProfile() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {badges.map((badge, index) => (
-                    <motion.div
-                      key={badge.id}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.2 + index * 0.05 }}
-                      className="p-4 rounded-lg bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 text-center hover-elevate"
-                      data-testid={`badge-${badge.badgeType}`}
-                    >
-                      <div className="text-3xl mb-2">{badge.definition.icon}</div>
-                      <div className="font-medium text-sm">{badge.definition.name}</div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {badge.definition.description}
-                      </div>
-                    </motion.div>
-                  ))}
+                  {badges.map((badge, index) => {
+                    const BadgeIcon = BADGE_ICON_MAP[badge.definition.icon] || Trophy;
+                    return (
+                      <motion.div
+                        key={badge.id}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.2 + index * 0.05 }}
+                        className="p-4 rounded-lg bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 text-center hover-elevate"
+                        data-testid={`badge-${badge.badgeType}`}
+                      >
+                        <div className="flex justify-center mb-2">
+                          <BadgeIcon className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div className="font-medium text-sm">{badge.definition.name}</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {badge.definition.description}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -400,13 +426,14 @@ export default function PlayerProfile() {
                 <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                   Create an account to keep your personality profile, badges, and stats across devices.
                 </p>
-                <Button 
-                  onClick={() => window.location.href = "/"}
-                  className="bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600"
-                  data-testid="button-create-account"
-                >
-                  Create Account
-                </Button>
+                <Link href="/">
+                  <Button 
+                    className="bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                    data-testid="button-create-account"
+                  >
+                    Create Account
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </motion.div>

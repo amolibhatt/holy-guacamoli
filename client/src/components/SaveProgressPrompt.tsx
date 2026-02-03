@@ -138,7 +138,7 @@ export function SaveProgressPrompt({ isOpen, onClose, stats }: SaveProgressPromp
                   <Button 
                     onClick={handleSaveProgress}
                     disabled={isLoading}
-                    className="w-full bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600"
+                    className="w-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
                     data-testid="button-save-progress"
                   >
                     {isLoading ? "Redirecting..." : "Save My Progress"}
