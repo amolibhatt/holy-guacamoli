@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -73,9 +73,11 @@ const POINT_TIERS = [10, 20, 30, 40, 50];
 export default function BlitzgridAdmin() {
   const { toast } = useToast();
   const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
+  const searchString = useSearch();
   
   const [selectedGridId, setSelectedGridId] = useState<number | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [hasInitializedFromUrl, setHasInitializedFromUrl] = useState(false);
   
   const [editingGridId, setEditingGridId] = useState<number | null>(null);
   const [editGridName, setEditGridName] = useState("");
@@ -107,6 +109,21 @@ export default function BlitzgridAdmin() {
     queryKey: ['/api/blitzgrid/grids'],
     enabled: isAuthenticated,
   });
+
+  // Auto-select grid from URL parameter (e.g., /blitzgrid/admin?grid=123)
+  useEffect(() => {
+    if (hasInitializedFromUrl || loadingGrids || grids.length === 0) return;
+    
+    const params = new URLSearchParams(searchString);
+    const gridParam = params.get('grid');
+    if (gridParam) {
+      const gridId = parseInt(gridParam, 10);
+      if (!isNaN(gridId) && grids.some(g => g.id === gridId)) {
+        setSelectedGridId(gridId);
+      }
+    }
+    setHasInitializedFromUrl(true);
+  }, [searchString, grids, loadingGrids, hasInitializedFromUrl]);
 
   const { data: gridCategories = [], isLoading: loadingCategories } = useQuery<CategoryWithQuestions[]>({
     queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'],

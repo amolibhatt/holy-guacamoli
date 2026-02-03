@@ -523,7 +523,6 @@ export default function SuperAdmin() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8"
                   onClick={() => {
                     queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
                     queryClient.invalidateQueries({ queryKey: ['/api/super-admin/users'] });
@@ -533,7 +532,7 @@ export default function SuperAdmin() {
                   }}
                   data-testid="button-refresh-dashboard"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" />
+                  <RefreshCw className="w-4 h-4" />
                 </Button>
               </div>
               
@@ -1182,11 +1181,10 @@ export default function SuperAdmin() {
                                           <Button
                                             variant="outline"
                                             size="icon"
-                                            className="h-8 w-8"
                                             onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] })}
                                             data-testid="button-refresh-grids"
                                           >
-                                            <RefreshCw className="w-3.5 h-3.5" />
+                                            <RefreshCw className="w-4 h-4" />
                                           </Button>
                                           <Badge variant="secondary">{allBoards.length} total</Badge>
                                         </div>
@@ -1223,7 +1221,7 @@ export default function SuperAdmin() {
                                             const isComplete = board.categoryCount >= 5 && board.questionCount >= 25;
                                             const isStarterPack = board.isStarterPack ?? false;
                                             return (
-                                              <div key={board.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border">
+                                              <div key={board.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border" data-testid={`grid-row-${board.id}`}>
                                                 <div className="flex-1 min-w-0">
                                                   <div className="flex items-center gap-2 flex-wrap">
                                                     <span className="font-medium truncate">{board.name}</span>
@@ -1259,7 +1257,7 @@ export default function SuperAdmin() {
                                                   >
                                                     <Star className={`w-4 h-4 ${isStarterPack ? 'fill-current' : ''}`} />
                                                   </Button>
-                                                  <Link href={`/admin?game=${board.id}`}>
+                                                  <Link href={`/blitzgrid/admin?grid=${board.id}`}>
                                                     <Button variant="ghost" size="icon" data-testid={`button-edit-grid-${board.id}`}>
                                                       <Pencil className="w-4 h-4" />
                                                     </Button>
@@ -1297,13 +1295,16 @@ export default function SuperAdmin() {
                                             <Button
                                               variant="outline"
                                               size="icon"
-                                              className="h-8 w-8"
                                               onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/blitzgrid'] })}
                                               data-testid="button-refresh-blitzgrid-questions"
                                             >
-                                              <RefreshCw className="w-3.5 h-3.5" />
+                                              <RefreshCw className="w-4 h-4" />
                                             </Button>
-                                            <Badge variant="secondary">{blitzgridQuestions.length} total</Badge>
+                                            {isLoadingBlitzgridQuestions ? (
+                                              <Skeleton className="h-5 w-16" />
+                                            ) : (
+                                              <Badge variant="secondary">{blitzgridQuestions.length} total</Badge>
+                                            )}
                                           </div>
                                         </div>
                                         
@@ -1335,7 +1336,7 @@ export default function SuperAdmin() {
                                           return (
                                           <div className="space-y-2 max-h-[300px] overflow-y-auto">
                                             {filteredBlitzgrid.slice(0, 50).map((q) => (
-                                              <div key={q.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border">
+                                              <div key={q.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border" data-testid={`blitzgrid-question-row-${q.id}`}>
                                                 <div className="flex-1 min-w-0">
                                                   <div className="flex items-center gap-2 flex-wrap">
                                                     <span className="font-medium truncate">{q.question}</span>
