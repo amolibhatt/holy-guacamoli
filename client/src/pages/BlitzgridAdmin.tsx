@@ -17,7 +17,7 @@ import {
   Plus, Trash2, Pencil, Check, X, Grid3X3, ListOrdered, Brain, Clock,
   ChevronRight, ArrowLeft, Loader2,
   AlertCircle, CheckCircle2, Image, Music, Video,
-  Download, Upload, FileSpreadsheet, Heart, ChevronDown, ChevronUp,
+  Download, Upload, FileSpreadsheet, Heart, ChevronDown, ChevronUp, Smile,
 } from "lucide-react";
 import { 
   AlertDialog, AlertDialogAction, AlertDialogCancel, 
@@ -502,6 +502,16 @@ export default function BlitzgridAdmin() {
                 >
                   <Clock className="w-4 h-4 mr-2" />
                   Past Forward
+                </Button>
+              </Link>
+              <Link href="/admin/memenoharm">
+                <Button 
+                  variant="ghost" 
+                  className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
+                  data-testid="tab-memenoharm"
+                >
+                  <Smile className="w-4 h-4 mr-2" />
+                  Meme No Harm
                 </Button>
               </Link>
             </nav>
@@ -1041,6 +1051,16 @@ export default function BlitzgridAdmin() {
               >
                 <Clock className="w-4 h-4 mr-2" />
                 Past Forward
+              </Button>
+            </Link>
+            <Link href="/admin/memenoharm">
+              <Button 
+                variant="ghost" 
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
+                data-testid="tab-memenoharm"
+              >
+                <Smile className="w-4 h-4 mr-2" />
+                Meme No Harm
               </Button>
             </Link>
           </nav>

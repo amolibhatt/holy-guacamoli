@@ -23,6 +23,8 @@ const PsyOpAdmin = lazy(() => import("@/pages/PsyOpAdmin"));
 const PsyOpHost = lazy(() => import("@/pages/PsyOpHost"));
 const TimeWarpAdmin = lazy(() => import("@/pages/TimeWarpAdmin"));
 const TimeWarpHost = lazy(() => import("@/pages/TimeWarpHost"));
+const MemeNoHarmAdmin = lazy(() => import("@/pages/MemeNoHarmAdmin"));
+const MemeNoHarmHost = lazy(() => import("@/pages/MemeNoHarmHost"));
 const GameHistory = lazy(() => import("@/pages/GameHistory"));
 const Blitzgrid = lazy(() => import("@/pages/Blitzgrid"));
 const Pricing = lazy(() => import("@/pages/Pricing"));
@@ -58,6 +60,9 @@ function Router() {
         <Route path="/host/psyop" component={PsyOpHost} />
         <Route path="/admin/pastforward" component={TimeWarpAdmin} />
         <Route path="/pastforward/host" component={TimeWarpHost} />
+        <Route path="/admin/memenoharm" component={MemeNoHarmAdmin} />
+        <Route path="/memenoharm/host" component={MemeNoHarmHost} />
+        <Route path="/memenoharm/:code?" component={SortCircuitPlayer} />
         <Route path="/sortcircuit/:code?" component={SortCircuitPlayer} />
         <Route path="/host/blitzgrid" component={Blitzgrid} />
         <Route path="/pricing" component={Pricing} />

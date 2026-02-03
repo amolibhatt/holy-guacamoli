@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, psyopQuestions, timeWarpQuestions, adminAnnouncements, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameSessionWithDetails, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion, type PsyopQuestion, type InsertPsyopQuestion, type TimeWarpQuestion, type InsertTimeWarpQuestion, type AdminAnnouncement, type InsertAdminAnnouncement, type ModerationStatus } from "@shared/schema";
+import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, psyopQuestions, timeWarpQuestions, memePrompts, memeImages, memeSessions, memePlayers, memeRounds, memeSubmissions, memeVotes, adminAnnouncements, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameSessionWithDetails, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion, type PsyopQuestion, type InsertPsyopQuestion, type TimeWarpQuestion, type InsertTimeWarpQuestion, type MemePrompt, type InsertMemePrompt, type MemeImage, type InsertMemeImage, type MemeSession, type InsertMemeSession, type MemePlayer, type InsertMemePlayer, type MemeRound, type InsertMemeRound, type MemeSubmission, type InsertMemeSubmission, type MemeVote, type InsertMemeVote, type AdminAnnouncement, type InsertAdminAnnouncement, type ModerationStatus } from "@shared/schema";
 import { users } from "@shared/models/auth";
 import { eq, and, asc, count, inArray, desc, sql, gte, like } from "drizzle-orm";
 
@@ -178,6 +178,16 @@ export interface IStorage {
   createTimeWarpQuestion(data: InsertTimeWarpQuestion): Promise<TimeWarpQuestion>;
   updateTimeWarpQuestion(id: number, data: Partial<InsertTimeWarpQuestion>, userId: string, role?: string): Promise<TimeWarpQuestion | null>;
   deleteTimeWarpQuestion(id: number, userId: string, role?: string): Promise<boolean>;
+
+  // Meme No Harm
+  getMemePrompts(userId: string, role?: string): Promise<MemePrompt[]>;
+  createMemePrompt(data: InsertMemePrompt): Promise<MemePrompt>;
+  updateMemePrompt(id: number, data: Partial<InsertMemePrompt>, userId: string, role?: string): Promise<MemePrompt | null>;
+  deleteMemePrompt(id: number, userId: string, role?: string): Promise<boolean>;
+  getMemeImages(userId: string, role?: string): Promise<MemeImage[]>;
+  createMemeImage(data: InsertMemeImage): Promise<MemeImage>;
+  updateMemeImage(id: number, data: Partial<InsertMemeImage>, userId: string, role?: string): Promise<MemeImage | null>;
+  deleteMemeImage(id: number, userId: string, role?: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1606,6 +1616,73 @@ export class DatabaseStorage implements IStorage {
       return result.length > 0;
     }
     const result = await db.delete(timeWarpQuestions).where(and(eq(timeWarpQuestions.id, id), eq(timeWarpQuestions.userId, userId))).returning();
+    return result.length > 0;
+  }
+
+  // Meme No Harm implementations
+  async getMemePrompts(userId: string, role?: string): Promise<MemePrompt[]> {
+    if (role === 'super_admin') {
+      return await db.select().from(memePrompts).orderBy(desc(memePrompts.createdAt));
+    }
+    return await db.select().from(memePrompts).where(eq(memePrompts.userId, userId)).orderBy(desc(memePrompts.createdAt));
+  }
+
+  async createMemePrompt(data: InsertMemePrompt): Promise<MemePrompt> {
+    const [prompt] = await db.insert(memePrompts).values(data).returning();
+    return prompt;
+  }
+
+  async updateMemePrompt(id: number, data: Partial<InsertMemePrompt>, userId: string, role?: string): Promise<MemePrompt | null> {
+    const condition = role === 'super_admin' 
+      ? eq(memePrompts.id, id)
+      : and(eq(memePrompts.id, id), eq(memePrompts.userId, userId));
+    
+    const [updated] = await db.update(memePrompts)
+      .set(data as any)
+      .where(condition)
+      .returning();
+    return updated || null;
+  }
+
+  async deleteMemePrompt(id: number, userId: string, role?: string): Promise<boolean> {
+    if (role === 'super_admin') {
+      const result = await db.delete(memePrompts).where(eq(memePrompts.id, id)).returning();
+      return result.length > 0;
+    }
+    const result = await db.delete(memePrompts).where(and(eq(memePrompts.id, id), eq(memePrompts.userId, userId))).returning();
+    return result.length > 0;
+  }
+
+  async getMemeImages(userId: string, role?: string): Promise<MemeImage[]> {
+    if (role === 'super_admin') {
+      return await db.select().from(memeImages).orderBy(desc(memeImages.createdAt));
+    }
+    return await db.select().from(memeImages).where(eq(memeImages.userId, userId)).orderBy(desc(memeImages.createdAt));
+  }
+
+  async createMemeImage(data: InsertMemeImage): Promise<MemeImage> {
+    const [image] = await db.insert(memeImages).values(data).returning();
+    return image;
+  }
+
+  async updateMemeImage(id: number, data: Partial<InsertMemeImage>, userId: string, role?: string): Promise<MemeImage | null> {
+    const condition = role === 'super_admin' 
+      ? eq(memeImages.id, id)
+      : and(eq(memeImages.id, id), eq(memeImages.userId, userId));
+    
+    const [updated] = await db.update(memeImages)
+      .set(data as any)
+      .where(condition)
+      .returning();
+    return updated || null;
+  }
+
+  async deleteMemeImage(id: number, userId: string, role?: string): Promise<boolean> {
+    if (role === 'super_admin') {
+      const result = await db.delete(memeImages).where(eq(memeImages.id, id)).returning();
+      return result.length > 0;
+    }
+    const result = await db.delete(memeImages).where(and(eq(memeImages.id, id), eq(memeImages.userId, userId))).returning();
     return result.length > 0;
   }
 

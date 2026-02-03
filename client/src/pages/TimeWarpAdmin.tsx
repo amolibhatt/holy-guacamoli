@@ -14,7 +14,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Loader2, Grid3X3, ListOrdered, Eye, Plus, Trash2, X, 
-  Clock, Image as ImageIcon, Pencil, Play
+  Clock, Image as ImageIcon, Pencil, Play, Smile
 } from "lucide-react";
 import type { TimeWarpQuestion } from "@shared/schema";
 
@@ -219,6 +219,16 @@ export default function TimeWarpAdmin() {
               >
                 <Clock className="w-4 h-4 mr-2" />
                 Past Forward
+              </Button>
+            </Link>
+            <Link href="/admin/memenoharm">
+              <Button 
+                variant="ghost" 
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
+                data-testid="tab-memenoharm"
+              >
+                <Smile className="w-4 h-4 mr-2" />
+                Meme No Harm
               </Button>
             </Link>
           </nav>
