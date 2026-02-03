@@ -395,7 +395,7 @@ export default function Blitzgrid() {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
       setQuestionForms(prev => {
         const newForms = { ...prev };
-        delete newForms[variables.points];
+        delete newForms[`${variables.categoryId}-${variables.points}`];
         return newForms;
       });
       toast({ title: "Question saved" });

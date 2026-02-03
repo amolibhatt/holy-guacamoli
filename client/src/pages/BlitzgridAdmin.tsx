@@ -203,7 +203,7 @@ export default function BlitzgridAdmin() {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
       setQuestionForms(prev => {
         const newForms = { ...prev };
-        delete newForms[variables.points];
+        delete newForms[`${variables.categoryId}-${variables.points}`];
         return newForms;
       });
       toast({ title: "Question saved" });
@@ -571,7 +571,7 @@ export default function BlitzgridAdmin() {
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                     g.id === selectedGridId 
                       ? 'bg-primary/10 text-primary font-medium' 
-                      : 'text-foreground hover:bg-muted'
+                      : 'text-foreground hover-elevate'
                   }`}
                   data-testid={`sidebar-grid-${g.id}`}
                 >
