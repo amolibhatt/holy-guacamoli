@@ -150,7 +150,7 @@ export function SaveProgressPrompt({ isOpen, onClose, stats }: SaveProgressPromp
                 </div>
                 
                 <p className="text-xs text-center text-muted-foreground">
-                  Sign in with Gmail or email
+                  Sign in with your email
                 </p>
               </CardContent>
             </Card>

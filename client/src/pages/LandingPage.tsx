@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Logo } from "@/components/Logo";
 import { motion } from "framer-motion";
-import { Loader2, Heart, Chrome } from "lucide-react";
+import { Loader2, Heart } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -78,29 +78,6 @@ export default function LandingPage() {
 
         <Card className="border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl shadow-lime-500/5 rounded-2xl">
             <CardContent className="p-6">
-              {/* Social Login Buttons */}
-              <div className="space-y-3 mb-5">
-                <Button 
-                  variant="outline" 
-                  className="w-full h-12 rounded-xl border-white/15 bg-white/5 text-white hover:bg-white/10 hover:border-white/25 gap-3"
-                  onClick={() => window.location.href = "/api/login"}
-                  data-testid="button-social-login"
-                >
-                  <Chrome className="h-5 w-5 text-[#4285F4]" />
-                  <span>Continue with Google</span>
-                </Button>
-              </div>
-
-              {/* Divider */}
-              <div className="relative my-5">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/10"></div>
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="bg-transparent px-3 text-white/40">or use email</span>
-                </div>
-              </div>
-
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-2 mb-5 bg-white/5 h-11 rounded-xl">
                   <TabsTrigger value="login" className="rounded-lg data-[state=active]:bg-lime-500/20 data-[state=active]:text-lime-400" data-testid="tab-login">Sign In</TabsTrigger>
