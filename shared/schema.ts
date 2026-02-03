@@ -515,6 +515,7 @@ export const sessionPlayers = pgTable("session_players", {
   id: serial("id").primaryKey(),
   sessionId: integer("session_id").notNull(),
   playerId: text("player_id").notNull(),
+  userId: text("user_id"), // Links to authenticated user (null for guests)
   name: text("name").notNull(),
   avatar: text("avatar").notNull().default("cat"),
   score: integer("score").notNull().default(0),
@@ -523,6 +524,7 @@ export const sessionPlayers = pgTable("session_players", {
   lastSeenAt: timestamp("last_seen_at").notNull().defaultNow(),
 }, (table) => [
   unique().on(table.sessionId, table.playerId),
+  index("idx_session_players_user").on(table.userId),
 ]);
 
 export const PLAYER_AVATARS = [
@@ -870,3 +872,102 @@ export const adminAnnouncements = pgTable("admin_announcements", {
 export const insertAdminAnnouncementSchema = createInsertSchema(adminAnnouncements).omit({ id: true, createdAt: true });
 export type AdminAnnouncement = typeof adminAnnouncements.$inferSelect;
 export type InsertAdminAnnouncement = z.infer<typeof insertAdminAnnouncementSchema>;
+
+// Player Game Stats - tracks per-game statistics for authenticated players
+export const playerGameStats = pgTable("player_game_stats", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  gameSlug: text("game_slug").notNull(), // blitzgrid, sequence_squeeze, psyop, timewarp, memenoharm
+  gamesPlayed: integer("games_played").notNull().default(0),
+  gamesWon: integer("games_won").notNull().default(0),
+  totalPoints: integer("total_points").notNull().default(0),
+  highestScore: integer("highest_score").notNull().default(0),
+  lastPlayedAt: timestamp("last_played_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  unique().on(table.userId, table.gameSlug),
+  index("idx_player_stats_user").on(table.userId),
+  index("idx_player_stats_game").on(table.gameSlug),
+]);
+
+// Badge Definitions - defines all possible badges
+export const BADGE_CATEGORIES = ["achievement", "milestone", "special"] as const;
+export type BadgeCategory = typeof BADGE_CATEGORIES[number];
+
+export const badges = pgTable("badges", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon").notNull(), // lucide icon name
+  category: text("category").notNull().$type<BadgeCategory>().default("achievement"),
+  gameSlug: text("game_slug"), // null for cross-game badges
+  requirement: jsonb("requirement").$type<{
+    type: "games_played" | "games_won" | "total_points" | "first_game" | "streak" | "special";
+    threshold?: number;
+    gameSlug?: string;
+  }>().notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// User Badges - tracks which badges each user has earned
+export const userBadges = pgTable("user_badges", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  badgeId: integer("badge_id").notNull(),
+  earnedAt: timestamp("earned_at").notNull().defaultNow(),
+}, (table) => [
+  unique().on(table.userId, table.badgeId),
+  index("idx_user_badges_user").on(table.userId),
+]);
+
+// Player Game History - individual game records for profile
+export const playerGameHistory = pgTable("player_game_history", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  gameSlug: text("game_slug").notNull(),
+  sessionCode: text("session_code").notNull(),
+  score: integer("score").notNull().default(0),
+  placement: integer("placement"), // 1st, 2nd, 3rd, etc.
+  playerCount: integer("player_count").notNull().default(1),
+  playedAt: timestamp("played_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_player_history_user").on(table.userId),
+  index("idx_player_history_game").on(table.gameSlug),
+]);
+
+// Player stats insert schemas
+export const insertPlayerGameStatsSchema = createInsertSchema(playerGameStats).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertBadgeSchema = createInsertSchema(badges).omit({ id: true, createdAt: true });
+export const insertUserBadgeSchema = createInsertSchema(userBadges).omit({ id: true, earnedAt: true });
+export const insertPlayerGameHistorySchema = createInsertSchema(playerGameHistory).omit({ id: true, playedAt: true });
+
+// Player stats types
+export type PlayerGameStats = typeof playerGameStats.$inferSelect;
+export type Badge = typeof badges.$inferSelect;
+export type UserBadge = typeof userBadges.$inferSelect;
+export type PlayerGameHistory = typeof playerGameHistory.$inferSelect;
+export type InsertPlayerGameStats = z.infer<typeof insertPlayerGameStatsSchema>;
+export type InsertBadge = z.infer<typeof insertBadgeSchema>;
+export type InsertUserBadge = z.infer<typeof insertUserBadgeSchema>;
+export type InsertPlayerGameHistory = z.infer<typeof insertPlayerGameHistorySchema>;
+
+// Player profile with aggregated stats
+export type PlayerProfile = {
+  user: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    email: string;
+  };
+  gameStats: PlayerGameStats[];
+  badges: (UserBadge & { badge: Badge })[];
+  recentGames: PlayerGameHistory[];
+  totals: {
+    gamesPlayed: number;
+    gamesWon: number;
+    totalPoints: number;
+  };
+};
