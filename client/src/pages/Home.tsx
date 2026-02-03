@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, Brain, Users, Clock, Smile } from "lucide-react";
+import { Loader2, Grid3X3, Brain, Users, Clock, Smile, Play } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { AppHeader } from "@/components/AppHeader";
 import { GAME_RULES } from "@/components/GameRules";
 
@@ -101,6 +103,13 @@ export default function Home() {
   const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const [gameCode, setGameCode] = useState("");
+
+  const handleJoinGame = () => {
+    if (gameCode.trim()) {
+      setLocation(`/play/${gameCode.trim().toUpperCase()}`);
+    }
+  };
 
   const { data: gameTypes = [], isLoading: isLoadingGames } = useQuery<(GameType & { status?: string })[]>({
     queryKey: ['/api/game-types/homepage'],
@@ -178,6 +187,42 @@ export default function Home() {
               </p>
             </motion.div>
           </div>
+
+          {/* Join a Game Section */}
+          <motion.div 
+            className="mb-8 lg:mb-10"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="bg-[#0d0d12] border border-white/10 rounded-xl p-4 lg:p-6">
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <div className="flex items-center gap-2 text-white/70 w-full sm:w-auto">
+                  <Play className="w-5 h-5 text-lime-400" />
+                  <span className="text-sm font-medium">Join a Game</span>
+                </div>
+                <div className="flex flex-1 gap-2 w-full">
+                  <Input
+                    placeholder="Enter game code"
+                    value={gameCode}
+                    onChange={(e) => setGameCode(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => e.key === 'Enter' && handleJoinGame()}
+                    className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30 uppercase tracking-widest text-center font-mono"
+                    maxLength={6}
+                    data-testid="input-game-code"
+                  />
+                  <Button 
+                    onClick={handleJoinGame}
+                    disabled={!gameCode.trim()}
+                    className="bg-lime-500 hover:bg-lime-600 text-black font-bold px-6"
+                    data-testid="button-join-game"
+                  >
+                    Join
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
 
           {/* Game Cards - 2 column grid on medium+ screens */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
