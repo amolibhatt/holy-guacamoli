@@ -12,6 +12,7 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./auth";
 import { registerReplitAuthRoutes, registerReplitAuthApiRoutes } from "./replit_integrations/auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { razorpayRouter } from "./razorpay";
+import playerProfileRouter from "./routes/playerProfile";
 import { SOURCE_GROUPS, type SourceGroup, type Question } from "@shared/schema";
 
 // Required point values for a category to go LIVE
@@ -115,6 +116,7 @@ export async function registerRoutes(
   
   // Register Razorpay payment routes
   app.use("/api/razorpay", razorpayRouter);
+  app.use(playerProfileRouter);
   
   // Register object storage routes for image uploads
   registerObjectStorageRoutes(app);
