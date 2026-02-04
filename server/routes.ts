@@ -4417,6 +4417,7 @@ Be creative! Make facts surprising and fun to guess.`;
                 type: 'joined',
                 playerId,
                 buzzerLocked: room.buzzerLocked,
+                buzzerBlocked: room.passedPlayers.has(playerId),
                 score: existingPlayer.score,
               }));
 

@@ -132,6 +132,7 @@ export default function PlayerPage() {
           setPlayerId(data.playerId);
           playerIdRef.current = data.playerId;
           setBuzzerLocked(data.buzzerLocked);
+          setBuzzerBlocked(data.buzzerBlocked || false);
           if (data.score !== undefined) setScore(data.score);
           saveSession(roomCode.toUpperCase(), playerName, data.playerId, selectedAvatar);
           break;
