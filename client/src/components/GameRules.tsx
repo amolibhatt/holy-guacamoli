@@ -16,7 +16,7 @@ export interface GameRulesContent {
 
 export const GAME_RULES: Record<string, GameRulesContent> = {
   blitzgrid: {
-    title: "Blitzgrid",
+    title: "BlitzGrid",
     tagline: "Race the clock, decode the clues, and claim the grid.",
     players: "2-8 players",
     duration: "15-30 min",

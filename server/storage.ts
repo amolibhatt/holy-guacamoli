@@ -1701,7 +1701,7 @@ export class DatabaseStorage implements IStorage {
     const requiredGameTypes = [
       {
         slug: "blitzgrid",
-        displayName: "Blitzgrid",
+        displayName: "BlitzGrid",
         description: "5 categories, 5 questions each. Race the clock to claim the grid!",
         icon: "grid",
         status: "active" as const,

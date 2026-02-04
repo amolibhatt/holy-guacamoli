@@ -109,7 +109,7 @@ const TRAIT_INFO: Record<string, {
 
 // Keys match backend game slugs
 const GAME_INFO: Record<string, { name: string; icon: typeof Brain; color: string }> = {
-  blitzgrid: { name: "Blitzgrid", icon: Brain, color: "from-rose-400 to-fuchsia-500" },
+  blitzgrid: { name: "BlitzGrid", icon: Brain, color: "from-rose-400 to-fuchsia-500" },
   sequence_squeeze: { name: "Sort Circuit", icon: Target, color: "from-emerald-400 to-cyan-500" },
   psyop: { name: "PsyOp", icon: Zap, color: "from-violet-400 to-indigo-500" },
   timewarp: { name: "Past Forward", icon: Clock, color: "from-amber-400 to-orange-500" },

@@ -1065,7 +1065,7 @@ export default function Blitzgrid() {
   if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <AppHeader minimal backHref="/" title="Blitzgrid" />
+        <AppHeader minimal backHref="/" title="BlitzGrid" />
         <main className="max-w-6xl mx-auto px-4 py-6 w-full">
           <Skeleton className="h-8 w-48 mb-4" />
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -2407,7 +2407,7 @@ export default function Blitzgrid() {
                         const scoreText = topPlayers.map((p, i) => 
                           `#${i + 1} ${p.name}: ${p.score} pts`
                         ).join(' | ');
-                        const shareText = `Blitzgrid Results - ${scoreText} - Play at Holy GuacAmoli!`;
+                        const shareText = `BlitzGrid Results - ${scoreText} - Play at Holy GuacAmoli!`;
                         
                         try {
                           const response = await fetch(shareImageUrl);
@@ -2416,12 +2416,12 @@ export default function Blitzgrid() {
                           if (navigator.canShare && navigator.canShare({ files: [new File([blob], 'blitzgrid-results.png', { type: 'image/png' })] })) {
                             const file = new File([blob], 'blitzgrid-results.png', { type: 'image/png' });
                             await navigator.share({
-                              title: 'Blitzgrid Results',
+                              title: 'BlitzGrid Results',
                               text: shareText,
                               files: [file],
                             });
                           } else if (navigator.share) {
-                            await navigator.share({ title: 'Blitzgrid Results', text: shareText });
+                            await navigator.share({ title: 'BlitzGrid Results', text: shareText });
                           } else {
                             const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
                             window.open(twitterUrl, '_blank');
@@ -2985,7 +2985,7 @@ export default function Blitzgrid() {
     
     return (
       <div className="min-h-screen flex flex-col bg-background" data-testid="page-blitzgrid-grid">
-        <AppHeader minimal backHref="/" title={grid?.name || 'Blitzgrid'} />
+        <AppHeader minimal backHref="/" title={grid?.name || 'BlitzGrid'} />
         <main className="flex-1 flex flex-col max-w-6xl mx-auto px-4 py-6 w-full">
           <div className="flex items-center justify-between gap-4 mb-4 shrink-0">
             <div>
@@ -3372,7 +3372,7 @@ export default function Blitzgrid() {
             >
               {grid.name}
             </h3>
-            {grid.description && grid.description !== "Blitzgrid" && (
+            {grid.description && grid.description !== "BlitzGrid" && (
               <p className="text-xs text-white/40 mt-1 truncate" title={grid.description}>
                 {grid.description}
               </p>
@@ -3412,7 +3412,7 @@ export default function Blitzgrid() {
         />
       </div>
       
-      <AppHeader minimal backHref="/" title="Blitzgrid" />
+      <AppHeader minimal backHref="/" title="BlitzGrid" />
       
       <main className="flex-1 max-w-6xl mx-auto px-4 py-6 relative z-10 w-full">
         {loadingGrids ? (

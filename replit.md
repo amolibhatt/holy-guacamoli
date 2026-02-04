@@ -2,14 +2,14 @@
 
 ## Overview
 
-Holy GuacAmoli! is a multi-game party platform featuring Blitzgrid (5x5 trivia grid game) and Sort Circuit (multiplayer ordering game). Built for Amoli's birthday. It's built as a full-stack TypeScript application with a React frontend and Express backend.
+Holy GuacAmoli! is a multi-game party platform featuring BlitzGrid (5x5 trivia grid game) and Sort Circuit (multiplayer ordering game). Built for Amoli's birthday. It's built as a full-stack TypeScript application with a React frontend and Express backend.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
 
 ### Design Preferences
-- **Pastel Aesthetic**: User strongly prefers soft pastel colors with multi-color gradients (rose→pink→fuchsia for Blitzgrid, emerald→teal→cyan for Sort Circuit, violet→purple→indigo for PsyOp)
+- **Pastel Aesthetic**: User strongly prefers soft pastel colors with multi-color gradients (rose→pink→fuchsia for BlitzGrid, emerald→teal→cyan for Sort Circuit, violet→purple→indigo for PsyOp)
 - **Decorative Elements**: Semi-circle shapes in card corners, layered gradients, soft shadows
 - **Dark Theme Only**: App uses a permanent dark arcade theme for neon glow effects
 - **Footer Branding**: "made with ♥ by Amoli" using Heart icon (not emoji) with pastel gradient on name
@@ -47,7 +47,7 @@ Preferred communication style: Simple, everyday language.
 6. **Multiplayer Game System**: WebSocket-based real-time multiplayer for Sort Circuit where players join via room codes.
 7. **Animations**: 3D flip card animations for question cells, particle effects for milestones and category completion
 8. **Portable Email/Password Auth**: Host authentication uses bcrypt for password hashing and express-session with PostgreSQL store. No external OAuth dependencies - works on any platform.
-9. **Blitzgrid Structure**: Grid = Board (up to 5 categories), Category = 5 Questions (unique point tiers 10/20/30/40/50). A Category is "Active" when it has all 5 point tiers filled. A Grid is "Active" when it has 5 Active Categories. Uses theme="blitzgrid" to distinguish from other boards.
+9. **BlitzGrid Structure**: Grid = Board (up to 5 categories), Category = 5 Questions (unique point tiers 10/20/30/40/50). A Category is "Active" when it has all 5 point tiers filled. A Grid is "Active" when it has 5 Active Categories. Uses theme="blitzgrid" to distinguish from other boards.
 
 ### Recent Changes (January 2026)
 - **Simplified Architecture**: Questions now belong directly to categories via categoryId (not boardCategoryId). Each category has exactly 5 questions with unique points {10,20,30,40,50}.
@@ -69,21 +69,21 @@ Preferred communication style: Simple, everyday language.
 - **Bulk Import Validation**: Enhanced with length limits, board-specific point values, max 50 items per import
 - **Analytics Improvements**: Server-side validation, 10% log sampling, event batching
 - **AI Fallback**: Rate-limit detection, empty answer handling with 30% scoring
-- **Buzzkill, Double Dip, and Sync or Sink Removed**: Removed these game modes to focus on core games (Blitzgrid, Sort Circuit, PsyOp)
+- **Buzzkill, Double Dip, and Sync or Sink Removed**: Removed these game modes to focus on core games (BlitzGrid, Sort Circuit, PsyOp)
 - **Drag-and-Drop Category Reordering**: Categories can be reordered within a board by dragging category tabs
 - **Auto-Save Drafts**: Work-in-progress questions are saved to localStorage per category, cleared on successful save or when all fields are empty
 - **Improved Admin Navigation**: Hierarchical sidebar shows categories nested under boards (expandable tree), breadcrumb navigation shows current location (Board > Category), clearer completion indicators at each level
 - **Enhanced Admin UX**: Collapsible sidebar with tooltip hover, visual progress bars (color-coded: amber/blue/green), quick-add inline question form, progress dashboard with next actions, improved empty states with action buttons
 - **Super Admin Starter Packs**: Super admin can promote any complete grid to "starter pack" status via toggle in SuperAdmin > All Grids tab. Starter packs are automatically copied to new users on signup, giving them ready-to-play content. Uses isStarterPack boolean on boards table.
 - **Fun Interactive Themes**: 9 playful themes (Sports, Birthday, Beach, Office, Dogs, Cats, Space, Music, Nature) each with animated floating elements - trophies, balloons, waves, paw prints, stars, music notes, trees, etc. Theme elements animate continuously during gameplay.
-- **Excel Import/Export**: Blitzgrid grids can be exported to and imported from Excel (.xlsx) files. Template includes sample data and instructions sheet. Row-based format with columns: Grid Name, Grid Description, Category Name, Category Description, Points, Question, Answer, Options (pipe-delimited), Image URL, Audio URL, Video URL.
+- **Excel Import/Export**: BlitzGrid grids can be exported to and imported from Excel (.xlsx) files. Template includes sample data and instructions sheet. Row-based format with columns: Grid Name, Grid Description, Category Name, Category Description, Points, Question, Answer, Options (pipe-delimited), Image URL, Audio URL, Video URL.
 - **Enhanced Super Admin Dashboard**: Comprehensive admin dashboard with 6 tabs: Analytics (DAU/WAU/MAU, session stats, player counts), Games (enable/disable, status management), Grids (all grids with moderation), Users (role management, activity tracking), System (database stats, flagged content moderation), Actions (broadcast announcements, data export). All endpoints protected by isSuperAdmin middleware.
 - **Admin Announcements**: Broadcast system for super admins to send platform-wide announcements with title, message, type (info/warning/success), and optional expiration.
 - **Content Moderation**: Boards can be flagged (moderationStatus), featured (isFeatured), with tracking of moderatedBy and moderatedAt timestamps.
 - **User Activity Tracking**: lastLoginAt field on users table, activity API showing games hosted and recent sessions.
 - **Super Admin Sessions Tab**: Dedicated tab showing all game sessions across the platform with host info, player lists, scores, and winners. Relative timestamps ("2h ago") for intuitive display.
 - **Expandable User Details**: Users tab features expandable rows with last login, grids created, games hosted count, and detailed session history with player names, scores, and winners. Note: Players join games anonymously via QR codes without accounts, so only hosted games (not played games) can be tracked per registered user.
-- **Enhanced Games Tab**: Super admin can see all games with enable/disable status controls. Expanded game views show all questions with creator info for Sort Circuit and PsyOp, and all grids with owner info for Blitzgrid. Starter pack toggles available for all game types.
+- **Enhanced Games Tab**: Super admin can see all games with enable/disable status controls. Expanded game views show all questions with creator info for Sort Circuit and PsyOp, and all grids with owner info for BlitzGrid. Starter pack toggles available for all game types.
 - **Per-Game Starter Packs**: isStarterPack field added to sequence_questions and psyop_questions tables. Super admins can mark individual questions as starter pack content that gets copied to new users.
 
 ### Known Security Notes

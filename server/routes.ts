@@ -3510,7 +3510,7 @@ Be creative! Make facts surprising and fun to guess.`;
       const board = await storage.createBoard({
         userId,
         name: name.trim(),
-        description: "Blitzgrid",
+        description: "BlitzGrid",
         pointValues: [10, 20, 30, 40, 50],
         theme: "blitzgrid",
         visibility: "private",

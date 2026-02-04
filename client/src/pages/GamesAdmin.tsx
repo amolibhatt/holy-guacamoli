@@ -23,7 +23,7 @@ const MODE_LABELS: Record<GameMode, string> = {
   heads_up: "Heads Up",
   board: "Board Game",
   sequence: "Sort Circuit",
-  blitzgrid: "Blitzgrid",
+  blitzgrid: "BlitzGrid",
 };
 
 const MODE_ICONS: Record<GameMode, typeof Grid3X3> = {

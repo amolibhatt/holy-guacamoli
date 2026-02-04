@@ -317,7 +317,7 @@ export default function PsyOpAdmin() {
                 data-testid="tab-blitzgrid"
               >
                 <Grid3X3 className="w-4 h-4 mr-2" />
-                Blitzgrid
+                BlitzGrid
               </Button>
             </Link>
             <Link href="/admin/sort-circuit">

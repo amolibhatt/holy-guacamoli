@@ -70,7 +70,7 @@ interface CategoryWithQuestions extends Category {
 
 const POINT_TIERS = [10, 20, 30, 40, 50];
 
-export default function BlitzgridAdmin() {
+export default function BlitzGridAdmin() {
   const { toast } = useToast();
   const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
   const searchString = useSearch();
@@ -536,7 +536,7 @@ export default function BlitzgridAdmin() {
     return (
       <div className="min-h-screen bg-background flex flex-col" data-testid="page-blitzgrid-admin-grid">
         <div className="fixed inset-0 bg-gradient-to-br from-rose-300/5 via-transparent to-fuchsia-300/5 pointer-events-none" />
-        <AppHeader minimal backHref="/" title="Blitzgrid Admin" />
+        <AppHeader minimal backHref="/" title="BlitzGrid Admin" />
         
         <div className="border-b border-border bg-card/50">
           <div className="max-w-4xl mx-auto px-4 w-full">
@@ -548,7 +548,7 @@ export default function BlitzgridAdmin() {
                   data-testid="tab-blitzgrid"
                 >
                   <Grid3X3 className="w-4 h-4 mr-2" />
-                  Blitzgrid
+                  BlitzGrid
                 </Button>
               </Link>
               <Link href="/admin/sort-circuit">
@@ -793,7 +793,7 @@ export default function BlitzgridAdmin() {
                               updateGridMutation.mutate({ 
                                 id: selectedGridId, 
                                 name: editGridName.trim(), 
-                                description: editGridDescription.trim() || "Blitzgrid" 
+                                description: editGridDescription.trim() || "BlitzGrid" 
                               });
                             }
                           }}
@@ -815,7 +815,7 @@ export default function BlitzgridAdmin() {
                             updateGridMutation.mutate({ 
                               id: selectedGridId, 
                               name: editGridName.trim(), 
-                              description: editGridDescription.trim() || "Blitzgrid" 
+                              description: editGridDescription.trim() || "BlitzGrid" 
                             });
                           }
                         }}
@@ -823,7 +823,7 @@ export default function BlitzgridAdmin() {
                       />
                     ) : (
                       <p className="text-muted-foreground text-sm">
-                        {grid?.description && grid.description !== "Blitzgrid" ? grid.description : "No description"}
+                        {grid?.description && grid.description !== "BlitzGrid" ? grid.description : "No description"}
                       </p>
                     )}
                     <p className="text-sm text-muted-foreground">
@@ -839,7 +839,7 @@ export default function BlitzgridAdmin() {
                             updateGridMutation.mutate({ 
                               id: selectedGridId, 
                               name: editGridName.trim(), 
-                              description: editGridDescription.trim() || "Blitzgrid" 
+                              description: editGridDescription.trim() || "BlitzGrid" 
                             });
                           }}
                           disabled={!editGridName.trim() || updateGridMutation.isPending}
@@ -859,7 +859,7 @@ export default function BlitzgridAdmin() {
                           onClick={() => {
                           setEditingGridId(selectedGridId);
                           setEditGridName(grid?.name || '');
-                          setEditGridDescription(grid?.description === "Blitzgrid" ? "" : (grid?.description || ""));
+                          setEditGridDescription(grid?.description === "BlitzGrid" ? "" : (grid?.description || ""));
                         }}
                         data-testid="button-edit-grid"
                       >
@@ -1214,7 +1214,7 @@ export default function BlitzgridAdmin() {
   return (
     <div className="min-h-screen bg-background flex flex-col" data-testid="page-blitzgrid-admin">
       <div className="fixed inset-0 bg-gradient-to-br from-rose-300/5 via-transparent to-fuchsia-300/5 pointer-events-none" />
-      <AppHeader minimal backHref="/" title="Blitzgrid Admin" />
+      <AppHeader minimal backHref="/" title="BlitzGrid Admin" />
       
       <div className="border-b border-border bg-card/50">
         <div className="max-w-4xl mx-auto px-4 w-full">
@@ -1226,7 +1226,7 @@ export default function BlitzgridAdmin() {
                 data-testid="tab-blitzgrid"
               >
                 <Grid3X3 className="w-4 h-4 mr-2" />
-                Blitzgrid
+                BlitzGrid
               </Button>
             </Link>
             <Link href="/admin/sort-circuit">
@@ -1276,7 +1276,7 @@ export default function BlitzgridAdmin() {
       <main className="max-w-4xl mx-auto px-4 py-6 flex-1 w-full">
         <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold">Blitzgrid Grids</h1>
+            <h1 className="text-2xl font-bold">BlitzGrid Grids</h1>
             <p className="text-muted-foreground text-sm">Create and edit your trivia grids</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -1486,7 +1486,7 @@ export default function BlitzgridAdmin() {
                               e.stopPropagation();
                               setEditingGridId(grid.id);
                               setEditGridName(grid.name);
-                              setEditGridDescription(grid.description === "Blitzgrid" ? "" : (grid.description || ""));
+                              setEditGridDescription(grid.description === "BlitzGrid" ? "" : (grid.description || ""));
                             }}
                             data-testid={`button-edit-grid-${grid.id}`}
                           >

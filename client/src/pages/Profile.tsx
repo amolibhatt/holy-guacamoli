@@ -17,7 +17,7 @@ const GAME_CONFIG: Record<string, {
   icon: React.ComponentType<{ className?: string }>;
   name: string;
 }> = {
-  blitzgrid: { icon: Grid3X3, name: "Blitzgrid" },
+  blitzgrid: { icon: Grid3X3, name: "BlitzGrid" },
   sequence_squeeze: { icon: List, name: "Sort Circuit" },
   psyop: { icon: Brain, name: "PsyOp" },
   timewarp: { icon: Clock, name: "Past Forward" },
