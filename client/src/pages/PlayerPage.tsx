@@ -717,7 +717,7 @@ export default function PlayerPage() {
                       />
                       <Button
                         onClick={() => {
-                          if (psyopLieText.trim() && wsRef.current) {
+                          if (psyopLieText.trim() && wsRef.current?.readyState === WebSocket.OPEN) {
                             wsRef.current.send(JSON.stringify({
                               type: "psyop:submit:lie",
                               lieText: psyopLieText.trim(),
@@ -771,7 +771,7 @@ export default function PlayerPage() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.1 }}
                       onClick={() => {
-                        if (wsRef.current) {
+                        if (wsRef.current?.readyState === WebSocket.OPEN) {
                           wsRef.current.send(JSON.stringify({
                             type: "psyop:submit:vote",
                             votedForId: option.id,
