@@ -441,9 +441,9 @@ export default function BlitzGridAdmin() {
                 <p className="text-sm text-muted-foreground mt-1 truncate" title={`Answer: ${existingQuestion.correctAnswer}`}>Answer: {existingQuestion.correctAnswer}</p>
                 {(hasMedia || hasAnswerMedia) && (
                   <div className="flex gap-2 text-xs text-muted-foreground mt-1">
-                    {(existingQuestion.imageUrl || existingQuestion.answerImageUrl) && <span className="flex items-center gap-1"><Image className="w-3 h-3" /></span>}
-                    {(existingQuestion.audioUrl || existingQuestion.answerAudioUrl) && <span className="flex items-center gap-1"><Music className="w-3 h-3" /></span>}
-                    {(existingQuestion.videoUrl || existingQuestion.answerVideoUrl) && <span className="flex items-center gap-1"><Video className="w-3 h-3" /></span>}
+                    {(existingQuestion.imageUrl || existingQuestion.answerImageUrl) && <span className="flex items-center gap-1"><Image className="w-3 h-3 shrink-0" aria-hidden="true" /></span>}
+                    {(existingQuestion.audioUrl || existingQuestion.answerAudioUrl) && <span className="flex items-center gap-1"><Music className="w-3 h-3 shrink-0" aria-hidden="true" /></span>}
+                    {(existingQuestion.videoUrl || existingQuestion.answerVideoUrl) && <span className="flex items-center gap-1"><Video className="w-3 h-3 shrink-0" aria-hidden="true" /></span>}
                   </div>
                 )}
               </div>
@@ -483,19 +483,19 @@ export default function BlitzGridAdmin() {
                   <label className="cursor-pointer" data-testid={`label-upload-question-image-${formKey}`}>
                     <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, imageUrl: url } })); toast({ title: "Image uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
                     <Button type="button" size="sm" variant={formData?.imageUrl ? "default" : "outline"} asChild>
-                      <span><Image className="w-3 h-3 mr-1" />{formData?.imageUrl ? <CheckCircle2 className="w-3 h-3" /> : "Image"}</span>
+                      <span><Image className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />{formData?.imageUrl ? <CheckCircle2 className="w-3 h-3 shrink-0" aria-hidden="true" /> : "Image"}</span>
                     </Button>
                   </label>
                   <label className="cursor-pointer" data-testid={`label-upload-question-audio-${formKey}`}>
                     <input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, audioUrl: url } })); toast({ title: "Audio uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
                     <Button type="button" size="sm" variant={formData?.audioUrl ? "default" : "outline"} asChild>
-                      <span><Music className="w-3 h-3 mr-1" />{formData?.audioUrl ? <CheckCircle2 className="w-3 h-3" /> : "Audio"}</span>
+                      <span><Music className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />{formData?.audioUrl ? <CheckCircle2 className="w-3 h-3 shrink-0" aria-hidden="true" /> : "Audio"}</span>
                     </Button>
                   </label>
                   <label className="cursor-pointer" data-testid={`label-upload-question-video-${formKey}`}>
                     <input type="file" accept="video/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, videoUrl: url } })); toast({ title: "Video uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
                     <Button type="button" size="sm" variant={formData?.videoUrl ? "default" : "outline"} asChild>
-                      <span><Video className="w-3 h-3 mr-1" />{formData?.videoUrl ? <CheckCircle2 className="w-3 h-3" /> : "Video"}</span>
+                      <span><Video className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />{formData?.videoUrl ? <CheckCircle2 className="w-3 h-3 shrink-0" aria-hidden="true" /> : "Video"}</span>
                     </Button>
                   </label>
                   {(formData?.imageUrl || formData?.audioUrl || formData?.videoUrl) && (
@@ -522,19 +522,19 @@ export default function BlitzGridAdmin() {
                   <label className="cursor-pointer" data-testid={`label-upload-answer-image-${formKey}`}>
                     <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerImageUrl: url } })); toast({ title: "Image uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
                     <Button type="button" size="sm" variant={formData?.answerImageUrl ? "default" : "outline"} asChild>
-                      <span><Image className="w-3 h-3 mr-1" />{formData?.answerImageUrl ? <CheckCircle2 className="w-3 h-3" /> : "Image"}</span>
+                      <span><Image className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />{formData?.answerImageUrl ? <CheckCircle2 className="w-3 h-3 shrink-0" aria-hidden="true" /> : "Image"}</span>
                     </Button>
                   </label>
                   <label className="cursor-pointer" data-testid={`label-upload-answer-audio-${formKey}`}>
                     <input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerAudioUrl: url } })); toast({ title: "Audio uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
                     <Button type="button" size="sm" variant={formData?.answerAudioUrl ? "default" : "outline"} asChild>
-                      <span><Music className="w-3 h-3 mr-1" />{formData?.answerAudioUrl ? <CheckCircle2 className="w-3 h-3" /> : "Audio"}</span>
+                      <span><Music className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />{formData?.answerAudioUrl ? <CheckCircle2 className="w-3 h-3 shrink-0" aria-hidden="true" /> : "Audio"}</span>
                     </Button>
                   </label>
                   <label className="cursor-pointer" data-testid={`label-upload-answer-video-${formKey}`}>
                     <input type="file" accept="video/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerVideoUrl: url } })); toast({ title: "Video uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
                     <Button type="button" size="sm" variant={formData?.answerVideoUrl ? "default" : "outline"} asChild>
-                      <span><Video className="w-3 h-3 mr-1" />{formData?.answerVideoUrl ? <CheckCircle2 className="w-3 h-3" /> : "Video"}</span>
+                      <span><Video className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />{formData?.answerVideoUrl ? <CheckCircle2 className="w-3 h-3 shrink-0" aria-hidden="true" /> : "Video"}</span>
                     </Button>
                   </label>
                   {(formData?.answerImageUrl || formData?.answerAudioUrl || formData?.answerVideoUrl) && (
@@ -564,7 +564,7 @@ export default function BlitzGridAdmin() {
                   className="relative rounded-none border-b-2 border-primary text-foreground"
                   data-testid="tab-blitzgrid"
                 >
-                  <Grid3X3 className="w-4 h-4 mr-2" />
+                  <Grid3X3 className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                   BlitzGrid
                 </Button>
               </Link>
@@ -574,7 +574,7 @@ export default function BlitzGridAdmin() {
                   className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                   data-testid="tab-sort-circuit"
                 >
-                  <ListOrdered className="w-4 h-4 mr-2" />
+                  <ListOrdered className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                   Sort Circuit
                 </Button>
               </Link>
@@ -584,7 +584,7 @@ export default function BlitzGridAdmin() {
                   className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                   data-testid="tab-psyop"
                 >
-                  <Brain className="w-4 h-4 mr-2" />
+                  <Brain className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                   PsyOp
                 </Button>
               </Link>
@@ -594,7 +594,7 @@ export default function BlitzGridAdmin() {
                   className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                   data-testid="tab-timewarp"
                 >
-                  <Clock className="w-4 h-4 mr-2" />
+                  <Clock className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                   Past Forward
                 </Button>
               </Link>
@@ -604,7 +604,7 @@ export default function BlitzGridAdmin() {
                   className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                   data-testid="tab-memenoharm"
                 >
-                  <Smile className="w-4 h-4 mr-2" />
+                  <Smile className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                   Meme No Harm
                 </Button>
               </Link>
@@ -620,7 +620,7 @@ export default function BlitzGridAdmin() {
               onClick={handleDownloadTemplate}
               data-testid="button-download-template-top"
             >
-              <FileSpreadsheet className="w-4 h-4 mr-1" /> Template
+              <FileSpreadsheet className="w-4 h-4 mr-1 shrink-0" aria-hidden="true" /> Template
             </Button>
             <Button
               variant="outline"
@@ -629,7 +629,7 @@ export default function BlitzGridAdmin() {
               disabled={isExporting || grids.length === 0}
               data-testid="button-export-grids-top"
             >
-              {isExporting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
+              {isExporting ? <Loader2 className="w-4 h-4 mr-1 shrink-0 animate-spin" aria-hidden="true" /> : <Download className="w-4 h-4 mr-1 shrink-0" aria-hidden="true" />}
               Export
             </Button>
             <Button
@@ -639,7 +639,7 @@ export default function BlitzGridAdmin() {
               disabled={isImporting}
               data-testid="button-import-grids-top"
             >
-              {isImporting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Upload className="w-4 h-4 mr-1" />}
+              {isImporting ? <Loader2 className="w-4 h-4 mr-1 shrink-0 animate-spin" aria-hidden="true" /> : <Upload className="w-4 h-4 mr-1 shrink-0" aria-hidden="true" />}
               Import
             </Button>
             <input
@@ -663,7 +663,7 @@ export default function BlitzGridAdmin() {
                 onClick={() => setShowNewGridForm(true)}
                 data-testid="button-add-grid-sidebar"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 shrink-0" aria-hidden="true" />
               </Button>
             </div>
             
@@ -702,7 +702,7 @@ export default function BlitzGridAdmin() {
                     disabled={!newGridName.trim() || createGridMutation.isPending}
                     data-testid="button-create-grid-sidebar"
                   >
-                    {createGridMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Create"}
+                    {createGridMutation.isPending ? <Loader2 className="w-3 h-3 shrink-0 animate-spin" aria-hidden="true" /> : "Create"}
                   </Button>
                   <Button 
                     size="sm"
@@ -757,11 +757,11 @@ export default function BlitzGridAdmin() {
                       data-testid={`button-delete-grid-sidebar-${g.id}`}
                     >
                       {deleteGridMutation.isPending && deletingGridId === g.id ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <Loader2 className="w-3 h-3 shrink-0 animate-spin" aria-hidden="true" />
                       ) : deletingGridId === g.id ? (
-                        <Check className="w-3 h-3" />
+                        <Check className="w-3 h-3 shrink-0" aria-hidden="true" />
                       ) : (
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-3 h-3 shrink-0" aria-hidden="true" />
                       )}
                     </Button>
                   </div>
@@ -775,14 +775,14 @@ export default function BlitzGridAdmin() {
             {/* Mobile Grid Selector */}
             <div className="md:hidden mb-4">
               <Select value={String(selectedGridId)} onValueChange={(v) => setSelectedGridId(Number(v))}>
-                <SelectTrigger>
+                <SelectTrigger data-testid="select-grid-mobile">
                   <SelectValue placeholder="Select a grid" />
                 </SelectTrigger>
                 <SelectContent>
                   {grids.map(g => (
                     <SelectItem key={g.id} value={String(g.id)}>
                       <span className="flex items-center gap-1">
-                        {g.name} {g.isActive && <CheckCircle2 className="w-3 h-3 text-green-500" />}
+                        {g.name} {g.isActive && <CheckCircle2 className="w-3 h-3 text-green-500 shrink-0" aria-hidden="true" />}
                       </span>
                     </SelectItem>
                   ))}
@@ -796,7 +796,7 @@ export default function BlitzGridAdmin() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 space-y-3">
                     <div className="flex items-center gap-2">
-                      <Grid3X3 className="w-5 h-5 text-fuchsia-500 dark:text-fuchsia-400 shrink-0" />
+                      <Grid3X3 className="w-5 h-5 text-fuchsia-500 dark:text-fuchsia-400 shrink-0" aria-hidden="true" />
                       {editingGridId === selectedGridId ? (
                         <Input
                           value={editGridName}
@@ -862,7 +862,7 @@ export default function BlitzGridAdmin() {
                           disabled={!editGridName.trim() || updateGridMutation.isPending}
                           data-testid="button-save-grid"
                         >
-                          {updateGridMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1" /> Save</>}
+                          {updateGridMutation.isPending ? <Loader2 className="w-4 h-4 shrink-0 animate-spin" aria-hidden="true" /> : <><Check className="w-4 h-4 mr-1 shrink-0" aria-hidden="true" /> Save</>}
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => setEditingGridId(null)} data-testid="button-cancel-grid-edit">
                           Cancel
@@ -880,15 +880,15 @@ export default function BlitzGridAdmin() {
                         }}
                         data-testid="button-edit-grid"
                       >
-                        <Pencil className="w-4 h-4 mr-1" /> Edit
+                        <Pencil className="w-4 h-4 mr-1 shrink-0" aria-hidden="true" /> Edit
                       </Button>
                       {grid?.isActive ? (
                         <Badge className="bg-green-500/20 text-green-600 dark:text-green-400">
-                          <CheckCircle2 className="w-3 h-3 mr-1" /> Ready to Play
+                          <CheckCircle2 className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" /> Ready to Play
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                          <AlertCircle className="w-3 h-3 mr-1" /> Incomplete
+                          <AlertCircle className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" /> Incomplete
                         </Badge>
                       )}
                     </>
@@ -935,14 +935,14 @@ export default function BlitzGridAdmin() {
                         disabled={!newCategoryName.trim() || createCategoryMutation.isPending}
                         data-testid="button-create-category"
                       >
-                        {createCategoryMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
+                        {createCategoryMutation.isPending ? <Loader2 className="w-4 h-4 shrink-0 animate-spin" aria-hidden="true" /> : "Create"}
                       </Button>
                       <Button variant="ghost" onClick={() => { 
                         setShowNewCategoryForm(false); 
                         setNewCategoryName(""); 
                         setNewCategoryDescription("");
                       }} data-testid="button-cancel-category-create">
-                        <X className="w-4 h-4" />
+                        <X className="w-4 h-4 shrink-0" aria-hidden="true" />
                       </Button>
                     </div>
                     <Input
@@ -959,7 +959,7 @@ export default function BlitzGridAdmin() {
                     onClick={() => setShowNewCategoryForm(true)}
                     data-testid="button-new-category"
                   >
-                    <Plus className="w-4 h-4 mr-2" /> Add Category ({gridCategories.length}/5)
+                    <Plus className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" /> Add Category ({gridCategories.length}/5)
                   </Button>
                 )}
               </CardContent>
@@ -974,7 +974,7 @@ export default function BlitzGridAdmin() {
           ) : gridCategories.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
-                <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4 shrink-0" aria-hidden="true" />
                 <h3 className="font-medium mb-2">No categories yet</h3>
                 <p className="text-muted-foreground text-sm">Add your first category above to start building your grid</p>
               </CardContent>
@@ -1005,7 +1005,7 @@ export default function BlitzGridAdmin() {
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-3">
-                          <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                          <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} aria-hidden="true" />
                           <div className="min-w-0">
                             <CardTitle className="text-base truncate" title={category.name}>{category.name}</CardTitle>
                             <CardDescription className="text-xs truncate" title={`${category.description || 'No description'} · ${category.questionCount}/5 questions`}>
@@ -1015,7 +1015,7 @@ export default function BlitzGridAdmin() {
                         </div>
                         <div className="flex items-center gap-2">
                           {category.questionCount >= 5 ? (
-                            <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 text-xs">Complete</Badge>
+                            <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 text-xs shrink-0">Complete</Badge>
                           ) : (
                             <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs">
                               {5 - category.questionCount} needed
@@ -1031,7 +1031,7 @@ export default function BlitzGridAdmin() {
                             disabled={removeCategoryMutation.isPending}
                             data-testid={`button-remove-category-${category.id}`}
                           >
-                            <Trash2 className="w-4 h-4 text-destructive" />
+                            <Trash2 className="w-4 h-4 text-destructive shrink-0" aria-hidden="true" />
                           </Button>
                         </div>
                       </div>
@@ -1134,7 +1134,7 @@ export default function BlitzGridAdmin() {
                                     }}
                                     data-testid={`button-edit-category-${category.id}`}
                                   >
-                                    <Pencil className="w-4 h-4" />
+                                    <Pencil className="w-4 h-4 shrink-0" aria-hidden="true" />
                                   </Button>
                                 </div>
                               )}
@@ -1210,7 +1210,7 @@ export default function BlitzGridAdmin() {
                                   disabled={saveQuestionMutation.isPending || updateCategoryMutation.isPending || !editCategoryName.trim()}
                                   data-testid={`button-save-category-${category.id}`}
                                 >
-                                  {(saveQuestionMutation.isPending || updateCategoryMutation.isPending) ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                                  {(saveQuestionMutation.isPending || updateCategoryMutation.isPending) ? <Loader2 className="w-4 h-4 mr-2 shrink-0 animate-spin" aria-hidden="true" /> : null}
                                   Save All
                                 </Button>
                               </div>
@@ -1247,7 +1247,7 @@ export default function BlitzGridAdmin() {
                 className="relative rounded-none border-b-2 border-primary text-foreground"
                 data-testid="tab-blitzgrid"
               >
-                <Grid3X3 className="w-4 h-4 mr-2" />
+                <Grid3X3 className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                 BlitzGrid
               </Button>
             </Link>
@@ -1257,7 +1257,7 @@ export default function BlitzGridAdmin() {
                 className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                 data-testid="tab-sort-circuit"
               >
-                <ListOrdered className="w-4 h-4 mr-2" />
+                <ListOrdered className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                 Sort Circuit
               </Button>
             </Link>
@@ -1267,7 +1267,7 @@ export default function BlitzGridAdmin() {
                 className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                 data-testid="tab-psyop"
               >
-                <Brain className="w-4 h-4 mr-2" />
+                <Brain className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                 PsyOp
               </Button>
             </Link>
@@ -1277,7 +1277,7 @@ export default function BlitzGridAdmin() {
                 className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                 data-testid="tab-timewarp"
               >
-                <Clock className="w-4 h-4 mr-2" />
+                <Clock className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                 Past Forward
               </Button>
             </Link>
@@ -1287,7 +1287,7 @@ export default function BlitzGridAdmin() {
                 className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                 data-testid="tab-memenoharm"
               >
-                <Smile className="w-4 h-4 mr-2" />
+                <Smile className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                 Meme No Harm
               </Button>
             </Link>
@@ -1308,7 +1308,7 @@ export default function BlitzGridAdmin() {
               onClick={handleDownloadTemplate}
               data-testid="button-download-template"
             >
-              <FileSpreadsheet className="w-4 h-4 mr-2" /> Template
+              <FileSpreadsheet className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" /> Template
             </Button>
             <Button
               variant="outline"
@@ -1317,7 +1317,7 @@ export default function BlitzGridAdmin() {
               disabled={isExporting || grids.length === 0}
               data-testid="button-export-grids"
             >
-              {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+              {isExporting ? <Loader2 className="w-4 h-4 mr-2 shrink-0 animate-spin" aria-hidden="true" /> : <Download className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />}
               Export
             </Button>
             <Button
@@ -1327,7 +1327,7 @@ export default function BlitzGridAdmin() {
               disabled={isImporting}
               data-testid="button-import-grids"
             >
-              {isImporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+              {isImporting ? <Loader2 className="w-4 h-4 mr-2 shrink-0 animate-spin" aria-hidden="true" /> : <Upload className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />}
               Import
             </Button>
             <input
@@ -1389,7 +1389,7 @@ export default function BlitzGridAdmin() {
                     disabled={!newGridName.trim() || createGridMutation.isPending}
                     data-testid="button-create-grid"
                   >
-                    {createGridMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    {createGridMutation.isPending ? <Loader2 className="w-4 h-4 shrink-0 animate-spin mr-2" aria-hidden="true" /> : null}
                     Create Grid
                   </Button>
                   <Button 
@@ -1416,7 +1416,7 @@ export default function BlitzGridAdmin() {
         ) : grids.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+              <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4 shrink-0" aria-hidden="true" />
               <h3 className="font-medium mb-2">No grids yet</h3>
               <p className="text-muted-foreground text-sm mb-4">Create your first grid to get started</p>
               <Button onClick={() => setShowNewGridForm(true)} data-testid="button-add-first-grid">
@@ -1480,7 +1480,7 @@ export default function BlitzGridAdmin() {
                             disabled={!editGridName.trim() || updateGridMutation.isPending}
                             data-testid={`button-save-grid-${grid.id}`}
                           >
-                            <Check className="w-3 h-3 mr-1" />
+                            <Check className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />
                             Save
                           </Button>
                           <Button
@@ -1496,7 +1496,7 @@ export default function BlitzGridAdmin() {
                     ) : (
                       <>
                         <div className="flex items-center gap-2 min-w-0">
-                          <Grid3X3 className="w-5 h-5 text-fuchsia-500 dark:text-fuchsia-400 shrink-0" />
+                          <Grid3X3 className="w-5 h-5 text-fuchsia-500 dark:text-fuchsia-400 shrink-0" aria-hidden="true" />
                           <h3 className="font-semibold truncate" title={grid.name}>{grid.name}</h3>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
@@ -1512,7 +1512,7 @@ export default function BlitzGridAdmin() {
                             }}
                             data-testid={`button-edit-grid-${grid.id}`}
                           >
-                            <Pencil className="w-4 h-4" />
+                            <Pencil className="w-4 h-4 shrink-0" aria-hidden="true" />
                           </Button>
                           <Button
                             size="icon"
@@ -1530,11 +1530,11 @@ export default function BlitzGridAdmin() {
                             data-testid={`button-delete-grid-${grid.id}`}
                           >
                             {deleteGridMutation.isPending && deletingGridId === grid.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <Loader2 className="w-4 h-4 shrink-0 animate-spin" aria-hidden="true" />
                             ) : deletingGridId === grid.id ? (
-                              <Check className="w-4 h-4" />
+                              <Check className="w-4 h-4 shrink-0" aria-hidden="true" />
                             ) : (
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4 shrink-0" aria-hidden="true" />
                             )}
                           </Button>
                         </div>
@@ -1548,7 +1548,7 @@ export default function BlitzGridAdmin() {
                     </p>
                     {grid.isActive ? (
                       <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 text-xs shrink-0">
-                        <CheckCircle2 className="w-3 h-3 mr-1" /> Active
+                        <CheckCircle2 className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" /> Active
                       </Badge>
                     ) : (
                       <Badge variant="secondary" className="text-xs shrink-0">
