@@ -167,8 +167,9 @@ export default function BlitzGridAdmin() {
       const res = await apiRequest('POST', `/api/blitzgrid/grids/${gridId}/categories/create`, { name, description });
       return res.json();
     },
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'] });
+    onSuccess: async (data: any) => {
+      // Wait for category list to refetch before setting state
+      await queryClient.refetchQueries({ queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
       setNewCategoryName("");
       setNewCategoryDescription("");
