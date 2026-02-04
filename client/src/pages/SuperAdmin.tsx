@@ -1230,7 +1230,7 @@ export default function SuperAdmin() {
                                                     {isComplete ? (
                                                       <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 text-xs">Complete</Badge>
                                                     ) : (
-                                                      <Badge variant="outline" className="text-amber-600 dark:text-amber-400 text-xs">
+                                                      <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs">
                                                         {board.categoryCount}/5 categories
                                                       </Badge>
                                                     )}

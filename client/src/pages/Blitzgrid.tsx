@@ -2152,7 +2152,7 @@ export default function Blitzgrid() {
                               <Button
                                 size="sm"
                                 variant="default"
-                                className="bg-teal-500"
+                                className="bg-emerald-500 hover:bg-emerald-600"
                                 onClick={(e) => { e.stopPropagation(); updatePlayerScore(player.id, 10); }}
                                 data-testid={`button-add-score-${player.id}`}
                               >
@@ -2661,7 +2661,7 @@ export default function Blitzgrid() {
                                 </Button>
                                 <Button
                                   size="sm"
-                                  className="bg-teal-500 text-white h-7 text-xs px-2"
+                                  className="bg-emerald-500 hover:bg-emerald-600 text-white h-7 text-xs px-2"
                                   disabled={isJudging}
                                   onClick={() => {
                                     setIsJudging(true);
@@ -2964,11 +2964,11 @@ export default function Blitzgrid() {
             </div>
             <div className="flex items-center gap-2">
               {grid?.isActive ? (
-                <Badge variant="secondary" className="text-green-600 dark:text-green-400">
+                <Badge variant="secondary" className="bg-green-500/20 text-green-600 dark:text-green-400">
                   <CheckCircle2 className="w-3 h-3 mr-1" /> Ready
                 </Badge>
               ) : (
-                <Badge variant="outline" className="text-amber-600 dark:text-amber-400">
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400">
                   <AlertCircle className="w-3 h-3 mr-1" /> Incomplete
                 </Badge>
               )}
@@ -3098,9 +3098,9 @@ export default function Blitzgrid() {
                           </div>
                           <div className="flex items-center gap-2">
                             {category.questionCount >= 5 ? (
-                              <Badge variant="secondary" className="text-green-600 dark:text-green-400 text-xs">Complete</Badge>
+                              <Badge variant="secondary" className="bg-green-500/20 text-green-600 dark:text-green-400 text-xs">Complete</Badge>
                             ) : (
-                              <Badge variant="outline" className="text-amber-600 dark:text-amber-400 text-xs">
+                              <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs">
                                 {5 - category.questionCount} needed
                               </Badge>
                             )}
