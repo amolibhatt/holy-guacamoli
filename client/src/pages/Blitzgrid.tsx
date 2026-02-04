@@ -101,7 +101,26 @@ export default function Blitzgrid() {
   const [shuffleMode, setShuffleMode] = useState(false);
   const [shuffledCategories, setShuffledCategories] = useState<CategoryWithQuestions[] | null>(null);
   const [isShuffling, setIsShuffling] = useState(false);
-  const [playedShuffleCategoryIds, setPlayedShuffleCategoryIds] = useState<number[]>([]);
+  
+  // Persist played shuffle category IDs in sessionStorage
+  const SHUFFLE_STORAGE_KEY = 'blitzgrid_played_shuffle_categories';
+  const [playedShuffleCategoryIds, setPlayedShuffleCategoryIds] = useState<number[]>(() => {
+    try {
+      const stored = sessionStorage.getItem(SHUFFLE_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+  
+  // Sync to sessionStorage when played IDs change
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(SHUFFLE_STORAGE_KEY, JSON.stringify(playedShuffleCategoryIds));
+    } catch {
+      // Ignore storage errors
+    }
+  }, [playedShuffleCategoryIds]);
   const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set());
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -3463,108 +3482,130 @@ export default function Blitzgrid() {
               animate={{ opacity: 1, y: 0 }}
             >
               {/* Shuffle Play Hero - Full Width Bar */}
-              <motion.button
-                onClick={handleShufflePlay}
-                disabled={isShuffling}
-                className="w-full flex items-center justify-between gap-4 p-5 rounded-xl text-left relative overflow-hidden group hover-elevate"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.12) 0%, rgba(6, 182, 212, 0.06) 100%)',
-                  border: '1px solid rgba(34, 211, 238, 0.4)',
-                }}
-                data-testid="button-shuffle-play"
-              >
-                {/* Animated background pulse */}
-                <motion.div 
-                  className="absolute inset-0 rounded-xl"
-                  animate={{
-                    boxShadow: [
-                      'inset 0 0 20px rgba(34, 211, 238, 0.1), 0 0 20px rgba(34, 211, 238, 0.15)',
-                      'inset 0 0 30px rgba(34, 211, 238, 0.2), 0 0 40px rgba(34, 211, 238, 0.25)',
-                      'inset 0 0 20px rgba(34, 211, 238, 0.1), 0 0 20px rgba(34, 211, 238, 0.15)',
-                    ],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                />
-                {/* Scanning light effect */}
-                <motion.div 
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent"
-                  animate={{
-                    x: ['-100%', '200%'],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    repeatDelay: 1,
-                  }}
-                />
+              {(() => {
+                // Calculate total available categories from all active grids
+                const totalAvailableCategories = grids.reduce((sum, g) => sum + (g.categoryCount || 0), 0);
+                const playedCount = playedShuffleCategoryIds.length;
+                const remainingCount = Math.max(0, totalAvailableCategories - playedCount);
                 
-                <div className="relative flex items-center gap-4">
-                  <motion.div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center"
-                    style={{
-                      background: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)',
-                    }}
-                    animate={{
-                      boxShadow: [
-                        '0 0 15px rgba(34, 211, 238, 0.5)',
-                        '0 0 30px rgba(34, 211, 238, 0.8)',
-                        '0 0 15px rgba(34, 211, 238, 0.5)',
-                      ],
-                      scale: [1, 1.05, 1],
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                  >
-                    {isShuffling ? (
-                      <Loader2 className="w-6 h-6 text-black animate-spin shrink-0" aria-hidden="true" />
-                    ) : (
-                      <Shuffle className="w-6 h-6 text-black shrink-0" aria-hidden="true" />
+                return (
+                  <div className="space-y-2">
+                    <motion.button
+                      onClick={handleShufflePlay}
+                      disabled={isShuffling || remainingCount < 5}
+                      className="w-full flex items-center justify-between gap-4 p-5 rounded-xl text-left relative overflow-hidden group hover-elevate disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.12) 0%, rgba(6, 182, 212, 0.06) 100%)',
+                        border: '1px solid rgba(34, 211, 238, 0.4)',
+                      }}
+                      data-testid="button-shuffle-play"
+                    >
+                      {/* Animated background pulse */}
+                      <motion.div 
+                        className="absolute inset-0 rounded-xl"
+                        animate={{
+                          boxShadow: [
+                            'inset 0 0 20px rgba(34, 211, 238, 0.1), 0 0 20px rgba(34, 211, 238, 0.15)',
+                            'inset 0 0 30px rgba(34, 211, 238, 0.2), 0 0 40px rgba(34, 211, 238, 0.25)',
+                            'inset 0 0 20px rgba(34, 211, 238, 0.1), 0 0 20px rgba(34, 211, 238, 0.15)',
+                          ],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }}
+                      />
+                      {/* Scanning light effect */}
+                      <motion.div 
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent"
+                        animate={{
+                          x: ['-100%', '200%'],
+                        }}
+                        transition={{
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          repeatDelay: 1,
+                        }}
+                      />
+                      
+                      <div className="relative flex items-center gap-4">
+                        <motion.div 
+                          className="w-12 h-12 rounded-xl flex items-center justify-center"
+                          style={{
+                            background: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)',
+                          }}
+                          animate={{
+                            boxShadow: [
+                              '0 0 15px rgba(34, 211, 238, 0.5)',
+                              '0 0 30px rgba(34, 211, 238, 0.8)',
+                              '0 0 15px rgba(34, 211, 238, 0.5)',
+                            ],
+                            scale: [1, 1.05, 1],
+                          }}
+                          transition={{
+                            duration: 1.5,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          }}
+                        >
+                          {isShuffling ? (
+                            <Loader2 className="w-6 h-6 text-black animate-spin shrink-0" aria-hidden="true" />
+                          ) : (
+                            <Shuffle className="w-6 h-6 text-black shrink-0" aria-hidden="true" />
+                          )}
+                        </motion.div>
+                        <div>
+                          <h3 
+                            className="font-black uppercase tracking-wide text-lg text-cyan-300 transition-colors"
+                            style={{ 
+                              fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                              textShadow: '0 0 15px rgba(34, 211, 238, 0.5)',
+                            }}
+                          >
+                            I'm Feeling Lucky
+                          </h3>
+                          <p className="text-white/40 text-sm">
+                            Random mix from all your grids
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="relative text-right">
+                        {totalAvailableCategories > 0 ? (
+                          <span className="text-white/40 text-sm" data-testid="text-shuffle-stats">
+                            {playedCount} of {totalAvailableCategories} played
+                          </span>
+                        ) : (
+                          <span className="text-cyan-400/60 text-sm">
+                            Try your luck
+                          </span>
+                        )}
+                      </div>
+                    </motion.button>
+                    
+                    {/* Reset button - separate from shuffle button */}
+                    {playedCount > 0 && (
+                      <div className="flex justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setPlayedShuffleCategoryIds([]);
+                            toast({ title: "Reset", description: "All categories available again" });
+                          }}
+                          className="text-cyan-400 hover:text-cyan-300 text-xs"
+                          data-testid="button-shuffle-reset"
+                        >
+                          <RotateCcw className="w-3 h-3 mr-1.5 shrink-0" aria-hidden="true" />
+                          Reset played categories
+                        </Button>
+                      </div>
                     )}
-                  </motion.div>
-                  <div>
-                    <h3 
-                      className="font-black uppercase tracking-wide text-lg text-cyan-300 transition-colors"
-                      style={{ 
-                        fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                        textShadow: '0 0 15px rgba(34, 211, 238, 0.5)',
-                      }}
-                    >
-                      I'm Feeling Lucky
-                    </h3>
-                    <p className="text-white/40 text-sm">
-                      Random mix from all your grids
-                    </p>
                   </div>
-                </div>
-                
-                {playedShuffleCategoryIds.length > 0 ? (
-                  <div className="relative flex items-center gap-3">
-                    <span className="text-white/40 text-sm">{playedShuffleCategoryIds.length} played</span>
-                    <span 
-                      className="text-cyan-400 text-sm underline cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPlayedShuffleCategoryIds([]);
-                        toast({ title: "Reset", description: "All categories available again" });
-                      }}
-                    >
-                      Reset
-                    </span>
-                  </div>
-                ) : (
-                  <div className="relative text-cyan-400/60 text-sm">
-                    Try your luck
-                  </div>
-                )}
-              </motion.button>
+                );
+              })()}
             </motion.div>
 
             {/* My Grids Section */}
