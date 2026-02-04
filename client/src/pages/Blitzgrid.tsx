@@ -2279,7 +2279,7 @@ export default function Blitzgrid() {
                             {top3[1] && (
                               <div className="flex flex-col items-center w-[80px]">
                                 <div className="text-2xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[1].avatar)?.emoji || <User className="w-6 h-6" />}</div>
-                                <div className="text-xs font-bold text-white truncate max-w-[75px] mb-1">{top3[1].name}</div>
+                                <div className="text-xs font-bold text-white truncate w-full text-center mb-1">{top3[1].name}</div>
                                 <div className="w-full h-[70px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(148, 163, 184, 0.6)', boxShadow: '0 0 15px rgba(148, 163, 184, 0.3)' }}>
                                   <span className="text-2xl font-black text-slate-300">2</span>
                                   <span className="text-xs font-bold text-slate-400">{top3[1].score} pts</span>
@@ -2292,7 +2292,7 @@ export default function Blitzgrid() {
                               <div className="flex flex-col items-center w-[90px]">
                                 <Crown className="w-6 h-6 text-yellow-400 mb-0.5" style={{ filter: 'drop-shadow(0 0 6px rgba(250, 204, 21, 0.6))' }} />
                                 <div className="text-3xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[0].avatar)?.emoji || <User className="w-8 h-8" />}</div>
-                                <div className="text-sm font-bold text-yellow-300 truncate max-w-[85px] mb-1">{top3[0].name}</div>
+                                <div className="text-sm font-bold text-yellow-300 truncate w-full text-center mb-1">{top3[0].name}</div>
                                 <div className="w-full h-[90px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(250, 204, 21, 0.8)', boxShadow: '0 0 25px rgba(250, 204, 21, 0.4)' }}>
                                   <Trophy className="w-5 h-5 text-yellow-400 mb-0.5" />
                                   <span className="text-3xl font-black text-yellow-300">1</span>
@@ -2305,7 +2305,7 @@ export default function Blitzgrid() {
                             {top3[2] && (
                               <div className="flex flex-col items-center w-[80px]">
                                 <div className="text-2xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[2].avatar)?.emoji || <User className="w-6 h-6" />}</div>
-                                <div className="text-xs font-bold text-white truncate max-w-[75px] mb-1">{top3[2].name}</div>
+                                <div className="text-xs font-bold text-white truncate w-full text-center mb-1">{top3[2].name}</div>
                                 <div className="w-full h-[55px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(251, 146, 60, 0.6)', boxShadow: '0 0 15px rgba(251, 146, 60, 0.3)' }}>
                                   <span className="text-2xl font-black text-orange-300">3</span>
                                   <span className="text-xs font-bold text-orange-400">{top3[2].score} pts</span>
@@ -2320,7 +2320,7 @@ export default function Blitzgrid() {
                               {others.map((p, i) => (
                                 <div key={p.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border border-white/20 max-w-[140px]" style={{ background: 'rgba(255,255,255,0.05)' }}>
                                   <span className="font-bold text-white/50 flex-shrink-0">#{i + 4}</span>
-                                  <span className="text-white font-medium truncate">{p.name}</span>
+                                  <span className="text-white font-medium truncate min-w-0 flex-1">{p.name}</span>
                                   <span className="text-white/60 font-bold flex-shrink-0">{p.score}</span>
                                 </div>
                               ))}
@@ -2622,7 +2622,7 @@ export default function Blitzgrid() {
                             <span className={`text-sm font-bold flex-shrink-0 ${index === 0 ? 'text-orange-400' : 'text-white/40'}`}>
                               #{index + 1}
                             </span>
-                            <span className={`font-medium truncate ${index === 0 ? 'text-white' : 'text-white/60'}`}>{buzz.name}</span>
+                            <span className={`font-medium truncate min-w-0 flex-1 ${index === 0 ? 'text-white' : 'text-white/60'}`}>{buzz.name}</span>
                             <span className="text-xs text-white/40 flex-shrink-0">({player?.score || 0})</span>
                           </div>
                           <div className="flex items-center gap-1">
@@ -2861,9 +2861,9 @@ export default function Blitzgrid() {
       if (existingQuestion && !isEditing) {
         return (
           <div className="flex items-center justify-between gap-2 p-2 bg-muted/30 rounded text-sm">
-            <div className="flex-1 min-w-0">
-              <span className="font-medium text-xs text-muted-foreground mr-2">{points}pts:</span>
-              <span className="truncate">{existingQuestion.question}</span>
+            <div className="flex-1 min-w-0 flex items-center">
+              <span className="font-medium text-xs text-muted-foreground mr-2 flex-shrink-0">{points}pts:</span>
+              <span className="truncate min-w-0 flex-1">{existingQuestion.question}</span>
             </div>
             <div className="flex gap-1 shrink-0">
               <Button 
@@ -3242,10 +3242,10 @@ export default function Blitzgrid() {
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 min-w-0 mb-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${colorConfig.bg}`}>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${colorConfig.bg}`}>
                           <Grid3X3 className="w-4 h-4 text-white" />
                         </div>
-                        <h3 className={`font-semibold truncate ${colorConfig.cardTitle}`} data-testid={`text-picker-grid-name-${grid.id}`}>{grid.name}</h3>
+                        <h3 className={`font-semibold truncate min-w-0 flex-1 ${colorConfig.cardTitle}`} data-testid={`text-picker-grid-name-${grid.id}`}>{grid.name}</h3>
                       </div>
                       
                       <div className="flex items-center justify-between gap-2">
