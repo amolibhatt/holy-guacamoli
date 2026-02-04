@@ -215,76 +215,32 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Main title with pulsing glow */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
+            {/* Main title */}
+            <motion.h1 
+              className="relative text-4xl lg:text-6xl font-black mb-3"
+              style={{ fontFamily: "'Archivo Black', sans-serif" }}
+              data-testid="text-main-title"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ type: "spring", stiffness: 200, damping: 15 }}
             >
-              <motion.h1 
-                className="relative text-4xl lg:text-5xl font-black mb-2"
-                style={{ fontFamily: "'Archivo Black', sans-serif" }}
-                data-testid="text-main-title"
-                animate={{
-                  textShadow: [
-                    '0 0 20px rgba(232,121,249,0.5), 0 0 40px rgba(34,211,238,0.3)',
-                    '0 0 40px rgba(232,121,249,0.8), 0 0 80px rgba(34,211,238,0.5)',
-                    '0 0 20px rgba(232,121,249,0.5), 0 0 40px rgba(34,211,238,0.3)',
-                  ],
-                }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <span className="bg-gradient-to-r from-fuchsia-400 via-cyan-300 to-lime-300 bg-clip-text text-transparent">
-                  Turn Any Party Into
-                </span>
-                {" "}
-                <span className="text-white">
-                  CHAOS
-                </span>
-              </motion.h1>
-            </motion.div>
-
-            {/* Punchy tagline with stagger */}
-            <motion.div 
-              className="flex flex-wrap justify-center gap-2 lg:gap-3 mb-2"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-            >
-              {[
-                { text: "BLUFF", color: "#e879f9" },
-                { text: "BUZZ", color: "#22d3ee" },
-                { text: "BRAG", color: "#a3e635" },
-              ].map((item, i) => (
-                <motion.span
-                  key={item.text}
-                  className="text-lg lg:text-xl font-black tracking-wider"
-                  style={{ 
-                    color: item.color,
-                    textShadow: `0 0 15px ${item.color}`,
-                  }}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ 
-                    delay: 0.4 + i * 0.1, 
-                    type: "spring", 
-                    stiffness: 300,
-                    damping: 20,
-                  }}
-                >
-                  {item.text}
-                </motion.span>
-              ))}
-            </motion.div>
+              <span className="bg-gradient-to-r from-fuchsia-400 via-cyan-300 to-lime-300 bg-clip-text text-transparent">
+                Party Games,
+              </span>
+              {" "}
+              <span className="text-white">
+                Zero Setup
+              </span>
+            </motion.h1>
             
             <motion.p 
-              className="text-white/50 text-sm lg:text-base max-w-md mx-auto"
+              className="text-white/60 text-base lg:text-lg max-w-md mx-auto"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
+              transition={{ delay: 0.2 }}
               data-testid="text-subtitle"
             >
-              Pick your game, rally your crew, let the chaos begin.
+              Pick a game. Rally your crew. Let the chaos begin.
             </motion.p>
           </motion.div>
 
