@@ -2625,9 +2625,9 @@ export default function Blitzgrid() {
               {players.length > 0 && !showAnswer && buzzQueue.length === 0 && (
                 <div className="mx-5 mb-4 flex items-center justify-center gap-3 py-2 px-4 bg-white/5 border border-white/10 rounded-full" data-testid="buzzer-status-waiting">
                   <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full shrink-0 ${buzzerLocked ? 'bg-red-400' : 'bg-cyan-400 animate-pulse'}`} data-testid="buzzer-waiting-dot" />
+                    <div className="w-2 h-2 rounded-full shrink-0 bg-cyan-400 animate-pulse" data-testid="buzzer-waiting-dot" />
                     <span className="text-white/50 text-sm" data-testid="waiting-players-count">
-                      {buzzerLocked ? `${players.length} player${players.length !== 1 ? 's' : ''} ready` : `${players.length} can buzz`}
+                      {players.length} player{players.length !== 1 ? 's' : ''}
                     </span>
                   </div>
                 </div>
