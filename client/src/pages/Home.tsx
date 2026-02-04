@@ -217,7 +217,7 @@ export default function Home() {
 
             {/* Main title */}
             <motion.h1 
-              className="relative text-3xl lg:text-5xl font-black mb-2"
+              className="relative text-2xl lg:text-4xl font-black mb-2"
               style={{ fontFamily: "'Archivo Black', sans-serif" }}
               data-testid="text-main-title"
               initial={{ opacity: 0, y: 20 }}
