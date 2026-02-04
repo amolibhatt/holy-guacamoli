@@ -385,7 +385,7 @@ export default function GamesAdmin() {
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2 min-w-0">
                                   <Icon className="w-4 h-4 text-primary shrink-0" />
-                                  <span className="font-medium truncate">{game.name}</span>
+                                  <span className="font-medium truncate" title={game.name}>{game.name}</span>
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <span className="text-xs text-muted-foreground">{MODE_LABELS[game.mode]}</span>

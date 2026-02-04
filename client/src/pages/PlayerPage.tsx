@@ -589,7 +589,7 @@ export default function PlayerPage() {
       </header>
       
       <div className="px-4 py-2 bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-primary/10 flex items-center justify-between gap-2">
-        <span className="text-lg font-bold text-foreground truncate min-w-0 flex-1">{playerName}</span>
+        <span className="text-lg font-bold text-foreground truncate min-w-0 flex-1" title={playerName}>{playerName}</span>
         {leaderboard.length > 0 && (
           <Button
             size="sm"
@@ -632,7 +632,7 @@ export default function PlayerPage() {
                     <span className="text-lg flex-shrink-0">
                       {PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
                     </span>
-                    <span className={`font-medium truncate min-w-0 flex-1 ${player.id === playerId ? 'text-primary' : 'text-foreground'}`}>
+                    <span className={`font-medium truncate min-w-0 flex-1 ${player.id === playerId ? 'text-primary' : 'text-foreground'}`} title={player.name}>
                       {player.name}
                       {player.id === playerId && <span className="text-xs ml-1">(you)</span>}
                     </span>

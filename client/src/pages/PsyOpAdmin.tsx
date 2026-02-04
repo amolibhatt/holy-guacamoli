@@ -416,7 +416,7 @@ export default function PsyOpAdmin() {
             >
               <div className="flex items-center gap-2">
                 <Eye className={`w-4 h-4 shrink-0 ${selectedCategory === null ? 'text-primary' : 'text-muted-foreground'}`} />
-                <span className="truncate flex-1">All Questions</span>
+                <span className="truncate flex-1" title="All Questions">All Questions</span>
                 <Badge variant="secondary" className="text-xs">{questions.length}</Badge>
               </div>
             </button>
@@ -437,7 +437,7 @@ export default function PsyOpAdmin() {
                 >
                   <div className="flex items-center gap-2">
                     <Folder className={`w-4 h-4 shrink-0 ${cat === selectedCategory ? 'text-primary' : 'text-muted-foreground'}`} />
-                    <span className="truncate flex-1">{cat}</span>
+                    <span className="truncate flex-1" title={cat}>{cat}</span>
                     <Badge variant="secondary" className="text-xs">{count}</Badge>
                   </div>
                 </button>

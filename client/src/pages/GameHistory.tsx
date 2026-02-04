@@ -36,7 +36,7 @@ function SessionCard({ session }: { session: GameSessionWithDetails }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <Gamepad2 className="w-4 h-4 text-primary shrink-0" />
-              <CardTitle className="text-lg truncate">
+              <CardTitle className="text-lg truncate" title={session.boardName || "Quick Game"}>
                 {session.boardName || "Quick Game"}
               </CardTitle>
             </div>
@@ -63,7 +63,7 @@ function SessionCard({ session }: { session: GameSessionWithDetails }) {
               <p className="text-sm text-muted-foreground">Winner</p>
               <div className="flex items-center gap-2">
                 <span className="text-lg">{getAvatar(winner.avatar)}</span>
-                <span className="font-semibold truncate">{winner.name}</span>
+                <span className="font-semibold truncate" title={winner.name}>{winner.name}</span>
               </div>
             </div>
             <Badge className="bg-amber-500 text-white">
@@ -82,7 +82,7 @@ function SessionCard({ session }: { session: GameSessionWithDetails }) {
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground w-4">{idx + 2}.</span>
                   <span className="text-lg">{getAvatar(player.avatar)}</span>
-                  <span className="font-medium truncate">{player.name}</span>
+                  <span className="font-medium truncate" title={player.name}>{player.name}</span>
                 </div>
                 <Badge variant="secondary">
                   {player.score} pts

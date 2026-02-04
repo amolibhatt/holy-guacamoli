@@ -701,7 +701,7 @@ export default function SequenceSqueeze() {
                               <div className="text-2xl">
                                 {avatarData?.emoji || <User className="w-6 h-6 text-teal-400" />}
                               </div>
-                              <span className="font-medium text-[10px] text-center text-white truncate w-full" data-testid={`text-player-name-${p.id}`}>
+                              <span className="font-medium text-[10px] text-center text-white truncate w-full" data-testid={`text-player-name-${p.id}`} title={p.name}>
                                 {p.name}
                               </span>
                               {(playerScore > 0 || streak >= 2) && (
@@ -1218,7 +1218,7 @@ export default function SequenceSqueeze() {
                                   <div className={`text-lg font-bold ${isPositionCorrect ? 'text-emerald-300' : 'text-red-300'}`}>
                                     {letter}
                                   </div>
-                                  <div className="text-[10px] text-white/50 truncate max-w-[60px]">
+                                  <div className="text-[10px] text-white/50 truncate max-w-[60px]" title={option}>
                                     {option}
                                   </div>
                                 </div>
