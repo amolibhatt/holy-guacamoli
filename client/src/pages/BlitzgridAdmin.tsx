@@ -1050,7 +1050,8 @@ export default function BlitzGridAdmin() {
                             <div className="mb-3 pb-2 border-b space-y-2">
                               {editingCategoryId === category.id ? (
                                 <div className="space-y-2">
-                                  <div className="flex items-center gap-2">
+                                  <div>
+                                    <label className="text-xs text-muted-foreground mb-1 block">Category Name</label>
                                     <Input
                                       placeholder="Category name..."
                                       value={editCategoryName}
@@ -1072,9 +1073,10 @@ export default function BlitzGridAdmin() {
                                       data-testid={`input-edit-category-name-${category.id}`}
                                     />
                                   </div>
-                                  <div className="flex items-center gap-2">
+                                  <div>
+                                    <label className="text-xs text-muted-foreground mb-1 block">Description (optional)</label>
                                     <Input
-                                      placeholder="Category description (optional)..."
+                                      placeholder="Category description..."
                                       value={editCategoryDescription}
                                       onChange={(e) => setEditCategoryDescription(e.target.value)}
                                       className="flex-1 h-8 text-sm"
@@ -1137,6 +1139,9 @@ export default function BlitzGridAdmin() {
                                 </div>
                               )}
                             </div>
+                            {editingCategoryId === category.id && (
+                              <div className="text-xs font-medium text-muted-foreground mb-2">Questions (5 required)</div>
+                            )}
                             {POINT_TIERS.map(points => (
                               <div key={points}>
                                 {renderQuestionSlot(category, points)}
