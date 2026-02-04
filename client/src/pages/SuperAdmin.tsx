@@ -181,7 +181,7 @@ interface BlitzgridQuestionWithCreator {
   imageUrl: string | null;
   audioUrl: string | null;
   videoUrl: string | null;
-  categoryId: number | null;
+  categoryId: number;
   category: { id: number; name: string } | null;
   board: { id: number; name: string; userId: string | null } | null;
   creator: QuestionCreator | null;
