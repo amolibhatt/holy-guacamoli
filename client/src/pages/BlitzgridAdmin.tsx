@@ -1212,8 +1212,77 @@ export default function BlitzgridAdmin() {
               onChange={handleImport}
               className="hidden"
             />
+            <Button
+              size="sm"
+              onClick={() => setShowNewGridForm(true)}
+              data-testid="button-add-grid"
+            >
+              <Plus className="w-4 h-4 mr-2" /> Add Grid
+            </Button>
           </div>
         </div>
+
+        {/* New Grid Form */}
+        {showNewGridForm && (
+          <Card className="mb-4">
+            <CardContent className="py-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Grid name..."
+                    value={newGridName}
+                    onChange={(e) => setNewGridName(e.target.value)}
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setShowNewGridForm(false);
+                        setNewGridName("");
+                        setNewGridDescription("");
+                      }
+                      if (e.key === 'Enter' && newGridName.trim() && !createGridMutation.isPending) {
+                        createGridMutation.mutate({ 
+                          name: newGridName.trim(),
+                          description: newGridDescription.trim() || undefined
+                        });
+                      }
+                    }}
+                    data-testid="input-new-grid-name"
+                  />
+                </div>
+                <Input
+                  placeholder="Description (optional)..."
+                  value={newGridDescription}
+                  onChange={(e) => setNewGridDescription(e.target.value)}
+                  data-testid="input-new-grid-description"
+                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => createGridMutation.mutate({ 
+                      name: newGridName.trim(),
+                      description: newGridDescription.trim() || undefined
+                    })}
+                    disabled={!newGridName.trim() || createGridMutation.isPending}
+                    data-testid="button-create-grid"
+                  >
+                    {createGridMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    Create Grid
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => { 
+                      setShowNewGridForm(false); 
+                      setNewGridName(""); 
+                      setNewGridDescription("");
+                    }} 
+                    data-testid="button-cancel-grid-create"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {loadingGrids ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -1224,7 +1293,10 @@ export default function BlitzgridAdmin() {
             <CardContent className="py-12 text-center">
               <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
               <h3 className="font-medium mb-2">No grids yet</h3>
-              <p className="text-muted-foreground text-sm">Use the Super Admin dashboard to create grids</p>
+              <p className="text-muted-foreground text-sm mb-4">Create your first grid to get started</p>
+              <Button onClick={() => setShowNewGridForm(true)} data-testid="button-add-first-grid">
+                <Plus className="w-4 h-4 mr-2" /> Add Grid
+              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -1316,6 +1388,29 @@ export default function BlitzgridAdmin() {
                             data-testid={`button-edit-grid-${grid.id}`}
                           >
                             <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (deletingGridId === grid.id) {
+                                deleteGridMutation.mutate(grid.id);
+                              } else {
+                                setDeletingGridId(grid.id);
+                              }
+                            }}
+                            disabled={deleteGridMutation.isPending && deletingGridId === grid.id}
+                            data-testid={`button-delete-grid-${grid.id}`}
+                          >
+                            {deleteGridMutation.isPending && deletingGridId === grid.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : deletingGridId === grid.id ? (
+                              <Check className="w-4 h-4" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
                           </Button>
                         </div>
                       </>
