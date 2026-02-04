@@ -883,9 +883,9 @@ export default function SuperAdmin() {
                                               {u.boards?.length > 0 ? (
                                                 <div className="space-y-1">
                                                   {u.boards.slice(0, 5).map((b) => (
-                                                    <div key={b.id} className="flex items-center justify-between gap-2 p-2 rounded bg-muted/50 text-sm">
-                                                      <span className="truncate" title={b.name}>{b.name}</span>
-                                                      <span className="text-xs text-muted-foreground">{formatRelativeDate(b.createdAt)}</span>
+                                                    <div key={b.id} className="flex items-center justify-between gap-2 p-2 rounded bg-muted/50 text-sm min-w-0">
+                                                      <span className="truncate flex-1 min-w-0" title={b.name}>{b.name}</span>
+                                                      <span className="text-xs text-muted-foreground shrink-0">{formatRelativeDate(b.createdAt)}</span>
                                                     </div>
                                                   ))}
                                                   {u.boards.length > 5 && (
@@ -908,15 +908,15 @@ export default function SuperAdmin() {
                                                       ? s.players.reduce((max, p) => p.score > max.score ? p : max, s.players[0])
                                                       : null;
                                                     return (
-                                                      <div key={s.id} className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm gap-2">
-                                                        <Badge variant={s.state === 'active' ? 'default' : 'secondary'} className={`text-xs ${s.state === 'active' ? 'bg-green-500' : ''}`}>
+                                                      <div key={s.id} className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm gap-2 min-w-0">
+                                                        <Badge variant={s.state === 'active' ? 'default' : 'secondary'} className={`text-xs shrink-0 ${s.state === 'active' ? 'bg-green-500' : ''}`}>
                                                           {s.code}
                                                         </Badge>
                                                         <span className="flex-1 text-xs text-muted-foreground truncate min-w-0" title={winner ? `${s.playerCount} players • Winner: ${winner.name}` : `${s.playerCount} players`}>
                                                           {s.playerCount} players
                                                           {winner && ` • Winner: ${winner.name}`}
                                                         </span>
-                                                        <span className="text-xs text-muted-foreground">{formatRelativeDate(s.createdAt)}</span>
+                                                        <span className="text-xs text-muted-foreground shrink-0">{formatRelativeDate(s.createdAt)}</span>
                                                       </div>
                                                     );
                                                   })}
@@ -1021,9 +1021,9 @@ export default function SuperAdmin() {
                                 
                                 return (
                                   <div key={session.id} className="p-3 rounded-lg border bg-muted/30" data-testid={`session-row-${session.id}`}>
-                                    <div className="flex items-center justify-between gap-4 flex-wrap">
-                                      <div className="flex items-center gap-3">
-                                        <Badge variant={session.state === 'active' ? 'default' : 'secondary'} className={session.state === 'active' ? 'bg-green-500' : ''}>
+                                    <div className="flex items-center justify-between gap-4 flex-wrap min-w-0">
+                                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                                        <Badge variant={session.state === 'active' ? 'default' : 'secondary'} className={`shrink-0 ${session.state === 'active' ? 'bg-green-500' : ''}`}>
                                           {session.code}
                                         </Badge>
                                         <span className="text-sm truncate max-w-[150px]" title={`Host: ${session.host?.username || session.host?.email || 'Unknown'}`}>Host: {session.host?.username || session.host?.email || 'Unknown'}</span>
@@ -1168,8 +1168,8 @@ export default function SuperAdmin() {
                                   
                                   {gameType.slug === 'blitzgrid' && (
                                     <div className="space-y-3">
-                                      <div className="flex items-center justify-between gap-4 flex-wrap">
-                                        <h4 className="font-medium text-foreground">All Grids</h4>
+                                      <div className="flex items-center justify-between gap-4 flex-wrap min-w-0">
+                                        <h4 className="font-medium text-foreground shrink-0">All Grids</h4>
                                         <div className="flex items-center gap-2">
                                           <div className="relative">
                                             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -1227,7 +1227,7 @@ export default function SuperAdmin() {
                                               <div key={board.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border" data-testid={`grid-row-${board.id}`}>
                                                 <div className="flex-1 min-w-0">
                                                   <div className="flex items-center gap-2 flex-wrap min-w-0">
-                                                    <span className="font-medium truncate" title={board.name}>{board.name}</span>
+                                                    <span className="font-medium truncate max-w-[200px]" title={board.name}>{board.name}</span>
                                                     {isComplete ? (
                                                       <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 text-xs">Complete</Badge>
                                                     ) : (
@@ -1282,8 +1282,8 @@ export default function SuperAdmin() {
                                       })()}
                                       
                                       <div className="mt-6 pt-4 border-t">
-                                        <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
-                                          <h4 className="font-medium text-foreground">All Questions</h4>
+                                        <div className="flex items-center justify-between gap-4 flex-wrap min-w-0 mb-3">
+                                          <h4 className="font-medium text-foreground shrink-0">All Questions</h4>
                                           <div className="flex items-center gap-2">
                                             <div className="relative">
                                               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -1342,10 +1342,10 @@ export default function SuperAdmin() {
                                               <div key={q.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border" data-testid={`blitzgrid-question-row-${q.id}`}>
                                                 <div className="flex-1 min-w-0">
                                                   <div className="flex items-center gap-2 flex-wrap min-w-0">
-                                                    <span className="font-medium truncate" title={q.question}>{q.question}</span>
+                                                    <span className="font-medium truncate max-w-[250px]" title={q.question}>{q.question}</span>
                                                     <Badge variant="outline" className="text-xs">{q.points}pts</Badge>
                                                   </div>
-                                                  <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1 flex-wrap">
+                                                  <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1 flex-wrap min-w-0">
                                                     {q.board && <span className="truncate max-w-[100px]" title={q.board.name}>{q.board.name}</span>}
                                                     {q.category && <span className="truncate max-w-[100px]" title={q.category.name}>• {q.category.name}</span>}
                                                     <span className="truncate max-w-[120px]" title={q.creator?.username || q.creator?.email || 'System'}>• {q.creator?.username || q.creator?.email || 'System'}</span>
@@ -1367,8 +1367,8 @@ export default function SuperAdmin() {
                                   
                                   {gameType.slug === 'sequence_squeeze' && (
                                     <div className="space-y-3">
-                                      <div className="flex items-center justify-between gap-4 flex-wrap">
-                                        <h4 className="font-medium text-foreground">Sort Circuit Questions</h4>
+                                      <div className="flex items-center justify-between gap-4 flex-wrap min-w-0">
+                                        <h4 className="font-medium text-foreground shrink-0">Sort Circuit Questions</h4>
                                         <div className="flex items-center gap-2">
                                           <div className="relative">
                                             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -1422,7 +1422,7 @@ export default function SuperAdmin() {
                                             <div key={q.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border" data-testid={`sequence-question-row-${q.id}`}>
                                               <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 flex-wrap min-w-0">
-                                                  <span className="font-medium truncate" title={q.question}>{q.question}</span>
+                                                  <span className="font-medium truncate max-w-[250px]" title={q.question}>{q.question}</span>
                                                   {q.isStarterPack && (
                                                     <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs">
                                                       <Star className="w-3 h-3 mr-1" />
@@ -1433,8 +1433,8 @@ export default function SuperAdmin() {
                                                     <Badge variant="outline" className="text-xs">Inactive</Badge>
                                                   )}
                                                 </div>
-                                                <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
-                                                  <User className="w-3 h-3" />
+                                                <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1 min-w-0">
+                                                  <User className="w-3 h-3 shrink-0" />
                                                   <span className="truncate max-w-[150px]" title={q.creator?.username || q.creator?.email || 'System'}>{q.creator?.username || q.creator?.email || 'System'}</span>
                                                 </div>
                                               </div>
@@ -1461,8 +1461,8 @@ export default function SuperAdmin() {
 
                                   {gameType.slug === 'psyop' && (
                                     <div className="space-y-3">
-                                      <div className="flex items-center justify-between gap-4 flex-wrap">
-                                        <h4 className="font-medium text-foreground">PsyOp Questions</h4>
+                                      <div className="flex items-center justify-between gap-4 flex-wrap min-w-0">
+                                        <h4 className="font-medium text-foreground shrink-0">PsyOp Questions</h4>
                                         <div className="flex items-center gap-2">
                                           <div className="relative">
                                             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -1517,7 +1517,7 @@ export default function SuperAdmin() {
                                             <div key={q.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border" data-testid={`psyop-question-row-${q.id}`}>
                                               <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 flex-wrap min-w-0">
-                                                  <span className="font-medium truncate" title={q.factText}>{q.factText}</span>
+                                                  <span className="font-medium truncate max-w-[250px]" title={q.factText}>{q.factText}</span>
                                                   {q.isStarterPack && (
                                                     <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs">
                                                       <Star className="w-3 h-3 mr-1" />
@@ -1531,8 +1531,8 @@ export default function SuperAdmin() {
                                                     <Badge variant="secondary" className="text-xs">{q.category}</Badge>
                                                   )}
                                                 </div>
-                                                <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
-                                                  <User className="w-3 h-3" />
+                                                <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1 min-w-0">
+                                                  <User className="w-3 h-3 shrink-0" />
                                                   <span className="truncate max-w-[150px]" title={q.creator?.username || q.creator?.email || 'System'}>{q.creator?.username || q.creator?.email || 'System'}</span>
                                                 </div>
                                               </div>
@@ -1722,8 +1722,8 @@ export default function SuperAdmin() {
                         {announcements.map((a) => (
                           <div key={a.id} className="flex items-center justify-between gap-3 p-2 rounded-lg bg-muted/50">
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-medium truncate" title={a.title}>{a.title}</p>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <p className="text-sm font-medium truncate max-w-[150px]" title={a.title}>{a.title}</p>
                                 <Badge 
                                   variant={a.type === 'warning' ? 'destructive' : a.type === 'success' ? 'default' : 'secondary'}
                                   className={`text-xs ${a.type === 'success' ? 'bg-green-500' : ''}`}
