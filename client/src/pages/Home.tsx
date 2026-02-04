@@ -217,7 +217,7 @@ export default function Home() {
 
             {/* Main title */}
             <motion.h1 
-              className="relative text-4xl lg:text-6xl font-black mb-3"
+              className="relative text-3xl lg:text-5xl font-black"
               style={{ fontFamily: "'Archivo Black', sans-serif" }}
               data-testid="text-main-title"
               initial={{ opacity: 0, y: 20 }}
@@ -225,23 +225,18 @@ export default function Home() {
               transition={{ type: "spring", stiffness: 200, damping: 15 }}
             >
               <span className="bg-gradient-to-r from-fuchsia-400 via-cyan-300 to-lime-300 bg-clip-text text-transparent">
-                Party Games,
+                Pick a game, rally your crew
               </span>
-              {" "}
-              <span className="text-white">
-                Zero Setup
-              </span>
+              <br />
+              <motion.span 
+                className="text-white"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.15 }}
+              >
+                Let the chaos begin
+              </motion.span>
             </motion.h1>
-            
-            <motion.p 
-              className="text-white/60 text-base lg:text-lg max-w-md mx-auto"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              data-testid="text-subtitle"
-            >
-              Pick a game. Rally your crew. Let the chaos begin.
-            </motion.p>
           </motion.div>
 
           {/* Join a Game - Compact */}
