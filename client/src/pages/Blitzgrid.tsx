@@ -1806,9 +1806,9 @@ export default function Blitzgrid() {
                     color: '#10b981',
                   }}
                 >
-                  <span className="text-lg">{PLAYER_AVATARS.find(a => a.id === lastJoinedPlayer.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
-                  <span className="font-medium">{lastJoinedPlayer.name} joined!</span>
-                  <UserPlus className="w-4 h-4 text-emerald-400" />
+                  <span className="text-lg flex-shrink-0">{PLAYER_AVATARS.find(a => a.id === lastJoinedPlayer.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
+                  <span className="font-medium truncate max-w-[150px]">{lastJoinedPlayer.name} joined!</span>
+                  <UserPlus className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                 </div>
               </motion.div>
             )}
@@ -1891,8 +1891,9 @@ export default function Blitzgrid() {
                       className="py-3 md:py-4 px-3 rounded-xl text-center relative overflow-hidden"
                     >
                       <span 
-                        className="font-bold text-xs md:text-sm uppercase tracking-wider block relative z-10"
+                        className="font-bold text-xs md:text-sm uppercase tracking-wider block relative z-10 truncate"
                         style={{ color: catNeonColor.text }}
+                        title={category.name}
                       >
                         {category.name}
                       </span>
@@ -2016,6 +2017,7 @@ export default function Blitzgrid() {
                       e.stopPropagation();
                       skipReveal();
                     }}
+                    data-testid="button-skip-reveal"
                   >
                     Skip
                   </Button>
@@ -2939,6 +2941,7 @@ export default function Blitzgrid() {
                 }
               }}
               disabled={!formData?.question || !formData?.correctAnswer || saveQuestionMutation.isPending}
+              data-testid={`button-save-question-${category.id}-${points}`}
             >
               {saveQuestionMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
             </Button>
@@ -3021,7 +3024,7 @@ export default function Blitzgrid() {
                       >
                         {createCategoryMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
                       </Button>
-                      <Button variant="ghost" onClick={() => { setShowNewCategoryForm(false); setNewCategoryName(""); setNewCategoryDescription(""); }}>
+                      <Button variant="ghost" onClick={() => { setShowNewCategoryForm(false); setNewCategoryName(""); setNewCategoryDescription(""); }} data-testid="button-cancel-new-category">
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
@@ -3082,10 +3085,10 @@ export default function Blitzgrid() {
                         onClick={() => setSelectedCategoryId(isExpanded ? null : category.id)}
                       >
                         <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-3">
-                            <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                            <div>
-                              <CardTitle className="text-base">{category.name}</CardTitle>
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <ChevronRight className={`w-4 h-4 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`} />
+                            <div className="min-w-0 flex-1">
+                              <CardTitle className="text-base truncate">{category.name}</CardTitle>
                               <CardDescription className="text-xs">
                                 {category.questionCount}/5 questions
                               </CardDescription>
