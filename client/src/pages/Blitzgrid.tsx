@@ -1737,12 +1737,12 @@ export default function Blitzgrid() {
                   <DropdownMenuItem onClick={() => {
                     const newVal = soundManager.toggle();
                     setSoundEnabled(newVal);
-                  }}>
+                  }} data-testid="menu-toggle-sound">
                     {soundEnabled ? <Volume2 className="w-4 h-4 mr-2" /> : <VolumeX className="w-4 h-4 mr-2" />}
                     {soundEnabled ? 'Sound On' : 'Sound Off'}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={resetGame}>
+                  <DropdownMenuItem onClick={resetGame} data-testid="menu-reset-questions">
                     <RotateCcw className="w-4 h-4 mr-2" />
                     Reset Questions
                   </DropdownMenuItem>
@@ -1760,6 +1760,7 @@ export default function Blitzgrid() {
                   <DropdownMenuItem 
                     onClick={() => setShowEndSessionDialog(true)}
                     className="text-destructive focus:text-destructive"
+                    data-testid="menu-end-session"
                   >
                     <Power className="w-4 h-4 mr-2" />
                     End Session
@@ -1781,8 +1782,8 @@ export default function Blitzgrid() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => { setShowEndSessionDialog(false); startGameOverReveal(); }} className="bg-destructive text-destructive-foreground">
+                  <AlertDialogCancel data-testid="button-cancel-end-session">Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => { setShowEndSessionDialog(false); startGameOverReveal(); }} className="bg-destructive text-destructive-foreground" data-testid="button-confirm-end-session">
                     End Session
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -2204,6 +2205,7 @@ export default function Blitzgrid() {
                     navigator.clipboard.writeText(joinUrl);
                     toast({ title: "Link copied!", description: "Share this link with players" });
                   }}
+                  data-testid="button-copy-join-link"
                 >
                   <Link2 className="w-4 h-4" />
                   Copy Join Link
