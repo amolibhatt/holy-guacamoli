@@ -1437,10 +1437,10 @@ export default function Blitzgrid() {
                       className="flex flex-wrap justify-center gap-2 mb-6"
                     >
                       {restOfPlayers.map((p, i) => (
-                        <div key={p.id} className="bg-white/5 backdrop-blur-sm px-3 py-2 rounded-lg border border-white/10 flex items-center gap-2">
-                          <span className="text-white/40 font-medium">#{i + 4}</span>
-                          <span className="text-lg">{PLAYER_AVATARS.find(a => a.id === p.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
-                          <span className="text-white font-medium">{p.name}</span>
+                        <div key={p.id} className="bg-white/5 backdrop-blur-sm px-3 py-2 rounded-lg border border-white/10 flex items-center gap-2 max-w-[200px]">
+                          <span className="text-white/40 font-medium flex-shrink-0">#{i + 4}</span>
+                          <span className="text-lg flex-shrink-0">{PLAYER_AVATARS.find(a => a.id === p.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
+                          <span className="text-white font-medium truncate">{p.name}</span>
                           <span className="text-white/40">{p.score} pts</span>
                         </div>
                       ))}
@@ -2117,8 +2117,8 @@ export default function Blitzgrid() {
                           )}
                           <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0a0a0f] ${player.connected ? 'bg-emerald-500' : 'bg-red-400'}`} />
                         </div>
-                        <div className="flex flex-col leading-tight">
-                          <span className="text-white/80 font-medium text-xs">{player.name}</span>
+                        <div className="flex flex-col leading-tight min-w-0">
+                          <span className="text-white/80 font-medium text-xs truncate max-w-[60px]">{player.name}</span>
                           <motion.span 
                             key={player.score}
                             initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? '#34d399' : scoreAnim?.delta && scoreAnim.delta < 0 ? '#f87171' : '#e879f9' }}
@@ -2214,7 +2214,7 @@ export default function Blitzgrid() {
                   </p>
                   <div className="flex flex-wrap justify-center gap-2">
                     {players.map(p => (
-                      <Badge key={p.id} variant="secondary" className="bg-white/10 text-white border border-white/20">{p.name}</Badge>
+                      <Badge key={p.id} variant="secondary" className="bg-white/10 text-white border border-white/20 max-w-[120px] truncate">{p.name}</Badge>
                     ))}
                   </div>
                 </div>
@@ -2613,12 +2613,12 @@ export default function Blitzgrid() {
                           }`}
                           data-testid={`buzz-queue-item-${buzz.playerId}`}
                         >
-                          <div className="flex items-center gap-2">
-                            <span className={`text-sm font-bold ${index === 0 ? 'text-orange-400' : 'text-white/40'}`}>
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <span className={`text-sm font-bold flex-shrink-0 ${index === 0 ? 'text-orange-400' : 'text-white/40'}`}>
                               #{index + 1}
                             </span>
-                            <span className={`font-medium ${index === 0 ? 'text-white' : 'text-white/60'}`}>{buzz.name}</span>
-                            <span className="text-xs text-white/40">({player?.score || 0})</span>
+                            <span className={`font-medium truncate ${index === 0 ? 'text-white' : 'text-white/60'}`}>{buzz.name}</span>
+                            <span className="text-xs text-white/40 flex-shrink-0">({player?.score || 0})</span>
                           </div>
                           <div className="flex items-center gap-1">
                             {index === 0 ? (
@@ -2754,9 +2754,9 @@ export default function Blitzgrid() {
                     {players.map(player => (
                       <div 
                         key={player.id}
-                        className="flex items-center gap-1 bg-white/5 rounded-full pl-3 pr-1 py-1 border border-white/10"
+                        className="flex items-center gap-1 bg-white/5 rounded-full pl-3 pr-1 py-1 border border-white/10 max-w-[200px]"
                       >
-                        <span className="text-sm text-white/80">{player.name}</span>
+                        <span className="text-sm text-white/80 truncate">{player.name}</span>
                         <span className="text-xs text-white/40">{player.score}</span>
                         <Button
                           size="icon"
