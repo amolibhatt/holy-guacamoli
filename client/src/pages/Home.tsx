@@ -230,13 +230,13 @@ export default function Home() {
             </motion.h1>
             
             <motion.p 
-              className="text-white/50 text-base lg:text-lg"
+              className="text-white/80 text-lg lg:text-xl font-semibold tracking-wide"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.15 }}
               data-testid="text-subtitle"
             >
-              Let the chaos begin
+              Let the chaos begin.
             </motion.p>
           </motion.div>
 
