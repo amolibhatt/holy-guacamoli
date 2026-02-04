@@ -103,6 +103,10 @@ export default function BlitzgridAdmin() {
   const [editCategoryDescription, setEditCategoryDescription] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [showNewGridForm, setShowNewGridForm] = useState(false);
+  const [newGridName, setNewGridName] = useState("");
+  const [newGridDescription, setNewGridDescription] = useState("");
+  const [deletingGridId, setDeletingGridId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: grids = [], isLoading: loadingGrids } = useQuery<GridWithStats[]>({
@@ -233,6 +237,43 @@ export default function BlitzgridAdmin() {
     },
     onError: () => {
       toast({ title: "Couldn't delete question", variant: "destructive" });
+    },
+  });
+
+  const createGridMutation = useMutation({
+    mutationFn: async ({ name, description }: { name: string; description?: string }) => {
+      return apiRequest('POST', '/api/blitzgrid/grids', { name, description });
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
+      setNewGridName("");
+      setNewGridDescription("");
+      setShowNewGridForm(false);
+      if (data?.id) {
+        setSelectedGridId(data.id);
+      }
+      toast({ title: "Grid created" });
+    },
+    onError: (error: any) => {
+      toast({ title: error?.message || "Couldn't create grid", variant: "destructive" });
+    },
+  });
+
+  const deleteGridMutation = useMutation({
+    mutationFn: async (gridId: number) => {
+      return apiRequest('DELETE', `/api/blitzgrid/grids/${gridId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
+      if (selectedGridId === deletingGridId) {
+        setSelectedGridId(null);
+      }
+      setDeletingGridId(null);
+      toast({ title: "Grid deleted" });
+    },
+    onError: () => {
+      setDeletingGridId(null);
+      toast({ title: "Couldn't delete grid", variant: "destructive" });
     },
   });
 
