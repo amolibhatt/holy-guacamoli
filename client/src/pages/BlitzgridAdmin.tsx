@@ -164,15 +164,32 @@ export default function BlitzGridAdmin() {
 
   const createCategoryMutation = useMutation({
     mutationFn: async ({ gridId, name, description }: { gridId: number; name: string; description?: string }) => {
-      return apiRequest('POST', `/api/blitzgrid/grids/${gridId}/categories/create`, { name, description });
+      const res = await apiRequest('POST', `/api/blitzgrid/grids/${gridId}/categories/create`, { name, description });
+      return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
       setNewCategoryName("");
       setNewCategoryDescription("");
       setShowNewCategoryForm(false);
-      toast({ title: "Category created" });
+      
+      // Auto-expand and enter edit mode for the new category
+      if (data?.id) {
+        setSelectedCategoryId(data.id);
+        setEditingCategoryId(data.id);
+        setEditCategoryName(data.name || "");
+        setEditCategoryDescription(data.description || "");
+        // Pre-populate empty question forms
+        const newForms: Record<string, any> = {};
+        POINT_TIERS.forEach(pts => {
+          newForms[`${data.id}-${pts}`] = { question: '', correctAnswer: '', options: [] };
+        });
+        setQuestionForms(prev => ({ ...prev, ...newForms }));
+        toast({ title: "Category created - add your questions below" });
+      } else {
+        toast({ title: "Category created" });
+      }
     },
     onError: (error: any) => {
       toast({ title: error?.message || "Couldn't create category", variant: "destructive" });
