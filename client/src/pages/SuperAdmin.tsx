@@ -855,19 +855,20 @@ export default function SuperAdmin() {
                                         <div className="font-bold">{u.gamesHosted}</div>
                                         <div className="text-xs text-muted-foreground">Games</div>
                                       </div>
-                                      {u.role !== 'super_admin' && (
+                                      {u.id !== user?.id && (
                                         <>
                                           <Select
-                                            value={u.role || 'user'}
+                                            value={u.role || 'host'}
                                             onValueChange={(role) => updateUserRoleMutation.mutate({ userId: u.id, role })}
                                             disabled={updateUserRoleMutation.isPending}
                                           >
-                                            <SelectTrigger className="w-[90px] h-8" data-testid={`select-role-${u.id}`} onClick={(e) => e.stopPropagation()}>
+                                            <SelectTrigger className="w-[110px] h-8" data-testid={`select-role-${u.id}`} onClick={(e) => e.stopPropagation()}>
                                               <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                              <SelectItem value="user">User</SelectItem>
+                                              <SelectItem value="host">Host</SelectItem>
                                               <SelectItem value="admin">Admin</SelectItem>
+                                              <SelectItem value="super_admin">Super Admin</SelectItem>
                                             </SelectContent>
                                           </Select>
                                           <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeleteUserId(u.id); }} data-testid={`button-delete-user-${u.id}`}>
