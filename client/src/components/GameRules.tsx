@@ -18,7 +18,7 @@ export const GAME_RULES: Record<string, GameRulesContent> = {
   blitzgrid: {
     title: "BlitzGrid",
     tagline: "Race the clock, decode the clues, and claim the grid.",
-    players: "2-8 players",
+    players: "2+ players",
     duration: "15-30 min",
     accentColor: "#e879f9",
     overview: "A 5x5 trivia grid where players compete across 5 categories. Each category has questions worth 10-50 points. The player who answers correctly gets to pick the next question!",
