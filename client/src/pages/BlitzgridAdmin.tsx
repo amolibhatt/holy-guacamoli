@@ -22,9 +22,9 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Board, Category, Question } from "@shared/schema";
 
-// Helper to upload a file to object storage
+// Helper to upload a file to object storage (supports Replit and Cloudinary)
 async function uploadFile(file: File): Promise<string> {
-  // Step 1: Get presigned URL
+  // Step 1: Check upload method
   const response = await fetch("/api/uploads/request-url", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -40,9 +40,30 @@ async function uploadFile(file: File): Promise<string> {
     throw new Error("Failed to get upload URL");
   }
   
-  const { uploadURL, objectPath } = await response.json();
+  const data = await response.json();
   
-  // Step 2: Upload directly to storage
+  // Check if we need to use Cloudinary direct upload
+  if (data.useDirectUpload && data.uploadEndpoint) {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const uploadResponse = await fetch(data.uploadEndpoint, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+    
+    if (!uploadResponse.ok) {
+      throw new Error("Failed to upload file");
+    }
+    
+    const result = await uploadResponse.json();
+    return result.objectPath || result.url;
+  }
+  
+  // Replit Object Storage flow - upload to presigned URL
+  const { uploadURL, objectPath } = data;
+  
   const uploadResponse = await fetch(uploadURL, {
     method: "PUT",
     body: file,
@@ -53,7 +74,6 @@ async function uploadFile(file: File): Promise<string> {
     throw new Error("Failed to upload file");
   }
   
-  // Return the served path
   return objectPath;
 }
 

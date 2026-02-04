@@ -1,5 +1,38 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { v2 as cloudinary } from "cloudinary";
+import multer from "multer";
+
+// Check if we're in Replit environment (has object storage sidecar)
+const isReplitEnvironment = (): boolean => {
+  return !!(process.env.REPL_ID && process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID);
+};
+
+// Check if Cloudinary is configured
+const isCloudinaryConfigured = (): boolean => {
+  return !!(process.env.CLOUDINARY_URL || (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET));
+};
+
+// Configure Cloudinary if available
+if (isCloudinaryConfigured()) {
+  if (process.env.CLOUDINARY_URL) {
+    // CLOUDINARY_URL format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+    cloudinary.config({ secure: true });
+  } else {
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+      secure: true,
+    });
+  }
+}
+
+// Multer for handling file uploads (for Cloudinary flow)
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
 
 // Authentication middleware for uploads (only authenticated users can upload)
 const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
@@ -11,82 +44,104 @@ const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
 
 /**
  * Register object storage routes for file uploads.
- *
- * This provides example routes for the presigned URL upload flow:
- * 1. POST /api/uploads/request-url - Get a presigned URL for uploading (requires auth)
- * 2. The client then uploads directly to the presigned URL
- *
- * Security: Upload route is protected by authentication middleware.
+ * Supports both Replit Object Storage and Cloudinary as fallback.
  */
 export function registerObjectStorageRoutes(app: Express): void {
-  const objectStorageService = new ObjectStorageService();
+  const useReplit = isReplitEnvironment();
+  const useCloudinary = !useReplit && isCloudinaryConfigured();
+  
+  console.log(`[Upload] Storage backend: ${useReplit ? 'Replit Object Storage' : useCloudinary ? 'Cloudinary' : 'None configured'}`);
 
-  /**
-   * Request a presigned URL for file upload.
-   * Requires authentication.
-   *
-   * Request body (JSON):
-   * {
-   *   "name": "filename.jpg",
-   *   "size": 12345,
-   *   "contentType": "image/jpeg"
-   * }
-   *
-   * Response:
-   * {
-   *   "uploadURL": "https://storage.googleapis.com/...",
-   *   "objectPath": "/objects/uploads/uuid"
-   * }
-   *
-   * IMPORTANT: The client should NOT send the file to this endpoint.
-   * Send JSON metadata only, then upload the file directly to uploadURL.
-   */
-  app.post("/api/uploads/request-url", isAuthenticated, async (req, res) => {
-    try {
-      const { name, size, contentType } = req.body;
+  if (useReplit) {
+    // Replit Object Storage flow
+    const objectStorageService = new ObjectStorageService();
 
-      if (!name) {
-        return res.status(400).json({
-          error: "Missing required field: name",
+    app.post("/api/uploads/request-url", isAuthenticated, async (req, res) => {
+      try {
+        const { name, size, contentType } = req.body;
+
+        if (!name) {
+          return res.status(400).json({
+            error: "Missing required field: name",
+          });
+        }
+
+        const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+        const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+
+        res.json({
+          uploadURL,
+          objectPath,
+          metadata: { name, size, contentType },
         });
+      } catch (error) {
+        console.error("Error generating upload URL:", error);
+        res.status(500).json({ error: "Failed to generate upload URL" });
       }
+    });
 
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-
-      // Extract object path from the presigned URL for later reference
-      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
-
+    app.get("/objects/:objectPath(*)", async (req, res) => {
+      try {
+        const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+        await objectStorageService.downloadObject(objectFile, res);
+      } catch (error) {
+        console.error("Error serving object:", error);
+        if (error instanceof ObjectNotFoundError) {
+          return res.status(404).json({ error: "Object not found" });
+        }
+        return res.status(500).json({ error: "Failed to serve object" });
+      }
+    });
+  } else if (useCloudinary) {
+    // Cloudinary flow - direct upload with file
+    app.post("/api/uploads/request-url", isAuthenticated, async (req, res) => {
+      // For Cloudinary, we return a flag indicating direct upload is needed
       res.json({
-        uploadURL,
-        objectPath,
-        // Echo back the metadata for client convenience
-        metadata: { name, size, contentType },
+        useDirectUpload: true,
+        uploadEndpoint: "/api/uploads/cloudinary",
       });
-    } catch (error) {
-      console.error("Error generating upload URL:", error);
-      res.status(500).json({ error: "Failed to generate upload URL" });
-    }
-  });
+    });
 
-  /**
-   * Serve uploaded objects.
-   *
-   * GET /objects/:objectPath(*)
-   *
-   * This serves files from object storage. For public files, no auth needed.
-   * For protected files, add authentication middleware and ACL checks.
-   */
-  app.get("/objects/:objectPath(*)", async (req, res) => {
-    try {
-      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
-      await objectStorageService.downloadObject(objectFile, res);
-    } catch (error) {
-      console.error("Error serving object:", error);
-      if (error instanceof ObjectNotFoundError) {
-        return res.status(404).json({ error: "Object not found" });
+    app.post("/api/uploads/cloudinary", isAuthenticated, upload.single('file'), async (req, res) => {
+      try {
+        if (!req.file) {
+          return res.status(400).json({ error: "No file provided" });
+        }
+
+        // Upload to Cloudinary
+        const result = await new Promise<any>((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: "holyguacamoli",
+              resource_type: "auto",
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          uploadStream.end(req.file!.buffer);
+        });
+
+        res.json({
+          objectPath: result.secure_url,
+          url: result.secure_url,
+          publicId: result.public_id,
+        });
+      } catch (error) {
+        console.error("Cloudinary upload error:", error);
+        res.status(500).json({ error: "Failed to upload file" });
       }
-      return res.status(500).json({ error: "Failed to serve object" });
-    }
-  });
-}
+    });
 
+    // For Cloudinary, images are served directly from Cloudinary CDN
+    // No need for /objects/* route
+  } else {
+    // No storage configured - return helpful error
+    app.post("/api/uploads/request-url", isAuthenticated, (req, res) => {
+      res.status(503).json({ 
+        error: "File storage not configured. Set CLOUDINARY_URL environment variable for production deployments." 
+      });
+    });
+  }
+}
