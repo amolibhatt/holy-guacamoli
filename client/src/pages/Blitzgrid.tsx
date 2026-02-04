@@ -122,7 +122,6 @@ export default function Blitzgrid() {
     }
   }, [playedShuffleCategoryIds]);
   const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set());
-  const [hoveredCellKey, setHoveredCellKey] = useState<string | null>(null);
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
@@ -1970,8 +1969,6 @@ export default function Blitzgrid() {
                           e.stopPropagation();
                           isClickable && handleCellClick(category.id, points, question);
                         }}
-                        onMouseEnter={() => isClickable && setHoveredCellKey(cellKey)}
-                        onMouseLeave={() => setHoveredCellKey(null)}
                         disabled={!isClickable}
                         whileHover={isClickable ? { 
                           scale: 1.02, 
@@ -1980,13 +1977,6 @@ export default function Blitzgrid() {
                         whileTap={isClickable ? { scale: 0.96 } : {}}
                         data-testid={`cell-${category.id}-${points}`}
                       >
-                        {/* Shimmer effect on hover - controlled by state */}
-                        {isClickable && (
-                          <div 
-                            className={`absolute inset-0 pointer-events-none rounded-xl transition-transform duration-700 ease-in-out ${hoveredCellKey === cellKey ? 'translate-x-full' : '-translate-x-full'}`}
-                            style={{ background: `linear-gradient(90deg, transparent, ${tileNeonColor.glow}, transparent)` }}
-                          />
-                        )}
                         {isCellAnswered ? (
                           <motion.div
                             initial={{ scale: 0 }}
