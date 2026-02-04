@@ -64,6 +64,7 @@ export default function PlayerPage() {
   const [buzzPosition, setBuzzPosition] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<{ correct: boolean; points: number } | null>(null);
   const [hasBuzzed, setHasBuzzed] = useState(false);
+  const [buzzerBlocked, setBuzzerBlocked] = useState(false); // Blocked after wrong answer
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [score, setScore] = useState(0);
   const [showBuzzFlash, setShowBuzzFlash] = useState(false);
@@ -231,6 +232,10 @@ export default function PlayerPage() {
           setHasBuzzed(false);
           setBuzzPosition(null);
           setFeedback(null);
+          // Only clear block state on new question
+          if (data.newQuestion) {
+            setBuzzerBlocked(false);
+          }
           soundManager.play('whoosh', 0.4);
           try { navigator.vibrate?.(50); } catch {}
           break;
@@ -244,6 +249,13 @@ export default function PlayerPage() {
           setHasBuzzed(false);
           setBuzzPosition(null);
           setFeedback(null);
+          break;
+        case "buzzer:blocked":
+          // Player answered wrong - blocked from buzzing again on this question
+          setHasBuzzed(false);
+          setBuzzPosition(null);
+          setFeedback(null);
+          setBuzzerBlocked(true);
           break;
         case "buzz:confirmed":
           setBuzzPosition(data.position);
@@ -928,6 +940,24 @@ export default function PlayerPage() {
                   <p className="text-muted-foreground mt-2" data-testid="buzzed-waiting-message">Waiting for your turn...</p>
                 </>
               )}
+            </motion.div>
+          ) : buzzerBlocked ? (
+            <motion.div
+              key="blocked"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center flex flex-col items-center justify-center"
+              role="status"
+              aria-live="polite"
+            >
+              <motion.div 
+                className="w-48 h-48 rounded-full bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800 flex flex-col items-center justify-center mx-auto shadow-2xl border-4 border-slate-500/40 relative"
+                style={{ boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25), inset 0 -4px 12px rgba(0,0,0,0.2)' }}
+              >
+                <XCircle className="w-20 h-20 text-slate-400/80 drop-shadow-lg" aria-hidden="true" />
+              </motion.div>
+              <h2 className="text-2xl font-bold text-foreground mt-6" data-testid="buzzer-blocked-title">Already Tried</h2>
+              <p className="text-muted-foreground mt-2 max-w-xs mx-auto text-base" data-testid="buzzer-blocked-message">Wait for the next question</p>
             </motion.div>
           ) : buzzerLocked ? (
             <motion.div

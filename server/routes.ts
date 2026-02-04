@@ -4200,6 +4200,7 @@ Be creative! Make facts surprising and fun to guess.`;
     players: Map<string, RoomPlayer>;
     buzzerLocked: boolean;
     buzzQueue: Array<{ playerId: string; playerName: string; playerAvatar?: string; position: number; timestamp: number }>;
+    passedPlayers: Set<string>; // Players who answered wrong on current question (can't buzz again)
     boardId: number | null;
     completedQuestions: Set<number>;
     sessionId: number | null;
@@ -4309,6 +4310,7 @@ Be creative! Make facts surprising and fun to guess.`;
               players: new Map(),
               buzzerLocked: true,
               buzzQueue: [],
+              passedPlayers: new Set(),
               boardId: null,
               completedQuestions: new Set(),
               sessionId,
@@ -4353,6 +4355,7 @@ Be creative! Make facts surprising and fun to guess.`;
                     }])),
                     buzzerLocked: session.buzzerLocked,
                     buzzQueue: [],
+                    passedPlayers: new Set(),
                     boardId: session.currentBoardId,
                     completedQuestions: new Set(session.playedCategoryIds || []),
                     sessionId: session.id,
@@ -4509,6 +4512,9 @@ Be creative! Make facts surprising and fun to guess.`;
             const alreadyBuzzed = room.buzzQueue.some(b => b.playerId === player.id);
             if (alreadyBuzzed) break;
 
+            // Reject if player already answered wrong on this question
+            if (room.passedPlayers.has(player.id)) break;
+
             const position = room.buzzQueue.length + 1;
             const buzzEvent = {
               playerId: player.id,
@@ -4583,9 +4589,14 @@ Be creative! Make facts surprising and fun to guess.`;
 
             room.buzzerLocked = false;
             room.buzzQueue = [];
-            broadcastToRoom(room, { type: 'buzzer:unlocked' }, ws);
+            // Only clear passedPlayers if this is a new question (not unlock after wrong answer)
+            const isNewQuestion = !!data.newQuestion;
+            if (isNewQuestion) {
+              room.passedPlayers.clear();
+            }
+            broadcastToRoom(room, { type: 'buzzer:unlocked', newQuestion: isNewQuestion }, ws);
             room.players.forEach((player) => {
-              sendToPlayer(player, { type: 'buzzer:unlocked' });
+              sendToPlayer(player, { type: 'buzzer:unlocked', newQuestion: isNewQuestion });
             });
             break;
           }
@@ -4630,10 +4641,12 @@ Be creative! Make facts surprising and fun to guess.`;
             const { playerId } = data;
             if (playerId) {
               room.buzzQueue = room.buzzQueue.filter(b => b.playerId !== playerId);
-              // Notify the passed player to reset their buzz state
+              // Track that this player answered wrong on current question
+              room.passedPlayers.add(playerId);
+              // Notify the passed player they're blocked from buzzing again on this question
               const player = room.players.get(playerId);
               if (player) {
-                sendToPlayer(player, { type: 'buzzer:reset' });
+                sendToPlayer(player, { type: 'buzzer:blocked' });
               }
             }
             break;
@@ -4851,6 +4864,7 @@ Be creative! Make facts surprising and fun to guess.`;
               players: new Map(),
               buzzerLocked: true,
               buzzQueue: [],
+              passedPlayers: new Set(),
               boardId: null,
               completedQuestions: new Set(),
               sessionId,
@@ -4976,6 +4990,7 @@ Be creative! Make facts surprising and fun to guess.`;
               players: new Map(),
               buzzerLocked: true,
               buzzQueue: [],
+              passedPlayers: new Set(),
               boardId: null,
               completedQuestions: new Set(),
               sessionId: null,

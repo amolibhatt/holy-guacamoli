@@ -814,9 +814,9 @@ export default function Blitzgrid() {
     setBuzzQueue([]);
   }, []);
   
-  const unlockBuzzer = useCallback(() => {
+  const unlockBuzzer = useCallback((newQuestion = false) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'host:unlock' }));
+      wsRef.current.send(JSON.stringify({ type: 'host:unlock', newQuestion }));
       setBuzzerLocked(false);
       setBuzzQueue([]);
       setIsJudging(false);
@@ -1111,8 +1111,8 @@ export default function Blitzgrid() {
         if (!revealedCells.has(cellKey)) {
           setActiveQuestion(question);
           setShowAnswer(false);
-          // Auto-unlock buzzers when opening a question
-          unlockBuzzer();
+          // Auto-unlock buzzers when opening a new question (clears passedPlayers)
+          unlockBuzzer(true);
         }
       };
       
