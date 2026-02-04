@@ -47,6 +47,23 @@ export function registerObjectStorageRoutes(app: Express): void {
   const useCloudinary = !useReplit && isCloudinaryConfigured();
   
   console.log(`[Upload] Storage backend: ${useReplit ? 'Replit Object Storage' : useCloudinary ? 'Cloudinary' : 'None configured'}`);
+  
+  // Debug endpoint to check storage configuration (no auth required)
+  app.get("/api/uploads/status", (req, res) => {
+    const cloudinaryUrl = process.env.CLOUDINARY_URL;
+    res.json({
+      backend: useReplit ? 'replit' : useCloudinary ? 'cloudinary' : 'none',
+      replitEnv: {
+        hasReplId: !!process.env.REPL_ID,
+        hasBucketId: !!process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID,
+      },
+      cloudinaryEnv: {
+        hasUrl: !!cloudinaryUrl,
+        urlFormat: cloudinaryUrl ? (cloudinaryUrl.startsWith('cloudinary://') ? 'valid' : 'invalid') : 'missing',
+        urlPreview: cloudinaryUrl ? cloudinaryUrl.substring(0, 15) + '...' : null,
+      },
+    });
+  });
 
   if (useReplit) {
     // Replit Object Storage flow
