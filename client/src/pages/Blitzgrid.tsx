@@ -2496,6 +2496,9 @@ export default function Blitzgrid() {
                           <DialogTitle className="text-white text-lg font-semibold">
                             {category?.name || 'Question'}
                           </DialogTitle>
+                          <DialogDescription className="sr-only">
+                            {activeQuestion?.points} point question from {category?.name || 'category'}
+                          </DialogDescription>
                           {category?.description && (
                             <p className="text-white/40 text-sm mt-0.5 line-clamp-2">{category.description}</p>
                           )}
@@ -2610,7 +2613,7 @@ export default function Blitzgrid() {
                       return (
                         <div 
                           key={buzz.playerId}
-                          className={`flex items-center justify-between rounded-lg px-3 py-1.5 ${
+                          className={`flex items-center justify-between gap-2 rounded-lg px-3 py-1.5 ${
                             index === 0 ? 'bg-orange-500/20 border border-orange-400/60' : 'bg-white/5 border border-white/10'
                           }`}
                           data-testid={`buzz-queue-item-${buzz.playerId}`}
@@ -2857,7 +2860,7 @@ export default function Blitzgrid() {
       
       if (existingQuestion && !isEditing) {
         return (
-          <div className="flex items-center justify-between p-2 bg-muted/30 rounded text-sm">
+          <div className="flex items-center justify-between gap-2 p-2 bg-muted/30 rounded text-sm">
             <div className="flex-1 min-w-0">
               <span className="font-medium text-xs text-muted-foreground mr-2">{points}pts:</span>
               <span className="truncate">{existingQuestion.question}</span>
@@ -2948,7 +2951,7 @@ export default function Blitzgrid() {
       <div className="min-h-screen flex flex-col bg-background" data-testid="page-blitzgrid-grid">
         <AppHeader minimal backHref="/" title={grid?.name || 'Blitzgrid'} />
         <main className="flex-1 flex flex-col max-w-6xl mx-auto px-4 py-6 w-full">
-          <div className="flex items-center justify-between mb-4 shrink-0">
+          <div className="flex items-center justify-between gap-4 mb-4 shrink-0">
             <div>
               <p className="text-muted-foreground text-sm">
                 {gridCategories.length}/5 categories · {grid?.questionCount || 0}/25 questions
@@ -3200,7 +3203,7 @@ export default function Blitzgrid() {
             </div>
           </motion.div>
 
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between gap-4 mb-6">
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <Grid3X3 className="w-6 h-6 text-violet-500" />
