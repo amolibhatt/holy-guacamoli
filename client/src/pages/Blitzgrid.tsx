@@ -2497,14 +2497,14 @@ export default function Blitzgrid() {
                       <div className="flex items-start justify-between gap-3">
                         {/* Category info - left side */}
                         <div className="flex-1 min-w-0">
-                          <DialogTitle className="text-white text-lg font-semibold">
+                          <DialogTitle className="text-white text-lg font-semibold truncate" title={category?.name || 'Question'} data-testid="question-category-name">
                             {category?.name || 'Question'}
                           </DialogTitle>
                           <DialogDescription className="sr-only">
                             {activeQuestion?.points} point question from {category?.name || 'category'}
                           </DialogDescription>
                           {category?.description && (
-                            <p className="text-white/40 text-sm mt-0.5 line-clamp-2">{category.description}</p>
+                            <p className="text-white/40 text-sm mt-0.5 line-clamp-2" title={category.description}>{category.description}</p>
                           )}
                         </div>
                         
@@ -2536,16 +2536,17 @@ export default function Blitzgrid() {
                           
                           {/* Points badge */}
                           <div 
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg shrink-0"
                             style={{ 
                               backgroundColor: `${neonColor.border}25`,
                               border: `2px solid ${neonColor.border}60`,
                             }}
+                            data-testid="question-points-badge"
                           >
                             <span className="text-xl font-black" style={{ color: neonColor.text }}>
                               {activeQuestion?.points}
                             </span>
-                            <span className="text-xs text-white/50 uppercase">pts</span>
+                            <span className="text-xs text-white/50 uppercase shrink-0">pts</span>
                           </div>
                         </div>
                       </div>
@@ -2553,7 +2554,7 @@ export default function Blitzgrid() {
                     
                     {/* Question - THE HERO */}
                     <div className="py-8 px-2">
-                      <div className={`${textSizeClass} text-center font-semibold text-white leading-relaxed`}>
+                      <div className={`${textSizeClass} text-center font-semibold text-white leading-relaxed`} data-testid="question-text">
                         <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
                           {questionText}
                         </ReactMarkdown>
@@ -2565,12 +2566,13 @@ export default function Blitzgrid() {
               
               {/* Media Display */}
               {(activeQuestion?.imageUrl || activeQuestion?.audioUrl || activeQuestion?.videoUrl) && (
-                <div className="flex flex-col items-center gap-3 px-5 pb-4">
+                <div className="flex flex-col items-center gap-3 px-5 pb-4" data-testid="question-media-section">
                   {activeQuestion?.imageUrl && (
                     <img 
                       src={activeQuestion.imageUrl} 
-                      alt="Question media"
+                      alt="Question image"
                       className="max-w-full max-h-48 md:max-h-64 rounded-lg object-contain shadow-lg"
+                      data-testid="question-image"
                     />
                   )}
                   {activeQuestion?.videoUrl && (
@@ -2578,6 +2580,8 @@ export default function Blitzgrid() {
                       src={activeQuestion.videoUrl}
                       controls
                       className="max-w-full max-h-48 md:max-h-64 rounded-lg shadow-lg"
+                      data-testid="question-video"
+                      aria-label="Question video"
                     />
                   )}
                   {activeQuestion?.audioUrl && (
@@ -2585,6 +2589,8 @@ export default function Blitzgrid() {
                       src={activeQuestion.audioUrl}
                       controls
                       className="w-full max-w-sm"
+                      data-testid="question-audio"
+                      aria-label="Question audio"
                     />
                   )}
                 </div>
@@ -2592,7 +2598,7 @@ export default function Blitzgrid() {
               
               {/* Buzzer Status - inline, compact */}
               {players.length > 0 && !showAnswer && buzzQueue.length === 0 && (
-                <div className="mx-5 mb-4 flex items-center justify-center gap-3 py-2 px-4 bg-white/5 border border-white/10 rounded-full">
+                <div className="mx-5 mb-4 flex items-center justify-center gap-3 py-2 px-4 bg-white/5 border border-white/10 rounded-full" data-testid="buzzer-status-waiting">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
                     <span className="text-white/50 text-sm">{players.length} waiting</span>
@@ -2606,9 +2612,10 @@ export default function Blitzgrid() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   className="mx-5 mb-4 bg-orange-500/10 border border-orange-400/40 rounded-xl p-3"
+                  data-testid="buzz-queue-section"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <Zap className="w-4 h-4 text-orange-400" />
+                    <Zap className="w-4 h-4 text-orange-400 shrink-0" />
                     <span className="text-sm text-orange-300 font-semibold">Buzzed</span>
                   </div>
                   <div className="space-y-1.5">
@@ -2691,8 +2698,8 @@ export default function Blitzgrid() {
               
               {/* No players yet - subtle hint */}
               {players.length === 0 && !showAnswer && (
-                <div className="mx-5 mb-4 flex items-center justify-center gap-2 py-2 text-white/30">
-                  <Users className="w-3.5 h-3.5" />
+                <div className="mx-5 mb-4 flex items-center justify-center gap-2 py-2 text-white/30" data-testid="no-players-message">
+                  <Users className="w-3.5 h-3.5 shrink-0" />
                   <p className="text-xs">No players connected</p>
                 </div>
               )}
@@ -2712,12 +2719,14 @@ export default function Blitzgrid() {
                   >
                     <p 
                       className="text-xs font-medium uppercase tracking-wider mb-2 text-white/50"
+                      data-testid="answer-label"
                     >
                       Answer
                     </p>
                     <div 
                       className="text-xl font-bold prose prose-lg max-w-none [&>p]:m-0 prose-invert"
                       style={{ color: neonColorConfig[colorName].text }}
+                      data-testid="answer-text"
                     >
                       <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
                         {activeQuestion?.correctAnswer || ''}
@@ -2726,12 +2735,13 @@ export default function Blitzgrid() {
                     
                     {/* Answer Media */}
                     {(activeQuestion?.answerImageUrl || activeQuestion?.answerAudioUrl || activeQuestion?.answerVideoUrl) && (
-                      <div className="flex flex-col items-center gap-3 mt-4">
+                      <div className="flex flex-col items-center gap-3 mt-4" data-testid="answer-media-section">
                         {activeQuestion?.answerImageUrl && (
                           <img 
                             src={activeQuestion.answerImageUrl} 
-                            alt="Answer media"
+                            alt="Answer image"
                             className="max-w-full max-h-48 md:max-h-64 rounded-lg object-contain shadow-lg"
+                            data-testid="answer-image"
                           />
                         )}
                         {activeQuestion?.answerVideoUrl && (
@@ -2740,6 +2750,8 @@ export default function Blitzgrid() {
                             controls
                             autoPlay
                             className="max-w-full max-h-48 md:max-h-64 rounded-lg shadow-lg"
+                            data-testid="answer-video"
+                            aria-label="Answer video"
                           />
                         )}
                         {activeQuestion?.answerAudioUrl && (
@@ -2748,6 +2760,8 @@ export default function Blitzgrid() {
                             controls
                             autoPlay
                             className="w-full max-w-sm"
+                            data-testid="answer-audio"
+                            aria-label="Answer audio"
                           />
                         )}
                       </div>
@@ -2758,12 +2772,13 @@ export default function Blitzgrid() {
               
               {/* Manual Scoring - inline player chips (after answer revealed) */}
               {showAnswer && players.length > 0 && (
-                <div className="mx-5 mb-4">
+                <div className="mx-5 mb-4" data-testid="manual-scoring-section">
                   <div className="flex flex-wrap items-center gap-2">
                     {players.map(player => (
                       <div 
                         key={player.id}
                         className="flex items-center gap-1 bg-white/5 rounded-full pl-3 pr-1 py-1 border border-white/10 max-w-[200px]"
+                        data-testid={`player-scoring-chip-${player.id}`}
                       >
                         <span className="text-sm text-white/80 truncate min-w-0 flex-1" title={player.name}>{player.name}</span>
                         <span className="text-xs text-white/40 flex-shrink-0">{player.score}</span>
