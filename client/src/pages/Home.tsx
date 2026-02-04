@@ -217,7 +217,7 @@ export default function Home() {
 
             {/* Main title */}
             <motion.h1 
-              className="relative text-3xl lg:text-5xl font-black"
+              className="relative text-3xl lg:text-5xl font-black mb-2"
               style={{ fontFamily: "'Archivo Black', sans-serif" }}
               data-testid="text-main-title"
               initial={{ opacity: 0, y: 20 }}
@@ -227,16 +227,17 @@ export default function Home() {
               <span className="bg-gradient-to-r from-fuchsia-400 via-cyan-300 to-lime-300 bg-clip-text text-transparent">
                 Pick a game, rally your crew
               </span>
-              <br />
-              <motion.span 
-                className="text-white"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.15 }}
-              >
-                Let the chaos begin
-              </motion.span>
             </motion.h1>
+            
+            <motion.p 
+              className="text-white/50 text-base lg:text-lg"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.15 }}
+              data-testid="text-subtitle"
+            >
+              Let the chaos begin
+            </motion.p>
           </motion.div>
 
           {/* Join a Game - Compact */}
