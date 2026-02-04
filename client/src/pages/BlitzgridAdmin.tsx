@@ -242,7 +242,8 @@ export default function BlitzgridAdmin() {
 
   const createGridMutation = useMutation({
     mutationFn: async ({ name, description }: { name: string; description?: string }) => {
-      return apiRequest('POST', '/api/blitzgrid/grids', { name, description });
+      const res = await apiRequest('POST', '/api/blitzgrid/grids', { name, description });
+      return res.json();
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
@@ -261,12 +262,18 @@ export default function BlitzgridAdmin() {
 
   const deleteGridMutation = useMutation({
     mutationFn: async (gridId: number) => {
-      return apiRequest('DELETE', `/api/blitzgrid/grids/${gridId}`);
+      await apiRequest('DELETE', `/api/blitzgrid/grids/${gridId}`);
+      return gridId;
     },
-    onSuccess: () => {
+    onSuccess: (deletedGridId: number) => {
+      // Find the next grid to select before invalidating
+      const remainingGrids = grids.filter(g => g.id !== deletedGridId);
+      const nextGridId = remainingGrids.length > 0 ? remainingGrids[0].id : null;
+      
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
-      if (selectedGridId === deletingGridId) {
-        setSelectedGridId(null);
+      
+      if (selectedGridId === deletedGridId) {
+        setSelectedGridId(nextGridId);
       }
       setDeletingGridId(null);
       toast({ title: "Grid deleted" });
@@ -284,6 +291,14 @@ export default function BlitzgridAdmin() {
     }
   }, [grids, selectedGridId]);
 
+  // Clear delete confirmation after 3 seconds
+  useEffect(() => {
+    if (deletingGridId !== null) {
+      const timer = setTimeout(() => setDeletingGridId(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [deletingGridId]);
+
   // Reset all editing state when switching grids to prevent stale state
   useEffect(() => {
     setSelectedCategoryId(null);
@@ -293,6 +308,7 @@ export default function BlitzgridAdmin() {
     setNewCategoryName("");
     setNewCategoryDescription("");
     setQuestionForms({});
+    setDeletingGridId(null);
   }, [selectedGridId]);
 
   const handleExport = async () => {
@@ -1217,7 +1233,7 @@ export default function BlitzgridAdmin() {
               onClick={() => setShowNewGridForm(true)}
               data-testid="button-add-grid"
             >
-              <Plus className="w-4 h-4 mr-2" /> Add Grid
+              <Plus className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" /> Add Grid
             </Button>
           </div>
         </div>
@@ -1295,7 +1311,7 @@ export default function BlitzgridAdmin() {
               <h3 className="font-medium mb-2">No grids yet</h3>
               <p className="text-muted-foreground text-sm mb-4">Create your first grid to get started</p>
               <Button onClick={() => setShowNewGridForm(true)} data-testid="button-add-first-grid">
-                <Plus className="w-4 h-4 mr-2" /> Add Grid
+                <Plus className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" /> Add Grid
               </Button>
             </CardContent>
           </Card>
