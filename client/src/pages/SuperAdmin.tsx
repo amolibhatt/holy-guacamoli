@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,7 +10,8 @@ import {
   ChevronRight, Star, ChevronDown, Database,
   Megaphone, Flag, Heart, AlertTriangle,
   Download, Send, UserCheck, Zap, Trophy,
-  Calendar, LogIn, User, Play
+  Calendar, LogIn, User, Play, X, Eye,
+  ArrowUpRight, Filter, ChevronUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { GameStatus } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -220,6 +223,12 @@ export default function SuperAdmin() {
   const [psyopSearch, setPsyopSearch] = useState("");
   const [blitzgridSearch, setBlitzgridSearch] = useState("");
   const [activeTab, setActiveTab] = useState("dashboard");
+  
+  // Drill-down sheet state
+  type DrillDownType = 'users' | 'grids' | 'questions' | 'games' | 'sessions' | 'players' | 'active-sessions' | 'ended-sessions' | null;
+  const [drillDownType, setDrillDownType] = useState<DrillDownType>(null);
+  const [drillDownFilter, setDrillDownFilter] = useState<string>("");
+  const [dateRangeFilter, setDateRangeFilter] = useState<'today' | 'week' | 'month' | 'all'>('all');
 
   const { data: stats, isLoading: isLoadingStats } = useQuery<PlatformStats>({
     queryKey: ['/api/super-admin/stats'],
@@ -519,6 +528,82 @@ export default function SuperAdmin() {
     return date.toLocaleDateString();
   };
 
+  // Filter items by date range helper
+  const getDateCutoff = (): Date | null => {
+    if (dateRangeFilter === 'all') return null;
+    const cutoff = new Date();
+    if (dateRangeFilter === 'today') cutoff.setHours(0, 0, 0, 0);
+    else if (dateRangeFilter === 'week') cutoff.setDate(cutoff.getDate() - 7);
+    else if (dateRangeFilter === 'month') cutoff.setDate(cutoff.getDate() - 30);
+    return cutoff;
+  };
+
+  // Filtered data for drill-downs
+  const filteredUsersForDrillDown = useMemo(() => {
+    let users = [...allUsers];
+    const cutoff = getDateCutoff();
+    if (cutoff) {
+      users = users.filter(u => u.createdAt && new Date(String(u.createdAt)) >= cutoff);
+    }
+    if (drillDownFilter) {
+      const search = drillDownFilter.toLowerCase();
+      users = users.filter(u => 
+        (u.email?.toLowerCase().includes(search)) ||
+        (String((u as UserWithStats & { username?: string }).username || '').toLowerCase().includes(search))
+      );
+    }
+    return users;
+  }, [allUsers, drillDownFilter, dateRangeFilter]);
+
+  const filteredSessionsForDrillDown = useMemo(() => {
+    let sessions = [...allSessions];
+    const cutoff = getDateCutoff();
+    if (cutoff) {
+      sessions = sessions.filter(s => s.createdAt && new Date(s.createdAt) >= cutoff);
+    }
+    if (drillDownType === 'active-sessions') {
+      sessions = sessions.filter(s => s.state === 'active' || s.state === 'playing');
+    } else if (drillDownType === 'ended-sessions') {
+      sessions = sessions.filter(s => s.state === 'ended');
+    }
+    if (drillDownFilter) {
+      const search = drillDownFilter.toLowerCase();
+      sessions = sessions.filter(s => 
+        s.code.toLowerCase().includes(search) ||
+        s.host?.username.toLowerCase().includes(search)
+      );
+    }
+    return sessions;
+  }, [allSessions, drillDownType, drillDownFilter, dateRangeFilter]);
+
+  const filteredGridsForDrillDown = useMemo(() => {
+    let grids = [...allBoards];
+    // Boards may not have createdAt, skip date filter for grids
+    if (drillDownFilter) {
+      const search = drillDownFilter.toLowerCase();
+      grids = grids.filter(g => 
+        g.name.toLowerCase().includes(search) ||
+        g.ownerName?.toLowerCase().includes(search)
+      );
+    }
+    return grids;
+  }, [allBoards, drillDownFilter]);
+
+  // Get drill-down title
+  const getDrillDownTitle = () => {
+    switch (drillDownType) {
+      case 'users': return 'All Users';
+      case 'grids': return 'All Grids';
+      case 'questions': return 'All Questions';
+      case 'games': return 'Games Played';
+      case 'sessions': return 'All Sessions';
+      case 'players': return 'All Players';
+      case 'active-sessions': return 'Active Sessions';
+      case 'ended-sessions': return 'Completed Sessions';
+      default: return 'Details';
+    }
+  };
+
   return (
     <div className="min-h-screen gradient-game">
       <AppHeader minimal backHref="/" title="Super Admin" />
@@ -574,6 +659,8 @@ export default function SuperAdmin() {
                   icon={Users}
                   color="from-emerald-300 via-teal-300 to-cyan-300"
                   isLoading={isLoadingStats}
+                  clickable
+                  onClick={() => { setDrillDownType('users'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
                 />
                 <StatCard
                   title="Total Grids"
@@ -581,6 +668,8 @@ export default function SuperAdmin() {
                   icon={Grid3X3}
                   color="from-rose-300 via-pink-300 to-fuchsia-300"
                   isLoading={isLoadingStats}
+                  clickable
+                  onClick={() => { setDrillDownType('grids'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
                 />
                 <StatCard
                   title="Questions"
@@ -588,6 +677,8 @@ export default function SuperAdmin() {
                   icon={Activity}
                   color="from-violet-300 via-purple-300 to-indigo-300"
                   isLoading={isLoadingStats}
+                  clickable
+                  onClick={() => { setDrillDownType('questions'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
                 />
                 <StatCard
                   title="Games Played"
@@ -595,6 +686,8 @@ export default function SuperAdmin() {
                   icon={Gamepad2}
                   color="from-amber-300 via-yellow-300 to-amber-300"
                   isLoading={isLoadingStats}
+                  clickable
+                  onClick={() => { setDrillDownType('sessions'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
                 />
                 <StatCard
                   title="Sessions Today"
@@ -602,6 +695,8 @@ export default function SuperAdmin() {
                   icon={Clock}
                   color="from-rose-300 via-pink-300 to-fuchsia-300"
                   isLoading={isLoadingStats}
+                  clickable
+                  onClick={() => { setDrillDownType('sessions'); setDrillDownFilter(''); setDateRangeFilter('today'); }}
                 />
                 <StatCard
                   title="New This Week"
@@ -609,6 +704,8 @@ export default function SuperAdmin() {
                   icon={TrendingUp}
                   color="from-violet-300 via-purple-300 to-indigo-300"
                   isLoading={isLoadingStats}
+                  clickable
+                  onClick={() => { setDrillDownType('users'); setDrillDownFilter(''); setDateRangeFilter('week'); }}
                 />
               </div>
 
@@ -628,22 +725,49 @@ export default function SuperAdmin() {
                   ))
                 ) : (
                   <>
-                    <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
+                    <Card 
+                      className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 cursor-pointer hover-elevate active-elevate-2"
+                      onClick={() => { setDrillDownType('active-sessions'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && (setDrillDownType('active-sessions'), setDrillDownFilter(''), setDateRangeFilter('all'))}
+                      data-testid="card-active-rooms"
+                    >
                       <CardContent className="p-4 text-center">
                         <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">{roomStats?.activeRooms ?? 0}</p>
-                        <p className="text-sm text-muted-foreground">Active Rooms</p>
+                        <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                          Active Rooms <Eye className="w-3 h-3" />
+                        </p>
                       </CardContent>
                     </Card>
-                    <Card className="bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20">
+                    <Card 
+                      className="bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20 cursor-pointer hover-elevate active-elevate-2"
+                      onClick={() => { setDrillDownType('sessions'); setDrillDownFilter(''); setDateRangeFilter('today'); }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && (setDrillDownType('sessions'), setDrillDownFilter(''), setDateRangeFilter('today'))}
+                      data-testid="card-sessions-today"
+                    >
                       <CardContent className="p-4 text-center">
                         <p className="text-3xl font-bold text-pink-600 dark:text-pink-400">{roomStats?.sessionsToday ?? 0}</p>
-                        <p className="text-sm text-muted-foreground">Sessions Today</p>
+                        <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                          Sessions Today <Eye className="w-3 h-3" />
+                        </p>
                       </CardContent>
                     </Card>
-                    <Card className="bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20">
+                    <Card 
+                      className="bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 cursor-pointer hover-elevate active-elevate-2"
+                      onClick={() => { setDrillDownType('players'); setDrillDownFilter(''); setDateRangeFilter('today'); }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && (setDrillDownType('players'), setDrillDownFilter(''), setDateRangeFilter('today'))}
+                      data-testid="card-players-today"
+                    >
                       <CardContent className="p-4 text-center">
                         <p className="text-3xl font-bold text-violet-600 dark:text-violet-400">{roomStats?.playersToday ?? 0}</p>
-                        <p className="text-sm text-muted-foreground">Players Today</p>
+                        <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                          Players Today <Eye className="w-3 h-3" />
+                        </p>
                       </CardContent>
                     </Card>
                   </>
@@ -715,46 +839,70 @@ export default function SuperAdmin() {
                   ))
                 ) : (
                   <>
-                    <Card>
+                    <Card 
+                      className="cursor-pointer hover-elevate active-elevate-2"
+                      onClick={() => { setDrillDownType('active-sessions'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && (setDrillDownType('active-sessions'), setDrillDownFilter(''), setDateRangeFilter('all'))}
+                      data-testid="card-active-sessions"
+                    >
                       <CardContent className="pt-6">
                         <div className="flex items-center gap-3">
                           <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/30">
                             <Activity className="w-5 h-5 text-rose-600 dark:text-rose-400" />
                           </div>
-                          <div>
+                          <div className="flex-1">
                             <p className="text-2xl font-bold">{detailedAnalytics?.activeSessions ?? 0}</p>
                             <p className="text-sm text-muted-foreground">Active Sessions</p>
                           </div>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
                         </div>
                       </CardContent>
                     </Card>
-                    <Card>
+                    <Card 
+                      className="cursor-pointer hover-elevate active-elevate-2"
+                      onClick={() => { setDrillDownType('ended-sessions'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && (setDrillDownType('ended-sessions'), setDrillDownFilter(''), setDateRangeFilter('all'))}
+                      data-testid="card-ended-sessions"
+                    >
                       <CardContent className="pt-6">
                         <div className="flex items-center gap-3">
                           <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-900/30">
                             <Clock className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                           </div>
-                          <div>
+                          <div className="flex-1">
                             <p className="text-2xl font-bold">{detailedAnalytics?.endedSessions ?? 0}</p>
                             <p className="text-sm text-muted-foreground">Ended Sessions</p>
                           </div>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
                         </div>
                       </CardContent>
                     </Card>
-                    <Card>
+                    <Card 
+                      className="cursor-pointer hover-elevate active-elevate-2"
+                      onClick={() => { setDrillDownType('sessions'); setDrillDownFilter(''); setDateRangeFilter('month'); }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && (setDrillDownType('sessions'), setDrillDownFilter(''), setDateRangeFilter('month'))}
+                      data-testid="card-sessions-month"
+                    >
                       <CardContent className="pt-6">
                         <div className="flex items-center gap-3">
                           <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
                             <Calendar className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                           </div>
-                          <div>
+                          <div className="flex-1">
                             <p className="text-2xl font-bold">{detailedAnalytics?.totalSessionsThisMonth ?? 0}</p>
                             <p className="text-sm text-muted-foreground">This Month</p>
                           </div>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
                         </div>
                       </CardContent>
                     </Card>
-                    <Card>
+                    <Card data-testid="card-avg-players">
                       <CardContent className="pt-6">
                         <div className="flex items-center gap-3">
                           <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-900/30">
@@ -855,6 +1003,122 @@ export default function SuperAdmin() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Quick Insights */}
+              <h3 className="text-xl font-semibold text-foreground mt-8 mb-4 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-yellow-500" />
+                Quick Insights
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Engagement Insight */}
+                <Card className="bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-900/10 dark:to-teal-900/10 border-emerald-200 dark:border-emerald-800/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                        <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">Engagement Health</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {(detailedAnalytics?.avgPlayersPerSession ?? 0) >= 3 
+                            ? `Great engagement! Averaging ${detailedAnalytics?.avgPlayersPerSession ?? 0} players per session.`
+                            : (detailedAnalytics?.avgPlayersPerSession ?? 0) >= 1
+                            ? `Room for growth - averaging ${detailedAnalytics?.avgPlayersPerSession ?? 0} players per session. Consider promoting group play.`
+                            : 'No active sessions yet. Time to host your first game!'}
+                        </p>
+                        {(detailedAnalytics?.avgPlayersPerSession ?? 0) < 3 && (detailedAnalytics?.avgPlayersPerSession ?? 0) >= 1 && (
+                          <Button 
+                            variant="ghost" 
+                            className="p-0 h-auto text-emerald-600 dark:text-emerald-400 mt-2 hover:bg-transparent"
+                            onClick={() => { setDrillDownType('sessions'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
+                          >
+                            View sessions with most players <ArrowUpRight className="w-3 h-3 ml-1" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Conversion Insight */}
+                <Card className="bg-gradient-to-br from-violet-50/50 to-purple-50/50 dark:from-violet-900/10 dark:to-purple-900/10 border-violet-200 dark:border-violet-800/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-900/30">
+                        <UserCheck className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">Player Conversion</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {(conversionFunnel?.conversionRate ?? 0) >= 20
+                            ? `Excellent! ${conversionFunnel?.conversionRate}% of players are registered users.`
+                            : (conversionFunnel?.guestPlayers ?? 0) > 0
+                            ? `${conversionFunnel?.guestPlayers ?? 0} guest players could become registered users. Consider adding signup prompts.`
+                            : 'Start tracking conversions once players join games.'}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Content Insight */}
+                <Card className="bg-gradient-to-br from-rose-50/50 to-pink-50/50 dark:from-rose-900/10 dark:to-pink-900/10 border-rose-200 dark:border-rose-800/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/30">
+                        <Grid3X3 className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">Content Status</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {(stats?.totalBoards ?? 0) >= 5
+                            ? `Healthy content library with ${stats?.totalBoards ?? 0} grids and ${stats?.totalQuestions ?? 0} questions.`
+                            : (stats?.totalBoards ?? 0) >= 1
+                            ? `${stats?.totalBoards ?? 0} grids created. Add more to keep games fresh!`
+                            : 'No grids yet. Create your first BlitzGrid to get started.'}
+                        </p>
+                        <Button 
+                          variant="ghost" 
+                          className="p-0 h-auto text-rose-600 dark:text-rose-400 mt-2 hover:bg-transparent"
+                          onClick={() => { setDrillDownType('grids'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
+                        >
+                          Browse all grids <ArrowUpRight className="w-3 h-3 ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Activity Insight */}
+                <Card className="bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-900/10 dark:to-orange-900/10 border-amber-200 dark:border-amber-800/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                        <Activity className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">Today's Activity</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {(roomStats?.activeRooms ?? 0) > 0
+                            ? `${roomStats?.activeRooms ?? 0} active rooms right now with ${roomStats?.playersToday ?? 0} players today!`
+                            : (roomStats?.sessionsToday ?? 0) > 0
+                            ? `${roomStats?.sessionsToday ?? 0} sessions completed today. ${roomStats?.playersToday ?? 0} players participated.`
+                            : 'No activity yet today. A perfect time to host a game!'}
+                        </p>
+                        {(roomStats?.activeRooms ?? 0) > 0 && (
+                          <Button 
+                            variant="ghost" 
+                            className="p-0 h-auto text-amber-600 dark:text-amber-400 mt-2 hover:bg-transparent"
+                            onClick={() => { setDrillDownType('active-sessions'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
+                          >
+                            View live rooms <ArrowUpRight className="w-3 h-3 ml-1" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
               
               {/* Users Section */}
               <Card className="mt-6">
@@ -1961,6 +2225,220 @@ export default function SuperAdmin() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Drill-down Sheet */}
+      <Sheet open={drillDownType !== null} onOpenChange={(open) => !open && setDrillDownType(null)}>
+        <SheetContent className="w-full sm:max-w-xl overflow-hidden flex flex-col">
+          <SheetHeader className="space-y-1">
+            <div className="flex items-center justify-between">
+              <SheetTitle className="flex items-center gap-2">
+                {drillDownType === 'users' && <Users className="w-5 h-5 text-emerald-500" />}
+                {drillDownType === 'grids' && <Grid3X3 className="w-5 h-5 text-rose-500" />}
+                {drillDownType === 'sessions' && <Gamepad2 className="w-5 h-5 text-amber-500" />}
+                {drillDownType === 'active-sessions' && <Activity className="w-5 h-5 text-green-500" />}
+                {drillDownType === 'ended-sessions' && <Clock className="w-5 h-5 text-violet-500" />}
+                {drillDownType === 'players' && <User className="w-5 h-5 text-violet-500" />}
+                {drillDownType === 'questions' && <Activity className="w-5 h-5 text-purple-500" />}
+                {getDrillDownTitle()}
+              </SheetTitle>
+            </div>
+            <SheetDescription>
+              Click any item for details. Use filters to narrow down.
+            </SheetDescription>
+          </SheetHeader>
+
+          {/* Filters */}
+          <div className="flex flex-wrap gap-2 mt-4 pb-2 border-b">
+            <div className="relative flex-1 min-w-[150px]">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search..."
+                value={drillDownFilter}
+                onChange={(e) => setDrillDownFilter(e.target.value)}
+                className="pl-8 h-9"
+                data-testid="input-drilldown-search"
+              />
+            </div>
+            <Select value={dateRangeFilter} onValueChange={(v) => setDateRangeFilter(v as typeof dateRangeFilter)}>
+              <SelectTrigger className="w-[130px] h-9" data-testid="select-date-range">
+                <Filter className="w-3 h-3 mr-1" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Time</SelectItem>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="week">This Week</SelectItem>
+                <SelectItem value="month">This Month</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Results */}
+          <ScrollArea className="flex-1 mt-4 -mx-6 px-6">
+            <div className="space-y-2 pb-6">
+              {/* Users List */}
+              {drillDownType === 'users' && (
+                filteredUsersForDrillDown.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">No users found</p>
+                ) : (
+                  filteredUsersForDrillDown.slice(0, 50).map((user) => (
+                    <Card key={user.id} className="hover-elevate cursor-pointer" onClick={() => { setExpandedUserId(user.id); setUsersSectionExpanded(true); setActiveTab('dashboard'); setDrillDownType(null); }}>
+                      <CardContent className="p-3 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-300 to-teal-300 flex items-center justify-center text-white font-bold">
+                          {user.email?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-foreground truncate">{user.email || 'Unknown'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {user.boardCount} grids · {user.gamesHosted} games hosted
+                          </p>
+                        </div>
+                        <Badge variant={user.role === 'super_admin' ? 'default' : 'secondary'} className="text-xs">
+                          {user.role}
+                        </Badge>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      </CardContent>
+                    </Card>
+                  ))
+                )
+              )}
+
+              {/* Grids List */}
+              {drillDownType === 'grids' && (
+                filteredGridsForDrillDown.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">No grids found</p>
+                ) : (
+                  filteredGridsForDrillDown.slice(0, 50).map((grid) => (
+                    <Card key={grid.id} className="hover-elevate">
+                      <CardContent className="p-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-300 to-pink-300 flex items-center justify-center text-white">
+                            <Grid3X3 className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground truncate">{grid.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              by {grid.ownerName} · {grid.categoryCount} categories · {grid.questionCount} questions
+                            </p>
+                          </div>
+                          {grid.isStarterPack && (
+                            <Badge className="bg-gradient-to-r from-amber-400 to-orange-400 text-white text-xs">
+                              <Star className="w-3 h-3 mr-1" /> Starter
+                            </Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )
+              )}
+
+              {/* Sessions List */}
+              {(drillDownType === 'sessions' || drillDownType === 'active-sessions' || drillDownType === 'ended-sessions') && (
+                filteredSessionsForDrillDown.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">No sessions found</p>
+                ) : (
+                  filteredSessionsForDrillDown.slice(0, 50).map((session) => (
+                    <Card key={session.id} className="hover-elevate cursor-pointer" onClick={() => { setExpandedSessionId(String(session.id)); setSessionsSectionExpanded(true); setActiveTab('dashboard'); setDrillDownType(null); }}>
+                      <CardContent className="p-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-white ${
+                            session.state === 'ended' ? 'bg-gradient-to-br from-violet-400 to-purple-400' : 'bg-gradient-to-br from-green-400 to-emerald-400'
+                          }`}>
+                            {session.state === 'ended' ? <Trophy className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-mono font-bold text-foreground">{session.code}</p>
+                              <Badge variant={session.state === 'ended' ? 'secondary' : 'default'} className="text-xs">
+                                {session.state}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Host: {session.host?.username} · {session.playerCount} players · {formatRelativeDate(session.createdAt)}
+                            </p>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                        {session.players && session.players.length > 0 && (
+                          <div className="mt-2 pt-2 border-t flex flex-wrap gap-1">
+                            {session.players.slice(0, 5).map((player) => (
+                              <Badge key={player.id} variant="outline" className="text-xs">
+                                {player.name}: {player.score}
+                              </Badge>
+                            ))}
+                            {session.players.length > 5 && (
+                              <Badge variant="outline" className="text-xs">+{session.players.length - 5} more</Badge>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )
+              )}
+
+              {/* Players List */}
+              {drillDownType === 'players' && (
+                <div className="space-y-2">
+                  {filteredSessionsForDrillDown.flatMap(s => s.players || []).length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No players found</p>
+                  ) : (
+                    filteredSessionsForDrillDown.flatMap(s => 
+                      (s.players || []).map(player => ({ ...player, sessionCode: s.code, sessionState: s.state }))
+                    ).slice(0, 100).map((player, idx) => (
+                      <Card key={`${player.id}-${idx}`} className="hover-elevate">
+                        <CardContent className="p-3 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-300 to-purple-300 flex items-center justify-center text-white font-bold">
+                            {player.name?.charAt(0).toUpperCase() || <User className="w-5 h-5" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground">{player.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Session: {player.sessionCode} · Score: {player.score}
+                            </p>
+                          </div>
+                          <Badge variant={player.isConnected ? 'default' : 'secondary'} className="text-xs">
+                            {player.isConnected ? 'Online' : 'Offline'}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* Questions - just show count for now */}
+              {drillDownType === 'questions' && (
+                <div className="text-center py-8">
+                  <Activity className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-lg font-medium">{stats?.totalQuestions ?? 0} Questions</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Go to the Content tab to manage questions
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => { setActiveTab('content'); setDrillDownType(null); }}
+                  >
+                    Go to Content
+                  </Button>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+
+          {/* Summary footer */}
+          <div className="pt-3 mt-auto border-t text-sm text-muted-foreground">
+            {drillDownType === 'users' && `Showing ${Math.min(50, filteredUsersForDrillDown.length)} of ${filteredUsersForDrillDown.length} users`}
+            {drillDownType === 'grids' && `Showing ${Math.min(50, filteredGridsForDrillDown.length)} of ${filteredGridsForDrillDown.length} grids`}
+            {(drillDownType === 'sessions' || drillDownType === 'active-sessions' || drillDownType === 'ended-sessions') && 
+              `Showing ${Math.min(50, filteredSessionsForDrillDown.length)} of ${filteredSessionsForDrillDown.length} sessions`}
+            {drillDownType === 'players' && 
+              `Showing ${Math.min(100, filteredSessionsForDrillDown.flatMap(s => s.players || []).length)} players`}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
@@ -1970,29 +2448,42 @@ function StatCard({
   value, 
   icon: Icon, 
   color, 
-  isLoading 
+  isLoading,
+  onClick,
+  clickable = false
 }: { 
   title: string; 
   value: number; 
   icon: typeof Users; 
   color: string;
   isLoading: boolean;
+  onClick?: () => void;
+  clickable?: boolean;
 }) {
   return (
-    <Card className="hover-elevate">
+    <Card 
+      className={`hover-elevate ${clickable ? 'cursor-pointer active-elevate-2' : ''}`}
+      onClick={clickable ? onClick : undefined}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={clickable ? (e) => e.key === 'Enter' && onClick?.() : undefined}
+    >
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center shadow-lg`}>
             <Icon className="w-5 h-5 text-white" />
           </div>
-          <div>
+          <div className="flex-1">
             {isLoading ? (
               <Skeleton className="h-7 w-12" />
             ) : (
-              <div className="text-2xl font-bold text-foreground">{value}</div>
+              <div className="text-2xl font-bold text-foreground">{value.toLocaleString()}</div>
             )}
             <div className="text-xs text-muted-foreground">{title}</div>
           </div>
+          {clickable && !isLoading && (
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          )}
         </div>
       </CardContent>
     </Card>
