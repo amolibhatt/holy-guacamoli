@@ -1738,12 +1738,12 @@ export default function Blitzgrid() {
                     const newVal = soundManager.toggle();
                     setSoundEnabled(newVal);
                   }} data-testid="menu-toggle-sound">
-                    {soundEnabled ? <Volume2 className="w-4 h-4 mr-2" /> : <VolumeX className="w-4 h-4 mr-2" />}
+                    {soundEnabled ? <Volume2 className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" /> : <VolumeX className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />}
                     {soundEnabled ? 'Sound On' : 'Sound Off'}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={resetGame} data-testid="menu-reset-questions">
-                    <RotateCcw className="w-4 h-4 mr-2" />
+                    <RotateCcw className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                     Reset Questions
                   </DropdownMenuItem>
                   {shuffleMode && (
@@ -1753,16 +1753,16 @@ export default function Blitzgrid() {
                       }}
                       data-testid="button-reshuffle"
                     >
-                      <Shuffle className="w-4 h-4 mr-2" />
+                      <Shuffle className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                       Reshuffle Categories
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem 
                     onClick={() => setShowEndSessionDialog(true)}
-                    className="text-destructive focus:text-destructive"
+                    className="text-rose-500 focus:text-rose-500"
                     data-testid="menu-end-session"
                   >
-                    <Power className="w-4 h-4 mr-2" />
+                    <Power className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                     End Session
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -1807,9 +1807,9 @@ export default function Blitzgrid() {
                     color: '#10b981',
                   }}
                 >
-                  <span className="text-lg flex-shrink-0">{PLAYER_AVATARS.find(a => a.id === lastJoinedPlayer.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
-                  <span className="font-medium truncate max-w-[150px]" title={`${lastJoinedPlayer.name} joined!`}>{lastJoinedPlayer.name} joined!</span>
-                  <UserPlus className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <span className="text-lg shrink-0">{PLAYER_AVATARS.find(a => a.id === lastJoinedPlayer.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
+                  <span className="font-medium truncate min-w-0 max-w-[150px]" title={`${lastJoinedPlayer.name} joined!`}>{lastJoinedPlayer.name} joined!</span>
+                  <UserPlus className="w-4 h-4 text-emerald-400 shrink-0" aria-hidden="true" />
                 </div>
               </motion.div>
             )}
@@ -2087,7 +2087,7 @@ export default function Blitzgrid() {
                               exit={{ opacity: 0 }}
                               transition={{ duration: 1, ease: "easeOut" }}
                               className={`absolute -top-6 left-1/2 -translate-x-1/2 font-bold text-sm whitespace-nowrap ${
-                                scoreAnim.delta > 0 ? 'text-emerald-600' : 'text-destructive'
+                                scoreAnim.delta > 0 ? 'text-emerald-500' : 'text-rose-500'
                               }`}
                             >
                               {scoreAnim.delta > 0 ? '+' : ''}{scoreAnim.delta}
@@ -2147,7 +2147,7 @@ export default function Blitzgrid() {
                                 onClick={(e) => { e.stopPropagation(); updatePlayerScore(player.id, -10); }}
                                 data-testid={`button-sub-score-${player.id}`}
                               >
-                                <Minus className="w-3 h-3" />
+                                <Minus className="w-3 h-3 shrink-0" aria-hidden="true" />
                               </Button>
                               <Button
                                 size="sm"
@@ -2156,7 +2156,7 @@ export default function Blitzgrid() {
                                 onClick={(e) => { e.stopPropagation(); updatePlayerScore(player.id, 10); }}
                                 data-testid={`button-add-score-${player.id}`}
                               >
-                                <Plus className="w-3 h-3" />
+                                <Plus className="w-3 h-3 shrink-0" aria-hidden="true" />
                               </Button>
                             </motion.div>
                           )}
@@ -2168,8 +2168,8 @@ export default function Blitzgrid() {
               </LayoutGroup>
             ) : (
               <div className="flex items-center justify-center gap-2 text-white/40 text-sm py-1">
-                <Users className="w-4 h-4" />
-                <span>Tap room code to invite players</span>
+                <Users className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span data-testid="no-players-hint">Tap room code to invite players</span>
               </div>
             )}
           </motion.div>
@@ -2207,7 +2207,7 @@ export default function Blitzgrid() {
                   }}
                   data-testid="button-copy-join-link"
                 >
-                  <Link2 className="w-4 h-4" />
+                  <Link2 className="w-4 h-4 shrink-0" aria-hidden="true" />
                   Copy Join Link
                 </Button>
               
@@ -2600,7 +2600,7 @@ export default function Blitzgrid() {
               {players.length > 0 && !showAnswer && buzzQueue.length === 0 && (
                 <div className="mx-5 mb-4 flex items-center justify-center gap-3 py-2 px-4 bg-white/5 border border-white/10 rounded-full" data-testid="buzzer-status-waiting">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse shrink-0" />
+                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse shrink-0" data-testid="buzzer-waiting-dot" />
                     <span className="text-white/50 text-sm" data-testid="waiting-players-count">{players.length} waiting</span>
                   </div>
                 </div>
@@ -2663,7 +2663,7 @@ export default function Blitzgrid() {
                                   }}
                                   data-testid={`button-wrong-${buzz.playerId}`}
                                 >
-                                  <X className="w-3 h-3 shrink-0" />
+                                  <X className="w-3 h-3 shrink-0" aria-hidden="true" />
                                 </Button>
                                 <Button
                                   size="sm"
@@ -2681,7 +2681,7 @@ export default function Blitzgrid() {
                                   }}
                                   data-testid={`button-correct-${buzz.playerId}`}
                                 >
-                                  <Check className="w-3 h-3 shrink-0" />
+                                  <Check className="w-3 h-3 shrink-0" aria-hidden="true" />
                                 </Button>
                               </>
                             ) : (
@@ -2698,7 +2698,7 @@ export default function Blitzgrid() {
               {/* No players yet - subtle hint */}
               {players.length === 0 && !showAnswer && (
                 <div className="mx-5 mb-4 flex items-center justify-center gap-2 py-2 text-white/30" data-testid="no-players-message">
-                  <Users className="w-3.5 h-3.5 shrink-0" />
+                  <Users className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                   <p className="text-xs" data-testid="no-players-text">No players connected</p>
                 </div>
               )}
@@ -2832,7 +2832,7 @@ export default function Blitzgrid() {
                     className="text-white/50"
                     data-testid="button-undo-score"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 mr-1.5 shrink-0" /> Undo
+                    <RotateCcw className="w-3.5 h-3.5 mr-1.5 shrink-0" aria-hidden="true" /> Undo
                   </Button>
                 )}
                 {!showAnswer ? (
@@ -2848,7 +2848,7 @@ export default function Blitzgrid() {
                     }}
                     data-testid="button-reveal-answer"
                   >
-                    <Eye className="w-4 h-4 mr-2 shrink-0" /> Show Answer
+                    <Eye className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" /> Show Answer
                   </Button>
                 ) : (
                   <Button 
