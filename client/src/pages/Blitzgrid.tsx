@@ -756,7 +756,7 @@ export default function Blitzgrid() {
             particleCount: 100,
             spread: 70,
             origin: { y: 0.6 },
-            colors: ['#10b981', '#fbbf24', '#f472b6', '#8b5cf6']
+            colors: ['#10b981', '#facc15', '#f472b6', '#8b5cf6']
           });
         }
       } else if (points < 0) {
@@ -1411,13 +1411,13 @@ export default function Blitzgrid() {
                         >
                           <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.3, repeat: Infinity }} className="text-center">
                             <div className="flex items-center justify-center gap-2">
-                              <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-amber-400" />
-                              <Trophy className="w-12 h-12 md:w-16 md:h-16 text-amber-400" />
-                              <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-amber-400" />
+                              <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-yellow-400" />
+                              <Trophy className="w-12 h-12 md:w-16 md:h-16 text-yellow-400" />
+                              <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-yellow-400" />
                             </div>
                             <motion.p 
                               className="text-white text-xl md:text-2xl font-bold mt-2"
-                              style={{ textShadow: '0 0 10px rgba(251, 191, 36, 0.5)' }}
+                              style={{ textShadow: '0 0 10px rgba(250, 204, 21, 0.5)' }}
                               animate={{ opacity: [1, 0.5, 1] }}
                               transition={{ duration: 0.5, repeat: Infinity }}
                             >
@@ -1553,7 +1553,7 @@ export default function Blitzgrid() {
                                         {/* Biggest gain */}
                                         {stats.biggestGain > 0 && (
                                           <div className="flex items-center gap-1 text-xs">
-                                            <Zap className="w-3 h-3 text-amber-400" />
+                                            <Zap className="w-3 h-3 text-yellow-400" />
                                             <span className="text-white/40">Best answer: +{stats.biggestGain} pts</span>
                                           </div>
                                         )}
@@ -1587,12 +1587,12 @@ export default function Blitzgrid() {
                             {gameStats.mvpMoments.length > 0 && (
                               <div className="mt-4 pt-4 border-t border-white/10">
                                 <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
-                                  <Sparkles className="w-4 h-4 text-amber-400" />
+                                  <Sparkles className="w-4 h-4 text-yellow-400" />
                                   Highlight Moments
                                 </h4>
                                 <div className="flex flex-wrap gap-2">
                                   {gameStats.mvpMoments.map((moment, i) => (
-                                    <Badge key={i} variant="secondary" className="bg-amber-500/20 text-amber-300 border border-amber-400/50">
+                                    <Badge key={i} variant="secondary" className="bg-yellow-500/20 text-yellow-300 border border-yellow-400/50">
                                       {moment.description}
                                     </Badge>
                                   ))}
@@ -1623,7 +1623,7 @@ export default function Blitzgrid() {
                             data-testid="button-view-stats"
                             onClick={() => setShowDetailedStats(!showDetailedStats)}
                           >
-                            <Zap className="w-5 h-5 text-amber-500" />
+                            <Zap className="w-5 h-5 text-yellow-500" />
                             {showDetailedStats ? 'Hide Stats' : 'View Stats'}
                           </Button>
                           <Button
@@ -2100,9 +2100,9 @@ export default function Blitzgrid() {
                             animate={scoreAnim ? { scale: [1, 1.2, 1] } : {}}
                             transition={{ duration: 0.3 }}
                             className={`w-9 h-9 rounded-full flex items-center justify-center text-lg shadow-md border-2 ${
-                              idx === 0 ? 'bg-gradient-to-br from-amber-200 to-amber-400 border-amber-300' : 
+                              idx === 0 ? 'bg-gradient-to-br from-yellow-200 to-yellow-400 border-yellow-300' : 
                               idx === 1 ? 'bg-gradient-to-br from-slate-100 to-slate-300 border-slate-200' : 
-                              idx === 2 ? 'bg-gradient-to-br from-amber-400 to-amber-600 border-amber-500' : 
+                              idx === 2 ? 'bg-gradient-to-br from-orange-300 to-orange-500 border-orange-400' : 
                               'bg-gradient-to-br from-slate-100 via-slate-150 to-slate-200 border-slate-200'
                             }`}
                           >
@@ -2111,9 +2111,9 @@ export default function Blitzgrid() {
                           {/* Rank badge */}
                           {idx < 3 && (
                             <div className={`absolute -top-1 -left-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm ${
-                              idx === 0 ? 'bg-amber-400 text-amber-900' : 
+                              idx === 0 ? 'bg-yellow-400 text-yellow-900' : 
                               idx === 1 ? 'bg-slate-300 text-slate-700' : 
-                              'bg-amber-500 text-amber-900'
+                              'bg-orange-400 text-orange-900'
                             }`}>
                               {idx + 1}
                             </div>
@@ -3211,7 +3211,7 @@ export default function Blitzgrid() {
           <div className="flex items-center justify-between gap-4 mb-6">
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Grid3X3 className="w-6 h-6 text-violet-500" />
+                <Grid3X3 className="w-6 h-6 text-fuchsia-500" />
                 Choose Next Grid
               </h1>
               <p className="text-muted-foreground text-sm">Select a grid to continue playing</p>
