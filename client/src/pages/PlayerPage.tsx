@@ -493,6 +493,7 @@ export default function PlayerPage() {
                   value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
                   placeholder="Enter your name"
+                  maxLength={20}
                   data-testid="input-player-name"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && roomCode.trim() && playerName.trim()) {
@@ -586,8 +587,8 @@ export default function PlayerPage() {
         </div>
       </header>
       
-      <div className="px-4 py-2 bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-primary/10 flex items-center justify-between">
-        <span className="text-lg font-bold text-foreground">{playerName}</span>
+      <div className="px-4 py-2 bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-primary/10 flex items-center justify-between gap-2">
+        <span className="text-lg font-bold text-foreground truncate">{playerName}</span>
         {leaderboard.length > 0 && (
           <Button
             size="sm"
@@ -621,16 +622,16 @@ export default function PlayerPage() {
                   }`}
                   data-testid={`leaderboard-player-${player.id}`}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span className={`w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold ${
                       idx === 0 ? 'bg-yellow-500 text-black' : idx === 1 ? 'bg-slate-400 text-black' : idx === 2 ? 'bg-amber-600 text-white' : 'bg-muted text-muted-foreground'
                     }`}>
                       {idx + 1}
                     </span>
-                    <span className="text-lg">
+                    <span className="text-lg flex-shrink-0">
                       {PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
                     </span>
-                    <span className={`font-medium ${player.id === playerId ? 'text-primary' : 'text-foreground'}`}>
+                    <span className={`font-medium truncate ${player.id === playerId ? 'text-primary' : 'text-foreground'}`}>
                       {player.name}
                       {player.id === playerId && <span className="text-xs ml-1">(you)</span>}
                     </span>
