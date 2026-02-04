@@ -1281,7 +1281,7 @@ export default function Blitzgrid() {
                           >
                             {/* Name plate */}
                             <div className="bg-white/10 px-2 py-0.5 rounded border border-white/20">
-                              <div className="text-white font-bold text-xs md:text-sm truncate max-w-[80px] md:max-w-[110px]" data-testid="text-2nd-place-name">
+                              <div className="text-white font-bold text-xs md:text-sm truncate max-w-[80px] md:max-w-[110px]" data-testid="text-2nd-place-name" title={runnerUp.name}>
                                 {runnerUp.name}
                               </div>
                             </div>
@@ -1340,7 +1340,7 @@ export default function Blitzgrid() {
                           >
                             {/* Name plate */}
                             <div className="bg-yellow-500/20 px-3 py-1 rounded border border-yellow-400/50">
-                              <div className="text-yellow-300 font-black text-sm md:text-base truncate max-w-[90px] md:max-w-[130px]" data-testid="text-winner-name">
+                              <div className="text-yellow-300 font-black text-sm md:text-base truncate max-w-[90px] md:max-w-[130px]" data-testid="text-winner-name" title={winner.name}>
                                 {winner.name}
                               </div>
                             </div>
@@ -1387,7 +1387,7 @@ export default function Blitzgrid() {
                           >
                             {/* Name plate */}
                             <div className="bg-white/10 px-2 py-0.5 rounded border border-white/20">
-                              <div className="text-white font-bold text-xs truncate max-w-[70px] md:max-w-[100px]" data-testid="text-3rd-place-name">
+                              <div className="text-white font-bold text-xs truncate max-w-[70px] md:max-w-[100px]" data-testid="text-3rd-place-name" title={thirdPlace.name}>
                                 {thirdPlace.name}
                               </div>
                             </div>
@@ -1440,7 +1440,7 @@ export default function Blitzgrid() {
                         <div key={p.id} className="bg-white/5 backdrop-blur-sm px-3 py-2 rounded-lg border border-white/10 flex items-center gap-2 max-w-[220px]">
                           <span className="text-white/40 font-medium flex-shrink-0">#{i + 4}</span>
                           <span className="text-lg flex-shrink-0">{PLAYER_AVATARS.find(a => a.id === p.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
-                          <span className="text-white font-medium truncate min-w-0 flex-1">{p.name}</span>
+                          <span className="text-white font-medium truncate min-w-0 flex-1" title={p.name}>{p.name}</span>
                           <span className="text-white/40 flex-shrink-0">{p.score} pts</span>
                         </div>
                       ))}
@@ -1494,7 +1494,7 @@ export default function Blitzgrid() {
                                         {PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-white text-sm truncate">{player.name}</p>
+                                        <p className="font-semibold text-white text-sm truncate" title={player.name}>{player.name}</p>
                                         <p className="text-xs text-white/40">{player.score} points</p>
                                       </div>
                                       {idx < 3 && (
@@ -1808,7 +1808,7 @@ export default function Blitzgrid() {
                   }}
                 >
                   <span className="text-lg flex-shrink-0">{PLAYER_AVATARS.find(a => a.id === lastJoinedPlayer.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
-                  <span className="font-medium truncate max-w-[150px]">{lastJoinedPlayer.name} joined!</span>
+                  <span className="font-medium truncate max-w-[150px]" title={`${lastJoinedPlayer.name} joined!`}>{lastJoinedPlayer.name} joined!</span>
                   <UserPlus className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                 </div>
               </motion.div>
@@ -2121,7 +2121,7 @@ export default function Blitzgrid() {
                           <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0a0a0f] ${player.connected ? 'bg-emerald-500' : 'bg-red-400'}`} />
                         </div>
                         <div className="flex flex-col leading-tight min-w-0">
-                          <span className="text-white/80 font-medium text-xs truncate max-w-[60px]">{player.name}</span>
+                          <span className="text-white/80 font-medium text-xs truncate max-w-[60px]" title={player.name}>{player.name}</span>
                           <motion.span 
                             key={player.score}
                             initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? '#34d399' : scoreAnim?.delta && scoreAnim.delta < 0 ? '#f87171' : '#e879f9' }}
@@ -2219,7 +2219,7 @@ export default function Blitzgrid() {
                   <div className="flex flex-wrap justify-center gap-2">
                     {players.map(p => (
                       <Badge key={p.id} variant="secondary" className="bg-white/10 text-white border border-white/20 max-w-[120px]">
-                        <span className="truncate">{p.name}</span>
+                        <span className="truncate" title={p.name}>{p.name}</span>
                       </Badge>
                     ))}
                   </div>
@@ -2283,7 +2283,7 @@ export default function Blitzgrid() {
                             {top3[1] && (
                               <div className="flex flex-col items-center w-[80px]">
                                 <div className="text-2xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[1].avatar)?.emoji || <User className="w-6 h-6" />}</div>
-                                <div className="text-xs font-bold text-white truncate w-full text-center mb-1">{top3[1].name}</div>
+                                <div className="text-xs font-bold text-white truncate w-full text-center mb-1" title={top3[1].name}>{top3[1].name}</div>
                                 <div className="w-full h-[70px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(148, 163, 184, 0.6)', boxShadow: '0 0 15px rgba(148, 163, 184, 0.3)' }}>
                                   <span className="text-2xl font-black text-slate-300">2</span>
                                   <span className="text-xs font-bold text-slate-400">{top3[1].score} pts</span>
@@ -2296,7 +2296,7 @@ export default function Blitzgrid() {
                               <div className="flex flex-col items-center w-[90px]">
                                 <Crown className="w-6 h-6 text-yellow-400 mb-0.5" style={{ filter: 'drop-shadow(0 0 6px rgba(250, 204, 21, 0.6))' }} />
                                 <div className="text-3xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[0].avatar)?.emoji || <User className="w-8 h-8" />}</div>
-                                <div className="text-sm font-bold text-yellow-300 truncate w-full text-center mb-1">{top3[0].name}</div>
+                                <div className="text-sm font-bold text-yellow-300 truncate w-full text-center mb-1" title={top3[0].name}>{top3[0].name}</div>
                                 <div className="w-full h-[90px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(250, 204, 21, 0.8)', boxShadow: '0 0 25px rgba(250, 204, 21, 0.4)' }}>
                                   <Trophy className="w-5 h-5 text-yellow-400 mb-0.5" />
                                   <span className="text-3xl font-black text-yellow-300">1</span>
@@ -2309,7 +2309,7 @@ export default function Blitzgrid() {
                             {top3[2] && (
                               <div className="flex flex-col items-center w-[80px]">
                                 <div className="text-2xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[2].avatar)?.emoji || <User className="w-6 h-6" />}</div>
-                                <div className="text-xs font-bold text-white truncate w-full text-center mb-1">{top3[2].name}</div>
+                                <div className="text-xs font-bold text-white truncate w-full text-center mb-1" title={top3[2].name}>{top3[2].name}</div>
                                 <div className="w-full h-[55px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(251, 146, 60, 0.6)', boxShadow: '0 0 15px rgba(251, 146, 60, 0.3)' }}>
                                   <span className="text-2xl font-black text-orange-300">3</span>
                                   <span className="text-xs font-bold text-orange-400">{top3[2].score} pts</span>
@@ -2324,7 +2324,7 @@ export default function Blitzgrid() {
                               {others.map((p, i) => (
                                 <div key={p.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border border-white/20 max-w-[140px]" style={{ background: 'rgba(255,255,255,0.05)' }}>
                                   <span className="font-bold text-white/50 flex-shrink-0">#{i + 4}</span>
-                                  <span className="text-white font-medium truncate min-w-0 flex-1">{p.name}</span>
+                                  <span className="text-white font-medium truncate min-w-0 flex-1" title={p.name}>{p.name}</span>
                                   <span className="text-white/60 font-bold flex-shrink-0">{p.score}</span>
                                 </div>
                               ))}
@@ -2626,7 +2626,7 @@ export default function Blitzgrid() {
                             <span className={`text-sm font-bold flex-shrink-0 ${index === 0 ? 'text-orange-400' : 'text-white/40'}`}>
                               #{index + 1}
                             </span>
-                            <span className={`font-medium truncate min-w-0 flex-1 ${index === 0 ? 'text-white' : 'text-white/60'}`}>{buzz.name}</span>
+                            <span className={`font-medium truncate min-w-0 flex-1 ${index === 0 ? 'text-white' : 'text-white/60'}`} title={buzz.name}>{buzz.name}</span>
                             <span className="text-xs text-white/40 flex-shrink-0">({player?.score || 0})</span>
                           </div>
                           <div className="flex items-center gap-1">
@@ -2765,7 +2765,7 @@ export default function Blitzgrid() {
                         key={player.id}
                         className="flex items-center gap-1 bg-white/5 rounded-full pl-3 pr-1 py-1 border border-white/10 max-w-[200px]"
                       >
-                        <span className="text-sm text-white/80 truncate min-w-0 flex-1">{player.name}</span>
+                        <span className="text-sm text-white/80 truncate min-w-0 flex-1" title={player.name}>{player.name}</span>
                         <span className="text-xs text-white/40 flex-shrink-0">{player.score}</span>
                         <Button
                           size="icon"
@@ -2867,7 +2867,7 @@ export default function Blitzgrid() {
           <div className="flex items-center justify-between gap-2 p-2 bg-muted/30 rounded text-sm">
             <div className="flex-1 min-w-0 flex items-center">
               <span className="font-medium text-xs text-muted-foreground mr-2 flex-shrink-0">{points}pts:</span>
-              <span className="truncate min-w-0 flex-1">{existingQuestion.question}</span>
+              <span className="truncate min-w-0 flex-1" title={existingQuestion.question}>{existingQuestion.question}</span>
             </div>
             <div className="flex gap-1 shrink-0">
               <Button 
@@ -3090,7 +3090,7 @@ export default function Blitzgrid() {
                           <div className="flex items-center gap-3 min-w-0 flex-1">
                             <ChevronRight className={`w-4 h-4 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`} />
                             <div className="min-w-0 flex-1">
-                              <CardTitle className="text-base truncate">{category.name}</CardTitle>
+                              <CardTitle className="text-base truncate" title={category.name}>{category.name}</CardTitle>
                               <CardDescription className="text-xs">
                                 {category.questionCount}/5 questions
                               </CardDescription>
@@ -3250,7 +3250,7 @@ export default function Blitzgrid() {
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${colorConfig.bg}`}>
                           <Grid3X3 className="w-4 h-4 text-white" />
                         </div>
-                        <h3 className={`font-semibold truncate min-w-0 flex-1 ${colorConfig.cardTitle}`} data-testid={`text-picker-grid-name-${grid.id}`}>{grid.name}</h3>
+                        <h3 className={`font-semibold truncate min-w-0 flex-1 ${colorConfig.cardTitle}`} data-testid={`text-picker-grid-name-${grid.id}`} title={grid.name}>{grid.name}</h3>
                       </div>
                       
                       <div className="flex items-center justify-between gap-2">
@@ -3337,11 +3337,12 @@ export default function Blitzgrid() {
                 color: isHovered ? neonColor.text : '#fff',
                 textShadow: isHovered ? `0 0 12px ${neonColor.shadowColor}` : 'none',
               }}
+              title={grid.name}
             >
               {grid.name}
             </h3>
             {grid.description && grid.description !== "Blitzgrid" && (
-              <p className="text-xs text-white/40 mt-1 truncate">
+              <p className="text-xs text-white/40 mt-1 truncate" title={grid.description}>
                 {grid.description}
               </p>
             )}
