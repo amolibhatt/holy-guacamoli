@@ -1723,7 +1723,7 @@ export default function Blitzgrid() {
                     className="text-cyan-400"
                     data-testid="button-show-qr"
                   >
-                    <QrCode className="w-4 h-4" />
+                    <QrCode className="w-4 h-4 shrink-0" aria-hidden="true" />
                   </Button>
                 </motion.div>
               )}
@@ -1731,7 +1731,7 @@ export default function Blitzgrid() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="icon" variant="ghost" className="text-white/60" data-testid="button-game-menu">
-                    <MoreVertical className="w-4 h-4" />
+                    <MoreVertical className="w-4 h-4 shrink-0" aria-hidden="true" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
@@ -1845,7 +1845,7 @@ export default function Blitzgrid() {
                     transition={{ duration: 2, ease: "easeOut" }}
                     className="absolute bottom-0 right-0"
                   >
-                    <ReactionIcon className={`w-10 h-10 ${reactionColor}`} />
+                    <ReactionIcon className={`w-10 h-10 shrink-0 ${reactionColor}`} aria-hidden="true" />
                   </motion.div>
                 );
               })}
@@ -1972,7 +1972,7 @@ export default function Blitzgrid() {
                             transition={{ type: "spring", stiffness: 200, damping: 15 }}
                             className="flex items-center justify-center relative z-10"
                           >
-                            <Check className="w-8 h-8 md:w-12 md:h-12 opacity-50" style={{ color: tileNeonColor.icon }} strokeWidth={3} />
+                            <Check className="w-8 h-8 md:w-12 md:h-12 opacity-50 shrink-0" style={{ color: tileNeonColor.icon }} strokeWidth={3} aria-hidden="true" />
                           </motion.div>
                         ) : (
                           <span className="relative z-10">
@@ -2527,7 +2527,7 @@ export default function Blitzgrid() {
                             className={`gap-1.5 h-9 px-3 rounded-lg ${timerActive ? 'bg-white/15 text-white' : 'text-white/40 border border-white/20'}`}
                             data-testid="button-timer"
                           >
-                            <Timer className="w-4 h-4 shrink-0" />
+                            <Timer className="w-4 h-4 shrink-0" aria-hidden="true" />
                             {timerActive ? (
                               <span className="font-mono font-bold text-base min-w-[2ch] shrink-0" data-testid="timer-value">{timeLeft}</span>
                             ) : (
@@ -2631,11 +2631,11 @@ export default function Blitzgrid() {
                           data-testid={`buzz-queue-item-${buzz.playerId}`}
                         >
                           <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <span className={`text-sm font-bold flex-shrink-0 ${index === 0 ? 'text-orange-400' : 'text-white/40'}`} data-testid={`buzz-position-${buzz.playerId}`}>
+                            <span className={`text-sm font-bold shrink-0 ${index === 0 ? 'text-orange-400' : 'text-white/40'}`} data-testid={`buzz-position-${buzz.playerId}`}>
                               #{index + 1}
                             </span>
                             <span className={`font-medium truncate min-w-0 flex-1 ${index === 0 ? 'text-white' : 'text-white/60'}`} title={buzz.name} data-testid={`buzz-name-${buzz.playerId}`}>{buzz.name}</span>
-                            <span className="text-xs text-white/40 flex-shrink-0" data-testid={`buzz-score-${buzz.playerId}`}>({player?.score || 0})</span>
+                            <span className="text-xs text-white/40 shrink-0" data-testid={`buzz-score-${buzz.playerId}`}>({player?.score || 0})</span>
                           </div>
                           <div className="flex items-center gap-1">
                             {index === 0 ? (
@@ -2782,7 +2782,7 @@ export default function Blitzgrid() {
                         data-testid={`player-scoring-chip-${player.id}`}
                       >
                         <span className="text-sm text-white/80 truncate min-w-0 flex-1" title={player.name}>{player.name}</span>
-                        <span className="text-xs text-white/40 flex-shrink-0">{player.score}</span>
+                        <span className="text-xs text-white/40 shrink-0">{player.score}</span>
                         <Button
                           size="icon"
                           variant="ghost"
@@ -2798,7 +2798,7 @@ export default function Blitzgrid() {
                           }}
                           data-testid={`button-deduct-${player.id}`}
                         >
-                          <Minus className="w-4 h-4" />
+                          <Minus className="w-4 h-4 shrink-0" aria-hidden="true" />
                         </Button>
                         <Button
                           size="icon"
@@ -2815,7 +2815,7 @@ export default function Blitzgrid() {
                           }}
                           data-testid={`button-award-${player.id}`}
                         >
-                          <Plus className="w-4 h-4" />
+                          <Plus className="w-4 h-4 shrink-0" aria-hidden="true" />
                         </Button>
                       </div>
                     ))}
@@ -2882,7 +2882,7 @@ export default function Blitzgrid() {
         return (
           <div className="flex items-center justify-between gap-2 p-2 bg-muted/30 rounded text-sm">
             <div className="flex-1 min-w-0 flex items-center">
-              <span className="font-medium text-xs text-muted-foreground mr-2 flex-shrink-0">{points}pts:</span>
+              <span className="font-medium text-xs text-muted-foreground mr-2 shrink-0">{points}pts:</span>
               <span className="truncate min-w-0 flex-1" title={existingQuestion.question}>{existingQuestion.question}</span>
             </div>
             <div className="flex gap-1 shrink-0">
@@ -2899,7 +2899,7 @@ export default function Blitzgrid() {
                 }))}
                 data-testid={`button-edit-question-${existingQuestion.id}`}
               >
-                <Pencil className="w-4 h-4" />
+                <Pencil className="w-4 h-4 shrink-0" aria-hidden="true" />
               </Button>
               <Button 
                 size="icon" 
@@ -2908,7 +2908,7 @@ export default function Blitzgrid() {
                 disabled={deleteQuestionMutation.isPending}
                 data-testid={`button-delete-question-${existingQuestion.id}`}
               >
-                <Trash2 className="w-4 h-4 text-destructive" />
+                <Trash2 className="w-4 h-4 text-destructive shrink-0" aria-hidden="true" />
               </Button>
             </div>
           </div>
@@ -2961,7 +2961,7 @@ export default function Blitzgrid() {
               disabled={!formData?.question || !formData?.correctAnswer || saveQuestionMutation.isPending}
               data-testid={`button-save-question-${category.id}-${points}`}
             >
-              {saveQuestionMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+              {saveQuestionMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin shrink-0" aria-hidden="true" /> : <Check className="w-3 h-3 shrink-0" aria-hidden="true" />}
             </Button>
           </div>
         </div>
@@ -2981,11 +2981,11 @@ export default function Blitzgrid() {
             <div className="flex items-center gap-2">
               {grid?.isActive ? (
                 <Badge variant="secondary" className="bg-green-500/20 text-green-600 dark:text-green-400">
-                  <CheckCircle2 className="w-3 h-3 mr-1" /> Ready
+                  <CheckCircle2 className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" /> Ready
                 </Badge>
               ) : (
                 <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                  <AlertCircle className="w-3 h-3 mr-1" /> Incomplete
+                  <AlertCircle className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" /> Incomplete
                 </Badge>
               )}
               {grid?.isActive && (
@@ -3008,7 +3008,7 @@ export default function Blitzgrid() {
                     setShowAnswer(false);
                   }}
                 >
-                  <Play className="w-4 h-4 mr-2" /> Play
+                  <Play className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" /> Play
                 </Button>
               )}
             </div>
@@ -3040,10 +3040,10 @@ export default function Blitzgrid() {
                         disabled={!newCategoryName.trim() || createCategoryMutation.isPending || !selectedGridId}
                         data-testid="button-create-category"
                       >
-                        {createCategoryMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
+                        {createCategoryMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin shrink-0" aria-hidden="true" /> : "Create"}
                       </Button>
                       <Button variant="ghost" onClick={() => { setShowNewCategoryForm(false); setNewCategoryName(""); setNewCategoryDescription(""); }} data-testid="button-cancel-new-category">
-                        <X className="w-4 h-4" />
+                        <X className="w-4 h-4 shrink-0" aria-hidden="true" />
                       </Button>
                     </div>
                     <Input
@@ -3070,7 +3070,7 @@ export default function Blitzgrid() {
                     onClick={() => setShowNewCategoryForm(true)}
                     data-testid="button-new-category"
                   >
-                    <Plus className="w-4 h-4 mr-2" /> Add Category ({gridCategories.length}/5)
+                    <Plus className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" /> Add Category ({gridCategories.length}/5)
                   </Button>
                 )}
               </CardContent>
@@ -3086,7 +3086,7 @@ export default function Blitzgrid() {
             ) : gridCategories.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
-                  <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                  <Grid3X3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4 shrink-0" aria-hidden="true" />
                   <h3 className="font-medium mb-2">No categories yet</h3>
                   <p className="text-muted-foreground text-sm">Add your first category above to start building your grid</p>
                 </CardContent>
@@ -3104,7 +3104,7 @@ export default function Blitzgrid() {
                       >
                         <div className="flex items-center justify-between gap-4">
                           <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <ChevronRight className={`w-4 h-4 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`} />
+                            <ChevronRight className={`w-4 h-4 transition-transform shrink-0 ${isExpanded ? 'rotate-90' : ''}`} aria-hidden="true" />
                             <div className="min-w-0 flex-1">
                               <CardTitle className="text-base truncate" title={category.name}>{category.name}</CardTitle>
                               <CardDescription className="text-xs">
@@ -3130,7 +3130,7 @@ export default function Blitzgrid() {
                               disabled={removeCategoryMutation.isPending}
                               data-testid={`button-remove-category-${category.id}`}
                             >
-                              <Trash2 className="w-4 h-4 text-destructive" />
+                              <Trash2 className="w-4 h-4 text-destructive shrink-0" aria-hidden="true" />
                             </Button>
                           </div>
                         </div>
@@ -3213,13 +3213,13 @@ export default function Blitzgrid() {
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-primary" />
+                  <Users className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
                   <span className="font-bold text-primary" data-testid="text-picker-player-count">{players.length}</span>
                   <span className="text-muted-foreground text-sm">player{players.length !== 1 ? 's' : ''} waiting</span>
                 </div>
               </div>
               <Button variant="outline" size="sm" onClick={endSessionFromPicker} data-testid="button-end-session-picker">
-                <Power className="w-4 h-4 mr-2" /> End Session
+                <Power className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" /> End Session
               </Button>
             </div>
           </motion.div>
@@ -3227,7 +3227,7 @@ export default function Blitzgrid() {
           <div className="flex items-center justify-between gap-4 mb-6">
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Grid3X3 className="w-6 h-6 text-fuchsia-500" />
+                <Grid3X3 className="w-6 h-6 text-fuchsia-500 shrink-0" aria-hidden="true" />
                 Choose Next Grid
               </h1>
               <p className="text-muted-foreground text-sm">Select a grid to continue playing</p>
@@ -3241,7 +3241,7 @@ export default function Blitzgrid() {
           ) : grids.filter(g => g.isActive).length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
-                <AlertCircle className="w-12 h-12 text-yellow-500/50 mx-auto mb-4" />
+                <AlertCircle className="w-12 h-12 text-yellow-500/50 mx-auto mb-4 shrink-0" aria-hidden="true" />
                 <h3 className="font-medium mb-2">No active grids available</h3>
                 <p className="text-muted-foreground text-sm mb-4">All grids need to be completed to be playable</p>
                 <Button variant="outline" onClick={endSessionFromPicker} data-testid="button-end-no-grids">
@@ -3263,8 +3263,8 @@ export default function Blitzgrid() {
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 min-w-0 mb-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${colorConfig.bg}`}>
-                          <Grid3X3 className="w-4 h-4 text-white" />
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${colorConfig.bg}`}>
+                          <Grid3X3 className="w-4 h-4 text-white shrink-0" aria-hidden="true" />
                         </div>
                         <h3 className={`font-semibold truncate min-w-0 flex-1 ${colorConfig.cardTitle}`} data-testid={`text-picker-grid-name-${grid.id}`} title={grid.name}>{grid.name}</h3>
                       </div>
@@ -3274,7 +3274,7 @@ export default function Blitzgrid() {
                           {grid.categoryCount} categories · {grid.questionCount} questions
                         </p>
                         <Badge variant="secondary" className="text-xs shrink-0" data-testid={`badge-picker-grid-play-${grid.id}`}>
-                          <Play className="w-3 h-3 mr-1" /> Play
+                          <Play className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" /> Play
                         </Badge>
                       </div>
                     </CardContent>
@@ -3343,7 +3343,7 @@ export default function Blitzgrid() {
               boxShadow: isHovered ? `0 0 15px ${neonColor.shadowColor}` : `0 0 8px ${neonColor.glow}`,
             }}
           >
-            <Grid3X3 className="w-6 h-6" style={{ color: neonColor.icon }} />
+            <Grid3X3 className="w-6 h-6 shrink-0" style={{ color: neonColor.icon }} aria-hidden="true" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 
@@ -3416,7 +3416,7 @@ export default function Blitzgrid() {
               className="w-20 h-20 rounded-xl flex items-center justify-center mx-auto mb-5"
               style={{ border: '2px solid #333' }}
             >
-              <Grid3X3 className="w-10 h-10 text-white/30" />
+              <Grid3X3 className="w-10 h-10 text-white/30 shrink-0" aria-hidden="true" />
             </div>
             <h3 
               className="text-2xl font-black mb-3 text-white uppercase tracking-wide"
@@ -3435,7 +3435,7 @@ export default function Blitzgrid() {
                 className="bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white font-bold uppercase tracking-wide"
                 data-testid="button-create-first-grid"
               >
-                <Grid3X3 className="w-4 h-4 mr-2" />
+                <Grid3X3 className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                 Create Your First Grid
               </Button>
             </Link>
@@ -3509,9 +3509,9 @@ export default function Blitzgrid() {
                     }}
                   >
                     {isShuffling ? (
-                      <Loader2 className="w-6 h-6 text-black animate-spin" />
+                      <Loader2 className="w-6 h-6 text-black animate-spin shrink-0" aria-hidden="true" />
                     ) : (
-                      <Shuffle className="w-6 h-6 text-black" />
+                      <Shuffle className="w-6 h-6 text-black shrink-0" aria-hidden="true" />
                     )}
                   </motion.div>
                   <div>
@@ -3582,7 +3582,7 @@ export default function Blitzgrid() {
                 {/* Section header */}
                 <div className="flex items-center gap-4 mb-5">
                   <h2 className="text-sm font-bold text-white/70 uppercase tracking-widest whitespace-nowrap flex flex-wrap items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-fuchsia-400" />
+                    <Sparkles className="w-4 h-4 text-fuchsia-400 shrink-0" aria-hidden="true" />
                     Starter Packs
                   </h2>
                   <div className="flex-1 h-[1px] bg-gradient-to-r from-fuchsia-500/50 via-fuchsia-500/20 to-transparent" />
@@ -3607,7 +3607,7 @@ export default function Blitzgrid() {
         title="How to Play"
         data-testid="button-rules-blitzgrid"
       >
-        <HelpCircle className="w-5 h-5" />
+        <HelpCircle className="w-5 h-5 shrink-0" aria-hidden="true" />
       </Button>
       
       <GameRulesSheet 
