@@ -244,83 +244,49 @@ export default function Home() {
             </motion.p>
           </motion.div>
 
-          {/* Two Column Layout for Join/Host */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-10 lg:mb-14">
-            
-            {/* Join a Game Card */}
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-              className="relative overflow-hidden"
-            >
-              <div className="bg-gradient-to-br from-lime-500/10 to-emerald-500/5 border border-lime-500/20 rounded-2xl p-6 lg:p-8 h-full">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-lime-500/20 flex items-center justify-center">
-                    <Play className="w-6 h-6 text-lime-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Join a Game</h2>
-                    <p className="text-white/50 text-sm">Enter the code from your host</p>
-                  </div>
-                </div>
-                
-                <div className="flex gap-3">
-                  <Input
-                    placeholder="ABCD"
-                    value={gameCode}
-                    onChange={(e) => setGameCode(e.target.value.toUpperCase())}
-                    onKeyDown={(e) => e.key === 'Enter' && handleJoinGame()}
-                    className="flex-1 h-14 bg-black/30 border-white/10 text-white text-xl placeholder:text-white/20 uppercase tracking-[0.3em] text-center font-mono rounded-xl"
-                    maxLength={4}
-                    data-testid="input-game-code"
-                  />
-                  <Button 
-                    size="lg"
-                    onClick={handleJoinGame}
-                    disabled={!gameCode.trim()}
-                    className="px-8 bg-lime-500 text-black font-bold rounded-xl"
-                    data-testid="button-join-game"
-                  >
-                    Join
-                  </Button>
-                </div>
+          {/* Join a Game - Compact */}
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-10"
+          >
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col sm:flex-row items-center gap-4">
+              <div className="flex items-center gap-3 shrink-0">
+                <Play className="w-5 h-5 text-lime-400" aria-hidden="true" />
+                <span className="text-white font-medium">Join a Game</span>
               </div>
-            </motion.div>
-
-            {/* Host a Game Card */}
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <div className="bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 border border-fuchsia-500/20 rounded-2xl p-6 lg:p-8 h-full">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-fuchsia-500/20 flex items-center justify-center">
-                    <Users className="w-6 h-6 text-fuchsia-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Host a Game</h2>
-                    <p className="text-white/50 text-sm">Pick a game and invite friends</p>
-                  </div>
-                </div>
-                <p className="text-white/40 text-sm">
-                  Choose from {gameTypes.length || 5} party games below. You'll get a code to share with players.
-                </p>
+              <div className="flex gap-2 flex-1 w-full sm:w-auto">
+                <Input
+                  placeholder="Enter code"
+                  value={gameCode}
+                  onChange={(e) => setGameCode(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.key === 'Enter' && handleJoinGame()}
+                  className="flex-1 h-10 bg-black/30 border-white/10 text-white text-sm placeholder:text-white/30 uppercase tracking-widest text-center font-mono"
+                  maxLength={4}
+                  data-testid="input-game-code"
+                />
+                <Button 
+                  onClick={handleJoinGame}
+                  disabled={!gameCode.trim()}
+                  className="bg-lime-500 hover:bg-lime-400 text-black font-bold px-6"
+                  data-testid="button-join-game"
+                >
+                  Join
+                </Button>
               </div>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
 
-          {/* Games Section Header */}
+          {/* Host a Game Section */}
           <motion.div 
             className="mb-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.2 }}
           >
-            <h3 className="text-white/30 text-xs uppercase tracking-widest font-medium">
-              Choose Your Game
-            </h3>
+            <h2 className="text-white text-lg font-bold mb-1">Host a Game</h2>
+            <p className="text-white/40 text-sm">Pick one and get a code to share with players</p>
           </motion.div>
 
           {/* Game Cards - 2 column grid on medium+ screens */}
