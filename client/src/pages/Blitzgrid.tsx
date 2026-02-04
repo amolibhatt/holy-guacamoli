@@ -25,7 +25,7 @@ import {
   ChevronRight, ArrowLeft, Play, Loader2,
   AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, User, Minus, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Medal,
   Volume2, VolumeX, MoreVertical, Settings, Copy, Link2, Share2, Download, Image, Loader2 as LoaderIcon, Clock,
-  Hand, Flame, Laugh, CircleDot, ThumbsUp, Sparkles, Heart, Timer, Zap, Shuffle, Star, HelpCircle
+  Hand, Flame, Laugh, CircleDot, ThumbsUp, Sparkles, Heart, Timer, Zap, Shuffle, Star, HelpCircle, MessageCircle
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import html2canvas from "html2canvas";
@@ -2198,10 +2198,11 @@ export default function Blitzgrid() {
                 </div>
               </div>
               
-              <Button
+              <div className="flex items-center gap-2">
+                <Button
                   variant="outline"
                   size="sm"
-                  className="w-full gap-2"
+                  className="flex-1 gap-2"
                   onClick={() => {
                     navigator.clipboard.writeText(joinUrl);
                     toast({ title: "Link copied!", description: "Share this link with players" });
@@ -2209,8 +2210,22 @@ export default function Blitzgrid() {
                   data-testid="button-copy-join-link"
                 >
                   <Link2 className="w-4 h-4 shrink-0" aria-hidden="true" />
-                  Copy Join Link
+                  Copy Link
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 gap-2 text-green-500 hover:text-green-400 hover:bg-green-950"
+                  onClick={() => {
+                    const message = `Join my game! 🎮\n\nRoom Code: ${roomCode}\n${joinUrl}`;
+                    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                  }}
+                  data-testid="button-share-whatsapp"
+                >
+                  <MessageCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  WhatsApp
+                </Button>
+              </div>
               
               {players.length > 0 && (
                 <div className="border-t border-white/10 pt-3 mt-2">
