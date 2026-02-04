@@ -486,7 +486,7 @@ export default function SequenceSqueeze() {
   if (isAuthLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary shrink-0" aria-hidden="true" />
       </div>
     );
   }
@@ -538,7 +538,7 @@ export default function SequenceSqueeze() {
             animate={{ opacity: 1 }}
             className="flex items-center justify-center py-20"
           >
-            <Loader2 className="w-8 h-8 animate-spin text-teal-500" />
+            <Loader2 className="w-8 h-8 animate-spin text-teal-500 shrink-0" aria-hidden="true" />
             <span className="ml-3 text-muted-foreground">Creating room...</span>
           </motion.div>
         )}
@@ -590,7 +590,7 @@ export default function SequenceSqueeze() {
                   disabled={players.length === 0 || questions.length === 0}
                   data-testid="button-begin-game"
                 >
-                  <Play className="w-4 h-4 mr-1" />
+                  <Play className="w-4 h-4 mr-1 shrink-0" aria-hidden="true" />
                   Begin Game
                 </Button>
                 
@@ -610,7 +610,7 @@ export default function SequenceSqueeze() {
                         onClick={() => setQuestionsToPlay(q => Math.max(1, (q ?? questions.length) - 1))}
                         data-testid="button-questions-decrease"
                       >
-                        <Minus className="w-3 h-3" />
+                        <Minus className="w-3 h-3 shrink-0" aria-hidden="true" />
                       </Button>
                       <span className="font-bold text-sm w-6 text-center text-white" data-testid="text-questions-count">
                         {questionsToPlay ?? questions.length}
@@ -622,7 +622,7 @@ export default function SequenceSqueeze() {
                         onClick={() => setQuestionsToPlay(q => Math.min(questions.length, (q ?? questions.length) + 1))}
                         data-testid="button-questions-increase"
                       >
-                        <Plus className="w-3 h-3" />
+                        <Plus className="w-3 h-3 shrink-0" aria-hidden="true" />
                       </Button>
                     </div>
                   </div>
@@ -636,7 +636,7 @@ export default function SequenceSqueeze() {
                         onClick={() => setPointsPerRound(p => Math.max(5, p - 5))}
                         data-testid="button-points-decrease"
                       >
-                        <Minus className="w-3 h-3" />
+                        <Minus className="w-3 h-3 shrink-0" aria-hidden="true" />
                       </Button>
                       <span className="font-bold text-sm w-6 text-center text-white" data-testid="text-points-per-round">{pointsPerRound}</span>
                       <Button 
@@ -646,7 +646,7 @@ export default function SequenceSqueeze() {
                         onClick={() => setPointsPerRound(p => Math.min(50, p + 5))}
                         data-testid="button-points-increase"
                       >
-                        <Plus className="w-3 h-3" />
+                        <Plus className="w-3 h-3 shrink-0" aria-hidden="true" />
                       </Button>
                     </div>
                   </div>
@@ -657,7 +657,7 @@ export default function SequenceSqueeze() {
               <div className="flex-1 flex flex-col min-h-0 p-4 bg-white/5 rounded-xl border border-white/10">
                 <div className="flex items-center justify-between gap-2 mb-3 shrink-0">
                   <h2 className="text-sm font-bold text-white flex items-center gap-2" data-testid="text-players-header">
-                    <Users className="w-4 h-4 text-teal-400" />
+                    <Users className="w-4 h-4 text-teal-400 shrink-0" aria-hidden="true" />
                     Players
                   </h2>
                   <Badge 
@@ -677,7 +677,7 @@ export default function SequenceSqueeze() {
                     className="flex-1 flex flex-col items-center justify-center" 
                     data-testid="card-players-empty"
                   >
-                    <Users className="w-8 h-8 text-white/20 mb-2" />
+                    <Users className="w-8 h-8 text-white/20 mb-2 shrink-0" aria-hidden="true" />
                     <p className="text-white/40 text-xs">Waiting for players...</p>
                   </div>
                 ) : (
@@ -699,7 +699,7 @@ export default function SequenceSqueeze() {
                               data-testid={`player-card-${p.id}`}
                             >
                               <div className="text-2xl">
-                                {avatarData?.emoji || <User className="w-6 h-6 text-teal-400" />}
+                                {avatarData?.emoji || <User className="w-6 h-6 text-teal-400 shrink-0" aria-hidden="true" />}
                               </div>
                               <span className="font-medium text-[10px] text-center text-white truncate w-full" data-testid={`text-player-name-${p.id}`} title={p.name}>
                                 {p.name}
@@ -713,7 +713,7 @@ export default function SequenceSqueeze() {
                                   )}
                                   {streak >= 2 && (
                                     <span className="inline-flex items-center text-[10px] text-amber-400">
-                                      <Flame className="w-2 h-2" />
+                                      <Flame className="w-2 h-2 shrink-0" aria-hidden="true" />
                                       {streak}
                                     </span>
                                   )}
@@ -752,7 +752,7 @@ export default function SequenceSqueeze() {
                     transition={{ duration: 0.5, repeat: Infinity }}
                     className="mb-6"
                   >
-                    <Sparkles className="w-16 h-16 mx-auto text-cyan-400" />
+                    <Sparkles className="w-16 h-16 mx-auto text-cyan-400 shrink-0" aria-hidden="true" />
                   </motion.div>
                   <h1 
                     className="text-5xl md:text-7xl font-black mb-4"
@@ -774,7 +774,7 @@ export default function SequenceSqueeze() {
                   onClick={skipAnimation}
                   data-testid="button-skip-animation"
                 >
-                  <SkipForward className="w-4 h-4 mr-2" />
+                  <SkipForward className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                   Skip
                 </Button>
               </motion.div>
@@ -801,7 +801,7 @@ export default function SequenceSqueeze() {
                   onClick={skipAnimation}
                   data-testid="button-skip-animation"
                 >
-                  <SkipForward className="w-4 h-4 mr-2" />
+                  <SkipForward className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                   Skip
                 </Button>
               </motion.div>
@@ -847,7 +847,7 @@ export default function SequenceSqueeze() {
                   onClick={skipAnimation}
                   data-testid="button-skip-animation"
                 >
-                  <SkipForward className="w-4 h-4 mr-2" />
+                  <SkipForward className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                   Skip
                 </Button>
               </motion.div>
@@ -878,21 +878,21 @@ export default function SequenceSqueeze() {
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-3">
                 <Badge className="gap-1 font-mono bg-white/10 text-white/70 border border-white/20" data-testid="badge-elapsed-time">
-                  <Clock className="w-4 h-4" />
+                  <Clock className="w-4 h-4 shrink-0" aria-hidden="true" />
                   {(elapsedTime / 1000).toFixed(1)}s
                 </Badge>
                 <Badge className="gap-1 bg-teal-500/20 text-teal-300 border border-teal-400/30">
-                  <Users className="w-4 h-4" />
+                  <Users className="w-4 h-4 shrink-0" aria-hidden="true" />
                   {submissions.length}/{players.length} locked in
                 </Badge>
               </div>
               <div className="flex items-center gap-2">
                 <Button size="lg" variant="outline" onClick={() => setIsPaused(true)} data-testid="button-pause">
-                  <Pause className="w-5 h-5 mr-2" />
+                  <Pause className="w-5 h-5 mr-2 shrink-0" aria-hidden="true" />
                   Pause
                 </Button>
                 <Button size="lg" variant="destructive" onClick={revealAnswer} data-testid="button-force-reveal-top">
-                  <Zap className="w-5 h-5 mr-2" />
+                  <Zap className="w-5 h-5 mr-2 shrink-0" aria-hidden="true" />
                   Force Reveal
                 </Button>
               </div>
@@ -908,10 +908,10 @@ export default function SequenceSqueeze() {
                   className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
                 >
                   <div className="text-center text-white">
-                    <Pause className="w-20 h-20 mx-auto mb-4 opacity-50" />
+                    <Pause className="w-20 h-20 mx-auto mb-4 opacity-50 shrink-0" aria-hidden="true" />
                     <h2 className="text-4xl font-bold mb-6">Game Paused</h2>
                     <Button size="lg" onClick={() => setIsPaused(false)} data-testid="button-resume">
-                      <Play className="w-5 h-5 mr-2" />
+                      <Play className="w-5 h-5 mr-2 shrink-0" aria-hidden="true" />
                       Resume
                     </Button>
                   </div>
@@ -922,7 +922,7 @@ export default function SequenceSqueeze() {
             {submissions.length > 0 && (
               <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 mb-4 border border-white/10">
                 <h3 className="text-sm font-semibold mb-2 flex items-center gap-2 text-white/80">
-                  <Zap className="w-4 h-4 text-cyan-400" />
+                  <Zap className="w-4 h-4 text-cyan-400 shrink-0" aria-hidden="true" />
                   Live Ticker
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -941,7 +941,7 @@ export default function SequenceSqueeze() {
                         <span className="text-xs font-mono text-cyan-400">({(sub.timeMs / 1000).toFixed(2)}s)</span>
                         {streak >= 2 && (
                           <span className="inline-flex items-center gap-0.5 text-xs text-amber-500">
-                            <Flame className="w-3 h-3" />
+                            <Flame className="w-3 h-3 shrink-0" aria-hidden="true" />
                             {streak}
                           </span>
                         )}
@@ -1003,7 +1003,7 @@ export default function SequenceSqueeze() {
                   animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
                   transition={{ duration: 0.5, repeat: 3 }}
                 >
-                  <Crown className="w-16 h-16 mx-auto text-amber-500 mb-2" />
+                  <Crown className="w-16 h-16 mx-auto text-amber-500 mb-2 shrink-0" aria-hidden="true" />
                 </motion.div>
                 <h2 className="text-3xl font-black text-amber-600 dark:text-amber-400">FASTEST FINGER!</h2>
                 <p className="text-2xl font-bold mt-2">{winner.playerName}</p>
@@ -1038,7 +1038,7 @@ export default function SequenceSqueeze() {
             <div className="grid md:grid-cols-2 gap-4">
               <Card className="p-4">
                 <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm">
-                  <Medal className="w-4 h-4 text-amber-500" />
+                  <Medal className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />
                   Top 3 Leaderboard
                 </h3>
                 {leaderboard.length === 0 ? (
@@ -1055,9 +1055,9 @@ export default function SequenceSqueeze() {
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          {idx === 0 && <Star className="w-4 h-4 text-amber-500" />}
-                          {idx === 1 && <Star className="w-4 h-4 text-slate-400" />}
-                          {idx === 2 && <Star className="w-4 h-4 text-orange-600" />}
+                          {idx === 0 && <Star className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />}
+                          {idx === 1 && <Star className="w-4 h-4 text-slate-400 shrink-0" aria-hidden="true" />}
+                          {idx === 2 && <Star className="w-4 h-4 text-orange-600 shrink-0" aria-hidden="true" />}
                           <span className="font-medium text-sm">{entry.playerName}</span>
                         </div>
                         <span className="font-bold text-sm">{entry.score} pts</span>
@@ -1069,7 +1069,7 @@ export default function SequenceSqueeze() {
 
               <Card className="p-4">
                 <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm">
-                  <Trophy className="w-4 h-4 text-teal-500" />
+                  <Trophy className="w-4 h-4 text-teal-500 shrink-0" aria-hidden="true" />
                   Round Results
                 </h3>
                 {submissions.length === 0 ? (
@@ -1090,12 +1090,12 @@ export default function SequenceSqueeze() {
                           }`}
                         >
                           <div className="flex items-center gap-2">
-                            {idx === 0 && sub.isCorrect && <Crown className="w-3 h-3 text-amber-500" />}
+                            {idx === 0 && sub.isCorrect && <Crown className="w-3 h-3 text-amber-500 shrink-0" aria-hidden="true" />}
                             <span className="font-medium">{sub.playerName}</span>
                             {sub.isCorrect ? (
-                              <Check className="w-3 h-3 text-emerald-500" />
+                              <Check className="w-3 h-3 text-emerald-500 shrink-0" aria-hidden="true" />
                             ) : (
-                              <X className="w-3 h-3 text-destructive" />
+                              <X className="w-3 h-3 text-destructive shrink-0" aria-hidden="true" />
                             )}
                           </div>
                           <div className="flex items-center gap-1">
@@ -1110,7 +1110,7 @@ export default function SequenceSqueeze() {
                               }))}
                               data-testid={`button-award-${sub.playerId}`}
                             >
-                              <Plus className="w-3 h-3 text-emerald-500" />
+                              <Plus className="w-3 h-3 text-emerald-500 shrink-0" aria-hidden="true" />
                             </Button>
                             <Button 
                               size="icon" 
@@ -1122,7 +1122,7 @@ export default function SequenceSqueeze() {
                               }))}
                               data-testid={`button-deduct-${sub.playerId}`}
                             >
-                              <Minus className="w-3 h-3 text-destructive" />
+                              <Minus className="w-3 h-3 text-destructive shrink-0" aria-hidden="true" />
                             </Button>
                           </div>
                         </div>
@@ -1135,7 +1135,7 @@ export default function SequenceSqueeze() {
             {/* Everyone's Answers - Full Width */}
             <Card className="p-4 bg-white/5 border-white/10" data-testid="section-everyones-answers">
               <h3 className="font-semibold mb-4 flex items-center gap-2 text-white">
-                <Users className="w-4 h-4 text-cyan-400" />
+                <Users className="w-4 h-4 text-cyan-400 shrink-0" aria-hidden="true" />
                 Everyone's Answers
               </h3>
               {submissions.length === 0 ? (
@@ -1171,12 +1171,12 @@ export default function SequenceSqueeze() {
                               {avatarEmoji ? (
                                 <span className="text-lg">{avatarEmoji}</span>
                               ) : (
-                                <User className="w-5 h-5 text-white/60" />
+                                <User className="w-5 h-5 text-white/60 shrink-0" aria-hidden="true" />
                               )}
                               <span className="font-semibold text-white">{sub.playerName}</span>
                               {idx === 0 && sub.isCorrect && (
                                 <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-xs">
-                                  <Crown className="w-3 h-3 mr-1" />
+                                  <Crown className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />
                                   Winner
                                 </Badge>
                               )}
@@ -1185,7 +1185,7 @@ export default function SequenceSqueeze() {
                               <span className="text-xs text-white/50 font-mono">{(sub.timeMs / 1000).toFixed(2)}s</span>
                               {sub.isCorrect ? (
                                 <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-xs">
-                                  <Check className="w-3 h-3 mr-1" />
+                                  <Check className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />
                                   Correct
                                 </Badge>
                               ) : matchCount >= 3 ? (
@@ -1194,7 +1194,7 @@ export default function SequenceSqueeze() {
                                 </Badge>
                               ) : (
                                 <Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-xs">
-                                  <X className="w-3 h-3 mr-1" />
+                                  <X className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />
                                   {matchCount}/4 correct
                                 </Badge>
                               )}
@@ -1234,7 +1234,7 @@ export default function SequenceSqueeze() {
 
             <div className="flex justify-center gap-3 flex-wrap">
               <Button onClick={advanceToNextQuestion} data-testid="button-next">
-                <RefreshCw className="w-4 h-4 mr-2" />
+                <RefreshCw className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                 {currentQuestionIndex < totalQuestions ? "Next Question" : "Back to Lobby"}
               </Button>
               <Button 
@@ -1242,7 +1242,7 @@ export default function SequenceSqueeze() {
                 onClick={() => ws?.send(JSON.stringify({ type: "sequence:host:showLeaderboard" }))}
                 data-testid="button-show-leaderboard"
               >
-                <Trophy className="w-4 h-4 mr-2" />
+                <Trophy className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                 Full Leaderboard
               </Button>
               {currentQuestionIndex >= totalQuestions && (
@@ -1251,7 +1251,7 @@ export default function SequenceSqueeze() {
                   onClick={() => ws?.send(JSON.stringify({ type: "sequence:host:endGame" }))}
                   data-testid="button-end-game"
                 >
-                  <Star className="w-4 h-4 mr-2" />
+                  <Star className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                   End Game
                 </Button>
               )}
@@ -1265,7 +1265,7 @@ export default function SequenceSqueeze() {
             animate={{ opacity: 1 }}
             className="text-center py-8"
           >
-            <Trophy className="w-16 h-16 mx-auto text-amber-500 mb-4" />
+            <Trophy className="w-16 h-16 mx-auto text-amber-500 mb-4 shrink-0" aria-hidden="true" />
             <h2 className="text-3xl font-bold mb-6">Scoreboard</h2>
             <Card className="max-w-2xl mx-auto p-6">
               {leaderboard.length === 0 ? (
@@ -1295,22 +1295,22 @@ export default function SequenceSqueeze() {
                       </div>
                       <div className="flex flex-wrap gap-3 text-sm">
                         <div className="flex items-center gap-1 px-2 py-1 bg-emerald-500/20 rounded">
-                          <Check className="w-3 h-3 text-emerald-500" />
+                          <Check className="w-3 h-3 text-emerald-500 shrink-0" aria-hidden="true" />
                           <span>{entry.correctAnswers || 0} correct</span>
                         </div>
                         <div className="flex items-center gap-1 px-2 py-1 bg-destructive/20 rounded">
-                          <X className="w-3 h-3 text-destructive" />
+                          <X className="w-3 h-3 text-destructive shrink-0" aria-hidden="true" />
                           <span>{entry.wrongAnswers || 0} wrong</span>
                         </div>
                         {entry.avgTimeMs > 0 && (
                           <div className="flex items-center gap-1 px-2 py-1 bg-blue-500/20 rounded">
-                            <Clock className="w-3 h-3 text-blue-500" />
+                            <Clock className="w-3 h-3 text-blue-500 shrink-0" aria-hidden="true" />
                             <span>{(entry.avgTimeMs / 1000).toFixed(1)}s avg</span>
                           </div>
                         )}
                         {entry.bestStreak > 0 && (
                           <div className="flex items-center gap-1 px-2 py-1 bg-amber-500/20 rounded">
-                            <Zap className="w-3 h-3 text-amber-500" />
+                            <Zap className="w-3 h-3 text-amber-500 shrink-0" aria-hidden="true" />
                             <span>{entry.bestStreak} best streak</span>
                           </div>
                         )}
@@ -1345,7 +1345,7 @@ export default function SequenceSqueeze() {
               animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
               transition={{ duration: 1, repeat: Infinity }}
             >
-              <Trophy className="w-24 h-24 mx-auto text-amber-500 mb-4" />
+              <Trophy className="w-24 h-24 mx-auto text-amber-500 mb-4 shrink-0" aria-hidden="true" />
             </motion.div>
             <h1 className="text-4xl font-black mb-2">GAME OVER!</h1>
             {leaderboard[0] && (
@@ -1397,7 +1397,7 @@ export default function SequenceSqueeze() {
                 }}
                 data-testid="button-new-game"
               >
-                <RefreshCw className="w-5 h-5 mr-2" />
+                <RefreshCw className="w-5 h-5 mr-2 shrink-0" aria-hidden="true" />
                 Start New Game
               </Button>
             </div>
@@ -1445,7 +1445,7 @@ export default function SequenceSqueeze() {
         title="How to Play"
         data-testid="button-rules-sequence"
       >
-        <HelpCircle className="w-5 h-5" />
+        <HelpCircle className="w-5 h-5 shrink-0" aria-hidden="true" />
       </Button>
       
       <GameRulesSheet 
@@ -1563,7 +1563,7 @@ function CreateQuestionForm({ onSubmit, isLoading }: {
         className="w-full" 
         disabled={isLoading || correctOrder.length !== 4}
       >
-        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Question"}
+        {isLoading ? <Loader2 className="w-4 h-4 animate-spin shrink-0" aria-hidden="true" /> : "Create Question"}
       </Button>
     </form>
   );

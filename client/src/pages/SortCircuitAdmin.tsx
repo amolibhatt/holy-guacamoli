@@ -12,7 +12,7 @@ export default function SortCircuitAdmin() {
   if (isAuthLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
+        <Loader2 className="w-10 h-10 animate-spin text-muted-foreground shrink-0" aria-hidden="true" />
       </div>
     );
   }
@@ -37,7 +37,7 @@ export default function SortCircuitAdmin() {
                 className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                 data-testid="tab-blitzgrid"
               >
-                <Grid3X3 className="w-4 h-4 mr-2" />
+                <Grid3X3 className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                 BlitzGrid
               </Button>
             </Link>
@@ -47,7 +47,7 @@ export default function SortCircuitAdmin() {
                 className="relative rounded-none border-b-2 border-primary text-foreground"
                 data-testid="tab-sort-circuit"
               >
-                <ListOrdered className="w-4 h-4 mr-2" />
+                <ListOrdered className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                 Sort Circuit
               </Button>
             </Link>
@@ -57,7 +57,7 @@ export default function SortCircuitAdmin() {
                 className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                 data-testid="tab-psyop"
               >
-                <Eye className="w-4 h-4 mr-2" />
+                <Eye className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                 PsyOp
               </Button>
             </Link>
@@ -67,7 +67,7 @@ export default function SortCircuitAdmin() {
                 className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                 data-testid="tab-timewarp"
               >
-                <Clock className="w-4 h-4 mr-2" />
+                <Clock className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                 Past Forward
               </Button>
             </Link>
@@ -77,7 +77,7 @@ export default function SortCircuitAdmin() {
                 className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
                 data-testid="tab-memenoharm"
               >
-                <Smile className="w-4 h-4 mr-2" />
+                <Smile className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                 Meme No Harm
               </Button>
             </Link>

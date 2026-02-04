@@ -275,13 +275,13 @@ export default function SequencePlayer() {
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-teal-500 flex items-center justify-center shadow-xl">
-              <ListOrdered className="w-10 h-10 text-white" />
+              <ListOrdered className="w-10 h-10 text-white shrink-0" aria-hidden="true" />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">Sort Circuit</h1>
-            <p className="text-teal-200">Arrange fast. Win first.</p>
+            <h1 className="text-3xl font-bold text-white mb-2" data-testid="text-game-title">Sort Circuit</h1>
+            <p className="text-teal-200" data-testid="text-game-tagline">Arrange fast. Win first.</p>
           </div>
 
-          <form onSubmit={handleJoin} className="space-y-4">
+          <form onSubmit={handleJoin} className="space-y-4" data-testid="form-join">
             <div>
               <label className="text-sm font-medium text-teal-200 mb-1.5 block">Room Code</label>
               <Input
@@ -291,6 +291,7 @@ export default function SequencePlayer() {
                 className="bg-white/10 border-white/20 text-white placeholder:text-white/50 text-center text-2xl font-mono tracking-widest"
                 maxLength={6}
                 required
+                data-testid="input-room-code"
               />
             </div>
             
@@ -303,6 +304,7 @@ export default function SequencePlayer() {
                 className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
                 maxLength={30}
                 required
+                data-testid="input-player-name"
               />
             </div>
 
@@ -319,6 +321,7 @@ export default function SequencePlayer() {
                         ? 'bg-teal-500 ring-2 ring-white scale-110'
                         : 'bg-white/10 hover:bg-white/20'
                     }`}
+                    data-testid={`button-avatar-${avatar.id}`}
                   >
                     <span className="text-2xl">{avatar.emoji}</span>
                   </button>
@@ -330,6 +333,7 @@ export default function SequencePlayer() {
               type="submit" 
               className="w-full h-14 text-lg bg-teal-500 text-white"
               disabled={status === "connecting"}
+              data-testid="button-join-game"
             >
               {status === "connecting" ? "Joining..." : "Join Game"}
             </Button>
@@ -337,9 +341,9 @@ export default function SequencePlayer() {
 
           <div className="flex justify-center mt-4">
             {status === "connected" ? (
-              <Badge className="bg-teal-500 gap-1"><Wifi className="w-3 h-3" />Connected</Badge>
+              <Badge className="bg-teal-500 gap-1" data-testid="badge-connected"><Wifi className="w-3 h-3 shrink-0" aria-hidden="true" />Connected</Badge>
             ) : status === "error" ? (
-              <Badge variant="destructive" className="gap-1"><WifiOff className="w-3 h-3" />Error</Badge>
+              <Badge variant="destructive" className="gap-1" data-testid="badge-error"><WifiOff className="w-3 h-3 shrink-0" aria-hidden="true" />Error</Badge>
             ) : null}
           </div>
         </div>
@@ -348,20 +352,20 @@ export default function SequencePlayer() {
   }
 
   return (
-    <div className="min-h-screen bg-teal-900 flex flex-col">
+    <div className="min-h-screen bg-teal-900 flex flex-col" data-testid="page-sequence-player">
       <header className="p-4 flex items-center justify-between border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center shrink-0">
             <span className="text-lg">{PLAYER_AVATARS.find(a => a.id === selectedAvatar)?.emoji || "?"}</span>
           </div>
-          <span className="text-white font-medium">{playerName}</span>
+          <span className="text-white font-medium truncate" data-testid="text-player-name" title={playerName}>{playerName}</span>
         </div>
         {status === "connected" ? (
-          <Badge className="bg-teal-500/20 text-teal-300 border-teal-500/30 gap-1">
-            <Wifi className="w-3 h-3" />Online
+          <Badge className="bg-teal-500/20 text-teal-300 border-teal-500/30 gap-1 shrink-0" data-testid="badge-online">
+            <Wifi className="w-3 h-3 shrink-0" aria-hidden="true" />Online
           </Badge>
         ) : (
-          <Badge variant="destructive" className="gap-1"><WifiOff className="w-3 h-3" />Offline</Badge>
+          <Badge variant="destructive" className="gap-1 shrink-0" data-testid="badge-offline"><WifiOff className="w-3 h-3 shrink-0" aria-hidden="true" />Offline</Badge>
         )}
       </header>
 
@@ -374,14 +378,14 @@ export default function SequencePlayer() {
           >
             <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-teal-500/20 flex items-center justify-center">
               <motion.div animate={{ rotate: 360 }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }}>
-                <Sparkles className="w-12 h-12 text-teal-400" />
+                <Sparkles className="w-12 h-12 text-teal-400 shrink-0" aria-hidden="true" />
               </motion.div>
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Waiting for host...</h2>
+            <h2 className="text-2xl font-bold text-white mb-2" data-testid="text-waiting">Waiting for host...</h2>
             <p className="text-teal-200">Get ready to arrange the sequence!</p>
             {myScore > 0 && (
-              <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full">
-                <Star className="w-4 h-4 text-amber-400" />
+              <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full" data-testid="badge-score">
+                <Star className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
                 <span className="text-white font-bold">{myScore} pts</span>
               </div>
             )}
@@ -404,7 +408,7 @@ export default function SequencePlayer() {
                 transition={{ duration: 0.8, repeat: Infinity }}
                 className="mb-8"
               >
-                <Lock className="w-20 h-20 text-white/80" />
+                <Lock className="w-20 h-20 text-white/80 shrink-0" aria-hidden="true" />
               </motion.div>
               <motion.h1
                 initial={{ y: 20, opacity: 0 }}
@@ -438,11 +442,11 @@ export default function SequencePlayer() {
             animate={{ opacity: 1, y: 0 }}
             className="w-full max-w-md space-y-4"
           >
-            <div className="flex items-center justify-between">
-              <Badge variant="secondary" className="bg-white/10 text-white gap-1">
+            <div className="flex items-center justify-between gap-2">
+              <Badge variant="secondary" className="bg-white/10 text-white gap-1" data-testid="badge-question-progress">
                 Q{currentQuestionIndex}/{totalQuestions}
               </Badge>
-              <Badge variant="secondary" className={`${phase === "submitted" ? "bg-cyan-500/30 text-cyan-300 border-cyan-400/50" : "bg-white/10 text-white"}`}>
+              <Badge variant="secondary" className={`${phase === "submitted" ? "bg-cyan-500/30 text-cyan-300 border-cyan-400/50" : "bg-white/10 text-white"}`} data-testid="badge-status">
                 {phase === "submitted" ? "LOCKED IN" : "Tap 1-2-3-4"}
               </Badge>
             </div>
@@ -474,6 +478,7 @@ export default function SequencePlayer() {
                         ? 'bg-cyan-500 text-white ring-2 ring-cyan-300'
                         : 'bg-white/10 text-white hover:bg-white/20'
                     } ${phase === "submitted" ? 'opacity-60' : ''}`}
+                    data-testid={`button-option-${letter}`}
                   >
                     {isSelected && (
                       <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-white text-cyan-600 flex items-center justify-center text-xl font-bold shadow-lg">
@@ -492,8 +497,9 @@ export default function SequencePlayer() {
                 variant="outline" 
                 className="w-full border-white/20 text-white"
                 onClick={resetSelection}
+                data-testid="button-reset-selection"
               >
-                <RotateCcw className="w-4 h-4 mr-2" />
+                <RotateCcw className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                 Reset Selection
               </Button>
             )}
@@ -524,11 +530,11 @@ export default function SequencePlayer() {
           >
             <div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${
               isCorrect ? 'bg-cyan-500' : 'bg-red-600'
-            }`}>
+            }`} data-testid={`icon-result-${isCorrect ? 'correct' : 'wrong'}`}>
               {isCorrect ? (
-                <Check className="w-12 h-12 text-white" />
+                <Check className="w-12 h-12 text-white shrink-0" aria-hidden="true" />
               ) : (
-                <X className="w-12 h-12 text-white" />
+                <X className="w-12 h-12 text-white shrink-0" aria-hidden="true" />
               )}
             </div>
             <h2 className={`text-3xl font-bold mb-4 ${isCorrect ? 'text-cyan-400' : 'text-red-400'}`}>
@@ -559,8 +565,8 @@ export default function SequencePlayer() {
                 transition={{ delay: 0.5 }}
                 className="mb-4"
               >
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/20 border border-amber-500/30">
-                  <Trophy className="w-5 h-5 text-amber-400" />
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/20 border border-amber-500/30" data-testid="badge-rank">
+                  <Trophy className="w-5 h-5 text-amber-400 shrink-0" aria-hidden="true" />
                   <span className="font-bold text-amber-400">
                     {rank === 1 ? "1st Place!" : rank === 2 ? "2nd Place!" : "3rd Place!"}
                   </span>
@@ -598,7 +604,7 @@ export default function SequencePlayer() {
           >
             {rank === 1 && (
               <div className="mb-4">
-                <Trophy className="w-16 h-16 text-amber-400 mx-auto" />
+                <Trophy className="w-16 h-16 text-amber-400 mx-auto shrink-0" aria-hidden="true" />
               </div>
             )}
             <h2 className="text-2xl font-bold text-white mb-2">
@@ -614,8 +620,8 @@ export default function SequencePlayer() {
             animate={{ opacity: 1, scale: 1 }}
             className="text-center w-full max-w-sm"
           >
-            <Trophy className="w-16 h-16 mx-auto text-amber-400 mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-6">Leaderboard</h2>
+            <Trophy className="w-16 h-16 mx-auto text-amber-400 mb-4 shrink-0" aria-hidden="true" />
+            <h2 className="text-2xl font-bold text-white mb-6" data-testid="text-leaderboard-title">Leaderboard</h2>
             <div className="space-y-2 mb-6">
               {leaderboard.map((entry, idx) => {
                 const isMe = entry.playerId === playerId;
@@ -633,13 +639,13 @@ export default function SequencePlayer() {
                       'bg-white/10'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl font-black text-white/80">{idx + 1}</span>
-                      {idx === 0 && <Crown className="w-5 h-5 text-amber-400" />}
-                      {idx === 1 && <Medal className="w-5 h-5 text-slate-300" />}
-                      {idx === 2 && <Medal className="w-5 h-5 text-orange-400" />}
-                      <span className="font-semibold text-white">{entry.playerName}</span>
-                      {isMe && <Badge className="bg-teal-500 text-xs">You</Badge>}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-xl font-black text-white/80 shrink-0">{idx + 1}</span>
+                      {idx === 0 && <Crown className="w-5 h-5 text-amber-400 shrink-0" aria-hidden="true" />}
+                      {idx === 1 && <Medal className="w-5 h-5 text-slate-300 shrink-0" aria-hidden="true" />}
+                      {idx === 2 && <Medal className="w-5 h-5 text-orange-400 shrink-0" aria-hidden="true" />}
+                      <span className="font-semibold text-white truncate" title={entry.playerName}>{entry.playerName}</span>
+                      {isMe && <Badge className="bg-teal-500 text-xs shrink-0" data-testid="badge-you">You</Badge>}
                     </div>
                     <span className="font-bold text-white">{entry.score} pts</span>
                   </motion.div>
@@ -660,9 +666,9 @@ export default function SequencePlayer() {
               animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
               transition={{ duration: 1, repeat: Infinity }}
             >
-              <Trophy className="w-24 h-24 mx-auto text-amber-400 mb-4" />
+              <Trophy className="w-24 h-24 mx-auto text-amber-400 mb-4 shrink-0" aria-hidden="true" />
             </motion.div>
-            <h1 className="text-4xl font-black text-white mb-2">GAME OVER!</h1>
+            <h1 className="text-4xl font-black text-white mb-2" data-testid="text-game-over">GAME OVER!</h1>
             
             {leaderboard[0] && (
               <div className="mb-6">
