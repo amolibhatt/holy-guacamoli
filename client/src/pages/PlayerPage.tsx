@@ -632,7 +632,7 @@ export default function PlayerPage() {
                     <span className="text-lg flex-shrink-0">
                       {PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
                     </span>
-                    <span className={`font-medium truncate ${player.id === playerId ? 'text-primary' : 'text-foreground'}`}>
+                    <span className={`font-medium truncate min-w-0 flex-1 ${player.id === playerId ? 'text-primary' : 'text-foreground'}`}>
                       {player.name}
                       {player.id === playerId && <span className="text-xs ml-1">(you)</span>}
                     </span>

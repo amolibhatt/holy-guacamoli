@@ -11,7 +11,7 @@ export function AppLayout({ children, showBackButton = true }: AppLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#0a0a0f' }}>
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+      <header className="flex items-center justify-between gap-4 px-4 py-3 border-b border-white/10">
         <Link href="/" className="hover:opacity-80 transition-opacity">
           <Logo size="sm" />
         </Link>

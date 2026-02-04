@@ -5,7 +5,7 @@ import { Logo } from "./Logo";
 export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
         <Link href="/" className="cursor-pointer hover:opacity-90 transition-opacity">
           <Logo size="md" />
         </Link>

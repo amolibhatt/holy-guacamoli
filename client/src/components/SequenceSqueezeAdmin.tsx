@@ -257,7 +257,7 @@ export function SequenceSqueezeAdmin() {
           >
             <Card className="border-purple-500/30 bg-purple-500/10">
               <CardContent className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-purple-400">
                     <Sparkles className="w-5 h-5" />
                     <span className="font-semibold">AI Assistant</span>
