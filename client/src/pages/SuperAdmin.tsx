@@ -882,7 +882,7 @@ export default function SuperAdmin() {
                                               {u.boards?.length > 0 ? (
                                                 <div className="space-y-1">
                                                   {u.boards.slice(0, 5).map((b) => (
-                                                    <div key={b.id} className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm">
+                                                    <div key={b.id} className="flex items-center justify-between gap-2 p-2 rounded bg-muted/50 text-sm">
                                                       <span className="truncate" title={b.name}>{b.name}</span>
                                                       <span className="text-xs text-muted-foreground">{formatRelativeDate(b.createdAt)}</span>
                                                     </div>
@@ -1432,7 +1432,7 @@ export default function SuperAdmin() {
                                                 </div>
                                                 <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
                                                   <User className="w-3 h-3" />
-                                                  {q.creator?.username || q.creator?.email || 'System'}
+                                                  <span className="truncate max-w-[150px]" title={q.creator?.username || q.creator?.email || 'System'}>{q.creator?.username || q.creator?.email || 'System'}</span>
                                                 </div>
                                               </div>
                                               <Button
@@ -1530,7 +1530,7 @@ export default function SuperAdmin() {
                                                 </div>
                                                 <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
                                                   <User className="w-3 h-3" />
-                                                  {q.creator?.username || q.creator?.email || 'System'}
+                                                  <span className="truncate max-w-[150px]" title={q.creator?.username || q.creator?.email || 'System'}>{q.creator?.username || q.creator?.email || 'System'}</span>
                                                 </div>
                                               </div>
                                               <Button
@@ -1643,7 +1643,7 @@ export default function SuperAdmin() {
                     ) : (
                       <div className="space-y-2 max-h-[200px] overflow-y-auto">
                         {flaggedBoards.map((board) => (
-                          <div key={board.id} className="flex items-center justify-between p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+                          <div key={board.id} className="flex items-center justify-between gap-3 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
                             <span className="text-sm font-medium truncate flex-1" title={board.name}>{board.name}</span>
                             <div className="flex gap-1">
                               <Button
@@ -1717,7 +1717,7 @@ export default function SuperAdmin() {
                     ) : announcements.length > 0 && (
                       <div className="pt-3 border-t space-y-2 max-h-[150px] overflow-y-auto">
                         {announcements.map((a) => (
-                          <div key={a.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                          <div key={a.id} className="flex items-center justify-between gap-3 p-2 rounded-lg bg-muted/50">
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
                                 <p className="text-sm font-medium truncate" title={a.title}>{a.title}</p>
