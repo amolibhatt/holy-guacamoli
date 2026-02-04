@@ -2615,8 +2615,8 @@ export default function Blitzgrid() {
                   data-testid="buzz-queue-section"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <Zap className="w-4 h-4 text-orange-400 shrink-0" />
-                    <span className="text-sm text-orange-300 font-semibold">Buzzed</span>
+                    <Zap className="w-4 h-4 text-orange-400 shrink-0" aria-hidden="true" />
+                    <span className="text-sm text-orange-300 font-semibold" data-testid="buzz-queue-title">Buzzed</span>
                   </div>
                   <div className="space-y-1.5">
                     {buzzQueue.map((buzz, index) => {
@@ -2630,11 +2630,11 @@ export default function Blitzgrid() {
                           data-testid={`buzz-queue-item-${buzz.playerId}`}
                         >
                           <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <span className={`text-sm font-bold flex-shrink-0 ${index === 0 ? 'text-orange-400' : 'text-white/40'}`}>
+                            <span className={`text-sm font-bold flex-shrink-0 ${index === 0 ? 'text-orange-400' : 'text-white/40'}`} data-testid={`buzz-position-${buzz.playerId}`}>
                               #{index + 1}
                             </span>
-                            <span className={`font-medium truncate min-w-0 flex-1 ${index === 0 ? 'text-white' : 'text-white/60'}`} title={buzz.name}>{buzz.name}</span>
-                            <span className="text-xs text-white/40 flex-shrink-0">({player?.score || 0})</span>
+                            <span className={`font-medium truncate min-w-0 flex-1 ${index === 0 ? 'text-white' : 'text-white/60'}`} title={buzz.name} data-testid={`buzz-name-${buzz.playerId}`}>{buzz.name}</span>
+                            <span className="text-xs text-white/40 flex-shrink-0" data-testid={`buzz-score-${buzz.playerId}`}>({player?.score || 0})</span>
                           </div>
                           <div className="flex items-center gap-1">
                             {index === 0 ? (

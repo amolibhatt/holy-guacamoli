@@ -550,17 +550,17 @@ export default function PlayerPage() {
     <div className="min-h-screen gradient-game flex flex-col" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <InstallPrompt />
       <FullScreenFlash show={showBuzzFlash} color="bg-amber-400/60" />
-      <FullScreenFlash show={showCorrectFlash} color="bg-green-400/60" />
-      <FullScreenFlash show={showWrongFlash} color="bg-destructive/60" />
+      <FullScreenFlash show={showCorrectFlash} color="bg-emerald-400/60" />
+      <FullScreenFlash show={showWrongFlash} color="bg-rose-400/60" />
       
       <header className="px-4 py-3 flex items-center justify-between gap-2 bg-card/80 backdrop-blur-xl border-b border-primary/20 shadow-lg" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            {status === "connected" && <Wifi className="w-4 h-4 text-green-500" />}
-            {status === "connecting" && <RefreshCw className="w-4 h-4 animate-spin text-primary" />}
-            {status === "reconnecting" && <RefreshCw className="w-4 h-4 animate-spin text-yellow-500" />}
-            {(status === "disconnected" || status === "error") && <WifiOff className="w-4 h-4 text-destructive" />}
-            <span className="font-mono font-bold text-lg text-foreground">{roomCode}</span>
+            {status === "connected" && <Wifi className="w-4 h-4 text-emerald-500 shrink-0" data-testid="status-connected" />}
+            {status === "connecting" && <RefreshCw className="w-4 h-4 animate-spin text-primary shrink-0" data-testid="status-connecting" />}
+            {status === "reconnecting" && <RefreshCw className="w-4 h-4 animate-spin text-amber-500 shrink-0" data-testid="status-reconnecting" />}
+            {(status === "disconnected" || status === "error") && <WifiOff className="w-4 h-4 text-rose-500 shrink-0" data-testid="status-disconnected" />}
+            <span className="font-mono font-bold text-lg text-foreground" data-testid="display-room-code">{roomCode}</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -886,16 +886,18 @@ export default function PlayerPage() {
                     }}
                     transition={{ duration: 1.5, repeat: Infinity }}
                     className="w-48 h-48 rounded-full gradient-gold flex items-center justify-center mx-auto shadow-2xl relative"
+                    data-testid="buzzed-first-indicator"
                   >
-                    <Star className="absolute -top-2 -right-2 w-10 h-10 text-yellow-300 fill-yellow-300" />
-                    <Star className="absolute -top-4 left-4 w-6 h-6 text-yellow-200 fill-yellow-200" />
-                    <span className="text-7xl font-black text-white drop-shadow-lg">#1</span>
+                    <Star className="absolute -top-2 -right-2 w-10 h-10 text-yellow-300 fill-yellow-300" aria-hidden="true" />
+                    <Star className="absolute -top-4 left-4 w-6 h-6 text-yellow-200 fill-yellow-200" aria-hidden="true" />
+                    <span className="text-7xl font-black text-white drop-shadow-lg" data-testid="buzz-position-first">#1</span>
                   </motion.div>
                   <motion.h2 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
                     className="text-3xl font-black text-primary mt-6"
+                    data-testid="buzzed-first-title"
                   >
                     You Buzzed First!
                   </motion.h2>
@@ -904,8 +906,9 @@ export default function PlayerPage() {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.4 }}
                     className="text-lg text-muted-foreground mt-2 flex items-center justify-center gap-2"
+                    data-testid="buzzed-first-message"
                   >
-                    <Sparkles className="w-5 h-5 text-primary" />
+                    <Sparkles className="w-5 h-5 text-primary shrink-0" aria-hidden="true" />
                     Get ready to answer!
                   </motion.p>
                 </>
@@ -915,13 +918,14 @@ export default function PlayerPage() {
                     animate={{ scale: [1, 1.05, 1] }}
                     transition={{ duration: 2, repeat: Infinity }}
                     className="w-40 h-40 rounded-full bg-white/20 border-4 border-white/30 flex items-center justify-center mx-auto"
+                    data-testid="buzzed-waiting-indicator"
                   >
-                    <span className="text-6xl font-black text-white">#{buzzPosition}</span>
+                    <span className="text-6xl font-black text-white" data-testid="buzz-position-value">#{buzzPosition}</span>
                   </motion.div>
-                  <h2 className="text-2xl font-bold text-foreground mt-4">
+                  <h2 className="text-2xl font-bold text-foreground mt-4" data-testid="buzzed-waiting-title">
                     You're #{buzzPosition} in line
                   </h2>
-                  <p className="text-muted-foreground mt-2">Waiting for your turn...</p>
+                  <p className="text-muted-foreground mt-2" data-testid="buzzed-waiting-message">Waiting for your turn...</p>
                 </>
               )}
             </motion.div>
@@ -944,12 +948,12 @@ export default function PlayerPage() {
                   animate={{ opacity: [0.5, 0.8, 0.5] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  <Lock className="w-24 h-24 text-slate-300/80 mb-2 drop-shadow-lg" />
+                  <Lock className="w-24 h-24 text-slate-300/80 mb-2 drop-shadow-lg" aria-hidden="true" />
                 </motion.div>
-                <span className="text-slate-300 text-2xl font-black tracking-wider">LOCKED</span>
+                <span className="text-slate-300 text-2xl font-black tracking-wider" data-testid="buzzer-locked-label">LOCKED</span>
               </motion.div>
-              <h2 className="text-2xl font-bold text-foreground mt-8">You're In!</h2>
-              <p className="text-muted-foreground mt-2 max-w-xs mx-auto text-base">Buzzer unlocks when the host picks a question</p>
+              <h2 className="text-2xl font-bold text-foreground mt-8" data-testid="buzzer-status-title">You're In!</h2>
+              <p className="text-muted-foreground mt-2 max-w-xs mx-auto text-base" data-testid="buzzer-status-message">Buzzer unlocks when the host picks a question</p>
             </motion.div>
           ) : (
             <motion.div
@@ -999,6 +1003,7 @@ export default function PlayerPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
                 className="text-amber-600 dark:text-amber-400 font-bold mt-8 text-xl"
+                data-testid="buzzer-hint"
               >
                 Tap fast to answer first!
               </motion.p>
@@ -1031,8 +1036,8 @@ export default function PlayerPage() {
 
       <footer className="p-4 text-center border-t border-border/30 bg-card/40 backdrop-blur" role="status" aria-live="polite" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
         <div className="flex items-center justify-center gap-3">
-          <div className={`w-3 h-3 rounded-full ${hostPickingGrid ? "bg-purple-500 animate-pulse" : buzzerLocked ? "bg-muted-foreground/50" : "bg-green-500 animate-pulse"}`} />
-          <span className={`text-sm font-medium ${hostPickingGrid ? "text-purple-500 font-bold" : buzzerLocked ? "text-muted-foreground" : "text-primary font-bold"}`}>
+          <div className={`w-3 h-3 rounded-full shrink-0 ${hostPickingGrid ? "bg-purple-500 animate-pulse" : buzzerLocked ? "bg-muted-foreground/50" : "bg-emerald-500 animate-pulse"}`} data-testid="footer-status-dot" />
+          <span className={`text-sm font-medium ${hostPickingGrid ? "text-purple-500 font-bold" : buzzerLocked ? "text-muted-foreground" : "text-primary font-bold"}`} data-testid="footer-status-text">
             {hostPickingGrid ? "Host choosing next grid..." : buzzerLocked ? "Waiting for next question..." : "TAP THE BUZZER!"}
           </span>
         </div>
