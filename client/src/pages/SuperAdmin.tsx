@@ -818,17 +818,17 @@ export default function SuperAdmin() {
                                     className="p-3 flex items-center justify-between gap-4 cursor-pointer hover-elevate"
                                     onClick={() => setExpandedUserId(isUserExpanded ? null : u.id)}
                                   >
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white font-bold">
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white font-bold shrink-0">
                                         {u.firstName?.[0] || u.email[0].toUpperCase()}
                                       </div>
-                                      <div>
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-medium">{u.firstName || 'User'} {u.lastName || ''}</span>
-                                          {u.role === 'super_admin' && <Badge className="bg-purple-500/20 text-purple-600 text-xs"><Shield className="w-3 h-3 mr-1" />Super</Badge>}
-                                          {u.role === 'admin' && <Badge className="bg-blue-500/20 text-blue-600 text-xs">Admin</Badge>}
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <span className="font-medium truncate max-w-[150px]" title={`${u.firstName || 'User'} ${u.lastName || ''}`}>{u.firstName || 'User'} {u.lastName || ''}</span>
+                                          {u.role === 'super_admin' && <Badge className="bg-purple-500/20 text-purple-600 text-xs shrink-0"><Shield className="w-3 h-3 mr-1" />Super</Badge>}
+                                          {u.role === 'admin' && <Badge className="bg-blue-500/20 text-blue-600 text-xs shrink-0">Admin</Badge>}
                                         </div>
-                                        <div className="text-xs text-muted-foreground">{u.email} • Last login: {formatRelativeDate(u.lastLoginAt)}</div>
+                                        <div className="text-xs text-muted-foreground truncate" title={`${u.email} • Last login: ${formatRelativeDate(u.lastLoginAt)}`}>{u.email} • Last login: {formatRelativeDate(u.lastLoginAt)}</div>
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-4 text-sm">
@@ -911,7 +911,7 @@ export default function SuperAdmin() {
                                                         <Badge variant={s.state === 'active' ? 'default' : 'secondary'} className={`text-xs ${s.state === 'active' ? 'bg-green-500' : ''}`}>
                                                           {s.code}
                                                         </Badge>
-                                                        <span className="flex-1 text-xs text-muted-foreground">
+                                                        <span className="flex-1 text-xs text-muted-foreground truncate min-w-0" title={winner ? `${s.playerCount} players • Winner: ${winner.name}` : `${s.playerCount} players`}>
                                                           {s.playerCount} players
                                                           {winner && ` • Winner: ${winner.name}`}
                                                         </span>
@@ -1025,8 +1025,8 @@ export default function SuperAdmin() {
                                         <Badge variant={session.state === 'active' ? 'default' : 'secondary'} className={session.state === 'active' ? 'bg-green-500' : ''}>
                                           {session.code}
                                         </Badge>
-                                        <span className="text-sm">Host: {session.host?.username || session.host?.email || 'Unknown'}</span>
-                                        <Badge variant="outline" className="text-xs capitalize">{session.state}</Badge>
+                                        <span className="text-sm truncate max-w-[150px]" title={`Host: ${session.host?.username || session.host?.email || 'Unknown'}`}>Host: {session.host?.username || session.host?.email || 'Unknown'}</span>
+                                        <Badge variant="outline" className="text-xs capitalize shrink-0">{session.state}</Badge>
                                       </div>
                                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                         <span className="flex items-center gap-1">
@@ -1037,11 +1037,13 @@ export default function SuperAdmin() {
                                     </div>
                                     {winner && (
                                       <div className="mt-2 pt-2 border-t flex items-center gap-2 flex-wrap">
-                                        <Trophy className="w-4 h-4 text-amber-500" />
-                                        <span className="text-sm font-medium">{winner.name}</span>
-                                        <span className="text-xs text-muted-foreground">({winner.score} pts)</span>
+                                        <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
+                                        <span className="text-sm font-medium truncate max-w-[100px]" title={winner.name}>{winner.name}</span>
+                                        <span className="text-xs text-muted-foreground shrink-0">({winner.score} pts)</span>
                                         {session.players.filter(p => p.id !== winner.id).slice(0, 3).map((p) => (
-                                          <Badge key={p.id} variant="secondary" className="text-xs">{p.name}: {p.score}</Badge>
+                                          <Badge key={p.id} variant="secondary" className="text-xs max-w-[100px]" title={`${p.name}: ${p.score}`}>
+                                            <span className="truncate">{p.name}</span>: {p.score}
+                                          </Badge>
                                         ))}
                                       </div>
                                     )}
@@ -1416,7 +1418,7 @@ export default function SuperAdmin() {
                                         return (
                                         <div className="space-y-2 max-h-[400px] overflow-y-auto">
                                           {filteredSequence.map((q) => (
-                                            <div key={q.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border">
+                                            <div key={q.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border" data-testid={`sequence-question-row-${q.id}`}>
                                               <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                   <span className="font-medium truncate" title={q.question}>{q.question}</span>
@@ -1511,7 +1513,7 @@ export default function SuperAdmin() {
                                         return (
                                         <div className="space-y-2 max-h-[400px] overflow-y-auto">
                                           {filteredPsyop.map((q) => (
-                                            <div key={q.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border">
+                                            <div key={q.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border" data-testid={`psyop-question-row-${q.id}`}>
                                               <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                   <span className="font-medium truncate" title={q.factText}>{q.factText}</span>
@@ -1644,8 +1646,8 @@ export default function SuperAdmin() {
                       <div className="space-y-2 max-h-[200px] overflow-y-auto">
                         {flaggedBoards.map((board) => (
                           <div key={board.id} className="flex items-center justify-between gap-3 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
-                            <span className="text-sm font-medium truncate flex-1" title={board.name}>{board.name}</span>
-                            <div className="flex gap-1">
+                            <span className="text-sm font-medium truncate flex-1 min-w-0" title={board.name}>{board.name}</span>
+                            <div className="flex gap-1 shrink-0">
                               <Button
                                 size="sm"
                                 variant="ghost"
