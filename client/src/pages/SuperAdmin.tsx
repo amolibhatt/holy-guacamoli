@@ -402,6 +402,19 @@ export default function SuperAdmin() {
     },
   });
 
+  const deleteBlitzgridQuestionMutation = useMutation({
+    mutationFn: async (questionId: number) => {
+      await apiRequest('DELETE', `/api/super-admin/questions/blitzgrid/${questionId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/blitzgrid'] });
+      toast({ title: "Question deleted" });
+    },
+    onError: () => {
+      toast({ title: "Couldn't delete question", variant: "destructive" });
+    },
+  });
+
   const handleExportData = async () => {
     setIsExporting(true);
     try {
@@ -1350,6 +1363,15 @@ export default function SuperAdmin() {
                                                     <span className="truncate max-w-[120px]" title={q.creator?.username || q.creator?.email || 'System'}>• {q.creator?.username || q.creator?.email || 'System'}</span>
                                                   </div>
                                                 </div>
+                                                <Button
+                                                  size="icon"
+                                                  variant="ghost"
+                                                  onClick={() => deleteBlitzgridQuestionMutation.mutate(q.id)}
+                                                  disabled={deleteBlitzgridQuestionMutation.isPending}
+                                                  data-testid={`button-delete-blitzgrid-question-${q.id}`}
+                                                >
+                                                  <Trash2 className="w-4 h-4 text-destructive shrink-0" aria-hidden="true" />
+                                                </Button>
                                               </div>
                                             ))}
                                             {filteredBlitzgrid.length > 50 && (

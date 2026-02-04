@@ -2113,6 +2113,21 @@ export async function registerRoutes(
     }
   });
 
+  // Delete BlitzGrid question (super admin only)
+  app.delete("/api/super-admin/questions/blitzgrid/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const questionId = parseInt(req.params.id);
+      if (isNaN(questionId) || questionId <= 0) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+      await storage.deleteQuestion(questionId);
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting blitzgrid question:", err);
+      res.status(500).json({ message: "Failed to delete question" });
+    }
+  });
+
   // Game Types (public - for hosts and players)
   app.get("/api/game-types", async (req, res) => {
     try {
