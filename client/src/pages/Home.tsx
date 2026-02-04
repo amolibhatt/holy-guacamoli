@@ -210,12 +210,12 @@ export default function Home() {
                 
                 <div className="flex gap-3">
                   <Input
-                    placeholder="ABCD12"
+                    placeholder="ABCD"
                     value={gameCode}
                     onChange={(e) => setGameCode(e.target.value.toUpperCase())}
                     onKeyDown={(e) => e.key === 'Enter' && handleJoinGame()}
                     className="flex-1 h-14 bg-black/30 border-white/10 text-white text-xl placeholder:text-white/20 uppercase tracking-[0.3em] text-center font-mono rounded-xl"
-                    maxLength={6}
+                    maxLength={4}
                     data-testid="input-game-code"
                   />
                   <Button 
