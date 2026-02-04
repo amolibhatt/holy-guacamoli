@@ -406,26 +406,26 @@ export default function BlitzgridAdmin() {
                 />
                 <div className="flex items-center gap-1 mt-2">
                   <span className="text-xs text-muted-foreground">Media:</span>
-                  <label className="cursor-pointer">
+                  <label className="cursor-pointer" data-testid={`label-upload-question-image-${formKey}`}>
                     <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, imageUrl: url } })); toast({ title: "Image uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
                     <Button type="button" size="sm" variant={formData?.imageUrl ? "default" : "outline"} asChild>
                       <span><Image className="w-3 h-3 mr-1" />{formData?.imageUrl ? <CheckCircle2 className="w-3 h-3" /> : "Image"}</span>
                     </Button>
                   </label>
-                  <label className="cursor-pointer">
+                  <label className="cursor-pointer" data-testid={`label-upload-question-audio-${formKey}`}>
                     <input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, audioUrl: url } })); toast({ title: "Audio uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
                     <Button type="button" size="sm" variant={formData?.audioUrl ? "default" : "outline"} asChild>
                       <span><Music className="w-3 h-3 mr-1" />{formData?.audioUrl ? <CheckCircle2 className="w-3 h-3" /> : "Audio"}</span>
                     </Button>
                   </label>
-                  <label className="cursor-pointer">
+                  <label className="cursor-pointer" data-testid={`label-upload-question-video-${formKey}`}>
                     <input type="file" accept="video/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, videoUrl: url } })); toast({ title: "Video uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
                     <Button type="button" size="sm" variant={formData?.videoUrl ? "default" : "outline"} asChild>
                       <span><Video className="w-3 h-3 mr-1" />{formData?.videoUrl ? <CheckCircle2 className="w-3 h-3" /> : "Video"}</span>
                     </Button>
                   </label>
                   {(formData?.imageUrl || formData?.audioUrl || formData?.videoUrl) && (
-                    <Button type="button" size="sm" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, imageUrl: '', audioUrl: '', videoUrl: '' } }))}>
+                    <Button type="button" size="sm" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, imageUrl: '', audioUrl: '', videoUrl: '' } }))} data-testid={`button-clear-question-media-${formKey}`}>
                       Clear
                     </Button>
                   )}
@@ -445,26 +445,26 @@ export default function BlitzgridAdmin() {
                 />
                 <div className="flex items-center gap-1 mt-2">
                   <span className="text-xs text-muted-foreground">Media:</span>
-                  <label className="cursor-pointer">
+                  <label className="cursor-pointer" data-testid={`label-upload-answer-image-${formKey}`}>
                     <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerImageUrl: url } })); toast({ title: "Image uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
                     <Button type="button" size="sm" variant={formData?.answerImageUrl ? "default" : "outline"} asChild>
                       <span><Image className="w-3 h-3 mr-1" />{formData?.answerImageUrl ? <CheckCircle2 className="w-3 h-3" /> : "Image"}</span>
                     </Button>
                   </label>
-                  <label className="cursor-pointer">
+                  <label className="cursor-pointer" data-testid={`label-upload-answer-audio-${formKey}`}>
                     <input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerAudioUrl: url } })); toast({ title: "Audio uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
                     <Button type="button" size="sm" variant={formData?.answerAudioUrl ? "default" : "outline"} asChild>
                       <span><Music className="w-3 h-3 mr-1" />{formData?.answerAudioUrl ? <CheckCircle2 className="w-3 h-3" /> : "Audio"}</span>
                     </Button>
                   </label>
-                  <label className="cursor-pointer">
+                  <label className="cursor-pointer" data-testid={`label-upload-answer-video-${formKey}`}>
                     <input type="file" accept="video/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerVideoUrl: url } })); toast({ title: "Video uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } }} />
                     <Button type="button" size="sm" variant={formData?.answerVideoUrl ? "default" : "outline"} asChild>
                       <span><Video className="w-3 h-3 mr-1" />{formData?.answerVideoUrl ? <CheckCircle2 className="w-3 h-3" /> : "Video"}</span>
                     </Button>
                   </label>
                   {(formData?.answerImageUrl || formData?.answerAudioUrl || formData?.answerVideoUrl) && (
-                    <Button type="button" size="sm" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerImageUrl: '', answerAudioUrl: '', answerVideoUrl: '' } }))}>
+                    <Button type="button" size="sm" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey] || defaultForm, answerImageUrl: '', answerAudioUrl: '', answerVideoUrl: '' } }))} data-testid={`button-clear-answer-media-${formKey}`}>
                       Clear
                     </Button>
                   )}
@@ -847,7 +847,7 @@ export default function BlitzgridAdmin() {
                           <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                           <div className="min-w-0">
                             <CardTitle className="text-base truncate" title={category.name}>{category.name}</CardTitle>
-                            <CardDescription className="text-xs truncate">
+                            <CardDescription className="text-xs truncate" title={`${category.description || 'No description'} · ${category.questionCount}/5 questions`}>
                               {category.description ? `${category.description} · ` : ''}{category.questionCount}/5 questions
                             </CardDescription>
                           </div>
