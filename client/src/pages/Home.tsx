@@ -215,54 +215,6 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Bouncing game icons */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              <motion.div
-                className="absolute top-2 left-[8%]"
-                animate={{ 
-                  y: [0, -20, 0],
-                  rotate: [0, 15, 0],
-                  scale: [1, 1.1, 1],
-                }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <Grid3X3 className="w-10 h-10 lg:w-14 lg:h-14 text-fuchsia-500" style={{ filter: 'drop-shadow(0 0 10px rgba(232,121,249,0.6))' }} />
-              </motion.div>
-              <motion.div
-                className="absolute top-6 right-[10%]"
-                animate={{ 
-                  y: [0, 15, 0],
-                  rotate: [0, -20, 0],
-                  scale: [1, 1.15, 1],
-                }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
-              >
-                <Brain className="w-8 h-8 lg:w-12 lg:h-12 text-cyan-400" style={{ filter: 'drop-shadow(0 0 10px rgba(34,211,238,0.6))' }} />
-              </motion.div>
-              <motion.div
-                className="absolute bottom-2 left-[15%]"
-                animate={{ 
-                  y: [0, -15, 0],
-                  rotate: [0, -10, 0],
-                  scale: [1, 1.2, 1],
-                }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
-              >
-                <Users className="w-9 h-9 lg:w-11 lg:h-11 text-lime-400" style={{ filter: 'drop-shadow(0 0 10px rgba(163,230,53,0.6))' }} />
-              </motion.div>
-              <motion.div
-                className="absolute bottom-4 right-[12%]"
-                animate={{ 
-                  y: [0, 18, 0],
-                  rotate: [0, 25, 0],
-                  scale: [1, 1.1, 1],
-                }}
-                transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: 0.9 }}
-              >
-                <Smile className="w-8 h-8 lg:w-10 lg:h-10 text-violet-400" style={{ filter: 'drop-shadow(0 0 10px rgba(139,92,246,0.6))' }} />
-              </motion.div>
-            </div>
-
             {/* Main title with pulsing glow */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
