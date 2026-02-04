@@ -639,29 +639,116 @@ export default function BlitzgridAdmin() {
           <aside className="w-64 border-r border-border bg-card/50 p-4 shrink-0 hidden md:block">
             <div className="flex items-center justify-between gap-2 mb-4">
               <h2 className="font-semibold text-sm text-muted-foreground">Grids</h2>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7"
+                onClick={() => setShowNewGridForm(true)}
+                data-testid="button-add-grid-sidebar"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
             </div>
+            
+            {/* New Grid Form in Sidebar */}
+            {showNewGridForm && (
+              <div className="mb-3 p-2 bg-muted/50 rounded-lg space-y-2">
+                <Input
+                  placeholder="Grid name..."
+                  value={newGridName}
+                  onChange={(e) => setNewGridName(e.target.value)}
+                  autoFocus
+                  className="h-8 text-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setShowNewGridForm(false);
+                      setNewGridName("");
+                      setNewGridDescription("");
+                    }
+                    if (e.key === 'Enter' && newGridName.trim() && !createGridMutation.isPending) {
+                      createGridMutation.mutate({ 
+                        name: newGridName.trim(),
+                        description: newGridDescription.trim() || undefined
+                      });
+                    }
+                  }}
+                  data-testid="input-new-grid-name-sidebar"
+                />
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => createGridMutation.mutate({ 
+                      name: newGridName.trim(),
+                      description: newGridDescription.trim() || undefined
+                    })}
+                    disabled={!newGridName.trim() || createGridMutation.isPending}
+                    data-testid="button-create-grid-sidebar"
+                  >
+                    {createGridMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Create"}
+                  </Button>
+                  <Button 
+                    size="sm"
+                    variant="ghost" 
+                    className="h-7 text-xs"
+                    onClick={() => { 
+                      setShowNewGridForm(false); 
+                      setNewGridName(""); 
+                      setNewGridDescription("");
+                    }} 
+                    data-testid="button-cancel-grid-create-sidebar"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-1">
               {grids.map(g => (
-                <button
+                <div
                   key={g.id}
-                  onClick={() => setSelectedGridId(g.id)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                  className={`group w-full text-left px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer ${
                     g.id === selectedGridId 
                       ? 'bg-primary/10 text-primary font-medium' 
                       : 'text-foreground hover-elevate'
                   }`}
+                  onClick={() => setSelectedGridId(g.id)}
                   data-testid={`sidebar-grid-${g.id}`}
                 >
                   <div className="flex items-center gap-2">
-                    <Grid3X3 className={`w-4 h-4 shrink-0 ${g.id === selectedGridId ? 'text-primary' : 'text-muted-foreground'}`} />
-                    <span className="truncate flex-1" title={g.name}>{g.name}</span>
+                    <Grid3X3 className={`w-4 h-4 shrink-0 ${g.id === selectedGridId ? 'text-primary' : 'text-muted-foreground'}`} aria-hidden="true" />
+                    <span className="truncate flex-1 min-w-0" title={g.name}>{g.name}</span>
                     {g.isActive ? (
                       <div className="w-2 h-2 rounded-full bg-green-500 shrink-0" title="Active" />
                     ) : (
                       <div className="w-2 h-2 rounded-full bg-amber-500 shrink-0" title="Incomplete" />
                     )}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (deletingGridId === g.id) {
+                          deleteGridMutation.mutate(g.id);
+                        } else {
+                          setDeletingGridId(g.id);
+                        }
+                      }}
+                      disabled={deleteGridMutation.isPending && deletingGridId === g.id}
+                      data-testid={`button-delete-grid-sidebar-${g.id}`}
+                    >
+                      {deleteGridMutation.isPending && deletingGridId === g.id ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : deletingGridId === g.id ? (
+                        <Check className="w-3 h-3" />
+                      ) : (
+                        <Trash2 className="w-3 h-3" />
+                      )}
+                    </Button>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           </aside>
