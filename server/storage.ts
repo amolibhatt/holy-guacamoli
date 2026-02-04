@@ -1142,7 +1142,9 @@ export class DatabaseStorage implements IStorage {
   async getPlatformStats() {
     const [userCount] = await db.select({ count: count() }).from(users);
     const [boardCount] = await db.select({ count: count() }).from(boards);
-    const [questionCount] = await db.select({ count: count() }).from(questions);
+    const [blitzgridQuestionCount] = await db.select({ count: count() }).from(questions);
+    const [sequenceQuestionCount] = await db.select({ count: count() }).from(sequenceQuestions);
+    const [psyopQuestionCount] = await db.select({ count: count() }).from(psyopQuestions);
     const [sessionCount] = await db.select({ count: count() }).from(gameSessions);
     
     const today = new Date();
@@ -1159,11 +1161,20 @@ export class DatabaseStorage implements IStorage {
 
     return {
       totalUsers: userCount?.count ?? 0,
-      totalBoards: boardCount?.count ?? 0,
-      totalQuestions: questionCount?.count ?? 0,
       totalGamesPlayed: sessionCount?.count ?? 0,
       activeSessionsToday: todaySessionCount?.count ?? 0,
       newUsersThisWeek: newUserCount?.count ?? 0,
+      blitzgrid: {
+        grids: boardCount?.count ?? 0,
+        questions: blitzgridQuestionCount?.count ?? 0,
+      },
+      sortCircuit: {
+        questions: sequenceQuestionCount?.count ?? 0,
+      },
+      psyop: {
+        questions: psyopQuestionCount?.count ?? 0,
+      },
+      totalContent: (boardCount?.count ?? 0) + (blitzgridQuestionCount?.count ?? 0) + (sequenceQuestionCount?.count ?? 0) + (psyopQuestionCount?.count ?? 0),
     };
   }
 

@@ -41,11 +41,20 @@ import type { SafeUser } from "@shared/models/auth";
 
 interface PlatformStats {
   totalUsers: number;
-  totalBoards: number;
-  totalQuestions: number;
   totalGamesPlayed: number;
   activeSessionsToday: number;
   newUsersThisWeek: number;
+  blitzgrid: {
+    grids: number;
+    questions: number;
+  };
+  sortCircuit: {
+    questions: number;
+  };
+  psyop: {
+    questions: number;
+  };
+  totalContent: number;
 }
 
 interface SessionPlayer {
@@ -663,8 +672,9 @@ export default function SuperAdmin() {
                   onClick={() => { setDrillDownType('users'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
                 />
                 <StatCard
-                  title="Total Grids"
-                  value={stats?.totalBoards ?? 0}
+                  title="BlitzGrid"
+                  value={`${stats?.blitzgrid?.grids ?? 0} grids`}
+                  subtitle={`${stats?.blitzgrid?.questions ?? 0} questions`}
                   icon={Grid3X3}
                   color="from-rose-300 via-pink-300 to-fuchsia-300"
                   isLoading={isLoadingStats}
@@ -672,13 +682,22 @@ export default function SuperAdmin() {
                   onClick={() => { setDrillDownType('grids'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
                 />
                 <StatCard
-                  title="Questions"
-                  value={stats?.totalQuestions ?? 0}
-                  icon={Activity}
+                  title="Sort Circuit"
+                  value={`${stats?.sortCircuit?.questions ?? 0} questions`}
+                  icon={ListOrdered}
+                  color="from-emerald-300 via-teal-300 to-cyan-300"
+                  isLoading={isLoadingStats}
+                  clickable
+                  onClick={() => { setActiveTab('content'); }}
+                />
+                <StatCard
+                  title="PsyOp"
+                  value={`${stats?.psyop?.questions ?? 0} questions`}
+                  icon={Shield}
                   color="from-violet-300 via-purple-300 to-indigo-300"
                   isLoading={isLoadingStats}
                   clickable
-                  onClick={() => { setDrillDownType('questions'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
+                  onClick={() => { setActiveTab('content'); }}
                 />
                 <StatCard
                   title="Games Played"
@@ -688,15 +707,6 @@ export default function SuperAdmin() {
                   isLoading={isLoadingStats}
                   clickable
                   onClick={() => { setDrillDownType('sessions'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
-                />
-                <StatCard
-                  title="Sessions Today"
-                  value={stats?.activeSessionsToday ?? 0}
-                  icon={Clock}
-                  color="from-rose-300 via-pink-300 to-fuchsia-300"
-                  isLoading={isLoadingStats}
-                  clickable
-                  onClick={() => { setDrillDownType('sessions'); setDrillDownFilter(''); setDateRangeFilter('today'); }}
                 />
                 <StatCard
                   title="New This Week"
@@ -1071,11 +1081,11 @@ export default function SuperAdmin() {
                       <div className="flex-1">
                         <p className="font-medium text-foreground">Content Status</p>
                         <p className="text-sm text-muted-foreground mt-1">
-                          {(stats?.totalBoards ?? 0) >= 5
-                            ? `Healthy content library with ${stats?.totalBoards ?? 0} grids and ${stats?.totalQuestions ?? 0} questions.`
-                            : (stats?.totalBoards ?? 0) >= 1
-                            ? `${stats?.totalBoards ?? 0} grids created. Add more to keep games fresh!`
-                            : 'No grids yet. Create your first BlitzGrid to get started.'}
+                          {(stats?.totalContent ?? 0) >= 50
+                            ? `Healthy content library: ${stats?.blitzgrid?.grids ?? 0} grids, ${stats?.blitzgrid?.questions ?? 0} BlitzGrid Qs, ${stats?.sortCircuit?.questions ?? 0} Sort Circuit Qs, ${stats?.psyop?.questions ?? 0} PsyOp Qs.`
+                            : (stats?.totalContent ?? 0) >= 10
+                            ? `${stats?.totalContent ?? 0} content pieces created. Add more to keep games fresh!`
+                            : 'Limited content. Add grids and questions to get started.'}
                         </p>
                         <Button 
                           variant="ghost" 
@@ -2408,21 +2418,56 @@ export default function SuperAdmin() {
                 </div>
               )}
 
-              {/* Questions - just show count for now */}
+              {/* Questions - show breakdown by game type */}
               {drillDownType === 'questions' && (
-                <div className="text-center py-8">
-                  <Activity className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-lg font-medium">{stats?.totalQuestions ?? 0} Questions</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Go to the Content tab to manage questions
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4"
-                    onClick={() => { setActiveTab('content'); setDrillDownType(null); }}
-                  >
-                    Go to Content
-                  </Button>
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <Card className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-300 via-pink-300 to-fuchsia-300 flex items-center justify-center">
+                          <Grid3X3 className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <div className="text-xl font-bold">{stats?.blitzgrid?.questions ?? 0}</div>
+                          <div className="text-xs text-muted-foreground">BlitzGrid Questions</div>
+                        </div>
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-300 via-teal-300 to-cyan-300 flex items-center justify-center">
+                          <ListOrdered className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <div className="text-xl font-bold">{stats?.sortCircuit?.questions ?? 0}</div>
+                          <div className="text-xs text-muted-foreground">Sort Circuit Questions</div>
+                        </div>
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-300 via-purple-300 to-indigo-300 flex items-center justify-center">
+                          <Shield className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <div className="text-xl font-bold">{stats?.psyop?.questions ?? 0}</div>
+                          <div className="text-xs text-muted-foreground">PsyOp Questions</div>
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Total: {(stats?.blitzgrid?.questions ?? 0) + (stats?.sortCircuit?.questions ?? 0) + (stats?.psyop?.questions ?? 0)} questions across all games
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => { setActiveTab('content'); setDrillDownType(null); }}
+                    >
+                      Manage Content
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
@@ -2446,6 +2491,7 @@ export default function SuperAdmin() {
 function StatCard({ 
   title, 
   value, 
+  subtitle,
   icon: Icon, 
   color, 
   isLoading,
@@ -2453,13 +2499,15 @@ function StatCard({
   clickable = false
 }: { 
   title: string; 
-  value: number; 
+  value: number | string; 
+  subtitle?: string;
   icon: typeof Users; 
   color: string;
   isLoading: boolean;
   onClick?: () => void;
   clickable?: boolean;
 }) {
+  const displayValue = typeof value === 'number' ? value.toLocaleString() : value;
   return (
     <Card 
       className={`hover-elevate ${clickable ? 'cursor-pointer active-elevate-2' : ''}`}
@@ -2473,16 +2521,19 @@ function StatCard({
           <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center shadow-lg`}>
             <Icon className="w-5 h-5 text-white" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {isLoading ? (
               <Skeleton className="h-7 w-12" />
             ) : (
-              <div className="text-2xl font-bold text-foreground">{value.toLocaleString()}</div>
+              <>
+                <div className="text-xl font-bold text-foreground truncate">{displayValue}</div>
+                {subtitle && <div className="text-xs text-muted-foreground/70 truncate">{subtitle}</div>}
+              </>
             )}
             <div className="text-xs text-muted-foreground">{title}</div>
           </div>
           {clickable && !isLoading && (
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
           )}
         </div>
       </CardContent>
