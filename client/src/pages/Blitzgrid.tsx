@@ -1248,9 +1248,9 @@ export default function Blitzgrid() {
                       style={{ textShadow: '0 0 20px rgba(232, 121, 249, 0.5)' }}
                     >Final Scores</h2>
                     <div className="flex items-center justify-center gap-2">
-                      <Sparkles className="w-5 h-5 text-fuchsia-400" />
-                      <span className="text-white/60">Who takes the crown?</span>
-                      <Sparkles className="w-5 h-5 text-fuchsia-400" />
+                      <Sparkles className="w-5 h-5 text-fuchsia-400 shrink-0" aria-hidden="true" />
+                      <span className="text-white/60" data-testid="game-over-subtitle">Who takes the crown?</span>
+                      <Sparkles className="w-5 h-5 text-fuchsia-400 shrink-0" aria-hidden="true" />
                     </div>
                   </motion.div>
 
@@ -1280,7 +1280,7 @@ export default function Blitzgrid() {
                             style={{ borderColor: 'rgba(148, 163, 184, 0.6)', boxShadow: '0 0 20px rgba(148, 163, 184, 0.2)' }}
                           >
                             {/* Name plate */}
-                            <div className="bg-white/10 px-2 py-0.5 rounded border border-white/20">
+                            <div className="bg-white/10 px-2 py-0.5 rounded border border-white/20 min-w-0 max-w-full">
                               <div className="text-white font-bold text-xs md:text-sm truncate max-w-[80px] md:max-w-[110px]" data-testid="text-2nd-place-name" title={runnerUp.name}>
                                 {runnerUp.name}
                               </div>
@@ -1289,8 +1289,8 @@ export default function Blitzgrid() {
                               {runnerUp.score} pts
                             </div>
                             <div className="flex items-center">
-                              <Medal className="w-6 h-6 text-slate-400 mr-1" />
-                              <span className="text-3xl md:text-4xl font-black text-slate-400">2</span>
+                              <Medal className="w-6 h-6 text-slate-400 mr-1 shrink-0" aria-hidden="true" />
+                              <span className="text-3xl md:text-4xl font-black text-slate-400" data-testid="text-2nd-place-rank">2</span>
                             </div>
                           </div>
                         </motion.div>
@@ -1315,7 +1315,7 @@ export default function Blitzgrid() {
                           
                           {/* Crown */}
                           <motion.div initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }}>
-                            <Crown className="w-10 h-10 md:w-12 md:h-12 text-yellow-400 mx-auto drop-shadow-lg" />
+                            <Crown className="w-10 h-10 md:w-12 md:h-12 text-yellow-400 mx-auto drop-shadow-lg shrink-0" aria-hidden="true" />
                           </motion.div>
                           
                           {/* Player floating above podium */}
@@ -1339,7 +1339,7 @@ export default function Blitzgrid() {
                             style={{ borderColor: 'rgba(250, 204, 21, 0.8)', boxShadow: '0 0 40px rgba(250, 204, 21, 0.3)' }}
                           >
                             {/* Name plate */}
-                            <div className="bg-yellow-500/20 px-3 py-1 rounded border border-yellow-400/50">
+                            <div className="bg-yellow-500/20 px-3 py-1 rounded border border-yellow-400/50 min-w-0 max-w-full">
                               <div className="text-yellow-300 font-black text-sm md:text-base truncate max-w-[90px] md:max-w-[130px]" data-testid="text-winner-name" title={winner.name}>
                                 {winner.name}
                               </div>
@@ -1354,8 +1354,8 @@ export default function Blitzgrid() {
                               {winner.score} pts
                             </motion.div>
                             <div className="flex flex-col items-center">
-                              <Trophy className="w-8 h-8 md:w-10 md:h-10 text-yellow-400 mb-1" />
-                              <span className="text-5xl md:text-6xl font-black text-yellow-400">1</span>
+                              <Trophy className="w-8 h-8 md:w-10 md:h-10 text-yellow-400 mb-1 shrink-0" aria-hidden="true" />
+                              <span className="text-5xl md:text-6xl font-black text-yellow-400" data-testid="text-winner-rank">1</span>
                             </div>
                           </div>
                         </motion.div>
@@ -1386,7 +1386,7 @@ export default function Blitzgrid() {
                             style={{ borderColor: 'rgba(251, 146, 60, 0.6)', boxShadow: '0 0 20px rgba(251, 146, 60, 0.2)' }}
                           >
                             {/* Name plate */}
-                            <div className="bg-white/10 px-2 py-0.5 rounded border border-white/20">
+                            <div className="bg-white/10 px-2 py-0.5 rounded border border-white/20 min-w-0 max-w-full">
                               <div className="text-white font-bold text-xs truncate max-w-[70px] md:max-w-[100px]" data-testid="text-3rd-place-name" title={thirdPlace.name}>
                                 {thirdPlace.name}
                               </div>
@@ -1394,7 +1394,7 @@ export default function Blitzgrid() {
                             <div className="text-lg md:text-xl font-black text-orange-300" data-testid="text-3rd-place-score" style={{ textShadow: '0 0 10px rgba(251, 146, 60, 0.5)' }}>
                               {thirdPlace.score} pts
                             </div>
-                            <span className="text-2xl md:text-3xl font-black text-orange-400">3</span>
+                            <span className="text-2xl md:text-3xl font-black text-orange-400" data-testid="text-3rd-place-rank">3</span>
                           </div>
                         </motion.div>
                       )}
@@ -1411,15 +1411,16 @@ export default function Blitzgrid() {
                         >
                           <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.3, repeat: Infinity }} className="text-center">
                             <div className="flex items-center justify-center gap-2">
-                              <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-yellow-400" />
-                              <Trophy className="w-12 h-12 md:w-16 md:h-16 text-yellow-400" />
-                              <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-yellow-400" />
+                              <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-yellow-400 shrink-0" aria-hidden="true" />
+                              <Trophy className="w-12 h-12 md:w-16 md:h-16 text-yellow-400 shrink-0" aria-hidden="true" />
+                              <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-yellow-400 shrink-0" aria-hidden="true" />
                             </div>
                             <motion.p 
                               className="text-white text-xl md:text-2xl font-bold mt-2"
                               style={{ textShadow: '0 0 10px rgba(250, 204, 21, 0.5)' }}
                               animate={{ opacity: [1, 0.5, 1] }}
                               transition={{ duration: 0.5, repeat: Infinity }}
+                              data-testid="drumroll-text"
                             >
                               And the winner is...
                             </motion.p>
@@ -1437,11 +1438,11 @@ export default function Blitzgrid() {
                       className="flex flex-wrap justify-center gap-2 mb-6"
                     >
                       {restOfPlayers.map((p, i) => (
-                        <div key={p.id} className="bg-white/5 backdrop-blur-sm px-3 py-2 rounded-lg border border-white/10 flex items-center gap-2 max-w-[220px]">
-                          <span className="text-white/40 font-medium flex-shrink-0">#{i + 4}</span>
-                          <span className="text-lg flex-shrink-0">{PLAYER_AVATARS.find(a => a.id === p.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
-                          <span className="text-white font-medium truncate min-w-0 flex-1" title={p.name}>{p.name}</span>
-                          <span className="text-white/40 flex-shrink-0">{p.score} pts</span>
+                        <div key={p.id} className="bg-white/5 backdrop-blur-sm px-3 py-2 rounded-lg border border-white/10 flex items-center gap-2 max-w-[220px]" data-testid={`rest-player-${p.id}`}>
+                          <span className="text-white/40 font-medium shrink-0" data-testid={`rest-player-rank-${p.id}`}>#{i + 4}</span>
+                          <span className="text-lg shrink-0">{PLAYER_AVATARS.find(a => a.id === p.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
+                          <span className="text-white font-medium truncate min-w-0 flex-1" title={p.name} data-testid={`rest-player-name-${p.id}`}>{p.name}</span>
+                          <span className="text-white/40 shrink-0" data-testid={`rest-player-score-${p.id}`}>{p.score} pts</span>
                         </div>
                       ))}
                     </motion.div>
@@ -1463,8 +1464,8 @@ export default function Blitzgrid() {
                             className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 md:p-6 border border-white/10 shadow-lg"
                           >
                             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                              <Zap className="w-5 h-5 text-fuchsia-400" />
-                              Game Stats
+                              <Zap className="w-5 h-5 text-fuchsia-400 shrink-0" aria-hidden="true" />
+                              <span data-testid="game-stats-title">Game Stats</span>
                             </h3>
                             
                             {/* Stats Grid */}
@@ -1533,11 +1534,11 @@ export default function Blitzgrid() {
                                         {/* Stats row */}
                                         <div className="flex justify-between gap-2 text-xs">
                                           <div className="flex items-center gap-1">
-                                            <Check className="w-3 h-3 text-emerald-400" />
+                                            <Check className="w-3 h-3 text-emerald-400 shrink-0" aria-hidden="true" />
                                             <span className="text-white/40">{stats.correctAnswers} correct</span>
                                           </div>
                                           <div className="flex items-center gap-1">
-                                            <X className="w-3 h-3 text-rose-400" />
+                                            <X className="w-3 h-3 text-rose-400 shrink-0" aria-hidden="true" />
                                             <span className="text-white/40">{stats.wrongAnswers} wrong</span>
                                           </div>
                                         </div>
@@ -1545,7 +1546,7 @@ export default function Blitzgrid() {
                                         {/* Best streak */}
                                         {stats.bestStreak >= 2 && (
                                           <div className="flex items-center gap-1 text-xs">
-                                            <Flame className="w-3 h-3 text-orange-400" />
+                                            <Flame className="w-3 h-3 text-orange-400 shrink-0" aria-hidden="true" />
                                             <span className="text-white/40">Best streak: {stats.bestStreak} in a row</span>
                                           </div>
                                         )}
@@ -1553,7 +1554,7 @@ export default function Blitzgrid() {
                                         {/* Biggest gain */}
                                         {stats.biggestGain > 0 && (
                                           <div className="flex items-center gap-1 text-xs">
-                                            <Zap className="w-3 h-3 text-yellow-400" />
+                                            <Zap className="w-3 h-3 text-yellow-400 shrink-0" aria-hidden="true" />
                                             <span className="text-white/40">Best answer: +{stats.biggestGain} pts</span>
                                           </div>
                                         )}
@@ -1587,8 +1588,8 @@ export default function Blitzgrid() {
                             {gameStats.mvpMoments.length > 0 && (
                               <div className="mt-4 pt-4 border-t border-white/10">
                                 <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
-                                  <Sparkles className="w-4 h-4 text-yellow-400" />
-                                  Highlight Moments
+                                  <Sparkles className="w-4 h-4 text-yellow-400 shrink-0" aria-hidden="true" />
+                                  <span data-testid="highlight-moments-title">Highlight Moments</span>
                                 </h4>
                                 <div className="flex flex-wrap gap-2">
                                   {gameStats.mvpMoments.map((moment, i) => (
@@ -1623,7 +1624,7 @@ export default function Blitzgrid() {
                             data-testid="button-view-stats"
                             onClick={() => setShowDetailedStats(!showDetailedStats)}
                           >
-                            <Zap className="w-5 h-5 text-yellow-500" />
+                            <Zap className="w-5 h-5 text-yellow-500 shrink-0" aria-hidden="true" />
                             {showDetailedStats ? 'Hide Stats' : 'View Stats'}
                           </Button>
                           <Button
@@ -1636,7 +1637,7 @@ export default function Blitzgrid() {
                               setShareImageUrl(null);
                             }}
                           >
-                            <Share2 className="w-5 h-5" />
+                            <Share2 className="w-5 h-5 shrink-0" aria-hidden="true" />
                             Share Results
                           </Button>
                         </div>
@@ -1648,7 +1649,7 @@ export default function Blitzgrid() {
                             className="font-bold shadow-lg"
                             data-testid="button-next-grid"
                           >
-                            <Grid3X3 className="w-5 h-5 mr-2" />
+                            <Grid3X3 className="w-5 h-5 mr-2 shrink-0" aria-hidden="true" />
                             Next Grid
                           </Button>
                           <Button
@@ -1656,9 +1657,9 @@ export default function Blitzgrid() {
                             variant="outline"
                             onClick={closeGameOver}
                             className="font-bold"
-                            data-testid="button-end-session"
+                            data-testid="button-end-session-gameover"
                           >
-                            <Power className="w-5 h-5 mr-2" />
+                            <Power className="w-5 h-5 mr-2 shrink-0" aria-hidden="true" />
                             End Session
                           </Button>
                         </div>
@@ -1686,7 +1687,7 @@ export default function Blitzgrid() {
                 className="text-muted-foreground"
                 data-testid="button-exit-play"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="w-5 h-5 shrink-0" aria-hidden="true" />
               </Button>
               <Link href="/">
                 <Logo size="md" />
