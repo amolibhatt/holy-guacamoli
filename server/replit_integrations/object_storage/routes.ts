@@ -117,7 +117,10 @@ export function registerObjectStorageRoutes(app: Express): void {
 
     app.post("/api/uploads/cloudinary", isAuthenticated, upload.single('file'), async (req, res) => {
       try {
+        console.log(`[Upload] Cloudinary upload started - file: ${req.file?.originalname}, size: ${req.file?.size}, type: ${req.file?.mimetype}`);
+        
         if (!req.file) {
+          console.error("[Upload] No file in request");
           return res.status(400).json({ error: "No file provided" });
         }
 
@@ -130,8 +133,13 @@ export function registerObjectStorageRoutes(app: Express): void {
               resource_type: "auto",
             },
             (error: any, result: any) => {
-              if (error) reject(error);
-              else resolve(result);
+              if (error) {
+                console.error("[Upload] Cloudinary API error:", error.message || error);
+                reject(error);
+              } else {
+                console.log(`[Upload] Cloudinary success - url: ${result.secure_url}`);
+                resolve(result);
+              }
             }
           );
           uploadStream.end(req.file!.buffer);
@@ -142,9 +150,9 @@ export function registerObjectStorageRoutes(app: Express): void {
           url: result.secure_url,
           publicId: result.public_id,
         });
-      } catch (error) {
-        console.error("Cloudinary upload error:", error);
-        res.status(500).json({ error: "Failed to upload file" });
+      } catch (error: any) {
+        console.error("[Upload] Cloudinary upload failed:", error.message || error);
+        res.status(500).json({ error: error.message || "Failed to upload file" });
       }
     });
 
