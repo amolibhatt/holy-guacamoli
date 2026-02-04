@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { QRCodeSVG } from "qrcode.react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Copy, Check, Lock, Unlock, RotateCcw, Wifi, WifiOff, QrCode, X, RefreshCw, Trash2 } from "lucide-react";
+import { Zap, Copy, Check, Lock, Unlock, RotateCcw, Wifi, WifiOff, QrCode, X, RefreshCw, Trash2, MessageCircle } from "lucide-react";
 import { soundManager } from "@/lib/sounds";
 import { useScore } from "@/components/ScoreContext";
 import { useAuth } from "@/hooks/use-auth";
@@ -467,6 +467,29 @@ export const BuzzerPanel = forwardRef<BuzzerPanelHandle>(function BuzzerPanel(_,
             <div className="text-center text-sm text-muted-foreground">
               <p>Scan QR code or visit:</p>
               <p className="font-mono text-foreground">{joinUrl}</p>
+            </div>
+            <div className="flex items-center gap-2 w-full">
+              <Button
+                variant="outline"
+                className="flex-1 gap-2"
+                onClick={copyLink}
+                data-testid="button-copy-link-dialog"
+              >
+                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {copied ? "Copied!" : "Copy Link"}
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 gap-2 text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-500 dark:hover:text-green-400 dark:hover:bg-green-950"
+                onClick={() => {
+                  const message = `Join my game! 🎮\n\nRoom Code: ${roomCode}\n${joinUrl}`;
+                  window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                }}
+                data-testid="button-share-whatsapp"
+              >
+                <MessageCircle className="w-4 h-4" />
+                WhatsApp
+              </Button>
             </div>
           </div>
         </DialogContent>
