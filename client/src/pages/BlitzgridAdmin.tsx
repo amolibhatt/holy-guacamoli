@@ -37,10 +37,16 @@ async function uploadFile(file: File): Promise<string> {
   });
   
   if (!response.ok) {
-    throw new Error("Failed to get upload URL");
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to get upload URL");
   }
   
   const data = await response.json();
+  
+  // Check for error in response
+  if (data.error) {
+    throw new Error(data.error);
+  }
   
   // Check if we need to use Cloudinary direct upload
   if (data.useDirectUpload && data.uploadEndpoint) {
@@ -54,7 +60,8 @@ async function uploadFile(file: File): Promise<string> {
     });
     
     if (!uploadResponse.ok) {
-      throw new Error("Failed to upload file");
+      const errorData = await uploadResponse.json().catch(() => ({}));
+      throw new Error(errorData.error || "Failed to upload file");
     }
     
     const result = await uploadResponse.json();
@@ -64,6 +71,10 @@ async function uploadFile(file: File): Promise<string> {
   // Replit Object Storage flow - upload to presigned URL
   const { uploadURL, objectPath } = data;
   
+  if (!uploadURL) {
+    throw new Error("No upload URL provided");
+  }
+  
   const uploadResponse = await fetch(uploadURL, {
     method: "PUT",
     body: file,
@@ -71,7 +82,7 @@ async function uploadFile(file: File): Promise<string> {
   });
   
   if (!uploadResponse.ok) {
-    throw new Error("Failed to upload file");
+    throw new Error("Failed to upload file to storage");
   }
   
   return objectPath;

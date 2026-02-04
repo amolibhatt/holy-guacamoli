@@ -135,10 +135,20 @@ export function registerObjectStorageRoutes(app: Express): void {
     // No need for /objects/* route
   } else {
     // No storage configured - return helpful error
+    console.log(`[Upload] CLOUDINARY_URL value: ${process.env.CLOUDINARY_URL ? 'Set but invalid format' : 'Not set'}`);
+    
     app.post("/api/uploads/request-url", isAuthenticated, (req, res) => {
-      res.status(503).json({ 
-        error: "File storage not configured. Set CLOUDINARY_URL environment variable for production deployments." 
-      });
+      const cloudinaryUrl = process.env.CLOUDINARY_URL;
+      let errorMsg = "File storage not configured.";
+      
+      if (!cloudinaryUrl) {
+        errorMsg = "CLOUDINARY_URL environment variable is not set.";
+      } else if (!cloudinaryUrl.startsWith('cloudinary://')) {
+        errorMsg = "CLOUDINARY_URL must start with 'cloudinary://'. Current value is invalid.";
+      }
+      
+      console.error(`[Upload] ${errorMsg}`);
+      res.status(503).json({ error: errorMsg });
     });
   }
 }
