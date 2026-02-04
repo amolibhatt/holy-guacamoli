@@ -2351,7 +2351,13 @@ export class DatabaseStorage implements IStorage {
                 lastName: users.lastName,
                 email: users.email,
               }).from(users).where(eq(users.id, b.userId));
-              creator = user || null;
+              if (user) {
+                creator = {
+                  id: user.id,
+                  username: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || 'Unknown',
+                  email: user.email,
+                };
+              }
             }
           }
         }

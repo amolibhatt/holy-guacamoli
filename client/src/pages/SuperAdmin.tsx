@@ -182,7 +182,6 @@ interface BlitzgridQuestionWithCreator {
   audioUrl: string | null;
   videoUrl: string | null;
   categoryId: number | null;
-  createdAt: string;
   category: { id: number; name: string } | null;
   board: { id: number; name: string; userId: string | null } | null;
   creator: QuestionCreator | null;
@@ -829,7 +828,7 @@ export default function SuperAdmin() {
                                           {u.role === 'super_admin' && <Badge className="bg-purple-500/20 text-purple-600 text-xs shrink-0"><Shield className="w-3 h-3 mr-1" />Super</Badge>}
                                           {u.role === 'admin' && <Badge className="bg-blue-500/20 text-blue-600 text-xs shrink-0">Admin</Badge>}
                                         </div>
-                                        <div className="text-xs text-muted-foreground truncate" title={`${u.email} • Last login: ${formatRelativeDate(u.lastLoginAt)}`}>{u.email} • Last login: {formatRelativeDate(u.lastLoginAt)}</div>
+                                        <div className="text-xs text-muted-foreground truncate max-w-[200px]" title={`${u.email} • Last login: ${formatRelativeDate(u.lastLoginAt)}`}>{u.email} • Last login: {formatRelativeDate(u.lastLoginAt)}</div>
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-4 text-sm">
@@ -884,7 +883,7 @@ export default function SuperAdmin() {
                                                 <div className="space-y-1">
                                                   {u.boards.slice(0, 5).map((b) => (
                                                     <div key={b.id} className="flex items-center justify-between gap-2 p-2 rounded bg-muted/50 text-sm min-w-0">
-                                                      <span className="truncate flex-1 min-w-0" title={b.name}>{b.name}</span>
+                                                      <span className="truncate flex-1 min-w-0 max-w-[150px]" title={b.name}>{b.name}</span>
                                                       <span className="text-xs text-muted-foreground shrink-0">{formatRelativeDate(b.createdAt)}</span>
                                                     </div>
                                                   ))}
@@ -912,7 +911,7 @@ export default function SuperAdmin() {
                                                         <Badge variant={s.state === 'active' ? 'default' : 'secondary'} className={`text-xs shrink-0 ${s.state === 'active' ? 'bg-green-500' : ''}`}>
                                                           {s.code}
                                                         </Badge>
-                                                        <span className="flex-1 text-xs text-muted-foreground truncate min-w-0" title={winner ? `${s.playerCount} players • Winner: ${winner.name}` : `${s.playerCount} players`}>
+                                                        <span className="flex-1 text-xs text-muted-foreground truncate min-w-0 max-w-[150px]" title={winner ? `${s.playerCount} players • Winner: ${winner.name}` : `${s.playerCount} players`}>
                                                           {s.playerCount} players
                                                           {winner && ` • Winner: ${winner.name}`}
                                                         </span>
@@ -1043,7 +1042,7 @@ export default function SuperAdmin() {
                                         <span className="text-xs text-muted-foreground shrink-0">({winner.score} pts)</span>
                                         {session.players.filter(p => p.id !== winner.id).slice(0, 3).map((p) => (
                                           <Badge key={p.id} variant="secondary" className="text-xs max-w-[100px]" title={`${p.name}: ${p.score}`}>
-                                            <span className="truncate" title={p.name}>{p.name}</span>: {p.score}
+                                            <span className="truncate max-w-[60px]" title={p.name}>{p.name}</span>: {p.score}
                                           </Badge>
                                         ))}
                                       </div>
@@ -1647,7 +1646,7 @@ export default function SuperAdmin() {
                       <div className="space-y-2 max-h-[200px] overflow-y-auto">
                         {flaggedBoards.map((board) => (
                           <div key={board.id} className="flex items-center justify-between gap-3 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
-                            <span className="text-sm font-medium truncate flex-1 min-w-0" title={board.name}>{board.name}</span>
+                            <span className="text-sm font-medium truncate flex-1 min-w-0 max-w-[200px]" title={board.name}>{board.name}</span>
                             <div className="flex gap-1 shrink-0">
                               <Button
                                 size="sm"
