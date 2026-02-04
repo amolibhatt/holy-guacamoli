@@ -11,7 +11,8 @@ import {
   Megaphone, Flag, Heart, AlertTriangle,
   Download, Send, UserCheck, Zap, Trophy,
   Calendar, LogIn, User, Play, X, Eye,
-  ArrowUpRight, Filter, ChevronUp
+  ArrowUpRight, Filter, ChevronUp, Layers,
+  Image, Brain
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,21 +40,22 @@ import { AppHeader } from "@/components/AppHeader";
 import type { Board, GameType } from "@shared/schema";
 import type { SafeUser } from "@shared/models/auth";
 
+interface GameContentItem {
+  type: string;
+  count: number;
+}
+
+interface GameContentStats {
+  label: string;
+  items: GameContentItem[];
+}
+
 interface PlatformStats {
   totalUsers: number;
   totalGamesPlayed: number;
   activeSessionsToday: number;
   newUsersThisWeek: number;
-  blitzgrid: {
-    grids: number;
-    questions: number;
-  };
-  sortCircuit: {
-    questions: number;
-  };
-  psyop: {
-    questions: number;
-  };
+  gameContent: Record<string, GameContentStats>;
   totalContent: number;
 }
 
@@ -508,7 +510,9 @@ export default function SuperAdmin() {
     switch (slug) {
       case 'blitzgrid': return Grid3X3;
       case 'sequence_squeeze': return ListOrdered;
-      case 'psyop': return Shield;
+      case 'psyop': return Brain;
+      case 'timewarp': return Clock;
+      case 'memenoharm': return Image;
       default: return Gamepad2;
     }
   };
@@ -518,7 +522,9 @@ export default function SuperAdmin() {
       case 'blitzgrid': return 'from-rose-300 via-pink-300 to-fuchsia-300';
       case 'sequence_squeeze': return 'from-emerald-300 via-teal-300 to-cyan-300';
       case 'psyop': return 'from-violet-300 via-purple-300 to-indigo-300';
-      default: return 'from-amber-300 via-yellow-300 to-orange-300';
+      case 'timewarp': return 'from-sky-300 via-blue-300 to-indigo-300';
+      case 'memenoharm': return 'from-amber-300 via-orange-300 to-red-300';
+      default: return 'from-gray-300 via-slate-300 to-zinc-300';
     }
   };
 
@@ -672,29 +678,10 @@ export default function SuperAdmin() {
                   onClick={() => { setDrillDownType('users'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
                 />
                 <StatCard
-                  title="BlitzGrid"
-                  value={`${stats?.blitzgrid?.grids ?? 0} grids`}
-                  subtitle={`${stats?.blitzgrid?.questions ?? 0} questions`}
-                  icon={Grid3X3}
-                  color="from-rose-300 via-pink-300 to-fuchsia-300"
-                  isLoading={isLoadingStats}
-                  clickable
-                  onClick={() => { setDrillDownType('grids'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
-                />
-                <StatCard
-                  title="Sort Circuit"
-                  value={`${stats?.sortCircuit?.questions ?? 0} questions`}
-                  icon={ListOrdered}
-                  color="from-emerald-300 via-teal-300 to-cyan-300"
-                  isLoading={isLoadingStats}
-                  clickable
-                  onClick={() => { setActiveTab('content'); }}
-                />
-                <StatCard
-                  title="PsyOp"
-                  value={`${stats?.psyop?.questions ?? 0} questions`}
-                  icon={Shield}
-                  color="from-violet-300 via-purple-300 to-indigo-300"
+                  title="Total Content"
+                  value={stats?.totalContent ?? 0}
+                  icon={Database}
+                  color="from-amber-300 via-yellow-300 to-amber-300"
                   isLoading={isLoadingStats}
                   clickable
                   onClick={() => { setActiveTab('content'); }}
@@ -703,7 +690,7 @@ export default function SuperAdmin() {
                   title="Games Played"
                   value={stats?.totalGamesPlayed ?? 0}
                   icon={Gamepad2}
-                  color="from-amber-300 via-yellow-300 to-amber-300"
+                  color="from-emerald-300 via-teal-300 to-cyan-300"
                   isLoading={isLoadingStats}
                   clickable
                   onClick={() => { setDrillDownType('sessions'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
@@ -717,6 +704,45 @@ export default function SuperAdmin() {
                   clickable
                   onClick={() => { setDrillDownType('users'); setDrillDownFilter(''); setDateRangeFilter('week'); }}
                 />
+              </div>
+
+              {/* Per-Game Content Stats */}
+              <h3 className="text-xl font-semibold text-foreground mt-8 mb-4 flex items-center gap-2">
+                <Layers className="w-5 h-5 text-violet-500" />
+                Content by Game
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-4">
+                {stats?.gameContent && Object.entries(stats.gameContent).map(([slug, game]) => {
+                  const GameIcon = getGameIcon(slug);
+                  const gradient = getGameGradient(slug);
+                  const primaryItem = game.items[0];
+                  const subtitle = game.items.length > 1 ? game.items.slice(1).map(i => `${i.count} ${i.type}`).join(', ') : undefined;
+                  return (
+                    <Card 
+                      key={slug} 
+                      className="hover-elevate cursor-pointer active-elevate-2"
+                      onClick={() => setActiveTab('content')}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && setActiveTab('content')}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center shadow`}>
+                            <GameIcon className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-bold text-foreground truncate">
+                              {primaryItem.count} {primaryItem.type}
+                            </div>
+                            {subtitle && <div className="text-xs text-muted-foreground/70 truncate">{subtitle}</div>}
+                            <div className="text-xs text-muted-foreground truncate">{game.label}</div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
 
               <h3 className="text-xl font-semibold text-foreground mt-8 mb-4 flex items-center gap-2">
@@ -1082,7 +1108,7 @@ export default function SuperAdmin() {
                         <p className="font-medium text-foreground">Content Status</p>
                         <p className="text-sm text-muted-foreground mt-1">
                           {(stats?.totalContent ?? 0) >= 50
-                            ? `Healthy content library: ${stats?.blitzgrid?.grids ?? 0} grids, ${stats?.blitzgrid?.questions ?? 0} BlitzGrid Qs, ${stats?.sortCircuit?.questions ?? 0} Sort Circuit Qs, ${stats?.psyop?.questions ?? 0} PsyOp Qs.`
+                            ? `Healthy content library with ${stats?.totalContent ?? 0} total items across ${Object.keys(stats?.gameContent ?? {}).length} games.`
                             : (stats?.totalContent ?? 0) >= 10
                             ? `${stats?.totalContent ?? 0} content pieces created. Add more to keep games fresh!`
                             : 'Limited content. Add grids and questions to get started.'}
@@ -2418,47 +2444,35 @@ export default function SuperAdmin() {
                 </div>
               )}
 
-              {/* Questions - show breakdown by game type */}
+              {/* Questions - show breakdown by game type dynamically */}
               {drillDownType === 'questions' && (
                 <div className="space-y-4 py-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <Card className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-300 via-pink-300 to-fuchsia-300 flex items-center justify-center">
-                          <Grid3X3 className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <div className="text-xl font-bold">{stats?.blitzgrid?.questions ?? 0}</div>
-                          <div className="text-xs text-muted-foreground">BlitzGrid Questions</div>
-                        </div>
-                      </div>
-                    </Card>
-                    <Card className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-300 via-teal-300 to-cyan-300 flex items-center justify-center">
-                          <ListOrdered className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <div className="text-xl font-bold">{stats?.sortCircuit?.questions ?? 0}</div>
-                          <div className="text-xs text-muted-foreground">Sort Circuit Questions</div>
-                        </div>
-                      </div>
-                    </Card>
-                    <Card className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-300 via-purple-300 to-indigo-300 flex items-center justify-center">
-                          <Shield className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <div className="text-xl font-bold">{stats?.psyop?.questions ?? 0}</div>
-                          <div className="text-xs text-muted-foreground">PsyOp Questions</div>
-                        </div>
-                      </div>
-                    </Card>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {stats?.gameContent && Object.entries(stats.gameContent).map(([slug, game]) => {
+                      const GameIcon = getGameIcon(slug);
+                      const gradient = getGameGradient(slug);
+                      const totalItems = game.items.reduce((sum, item) => sum + item.count, 0);
+                      return (
+                        <Card key={slug} className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+                              <GameIcon className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                              <div className="text-xl font-bold">{totalItems}</div>
+                              <div className="text-xs text-muted-foreground">{game.label}</div>
+                              <div className="text-xs text-muted-foreground/70">
+                                {game.items.map(i => `${i.count} ${i.type}`).join(', ')}
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    })}
                   </div>
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground">
-                      Total: {(stats?.blitzgrid?.questions ?? 0) + (stats?.sortCircuit?.questions ?? 0) + (stats?.psyop?.questions ?? 0)} questions across all games
+                      Total: {stats?.totalContent ?? 0} content items across {Object.keys(stats?.gameContent ?? {}).length} games
                     </p>
                     <Button 
                       variant="outline" 

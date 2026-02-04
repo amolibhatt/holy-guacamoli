@@ -1141,10 +1141,6 @@ export class DatabaseStorage implements IStorage {
   // === SUPER ADMIN METHODS ===
   async getPlatformStats() {
     const [userCount] = await db.select({ count: count() }).from(users);
-    const [boardCount] = await db.select({ count: count() }).from(boards);
-    const [blitzgridQuestionCount] = await db.select({ count: count() }).from(questions);
-    const [sequenceQuestionCount] = await db.select({ count: count() }).from(sequenceQuestions);
-    const [psyopQuestionCount] = await db.select({ count: count() }).from(psyopQuestions);
     const [sessionCount] = await db.select({ count: count() }).from(gameSessions);
     
     const today = new Date();
@@ -1159,22 +1155,84 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(gte(users.createdAt, oneWeekAgo));
 
+    // Get all game types from database
+    const allGameTypes = await db.select().from(gameTypes).orderBy(asc(gameTypes.sortOrder));
+    
+    // Count content for each game type dynamically
+    const [boardCount] = await db.select({ count: count() }).from(boards);
+    const [blitzgridQuestionCount] = await db.select({ count: count() }).from(questions);
+    const [sequenceQuestionCount] = await db.select({ count: count() }).from(sequenceQuestions);
+    const [psyopQuestionCount] = await db.select({ count: count() }).from(psyopQuestions);
+    const [timeWarpQuestionCount] = await db.select({ count: count() }).from(timeWarpQuestions);
+    const [memePromptCount] = await db.select({ count: count() }).from(memePrompts);
+    const [memeImageCount] = await db.select({ count: count() }).from(memeImages);
+
+    // Build dynamic game content stats
+    const gameContent: Record<string, { label: string; items: { type: string; count: number }[] }> = {};
+    
+    for (const game of allGameTypes) {
+      switch (game.slug) {
+        case 'blitzgrid':
+          gameContent[game.slug] = {
+            label: game.displayName,
+            items: [
+              { type: 'grids', count: Number(boardCount?.count ?? 0) },
+              { type: 'questions', count: Number(blitzgridQuestionCount?.count ?? 0) }
+            ]
+          };
+          break;
+        case 'sequence_squeeze':
+          gameContent[game.slug] = {
+            label: game.displayName,
+            items: [{ type: 'questions', count: Number(sequenceQuestionCount?.count ?? 0) }]
+          };
+          break;
+        case 'psyop':
+          gameContent[game.slug] = {
+            label: game.displayName,
+            items: [{ type: 'questions', count: Number(psyopQuestionCount?.count ?? 0) }]
+          };
+          break;
+        case 'timewarp':
+          gameContent[game.slug] = {
+            label: game.displayName,
+            items: [{ type: 'questions', count: Number(timeWarpQuestionCount?.count ?? 0) }]
+          };
+          break;
+        case 'memenoharm':
+          gameContent[game.slug] = {
+            label: game.displayName,
+            items: [
+              { type: 'prompts', count: Number(memePromptCount?.count ?? 0) },
+              { type: 'images', count: Number(memeImageCount?.count ?? 0) }
+            ]
+          };
+          break;
+        default:
+          // For any new games, show 0 content until their tables are added
+          gameContent[game.slug] = {
+            label: game.displayName,
+            items: [{ type: 'items', count: 0 }]
+          };
+      }
+    }
+
+    const totalContent = 
+      Number(boardCount?.count ?? 0) + 
+      Number(blitzgridQuestionCount?.count ?? 0) + 
+      Number(sequenceQuestionCount?.count ?? 0) + 
+      Number(psyopQuestionCount?.count ?? 0) +
+      Number(timeWarpQuestionCount?.count ?? 0) +
+      Number(memePromptCount?.count ?? 0) +
+      Number(memeImageCount?.count ?? 0);
+
     return {
       totalUsers: userCount?.count ?? 0,
       totalGamesPlayed: sessionCount?.count ?? 0,
       activeSessionsToday: todaySessionCount?.count ?? 0,
       newUsersThisWeek: newUserCount?.count ?? 0,
-      blitzgrid: {
-        grids: boardCount?.count ?? 0,
-        questions: blitzgridQuestionCount?.count ?? 0,
-      },
-      sortCircuit: {
-        questions: sequenceQuestionCount?.count ?? 0,
-      },
-      psyop: {
-        questions: psyopQuestionCount?.count ?? 0,
-      },
-      totalContent: (boardCount?.count ?? 0) + (blitzgridQuestionCount?.count ?? 0) + (sequenceQuestionCount?.count ?? 0) + (psyopQuestionCount?.count ?? 0),
+      gameContent,
+      totalContent,
     };
   }
 
