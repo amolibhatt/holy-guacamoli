@@ -1971,8 +1971,9 @@ export default function Blitzgrid() {
                         }}
                         disabled={!isClickable}
                         whileHover={isClickable ? { 
-                          scale: 1.02, 
-                          y: -2,
+                          scale: 1.05, 
+                          y: -3,
+                          boxShadow: `0 0 20px ${tileNeonColor.glow}, 0 0 40px ${tileNeonColor.glow}40`,
                         } : {}}
                         whileTap={isClickable ? { scale: 0.96 } : {}}
                         data-testid={`cell-${category.id}-${points}`}
