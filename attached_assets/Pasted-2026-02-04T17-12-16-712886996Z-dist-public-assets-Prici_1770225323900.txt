@@ -1,0 +1,50 @@
+2026-02-04T17:12:16.712886996Z ../dist/public/assets/Pricing-YmtGY-vh.js             6.98 kB │ gzip:   2.87 kB
+2026-02-04T17:12:16.712889866Z ../dist/public/assets/GameHistory-D4prNLIf.js         7.13 kB │ gzip:   2.04 kB
+2026-02-04T17:12:16.712895196Z ../dist/public/assets/MemeNoHarmAdmin-C7MBhEJR.js     8.53 kB │ gzip:   2.30 kB
+2026-02-04T17:12:16.712903636Z ../dist/public/assets/Profile-C7rx2-mC.js             9.47 kB │ gzip:   2.69 kB
+2026-02-04T17:12:16.712953487Z ../dist/public/assets/TimeWarpAdmin-DyTPj9OI.js      10.35 kB │ gzip:   3.15 kB
+2026-02-04T17:12:16.712958297Z ../dist/public/assets/MemeNoHarmHost-PPIqFKGr.js     14.17 kB │ gzip:   4.06 kB
+2026-02-04T17:12:16.712968088Z ../dist/public/assets/PsyOpHost-Nm70Hxmd.js          15.74 kB │ gzip:   5.14 kB
+2026-02-04T17:12:16.712974178Z ../dist/public/assets/SortCircuitAdmin-DfPhdMxz.js   15.79 kB │ gzip:   4.34 kB
+2026-02-04T17:12:16.713070609Z ../dist/public/assets/index-BiKVXZoV.js              16.44 kB │ gzip:   6.15 kB
+2026-02-04T17:12:16.713078279Z ../dist/public/assets/SequencePlayer-DPTLfHCg.js     17.64 kB │ gzip:   4.86 kB
+2026-02-04T17:12:16.713080699Z ../dist/public/assets/PsyOpAdmin-BVkJrXcA.js         18.67 kB │ gzip:   5.06 kB
+2026-02-04T17:12:16.713090319Z ../dist/public/assets/select-Dj0kYlO_.js             20.88 kB │ gzip:   7.24 kB
+2026-02-04T17:12:16.713097439Z ../dist/public/assets/TimeWarpHost-HTLCbkcf.js       20.92 kB │ gzip:   6.55 kB
+2026-02-04T17:12:16.71313737Z ../dist/public/assets/SequenceSqueeze-DMW8kDdb.js    38.40 kB │ gzip:   9.23 kB
+2026-02-04T17:12:16.71314011Z ../dist/public/assets/BlitzgridAdmin-DW2oma07.js     42.06 kB │ gzip:   8.06 kB
+2026-02-04T17:12:16.713172511Z ../dist/public/assets/SuperAdmin-DGHyNaBn.js         50.18 kB │ gzip:   9.72 kB
+2026-02-04T17:12:16.713176001Z ../dist/public/assets/Blitzgrid-BJ8aHDTs.js         451.50 kB │ gzip: 117.65 kB
+2026-02-04T17:12:16.713212821Z ../dist/public/assets/index-Gr08pkYh.js             689.71 kB │ gzip: 211.14 kB
+2026-02-04T17:12:16.713347223Z 
+2026-02-04T17:12:16.713352054Z (!) Some chunks are larger than 500 kB after minification. Consider:
+2026-02-04T17:12:16.713355294Z - Using dynamic import() to code-split the application
+2026-02-04T17:12:16.713358744Z - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+2026-02-04T17:12:16.713361384Z - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+2026-02-04T17:12:16.713656478Z ✓ built in 7.95s
+2026-02-04T17:12:16.71377593Z building server...
+2026-02-04T17:12:17.183206098Z 
+2026-02-04T17:12:17.183229589Z   dist/index.cjs  2.6mb ⚠️
+2026-02-04T17:12:17.183233189Z 
+2026-02-04T17:12:17.183236839Z ⚡ Done in 457ms
+2026-02-04T17:13:21.214819364Z ==> Uploading build...
+2026-02-04T17:13:31.686900501Z ==> Uploaded in 6.2s. Compression took 4.2s
+2026-02-04T17:13:36.685001789Z ==> Build successful 🎉
+2026-02-04T17:14:42.510341947Z ==> Deploying...
+2026-02-04T17:14:42.796532929Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-02-04T17:15:05.88691846Z ==> Running 'npm start'
+2026-02-04T17:15:06.99100549Z 
+2026-02-04T17:15:06.991037531Z > rest-express@1.0.0 start
+2026-02-04T17:15:06.991044011Z > NODE_ENV=production node dist/index.cjs
+2026-02-04T17:15:06.991046481Z 
+2026-02-04T17:15:11.899060432Z [Upload] Storage backend: Cloudinary
+2026-02-04T17:15:12.400093985Z Checked 4 boards for color assignment
+2026-02-04T17:15:12.485676042Z [WebSocket] Server initialized on /ws
+2026-02-04T17:15:12.591773817Z 5:15:12 PM [express] serving on port 10000
+2026-02-04T17:15:14.502509959Z ==> Your service is live 🎉
+2026-02-04T17:15:14.816549011Z ==> 
+2026-02-04T17:15:14.821282015Z ==> ///////////////////////////////////////////////////////////
+2026-02-04T17:15:14.825901897Z ==> 
+2026-02-04T17:15:14.830720322Z ==> Available at your primary URL https://holy-guacamoli.onrender.com
+2026-02-04T17:15:14.839872314Z ==> 
+2026-02-04T17:15:14.84417542Z ==> ///////////////////////////////////////////////////////////
