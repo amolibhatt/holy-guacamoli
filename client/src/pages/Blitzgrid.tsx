@@ -2504,7 +2504,7 @@ export default function Blitzgrid() {
                             {activeQuestion?.points} point question from {category?.name || 'category'}
                           </DialogDescription>
                           {category?.description && (
-                            <p className="text-white/40 text-sm mt-0.5 line-clamp-2" title={category.description}>{category.description}</p>
+                            <p className="text-white/40 text-sm mt-0.5 line-clamp-2" title={category.description} data-testid="question-category-description">{category.description}</p>
                           )}
                         </div>
                         
@@ -2526,11 +2526,11 @@ export default function Blitzgrid() {
                             className={`gap-1.5 h-9 px-3 rounded-lg ${timerActive ? 'bg-white/15 text-white' : 'text-white/40 border border-white/20'}`}
                             data-testid="button-timer"
                           >
-                            <Timer className="w-4 h-4" />
+                            <Timer className="w-4 h-4 shrink-0" />
                             {timerActive ? (
-                              <span className="font-mono font-bold text-base min-w-[2ch]">{timeLeft}</span>
+                              <span className="font-mono font-bold text-base min-w-[2ch] shrink-0" data-testid="timer-value">{timeLeft}</span>
                             ) : (
-                              <span className="text-sm">10s</span>
+                              <span className="text-sm shrink-0">10s</span>
                             )}
                           </Button>
                           
@@ -2543,7 +2543,7 @@ export default function Blitzgrid() {
                             }}
                             data-testid="question-points-badge"
                           >
-                            <span className="text-xl font-black" style={{ color: neonColor.text }}>
+                            <span className="text-xl font-black shrink-0" style={{ color: neonColor.text }} data-testid="question-points-value">
                               {activeQuestion?.points}
                             </span>
                             <span className="text-xs text-white/50 uppercase shrink-0">pts</span>
@@ -2600,8 +2600,8 @@ export default function Blitzgrid() {
               {players.length > 0 && !showAnswer && buzzQueue.length === 0 && (
                 <div className="mx-5 mb-4 flex items-center justify-center gap-3 py-2 px-4 bg-white/5 border border-white/10 rounded-full" data-testid="buzzer-status-waiting">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
-                    <span className="text-white/50 text-sm">{players.length} waiting</span>
+                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse shrink-0" />
+                    <span className="text-white/50 text-sm" data-testid="waiting-players-count">{players.length} waiting</span>
                   </div>
                 </div>
               )}
@@ -2700,7 +2700,7 @@ export default function Blitzgrid() {
               {players.length === 0 && !showAnswer && (
                 <div className="mx-5 mb-4 flex items-center justify-center gap-2 py-2 text-white/30" data-testid="no-players-message">
                   <Users className="w-3.5 h-3.5 shrink-0" />
-                  <p className="text-xs">No players connected</p>
+                  <p className="text-xs" data-testid="no-players-text">No players connected</p>
                 </div>
               )}
               
