@@ -293,16 +293,26 @@ export default function Home() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <div className="flex items-center gap-3 mb-1">
-              <motion.div
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <Users className="w-5 h-5 text-fuchsia-400" aria-hidden="true" style={{ filter: 'drop-shadow(0 0 6px rgba(232,121,249,0.6))' }} />
-              </motion.div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">Host a Game</h2>
+            <div 
+              className="rounded-xl p-4 mb-4"
+              style={{
+                background: 'linear-gradient(135deg, rgba(232,121,249,0.1) 0%, rgba(139,92,246,0.05) 100%)',
+                border: '1px solid rgba(232,121,249,0.25)',
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <Users className="w-5 h-5 text-fuchsia-400" aria-hidden="true" style={{ filter: 'drop-shadow(0 0 6px rgba(232,121,249,0.6))' }} />
+                </motion.div>
+                <div>
+                  <h2 className="text-white font-semibold">Host a Game</h2>
+                  <p className="text-white/50 text-sm">Pick one and get a code to share</p>
+                </div>
+              </div>
             </div>
-            <p className="text-white/50 text-sm ml-8">Pick one and get a code to share with players</p>
           </motion.div>
 
           {/* Game Cards - 2 column grid on medium+ screens */}
