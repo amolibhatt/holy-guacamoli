@@ -118,6 +118,18 @@ interface RoomStats {
   activeRooms: number;
 }
 
+interface ConversionFunnel {
+  totalSessions: number;
+  sessionsWithPlayers: number;
+  completedSessions: number;
+  guestPlayers: number;
+  registeredPlayers: number;
+  totalPlayers: number;
+  conversionRate: number;
+  sessionCompletionRate: number;
+  playerJoinRate: number;
+}
+
 interface DatabaseStats {
   users: number;
   boards: number;
@@ -231,6 +243,10 @@ export default function SuperAdmin() {
 
   const { data: roomStats, isLoading: isLoadingRoomStats } = useQuery<RoomStats>({
     queryKey: ['/api/super-admin/room-stats'],
+  });
+
+  const { data: conversionFunnel, isLoading: isLoadingFunnel } = useQuery<ConversionFunnel>({
+    queryKey: ['/api/super-admin/conversion-funnel'],
   });
 
   const { data: dbStats, isLoading: isLoadingDbStats } = useQuery<DatabaseStats>({
@@ -543,6 +559,7 @@ export default function SuperAdmin() {
                     queryClient.invalidateQueries({ queryKey: ['/api/super-admin/sessions'] });
                     queryClient.invalidateQueries({ queryKey: ['/api/super-admin/analytics'] });
                     queryClient.invalidateQueries({ queryKey: ['/api/super-admin/room-stats'] });
+                    queryClient.invalidateQueries({ queryKey: ['/api/super-admin/conversion-funnel'] });
                   }}
                   data-testid="button-refresh-dashboard"
                 >
@@ -753,6 +770,91 @@ export default function SuperAdmin() {
                   </>
                 )}
               </div>
+
+              {/* Conversion Funnel */}
+              <h3 className="text-xl font-semibold text-foreground mt-8 mb-4 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-emerald-500" />
+                Conversion Funnel
+                <Badge variant="secondary" className="text-xs">Last 30 days</Badge>
+              </h3>
+              <Card>
+                <CardContent className="pt-6">
+                  {isLoadingFunnel ? (
+                    <div className="space-y-4">
+                      {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Funnel Steps */}
+                      <div className="space-y-2">
+                        {[
+                          { 
+                            label: 'Sessions Created', 
+                            value: conversionFunnel?.totalSessions ?? 0, 
+                            color: 'bg-violet-500',
+                            width: '100%'
+                          },
+                          { 
+                            label: 'Sessions with Players', 
+                            value: conversionFunnel?.sessionsWithPlayers ?? 0, 
+                            color: 'bg-purple-500',
+                            width: `${conversionFunnel?.playerJoinRate ?? 0}%`,
+                            rate: conversionFunnel?.playerJoinRate
+                          },
+                          { 
+                            label: 'Sessions Completed', 
+                            value: conversionFunnel?.completedSessions ?? 0, 
+                            color: 'bg-fuchsia-500',
+                            width: `${conversionFunnel?.sessionCompletionRate ?? 0}%`,
+                            rate: conversionFunnel?.sessionCompletionRate
+                          },
+                        ].map((step, index) => (
+                          <div key={step.label} className="relative">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">{step.label}</span>
+                              <span className="text-sm text-muted-foreground">
+                                {step.value.toLocaleString()}
+                                {step.rate !== undefined && (
+                                  <span className="text-xs ml-1">({step.rate}%)</span>
+                                )}
+                              </span>
+                            </div>
+                            <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full ${step.color} rounded-full transition-all duration-500`}
+                                style={{ width: step.width }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Player Breakdown */}
+                      <div className="pt-4 border-t mt-4">
+                        <p className="text-sm font-medium mb-3">Player Breakdown</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          <div className="p-3 rounded-lg bg-muted/50 text-center">
+                            <p className="text-2xl font-bold text-foreground">{conversionFunnel?.totalPlayers ?? 0}</p>
+                            <p className="text-xs text-muted-foreground">Total Players</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-center">
+                            <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{conversionFunnel?.guestPlayers ?? 0}</p>
+                            <p className="text-xs text-muted-foreground">Guests</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-center">
+                            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{conversionFunnel?.registeredPlayers ?? 0}</p>
+                            <p className="text-xs text-muted-foreground">Registered</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 text-center">
+                            <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">{conversionFunnel?.conversionRate ?? 0}%</p>
+                            <p className="text-xs text-muted-foreground">Conversion Rate</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
               
               {/* Users Section */}
               <Card className="mt-6">

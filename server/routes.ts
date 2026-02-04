@@ -1902,6 +1902,16 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/super-admin/conversion-funnel", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const funnel = await storage.getConversionFunnel();
+      res.json(funnel);
+    } catch (err) {
+      console.error("Error getting conversion funnel:", err);
+      res.status(500).json({ message: "Failed to get conversion funnel" });
+    }
+  });
+
   // === USER MANAGEMENT ===
   
   app.patch("/api/super-admin/users/:id/role", isAuthenticated, isSuperAdmin, async (req, res) => {

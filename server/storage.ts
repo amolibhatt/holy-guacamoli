@@ -1951,6 +1951,81 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
+  async getConversionFunnel() {
+    const now = new Date();
+    const oneMonthAgo = new Date(now);
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    // Total sessions created (last 30 days)
+    const [totalSessions] = await db.select({ count: count() })
+      .from(gameSessions)
+      .where(gte(gameSessions.createdAt, oneMonthAgo));
+
+    // Sessions that got at least 1 player
+    const sessionsWithPlayers = await db.select({ sessionId: sessionPlayers.sessionId })
+      .from(sessionPlayers)
+      .innerJoin(gameSessions, eq(sessionPlayers.sessionId, gameSessions.id))
+      .where(gte(gameSessions.createdAt, oneMonthAgo))
+      .groupBy(sessionPlayers.sessionId);
+
+    // Completed sessions (ended state)
+    const [completedSessions] = await db.select({ count: count() })
+      .from(gameSessions)
+      .where(and(
+        gte(gameSessions.createdAt, oneMonthAgo),
+        eq(gameSessions.state, 'ended')
+      ));
+
+    // Guest players (userId is null)
+    const [guestPlayers] = await db.select({ count: count() })
+      .from(sessionPlayers)
+      .innerJoin(gameSessions, eq(sessionPlayers.sessionId, gameSessions.id))
+      .where(and(
+        gte(gameSessions.createdAt, oneMonthAgo),
+        sql`${sessionPlayers.userId} IS NULL`
+      ));
+
+    // Registered players (userId is not null)
+    const [registeredPlayers] = await db.select({ count: count() })
+      .from(sessionPlayers)
+      .innerJoin(gameSessions, eq(sessionPlayers.sessionId, gameSessions.id))
+      .where(and(
+        gte(gameSessions.createdAt, oneMonthAgo),
+        sql`${sessionPlayers.userId} IS NOT NULL`
+      ));
+
+    // Total unique players
+    const [totalPlayers] = await db.select({ count: sql<number>`COUNT(DISTINCT ${sessionPlayers.playerId})` })
+      .from(sessionPlayers)
+      .innerJoin(gameSessions, eq(sessionPlayers.sessionId, gameSessions.id))
+      .where(gte(gameSessions.createdAt, oneMonthAgo));
+
+    const totalSessionCount = totalSessions?.count ?? 0;
+    const sessionsWithPlayersCount = sessionsWithPlayers.length;
+    const completedCount = completedSessions?.count ?? 0;
+    const guestCount = guestPlayers?.count ?? 0;
+    const registeredCount = registeredPlayers?.count ?? 0;
+    const totalPlayerCount = totalPlayers?.count ?? 0;
+
+    return {
+      totalSessions: totalSessionCount,
+      sessionsWithPlayers: sessionsWithPlayersCount,
+      completedSessions: completedCount,
+      guestPlayers: guestCount,
+      registeredPlayers: registeredCount,
+      totalPlayers: totalPlayerCount,
+      conversionRate: totalPlayerCount > 0 
+        ? Math.round((registeredCount / totalPlayerCount) * 100) 
+        : 0,
+      sessionCompletionRate: totalSessionCount > 0
+        ? Math.round((completedCount / totalSessionCount) * 100)
+        : 0,
+      playerJoinRate: totalSessionCount > 0
+        ? Math.round((sessionsWithPlayersCount / totalSessionCount) * 100)
+        : 0,
+    };
+  }
+
   // === USER MANAGEMENT ===
   
   async updateUserRole(userId: string, role: string) {
