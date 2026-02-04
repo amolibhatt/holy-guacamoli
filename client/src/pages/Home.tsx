@@ -225,7 +225,7 @@ export default function Home() {
               transition={{ type: "spring", stiffness: 200, damping: 15 }}
             >
               <span className="bg-gradient-to-r from-fuchsia-400 via-cyan-300 to-lime-300 bg-clip-text text-transparent">
-                Pick a game, rally your crew
+                Pick a game. Rally your crew.
               </span>
             </motion.h1>
             
