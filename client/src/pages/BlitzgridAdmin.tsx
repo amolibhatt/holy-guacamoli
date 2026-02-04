@@ -22,8 +22,30 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Board, Category, Question } from "@shared/schema";
 
+// Media upload size limits (in bytes)
+const MEDIA_LIMITS = {
+  image: { maxSize: 5 * 1024 * 1024, label: '5MB', formats: 'JPG, PNG, GIF, WebP' },
+  audio: { maxSize: 10 * 1024 * 1024, label: '10MB', formats: 'MP3, WAV, M4A' },
+  video: { maxSize: 10 * 1024 * 1024, label: '10MB', formats: 'MP4, WebM' },
+};
+
+// Validate file before upload
+function validateFile(file: File, type: 'image' | 'audio' | 'video'): string | null {
+  const limit = MEDIA_LIMITS[type];
+  if (file.size > limit.maxSize) {
+    return `File too large. Max ${limit.label} for ${type}s.`;
+  }
+  return null;
+}
+
 // Helper to upload a file to object storage (supports Replit and Cloudinary)
-async function uploadFile(file: File): Promise<string> {
+async function uploadFile(file: File, type?: 'image' | 'audio' | 'video'): Promise<string> {
+  // Validate file size if type is provided
+  if (type) {
+    const error = validateFile(file, type);
+    if (error) throw new Error(error);
+  }
+  
   // Step 1: Check upload method
   const response = await fetch("/api/uploads/request-url", {
     method: "POST",
@@ -1078,6 +1100,9 @@ export default function BlitzGridAdmin() {
                                       </div>
                                       {isMediaOpen && (
                                         <div className="mt-3 pt-3 border-t border-border/50 space-y-3 ml-13">
+                                          <div className="text-xs text-muted-foreground/60 bg-muted/30 rounded px-2 py-1.5 mb-2">
+                                            <strong>Media limits:</strong> Images max 5MB (JPG, PNG, GIF) | Audio/Video max 10MB (MP3, MP4)
+                                          </div>
                                           <div className="space-y-1">
                                             <span className="text-xs text-muted-foreground font-medium">Question Media:</span>
                                             <div className="flex flex-wrap items-center gap-2">
@@ -1091,7 +1116,7 @@ export default function BlitzGridAdmin() {
                                                 </div>
                                               ) : (
                                                 <label className="cursor-pointer">
-                                                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: url, audioUrl: prev[formKey]?.audioUrl || '', videoUrl: prev[formKey]?.videoUrl || '', answerImageUrl: prev[formKey]?.answerImageUrl || '', answerAudioUrl: prev[formKey]?.answerAudioUrl || '', answerVideoUrl: prev[formKey]?.answerVideoUrl || '' } })); toast({ title: "Image uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
+                                                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file, 'image'); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: url, audioUrl: prev[formKey]?.audioUrl || '', videoUrl: prev[formKey]?.videoUrl || '', answerImageUrl: prev[formKey]?.answerImageUrl || '', answerAudioUrl: prev[formKey]?.answerAudioUrl || '', answerVideoUrl: prev[formKey]?.answerVideoUrl || '' } })); toast({ title: "Image uploaded" }); } catch (err) { toast({ title: err instanceof Error ? err.message : "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
                                                   <Button type="button" size="sm" variant="outline" asChild><span><Image className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />Img</span></Button>
                                                 </label>
                                               )}
@@ -1105,7 +1130,7 @@ export default function BlitzGridAdmin() {
                                                 </div>
                                               ) : (
                                                 <label className="cursor-pointer">
-                                                  <input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: prev[formKey]?.imageUrl || '', audioUrl: url, videoUrl: prev[formKey]?.videoUrl || '', answerImageUrl: prev[formKey]?.answerImageUrl || '', answerAudioUrl: prev[formKey]?.answerAudioUrl || '', answerVideoUrl: prev[formKey]?.answerVideoUrl || '' } })); toast({ title: "Audio uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
+                                                  <input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file, 'audio'); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: prev[formKey]?.imageUrl || '', audioUrl: url, videoUrl: prev[formKey]?.videoUrl || '', answerImageUrl: prev[formKey]?.answerImageUrl || '', answerAudioUrl: prev[formKey]?.answerAudioUrl || '', answerVideoUrl: prev[formKey]?.answerVideoUrl || '' } })); toast({ title: "Audio uploaded" }); } catch (err) { toast({ title: err instanceof Error ? err.message : "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
                                                   <Button type="button" size="sm" variant="outline" asChild><span><Music className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />Audio</span></Button>
                                                 </label>
                                               )}
@@ -1119,7 +1144,7 @@ export default function BlitzGridAdmin() {
                                                 </div>
                                               ) : (
                                                 <label className="cursor-pointer">
-                                                  <input type="file" accept="video/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: prev[formKey]?.imageUrl || '', audioUrl: prev[formKey]?.audioUrl || '', videoUrl: url, answerImageUrl: prev[formKey]?.answerImageUrl || '', answerAudioUrl: prev[formKey]?.answerAudioUrl || '', answerVideoUrl: prev[formKey]?.answerVideoUrl || '' } })); toast({ title: "Video uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
+                                                  <input type="file" accept="video/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file, 'video'); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: prev[formKey]?.imageUrl || '', audioUrl: prev[formKey]?.audioUrl || '', videoUrl: url, answerImageUrl: prev[formKey]?.answerImageUrl || '', answerAudioUrl: prev[formKey]?.answerAudioUrl || '', answerVideoUrl: prev[formKey]?.answerVideoUrl || '' } })); toast({ title: "Video uploaded" }); } catch (err) { toast({ title: err instanceof Error ? err.message : "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
                                                   <Button type="button" size="sm" variant="outline" asChild><span><Video className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />Video</span></Button>
                                                 </label>
                                               )}
@@ -1138,7 +1163,7 @@ export default function BlitzGridAdmin() {
                                                 </div>
                                               ) : (
                                                 <label className="cursor-pointer">
-                                                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: prev[formKey]?.imageUrl || '', audioUrl: prev[formKey]?.audioUrl || '', videoUrl: prev[formKey]?.videoUrl || '', answerImageUrl: url, answerAudioUrl: prev[formKey]?.answerAudioUrl || '', answerVideoUrl: prev[formKey]?.answerVideoUrl || '' } })); toast({ title: "Image uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
+                                                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file, 'image'); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: prev[formKey]?.imageUrl || '', audioUrl: prev[formKey]?.audioUrl || '', videoUrl: prev[formKey]?.videoUrl || '', answerImageUrl: url, answerAudioUrl: prev[formKey]?.answerAudioUrl || '', answerVideoUrl: prev[formKey]?.answerVideoUrl || '' } })); toast({ title: "Image uploaded" }); } catch (err) { toast({ title: err instanceof Error ? err.message : "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
                                                   <Button type="button" size="sm" variant="outline" asChild><span><Image className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />Img</span></Button>
                                                 </label>
                                               )}
@@ -1152,7 +1177,7 @@ export default function BlitzGridAdmin() {
                                                 </div>
                                               ) : (
                                                 <label className="cursor-pointer">
-                                                  <input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: prev[formKey]?.imageUrl || '', audioUrl: prev[formKey]?.audioUrl || '', videoUrl: prev[formKey]?.videoUrl || '', answerImageUrl: prev[formKey]?.answerImageUrl || '', answerAudioUrl: url, answerVideoUrl: prev[formKey]?.answerVideoUrl || '' } })); toast({ title: "Audio uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
+                                                  <input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file, 'audio'); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: prev[formKey]?.imageUrl || '', audioUrl: prev[formKey]?.audioUrl || '', videoUrl: prev[formKey]?.videoUrl || '', answerImageUrl: prev[formKey]?.answerImageUrl || '', answerAudioUrl: url, answerVideoUrl: prev[formKey]?.answerVideoUrl || '' } })); toast({ title: "Audio uploaded" }); } catch (err) { toast({ title: err instanceof Error ? err.message : "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
                                                   <Button type="button" size="sm" variant="outline" asChild><span><Music className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />Audio</span></Button>
                                                 </label>
                                               )}
@@ -1166,7 +1191,7 @@ export default function BlitzGridAdmin() {
                                                 </div>
                                               ) : (
                                                 <label className="cursor-pointer">
-                                                  <input type="file" accept="video/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: prev[formKey]?.imageUrl || '', audioUrl: prev[formKey]?.audioUrl || '', videoUrl: prev[formKey]?.videoUrl || '', answerImageUrl: prev[formKey]?.answerImageUrl || '', answerAudioUrl: prev[formKey]?.answerAudioUrl || '', answerVideoUrl: url } })); toast({ title: "Video uploaded" }); } catch { toast({ title: "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
+                                                  <input type="file" accept="video/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file, 'video'); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: prev[formKey]?.imageUrl || '', audioUrl: prev[formKey]?.audioUrl || '', videoUrl: prev[formKey]?.videoUrl || '', answerImageUrl: prev[formKey]?.answerImageUrl || '', answerAudioUrl: prev[formKey]?.answerAudioUrl || '', answerVideoUrl: url } })); toast({ title: "Video uploaded" }); } catch (err) { toast({ title: err instanceof Error ? err.message : "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
                                                   <Button type="button" size="sm" variant="outline" asChild><span><Video className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />Video</span></Button>
                                                 </label>
                                               )}
