@@ -293,8 +293,16 @@ export default function Home() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <h2 className="text-white text-lg font-bold mb-1">Host a Game</h2>
-            <p className="text-white/40 text-sm">Pick one and get a code to share with players</p>
+            <div className="flex items-center gap-3 mb-1">
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Users className="w-5 h-5 text-fuchsia-400" aria-hidden="true" style={{ filter: 'drop-shadow(0 0 6px rgba(232,121,249,0.6))' }} />
+              </motion.div>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">Host a Game</h2>
+            </div>
+            <p className="text-white/50 text-sm ml-8">Pick one and get a code to share with players</p>
           </motion.div>
 
           {/* Game Cards - 2 column grid on medium+ screens */}
