@@ -428,7 +428,7 @@ export default function BlitzGridAdmin() {
         <AppHeader minimal backHref="/" title="BlitzGrid Admin" />
         
         <div className="border-b border-border bg-card/50">
-          <div className="max-w-4xl mx-auto px-4 w-full">
+          <div className="px-4 w-full">
             <nav className="flex gap-1">
               <Link href="/admin/games">
                 <Button 
