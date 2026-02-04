@@ -2214,7 +2214,9 @@ export default function Blitzgrid() {
                   </p>
                   <div className="flex flex-wrap justify-center gap-2">
                     {players.map(p => (
-                      <Badge key={p.id} variant="secondary" className="bg-white/10 text-white border border-white/20 max-w-[120px] truncate">{p.name}</Badge>
+                      <Badge key={p.id} variant="secondary" className="bg-white/10 text-white border border-white/20 max-w-[120px]">
+                        <span className="truncate">{p.name}</span>
+                      </Badge>
                     ))}
                   </div>
                 </div>
@@ -2756,8 +2758,8 @@ export default function Blitzgrid() {
                         key={player.id}
                         className="flex items-center gap-1 bg-white/5 rounded-full pl-3 pr-1 py-1 border border-white/10 max-w-[200px]"
                       >
-                        <span className="text-sm text-white/80 truncate">{player.name}</span>
-                        <span className="text-xs text-white/40">{player.score}</span>
+                        <span className="text-sm text-white/80 truncate min-w-0 flex-1">{player.name}</span>
+                        <span className="text-xs text-white/40 flex-shrink-0">{player.score}</span>
                         <Button
                           size="icon"
                           variant="ghost"
