@@ -193,6 +193,8 @@ export default function SuperAdmin() {
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [deleteBoardId, setDeleteBoardId] = useState<number | null>(null);
   const [expandedGameSlug, setExpandedGameSlug] = useState<string | null>(null);
+  const [usersSectionExpanded, setUsersSectionExpanded] = useState(false);
+  const [sessionsSectionExpanded, setSessionsSectionExpanded] = useState(false);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
   const [userSearch, setUserSearch] = useState("");
@@ -756,11 +758,11 @@ export default function SuperAdmin() {
               <Card className="mt-6">
                 <CardHeader 
                   className="cursor-pointer hover-elevate"
-                  onClick={() => setExpandedUserId(expandedUserId === 'section' ? null : 'section')}
-                  onKeyDown={(e) => e.key === 'Enter' && setExpandedUserId(expandedUserId === 'section' ? null : 'section')}
+                  onClick={() => setUsersSectionExpanded(!usersSectionExpanded)}
+                  onKeyDown={(e) => e.key === 'Enter' && setUsersSectionExpanded(!usersSectionExpanded)}
                   tabIndex={0}
                   role="button"
-                  aria-expanded={expandedUserId === 'section'}
+                  aria-expanded={usersSectionExpanded}
                   data-testid="section-users-toggle"
                 >
                   <div className="flex items-center justify-between gap-4">
@@ -773,12 +775,12 @@ export default function SuperAdmin() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">{allUsers.length} users</Badge>
-                      <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${expandedUserId === 'section' ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${usersSectionExpanded ? 'rotate-180' : ''}`} />
                     </div>
                   </div>
                 </CardHeader>
                 <AnimatePresence>
-                  {expandedUserId === 'section' && (
+                  {usersSectionExpanded && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
@@ -962,11 +964,11 @@ export default function SuperAdmin() {
               <Card className="mt-4">
                 <CardHeader 
                   className="cursor-pointer hover-elevate"
-                  onClick={() => setExpandedSessionId(expandedSessionId === 'section' ? null : 'section')}
-                  onKeyDown={(e) => e.key === 'Enter' && setExpandedSessionId(expandedSessionId === 'section' ? null : 'section')}
+                  onClick={() => setSessionsSectionExpanded(!sessionsSectionExpanded)}
+                  onKeyDown={(e) => e.key === 'Enter' && setSessionsSectionExpanded(!sessionsSectionExpanded)}
                   tabIndex={0}
                   role="button"
-                  aria-expanded={expandedSessionId === 'section'}
+                  aria-expanded={sessionsSectionExpanded}
                   data-testid="section-sessions-toggle"
                 >
                   <div className="flex items-center justify-between gap-4">
@@ -979,12 +981,12 @@ export default function SuperAdmin() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">{allSessions.length} sessions</Badge>
-                      <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${expandedSessionId === 'section' ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${sessionsSectionExpanded ? 'rotate-180' : ''}`} />
                     </div>
                   </div>
                 </CardHeader>
                 <AnimatePresence>
-                  {expandedSessionId === 'section' && (
+                  {sessionsSectionExpanded && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
