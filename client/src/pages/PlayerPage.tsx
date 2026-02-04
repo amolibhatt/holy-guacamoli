@@ -553,12 +553,13 @@ export default function PlayerPage() {
       <FullScreenFlash show={showCorrectFlash} color="bg-green-400/60" />
       <FullScreenFlash show={showWrongFlash} color="bg-destructive/60" />
       
-      <header className="px-4 py-3 flex items-center justify-between bg-card/80 backdrop-blur-xl border-b border-primary/20 shadow-lg" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
+      <header className="px-4 py-3 flex items-center justify-between gap-2 bg-card/80 backdrop-blur-xl border-b border-primary/20 shadow-lg" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             {status === "connected" && <Wifi className="w-4 h-4 text-green-500" />}
+            {status === "connecting" && <RefreshCw className="w-4 h-4 animate-spin text-primary" />}
             {status === "reconnecting" && <RefreshCw className="w-4 h-4 animate-spin text-yellow-500" />}
-            {status === "disconnected" && <WifiOff className="w-4 h-4 text-destructive" />}
+            {(status === "disconnected" || status === "error") && <WifiOff className="w-4 h-4 text-destructive" />}
             <span className="font-mono font-bold text-lg text-foreground">{roomCode}</span>
           </div>
         </div>
@@ -588,13 +589,13 @@ export default function PlayerPage() {
       </header>
       
       <div className="px-4 py-2 bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-primary/10 flex items-center justify-between gap-2">
-        <span className="text-lg font-bold text-foreground truncate">{playerName}</span>
+        <span className="text-lg font-bold text-foreground truncate min-w-0 flex-1">{playerName}</span>
         {leaderboard.length > 0 && (
           <Button
             size="sm"
             variant="ghost"
             onClick={() => setShowLeaderboard(!showLeaderboard)}
-            className="gap-1 text-xs"
+            className="gap-1 text-xs flex-shrink-0"
             data-testid="button-toggle-leaderboard"
           >
             <Users className="w-4 h-4" />
@@ -636,7 +637,7 @@ export default function PlayerPage() {
                       {player.id === playerId && <span className="text-xs ml-1">(you)</span>}
                     </span>
                   </div>
-                  <span className="font-bold text-foreground">{player.score}</span>
+                  <span className="font-bold text-foreground flex-shrink-0">{player.score}</span>
                 </div>
               ))}
             </div>
