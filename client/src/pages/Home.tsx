@@ -168,7 +168,7 @@ export default function Home() {
           
           {/* Hero Section */}
           <motion.div 
-            className="relative text-center mb-10 lg:mb-14 py-8 lg:py-12"
+            className="relative text-center mb-8 lg:mb-10 py-4 lg:py-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
@@ -270,7 +270,7 @@ export default function Home() {
               transition={{ type: "spring", stiffness: 200, damping: 15 }}
             >
               <motion.h1 
-                className="relative text-5xl lg:text-7xl font-black mb-4"
+                className="relative text-4xl lg:text-5xl font-black mb-2"
                 style={{ fontFamily: "'Archivo Black', sans-serif" }}
                 data-testid="text-main-title"
                 animate={{
@@ -285,7 +285,7 @@ export default function Home() {
                 <span className="bg-gradient-to-r from-fuchsia-400 via-cyan-300 to-lime-300 bg-clip-text text-transparent">
                   Game Night
                 </span>
-                <br />
+                {" "}
                 <span className="text-white">
                   AWAITS
                 </span>
@@ -294,7 +294,7 @@ export default function Home() {
 
             {/* Punchy tagline with stagger */}
             <motion.div 
-              className="flex flex-wrap justify-center gap-3 lg:gap-4 mb-5"
+              className="flex flex-wrap justify-center gap-2 lg:gap-3 mb-2"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
@@ -306,20 +306,19 @@ export default function Home() {
               ].map((item, i) => (
                 <motion.span
                   key={item.text}
-                  className="text-xl lg:text-3xl font-black tracking-wider"
+                  className="text-lg lg:text-xl font-black tracking-wider"
                   style={{ 
                     color: item.color,
-                    textShadow: `0 0 20px ${item.color}`,
+                    textShadow: `0 0 15px ${item.color}`,
                   }}
-                  initial={{ opacity: 0, y: 30, rotateX: -90 }}
-                  animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ 
-                    delay: 0.4 + i * 0.15, 
+                    delay: 0.4 + i * 0.1, 
                     type: "spring", 
                     stiffness: 300,
                     damping: 20,
                   }}
-                  whileHover={{ scale: 1.1 }}
                 >
                   {item.text}
                 </motion.span>
@@ -327,31 +326,14 @@ export default function Home() {
             </motion.div>
             
             <motion.p 
-              className="text-white/60 text-lg lg:text-xl max-w-lg mx-auto font-medium"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
+              className="text-white/50 text-sm lg:text-base max-w-md mx-auto"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
               data-testid="text-subtitle"
             >
               No downloads. No signups. Just fun.
             </motion.p>
-
-            {/* Animated underline */}
-            <motion.div 
-              className="mt-6 mx-auto h-1.5 rounded-full overflow-hidden"
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 120, opacity: 1 }}
-              transition={{ delay: 0.8, duration: 0.6, ease: "easeOut" }}
-            >
-              <motion.div
-                className="h-full w-full bg-gradient-to-r from-fuchsia-500 via-cyan-400 to-lime-400"
-                animate={{ x: ['-100%', '100%'] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                style={{ 
-                  boxShadow: '0 0 20px rgba(232, 121, 249, 0.8), 0 0 40px rgba(34,211,238,0.6)',
-                }}
-              />
-            </motion.div>
           </motion.div>
 
           {/* Two Column Layout for Join/Host */}
