@@ -2152,7 +2152,7 @@ export default function Blitzgrid() {
                               <Button
                                 size="sm"
                                 variant="default"
-                                className="bg-emerald-500 hover:bg-emerald-600"
+                                className="bg-emerald-500"
                                 onClick={(e) => { e.stopPropagation(); updatePlayerScore(player.id, 10); }}
                                 data-testid={`button-add-score-${player.id}`}
                               >
@@ -2661,7 +2661,7 @@ export default function Blitzgrid() {
                                 </Button>
                                 <Button
                                   size="sm"
-                                  className="bg-emerald-500 hover:bg-emerald-600 text-white h-7 text-xs px-2"
+                                  className="bg-emerald-500 text-white h-7 text-xs px-2"
                                   disabled={isJudging}
                                   onClick={() => {
                                     setIsJudging(true);
