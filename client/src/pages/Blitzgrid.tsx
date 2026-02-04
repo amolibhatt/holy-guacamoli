@@ -122,6 +122,7 @@ export default function Blitzgrid() {
     }
   }, [playedShuffleCategoryIds]);
   const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set());
+  const [hoveredCellKey, setHoveredCellKey] = useState<string | null>(null);
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
@@ -1962,13 +1963,15 @@ export default function Blitzgrid() {
                           color: isCellAnswered ? '#555' : tileNeonColor.text,
                         }}
                         className={`
-                          w-full h-full rounded-xl font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden group/cell
+                          w-full h-full rounded-xl font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden
                           ${isCellAnswered ? 'opacity-40 cursor-default' : isCategoryRevealed ? 'cursor-pointer' : 'cursor-default'}
                         `}
                         onClick={(e) => {
                           e.stopPropagation();
                           isClickable && handleCellClick(category.id, points, question);
                         }}
+                        onMouseEnter={() => isClickable && setHoveredCellKey(cellKey)}
+                        onMouseLeave={() => setHoveredCellKey(null)}
                         disabled={!isClickable}
                         whileHover={isClickable ? { 
                           scale: 1.02, 
@@ -1977,10 +1980,10 @@ export default function Blitzgrid() {
                         whileTap={isClickable ? { scale: 0.96 } : {}}
                         data-testid={`cell-${category.id}-${points}`}
                       >
-                        {/* Shimmer effect on hover - using scoped group */}
+                        {/* Shimmer effect on hover - controlled by state */}
                         {isClickable && (
                           <div 
-                            className="absolute inset-0 bg-gradient-to-r from-transparent to-transparent -translate-x-full group-hover/cell:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none rounded-xl"
+                            className={`absolute inset-0 pointer-events-none rounded-xl transition-transform duration-700 ease-in-out ${hoveredCellKey === cellKey ? 'translate-x-full' : '-translate-x-full'}`}
                             style={{ background: `linear-gradient(90deg, transparent, ${tileNeonColor.glow}, transparent)` }}
                           />
                         )}
