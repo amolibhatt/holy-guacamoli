@@ -332,7 +332,7 @@ export default function Home() {
               transition={{ delay: 0.6 }}
               data-testid="text-subtitle"
             >
-              Phones out. Egos ready. Let's go.
+              Pick your game, rally your crew, let the chaos begin.
             </motion.p>
           </motion.div>
 
