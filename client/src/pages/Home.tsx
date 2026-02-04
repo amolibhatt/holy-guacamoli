@@ -168,23 +168,111 @@ export default function Home() {
           
           {/* Hero Section */}
           <motion.div 
-            className="text-center mb-10 lg:mb-14"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
+            className="relative text-center mb-10 lg:mb-14 py-6 lg:py-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
           >
-            <h1 
-              className="text-3xl lg:text-5xl font-black text-white mb-3"
-              style={{ fontFamily: "'Archivo Black', sans-serif" }}
-              data-testid="text-main-title"
+            {/* Floating animated icons */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {/* Floating game icons */}
+              <motion.div
+                className="absolute top-4 left-[10%] text-fuchsia-500/20"
+                animate={{ 
+                  y: [0, -15, 0],
+                  rotate: [0, 10, 0],
+                }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Grid3X3 className="w-8 h-8 lg:w-12 lg:h-12" />
+              </motion.div>
+              <motion.div
+                className="absolute top-8 right-[12%] text-cyan-500/20"
+                animate={{ 
+                  y: [0, 12, 0],
+                  rotate: [0, -8, 0],
+                }}
+                transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+              >
+                <Brain className="w-6 h-6 lg:w-10 lg:h-10" />
+              </motion.div>
+              <motion.div
+                className="absolute bottom-4 left-[18%] text-lime-500/20"
+                animate={{ 
+                  y: [0, 10, 0],
+                  rotate: [0, -12, 0],
+                }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+              >
+                <Users className="w-7 h-7 lg:w-9 lg:h-9" />
+              </motion.div>
+              <motion.div
+                className="absolute bottom-6 right-[15%] text-violet-500/20"
+                animate={{ 
+                  y: [0, -10, 0],
+                  rotate: [0, 15, 0],
+                }}
+                transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+              >
+                <Smile className="w-6 h-6 lg:w-8 lg:h-8" />
+              </motion.div>
+            </div>
+
+            {/* Main tagline with animated gradient */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
             >
-              Game Night Awaits
-            </h1>
-            <p 
-              className="text-white/50 text-base lg:text-lg max-w-md mx-auto"
+              <h1 
+                className="text-4xl lg:text-6xl font-black mb-4 bg-gradient-to-r from-white via-fuchsia-200 to-cyan-200 bg-clip-text text-transparent"
+                style={{ fontFamily: "'Archivo Black', sans-serif" }}
+                data-testid="text-main-title"
+              >
+                Game Night Awaits
+              </h1>
+            </motion.div>
+
+            {/* Animated subtitle words */}
+            <motion.div 
+              className="flex flex-wrap justify-center gap-2 lg:gap-3 mb-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              {["Laugh.", "Compete.", "Celebrate."].map((word, i) => (
+                <motion.span
+                  key={word}
+                  className="text-lg lg:text-2xl font-bold"
+                  style={{ 
+                    color: i === 0 ? '#e879f9' : i === 1 ? '#22d3ee' : '#a3e635',
+                  }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 + i * 0.15, type: "spring", stiffness: 200 }}
+                >
+                  {word}
+                </motion.span>
+              ))}
+            </motion.div>
+            
+            <motion.p 
+              className="text-white/50 text-base lg:text-lg max-w-lg mx-auto"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
               data-testid="text-subtitle"
             >
-              Join a friend's game or host your own party
-            </p>
+              The ultimate party game platform. No downloads, no accounts needed for players.
+            </motion.p>
+
+            {/* Glowing line accent */}
+            <motion.div 
+              className="mt-6 mx-auto w-24 h-1 rounded-full bg-gradient-to-r from-fuchsia-500 via-cyan-500 to-lime-500"
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={{ scaleX: 1, opacity: 1 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+              style={{ boxShadow: '0 0 20px rgba(232, 121, 249, 0.5)' }}
+            />
           </motion.div>
 
           {/* Two Column Layout for Join/Host */}
