@@ -445,7 +445,7 @@ export default function SuperAdmin() {
           </CardHeader>
           <CardContent>
             <Link href="/">
-              <Button className="w-full">
+              <Button className="w-full" data-testid="button-back-home">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Home
               </Button>
@@ -817,13 +817,14 @@ export default function SuperAdmin() {
                                   <div 
                                     className="p-3 flex items-center justify-between gap-4 cursor-pointer hover-elevate"
                                     onClick={() => setExpandedUserId(isUserExpanded ? null : u.id)}
+                                    data-testid={`button-toggle-user-${u.id}`}
                                   >
                                     <div className="flex items-center gap-3 min-w-0 flex-1">
                                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white font-bold shrink-0">
                                         {u.firstName?.[0] || u.email[0].toUpperCase()}
                                       </div>
                                       <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-2 flex-wrap">
+                                        <div className="flex items-center gap-2 flex-wrap min-w-0">
                                           <span className="font-medium truncate max-w-[150px]" title={`${u.firstName || 'User'} ${u.lastName || ''}`}>{u.firstName || 'User'} {u.lastName || ''}</span>
                                           {u.role === 'super_admin' && <Badge className="bg-purple-500/20 text-purple-600 text-xs shrink-0"><Shield className="w-3 h-3 mr-1" />Super</Badge>}
                                           {u.role === 'admin' && <Badge className="bg-blue-500/20 text-blue-600 text-xs shrink-0">Admin</Badge>}
@@ -1036,13 +1037,13 @@ export default function SuperAdmin() {
                                       </div>
                                     </div>
                                     {winner && (
-                                      <div className="mt-2 pt-2 border-t flex items-center gap-2 flex-wrap">
+                                      <div className="mt-2 pt-2 border-t flex items-center gap-2 flex-wrap min-w-0">
                                         <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
                                         <span className="text-sm font-medium truncate max-w-[100px]" title={winner.name}>{winner.name}</span>
                                         <span className="text-xs text-muted-foreground shrink-0">({winner.score} pts)</span>
                                         {session.players.filter(p => p.id !== winner.id).slice(0, 3).map((p) => (
                                           <Badge key={p.id} variant="secondary" className="text-xs max-w-[100px]" title={`${p.name}: ${p.score}`}>
-                                            <span className="truncate">{p.name}</span>: {p.score}
+                                            <span className="truncate" title={p.name}>{p.name}</span>: {p.score}
                                           </Badge>
                                         ))}
                                       </div>
@@ -1105,7 +1106,7 @@ export default function SuperAdmin() {
                               }
                             }}
                             aria-expanded={isExpanded}
-                            data-testid={`game-row-${gameType.slug}`}
+                            data-testid={`button-toggle-game-${gameType.slug}`}
                           >
                             <div className="flex items-center justify-between gap-4">
                               <div className="flex items-center gap-4">
@@ -1113,7 +1114,7 @@ export default function SuperAdmin() {
                                   <GameIcon className="w-6 h-6 text-white" />
                                 </div>
                                 <div>
-                                  <div className="flex items-center gap-2 flex-wrap">
+                                  <div className="flex items-center gap-2 flex-wrap min-w-0">
                                     <h3 className="font-semibold text-lg text-foreground">{gameType.displayName}</h3>
                                     {status === 'coming_soon' && (
                                       <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
@@ -1225,7 +1226,7 @@ export default function SuperAdmin() {
                                             return (
                                               <div key={board.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border" data-testid={`grid-row-${board.id}`}>
                                                 <div className="flex-1 min-w-0">
-                                                  <div className="flex items-center gap-2 flex-wrap">
+                                                  <div className="flex items-center gap-2 flex-wrap min-w-0">
                                                     <span className="font-medium truncate" title={board.name}>{board.name}</span>
                                                     {isComplete ? (
                                                       <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 text-xs">Complete</Badge>
@@ -1340,7 +1341,7 @@ export default function SuperAdmin() {
                                             {filteredBlitzgrid.slice(0, 50).map((q) => (
                                               <div key={q.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border" data-testid={`blitzgrid-question-row-${q.id}`}>
                                                 <div className="flex-1 min-w-0">
-                                                  <div className="flex items-center gap-2 flex-wrap">
+                                                  <div className="flex items-center gap-2 flex-wrap min-w-0">
                                                     <span className="font-medium truncate" title={q.question}>{q.question}</span>
                                                     <Badge variant="outline" className="text-xs">{q.points}pts</Badge>
                                                   </div>
@@ -1420,7 +1421,7 @@ export default function SuperAdmin() {
                                           {filteredSequence.map((q) => (
                                             <div key={q.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border" data-testid={`sequence-question-row-${q.id}`}>
                                               <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 flex-wrap">
+                                                <div className="flex items-center gap-2 flex-wrap min-w-0">
                                                   <span className="font-medium truncate" title={q.question}>{q.question}</span>
                                                   {q.isStarterPack && (
                                                     <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs">
@@ -1515,7 +1516,7 @@ export default function SuperAdmin() {
                                           {filteredPsyop.map((q) => (
                                             <div key={q.id} className="flex items-center justify-between gap-3 p-3 bg-background rounded-lg border" data-testid={`psyop-question-row-${q.id}`}>
                                               <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 flex-wrap">
+                                                <div className="flex items-center gap-2 flex-wrap min-w-0">
                                                   <span className="font-medium truncate" title={q.factText}>{q.factText}</span>
                                                   {q.isStarterPack && (
                                                     <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs">
