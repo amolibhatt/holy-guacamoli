@@ -1960,21 +1960,17 @@ export default function Blitzgrid() {
                           background: isCategoryRevealed ? '#0d0d12' : 'transparent',
                           border: isCategoryRevealed ? `1px solid ${isCellAnswered ? '#333' : `${tileNeonColor.border}50`}` : '1px solid transparent',
                           color: isCellAnswered ? '#555' : tileNeonColor.text,
+                          ['--glow-color' as string]: tileNeonColor.glow,
                         }}
                         className={`
-                          w-full h-full rounded-xl font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden
+                          w-full h-full rounded-xl font-black text-2xl md:text-4xl flex items-center justify-center relative overflow-hidden transition-all duration-200
                           ${isCellAnswered ? 'opacity-40 cursor-default' : isCategoryRevealed ? 'cursor-pointer' : 'cursor-default'}
+                          ${isClickable ? 'hover:scale-105 hover:-translate-y-1 hover:shadow-[0_0_20px_var(--glow-color),0_0_40px_var(--glow-color)]' : ''}
                         `}
                         onClick={(e) => {
                           e.stopPropagation();
                           isClickable && handleCellClick(category.id, points, question);
                         }}
-                        disabled={!isClickable}
-                        whileHover={isClickable ? { 
-                          scale: 1.05, 
-                          y: -3,
-                          boxShadow: `0 0 20px ${tileNeonColor.glow}, 0 0 40px ${tileNeonColor.glow}40`,
-                        } : {}}
                         whileTap={isClickable ? { scale: 0.96 } : {}}
                         data-testid={`cell-${category.id}-${points}`}
                       >
