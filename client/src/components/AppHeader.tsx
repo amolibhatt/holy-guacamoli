@@ -1,7 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { ArrowLeft, Settings, Shield, LogOut, HelpCircle, User, ChevronDown, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -72,7 +71,6 @@ export function AppHeader({
           </div>
 
           <div className="flex items-center gap-2">
-            <ThemeToggle />
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -211,8 +209,6 @@ export function AppHeader({
 
         <div className="flex items-center gap-1">
           {rightContent}
-          
-          <ThemeToggle />
           
           {showHelpButton && onHelpClick && (
             <Button 
