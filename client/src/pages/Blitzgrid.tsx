@@ -2262,8 +2262,8 @@ export default function Blitzgrid() {
                   <div className="w-full h-full flex flex-col p-6 relative z-10">
                     {/* Header */}
                     <div className="text-center mb-4">
-                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-fuchsia-500/50" style={{ background: 'rgba(217, 70, 239, 0.15)' }}>
-                        <Grid3X3 className="w-5 h-5 text-fuchsia-400" />
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-fuchsia-500/50" style={{ background: 'rgba(217, 70, 239, 0.15)' }} data-testid="share-card-header">
+                        <Grid3X3 className="w-5 h-5 text-fuchsia-400 shrink-0" aria-hidden="true" />
                         <span className="text-fuchsia-300 font-black text-lg tracking-wide">BLITZGRID</span>
                       </div>
                     </div>
@@ -2282,38 +2282,38 @@ export default function Blitzgrid() {
                           <div className="flex items-end justify-center gap-1 mb-4" style={{ height: '140px' }}>
                             {/* 2nd Place */}
                             {top3[1] && (
-                              <div className="flex flex-col items-center w-[80px]">
-                                <div className="text-2xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[1].avatar)?.emoji || <User className="w-6 h-6" />}</div>
-                                <div className="text-xs font-bold text-white truncate w-full text-center mb-1" title={top3[1].name}>{top3[1].name}</div>
+                              <div className="flex flex-col items-center w-[80px] min-w-0" data-testid="share-card-2nd-place">
+                                <div className="text-2xl mb-1 shrink-0">{PLAYER_AVATARS.find(a => a.id === top3[1].avatar)?.emoji || <User className="w-6 h-6 shrink-0" aria-hidden="true" />}</div>
+                                <div className="text-xs font-bold text-white truncate w-full text-center mb-1" title={top3[1].name} data-testid="share-card-2nd-name">{top3[1].name}</div>
                                 <div className="w-full h-[70px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(148, 163, 184, 0.6)', boxShadow: '0 0 15px rgba(148, 163, 184, 0.3)' }}>
-                                  <span className="text-2xl font-black text-slate-300">2</span>
-                                  <span className="text-xs font-bold text-slate-400">{top3[1].score} pts</span>
+                                  <span className="text-2xl font-black text-slate-300" data-testid="share-card-2nd-rank">2</span>
+                                  <span className="text-xs font-bold text-slate-400" data-testid="share-card-2nd-score">{top3[1].score} pts</span>
                                 </div>
                               </div>
                             )}
                             
                             {/* 1st Place */}
                             {top3[0] && (
-                              <div className="flex flex-col items-center w-[90px]">
-                                <Crown className="w-6 h-6 text-yellow-400 mb-0.5" style={{ filter: 'drop-shadow(0 0 6px rgba(250, 204, 21, 0.6))' }} />
-                                <div className="text-3xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[0].avatar)?.emoji || <User className="w-8 h-8" />}</div>
-                                <div className="text-sm font-bold text-yellow-300 truncate w-full text-center mb-1" title={top3[0].name}>{top3[0].name}</div>
+                              <div className="flex flex-col items-center w-[90px] min-w-0" data-testid="share-card-1st-place">
+                                <Crown className="w-6 h-6 text-yellow-400 mb-0.5 shrink-0" style={{ filter: 'drop-shadow(0 0 6px rgba(250, 204, 21, 0.6))' }} aria-hidden="true" />
+                                <div className="text-3xl mb-1 shrink-0">{PLAYER_AVATARS.find(a => a.id === top3[0].avatar)?.emoji || <User className="w-8 h-8 shrink-0" aria-hidden="true" />}</div>
+                                <div className="text-sm font-bold text-yellow-300 truncate w-full text-center mb-1" title={top3[0].name} data-testid="share-card-1st-name">{top3[0].name}</div>
                                 <div className="w-full h-[90px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(250, 204, 21, 0.8)', boxShadow: '0 0 25px rgba(250, 204, 21, 0.4)' }}>
-                                  <Trophy className="w-5 h-5 text-yellow-400 mb-0.5" />
-                                  <span className="text-3xl font-black text-yellow-300">1</span>
-                                  <span className="text-sm font-bold text-yellow-400">{top3[0].score} pts</span>
+                                  <Trophy className="w-5 h-5 text-yellow-400 mb-0.5 shrink-0" aria-hidden="true" />
+                                  <span className="text-3xl font-black text-yellow-300" data-testid="share-card-1st-rank">1</span>
+                                  <span className="text-sm font-bold text-yellow-400" data-testid="share-card-1st-score">{top3[0].score} pts</span>
                                 </div>
                               </div>
                             )}
                             
                             {/* 3rd Place */}
                             {top3[2] && (
-                              <div className="flex flex-col items-center w-[80px]">
-                                <div className="text-2xl mb-1">{PLAYER_AVATARS.find(a => a.id === top3[2].avatar)?.emoji || <User className="w-6 h-6" />}</div>
-                                <div className="text-xs font-bold text-white truncate w-full text-center mb-1" title={top3[2].name}>{top3[2].name}</div>
+                              <div className="flex flex-col items-center w-[80px] min-w-0" data-testid="share-card-3rd-place">
+                                <div className="text-2xl mb-1 shrink-0">{PLAYER_AVATARS.find(a => a.id === top3[2].avatar)?.emoji || <User className="w-6 h-6 shrink-0" aria-hidden="true" />}</div>
+                                <div className="text-xs font-bold text-white truncate w-full text-center mb-1" title={top3[2].name} data-testid="share-card-3rd-name">{top3[2].name}</div>
                                 <div className="w-full h-[55px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(251, 146, 60, 0.6)', boxShadow: '0 0 15px rgba(251, 146, 60, 0.3)' }}>
-                                  <span className="text-2xl font-black text-orange-300">3</span>
-                                  <span className="text-xs font-bold text-orange-400">{top3[2].score} pts</span>
+                                  <span className="text-2xl font-black text-orange-300" data-testid="share-card-3rd-rank">3</span>
+                                  <span className="text-xs font-bold text-orange-400" data-testid="share-card-3rd-score">{top3[2].score} pts</span>
                                 </div>
                               </div>
                             )}
@@ -2321,12 +2321,12 @@ export default function Blitzgrid() {
                           
                           {/* Others (4th, 5th) */}
                           {others.length > 0 && (
-                            <div className="flex justify-center gap-2 mt-2">
+                            <div className="flex justify-center gap-2 mt-2" data-testid="share-card-others">
                               {others.map((p, i) => (
-                                <div key={p.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border border-white/20 max-w-[140px]" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                                  <span className="font-bold text-white/50 flex-shrink-0">#{i + 4}</span>
+                                <div key={p.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border border-white/20 max-w-[140px]" style={{ background: 'rgba(255,255,255,0.05)' }} data-testid={`share-card-other-${p.id}`}>
+                                  <span className="font-bold text-white/50 shrink-0">#{i + 4}</span>
                                   <span className="text-white font-medium truncate min-w-0 flex-1" title={p.name}>{p.name}</span>
-                                  <span className="text-white/60 font-bold flex-shrink-0">{p.score}</span>
+                                  <span className="text-white/60 font-bold shrink-0">{p.score}</span>
                                 </div>
                               ))}
                             </div>
@@ -2340,9 +2340,9 @@ export default function Blitzgrid() {
                       <p className="text-white/40 text-xs mb-1">
                         {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </p>
-                      <p className="text-white/60 font-bold text-sm flex items-center justify-center gap-1">
+                      <p className="text-white/60 font-bold text-sm flex items-center justify-center gap-1" data-testid="share-card-footer">
                         <span>made with</span>
-                        <Heart className="w-3.5 h-3.5 text-fuchsia-400 fill-fuchsia-400" />
+                        <Heart className="w-3.5 h-3.5 text-fuchsia-400 fill-fuchsia-400 shrink-0" aria-hidden="true" />
                         <span>by</span>
                         <span className="text-fuchsia-400 font-black">Amoli</span>
                       </p>
@@ -2376,7 +2376,7 @@ export default function Blitzgrid() {
                     }}
                     data-testid="button-generate-image"
                   >
-                    {isGeneratingImage ? <LoaderIcon className="w-4 h-4 animate-spin" /> : <Image className="w-4 h-4" />}
+                    {isGeneratingImage ? <LoaderIcon className="w-4 h-4 animate-spin shrink-0" aria-hidden="true" /> : <Image className="w-4 h-4 shrink-0" aria-hidden="true" />}
                     {isGeneratingImage ? 'Generating...' : 'Generate Image'}
                   </Button>
                 )}
@@ -2418,7 +2418,7 @@ export default function Blitzgrid() {
                       }}
                       data-testid="button-share-image"
                     >
-                      <Share2 className="w-4 h-4" />
+                      <Share2 className="w-4 h-4 shrink-0" aria-hidden="true" />
                       Share
                     </Button>
                     
@@ -2449,7 +2449,7 @@ export default function Blitzgrid() {
                         }}
                         data-testid="button-copy-image"
                       >
-                        <Copy className="w-4 h-4" />
+                        <Copy className="w-4 h-4 shrink-0" aria-hidden="true" />
                         Copy
                       </Button>
                       
@@ -2465,7 +2465,7 @@ export default function Blitzgrid() {
                         }}
                         data-testid="button-download-image"
                       >
-                        <Download className="w-4 h-4" />
+                        <Download className="w-4 h-4 shrink-0" aria-hidden="true" />
                         Download
                       </Button>
                     </div>
