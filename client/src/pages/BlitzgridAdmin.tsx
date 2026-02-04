@@ -859,8 +859,10 @@ export default function BlitzGridAdmin() {
                 return (
                   <Card key={category.id} className={isExpanded ? 'ring-2 ring-primary/20' : ''}>
                     <CardHeader 
-                      className="cursor-pointer py-3"
+                      className={`py-3 ${editingCategoryId !== category.id ? 'cursor-pointer' : ''}`}
                       onClick={() => {
+                        // Don't toggle when editing this category
+                        if (editingCategoryId === category.id) return;
                         // Reset editing state when switching categories
                         if (!isExpanded && editingCategoryId !== null) {
                           setEditingCategoryId(null);
@@ -876,16 +878,46 @@ export default function BlitzGridAdmin() {
                       }}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
                           <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} aria-hidden="true" />
-                          <div className="min-w-0">
-                            <CardTitle className="text-base truncate" title={category.name}>{category.name}</CardTitle>
-                            <CardDescription className="text-xs truncate" title={`${category.description || 'No description'} · ${category.questionCount}/5 questions`}>
-                              {category.description ? `${category.description} · ` : ''}{category.questionCount}/5 questions
-                            </CardDescription>
-                          </div>
+                          {editingCategoryId === category.id ? (
+                            <div className="flex-1 space-y-1.5 min-w-0" onClick={(e) => e.stopPropagation()}>
+                              <Input
+                                placeholder="Category name..."
+                                value={editCategoryName}
+                                onChange={(e) => setEditCategoryName(e.target.value)}
+                                autoFocus
+                                className="h-8 text-sm font-medium"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Escape') {
+                                    setEditingCategoryId(null);
+                                  }
+                                }}
+                                data-testid={`input-edit-category-name-${category.id}`}
+                              />
+                              <Input
+                                placeholder="Description (optional)"
+                                value={editCategoryDescription}
+                                onChange={(e) => setEditCategoryDescription(e.target.value)}
+                                className="h-7 text-xs"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Escape') {
+                                    setEditingCategoryId(null);
+                                  }
+                                }}
+                                data-testid={`input-edit-category-description-${category.id}`}
+                              />
+                            </div>
+                          ) : (
+                            <div className="min-w-0">
+                              <CardTitle className="text-base truncate" title={category.name}>{category.name}</CardTitle>
+                              <CardDescription className="text-xs truncate" title={`${category.description || 'No description'} · ${category.questionCount}/5 questions`}>
+                                {category.description ? `${category.description} · ` : ''}{category.questionCount}/5 questions
+                              </CardDescription>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 shrink-0">
                           {category.questionCount >= 5 ? (
                             <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 text-xs shrink-0">Complete</Badge>
                           ) : (
@@ -893,18 +925,20 @@ export default function BlitzGridAdmin() {
                               {5 - category.questionCount} needed
                             </Badge>
                           )}
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeCategoryMutation.mutate({ gridId: selectedGridId, categoryId: category.id });
-                            }}
-                            disabled={removeCategoryMutation.isPending}
-                            data-testid={`button-remove-category-${category.id}`}
-                          >
-                            <Trash2 className="w-4 h-4 text-destructive shrink-0" aria-hidden="true" />
-                          </Button>
+                          {editingCategoryId !== category.id && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeCategoryMutation.mutate({ gridId: selectedGridId, categoryId: category.id });
+                              }}
+                              disabled={removeCategoryMutation.isPending}
+                              data-testid={`button-remove-category-${category.id}`}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive shrink-0" aria-hidden="true" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </CardHeader>
@@ -918,100 +952,45 @@ export default function BlitzGridAdmin() {
                           transition={{ duration: 0.2 }}
                         >
                           <CardContent className="pt-0 space-y-2">
-                            {/* Category Name & Description Editor */}
-                            <div className="mb-3 pb-2 border-b space-y-2">
-                              {editingCategoryId === category.id ? (
-                                <div className="space-y-2">
-                                  <div>
-                                    <label className="text-xs text-muted-foreground mb-1 block">Category Name</label>
-                                    <Input
-                                      placeholder="Category name..."
-                                      value={editCategoryName}
-                                      onChange={(e) => setEditCategoryName(e.target.value)}
-                                      autoFocus
-                                      className="flex-1 h-8 text-sm font-medium"
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && editCategoryName.trim()) {
-                                          updateCategoryMutation.mutate({ 
-                                            categoryId: category.id, 
-                                            name: editCategoryName.trim(),
-                                            description: editCategoryDescription.trim() 
-                                          });
-                                        }
-                                        if (e.key === 'Escape') {
-                                          setEditingCategoryId(null);
-                                        }
-                                      }}
-                                      data-testid={`input-edit-category-name-${category.id}`}
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="text-xs text-muted-foreground mb-1 block">Description (optional)</label>
-                                    <Input
-                                      placeholder="Category description..."
-                                      value={editCategoryDescription}
-                                      onChange={(e) => setEditCategoryDescription(e.target.value)}
-                                      className="flex-1 h-8 text-sm"
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          updateCategoryMutation.mutate({ 
-                                            categoryId: category.id, 
-                                            name: editCategoryName.trim() || undefined,
-                                            description: editCategoryDescription.trim() 
-                                          });
-                                        }
-                                        if (e.key === 'Escape') {
-                                          setEditingCategoryId(null);
-                                        }
-                                      }}
-                                      data-testid={`input-edit-category-description-${category.id}`}
-                                    />
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate" title={category.name}>{category.name}</p>
-                                    <p className="text-xs text-muted-foreground truncate" title={category.description || 'No description'}>
-                                      {category.description || 'No description'}
-                                    </p>
-                                  </div>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setEditingCategoryId(category.id);
-                                      setEditCategoryName(category.name);
-                                      setEditCategoryDescription(category.description || '');
-                                      // Pre-populate all question forms for this category
-                                      const newForms: Record<string, any> = {};
-                                      POINT_TIERS.forEach(pts => {
-                                        const q = category.questions?.find(q => q.points === pts);
-                                        if (q) {
-                                          newForms[`${category.id}-${pts}`] = {
-                                            question: q.question,
-                                            correctAnswer: q.correctAnswer,
-                                            options: q.options || [],
-                                            imageUrl: q.imageUrl || '',
-                                            audioUrl: q.audioUrl || '',
-                                            videoUrl: q.videoUrl || '',
-                                            answerImageUrl: q.answerImageUrl || '',
-                                            answerAudioUrl: q.answerAudioUrl || '',
-                                            answerVideoUrl: q.answerVideoUrl || '',
-                                          };
-                                        }
-                                      });
-                                      setQuestionForms(prev => ({ ...prev, ...newForms }));
-                                    }}
-                                    data-testid={`button-edit-category-${category.id}`}
-                                  >
-                                    <Pencil className="w-4 h-4 shrink-0" aria-hidden="true" />
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                            {/* Point Tier Tabs */}
+                            {/* Edit Questions button when not editing */}
+                            {editingCategoryId !== category.id && (
+                              <div className="mb-3">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingCategoryId(category.id);
+                                    setEditCategoryName(category.name);
+                                    setEditCategoryDescription(category.description || '');
+                                    // Pre-populate all question forms for this category
+                                    const newForms: Record<string, any> = {};
+                                    POINT_TIERS.forEach(pts => {
+                                      const q = category.questions?.find(q => q.points === pts);
+                                      if (q) {
+                                        newForms[`${category.id}-${pts}`] = {
+                                          question: q.question,
+                                          correctAnswer: q.correctAnswer,
+                                          options: q.options || [],
+                                          imageUrl: q.imageUrl || '',
+                                          audioUrl: q.audioUrl || '',
+                                          videoUrl: q.videoUrl || '',
+                                          answerImageUrl: q.answerImageUrl || '',
+                                          answerAudioUrl: q.answerAudioUrl || '',
+                                          answerVideoUrl: q.answerVideoUrl || '',
+                                        };
+                                      }
+                                    });
+                                    setQuestionForms(prev => ({ ...prev, ...newForms }));
+                                  }}
+                                  data-testid={`button-edit-category-${category.id}`}
+                                >
+                                  <Pencil className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
+                                  Edit Questions
+                                </Button>
+                              </div>
+                            )}
                             {/* Simple 5-row question editor */}
                             {editingCategoryId === category.id ? (
                               <div className="space-y-3">
