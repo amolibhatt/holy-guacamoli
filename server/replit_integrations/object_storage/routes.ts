@@ -1,6 +1,5 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
-import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
 
 // Check if we're in Replit environment (has object storage sidecar)
@@ -8,25 +7,22 @@ const isReplitEnvironment = (): boolean => {
   return !!(process.env.REPL_ID && process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID);
 };
 
-// Check if Cloudinary is configured
+// Check if Cloudinary URL is properly formatted
 const isCloudinaryConfigured = (): boolean => {
-  return !!(process.env.CLOUDINARY_URL || (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET));
+  const url = process.env.CLOUDINARY_URL;
+  return !!(url && url.startsWith('cloudinary://'));
 };
 
-// Configure Cloudinary if available
-if (isCloudinaryConfigured()) {
-  if (process.env.CLOUDINARY_URL) {
-    // CLOUDINARY_URL format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+// Lazy load cloudinary only when needed
+let cloudinaryInstance: any = null;
+const getCloudinary = () => {
+  if (!cloudinaryInstance) {
+    const { v2: cloudinary } = require('cloudinary');
     cloudinary.config({ secure: true });
-  } else {
-    cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET,
-      secure: true,
-    });
+    cloudinaryInstance = cloudinary;
   }
-}
+  return cloudinaryInstance;
+};
 
 // Multer for handling file uploads (for Cloudinary flow)
 const upload = multer({ 
@@ -109,13 +105,14 @@ export function registerObjectStorageRoutes(app: Express): void {
         }
 
         // Upload to Cloudinary
+        const cloudinary = getCloudinary();
         const result = await new Promise<any>((resolve, reject) => {
           const uploadStream = cloudinary.uploader.upload_stream(
             {
               folder: "holyguacamoli",
               resource_type: "auto",
             },
-            (error, result) => {
+            (error: any, result: any) => {
               if (error) reject(error);
               else resolve(result);
             }
