@@ -2642,7 +2642,6 @@ export default function Blitzgrid() {
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                  className="h-7 text-xs px-2"
                                   disabled={isJudging}
                                   onClick={() => {
                                     setIsJudging(true);
@@ -2664,11 +2663,11 @@ export default function Blitzgrid() {
                                   }}
                                   data-testid={`button-wrong-${buzz.playerId}`}
                                 >
-                                  <X className="w-3 h-3" />
+                                  <X className="w-3 h-3 shrink-0" />
                                 </Button>
                                 <Button
                                   size="sm"
-                                  className="bg-emerald-500 text-white h-7 text-xs px-2"
+                                  className="bg-emerald-500 text-white"
                                   disabled={isJudging}
                                   onClick={() => {
                                     setIsJudging(true);
@@ -2682,11 +2681,11 @@ export default function Blitzgrid() {
                                   }}
                                   data-testid={`button-correct-${buzz.playerId}`}
                                 >
-                                  <Check className="w-3 h-3" />
+                                  <Check className="w-3 h-3 shrink-0" />
                                 </Button>
                               </>
                             ) : (
-                              <span className="text-xs text-orange-400/70">next</span>
+                              <span className="text-xs text-orange-400/70" data-testid={`buzz-queue-next-${buzz.playerId}`}>next</span>
                             )}
                           </div>
                         </div>
@@ -2716,6 +2715,7 @@ export default function Blitzgrid() {
                       backgroundColor: `${neonColorConfig[colorName].border}15`,
                       borderColor: `${neonColorConfig[colorName].border}50`,
                     }}
+                    data-testid="answer-section"
                   >
                     <p 
                       className="text-xs font-medium uppercase tracking-wider mb-2 text-white/50"
@@ -2785,7 +2785,7 @@ export default function Blitzgrid() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="text-destructive rounded-full"
+                          className="text-rose-400 shrink-0"
                           onClick={() => {
                             const points = activeQuestion?.points || 0;
                             updatePlayerScore(player.id, -points, true, activeQuestion?.categoryId);
@@ -2802,7 +2802,7 @@ export default function Blitzgrid() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="text-emerald-400 rounded-full"
+                          className="text-emerald-400 shrink-0"
                           onClick={() => {
                             const points = activeQuestion?.points || 0;
                             updatePlayerScore(player.id, points, true, activeQuestion?.categoryId);
@@ -2832,7 +2832,7 @@ export default function Blitzgrid() {
                     className="text-white/50"
                     data-testid="button-undo-score"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 mr-1.5" /> Undo
+                    <RotateCcw className="w-3.5 h-3.5 mr-1.5 shrink-0" /> Undo
                   </Button>
                 )}
                 {!showAnswer ? (
@@ -2848,7 +2848,7 @@ export default function Blitzgrid() {
                     }}
                     data-testid="button-reveal-answer"
                   >
-                    <Eye className="w-4 h-4 mr-2" /> Show Answer
+                    <Eye className="w-4 h-4 mr-2 shrink-0" /> Show Answer
                   </Button>
                 ) : (
                   <Button 
