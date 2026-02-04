@@ -1829,11 +1829,11 @@ export default function Blitzgrid() {
                 
                 const reactionColor = {
                   clap: 'text-amber-400',
-                  fire: 'text-amber-500',
+                  fire: 'text-orange-500',
                   laugh: 'text-yellow-400',
-                  wow: 'text-violet-400',
-                  thumbsup: 'text-teal-400',
-                }[reaction.type] || 'text-violet-400';
+                  wow: 'text-purple-400',
+                  thumbsup: 'text-emerald-400',
+                }[reaction.type] || 'text-purple-400';
                 
                 return (
                   <motion.div
@@ -2118,13 +2118,13 @@ export default function Blitzgrid() {
                               {idx + 1}
                             </div>
                           )}
-                          <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0a0a0f] ${player.connected ? 'bg-emerald-500' : 'bg-red-400'}`} />
+                          <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0a0a0f] ${player.connected ? 'bg-emerald-500' : 'bg-rose-400'}`} />
                         </div>
                         <div className="flex flex-col leading-tight min-w-0">
                           <span className="text-white/80 font-medium text-xs truncate max-w-[60px]" title={player.name}>{player.name}</span>
                           <motion.span 
                             key={player.score}
-                            initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? '#34d399' : scoreAnim?.delta && scoreAnim.delta < 0 ? '#f87171' : '#e879f9' }}
+                            initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? '#34d399' : scoreAnim?.delta && scoreAnim.delta < 0 ? '#fb7185' : '#e879f9' }}
                             animate={{ scale: 1, color: '#e879f9' }}
                             transition={{ duration: 0.3 }}
                             className="font-bold text-sm"
@@ -2679,7 +2679,7 @@ export default function Blitzgrid() {
                                 </Button>
                               </>
                             ) : (
-                              <span className="text-xs text-amber-400">next</span>
+                              <span className="text-xs text-orange-400/70">next</span>
                             )}
                           </div>
                         </div>

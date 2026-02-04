@@ -625,7 +625,7 @@ export default function PlayerPage() {
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <span className={`w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold ${
-                      idx === 0 ? 'bg-yellow-500 text-black' : idx === 1 ? 'bg-slate-400 text-black' : idx === 2 ? 'bg-amber-600 text-white' : 'bg-muted text-muted-foreground'
+                      idx === 0 ? 'bg-yellow-500 text-black' : idx === 1 ? 'bg-slate-400 text-black' : idx === 2 ? 'bg-orange-500 text-white' : 'bg-muted text-muted-foreground'
                     }`}>
                       {idx + 1}
                     </span>
