@@ -1962,7 +1962,7 @@ export default function Blitzgrid() {
                           color: isCellAnswered ? '#555' : tileNeonColor.text,
                         }}
                         className={`
-                          w-full h-full rounded-xl font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden group
+                          w-full h-full rounded-xl font-black text-2xl md:text-4xl flex items-center justify-center transition-all duration-300 relative overflow-hidden
                           ${isCellAnswered ? 'opacity-40 cursor-default' : isCategoryRevealed ? 'cursor-pointer' : 'cursor-default'}
                         `}
                         onClick={(e) => {
@@ -1973,17 +1973,11 @@ export default function Blitzgrid() {
                         whileHover={isClickable ? { 
                           scale: 1.02, 
                           y: -2,
+                          boxShadow: `inset 0 0 20px ${tileNeonColor.glow}, 0 0 15px ${tileNeonColor.glow}`,
                         } : {}}
                         whileTap={isClickable ? { scale: 0.96 } : {}}
                         data-testid={`cell-${category.id}-${points}`}
                       >
-                        {/* Shimmer effect on hover */}
-                        {isClickable && (
-                          <div 
-                            className="absolute inset-0 bg-gradient-to-r from-transparent to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none rounded-xl"
-                            style={{ background: `linear-gradient(90deg, transparent, ${tileNeonColor.glow}, transparent)` }}
-                          />
-                        )}
                         {isCellAnswered ? (
                           <motion.div
                             initial={{ scale: 0 }}
