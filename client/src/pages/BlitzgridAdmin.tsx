@@ -363,8 +363,8 @@ export default function BlitzgridAdmin() {
                 <span className="text-sm font-semibold text-muted-foreground">{points}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm">{existingQuestion.question || <span className="text-muted-foreground italic">Media only</span>}</p>
-                <p className="text-sm text-muted-foreground mt-1">Answer: {existingQuestion.correctAnswer}</p>
+                <p className="text-sm truncate" title={existingQuestion.question}>{existingQuestion.question || <span className="text-muted-foreground italic">Media only</span>}</p>
+                <p className="text-sm text-muted-foreground mt-1 truncate" title={`Answer: ${existingQuestion.correctAnswer}`}>Answer: {existingQuestion.correctAnswer}</p>
                 {(hasMedia || hasAnswerMedia) && (
                   <div className="flex gap-2 text-xs text-muted-foreground mt-1">
                     {(existingQuestion.imageUrl || existingQuestion.answerImageUrl) && <span className="flex items-center gap-1"><Image className="w-3 h-3" /></span>}
@@ -597,7 +597,7 @@ export default function BlitzgridAdmin() {
                 >
                   <div className="flex items-center gap-2">
                     <Grid3X3 className={`w-4 h-4 shrink-0 ${g.id === selectedGridId ? 'text-primary' : 'text-muted-foreground'}`} />
-                    <span className="truncate flex-1">{g.name}</span>
+                    <span className="truncate flex-1" title={g.name}>{g.name}</span>
                     {g.isActive ? (
                       <div className="w-2 h-2 rounded-full bg-green-500 shrink-0" title="Active" />
                     ) : (
@@ -656,7 +656,7 @@ export default function BlitzgridAdmin() {
                           data-testid="input-edit-grid-name"
                         />
                       ) : (
-                        <h1 className="text-2xl font-bold">{grid?.name || 'Grid'}</h1>
+                        <h1 className="text-2xl font-bold truncate" title={grid?.name}>{grid?.name || 'Grid'}</h1>
                       )}
                     </div>
                     {editingGridId === selectedGridId ? (
@@ -845,9 +845,9 @@ export default function BlitzgridAdmin() {
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-3">
                           <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                          <div>
-                            <CardTitle className="text-base">{category.name}</CardTitle>
-                            <CardDescription className="text-xs">
+                          <div className="min-w-0">
+                            <CardTitle className="text-base truncate" title={category.name}>{category.name}</CardTitle>
+                            <CardDescription className="text-xs truncate">
                               {category.description ? `${category.description} · ` : ''}{category.questionCount}/5 questions
                             </CardDescription>
                           </div>
@@ -936,8 +936,8 @@ export default function BlitzgridAdmin() {
                               ) : (
                                 <div className="flex items-center justify-between gap-2">
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate">{category.name}</p>
-                                    <p className="text-xs text-muted-foreground truncate">
+                                    <p className="text-sm font-medium truncate" title={category.name}>{category.name}</p>
+                                    <p className="text-xs text-muted-foreground truncate" title={category.description || 'No description'}>
                                       {category.description || 'No description'}
                                     </p>
                                   </div>
@@ -1249,6 +1249,7 @@ export default function BlitzgridAdmin() {
                             size="sm"
                             variant="ghost"
                             onClick={() => setEditingGridId(null)}
+                            data-testid={`button-cancel-grid-edit-${grid.id}`}
                           >
                             Cancel
                           </Button>
@@ -1258,7 +1259,7 @@ export default function BlitzgridAdmin() {
                       <>
                         <div className="flex items-center gap-2 min-w-0">
                           <Grid3X3 className="w-5 h-5 text-fuchsia-500 dark:text-fuchsia-400 shrink-0" />
-                          <h3 className="font-semibold truncate">{grid.name}</h3>
+                          <h3 className="font-semibold truncate" title={grid.name}>{grid.name}</h3>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
                           <Button
