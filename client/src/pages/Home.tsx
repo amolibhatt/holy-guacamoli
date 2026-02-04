@@ -283,11 +283,11 @@ export default function Home() {
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               >
                 <span className="bg-gradient-to-r from-fuchsia-400 via-cyan-300 to-lime-300 bg-clip-text text-transparent">
-                  Game Night
+                  Turn Any Party Into
                 </span>
                 {" "}
                 <span className="text-white">
-                  AWAITS
+                  CHAOS
                 </span>
               </motion.h1>
             </motion.div>
@@ -300,9 +300,9 @@ export default function Home() {
               transition={{ delay: 0.3 }}
             >
               {[
-                { text: "LAUGH", color: "#e879f9" },
-                { text: "COMPETE", color: "#22d3ee" },
-                { text: "WIN", color: "#a3e635" },
+                { text: "BLUFF", color: "#e879f9" },
+                { text: "BUZZ", color: "#22d3ee" },
+                { text: "BRAG", color: "#a3e635" },
               ].map((item, i) => (
                 <motion.span
                   key={item.text}
@@ -332,7 +332,7 @@ export default function Home() {
               transition={{ delay: 0.6 }}
               data-testid="text-subtitle"
             >
-              No downloads. No signups. Just fun.
+              Phones out. Egos ready. Let's go.
             </motion.p>
           </motion.div>
 
