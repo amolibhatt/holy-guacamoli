@@ -2188,8 +2188,8 @@ export default function Blitzgrid() {
               </LayoutGroup>
             ) : (
               <div className="flex items-center justify-center gap-2 text-white/40 text-sm py-1">
-                <Users className="w-4 h-4 shrink-0" aria-hidden="true" />
-                <span data-testid="no-players-hint">Tap room code to invite players</span>
+                <QrCode className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span data-testid="no-players-hint">Tap QR to invite players</span>
               </div>
             )}
           </motion.div>
