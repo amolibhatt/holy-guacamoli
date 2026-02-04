@@ -262,11 +262,11 @@ export default function Home() {
                 >
                   <Play className="w-5 h-5 text-lime-400" aria-hidden="true" style={{ filter: 'drop-shadow(0 0 6px rgba(163,230,53,0.6))' }} />
                 </motion.div>
-                <span className="text-white font-semibold">Got a code?</span>
+                <span className="text-white font-semibold">Join a Game</span>
               </div>
               <div className="flex gap-2 flex-1 w-full sm:w-auto">
                 <Input
-                  placeholder="XXXX"
+                  placeholder="Enter code"
                   value={gameCode}
                   onChange={(e) => setGameCode(e.target.value.toUpperCase())}
                   onKeyDown={(e) => e.key === 'Enter' && handleJoinGame()}
