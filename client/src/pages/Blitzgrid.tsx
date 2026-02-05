@@ -173,6 +173,11 @@ export default function Blitzgrid() {
       playBeep(now, 440, 0.15);
       playBeep(now + 0.2, 554, 0.15);
       playBeep(now + 0.4, 659, 0.3);
+      
+      // Close AudioContext after sounds finish to prevent resource leak
+      setTimeout(() => {
+        audioContext.close().catch(() => {});
+      }, 1000);
     } catch (e) {
       console.log('Could not play timer sound');
     }
@@ -230,6 +235,7 @@ export default function Blitzgrid() {
   const reactionTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const shareCardRef = useRef<HTMLDivElement | null>(null);
   const gameOverTimers = useRef<NodeJS.Timeout[]>([]);
+  const confettiTimers = useRef<NodeJS.Timeout[]>([]);
   const joinNotificationTimer = useRef<NodeJS.Timeout | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const scoresPanelRef = useRef<HTMLDivElement | null>(null);
@@ -558,6 +564,8 @@ export default function Blitzgrid() {
           case 'player:left':
             setPlayers(prev => prev.filter(p => p.id !== data.playerId));
             setBuzzQueue(prev => prev.filter(b => b.playerId !== data.playerId));
+            // Clear selection if left player was selected
+            setSelectedPlayerId(prev => prev === data.playerId ? null : prev);
             break;
           case 'player:reaction':
             if (data.reactionType && data.playerName) {
@@ -581,6 +589,8 @@ export default function Blitzgrid() {
               p.id === data.playerId ? { ...p, connected: false } : p
             ));
             setBuzzQueue(prev => prev.filter(b => b.playerId !== data.playerId));
+            // Clear selection if disconnected player was selected
+            setSelectedPlayerId(prev => prev === data.playerId ? null : prev);
             break;
           case 'score:updated':
             setPlayers(prev => prev.map(p => 
@@ -595,13 +605,18 @@ export default function Blitzgrid() {
             setBuzzQueue([]);
             break;
           case 'player:buzzed':
-            // Collect all buzzes - don't auto-lock
-            setBuzzQueue(prev => [...prev, {
-              playerId: data.playerId,
-              name: data.playerName,
-              position: data.position,
-              time: data.timestamp
-            }]);
+            // Collect all buzzes - don't auto-lock, prevent duplicate buzzes from same player
+            setBuzzQueue(prev => {
+              if (prev.some(b => b.playerId === data.playerId)) {
+                return prev; // Player already buzzed
+              }
+              return [...prev, {
+                playerId: data.playerId,
+                name: data.playerName,
+                position: data.position,
+                time: data.timestamp
+              }];
+            });
             break;
           case 'buzzer:reset':
             setBuzzQueue([]);
@@ -872,6 +887,15 @@ export default function Blitzgrid() {
     setShuffledCategories(null);
     setSelectedGridId(null);
     setLastScoreChange(null);
+    // Reset judging and selection state
+    setIsJudging(false);
+    setSelectedPlayerId(null);
+    // Reset timer state
+    setTimerActive(false);
+    setTimeLeft(10);
+    // Reset game over state
+    setShowGameOver(false);
+    setGameOverPhase(0);
     // Reset shuffle selection state for next session
     setHasShuffleGridSelection(false);
     setSelectedShuffleGridIds(new Set());
@@ -1017,6 +1041,10 @@ export default function Blitzgrid() {
   
   // Fire celebratory confetti with fireworks
   const fireConfetti = useCallback(() => {
+    // Clear any existing confetti timers
+    confettiTimers.current.forEach(clearTimeout);
+    confettiTimers.current = [];
+    
     const defaults = { startVelocity: 30, spread: 360, ticks: 80, zIndex: 100 };
     const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
     
@@ -1027,31 +1055,31 @@ export default function Blitzgrid() {
     confetti({ ...defaults, particleCount: 80, origin: { x: randomInRange(0.7, 0.9), y: randomInRange(0.2, 0.4) }, colors: ['#22c55e', '#16a34a', '#FFD700', '#FFA500'] });
     
     // Firework burst pattern - center explosion
-    setTimeout(() => {
+    confettiTimers.current.push(setTimeout(() => {
       confetti({ particleCount: 150, spread: 70, origin: { x: 0.5, y: 0.35 }, colors: ['#FFD700', '#FFFFFF', '#22c55e', '#4ADEBC', '#f472b6', '#8b5cf6'] });
-    }, 200);
+    }, 200));
     
     // Star shapes
-    setTimeout(() => {
+    confettiTimers.current.push(setTimeout(() => {
       confetti({ particleCount: 60, spread: 100, origin: { x: 0.5, y: 0.5 }, shapes: ['star'], colors: ['#FFD700', '#FFA500', '#FFFFFF'], scalar: 1.8 });
-    }, 400);
+    }, 400));
     
     // Side fireworks
-    setTimeout(() => {
+    confettiTimers.current.push(setTimeout(() => {
       confetti({ particleCount: 100, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#8b5cf6', '#a855f7', '#c084fc'] });
       confetti({ particleCount: 100, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#ec4899', '#f472b6', '#fb7185'] });
-    }, 600);
+    }, 600));
     
     // Final golden shower
-    setTimeout(() => {
+    confettiTimers.current.push(setTimeout(() => {
       playApplause();
       confetti({ particleCount: 200, spread: 180, origin: { x: 0.5, y: 0.1 }, startVelocity: 45, colors: ['#FFD700', '#FFA500', '#FFEC8B', '#FFFFFF'], gravity: 0.8 });
-    }, 900);
+    }, 900));
     
     // Extra stars burst
-    setTimeout(() => {
+    confettiTimers.current.push(setTimeout(() => {
       confetti({ particleCount: 80, spread: 360, origin: { x: 0.5, y: 0.4 }, shapes: ['star'], colors: ['#FFD700', '#FFFFFF'], scalar: 2, ticks: 100 });
-    }, 1200);
+    }, 1200));
   }, []);
   
   // Start the game over reveal animation
@@ -1189,6 +1217,9 @@ export default function Blitzgrid() {
       // Clear game over timers on unmount
       gameOverTimers.current.forEach(clearTimeout);
       gameOverTimers.current = [];
+      // Clear confetti timers on unmount
+      confettiTimers.current.forEach(clearTimeout);
+      confettiTimers.current = [];
       // Clear reaction timeouts on unmount
       reactionTimeouts.current.forEach(clearTimeout);
       reactionTimeouts.current.clear();
@@ -2414,7 +2445,19 @@ export default function Blitzgrid() {
                   className="flex-1 gap-2"
                   onClick={async () => {
                     try {
-                      await navigator.clipboard.writeText(joinUrl);
+                      if (navigator.clipboard?.writeText) {
+                        await navigator.clipboard.writeText(joinUrl);
+                      } else {
+                        // Fallback for older browsers
+                        const textArea = document.createElement('textarea');
+                        textArea.value = joinUrl;
+                        textArea.style.position = 'fixed';
+                        textArea.style.left = '-9999px';
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                      }
                       toast({ title: "Link copied!", description: "Share this link with players" });
                     } catch {
                       toast({ title: "Couldn't copy", description: "Please copy the link manually", variant: "destructive" });
@@ -2462,8 +2505,8 @@ export default function Blitzgrid() {
           {/* Share Results Modal */}
           <Dialog open={showShareModal} onOpenChange={(open) => {
             setShowShareModal(open);
-            if (!open && shareImageUrl) {
-              URL.revokeObjectURL(shareImageUrl);
+            if (!open) {
+              // Clear the data URL when closing (data URLs don't need revokeObjectURL)
               setShareImageUrl(null);
             }
           }}>
