@@ -1555,6 +1555,16 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/super-admin/dashboard", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const dashboard = await storage.getComprehensiveDashboard();
+      res.json(dashboard);
+    } catch (err) {
+      console.error("Error getting dashboard:", err);
+      res.status(500).json({ message: "Failed to get dashboard" });
+    }
+  });
+
   app.get("/api/super-admin/users", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
       const users = await storage.getAllUsersDetailed();

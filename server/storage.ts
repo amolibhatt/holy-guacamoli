@@ -2156,6 +2156,165 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
+  async getComprehensiveDashboard() {
+    const now = new Date();
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const monthAgo = new Date(today);
+    monthAgo.setMonth(monthAgo.getMonth() - 1);
+
+    // Real-time stats
+    const [activeSessions] = await db.select({ count: count() })
+      .from(gameSessions).where(eq(gameSessions.state, 'active'));
+    const [activePlayers] = await db.select({ count: count() })
+      .from(sessionPlayers)
+      .innerJoin(gameSessions, eq(sessionPlayers.sessionId, gameSessions.id))
+      .where(and(eq(gameSessions.state, 'active'), eq(sessionPlayers.isConnected, true)));
+
+    // Today vs Yesterday comparison
+    const [todaySessions] = await db.select({ count: count() })
+      .from(gameSessions).where(gte(gameSessions.createdAt, today));
+    const [yesterdaySessions] = await db.select({ count: count() })
+      .from(gameSessions).where(and(gte(gameSessions.createdAt, yesterday), sql`${gameSessions.createdAt} < ${today}`));
+    const [todayPlayers] = await db.select({ count: count() })
+      .from(sessionPlayers).where(gte(sessionPlayers.joinedAt, today));
+    const [yesterdayPlayers] = await db.select({ count: count() })
+      .from(sessionPlayers).where(and(gte(sessionPlayers.joinedAt, yesterday), sql`${sessionPlayers.joinedAt} < ${today}`));
+    const [todayNewUsers] = await db.select({ count: count() })
+      .from(users).where(gte(users.createdAt, today));
+    const [yesterdayNewUsers] = await db.select({ count: count() })
+      .from(users).where(and(gte(users.createdAt, yesterday), sql`${users.createdAt} < ${today}`));
+
+    // Weekly stats
+    const [weekSessions] = await db.select({ count: count() })
+      .from(gameSessions).where(gte(gameSessions.createdAt, weekAgo));
+    const [weekPlayers] = await db.select({ count: count() })
+      .from(sessionPlayers).where(gte(sessionPlayers.joinedAt, weekAgo));
+    const [weekNewUsers] = await db.select({ count: count() })
+      .from(users).where(gte(users.createdAt, weekAgo));
+
+    // Total counts
+    const [totalUsers] = await db.select({ count: count() }).from(users);
+    const [totalSessions] = await db.select({ count: count() }).from(gameSessions);
+    const [totalBoards] = await db.select({ count: count() }).from(boards);
+    const [totalQuestions] = await db.select({ count: count() }).from(questions);
+    const [totalSequenceQuestions] = await db.select({ count: count() }).from(sequenceQuestions);
+    const [totalPsyopQuestions] = await db.select({ count: count() }).from(psyopQuestions);
+
+    // Content stats
+    const [starterPackBoards] = await db.select({ count: count() })
+      .from(boards).where(eq(boards.isStarterPack, true));
+    const [flaggedBoards] = await db.select({ count: count() })
+      .from(boards).where(eq(boards.moderationStatus, 'flagged'));
+
+    // User breakdown by role
+    const usersByRole = await db.select({
+      role: users.role,
+      count: count(),
+    }).from(users).groupBy(users.role);
+
+    // Recent activity (last 10 sessions with basic info)
+    const recentSessions = await db.select({
+      id: gameSessions.id,
+      code: gameSessions.code,
+      state: gameSessions.state,
+      createdAt: gameSessions.createdAt,
+      hostId: gameSessions.hostId,
+    }).from(gameSessions)
+      .orderBy(desc(gameSessions.createdAt))
+      .limit(10);
+
+    // Top hosts this week
+    const topHostsWeek = await db.select({
+      hostId: gameSessions.hostId,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      email: users.email,
+      count: count(),
+    }).from(gameSessions)
+      .innerJoin(users, eq(gameSessions.hostId, users.id))
+      .where(gte(gameSessions.createdAt, weekAgo))
+      .groupBy(gameSessions.hostId, users.firstName, users.lastName, users.email)
+      .orderBy(desc(count()))
+      .limit(5);
+
+    // Popular grids this week
+    const popularGridsWeek = await db.select({
+      boardId: boards.id,
+      name: boards.name,
+      count: count(),
+    }).from(gameSessions)
+      .innerJoin(boards, eq(gameSessions.currentBoardId, boards.id))
+      .where(and(gte(gameSessions.createdAt, weekAgo), sql`${gameSessions.currentBoardId} IS NOT NULL`))
+      .groupBy(boards.id, boards.name)
+      .orderBy(desc(count()))
+      .limit(5);
+
+    // Average scores and game duration
+    const avgScores = await db.select({
+      avgScore: sql<number>`COALESCE(AVG(${sessionPlayers.score}), 0)`,
+      maxScore: sql<number>`COALESCE(MAX(${sessionPlayers.score}), 0)`,
+    }).from(sessionPlayers);
+
+    // Session completion rate (ended vs total)
+    const [completedSessions] = await db.select({ count: count() })
+      .from(gameSessions).where(eq(gameSessions.state, 'ended'));
+
+    return {
+      realtime: {
+        activeGames: activeSessions?.count ?? 0,
+        activePlayers: activePlayers?.count ?? 0,
+      },
+      today: {
+        games: todaySessions?.count ?? 0,
+        players: todayPlayers?.count ?? 0,
+        newUsers: todayNewUsers?.count ?? 0,
+        gamesChange: (todaySessions?.count ?? 0) - (yesterdaySessions?.count ?? 0),
+        playersChange: (todayPlayers?.count ?? 0) - (yesterdayPlayers?.count ?? 0),
+        usersChange: (todayNewUsers?.count ?? 0) - (yesterdayNewUsers?.count ?? 0),
+      },
+      week: {
+        games: weekSessions?.count ?? 0,
+        players: weekPlayers?.count ?? 0,
+        newUsers: weekNewUsers?.count ?? 0,
+      },
+      totals: {
+        users: totalUsers?.count ?? 0,
+        sessions: totalSessions?.count ?? 0,
+        boards: totalBoards?.count ?? 0,
+        blitzgridQuestions: totalQuestions?.count ?? 0,
+        sortCircuitQuestions: totalSequenceQuestions?.count ?? 0,
+        psyopQuestions: totalPsyopQuestions?.count ?? 0,
+        starterPacks: starterPackBoards?.count ?? 0,
+        flaggedContent: flaggedBoards?.count ?? 0,
+      },
+      usersByRole: usersByRole.reduce((acc, r) => ({ ...acc, [r.role || 'user']: r.count }), {} as Record<string, number>),
+      recentActivity: recentSessions.map(s => ({
+        id: s.id,
+        code: s.code,
+        state: s.state,
+        createdAt: s.createdAt,
+      })),
+      topHostsWeek: topHostsWeek.map(h => ({
+        name: [h.firstName, h.lastName].filter(Boolean).join(' ') || h.email || 'Unknown',
+        games: h.count,
+      })),
+      popularGridsWeek: popularGridsWeek.map(g => ({
+        name: g.name,
+        plays: g.count,
+      })),
+      performance: {
+        avgScore: Math.round(Number(avgScores[0]?.avgScore) || 0),
+        highScore: Number(avgScores[0]?.maxScore) || 0,
+        completionRate: totalSessions?.count ? Math.round(((completedSessions?.count ?? 0) / totalSessions.count) * 100) : 0,
+      },
+    };
+  }
+
   // === USER MANAGEMENT ===
   
   async updateUserRole(userId: string, role: string) {
