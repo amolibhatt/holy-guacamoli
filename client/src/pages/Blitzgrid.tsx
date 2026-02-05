@@ -861,6 +861,10 @@ export default function Blitzgrid() {
     setShuffledCategories(null);
     setSelectedGridId(null);
     setLastScoreChange(null);
+    // Reset shuffle selection state for next session
+    setHasShuffleGridSelection(false);
+    setSelectedShuffleGridIds(new Set());
+    setPlayedShuffleCategoryIds([]);
     toast({ title: "Session ended", description: "All players have been disconnected." });
   }, [clearStoredSession, disconnectWebSocket, toast]);
   
@@ -878,11 +882,11 @@ export default function Blitzgrid() {
   
   // Execute shuffle with selected grids
   const executeShufflePlay = useCallback(async (gridIds: number[]) => {
-    // Mark that user has made a selection
-    setHasShuffleGridSelection(true);
     // Prevent double-clicks/race conditions
     if (isShuffling) return;
     setIsShuffling(true);
+    // Mark that user has made a selection (after isShuffling check to avoid race condition)
+    setHasShuffleGridSelection(true);
     setShowShuffleGridPicker(false);
     try {
       // Build query params
@@ -3572,8 +3576,8 @@ export default function Blitzgrid() {
             >
               {/* Shuffle Play Hero - Full Width Bar */}
               {(() => {
-                // Calculate total available categories from all active grids
-                const totalAvailableCategories = grids.reduce((sum, g) => sum + (g.categoryCount || 0), 0);
+                // Calculate total available categories from eligible grids only
+                const totalAvailableCategories = eligibleShuffleGrids.reduce((sum, g) => sum + (g.categoryCount || 0), 0);
                 const playedCount = playedShuffleCategoryIds.length;
                 const remainingCount = Math.max(0, totalAvailableCategories - playedCount);
                 
