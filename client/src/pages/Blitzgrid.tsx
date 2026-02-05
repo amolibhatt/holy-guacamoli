@@ -911,15 +911,17 @@ export default function Blitzgrid() {
         params.set('gridIds', gridIds.join(','));
       }
       const queryString = params.toString();
-      const response = await apiRequest('GET', `/api/boards/shuffle-play${queryString ? '?' + queryString : ''}`);
+      const response = await fetch(`/api/boards/shuffle-play${queryString ? '?' + queryString : ''}`, {
+        credentials: 'include',
+      });
       const data = await response.json();
       
-      // Check for server error responses
-      if (data.exhausted) {
-        throw new Error("You've played all available categories! Reset to play again.");
-      }
-      if (data.message && !data.categories) {
-        throw new Error(data.message);
+      // Check for server error responses (handle 400s with proper messages)
+      if (!response.ok) {
+        if (data.exhausted) {
+          throw new Error("You've played all available categories! Reset to play again.");
+        }
+        throw new Error(data.message || "Failed to get shuffle data");
       }
       
       // Validate response has exactly 5 categories, each with 5 questions covering all point tiers
