@@ -172,28 +172,28 @@ export default function SuperAdmin() {
   const [psyopSearch, setPsyopSearch] = useState("");
   const [blitzgridSearch, setBlitzgridSearch] = useState("");
 
-  const { data: dashboard, isLoading: isLoadingDashboard, refetch: refetchDashboard } = useQuery<ComprehensiveDashboard>({
+  const { data: dashboard, isLoading: isLoadingDashboard, isError: isErrorDashboard, refetch: refetchDashboard } = useQuery<ComprehensiveDashboard>({
     queryKey: ['/api/super-admin/dashboard'],
     refetchInterval: 30000,
   });
 
-  const { data: allUsers = [], isLoading: isLoadingUsers } = useQuery<UserWithStats[]>({
+  const { data: allUsers = [], isLoading: isLoadingUsers, isError: isErrorUsers } = useQuery<UserWithStats[]>({
     queryKey: ['/api/super-admin/users'],
   });
 
-  const { data: allSessions = [], isLoading: isLoadingSessions } = useQuery<GameSessionDetailed[]>({
+  const { data: allSessions = [], isLoading: isLoadingSessions, isError: isErrorSessions } = useQuery<GameSessionDetailed[]>({
     queryKey: ['/api/super-admin/sessions'],
   });
 
-  const { data: gameTypes = [], isLoading: isLoadingGameTypes } = useQuery<GameType[]>({
+  const { data: gameTypes = [], isLoading: isLoadingGameTypes, isError: isErrorGameTypes } = useQuery<GameType[]>({
     queryKey: ['/api/super-admin/game-types'],
   });
 
-  const { data: announcements = [], isLoading: isLoadingAnnouncements } = useQuery<Announcement[]>({
+  const { data: announcements = [], isLoading: isLoadingAnnouncements, isError: isErrorAnnouncements } = useQuery<Announcement[]>({
     queryKey: ['/api/super-admin/announcements'],
   });
 
-  const { data: flaggedBoards = [] } = useQuery<Board[]>({
+  const { data: flaggedBoards = [], isError: isErrorFlagged } = useQuery<Board[]>({
     queryKey: ['/api/super-admin/boards/flagged'],
   });
 
@@ -436,6 +436,20 @@ export default function SuperAdmin() {
     );
   }
 
+  const ErrorState = ({ message = "Couldn't load data", onRetry }: { message?: string; onRetry?: () => void }) => (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+        <RefreshCw className="w-6 h-6 text-destructive" />
+      </div>
+      <p className="text-muted-foreground mb-4">{message}</p>
+      {onRetry && (
+        <Button variant="outline" size="sm" onClick={onRetry}>
+          Try again
+        </Button>
+      )}
+    </div>
+  );
+
   const TrendIndicator = ({ value, suffix = "" }: { value: number; suffix?: string }) => {
     if (value === 0) return null;
     return (
@@ -540,7 +554,11 @@ export default function SuperAdmin() {
                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                   <span className="text-sm font-medium text-muted-foreground">Live</span>
                 </div>
-                {flaggedBoards.length > 0 && (
+                {isErrorFlagged ? (
+                  <Badge variant="outline" className="text-muted-foreground">
+                    <Flag className="w-3 h-3 mr-1" />Flagged status unavailable
+                  </Badge>
+                ) : flaggedBoards.length > 0 && (
                   <Badge variant="destructive" className="animate-pulse">
                     <Flag className="w-3 h-3 mr-1" />{flaggedBoards.length} flagged
                   </Badge>
@@ -551,6 +569,8 @@ export default function SuperAdmin() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[1,2,3,4].map(i => <Skeleton key={i} className="h-24" />)}
                 </div>
+              ) : isErrorDashboard ? (
+                <ErrorState message="Couldn't load dashboard stats" onRetry={() => refetchDashboard()} />
               ) : dashboard && (
                 <>
                   {/* Real-time Stats */}
@@ -780,6 +800,8 @@ export default function SuperAdmin() {
 
               {isLoadingSessions ? (
                 <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-20" />)}</div>
+              ) : isErrorSessions ? (
+                <ErrorState message="Couldn't load sessions" onRetry={() => queryClient.invalidateQueries({ queryKey: ['/api/super-admin/sessions'] })} />
               ) : filteredSessions.length === 0 ? (
                 <Card><CardContent className="py-8 text-center text-muted-foreground">No sessions found</CardContent></Card>
               ) : (
@@ -855,6 +877,8 @@ export default function SuperAdmin() {
 
               {isLoadingUsers ? (
                 <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-16" />)}</div>
+              ) : isErrorUsers ? (
+                <ErrorState message="Couldn't load users" onRetry={() => queryClient.invalidateQueries({ queryKey: ['/api/super-admin/users'] })} />
               ) : filteredUsers.length === 0 ? (
                 <Card><CardContent className="py-8 text-center text-muted-foreground">No users found</CardContent></Card>
               ) : (
@@ -975,6 +999,8 @@ export default function SuperAdmin() {
               {/* Games List */}
               {isLoadingGameTypes ? (
                 <div className="space-y-4">{[1,2,3].map(i => <Skeleton key={i} className="h-20" />)}</div>
+              ) : isErrorGameTypes ? (
+                <ErrorState message="Couldn't load games" onRetry={() => queryClient.invalidateQueries({ queryKey: ['/api/super-admin/game-types'] })} />
               ) : (
                 <div className="space-y-4">
                   {gameTypes.map((gameType) => {
@@ -1142,6 +1168,8 @@ export default function SuperAdmin() {
                   
                   {isLoadingAnnouncements ? (
                     <Skeleton className="h-12" />
+                  ) : isErrorAnnouncements ? (
+                    <p className="text-sm text-destructive text-center py-2">Couldn't load announcements</p>
                   ) : announcements.length > 0 && (
                     <div className="pt-3 border-t space-y-2 max-h-[200px] overflow-y-auto">
                       {announcements.map((a) => (
