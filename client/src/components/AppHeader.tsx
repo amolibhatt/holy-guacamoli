@@ -100,7 +100,7 @@ export function AppHeader({
                       {user?.role === 'super_admin' && (
                         <Badge variant="secondary" className="bg-purple-500/20 text-purple-400 text-[10px] px-1.5 py-0 shrink-0">
                           <Shield className="w-2.5 h-2.5 mr-0.5" />
-                          Super
+                          Super Admin
                         </Badge>
                       )}
                       {user?.role === 'admin' && (
