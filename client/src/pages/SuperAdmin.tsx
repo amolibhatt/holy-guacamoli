@@ -281,6 +281,9 @@ export default function SuperAdmin() {
 
   const createAnnouncementMutation = useMutation({
     mutationFn: async (data: { title: string; message: string; type?: string }) => {
+      if (!data.title.trim() || !data.message.trim()) {
+        throw new Error('Title and message are required');
+      }
       await apiRequest('POST', '/api/super-admin/announcements', data);
     },
     onSuccess: () => {
@@ -352,6 +355,7 @@ export default function SuperAdmin() {
   const formatRelativeDate = (dateStr: string | Date | null) => {
     if (!dateStr) return 'Never';
     const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'Unknown';
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
@@ -375,12 +379,14 @@ export default function SuperAdmin() {
     }
   };
 
-  const getHostDisplay = (host: GameSessionDetailed['host']) => {
+  const getHostDisplay = (host: GameSessionDetailed['host'] | null | undefined) => {
+    if (!host) return 'Unknown';
     if (host.firstName || host.lastName) {
       return `${host.firstName || ''} ${host.lastName || ''}`.trim();
     }
     if (host.email) return host.email;
-    return `ID: ${host.id.slice(0, 8)}...`;
+    if (host.id) return `ID: ${host.id.slice(0, 8)}...`;
+    return 'Unknown';
   };
 
   // Search filtering
@@ -388,7 +394,7 @@ export default function SuperAdmin() {
     ? allUsers.filter(u => {
         const search = userSearch.toLowerCase();
         const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
-        return u.email.toLowerCase().includes(search) || fullName.includes(search);
+        return (u.email ?? '').toLowerCase().includes(search) || fullName.includes(search);
       })
     : allUsers;
 
@@ -396,16 +402,16 @@ export default function SuperAdmin() {
     ? allSessions.filter(s => {
         const search = sessionSearch.toLowerCase();
         const hostName = `${s.host?.firstName || ''} ${s.host?.lastName || ''}`.toLowerCase();
-        return s.code.toLowerCase().includes(search) ||
+        return (s.code ?? '').toLowerCase().includes(search) ||
           hostName.includes(search) ||
           s.host?.email?.toLowerCase().includes(search) ||
-          s.players.some(p => p.name.toLowerCase().includes(search));
+          s.players.some(p => (p.name ?? '').toLowerCase().includes(search));
       })
     : allSessions;
 
   const filteredBoards = contentSearch.trim() 
     ? allBoards.filter(b => 
-        b.name.toLowerCase().includes(contentSearch.toLowerCase()) ||
+        (b.name ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
         b.ownerEmail?.toLowerCase().includes(contentSearch.toLowerCase())
       )
     : allBoards;
@@ -427,7 +433,7 @@ export default function SuperAdmin() {
           <h1 className="text-2xl font-bold text-white mb-2">Super Admin Only</h1>
           <p className="text-white/70 mb-6">This area requires super admin privileges.</p>
           <Link href="/">
-            <Button variant="outline">Back to Home</Button>
+            <Button variant="outline" data-testid="button-back-home">Back to Home</Button>
           </Link>
         </main>
       </div>
@@ -489,7 +495,7 @@ export default function SuperAdmin() {
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                     <CardTitle className="text-lg">Live Now</CardTitle>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => refetchDashboard()} data-testid="button-refresh-pulse">
+                  <Button variant="ghost" size="sm" onClick={() => refetchDashboard()} data-testid="button-refresh-pulse" aria-label="Refresh dashboard">
                     <RefreshCw className="w-4 h-4" />
                   </Button>
                 </div>
@@ -576,6 +582,7 @@ export default function SuperAdmin() {
                             variant="destructive"
                             onClick={() => setDeleteBoardId(board.id)}
                             data-testid={`button-reject-${board.id}`}
+                            aria-label="Reject content"
                           >
                             <X className="w-4 h-4" />
                           </Button>
@@ -678,7 +685,20 @@ export default function SuperAdmin() {
                   </Card>
                 ))}
               </div>
-            ) : dashboard && !isErrorDashboard && (
+            ) : isErrorDashboard && !dashboard ? (
+              <div className="grid md:grid-cols-2 gap-4">
+                {[1,2].map(i => (
+                  <Card key={i}>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg text-muted-foreground">{i === 1 ? 'Top Hosts' : 'Popular Grids'}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground text-center py-4">Data unavailable</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : dashboard && (
               <div className="grid md:grid-cols-2 gap-4">
                 <Card>
                   <CardHeader className="pb-3">
@@ -692,7 +712,7 @@ export default function SuperAdmin() {
                     ) : (
                       <div className="space-y-2">
                         {dashboard.topHostsWeek.slice(0, 5).map((h, i) => (
-                          <div key={i} className="flex items-center justify-between p-2 rounded bg-muted/30">
+                          <div key={`host-${h.name}-${i}`} className="flex items-center justify-between p-2 rounded bg-muted/30">
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-bold text-muted-foreground w-5">#{i + 1}</span>
                               <span className="text-sm">{h.name}</span>
@@ -717,7 +737,7 @@ export default function SuperAdmin() {
                     ) : (
                       <div className="space-y-2">
                         {dashboard.popularGridsWeek.slice(0, 5).map((g, i) => (
-                          <div key={i} className="flex items-center justify-between p-2 rounded bg-muted/30">
+                          <div key={`grid-${g.name}-${i}`} className="flex items-center justify-between p-2 rounded bg-muted/30">
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-bold text-muted-foreground w-5">#{i + 1}</span>
                               <span className="text-sm truncate">{g.name}</span>
@@ -749,27 +769,37 @@ export default function SuperAdmin() {
                     <ErrorState message="Couldn't load announcements" onRetry={() => refetchAnnouncements()} />
                   ) : showAnnouncementForm ? (
                     <div className="space-y-3">
-                      <Input
-                        placeholder="Title"
-                        value={announcementTitle}
-                        onChange={(e) => setAnnouncementTitle(e.target.value)}
-                        data-testid="input-announcement-title"
-                      />
-                      <Textarea
-                        placeholder="Message"
-                        value={announcementMessage}
-                        onChange={(e) => setAnnouncementMessage(e.target.value)}
-                        rows={2}
-                        data-testid="input-announcement-message"
-                      />
+                      <div>
+                        <Input
+                          placeholder="Title"
+                          value={announcementTitle}
+                          onChange={(e) => setAnnouncementTitle(e.target.value)}
+                          data-testid="input-announcement-title"
+                        />
+                        {!announcementTitle.trim() && announcementMessage.trim() && (
+                          <p className="text-xs text-destructive mt-1">Title is required</p>
+                        )}
+                      </div>
+                      <div>
+                        <Textarea
+                          placeholder="Message"
+                          value={announcementMessage}
+                          onChange={(e) => setAnnouncementMessage(e.target.value)}
+                          rows={2}
+                          data-testid="input-announcement-message"
+                        />
+                        {announcementTitle.trim() && !announcementMessage.trim() && (
+                          <p className="text-xs text-destructive mt-1">Message is required</p>
+                        )}
+                      </div>
                       <Select value={announcementType} onValueChange={(v) => setAnnouncementType(v as typeof announcementType)}>
                         <SelectTrigger data-testid="select-announcement-type">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="info">Info</SelectItem>
-                          <SelectItem value="warning">Warning</SelectItem>
-                          <SelectItem value="success">Success</SelectItem>
+                          <SelectItem value="info" data-testid="select-item-info">Info</SelectItem>
+                          <SelectItem value="warning" data-testid="select-item-warning">Warning</SelectItem>
+                          <SelectItem value="success" data-testid="select-item-success">Success</SelectItem>
                         </SelectContent>
                       </Select>
                       <div className="flex gap-2">
@@ -806,6 +836,7 @@ export default function SuperAdmin() {
                               variant="ghost"
                               onClick={() => deleteAnnouncementMutation.mutate(a.id)}
                               data-testid={`button-delete-announcement-${a.id}`}
+                              aria-label="Delete announcement"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -869,7 +900,7 @@ export default function SuperAdmin() {
                         data-testid="input-search-users"
                       />
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => refetchUsers()} data-testid="button-refresh-users">
+                    <Button variant="ghost" size="sm" onClick={() => refetchUsers()} data-testid="button-refresh-users" aria-label="Refresh users">
                       <RefreshCw className="w-4 h-4" />
                     </Button>
                   </div>
@@ -908,16 +939,17 @@ export default function SuperAdmin() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="user">User</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
-                              <SelectItem value="super_admin">Super Admin</SelectItem>
+                              <SelectItem value="user" data-testid="select-item-user">User</SelectItem>
+                              <SelectItem value="admin" data-testid="select-item-admin">Admin</SelectItem>
+                              <SelectItem value="super_admin" data-testid="select-item-super-admin">Super Admin</SelectItem>
                             </SelectContent>
                           </Select>
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 text-destructive"
+                            className="text-destructive"
                             onClick={() => setDeleteUserId(u.id)}
+                            aria-label="Delete user"
                             disabled={u.id === user.id}
                             data-testid={`button-delete-user-${u.id}`}
                           >
@@ -1021,13 +1053,13 @@ export default function SuperAdmin() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="active">
+                                <SelectItem value="active" data-testid="select-item-active">
                                   <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> Active</span>
                                 </SelectItem>
-                                <SelectItem value="hidden">
+                                <SelectItem value="hidden" data-testid="select-item-hidden">
                                   <span className="flex items-center gap-1"><EyeOff className="w-3 h-3" /> Hidden</span>
                                 </SelectItem>
-                                <SelectItem value="coming_soon">
+                                <SelectItem value="coming_soon" data-testid="select-item-coming-soon">
                                   <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Coming Soon</span>
                                 </SelectItem>
                               </SelectContent>
@@ -1068,14 +1100,16 @@ export default function SuperAdmin() {
                               variant={b.isStarterPack ? 'secondary' : 'outline'}
                               onClick={() => toggleStarterPackMutation.mutate({ boardId: b.id, isStarterPack: !b.isStarterPack })}
                               data-testid={`button-starter-${b.id}`}
+                              aria-label={b.isStarterPack ? 'Remove from starter pack' : 'Add to starter pack'}
                             >
                               <Star className={`w-4 h-4 ${b.isStarterPack ? 'fill-current' : ''}`} />
                             </Button>
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-8 w-8 text-destructive"
+                              className="text-destructive"
                               onClick={() => setDeleteBoardId(b.id)}
+                              aria-label="Delete content"
                               data-testid={`button-delete-board-${b.id}`}
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1115,6 +1149,7 @@ export default function SuperAdmin() {
                             variant={q.isStarterPack ? 'secondary' : 'outline'}
                             onClick={() => toggleSequenceStarterPackMutation.mutate({ questionId: q.id, isStarterPack: !q.isStarterPack })}
                             data-testid={`button-starter-seq-${q.id}`}
+                            aria-label={q.isStarterPack ? 'Remove from starter pack' : 'Add to starter pack'}
                           >
                             <Star className={`w-4 h-4 ${q.isStarterPack ? 'fill-current' : ''}`} />
                           </Button>
@@ -1152,6 +1187,7 @@ export default function SuperAdmin() {
                             variant={q.isStarterPack ? 'secondary' : 'outline'}
                             onClick={() => togglePsyopStarterPackMutation.mutate({ questionId: q.id, isStarterPack: !q.isStarterPack })}
                             data-testid={`button-starter-psyop-${q.id}`}
+                            aria-label={q.isStarterPack ? 'Remove from starter pack' : 'Add to starter pack'}
                           >
                             <Star className={`w-4 h-4 ${q.isStarterPack ? 'fill-current' : ''}`} />
                           </Button>
@@ -1181,7 +1217,7 @@ export default function SuperAdmin() {
                         data-testid="input-search-sessions"
                       />
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => refetchSessions()} data-testid="button-refresh-sessions">
+                    <Button variant="ghost" size="sm" onClick={() => refetchSessions()} data-testid="button-refresh-sessions" aria-label="Refresh sessions">
                       <RefreshCw className="w-4 h-4" />
                     </Button>
                   </div>
@@ -1240,7 +1276,7 @@ export default function SuperAdmin() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel data-testid="button-cancel-delete-user">Cancel</AlertDialogCancel>
               <Button
                 variant="destructive"
                 onClick={() => deleteUserId && deleteUserMutation.mutate(deleteUserId)}
@@ -1263,7 +1299,7 @@ export default function SuperAdmin() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel data-testid="button-cancel-delete-content">Cancel</AlertDialogCancel>
               <Button
                 variant="destructive"
                 onClick={() => deleteBoardId && deleteBoardMutation.mutate(deleteBoardId)}
