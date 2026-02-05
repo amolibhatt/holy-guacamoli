@@ -1912,6 +1912,16 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/super-admin/top-performers", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const performers = await storage.getTopPerformers();
+      res.json(performers);
+    } catch (err) {
+      console.error("Error getting top performers:", err);
+      res.status(500).json({ message: "Failed to get top performers" });
+    }
+  });
+
   // === USER MANAGEMENT ===
   
   app.patch("/api/super-admin/users/:id/role", isAuthenticated, isSuperAdmin, async (req, res) => {

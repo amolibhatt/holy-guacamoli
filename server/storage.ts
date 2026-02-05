@@ -199,6 +199,12 @@ export interface IStorage {
   getPlayerGameHistory(userId: string, limit?: number): Promise<PlayerGameHistory[]>;
   recordGamePlayed(data: InsertPlayerGameHistory): Promise<PlayerGameHistory>;
   checkAndAwardBadges(userId: string): Promise<Badge[]>;
+  
+  // Top Performers
+  getTopPerformers(): Promise<{
+    topHosts: { userId: string; name: string; email: string; gamesHosted: number }[];
+    popularGrids: { boardId: number; name: string; ownerName: string; sessionCount: number }[];
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2092,6 +2098,53 @@ export class DatabaseStorage implements IStorage {
       playerJoinRate: totalSessionCount > 0
         ? Math.round((sessionsWithPlayersCount / totalSessionCount) * 100)
         : 0,
+    };
+  }
+
+  async getTopPerformers() {
+    // Top hosts: users who hosted the most games
+    const topHosts = await db.select({
+      userId: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      email: users.email,
+      gamesHosted: count(),
+    })
+      .from(gameSessions)
+      .innerJoin(users, eq(gameSessions.hostId, users.id))
+      .groupBy(users.id, users.firstName, users.lastName, users.email)
+      .orderBy(desc(count()))
+      .limit(5);
+
+    // Popular grids: boards used in most sessions
+    const popularGrids = await db.select({
+      boardId: boards.id,
+      name: boards.name,
+      ownerFirstName: users.firstName,
+      ownerLastName: users.lastName,
+      sessionCount: count(),
+    })
+      .from(gameSessions)
+      .innerJoin(boards, eq(gameSessions.currentBoardId, boards.id))
+      .leftJoin(users, eq(boards.userId, users.id))
+      .where(sql`${gameSessions.currentBoardId} IS NOT NULL`)
+      .groupBy(boards.id, boards.name, users.firstName, users.lastName)
+      .orderBy(desc(count()))
+      .limit(5);
+
+    return {
+      topHosts: topHosts.map(h => ({
+        userId: h.userId,
+        name: [h.firstName, h.lastName].filter(Boolean).join(' ') || h.email || 'Unknown',
+        email: h.email,
+        gamesHosted: h.gamesHosted,
+      })),
+      popularGrids: popularGrids.map(g => ({
+        boardId: g.boardId,
+        name: g.name,
+        ownerName: [g.ownerFirstName, g.ownerLastName].filter(Boolean).join(' ') || 'Unknown',
+        sessionCount: g.sessionCount,
+      })),
     };
   }
 

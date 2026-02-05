@@ -213,6 +213,11 @@ interface BlitzgridQuestionWithCreator {
   creator: QuestionCreator | null;
 }
 
+interface TopPerformers {
+  topHosts: { userId: string; name: string; email: string; gamesHosted: number }[];
+  popularGrids: { boardId: number; name: string; ownerName: string; sessionCount: number }[];
+}
+
 export default function SuperAdmin() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { toast } = useToast();
@@ -298,6 +303,10 @@ export default function SuperAdmin() {
   const { data: blitzgridQuestions = [], isLoading: isLoadingBlitzgridQuestions } = useQuery<BlitzgridQuestionWithCreator[]>({
     queryKey: ['/api/super-admin/questions/blitzgrid'],
     enabled: expandedGameSlug === 'blitzgrid',
+  });
+
+  const { data: topPerformers, isLoading: isLoadingTopPerformers } = useQuery<TopPerformers>({
+    queryKey: ['/api/super-admin/top-performers'],
   });
 
   const updateGameTypeMutation = useMutation({
@@ -858,9 +867,9 @@ export default function SuperAdmin() {
               </div>
 
               <h3 className="text-xl font-semibold text-foreground mt-8 mb-4">Session Analytics</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {isLoadingAnalytics ? (
-                  [1, 2, 3, 4].map((i) => (
+                  [1, 2, 3].map((i) => (
                     <Card key={i}>
                       <CardContent className="pt-6">
                         <div className="flex items-center gap-3">
@@ -875,27 +884,6 @@ export default function SuperAdmin() {
                   ))
                 ) : (
                   <>
-                    <Card 
-                      className="cursor-pointer hover-elevate active-elevate-2"
-                      onClick={() => { setDrillDownType('active-sessions'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && (setDrillDownType('active-sessions'), setDrillDownFilter(''), setDateRangeFilter('all'))}
-                      data-testid="card-active-sessions"
-                    >
-                      <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/30">
-                            <Activity className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-2xl font-bold">{detailedAnalytics?.activeSessions ?? 0}</p>
-                            <p className="text-sm text-muted-foreground">Active Sessions</p>
-                          </div>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                      </CardContent>
-                    </Card>
                     <Card 
                       className="cursor-pointer hover-elevate active-elevate-2"
                       onClick={() => { setDrillDownType('ended-sessions'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
@@ -953,6 +941,78 @@ export default function SuperAdmin() {
                     </Card>
                   </>
                 )}
+              </div>
+
+              {/* Top Performers */}
+              <h3 className="text-xl font-semibold text-foreground mt-8 mb-4 flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-amber-500" />
+                Top Performers
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      Most Active Hosts
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoadingTopPerformers ? (
+                      <div className="space-y-2">
+                        {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
+                      </div>
+                    ) : !topPerformers?.topHosts?.length ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">No hosts yet</p>
+                    ) : (
+                      <div className="space-y-2" data-testid="list-top-hosts">
+                        {topPerformers.topHosts.map((host, idx) => (
+                          <div key={host.userId} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30" data-testid={`row-top-host-${host.userId}`}>
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? 'bg-amber-500 text-white' : idx === 1 ? 'bg-slate-400 text-white' : idx === 2 ? 'bg-amber-700 text-white' : 'bg-muted text-muted-foreground'}`}>
+                              {idx + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate" data-testid={`text-host-name-${host.userId}`}>{host.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{host.email}</p>
+                            </div>
+                            <Badge variant="secondary" className="shrink-0" data-testid={`badge-host-games-${host.userId}`}>{host.gamesHosted} games</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Grid3X3 className="w-4 h-4" />
+                      Most Popular Grids
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoadingTopPerformers ? (
+                      <div className="space-y-2">
+                        {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
+                      </div>
+                    ) : !topPerformers?.popularGrids?.length ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">No grids played yet</p>
+                    ) : (
+                      <div className="space-y-2" data-testid="list-popular-grids">
+                        {topPerformers.popularGrids.map((grid, idx) => (
+                          <div key={grid.boardId} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30" data-testid={`row-popular-grid-${grid.boardId}`}>
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? 'bg-amber-500 text-white' : idx === 1 ? 'bg-slate-400 text-white' : idx === 2 ? 'bg-amber-700 text-white' : 'bg-muted text-muted-foreground'}`}>
+                              {idx + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate" data-testid={`text-grid-name-${grid.boardId}`}>{grid.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">by {grid.ownerName}</p>
+                            </div>
+                            <Badge variant="secondary" className="shrink-0" data-testid={`badge-grid-plays-${grid.boardId}`}>{grid.sessionCount} plays</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Conversion Funnel */}
@@ -1493,6 +1553,59 @@ export default function SuperAdmin() {
                 <h2 className="text-2xl font-bold text-foreground">Game Content</h2>
                 <p className="text-sm text-muted-foreground mt-1">Manage games, view questions, and control starter packs</p>
               </div>
+
+              {/* Flagged Content - At top for visibility */}
+              {(isLoadingFlagged || flaggedBoards.length > 0) && (
+                <Card className="mb-6 border-amber-500/50">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Flag className="w-5 h-5 text-amber-500" />
+                      Flagged Content
+                      {flaggedBoards.length > 0 && (
+                        <Badge variant="destructive" className="ml-2">{flaggedBoards.length}</Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription>Content requiring moderation review</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoadingFlagged ? (
+                      <div className="space-y-2">
+                        {[1, 2].map((i) => (
+                          <Skeleton key={i} className="h-10 w-full" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                        {flaggedBoards.map((board) => (
+                          <div key={board.id} className="flex items-center justify-between gap-3 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+                            <span className="text-sm font-medium truncate flex-1 min-w-0 max-w-[200px]" title={board.name}>{board.name}</span>
+                            <div className="flex gap-1 shrink-0">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => updateModerationMutation.mutate({ boardId: board.id, data: { moderationStatus: 'approved' } })}
+                                disabled={updateModerationMutation.isPending}
+                                data-testid={`button-approve-board-${board.id}`}
+                              >
+                                {updateModerationMutation.isPending ? '...' : 'Approve'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => setDeleteBoardId(board.id)}
+                                disabled={deleteBoardMutation.isPending}
+                                data-testid={`button-delete-flagged-${board.id}`}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
               {isLoadingGameTypes ? (
                 <div className="space-y-4">
@@ -2043,57 +2156,6 @@ export default function SuperAdmin() {
                           <div key={stat.label} className={`p-2 rounded-lg ${stat.color}`}>
                             <p className="text-xl font-bold">{stat.value.toLocaleString()}</p>
                             <p className="text-xs opacity-80">{stat.label}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Flag className="w-5 h-5 text-amber-500" />
-                      Flagged Content
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoadingFlagged ? (
-                      <div className="space-y-2">
-                        {[1, 2].map((i) => (
-                          <Skeleton key={i} className="h-10 w-full" />
-                        ))}
-                      </div>
-                    ) : flaggedBoards.length === 0 ? (
-                      <div className="text-center py-4 text-muted-foreground">
-                        <UserCheck className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">All content looks good!</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                        {flaggedBoards.map((board) => (
-                          <div key={board.id} className="flex items-center justify-between gap-3 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
-                            <span className="text-sm font-medium truncate flex-1 min-w-0 max-w-[200px]" title={board.name}>{board.name}</span>
-                            <div className="flex gap-1 shrink-0">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => updateModerationMutation.mutate({ boardId: board.id, data: { moderationStatus: 'approved' } })}
-                                disabled={updateModerationMutation.isPending}
-                                data-testid={`button-approve-board-${board.id}`}
-                              >
-                                {updateModerationMutation.isPending ? '...' : 'Approve'}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => setDeleteBoardId(board.id)}
-                                disabled={deleteBoardMutation.isPending}
-                                data-testid={`button-delete-flagged-${board.id}`}
-                              >
-                                Remove
-                              </Button>
-                            </div>
                           </div>
                         ))}
                       </div>
