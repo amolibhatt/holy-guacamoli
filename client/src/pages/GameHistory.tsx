@@ -139,7 +139,9 @@ function LoadingSkeleton() {
 }
 
 export default function GameHistory() {
-  const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
+  const { isLoading: isAuthLoading, isAuthenticated, user } = useAuth();
+  
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   const { data: sessions, isLoading } = useQuery<GameSessionWithDetails[]>({
     queryKey: ["/api/host/sessions"],
@@ -173,6 +175,22 @@ export default function GameHistory() {
             <p>Please log in to view game history.</p>
             <Link href="/">
               <Button className="mt-4">Go to Login</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center space-y-4">
+            <h1 className="text-xl font-bold text-destructive">Access Denied</h1>
+            <p className="text-muted-foreground">You don't have permission to access this page.</p>
+            <Link href="/">
+              <Button variant="outline">Go Home</Button>
             </Link>
           </CardContent>
         </Card>

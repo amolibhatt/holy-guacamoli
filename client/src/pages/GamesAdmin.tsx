@@ -36,8 +36,10 @@ const MODE_ICONS: Record<GameMode, typeof Grid3X3> = {
 
 export default function GamesAdmin() {
   const { toast } = useToast();
-  const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
+  const { isLoading: isAuthLoading, isAuthenticated, user } = useAuth();
   const [, setLocation] = useLocation();
+  
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   
   const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
   const [showNewGameForm, setShowNewGameForm] = useState(false);
@@ -260,6 +262,20 @@ export default function GamesAdmin() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
         <Loader2 className="w-12 h-12 text-primary animate-spin" />
         <p className="text-muted-foreground mt-4">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold text-destructive">Access Denied</h1>
+          <p className="text-muted-foreground">You don't have permission to access this page.</p>
+          <Link href="/">
+            <Button variant="outline">Go Home</Button>
+          </Link>
+        </div>
       </div>
     );
   }
