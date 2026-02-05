@@ -1260,6 +1260,9 @@ export default function Blitzgrid() {
       const handleCloseQuestion = () => {
         setActiveQuestion(null);
         setShowAnswer(false);
+        // Stop timer when closing question
+        setTimerActive(false);
+        setTimeLeft(10);
         lockBuzzer();
         setIsJudging(false);
         setLastScoreChange(null);
@@ -2775,6 +2778,7 @@ export default function Blitzgrid() {
                       alt="Question image"
                       className="max-w-full max-h-48 md:max-h-64 rounded-lg object-contain shadow-lg"
                       data-testid="question-image"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
                   )}
                   {activeQuestion?.videoUrl && (
@@ -2784,6 +2788,7 @@ export default function Blitzgrid() {
                       className="max-w-full max-h-48 md:max-h-64 rounded-lg shadow-lg"
                       data-testid="question-video"
                       aria-label="Question video"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
                   )}
                   {activeQuestion?.audioUrl && (
@@ -2793,6 +2798,7 @@ export default function Blitzgrid() {
                       className="w-full max-w-sm"
                       data-testid="question-audio"
                       aria-label="Question audio"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
                   )}
                 </div>
@@ -2946,6 +2952,7 @@ export default function Blitzgrid() {
                             alt="Answer image"
                             className="max-w-full max-h-48 md:max-h-64 rounded-lg object-contain shadow-lg"
                             data-testid="answer-image"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
                         )}
                         {activeQuestion?.answerVideoUrl && (
@@ -2956,6 +2963,7 @@ export default function Blitzgrid() {
                             className="max-w-full max-h-48 md:max-h-64 rounded-lg shadow-lg"
                             data-testid="answer-video"
                             aria-label="Answer video"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
                         )}
                         {activeQuestion?.answerAudioUrl && (
@@ -2966,6 +2974,7 @@ export default function Blitzgrid() {
                             className="w-full max-w-sm"
                             data-testid="answer-audio"
                             aria-label="Answer audio"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
                         )}
                       </div>
