@@ -227,7 +227,6 @@ export default function Blitzgrid() {
   const [scoreAnimations, setScoreAnimations] = useState<Map<string, { delta: number; timestamp: number }>>(new Map());
   const [reactions, setReactions] = useState<Array<{ id: string; type: string; playerId?: string; timestamp: number }>>([]);
   const shareCardRef = useRef<HTMLDivElement | null>(null);
-  const previousScoresRef = useRef<Map<string, number>>(new Map());
   const gameOverTimers = useRef<NodeJS.Timeout[]>([]);
   const joinNotificationTimer = useRef<NodeJS.Timeout | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
