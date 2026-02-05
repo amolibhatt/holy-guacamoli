@@ -298,6 +298,7 @@ export async function registerRoutes(
                 imageUrl: cat.category.imageUrl,
                 questions: cat.questions.map(q => ({
                   id: q.id,
+                  categoryId: cat.category.id,
                   question: q.question,
                   correctAnswer: q.correctAnswer,
                   options: q.options,
@@ -305,6 +306,9 @@ export async function registerRoutes(
                   imageUrl: q.imageUrl,
                   audioUrl: q.audioUrl,
                   videoUrl: q.videoUrl,
+                  answerImageUrl: q.answerImageUrl,
+                  answerAudioUrl: q.answerAudioUrl,
+                  answerVideoUrl: q.answerVideoUrl,
                 })),
               });
             }
@@ -325,9 +329,12 @@ export async function registerRoutes(
         });
       }
       
-      // Shuffle and pick 5 random categories
-      const shuffled = allCategories.sort(() => Math.random() - 0.5);
-      const selectedCategories = shuffled.slice(0, 5);
+      // Fisher-Yates shuffle for unbiased randomization
+      for (let i = allCategories.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allCategories[i], allCategories[j]] = [allCategories[j], allCategories[i]];
+      }
+      const selectedCategories = allCategories.slice(0, 5);
       
       res.json({ categories: selectedCategories });
     } catch (err) {

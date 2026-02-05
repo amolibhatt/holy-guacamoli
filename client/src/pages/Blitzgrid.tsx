@@ -2385,9 +2385,13 @@ export default function Blitzgrid() {
                   variant="outline"
                   size="sm"
                   className="flex-1 gap-2"
-                  onClick={() => {
-                    navigator.clipboard.writeText(joinUrl);
-                    toast({ title: "Link copied!", description: "Share this link with players" });
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(joinUrl);
+                      toast({ title: "Link copied!", description: "Share this link with players" });
+                    } catch {
+                      toast({ title: "Couldn't copy", description: "Please copy the link manually", variant: "destructive" });
+                    }
                   }}
                   data-testid="button-copy-join-link"
                 >
