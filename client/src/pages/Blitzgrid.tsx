@@ -2199,7 +2199,9 @@ export default function Blitzgrid() {
                         `}
                         onClick={(e) => {
                           e.stopPropagation();
-                          isClickable && handleCellClick(category.id, points, question);
+                          if (isClickable && question) {
+                            handleCellClick(category.id, points, question);
+                          }
                         }}
                         whileTap={isClickable ? { scale: 0.96 } : {}}
                         data-testid={`cell-${category.id}-${points}`}
