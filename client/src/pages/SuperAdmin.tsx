@@ -115,33 +115,10 @@ interface BoardWithOwner extends Board {
   categoryCount: number;
 }
 
-interface DetailedAnalytics {
-  dau: number;
-  wau: number;
-  mau: number;
-  weeklyPlayers: number;
-  avgPlayersPerSession: number;
-  activeSessions: number;
-  endedSessions: number;
-  totalSessionsThisMonth: number;
-}
-
 interface RoomStats {
   sessionsToday: number;
   playersToday: number;
   activeRooms: number;
-}
-
-interface ConversionFunnel {
-  totalSessions: number;
-  sessionsWithPlayers: number;
-  completedSessions: number;
-  guestPlayers: number;
-  registeredPlayers: number;
-  totalPlayers: number;
-  conversionRate: number;
-  sessionCompletionRate: number;
-  playerJoinRate: number;
 }
 
 interface DatabaseStats {
@@ -213,11 +190,6 @@ interface BlitzgridQuestionWithCreator {
   creator: QuestionCreator | null;
 }
 
-interface TopPerformers {
-  topHosts: { userId: string; name: string; email: string; gamesHosted: number }[];
-  popularGrids: { boardId: number; name: string; ownerName: string; sessionCount: number }[];
-}
-
 export default function SuperAdmin() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { toast } = useToast();
@@ -259,16 +231,8 @@ export default function SuperAdmin() {
     queryKey: ['/api/super-admin/game-types'],
   });
 
-  const { data: detailedAnalytics, isLoading: isLoadingAnalytics } = useQuery<DetailedAnalytics>({
-    queryKey: ['/api/super-admin/analytics'],
-  });
-
   const { data: roomStats, isLoading: isLoadingRoomStats } = useQuery<RoomStats>({
     queryKey: ['/api/super-admin/room-stats'],
-  });
-
-  const { data: conversionFunnel, isLoading: isLoadingFunnel } = useQuery<ConversionFunnel>({
-    queryKey: ['/api/super-admin/conversion-funnel'],
   });
 
   const { data: announcements = [], isLoading: isLoadingAnnouncements } = useQuery<Announcement[]>({
@@ -296,10 +260,6 @@ export default function SuperAdmin() {
   const { data: blitzgridQuestions = [], isLoading: isLoadingBlitzgridQuestions } = useQuery<BlitzgridQuestionWithCreator[]>({
     queryKey: ['/api/super-admin/questions/blitzgrid'],
     enabled: expandedGameSlug === 'blitzgrid',
-  });
-
-  const { data: topPerformers, isLoading: isLoadingTopPerformers } = useQuery<TopPerformers>({
-    queryKey: ['/api/super-admin/top-performers'],
   });
 
   const updateGameTypeMutation = useMutation({
@@ -627,18 +587,14 @@ export default function SuperAdmin() {
 
       <main className="px-4 py-6 max-w-4xl mx-auto w-full">
         <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-md">
+          <TabsList className="grid w-full grid-cols-2 max-w-xs">
             <TabsTrigger value="dashboard" className="gap-2" data-testid="tab-dashboard">
               <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Overview</span>
+              <span className="hidden sm:inline">Dashboard</span>
             </TabsTrigger>
-            <TabsTrigger value="content" className="gap-2" data-testid="tab-content">
-              <Gamepad2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Content</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="gap-2 relative" data-testid="tab-settings">
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Users</span>
+            <TabsTrigger value="manage" className="gap-2" data-testid="tab-manage">
+              <Shield className="w-4 h-4" />
+              <span className="hidden sm:inline">Manage</span>
             </TabsTrigger>
           </TabsList>
 
@@ -659,9 +615,7 @@ export default function SuperAdmin() {
                     queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
                     queryClient.invalidateQueries({ queryKey: ['/api/super-admin/users'] });
                     queryClient.invalidateQueries({ queryKey: ['/api/super-admin/sessions'] });
-                    queryClient.invalidateQueries({ queryKey: ['/api/super-admin/analytics'] });
                     queryClient.invalidateQueries({ queryKey: ['/api/super-admin/room-stats'] });
-                    queryClient.invalidateQueries({ queryKey: ['/api/super-admin/conversion-funnel'] });
                   }}
                   data-testid="button-refresh-dashboard"
                 >
@@ -673,10 +627,10 @@ export default function SuperAdmin() {
               {flaggedBoards.length > 0 && (
                 <Card 
                   className="mb-4 border-amber-500/50 bg-amber-50/50 dark:bg-amber-900/10 cursor-pointer hover-elevate"
-                  onClick={() => setActiveTab('content')}
+                  onClick={() => setActiveTab('manage')}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && setActiveTab('content')}
+                  onKeyDown={(e) => e.key === 'Enter' && setActiveTab('manage')}
                   data-testid="alert-flagged-content"
                 >
                   <CardContent className="p-3 flex items-center gap-3">
@@ -711,7 +665,7 @@ export default function SuperAdmin() {
                   color="from-amber-300 via-yellow-300 to-amber-300"
                   isLoading={isLoadingStats}
                   clickable
-                  onClick={() => { setActiveTab('content'); }}
+                  onClick={() => { setActiveTab('manage'); }}
                 />
                 <StatCard
                   title="Games Played"
@@ -798,291 +752,10 @@ export default function SuperAdmin() {
                 )}
               </div>
 
-              <h3 className="text-xl font-semibold text-foreground mb-4">User Engagement (Active Users)</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {isLoadingAnalytics ? (
-                  [1, 2, 3].map((i) => (
-                    <Card key={i}>
-                      <CardHeader className="pb-2">
-                        <Skeleton className="h-4 w-24" />
-                      </CardHeader>
-                      <CardContent>
-                        <Skeleton className="h-8 w-16 mb-1" />
-                        <Skeleton className="h-3 w-20" />
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <>
-                    <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-muted-foreground">Daily Active</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{detailedAnalytics?.dau ?? 0}</p>
-                        <p className="text-xs text-muted-foreground">Hosts today</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-muted-foreground">Weekly Active</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-3xl font-bold text-teal-600 dark:text-teal-400">{detailedAnalytics?.wau ?? 0}</p>
-                        <p className="text-xs text-muted-foreground">Last 7 days</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-muted-foreground">Monthly Active</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">{detailedAnalytics?.mau ?? 0}</p>
-                        <p className="text-xs text-muted-foreground">Last 30 days</p>
-                      </CardContent>
-                    </Card>
-                  </>
-                )}
-              </div>
-
-              <h3 className="text-xl font-semibold text-foreground mt-8 mb-4">Session Analytics</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {isLoadingAnalytics ? (
-                  [1, 2, 3].map((i) => (
-                    <Card key={i}>
-                      <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                          <Skeleton className="h-10 w-10 rounded-lg" />
-                          <div>
-                            <Skeleton className="h-7 w-12 mb-1" />
-                            <Skeleton className="h-4 w-24" />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <>
-                    <Card 
-                      className="cursor-pointer hover-elevate active-elevate-2"
-                      onClick={() => { setDrillDownType('ended-sessions'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && (setDrillDownType('ended-sessions'), setDrillDownFilter(''), setDateRangeFilter('all'))}
-                      data-testid="card-ended-sessions"
-                    >
-                      <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-900/30">
-                            <Clock className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-2xl font-bold">{detailedAnalytics?.endedSessions ?? 0}</p>
-                            <p className="text-sm text-muted-foreground">Ended Sessions</p>
-                          </div>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card 
-                      className="cursor-pointer hover-elevate active-elevate-2"
-                      onClick={() => { setDrillDownType('sessions'); setDrillDownFilter(''); setDateRangeFilter('month'); }}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && (setDrillDownType('sessions'), setDrillDownFilter(''), setDateRangeFilter('month'))}
-                      data-testid="card-sessions-month"
-                    >
-                      <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                            <Calendar className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-2xl font-bold">{detailedAnalytics?.totalSessionsThisMonth ?? 0}</p>
-                            <p className="text-sm text-muted-foreground">This Month</p>
-                          </div>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card data-testid="card-avg-players">
-                      <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-900/30">
-                            <TrendingUp className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-                          </div>
-                          <div>
-                            <p className="text-2xl font-bold">{detailedAnalytics?.avgPlayersPerSession ?? 0}</p>
-                            <p className="text-sm text-muted-foreground">Avg Players/Session</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </>
-                )}
-              </div>
-
-              {/* Top Performers */}
-              <h3 className="text-xl font-semibold text-foreground mt-8 mb-4 flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-amber-500" />
-                Top Performers
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      Most Active Hosts
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoadingTopPerformers ? (
-                      <div className="space-y-2">
-                        {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
-                      </div>
-                    ) : !topPerformers?.topHosts?.length ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">No hosts yet</p>
-                    ) : (
-                      <div className="space-y-2" data-testid="list-top-hosts">
-                        {topPerformers.topHosts.map((host, idx) => (
-                          <div key={host.userId} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30" data-testid={`row-top-host-${host.userId}`}>
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? 'bg-amber-500 text-white' : idx === 1 ? 'bg-slate-400 text-white' : idx === 2 ? 'bg-amber-700 text-white' : 'bg-muted text-muted-foreground'}`}>
-                              {idx + 1}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate" data-testid={`text-host-name-${host.userId}`}>{host.name}</p>
-                              <p className="text-xs text-muted-foreground truncate">{host.email}</p>
-                            </div>
-                            <Badge variant="secondary" className="shrink-0" data-testid={`badge-host-games-${host.userId}`}>{host.gamesHosted} games</Badge>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
-                      <Grid3X3 className="w-4 h-4" />
-                      Most Popular Grids
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoadingTopPerformers ? (
-                      <div className="space-y-2">
-                        {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
-                      </div>
-                    ) : !topPerformers?.popularGrids?.length ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">No grids played yet</p>
-                    ) : (
-                      <div className="space-y-2" data-testid="list-popular-grids">
-                        {topPerformers.popularGrids.map((grid, idx) => (
-                          <div key={grid.boardId} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30" data-testid={`row-popular-grid-${grid.boardId}`}>
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? 'bg-amber-500 text-white' : idx === 1 ? 'bg-slate-400 text-white' : idx === 2 ? 'bg-amber-700 text-white' : 'bg-muted text-muted-foreground'}`}>
-                              {idx + 1}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate" data-testid={`text-grid-name-${grid.boardId}`}>{grid.name}</p>
-                              <p className="text-xs text-muted-foreground truncate">by {grid.ownerName}</p>
-                            </div>
-                            <Badge variant="secondary" className="shrink-0" data-testid={`badge-grid-plays-${grid.boardId}`}>{grid.sessionCount} plays</Badge>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Conversion Funnel */}
-              <h3 className="text-xl font-semibold text-foreground mt-8 mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-emerald-500" />
-                Conversion Funnel
-                <Badge variant="secondary" className="text-xs">Last 30 days</Badge>
-              </h3>
-              <Card>
-                <CardContent className="pt-6">
-                  {isLoadingFunnel ? (
-                    <div className="space-y-4">
-                      {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {/* Funnel Steps */}
-                      <div className="space-y-2">
-                        {[
-                          { 
-                            label: 'Sessions Created', 
-                            value: conversionFunnel?.totalSessions ?? 0, 
-                            color: 'bg-violet-500',
-                            width: '100%'
-                          },
-                          { 
-                            label: 'Sessions with Players', 
-                            value: conversionFunnel?.sessionsWithPlayers ?? 0, 
-                            color: 'bg-purple-500',
-                            width: `${conversionFunnel?.playerJoinRate ?? 0}%`,
-                            rate: conversionFunnel?.playerJoinRate
-                          },
-                          { 
-                            label: 'Sessions Completed', 
-                            value: conversionFunnel?.completedSessions ?? 0, 
-                            color: 'bg-fuchsia-500',
-                            width: `${conversionFunnel?.sessionCompletionRate ?? 0}%`,
-                            rate: conversionFunnel?.sessionCompletionRate
-                          },
-                        ].map((step, index) => (
-                          <div key={step.label} className="relative">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium">{step.label}</span>
-                              <span className="text-sm text-muted-foreground">
-                                {step.value.toLocaleString()}
-                                {step.rate !== undefined && (
-                                  <span className="text-xs ml-1">({step.rate}%)</span>
-                                )}
-                              </span>
-                            </div>
-                            <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full ${step.color} rounded-full transition-all duration-500`}
-                                style={{ width: step.width }}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Player Breakdown */}
-                      <div className="pt-4 border-t mt-4">
-                        <p className="text-sm font-medium mb-3">Player Breakdown</p>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                          <div className="p-3 rounded-lg bg-muted/50 text-center">
-                            <p className="text-2xl font-bold text-foreground">{conversionFunnel?.totalPlayers ?? 0}</p>
-                            <p className="text-xs text-muted-foreground">Total Players</p>
-                          </div>
-                          <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-center">
-                            <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{conversionFunnel?.guestPlayers ?? 0}</p>
-                            <p className="text-xs text-muted-foreground">Guests</p>
-                          </div>
-                          <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-center">
-                            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{conversionFunnel?.registeredPlayers ?? 0}</p>
-                            <p className="text-xs text-muted-foreground">Registered</p>
-                          </div>
-                          <div className="p-3 rounded-lg bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 text-center">
-                            <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">{conversionFunnel?.conversionRate ?? 0}%</p>
-                            <p className="text-xs text-muted-foreground">Conversion Rate</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
             </motion.div>
           </TabsContent>
 
-          <TabsContent value="content" className="space-y-4">
+          <TabsContent value="manage" className="space-y-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1651,21 +1324,7 @@ export default function SuperAdmin() {
                   )}
                 </div>
               )}
-            </motion.div>
-          </TabsContent>
 
-          <TabsContent value="settings" className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="flex items-center justify-between gap-4 mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">Users & Admin</h2>
-                  <p className="text-sm text-muted-foreground mt-1">Manage users, sessions, and system tools</p>
-                </div>
-              </div>
-              
               {/* Users Section */}
               <Card className="mb-6">
                 <CardHeader 
@@ -2095,7 +1754,7 @@ export default function SuperAdmin() {
                   <p className="text-center text-muted-foreground py-8">No users found</p>
                 ) : (
                   filteredUsersForDrillDown.slice(0, 50).map((user) => (
-                    <Card key={user.id} className="hover-elevate cursor-pointer" onClick={() => { setExpandedUserId(user.id); setUsersSectionExpanded(true); setActiveTab('dashboard'); setDrillDownType(null); }}>
+                    <Card key={user.id} className="hover-elevate cursor-pointer" onClick={() => { setExpandedUserId(user.id); setUsersSectionExpanded(true); setActiveTab('manage'); setDrillDownType(null); }}>
                       <CardContent className="p-3 flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-300 to-teal-300 flex items-center justify-center text-white font-bold">
                           {user.email?.charAt(0).toUpperCase() || 'U'}
@@ -2254,7 +1913,7 @@ export default function SuperAdmin() {
                     <Button 
                       variant="outline" 
                       className="mt-4"
-                      onClick={() => { setActiveTab('content'); setDrillDownType(null); }}
+                      onClick={() => { setActiveTab('manage'); setDrillDownType(null); }}
                     >
                       Manage Content
                     </Button>
