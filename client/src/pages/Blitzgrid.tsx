@@ -1287,8 +1287,11 @@ export default function Blitzgrid() {
       const restPhase = 2;
       
       // Use same background as grid selection page for unified look
-      // Use grid ID for stable color (same as grid cards)
-      const colorName = getBoardColorName(grid?.colorCode) || BOARD_COLORS[grid?.id ? grid.id % BOARD_COLORS.length : 0];
+      // Use grid ID for stable color (same logic as GridCard), or shuffle color for shuffle mode
+      const effectiveGridColor = grid?.colorCode?.startsWith('#') ? null : grid?.colorCode;
+      const colorName = shuffleMode 
+        ? 'fuchsia' as BoardColor 
+        : (effectiveGridColor as BoardColor || BOARD_COLORS[grid?.id ? grid.id % BOARD_COLORS.length : 0]);
       
       // Keyboard handler for reveal mode
       const handleKeyDown = (e: React.KeyboardEvent) => {
