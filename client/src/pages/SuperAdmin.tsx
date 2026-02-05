@@ -179,8 +179,9 @@ export default function SuperAdmin() {
     enabled: activeTab === 'content',
   });
 
-  const { data: flaggedBoards = [] } = useQuery<Board[]>({
+  const { data: flaggedBoards = [], isLoading: isLoadingFlagged, isError: isErrorFlagged, refetch: refetchFlagged } = useQuery<Board[]>({
     queryKey: ['/api/super-admin/boards/flagged'],
+    enabled: activeTab === 'overview',
   });
 
   const { data: allBoards = [], isLoading: isLoadingBoards, isError: isErrorBoards, refetch: refetchBoards } = useQuery<BoardWithOwner[]>({
@@ -188,8 +189,9 @@ export default function SuperAdmin() {
     enabled: activeTab === 'content',
   });
 
-  const { data: announcements = [] } = useQuery<Announcement[]>({
+  const { data: announcements = [], isLoading: isLoadingAnnouncements, isError: isErrorAnnouncements, refetch: refetchAnnouncements } = useQuery<Announcement[]>({
     queryKey: ['/api/super-admin/announcements'],
+    enabled: activeTab === 'overview',
   });
 
   const { data: sequenceQuestions = [], isLoading: isLoadingSequence, isError: isErrorSequence, refetch: refetchSequence } = useQuery<SequenceQuestionWithCreator[]>({
@@ -535,16 +537,23 @@ export default function SuperAdmin() {
             </Card>
 
             {/* Needs Review */}
-            {flaggedBoards.length > 0 && (
+            {(isLoadingFlagged || flaggedBoards.length > 0) && (
               <Card className="border-amber-500/50">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-5 h-5 text-amber-400" />
                     <CardTitle className="text-lg">Needs Review</CardTitle>
-                    <Badge variant="secondary">{flaggedBoards.length}</Badge>
+                    {!isLoadingFlagged && <Badge variant="secondary">{flaggedBoards.length}</Badge>}
                   </div>
                 </CardHeader>
                 <CardContent>
+                  {isLoadingFlagged ? (
+                    <div className="space-y-2">
+                      {[1,2].map(i => <Skeleton key={i} className="h-14" />)}
+                    </div>
+                  ) : isErrorFlagged ? (
+                    <ErrorState message="Couldn't load flagged content" onRetry={() => refetchFlagged()} />
+                  ) : (
                   <div className="space-y-2">
                     {flaggedBoards.map(board => (
                       <div key={board.id} className="flex items-center justify-between p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
@@ -573,6 +582,7 @@ export default function SuperAdmin() {
                       </div>
                     ))}
                   </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -706,7 +716,13 @@ export default function SuperAdmin() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {showAnnouncementForm ? (
+                  {isLoadingAnnouncements ? (
+                    <div className="space-y-2">
+                      {[1,2].map(i => <Skeleton key={i} className="h-10" />)}
+                    </div>
+                  ) : isErrorAnnouncements ? (
+                    <ErrorState message="Couldn't load announcements" onRetry={() => refetchAnnouncements()} />
+                  ) : showAnnouncementForm ? (
                     <div className="space-y-3">
                       <Input
                         placeholder="Title"
