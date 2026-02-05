@@ -946,13 +946,6 @@ export default function Blitzgrid() {
           startTime: Date.now(),
           mvpMoments: []
         });
-        // Only show fun toast on first shuffle, not on reshuffles
-        if (!hasShuffleGridSelection) {
-          toast({
-            title: "Let's gooo!",
-            description: "5 wild categories incoming. May the odds be ever in your favor.",
-          });
-        }
       } else {
         throw new Error("Not enough complete categories to shuffle");
       }
@@ -966,7 +959,7 @@ export default function Blitzgrid() {
     } finally {
       setIsShuffling(false);
     }
-  }, [toast, playedShuffleCategoryIds, isShuffling, hasShuffleGridSelection]);
+  }, [toast, playedShuffleCategoryIds, isShuffling]);
   
   // Wrapper for shuffle button - opens grid picker first time, then reuses selection
   const handleShufflePlay = useCallback(() => {
