@@ -1232,6 +1232,18 @@ export default function Blitzgrid() {
     
     // GAMEPLAY MODE (normal grid or shuffle mode)
     if (playMode && (grid?.isActive || shuffleMode)) {
+      // Show loading state if categories haven't loaded yet (non-shuffle mode only)
+      if (!shuffleMode && loadingCategories) {
+        return (
+          <div className="h-screen flex items-center justify-center arcade-bg" data-testid="page-blitzgrid-loading">
+            <div className="text-center">
+              <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-fuchsia-500" />
+              <p className="text-white/70">Loading game...</p>
+            </div>
+          </div>
+        );
+      }
+      
       const handleCellClick = (categoryId: number, points: number, question: Question) => {
         const cellKey = `${categoryId}-${points}`;
         if (!revealedCells.has(cellKey)) {
