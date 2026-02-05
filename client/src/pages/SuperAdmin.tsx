@@ -404,7 +404,7 @@ export default function SuperAdmin() {
         const hostName = `${s.host?.firstName || ''} ${s.host?.lastName || ''}`.toLowerCase();
         return (s.code ?? '').toLowerCase().includes(search) ||
           hostName.includes(search) ||
-          s.host?.email?.toLowerCase().includes(search) ||
+          (s.host?.email ?? '').toLowerCase().includes(search) ||
           s.players.some(p => (p.name ?? '').toLowerCase().includes(search));
       })
     : allSessions;
@@ -412,14 +412,14 @@ export default function SuperAdmin() {
   const filteredBoards = contentSearch.trim() 
     ? allBoards.filter(b => 
         (b.name ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
-        b.ownerEmail?.toLowerCase().includes(contentSearch.toLowerCase())
+        (b.ownerEmail ?? '').toLowerCase().includes(contentSearch.toLowerCase())
       )
     : allBoards;
 
   if (isAuthLoading) {
     return (
       <div className="min-h-screen gradient-game flex items-center justify-center">
-        <div className="animate-pulse text-white">Loading...</div>
+        <div className="animate-pulse text-white" data-testid="text-loading-auth">Loading...</div>
       </div>
     );
   }
@@ -430,8 +430,8 @@ export default function SuperAdmin() {
         <AppHeader minimal backHref="/" title="Access Denied" />
         <main className="px-4 py-8 max-w-md mx-auto text-center">
           <Shield className="w-16 h-16 mx-auto mb-4 text-red-400" />
-          <h1 className="text-2xl font-bold text-white mb-2">Super Admin Only</h1>
-          <p className="text-white/70 mb-6">This area requires super admin privileges.</p>
+          <h1 className="text-2xl font-bold text-white mb-2" data-testid="text-access-denied-title">Super Admin Only</h1>
+          <p className="text-white/70 mb-6" data-testid="text-access-denied-description">This area requires super admin privileges.</p>
           <Link href="/">
             <Button variant="outline" data-testid="button-back-home">Back to Home</Button>
           </Link>
@@ -440,12 +440,12 @@ export default function SuperAdmin() {
     );
   }
 
-  const ErrorState = ({ message = "Couldn't load data", onRetry }: { message?: string; onRetry?: () => void }) => (
+  const ErrorState = ({ message = "Couldn't load data", onRetry, testId = "button-retry" }: { message?: string; onRetry?: () => void; testId?: string }) => (
     <div className="flex flex-col items-center justify-center py-8 text-center">
       <RefreshCw className="w-8 h-8 text-muted-foreground mb-2" />
       <p className="text-sm text-muted-foreground mb-3">{message}</p>
       {onRetry && (
-        <Button variant="outline" size="sm" onClick={onRetry} data-testid="button-retry">Try again</Button>
+        <Button variant="outline" size="sm" onClick={onRetry} data-testid={testId}>Try again</Button>
       )}
     </div>
   );
@@ -506,7 +506,7 @@ export default function SuperAdmin() {
                     {[1,2,3,4].map(i => <Skeleton key={i} className="h-16" />)}
                   </div>
                 ) : isErrorDashboard ? (
-                  <ErrorState message="Couldn't load stats" onRetry={() => refetchDashboard()} />
+                  <ErrorState message="Couldn't load stats" onRetry={() => refetchDashboard()} testId="button-retry-stats" />
                 ) : dashboard && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="p-3 rounded-lg bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30">
@@ -559,7 +559,7 @@ export default function SuperAdmin() {
                       {[1,2].map(i => <Skeleton key={i} className="h-14" />)}
                     </div>
                   ) : isErrorFlagged ? (
-                    <ErrorState message="Couldn't load flagged content" onRetry={() => refetchFlagged()} />
+                    <ErrorState message="Couldn't load flagged content" onRetry={() => refetchFlagged()} testId="button-retry-flagged" />
                   ) : (
                   <div className="space-y-2">
                     {flaggedBoards.map(board => (
@@ -608,7 +608,7 @@ export default function SuperAdmin() {
                 ))}
               </div>
             ) : isErrorDashboard ? (
-              <ErrorState message="Couldn't load analytics" onRetry={() => refetchDashboard()} />
+              <ErrorState message="Couldn't load analytics" onRetry={() => refetchDashboard()} testId="button-retry-analytics" />
             ) : dashboard && (
               <div className="grid md:grid-cols-3 gap-4">
                 <Card>
@@ -687,16 +687,22 @@ export default function SuperAdmin() {
               </div>
             ) : isErrorDashboard && !dashboard ? (
               <div className="grid md:grid-cols-2 gap-4">
-                {[1,2].map(i => (
-                  <Card key={i}>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg text-muted-foreground">{i === 1 ? 'Top Hosts' : 'Popular Grids'}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground text-center py-4">Data unavailable</p>
-                    </CardContent>
-                  </Card>
-                ))}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg text-muted-foreground">Top Hosts</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-unavailable-top-hosts">Data unavailable</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg text-muted-foreground">Popular Grids</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-unavailable-popular-grids">Data unavailable</p>
+                  </CardContent>
+                </Card>
               </div>
             ) : dashboard && (
               <div className="grid md:grid-cols-2 gap-4">
@@ -708,7 +714,7 @@ export default function SuperAdmin() {
                   </CardHeader>
                   <CardContent>
                     {dashboard.topHostsWeek.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">No data yet</p>
+                      <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-empty-top-hosts">No data yet</p>
                     ) : (
                       <div className="space-y-2">
                         {dashboard.topHostsWeek.slice(0, 5).map((h, i) => (
@@ -733,7 +739,7 @@ export default function SuperAdmin() {
                   </CardHeader>
                   <CardContent>
                     {dashboard.popularGridsWeek.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">No data yet</p>
+                      <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-empty-popular-grids">No data yet</p>
                     ) : (
                       <div className="space-y-2">
                         {dashboard.popularGridsWeek.slice(0, 5).map((g, i) => (
@@ -766,7 +772,7 @@ export default function SuperAdmin() {
                       {[1,2].map(i => <Skeleton key={i} className="h-10" />)}
                     </div>
                   ) : isErrorAnnouncements ? (
-                    <ErrorState message="Couldn't load announcements" onRetry={() => refetchAnnouncements()} />
+                    <ErrorState message="Couldn't load announcements" onRetry={() => refetchAnnouncements()} testId="button-retry-announcements" />
                   ) : showAnnouncementForm ? (
                     <div className="space-y-3">
                       <div>
@@ -777,7 +783,7 @@ export default function SuperAdmin() {
                           data-testid="input-announcement-title"
                         />
                         {!announcementTitle.trim() && announcementMessage.trim() && (
-                          <p className="text-xs text-destructive mt-1">Title is required</p>
+                          <p className="text-xs text-destructive mt-1" data-testid="text-error-title-required">Title is required</p>
                         )}
                       </div>
                       <div>
@@ -789,7 +795,7 @@ export default function SuperAdmin() {
                           data-testid="input-announcement-message"
                         />
                         {announcementTitle.trim() && !announcementMessage.trim() && (
-                          <p className="text-xs text-destructive mt-1">Message is required</p>
+                          <p className="text-xs text-destructive mt-1" data-testid="text-error-message-required">Message is required</p>
                         )}
                       </div>
                       <Select value={announcementType} onValueChange={(v) => setAnnouncementType(v as typeof announcementType)}>
@@ -823,7 +829,7 @@ export default function SuperAdmin() {
                   ) : (
                     <div className="space-y-3">
                       {announcements.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-4">No active announcements</p>
+                        <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-empty-announcements">No active announcements</p>
                       ) : (
                         announcements.slice(0, 3).map(a => (
                           <div key={a.id} className="flex items-start justify-between p-2 rounded bg-muted/30">
@@ -912,9 +918,9 @@ export default function SuperAdmin() {
                     {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-14" />)}
                   </div>
                 ) : isErrorUsers ? (
-                  <ErrorState message="Couldn't load users" onRetry={() => refetchUsers()} />
+                  <ErrorState message="Couldn't load users" onRetry={() => refetchUsers()} testId="button-retry-users" />
                 ) : filteredUsers.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">No users found</p>
+                  <p className="text-center text-muted-foreground py-8" data-testid="text-empty-users">No users found</p>
                 ) : (
                   <div className="space-y-2 max-h-[600px] overflow-y-auto">
                     {filteredUsers.map(u => (
@@ -939,9 +945,9 @@ export default function SuperAdmin() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="user" data-testid="select-item-user">User</SelectItem>
-                              <SelectItem value="admin" data-testid="select-item-admin">Admin</SelectItem>
-                              <SelectItem value="super_admin" data-testid="select-item-super-admin">Super Admin</SelectItem>
+                              <SelectItem value="user">User</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="super_admin">Super Admin</SelectItem>
                             </SelectContent>
                           </Select>
                           <Button
@@ -1028,7 +1034,7 @@ export default function SuperAdmin() {
                       {[1,2,3].map(i => <Skeleton key={i} className="h-14" />)}
                     </div>
                   ) : isErrorGameTypes ? (
-                    <ErrorState message="Couldn't load games" onRetry={() => refetchGameTypes()} />
+                    <ErrorState message="Couldn't load games" onRetry={() => refetchGameTypes()} testId="button-retry-games" />
                   ) : (
                     <div className="space-y-2">
                       {gameTypes.map(game => {
@@ -1053,13 +1059,13 @@ export default function SuperAdmin() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="active" data-testid="select-item-active">
+                                <SelectItem value="active">
                                   <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> Active</span>
                                 </SelectItem>
-                                <SelectItem value="hidden" data-testid="select-item-hidden">
+                                <SelectItem value="hidden">
                                   <span className="flex items-center gap-1"><EyeOff className="w-3 h-3" /> Hidden</span>
                                 </SelectItem>
-                                <SelectItem value="coming_soon" data-testid="select-item-coming-soon">
+                                <SelectItem value="coming_soon">
                                   <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Coming Soon</span>
                                 </SelectItem>
                               </SelectContent>
@@ -1078,9 +1084,9 @@ export default function SuperAdmin() {
                       {[1,2,3].map(i => <Skeleton key={i} className="h-14" />)}
                     </div>
                   ) : isErrorBoards ? (
-                    <ErrorState message="Couldn't load grids" onRetry={() => refetchBoards()} />
+                    <ErrorState message="Couldn't load grids" onRetry={() => refetchBoards()} testId="button-retry-grids" />
                   ) : filteredBoards.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No grids found</p>
+                    <p className="text-center text-muted-foreground py-8" data-testid="text-empty-grids">No grids found</p>
                   ) : (
                     <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {filteredBoards.map(b => (
@@ -1128,9 +1134,9 @@ export default function SuperAdmin() {
                       {[1,2,3].map(i => <Skeleton key={i} className="h-14" />)}
                     </div>
                   ) : isErrorSequence ? (
-                    <ErrorState message="Couldn't load questions" onRetry={() => refetchSequence()} />
+                    <ErrorState message="Couldn't load questions" onRetry={() => refetchSequence()} testId="button-retry-sequence" />
                   ) : sequenceQuestions.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No questions found</p>
+                    <p className="text-center text-muted-foreground py-8" data-testid="text-empty-sequence">No questions found</p>
                   ) : (
                     <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {sequenceQuestions.map(q => (
@@ -1166,9 +1172,9 @@ export default function SuperAdmin() {
                       {[1,2,3].map(i => <Skeleton key={i} className="h-14" />)}
                     </div>
                   ) : isErrorPsyop ? (
-                    <ErrorState message="Couldn't load questions" onRetry={() => refetchPsyop()} />
+                    <ErrorState message="Couldn't load questions" onRetry={() => refetchPsyop()} testId="button-retry-psyop" />
                   ) : psyopQuestions.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No questions found</p>
+                    <p className="text-center text-muted-foreground py-8" data-testid="text-empty-psyop">No questions found</p>
                   ) : (
                     <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {psyopQuestions.map(q => (
@@ -1229,9 +1235,9 @@ export default function SuperAdmin() {
                     {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-14" />)}
                   </div>
                 ) : isErrorSessions ? (
-                  <ErrorState message="Couldn't load sessions" onRetry={() => refetchSessions()} />
+                  <ErrorState message="Couldn't load sessions" onRetry={() => refetchSessions()} testId="button-retry-sessions" />
                 ) : filteredSessions.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">No sessions found</p>
+                  <p className="text-center text-muted-foreground py-8" data-testid="text-empty-sessions">No sessions found</p>
                 ) : (
                   <div className="space-y-2 max-h-[600px] overflow-y-auto">
                     {filteredSessions.map(s => (
