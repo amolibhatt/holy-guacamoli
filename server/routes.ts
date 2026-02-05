@@ -4821,9 +4821,11 @@ Be creative! Make facts surprising and fun to guess.`;
             const gridName = data.gridName || 'New Grid';
             room.boardId = data.boardId;
             
-            // Reset per-grid state (buzz queue, etc.) while keeping players and scores
+            // Reset per-grid state (buzz queue, passed players, completed questions) while keeping players and scores
             room.buzzQueue = [];
             room.buzzerLocked = true;
+            room.passedPlayers.clear();
+            room.completedQuestions.clear();
             
             if (room.sessionId && data.boardId) {
               try {
