@@ -1203,8 +1203,8 @@ export default function Blitzgrid() {
   if (selectedGridId || shuffleMode) {
     const grid = selectedGridId ? grids.find(g => g.id === selectedGridId) : null;
     const effectiveColor = grid?.colorCode?.startsWith('#') ? null : grid?.colorCode;
-    // Use fuchsia/violet theme for shuffle mode
-    const shuffleColor = 'fuchsia';
+    // Use violet theme for shuffle mode (must be a valid BoardColor)
+    const shuffleColor = 'violet' as BoardColor;
     // Use grid ID for stable color assignment (not position which can change)
     const colorConfig = getBoardColorConfig(shuffleMode ? shuffleColor : (effectiveColor || BOARD_COLORS[grid?.id ? grid.id % BOARD_COLORS.length : 0]));
     
@@ -1290,7 +1290,7 @@ export default function Blitzgrid() {
       // Use grid ID for stable color (same logic as GridCard), or shuffle color for shuffle mode
       const effectiveGridColor = grid?.colorCode?.startsWith('#') ? null : grid?.colorCode;
       const colorName = shuffleMode 
-        ? 'fuchsia' as BoardColor 
+        ? shuffleColor
         : (effectiveGridColor as BoardColor || BOARD_COLORS[grid?.id ? grid.id % BOARD_COLORS.length : 0]);
       
       // Keyboard handler for reveal mode
