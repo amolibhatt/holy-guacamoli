@@ -301,8 +301,8 @@ export default function Blitzgrid() {
     enabled: !!selectedGridId,
   });
 
-  // Memoize eligible grids for shuffle (grids with at least 1 category)
-  const eligibleShuffleGrids = grids.filter(g => (g.categoryCount || 0) >= 1);
+  // Memoize eligible grids for shuffle (only active grids with 5 complete categories)
+  const eligibleShuffleGrids = grids.filter(g => g.isActive);
   const eligibleShuffleGridIds = new Set(eligibleShuffleGrids.map(g => g.id));
 
   // Use shuffled categories when in shuffle mode, otherwise use grid categories
