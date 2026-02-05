@@ -138,6 +138,20 @@ interface BlitzgridQuestionWithCreator {
   creator: QuestionCreator | null;
 }
 
+interface GameSessionDetailed {
+  id: number;
+  code: string;
+  hostId: string;
+  currentMode: string | null;
+  state: string;
+  createdAt: string;
+  updatedAt: string;
+  host: { id: string; firstName: string | null; lastName: string | null; email: string | null };
+  players: { id: number; name: string; avatar: string; score: number; isConnected: boolean; joinedAt: string }[];
+  playerCount: number;
+  winner: { id: number; name: string; score: number } | null;
+}
+
 export default function SuperAdmin() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { toast } = useToast();
@@ -195,20 +209,6 @@ export default function SuperAdmin() {
     queryKey: ['/api/super-admin/questions/blitzgrid'],
     enabled: expandedGameSlug === 'blitzgrid',
   });
-
-  interface GameSessionDetailed {
-    id: number;
-    code: string;
-    hostId: string;
-    currentMode: string | null;
-    state: string;
-    createdAt: string;
-    updatedAt: string;
-    host: { id: string; firstName: string | null; lastName: string | null; email: string | null };
-    players: { id: number; name: string; avatar: string; score: number; isConnected: boolean; joinedAt: string }[];
-    playerCount: number;
-    winner: { id: number; name: string; score: number } | null;
-  }
 
   const { data: allSessions = [], isLoading: isLoadingSessions } = useQuery<GameSessionDetailed[]>({
     queryKey: ['/api/super-admin/sessions'],
