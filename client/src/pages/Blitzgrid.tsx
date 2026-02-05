@@ -225,6 +225,7 @@ export default function Blitzgrid() {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [scoreAnimations, setScoreAnimations] = useState<Map<string, { delta: number; timestamp: number }>>(new Map());
+  const scoreAnimationTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const [reactions, setReactions] = useState<Array<{ id: string; type: string; playerId?: string; timestamp: number }>>([]);
   const reactionTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const shareCardRef = useRef<HTMLDivElement | null>(null);
@@ -773,7 +774,13 @@ export default function Blitzgrid() {
         next.set(playerId, { delta: points, timestamp: animTimestamp });
         return next;
       });
-      setTimeout(() => {
+      // Clear any previous timeout for this player
+      const prevTimeout = scoreAnimationTimeouts.current.get(playerId);
+      if (prevTimeout) {
+        clearTimeout(prevTimeout);
+      }
+      // Set new timeout and track it
+      const timeoutId = setTimeout(() => {
         setScoreAnimations(prev => {
           const current = prev.get(playerId);
           if (current && current.timestamp === animTimestamp) {
@@ -783,7 +790,9 @@ export default function Blitzgrid() {
           }
           return prev;
         });
+        scoreAnimationTimeouts.current.delete(playerId);
       }, 1500);
+      scoreAnimationTimeouts.current.set(playerId, timeoutId);
       
       if (points > 0) {
         playPointsAwarded(points);
@@ -1183,6 +1192,9 @@ export default function Blitzgrid() {
       // Clear reaction timeouts on unmount
       reactionTimeouts.current.forEach(clearTimeout);
       reactionTimeouts.current.clear();
+      // Clear score animation timeouts on unmount
+      scoreAnimationTimeouts.current.forEach(clearTimeout);
+      scoreAnimationTimeouts.current.clear();
     };
   }, [playMode, gridPickerMode, connectWebSocket, disconnectWebSocket]);
 
@@ -3398,6 +3410,7 @@ export default function Blitzgrid() {
       setSelectedGridId(gridId);
       setPlayMode(true);
       setGridPickerMode(false);
+      setShuffleMode(false); // Ensure shuffle mode is reset when picking a specific grid
       setRevealedCells(new Set());
       setRevealedCategoryCount(0);
       setCategoryRevealMode(true);
@@ -3550,6 +3563,7 @@ export default function Blitzgrid() {
         onClick={() => {
           setSelectedGridId(grid.id);
           setPlayMode(true);
+          setShuffleMode(false); // Ensure shuffle mode is reset when playing a specific grid
           setRevealedCells(new Set());
           setRevealedCategoryCount(0);
           setCategoryRevealMode(true);
