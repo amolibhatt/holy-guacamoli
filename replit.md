@@ -96,9 +96,30 @@ Preferred communication style: Simple, everyday language.
 ### Known Security Notes
 - **Express v4 Vulnerabilities**: npm audit shows 3 HIGH severity vulnerabilities in express/qs/body-parser. Express v5 upgrade was attempted but reverted due to breaking changes in path-to-regexp (route syntax like `:param(*)` no longer works). Will revisit when upstream compatibility improves.
 
+### Player Profile System (February 2026)
+- **Guest-First Gameplay**: Server issues guestIds via session; players start playing without accounts
+- **Profile Conversion**: Guests can convert to authenticated users, merging game history
+- **Personality Traits**: 17 traits across 5 games calculated from gameplay behavior (brain_trust, speed_demon, master_manipulator, comedy_genius, etc.)
+- **Badge System**: 16 badge types (first_blood, trivia_titan, speed_demon, meme_lord, etc.) awarded based on game stats
+- **Schema**: playerProfiles, playerGameStats, playerBadges tables in shared/models/auth.ts
+- **Service**: server/services/playerProfile.ts handles profile CRUD, stats, badges, personality calculation
+- **Routes**: server/routes/playerProfile.ts (/api/player/guest, /api/player/me, /api/player/stats, /api/player/merge)
+- **Hook**: client/src/hooks/use-player-profile.ts manages guest/user profiles and stats updates
+- **UI**: client/src/pages/PlayerProfile.tsx displays personality traits, badges, game stats
+
+### RBAC Security Audit (February 2026)
+- Fixed 39 routes: 12 frontend pages and 27 backend routes now properly protected
+- Increased isAdmin middleware usage from 57 to 86 routes
+- Fixed privilege escalation bug: Regular admins blocked from setting isGlobal, isStarterPack, visibility on boards
+- Role hierarchy: user → admin → super_admin
+- Storage layer filtering prevents IDOR attacks
+
 ### Planned Features (Schema Ready, UI Pending)
 - **Mirror Mechanic**: Prediction phase for multiple choice questions (questionType, options, prediction fields)
 - **Time Capsule**: Future-locked questions that unlock after specified days (isFutureLocked, unlockAfterDays fields)
+
+### Known Implementation Gaps
+- **Game Stats Persistence**: WebSocket tracks in-memory stats (correctAnswers, wrongAnswers, timing) during gameplay, but these aren't persisted to playerProfiles when games end. Games need to call updateStats mutation on game completion.
 
 ### WebSocket Architecture
 - **Server**: WebSocket for real-time multiplayer game communication
