@@ -865,6 +865,12 @@ export default function Blitzgrid() {
     setHasShuffleGridSelection(false);
     setSelectedShuffleGridIds(new Set());
     setPlayedShuffleCategoryIds([]);
+    // Clear sessionStorage to prevent resurrection of played IDs
+    try {
+      sessionStorage.removeItem(SHUFFLE_STORAGE_KEY);
+    } catch {
+      // Ignore storage errors
+    }
     toast({ title: "Session ended", description: "All players have been disconnected." });
   }, [clearStoredSession, disconnectWebSocket, toast]);
   
