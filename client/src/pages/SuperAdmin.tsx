@@ -740,45 +740,6 @@ export default function SuperAdmin() {
                 />
               </div>
 
-              {/* Per-Game Content Stats */}
-              <h3 className="text-xl font-semibold text-foreground mt-8 mb-4 flex items-center gap-2">
-                <Layers className="w-5 h-5 text-violet-500" />
-                Content by Game
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-4">
-                {stats?.gameContent && Object.entries(stats.gameContent).map(([slug, game]) => {
-                  const GameIcon = getGameIcon(slug);
-                  const gradient = getGameGradient(slug);
-                  const primaryItem = game.items[0];
-                  const subtitle = game.items.length > 1 ? game.items.slice(1).map(i => `${i.count} ${i.type}`).join(', ') : undefined;
-                  return (
-                    <Card 
-                      key={slug} 
-                      className="hover-elevate cursor-pointer active-elevate-2"
-                      onClick={() => setActiveTab('content')}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && setActiveTab('content')}
-                    >
-                      <CardContent className="p-3">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center shadow`}>
-                            <GameIcon className="w-4 h-4 text-white" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-bold text-foreground truncate">
-                              {primaryItem.count} {primaryItem.type}
-                            </div>
-                            {subtitle && <div className="text-xs text-muted-foreground/70 truncate">{subtitle}</div>}
-                            <div className="text-xs text-muted-foreground truncate">{game.label}</div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-
               <h3 className="text-xl font-semibold text-foreground mt-8 mb-4 flex items-center gap-2">
                 <Zap className="w-5 h-5 text-amber-500" />
                 Live Activity
@@ -1125,121 +1086,6 @@ export default function SuperAdmin() {
                 </CardContent>
               </Card>
 
-              {/* Quick Insights */}
-              <h3 className="text-xl font-semibold text-foreground mt-8 mb-4 flex items-center gap-2">
-                <Zap className="w-5 h-5 text-yellow-500" />
-                Quick Insights
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Engagement Insight */}
-                <Card className="bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-900/10 dark:to-teal-900/10 border-emerald-200 dark:border-emerald-800/30">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-                        <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">Engagement Health</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {(detailedAnalytics?.avgPlayersPerSession ?? 0) >= 3 
-                            ? `Great engagement! Averaging ${detailedAnalytics?.avgPlayersPerSession ?? 0} players per session.`
-                            : (detailedAnalytics?.avgPlayersPerSession ?? 0) >= 1
-                            ? `Room for growth - averaging ${detailedAnalytics?.avgPlayersPerSession ?? 0} players per session. Consider promoting group play.`
-                            : 'No active sessions yet. Time to host your first game!'}
-                        </p>
-                        {(detailedAnalytics?.avgPlayersPerSession ?? 0) < 3 && (detailedAnalytics?.avgPlayersPerSession ?? 0) >= 1 && (
-                          <Button 
-                            variant="ghost" 
-                            className="p-0 h-auto text-emerald-600 dark:text-emerald-400 mt-2 hover:bg-transparent"
-                            onClick={() => { setDrillDownType('sessions'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
-                          >
-                            View sessions with most players <ArrowUpRight className="w-3 h-3 ml-1" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Conversion Insight */}
-                <Card className="bg-gradient-to-br from-violet-50/50 to-purple-50/50 dark:from-violet-900/10 dark:to-purple-900/10 border-violet-200 dark:border-violet-800/30">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-900/30">
-                        <UserCheck className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">Player Conversion</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {(conversionFunnel?.conversionRate ?? 0) >= 20
-                            ? `Excellent! ${conversionFunnel?.conversionRate}% of players are registered users.`
-                            : (conversionFunnel?.guestPlayers ?? 0) > 0
-                            ? `${conversionFunnel?.guestPlayers ?? 0} guest players could become registered users. Consider adding signup prompts.`
-                            : 'Start tracking conversions once players join games.'}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Content Insight */}
-                <Card className="bg-gradient-to-br from-rose-50/50 to-pink-50/50 dark:from-rose-900/10 dark:to-pink-900/10 border-rose-200 dark:border-rose-800/30">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/30">
-                        <Grid3X3 className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">Content Status</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {(stats?.totalContent ?? 0) >= 50
-                            ? `Healthy content library with ${stats?.totalContent ?? 0} total items across ${Object.keys(stats?.gameContent ?? {}).length} games.`
-                            : (stats?.totalContent ?? 0) >= 10
-                            ? `${stats?.totalContent ?? 0} content pieces created. Add more to keep games fresh!`
-                            : 'Limited content. Add grids and questions to get started.'}
-                        </p>
-                        <Button 
-                          variant="ghost" 
-                          className="p-0 h-auto text-rose-600 dark:text-rose-400 mt-2 hover:bg-transparent"
-                          onClick={() => { setDrillDownType('grids'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
-                        >
-                          Browse all grids <ArrowUpRight className="w-3 h-3 ml-1" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Activity Insight */}
-                <Card className="bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-900/10 dark:to-orange-900/10 border-amber-200 dark:border-amber-800/30">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                        <Activity className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">Today's Activity</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {(roomStats?.activeRooms ?? 0) > 0
-                            ? `${roomStats?.activeRooms ?? 0} active rooms right now with ${roomStats?.playersToday ?? 0} players today!`
-                            : (roomStats?.sessionsToday ?? 0) > 0
-                            ? `${roomStats?.sessionsToday ?? 0} sessions completed today. ${roomStats?.playersToday ?? 0} players participated.`
-                            : 'No activity yet today. A perfect time to host a game!'}
-                        </p>
-                        {(roomStats?.activeRooms ?? 0) > 0 && (
-                          <Button 
-                            variant="ghost" 
-                            className="p-0 h-auto text-amber-600 dark:text-amber-400 mt-2 hover:bg-transparent"
-                            onClick={() => { setDrillDownType('active-sessions'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
-                          >
-                            View live rooms <ArrowUpRight className="w-3 h-3 ml-1" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
             </motion.div>
           </TabsContent>
 
@@ -2154,44 +2000,10 @@ export default function SuperAdmin() {
               </Card>
 
               <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Database className="w-4 h-4 text-teal-500" />
+                <Megaphone className="w-4 h-4 text-violet-500" />
                 Admin Tools
               </h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Database className="w-5 h-5 text-teal-500" />
-                      Database Overview
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoadingDbStats ? (
-                      <div className="space-y-2">
-                        {[1, 2, 3, 4].map((i) => (
-                          <Skeleton key={i} className="h-5 w-full" />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-3 gap-2">
-                        {[
-                          { label: 'Users', value: dbStats?.users ?? 0, color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' },
-                          { label: 'Grids', value: dbStats?.boards ?? 0, color: 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300' },
-                          { label: 'Categories', value: dbStats?.categories ?? 0, color: 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' },
-                          { label: 'Questions', value: dbStats?.questions ?? 0, color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' },
-                          { label: 'Sessions', value: dbStats?.sessions ?? 0, color: 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300' },
-                          { label: 'Players', value: dbStats?.players ?? 0, color: 'bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300' },
-                        ].map((stat) => (
-                          <div key={stat.label} className={`p-2 rounded-lg ${stat.color}`}>
-                            <p className="text-xl font-bold">{stat.value.toLocaleString()}</p>
-                            <p className="text-xs opacity-80">{stat.label}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2 text-lg">
