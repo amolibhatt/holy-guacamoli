@@ -3692,6 +3692,11 @@ export default function Blitzgrid() {
                           size="sm"
                           onClick={() => {
                             setPlayedShuffleCategoryIds([]);
+                            try {
+                              sessionStorage.removeItem(SHUFFLE_STORAGE_KEY);
+                            } catch {
+                              // Ignore storage errors
+                            }
                             toast({ title: "Reset", description: "All categories available again" });
                           }}
                           className="text-cyan-400 hover:text-cyan-300 text-xs"
