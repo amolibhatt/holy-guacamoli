@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, psyopQuestions, timeWarpQuestions, memePrompts, memeImages, memeSessions, memePlayers, memeRounds, memeSubmissions, memeVotes, adminAnnouncements, playerGameStats, badges, userBadges, playerGameHistory, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameSessionWithDetails, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion, type PsyopQuestion, type InsertPsyopQuestion, type TimeWarpQuestion, type InsertTimeWarpQuestion, type MemePrompt, type InsertMemePrompt, type MemeImage, type InsertMemeImage, type MemeSession, type InsertMemeSession, type MemePlayer, type InsertMemePlayer, type PlayerGameStats, type InsertPlayerGameStats, type Badge, type InsertBadge, type UserBadge, type InsertUserBadge, type PlayerGameHistory, type InsertPlayerGameHistory, type PlayerProfile, type MemeRound, type InsertMemeRound, type MemeSubmission, type InsertMemeSubmission, type MemeVote, type InsertMemeVote, type AdminAnnouncement, type InsertAdminAnnouncement, type ModerationStatus } from "@shared/schema";
 import { users } from "@shared/models/auth";
-import { eq, and, asc, count, inArray, desc, sql, gte, like } from "drizzle-orm";
+import { eq, and, asc, count, inArray, desc, sql, gte, like, or } from "drizzle-orm";
 
 export interface IStorage {
   getBoards(userId: string, role?: string): Promise<Board[]>;
@@ -1882,8 +1882,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllBlitzgridsWithOwners() {
+    // Match both "blitzgrid" and "blitzgrid:*" themes
     const allGrids = await db.select().from(boards)
-      .where(like(boards.theme, 'blitzgrid:%'))
+      .where(or(
+        eq(boards.theme, 'blitzgrid'),
+        like(boards.theme, 'blitzgrid:%')
+      ))
       .orderBy(desc(boards.id));
     
     const gridsWithOwners = await Promise.all(allGrids.map(async (board) => {
@@ -2507,6 +2511,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllBlitzgridQuestionsWithCreators() {
+    // Only get questions from blitzgrid boards (theme = "blitzgrid" or "blitzgrid:*")
+    const blitzgridBoards = await db.select({ id: boards.id })
+      .from(boards)
+      .where(or(
+        eq(boards.theme, 'blitzgrid'),
+        like(boards.theme, 'blitzgrid:%')
+      ));
+    
+    const blitzgridBoardIds = blitzgridBoards.map(b => b.id);
+    if (blitzgridBoardIds.length === 0) {
+      return [];
+    }
+
+    // Get category IDs linked to blitzgrid boards
+    const blitzgridCategoryLinks = await db.select({ categoryId: boardCategories.categoryId })
+      .from(boardCategories)
+      .where(inArray(boardCategories.boardId, blitzgridBoardIds));
+    
+    const blitzgridCategoryIds = Array.from(new Set(blitzgridCategoryLinks.map(bc => bc.categoryId)));
+    if (blitzgridCategoryIds.length === 0) {
+      return [];
+    }
+
+    // Get questions only from blitzgrid categories
     const allQuestions = await db.select({
       id: questions.id,
       question: questions.question,
@@ -2518,6 +2546,7 @@ export class DatabaseStorage implements IStorage {
       videoUrl: questions.videoUrl,
       categoryId: questions.categoryId,
     }).from(questions)
+      .where(inArray(questions.categoryId, blitzgridCategoryIds))
       .limit(500);
 
     const questionsWithDetails = await Promise.all(allQuestions.map(async (q) => {

@@ -3547,9 +3547,21 @@ Be creative! Make facts surprising and fun to guess.`;
     try {
       const userId = req.session.userId!;
       
-      const { name, description } = req.body;
+      const { name, description, theme } = req.body;
       if (!name || typeof name !== "string") {
         return res.status(400).json({ message: "Grid name is required" });
+      }
+      
+      // Theme should be "blitzgrid" or "blitzgrid:{themeName}"
+      let gridTheme = "blitzgrid";
+      if (theme && typeof theme === "string" && theme.trim()) {
+        const themeName = theme.trim().toLowerCase();
+        // If just a theme name is provided (e.g. "birthday"), prefix with "blitzgrid:"
+        if (!themeName.startsWith("blitzgrid")) {
+          gridTheme = `blitzgrid:${themeName}`;
+        } else {
+          gridTheme = themeName;
+        }
       }
       
       const board = await storage.createBoard({
@@ -3557,7 +3569,7 @@ Be creative! Make facts surprising and fun to guess.`;
         name: name.trim(),
         description: (typeof description === "string" && description.trim()) ? description.trim() : "BlitzGrid",
         pointValues: [10, 20, 30, 40, 50],
-        theme: "blitzgrid",
+        theme: gridTheme,
         visibility: "private",
         isGlobal: false,
         sortOrder: 0,
