@@ -1835,7 +1835,24 @@ export default function Blitzgrid() {
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={() => { setPlayMode(false); setShuffleMode(false); setShuffledCategories(null); setSelectedGridId(null); }}
+                onClick={() => { 
+                  // Clean up all game state when exiting play mode
+                  setActiveQuestion(null);
+                  setShowAnswer(false);
+                  setTimerActive(false);
+                  setTimeLeft(10);
+                  setBuzzQueue([]);
+                  setBuzzerLocked(true);
+                  setIsJudging(false);
+                  setLastScoreChange(null);
+                  setRevealedCells(new Set());
+                  setRevealedCategoryCount(0);
+                  setCategoryRevealMode(true);
+                  setPlayMode(false); 
+                  setShuffleMode(false); 
+                  setShuffledCategories(null); 
+                  setSelectedGridId(null); 
+                }}
                 className="text-muted-foreground"
                 data-testid="button-exit-play"
               >
@@ -3346,6 +3363,14 @@ export default function Blitzgrid() {
       setRevealedCells(new Set());
       setRevealedCategoryCount(0);
       setCategoryRevealMode(true);
+      // Reset timer state
+      setTimerActive(false);
+      setTimeLeft(10);
+      // Reset buzzer state
+      setBuzzQueue([]);
+      setBuzzerLocked(true);
+      setIsJudging(false);
+      setLastScoreChange(null);
       // Reset game stats for next grid
       setGameStats({
         playerStats: new Map(),
@@ -3490,6 +3515,14 @@ export default function Blitzgrid() {
           setRevealedCells(new Set());
           setRevealedCategoryCount(0);
           setCategoryRevealMode(true);
+          // Reset timer state
+          setTimerActive(false);
+          setTimeLeft(10);
+          // Reset buzzer state
+          setBuzzQueue([]);
+          setBuzzerLocked(true);
+          setIsJudging(false);
+          setLastScoreChange(null);
           setActiveQuestion(null);
           setGameStats({
             playerStats: new Map(),
