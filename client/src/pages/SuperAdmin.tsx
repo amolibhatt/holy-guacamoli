@@ -161,7 +161,8 @@ export default function SuperAdmin() {
   // Queries
   const { data: dashboard, isLoading: isLoadingDashboard, isError: isErrorDashboard, refetch: refetchDashboard } = useQuery<ComprehensiveDashboard>({
     queryKey: ['/api/super-admin/dashboard'],
-    refetchInterval: 30000,
+    enabled: activeTab === 'overview',
+    refetchInterval: activeTab === 'overview' ? 30000 : false,
   });
 
   const { data: allUsers = [], isLoading: isLoadingUsers, isError: isErrorUsers, refetch: refetchUsers } = useQuery<UserWithStats[]>({
@@ -588,7 +589,18 @@ export default function SuperAdmin() {
             )}
 
             {/* Analytics Summary */}
-            {isErrorDashboard ? (
+            {isLoadingDashboard && !dashboard ? (
+              <div className="grid md:grid-cols-3 gap-4">
+                {[1,2,3].map(i => (
+                  <Card key={i}>
+                    <CardHeader className="pb-2"><Skeleton className="h-4 w-20" /></CardHeader>
+                    <CardContent className="space-y-2">
+                      {[1,2,3].map(j => <Skeleton key={j} className="h-5 w-full" />)}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : isErrorDashboard ? (
               <ErrorState message="Couldn't load analytics" onRetry={() => refetchDashboard()} />
             ) : dashboard && (
               <div className="grid md:grid-cols-3 gap-4">
@@ -655,7 +667,18 @@ export default function SuperAdmin() {
             )}
 
             {/* Top Hosts & Popular Grids */}
-            {dashboard && !isErrorDashboard && (
+            {isLoadingDashboard && !dashboard ? (
+              <div className="grid md:grid-cols-2 gap-4">
+                {[1,2].map(i => (
+                  <Card key={i}>
+                    <CardHeader className="pb-3"><Skeleton className="h-5 w-24" /></CardHeader>
+                    <CardContent className="space-y-2">
+                      {[1,2,3].map(j => <Skeleton key={j} className="h-10 w-full" />)}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : dashboard && !isErrorDashboard && (
               <div className="grid md:grid-cols-2 gap-4">
                 <Card>
                   <CardHeader className="pb-3">
