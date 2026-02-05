@@ -225,11 +225,8 @@ export default function SuperAdmin() {
   const [deleteBoardId, setDeleteBoardId] = useState<number | null>(null);
   const [expandedGameSlug, setExpandedGameSlug] = useState<string | null>(null);
   const [usersSectionExpanded, setUsersSectionExpanded] = useState(false);
-  const [sessionsSectionExpanded, setSessionsSectionExpanded] = useState(false);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
-  const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
   const [userSearch, setUserSearch] = useState("");
-  const [sessionSearch, setSessionSearch] = useState("");
   const [gridSearch, setGridSearch] = useState("");
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
@@ -272,10 +269,6 @@ export default function SuperAdmin() {
 
   const { data: conversionFunnel, isLoading: isLoadingFunnel } = useQuery<ConversionFunnel>({
     queryKey: ['/api/super-admin/conversion-funnel'],
-  });
-
-  const { data: dbStats, isLoading: isLoadingDbStats } = useQuery<DatabaseStats>({
-    queryKey: ['/api/super-admin/db-stats'],
   });
 
   const { data: announcements = [], isLoading: isLoadingAnnouncements } = useQuery<Announcement[]>({
@@ -2159,7 +2152,7 @@ export default function SuperAdmin() {
                   <p className="text-center text-muted-foreground py-8">No sessions found</p>
                 ) : (
                   filteredSessionsForDrillDown.slice(0, 50).map((session) => (
-                    <Card key={session.id} className="hover-elevate cursor-pointer" onClick={() => { setExpandedSessionId(String(session.id)); setSessionsSectionExpanded(true); setActiveTab('dashboard'); setDrillDownType(null); }}>
+                    <Card key={session.id} className="hover-elevate">
                       <CardContent className="p-3">
                         <div className="flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-white ${
