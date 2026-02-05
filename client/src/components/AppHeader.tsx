@@ -1,7 +1,8 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/Logo";
-import { ArrowLeft, Settings, Shield, LogOut, HelpCircle, User, ChevronDown, Crown } from "lucide-react";
+import { ArrowLeft, Settings, Shield, LogOut, HelpCircle, User, ChevronDown, Crown, Gamepad2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import {
   DropdownMenu,
@@ -92,9 +93,28 @@ export function AppHeader({
                     <User className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-foreground truncate" data-testid="text-username">
-                      {user?.firstName || 'User'}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-foreground truncate" data-testid="text-username">
+                        {user?.firstName || 'User'}
+                      </p>
+                      {user?.role === 'super_admin' && (
+                        <Badge variant="secondary" className="bg-purple-500/20 text-purple-400 text-[10px] px-1.5 py-0 shrink-0">
+                          <Shield className="w-2.5 h-2.5 mr-0.5" />
+                          Super
+                        </Badge>
+                      )}
+                      {user?.role === 'admin' && (
+                        <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-[10px] px-1.5 py-0 shrink-0">
+                          Admin
+                        </Badge>
+                      )}
+                      {(!user?.role || user?.role === 'user') && (
+                        <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400 text-[10px] px-1.5 py-0 shrink-0">
+                          <Gamepad2 className="w-2.5 h-2.5 mr-0.5" />
+                          Player
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground truncate">
                       {user?.email || ''}
                     </p>
