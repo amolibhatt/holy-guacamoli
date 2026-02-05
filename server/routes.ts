@@ -3547,7 +3547,7 @@ Be creative! Make facts surprising and fun to guess.`;
     try {
       const userId = req.session.userId!;
       
-      const { name } = req.body;
+      const { name, description } = req.body;
       if (!name || typeof name !== "string") {
         return res.status(400).json({ message: "Grid name is required" });
       }
@@ -3555,7 +3555,7 @@ Be creative! Make facts surprising and fun to guess.`;
       const board = await storage.createBoard({
         userId,
         name: name.trim(),
-        description: "BlitzGrid",
+        description: (typeof description === "string" && description.trim()) ? description.trim() : "BlitzGrid",
         pointValues: [10, 20, 30, 40, 50],
         theme: "blitzgrid",
         visibility: "private",
