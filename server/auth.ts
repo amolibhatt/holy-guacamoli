@@ -204,7 +204,7 @@ export function registerAuthRoutes(app: Express): void {
 
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      const role = email === 'amoli.bhatt@gmail.com' ? 'super_admin' : 'host';
+      const role = email === 'amoli.bhatt@gmail.com' ? 'super_admin' : 'user';
 
       const [newUser] = await db.insert(users).values({
         email,

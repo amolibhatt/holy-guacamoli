@@ -56,7 +56,7 @@ export const authStorage = {
     }
 
     const randomPassword = crypto.randomBytes(32).toString("hex");
-    const role = userData.email === "amoli.bhatt@gmail.com" ? "super_admin" : "host";
+    const role = userData.email === "amoli.bhatt@gmail.com" ? "super_admin" : "user";
 
     const [newUser] = await db
       .insert(users)

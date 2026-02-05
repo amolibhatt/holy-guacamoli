@@ -28,6 +28,16 @@ function parseId(value: string): number | null {
   return id;
 }
 
+// Admin middleware - allows admin and super_admin to create/host content
+// Users with 'user' role can only view/play, not create
+const isAdmin: import('express').RequestHandler = (req, res, next) => {
+  const role = req.session?.userRole;
+  if (!req.session?.userId || (role !== 'admin' && role !== 'super_admin')) {
+    return res.status(403).json({ message: "Admin access required to create content" });
+  }
+  next();
+};
+
 // Validate if a category can be set to LIVE (isActive = true)
 // Returns { valid: true } or { valid: false, error: string }
 async function validateCategoryForLive(categoryId: number): Promise<{ valid: boolean; error?: string }> {
@@ -333,7 +343,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/boards", isAuthenticated, async (req, res) => {
+  app.post("/api/boards", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -360,7 +370,7 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/boards/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/boards/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const boardId = parseId(req.params.id);
       if (boardId === null) {
@@ -387,7 +397,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/boards/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/boards/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const boardId = parseId(req.params.id);
       if (boardId === null) {
@@ -427,7 +437,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/boards/:boardId/categories", isAuthenticated, async (req, res) => {
+  app.post("/api/boards/:boardId/categories", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const boardId = parseId(req.params.boardId);
       if (boardId === null) {
@@ -467,7 +477,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/board-categories/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/board-categories/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const bcId = parseId(req.params.id);
       if (bcId === null) {
@@ -494,7 +504,7 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/boards/:boardId/categories/reorder", isAuthenticated, async (req, res) => {
+  app.put("/api/boards/:boardId/categories/reorder", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const boardId = parseId(req.params.boardId);
       if (boardId === null) {
@@ -526,7 +536,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/boards/:boardId/categories/create-and-link", isAuthenticated, async (req, res) => {
+  app.post("/api/boards/:boardId/categories/create-and-link", isAuthenticated, isAdmin, async (req, res) => {
     const debugInfo: Record<string, any> = { timestamp: new Date().toISOString() };
     try {
       debugInfo.step = "parseId";
@@ -655,7 +665,7 @@ export async function registerRoutes(
   });
 
   // Standalone category creation - restricted to super_admin only (regular users use create-and-link)
-  app.post(api.categories.create.path, isAuthenticated, async (req, res) => {
+  app.post(api.categories.create.path, isAuthenticated, isAdmin, async (req, res) => {
     try {
       const role = req.session.userRole;
       // Only super_admin can create standalone (orphan) categories
@@ -677,7 +687,7 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/categories/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/categories/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -723,7 +733,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete(api.categories.delete.path, isAuthenticated, async (req, res) => {
+  app.delete(api.categories.delete.path, isAuthenticated, isAdmin, async (req, res) => {
     const userId = req.session.userId!;
     const role = req.session.userRole;
     const categoryId = Number(req.params.id);
@@ -795,7 +805,7 @@ export async function registerRoutes(
     res.json(questions);
   });
 
-  app.post(api.questions.create.path, isAuthenticated, async (req, res) => {
+  app.post(api.questions.create.path, isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -833,7 +843,7 @@ export async function registerRoutes(
     }
   });
 
-  app.put(api.questions.update.path, isAuthenticated, async (req, res) => {
+  app.put(api.questions.update.path, isAuthenticated, isAdmin, async (req, res) => {
     try {
       const questionId = parseId(req.params.id);
       if (questionId === null) {
@@ -876,7 +886,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete(api.questions.delete.path, isAuthenticated, async (req, res) => {
+  app.delete(api.questions.delete.path, isAuthenticated, isAdmin, async (req, res) => {
     const questionId = parseId(req.params.id);
     if (questionId === null) {
       return res.status(400).json({ message: 'Invalid question ID' });
@@ -910,7 +920,7 @@ export async function registerRoutes(
   const MAX_QUESTION_LENGTH = 1000;
   const MAX_ANSWER_LENGTH = 500;
   
-  app.post("/api/categories/:categoryId/questions/bulk", isAuthenticated, async (req, res) => {
+  app.post("/api/categories/:categoryId/questions/bulk", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -1070,7 +1080,7 @@ export async function registerRoutes(
     res.json(game);
   });
 
-  app.post("/api/games", isAuthenticated, async (req, res) => {
+  app.post("/api/games", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { name, mode, settings } = req.body;
@@ -1090,7 +1100,7 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/games/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/games/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -1106,7 +1116,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/games/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/games/:id", isAuthenticated, isAdmin, async (req, res) => {
     const userId = req.session.userId!;
     const role = req.session.userRole;
     const deleted = await storage.deleteGame(Number(req.params.id), userId, role);
@@ -1128,7 +1138,7 @@ export async function registerRoutes(
     res.json(gbs);
   });
 
-  app.post("/api/games/:gameId/boards", isAuthenticated, async (req, res) => {
+  app.post("/api/games/:gameId/boards", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -1153,7 +1163,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/games/:gameId/boards/:boardId", isAuthenticated, async (req, res) => {
+  app.delete("/api/games/:gameId/boards/:boardId", isAuthenticated, isAdmin, async (req, res) => {
     const userId = req.session.userId!;
     const role = req.session.userRole;
     const gameId = Number(req.params.gameId);
@@ -1186,7 +1196,7 @@ export async function registerRoutes(
     res.json(deck);
   });
 
-  app.post("/api/heads-up-decks", isAuthenticated, async (req, res) => {
+  app.post("/api/heads-up-decks", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -1212,7 +1222,7 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/heads-up-decks/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/heads-up-decks/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -1232,7 +1242,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/heads-up-decks/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/heads-up-decks/:id", isAuthenticated, isAdmin, async (req, res) => {
     const userId = req.session.userId!;
     const role = req.session.userRole;
     // Only Super Admins can delete decks
@@ -1258,7 +1268,7 @@ export async function registerRoutes(
     res.json(cards);
   });
 
-  app.post("/api/heads-up-decks/:deckId/cards", isAuthenticated, async (req, res) => {
+  app.post("/api/heads-up-decks/:deckId/cards", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -1283,7 +1293,7 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/heads-up-cards/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/heads-up-cards/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const role = req.session.userRole;
       // Only Super Admins can update cards
@@ -1302,7 +1312,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/heads-up-cards/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/heads-up-cards/:id", isAuthenticated, isAdmin, async (req, res) => {
     const role = req.session.userRole;
     // Only Super Admins can delete cards
     if (role !== 'super_admin') {
@@ -1327,7 +1337,7 @@ export async function registerRoutes(
     res.json(gds);
   });
 
-  app.post("/api/games/:gameId/decks", isAuthenticated, async (req, res) => {
+  app.post("/api/games/:gameId/decks", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -1352,7 +1362,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/games/:gameId/decks/:deckId", isAuthenticated, async (req, res) => {
+  app.delete("/api/games/:gameId/decks/:deckId", isAuthenticated, isAdmin, async (req, res) => {
     const userId = req.session.userId!;
     const role = req.session.userRole;
     const gameId = Number(req.params.gameId);
@@ -1928,7 +1938,7 @@ export async function registerRoutes(
     try {
       const { id } = req.params;
       const { role } = req.body;
-      if (!role || !['host', 'super_admin'].includes(role)) {
+      if (!role || !['user', 'admin', 'super_admin'].includes(role)) {
         return res.status(400).json({ message: "Invalid role" });
       }
       const updated = await storage.updateUserRole(id, role);
@@ -2188,7 +2198,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/sequence-squeeze/questions", isAuthenticated, async (req, res) => {
+  app.post("/api/sequence-squeeze/questions", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { question, optionA, optionB, optionC, optionD, correctOrder, hint, isActive } = req.body;
@@ -2248,7 +2258,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/sequence-squeeze/questions/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/sequence-squeeze/questions/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const userId = req.session.userId!;
@@ -2267,7 +2277,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/sequence-squeeze/questions/bulk", isAuthenticated, async (req, res) => {
+  app.post("/api/sequence-squeeze/questions/bulk", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { questions } = req.body;
@@ -2337,7 +2347,7 @@ export async function registerRoutes(
   });
 
   // AI-generated Sort Circuit questions
-  app.post("/api/sequence-squeeze/questions/generate", isAuthenticated, async (req, res) => {
+  app.post("/api/sequence-squeeze/questions/generate", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { topic, count = 3 } = req.body;
@@ -2466,7 +2476,7 @@ Keep options SHORT (max 50 chars each). Questions should be fun and educational.
   });
 
   // Conversational AI for Sort Circuit questions
-  app.post("/api/sequence-squeeze/questions/chat", isAuthenticated, async (req, res) => {
+  app.post("/api/sequence-squeeze/questions/chat", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { messages } = req.body;
       
@@ -2579,7 +2589,7 @@ Be creative and fun! Make questions engaging and varied.`;
     }
   });
 
-  app.post("/api/psyop/questions", isAuthenticated, async (req, res) => {
+  app.post("/api/psyop/questions", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { factText, correctAnswer, category, isActive } = req.body;
@@ -2614,7 +2624,7 @@ Be creative and fun! Make questions engaging and varied.`;
     }
   });
 
-  app.put("/api/psyop/questions/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/psyop/questions/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const userId = req.session.userId!;
@@ -2653,7 +2663,7 @@ Be creative and fun! Make questions engaging and varied.`;
     }
   });
 
-  app.delete("/api/psyop/questions/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/psyop/questions/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const userId = req.session.userId!;
@@ -2670,7 +2680,7 @@ Be creative and fun! Make questions engaging and varied.`;
     }
   });
 
-  app.post("/api/psyop/questions/bulk", isAuthenticated, async (req, res) => {
+  app.post("/api/psyop/questions/bulk", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { questions } = req.body;
@@ -2725,7 +2735,7 @@ Be creative and fun! Make questions engaging and varied.`;
   });
 
   // Conversational AI for PsyOp questions
-  app.post("/api/psyop/questions/chat", isAuthenticated, async (req, res) => {
+  app.post("/api/psyop/questions/chat", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { messages } = req.body;
       
@@ -2842,7 +2852,7 @@ Be creative! Make facts surprising and fun to guess.`;
     category: z.string().optional(),
   });
 
-  app.post("/api/pastforward/questions", isAuthenticated, async (req, res) => {
+  app.post("/api/pastforward/questions", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       
@@ -2882,7 +2892,7 @@ Be creative! Make facts surprising and fun to guess.`;
     isActive: z.boolean().optional(),
   });
 
-  app.put("/api/pastforward/questions/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/pastforward/questions/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -2915,7 +2925,7 @@ Be creative! Make facts surprising and fun to guess.`;
     }
   });
 
-  app.delete("/api/pastforward/questions/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/pastforward/questions/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -2951,7 +2961,7 @@ Be creative! Make facts surprising and fun to guess.`;
     prompt: z.string().min(1, "Prompt is required"),
   });
 
-  app.post("/api/memenoharm/prompts", isAuthenticated, async (req, res) => {
+  app.post("/api/memenoharm/prompts", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       
@@ -2973,7 +2983,7 @@ Be creative! Make facts surprising and fun to guess.`;
     }
   });
 
-  app.put("/api/memenoharm/prompts/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/memenoharm/prompts/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -2992,7 +3002,7 @@ Be creative! Make facts surprising and fun to guess.`;
     }
   });
 
-  app.delete("/api/memenoharm/prompts/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/memenoharm/prompts/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -3027,7 +3037,7 @@ Be creative! Make facts surprising and fun to guess.`;
     caption: z.string().optional(),
   });
 
-  app.post("/api/memenoharm/images", isAuthenticated, async (req, res) => {
+  app.post("/api/memenoharm/images", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       
@@ -3050,7 +3060,7 @@ Be creative! Make facts surprising and fun to guess.`;
     }
   });
 
-  app.put("/api/memenoharm/images/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/memenoharm/images/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -3069,7 +3079,7 @@ Be creative! Make facts surprising and fun to guess.`;
     }
   });
 
-  app.delete("/api/memenoharm/images/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/memenoharm/images/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -3533,7 +3543,7 @@ Be creative! Make facts surprising and fun to guess.`;
   });
   
   // Create a new grid
-  app.post("/api/blitzgrid/grids", isAuthenticated, async (req, res) => {
+  app.post("/api/blitzgrid/grids", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       
@@ -3601,7 +3611,7 @@ Be creative! Make facts surprising and fun to guess.`;
   });
   
   // Delete a grid
-  app.delete("/api/blitzgrid/grids/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/blitzgrid/grids/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       
@@ -3663,7 +3673,7 @@ Be creative! Make facts surprising and fun to guess.`;
   });
   
   // Add category to grid
-  app.post("/api/blitzgrid/grids/:id/categories", isAuthenticated, async (req, res) => {
+  app.post("/api/blitzgrid/grids/:id/categories", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       
@@ -3708,7 +3718,7 @@ Be creative! Make facts surprising and fun to guess.`;
   });
   
   // Create new category and add to grid
-  app.post("/api/blitzgrid/grids/:id/categories/create", isAuthenticated, async (req, res) => {
+  app.post("/api/blitzgrid/grids/:id/categories/create", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       
@@ -3756,7 +3766,7 @@ Be creative! Make facts surprising and fun to guess.`;
   });
   
   // Remove category from grid
-  app.delete("/api/blitzgrid/grids/:gridId/categories/:categoryId", isAuthenticated, async (req, res) => {
+  app.delete("/api/blitzgrid/grids/:gridId/categories/:categoryId", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       
@@ -3788,7 +3798,7 @@ Be creative! Make facts surprising and fun to guess.`;
   });
   
   // Save/update question for a category
-  app.post("/api/blitzgrid/categories/:categoryId/questions", isAuthenticated, async (req, res) => {
+  app.post("/api/blitzgrid/categories/:categoryId/questions", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       
@@ -3871,7 +3881,7 @@ Be creative! Make facts surprising and fun to guess.`;
   });
   
   // Delete a question
-  app.delete("/api/blitzgrid/questions/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/blitzgrid/questions/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       

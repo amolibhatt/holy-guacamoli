@@ -84,7 +84,7 @@ Preferred communication style: Simple, everyday language.
   - Collapsible Users section with role management and expandable details
   - Admin Tools for announcements and data export
   - Removed drill-down overlays, enterprise analytics, and vanity metrics to focus on what admins DO
-- **Simplified Role System**: Two roles only - Host (regular users who create/host games) and Super Admin (platform owner). Removed unused "Admin" role that had no special permissions.
+- **Three-Tier Role System**: User (players who can only play games), Admin (can create questions and host games), Super Admin (platform owner with full access). New signups default to User role.
 - **Admin Announcements**: Broadcast system for super admins to send platform-wide announcements with title, message, type (info/warning/success), and optional expiration.
 - **Content Moderation**: Boards can be flagged (moderationStatus), featured (isFeatured), with tracking of moderatedBy and moderatedAt timestamps.
 - **User Activity Tracking**: lastLoginAt field on users table, activity API showing games hosted and recent sessions.
