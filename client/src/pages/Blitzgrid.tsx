@@ -1224,7 +1224,7 @@ export default function Blitzgrid() {
       
       return (
         <div 
-          className="h-screen overflow-hidden flex flex-col relative touch-manipulation bg-[#0a0a0f]" 
+          className="h-screen overflow-hidden flex flex-col relative touch-manipulation arcade-bg" 
           data-testid="page-blitzgrid-play"
           tabIndex={0}
           onKeyDown={handleKeyDown}
@@ -1272,7 +1272,7 @@ export default function Blitzgrid() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0f]"
+                className="fixed inset-0 z-50 flex items-center justify-center arcade-bg"
               >
                 {/* Neon gradient overlay */}
                 <div className="absolute inset-0">
@@ -1312,7 +1312,7 @@ export default function Blitzgrid() {
                           {/* Player floating above podium */}
                           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: "spring" }} className="mb-1">
                             <div 
-                              className="w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center text-3xl md:text-4xl shadow-lg border-2 bg-[#0d0d12]"
+                              className="w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center text-3xl md:text-4xl shadow-lg border-2 arcade-surface"
                               style={{ borderColor: 'rgba(148, 163, 184, 0.6)', boxShadow: '0 0 15px rgba(148, 163, 184, 0.3)' }}
                             >
                               {PLAYER_AVATARS.find(a => a.id === runnerUp.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
@@ -1320,7 +1320,7 @@ export default function Blitzgrid() {
                           </motion.div>
                           {/* Podium with name plate - Silver/cyan theme */}
                           <div 
-                            className="w-24 md:w-32 h-28 md:h-36 bg-[#0d0d12] rounded-t-lg flex flex-col items-center justify-between pt-2 pb-3 border-t-2"
+                            className="w-24 md:w-32 h-28 md:h-36 arcade-surface rounded-t-lg flex flex-col items-center justify-between pt-2 pb-3 border-t-2"
                             style={{ borderColor: 'rgba(148, 163, 184, 0.6)', boxShadow: '0 0 20px rgba(148, 163, 184, 0.2)' }}
                           >
                             {/* Name plate */}
@@ -1370,7 +1370,7 @@ export default function Blitzgrid() {
                               transition={{ duration: 1.5, repeat: Infinity }}
                             />
                             <div 
-                              className="w-20 h-20 md:w-28 md:h-28 rounded-full flex items-center justify-center text-4xl md:text-5xl shadow-2xl border-2 relative z-10 bg-[#0d0d12]"
+                              className="w-20 h-20 md:w-28 md:h-28 rounded-full flex items-center justify-center text-4xl md:text-5xl shadow-2xl border-2 relative z-10 arcade-surface"
                               style={{ borderColor: 'rgba(250, 204, 21, 0.8)', boxShadow: '0 0 30px rgba(250, 204, 21, 0.4)' }}
                             >
                               {PLAYER_AVATARS.find(a => a.id === winner.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
@@ -1379,7 +1379,7 @@ export default function Blitzgrid() {
                           
                           {/* Grand Podium with name plate - Gold neon theme */}
                           <div 
-                            className="w-28 md:w-40 h-44 md:h-56 bg-[#0d0d12] rounded-t-lg flex flex-col items-center justify-between pt-2 pb-4 border-t-2"
+                            className="w-28 md:w-40 h-44 md:h-56 arcade-surface rounded-t-lg flex flex-col items-center justify-between pt-2 pb-4 border-t-2"
                             style={{ borderColor: 'rgba(250, 204, 21, 0.8)', boxShadow: '0 0 40px rgba(250, 204, 21, 0.3)' }}
                           >
                             {/* Name plate */}
@@ -1418,7 +1418,7 @@ export default function Blitzgrid() {
                           {/* Player floating above podium */}
                           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: "spring" }} className="mb-1">
                             <div 
-                              className="w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-2xl md:text-3xl shadow-lg border-2 bg-[#0d0d12]"
+                              className="w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-2xl md:text-3xl shadow-lg border-2 arcade-surface"
                               style={{ borderColor: 'rgba(251, 146, 60, 0.6)', boxShadow: '0 0 15px rgba(251, 146, 60, 0.3)' }}
                             >
                               {PLAYER_AVATARS.find(a => a.id === thirdPlace.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
@@ -1426,7 +1426,7 @@ export default function Blitzgrid() {
                           </motion.div>
                           {/* Podium with name plate - Bronze/orange neon theme */}
                           <div 
-                            className="w-20 md:w-28 h-20 md:h-24 bg-[#0d0d12] rounded-t-lg flex flex-col items-center justify-between pt-1 pb-2 border-t-2"
+                            className="w-20 md:w-28 h-20 md:h-24 arcade-surface rounded-t-lg flex flex-col items-center justify-between pt-1 pb-2 border-t-2"
                             style={{ borderColor: 'rgba(251, 146, 60, 0.6)', boxShadow: '0 0 20px rgba(251, 146, 60, 0.2)' }}
                           >
                             {/* Name plate */}
@@ -1535,7 +1535,7 @@ export default function Blitzgrid() {
                                         idx === 1 ? 'border-2 border-slate-400/60' : 
                                         idx === 2 ? 'border-2 border-orange-400/60' : 
                                         'border border-white/20'
-                                      }`} style={{ backgroundColor: '#0d0d12' }}>
+                                      }`} style={{ backgroundColor: 'var(--arcade-surface)' }}>
                                         {PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
                                       </div>
                                       <div className="flex-1 min-w-0">
@@ -1755,7 +1755,7 @@ export default function Blitzgrid() {
                     style={{
                       background: 'rgba(34, 211, 238, 0.1)',
                       borderColor: 'rgba(34, 211, 238, 0.4)',
-                      color: '#22d3ee',
+                      color: 'var(--arcade-neon-cyan)',
                     }}
                   >
                     {roomCode}
@@ -1849,7 +1849,7 @@ export default function Blitzgrid() {
                   style={{
                     background: 'rgba(16, 185, 129, 0.1)',
                     borderColor: 'rgba(16, 185, 129, 0.4)',
-                    color: '#10b981',
+                    color: 'var(--arcade-neon-emerald)',
                   }}
                 >
                   <span className="text-lg shrink-0">{PLAYER_AVATARS.find(a => a.id === lastJoinedPlayer.avatar)?.emoji || PLAYER_AVATARS[0].emoji}</span>
@@ -1931,7 +1931,7 @@ export default function Blitzgrid() {
                       style={{ 
                         perspective: 1000, 
                         transformStyle: 'preserve-3d',
-                        background: isRevealed ? '#0d0d12' : 'transparent',
+                        background: isRevealed ? 'var(--arcade-surface)' : 'transparent',
                         border: isRevealed ? `1px solid ${catNeonColor.border}40` : '1px solid transparent',
                       }}
                       className="py-3 md:py-4 px-3 rounded-xl text-center relative overflow-hidden"
@@ -1982,9 +1982,9 @@ export default function Blitzgrid() {
                         style={{ 
                           perspective: 1000, 
                           transformStyle: 'preserve-3d',
-                          background: isCategoryRevealed ? '#0d0d12' : 'transparent',
-                          border: isCategoryRevealed ? `1px solid ${isCellAnswered ? '#333' : `${tileNeonColor.border}50`}` : '1px solid transparent',
-                          color: isCellAnswered ? '#555' : tileNeonColor.text,
+                          background: isCategoryRevealed ? 'var(--arcade-surface)' : 'transparent',
+                          border: isCategoryRevealed ? `1px solid ${isCellAnswered ? 'var(--arcade-border)' : `${tileNeonColor.border}50`}` : '1px solid transparent',
+                          color: isCellAnswered ? 'var(--arcade-border-dim)' : tileNeonColor.text,
                           ['--glow-color' as string]: tileNeonColor.glow,
                         }}
                         className={`
@@ -2085,7 +2085,8 @@ export default function Blitzgrid() {
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3, type: "spring" }}
-            className="bg-[#0a0a0f]/95 backdrop-blur-md border-t border-white/10 px-4 py-2.5 relative z-10 overflow-hidden"
+            className="backdrop-blur-md border-t border-white/10 px-4 py-2.5 relative z-10 overflow-hidden"
+            style={{ backgroundColor: 'rgba(10, 10, 15, 0.95)' }}
           >
             {/* Subtle neon gradient accent */}
             <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-transparent to-fuchsia-500/5 pointer-events-none" />
@@ -2153,14 +2154,14 @@ export default function Blitzgrid() {
                               {idx + 1}
                             </div>
                           )}
-                          <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0a0a0f] ${player.connected ? 'bg-emerald-500' : 'bg-rose-400'}`} />
+                          <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 ${player.connected ? 'bg-emerald-500' : 'bg-rose-400'}`} style={{ borderColor: 'var(--arcade-bg)' }} />
                         </div>
                         <div className="flex flex-col leading-tight min-w-0">
                           <span className="text-white/80 font-medium text-xs truncate max-w-[60px]" title={player.name}>{player.name}</span>
                           <motion.span 
                             key={player.score}
-                            initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? '#34d399' : scoreAnim?.delta && scoreAnim.delta < 0 ? '#fb7185' : '#e879f9' }}
-                            animate={{ scale: 1, color: '#e879f9' }}
+                            initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? 'var(--arcade-neon-emerald-light)' : scoreAnim?.delta && scoreAnim.delta < 0 ? 'var(--arcade-neon-rose-light)' : 'var(--arcade-neon-rose)' }}
+                            animate={{ scale: 1, color: 'var(--arcade-neon-rose)' }}
                             transition={{ duration: 0.3 }}
                             className="font-bold text-sm"
                           >
@@ -2300,7 +2301,7 @@ export default function Blitzgrid() {
                   ref={shareCardRef}
                   className="w-[300px] rounded-2xl overflow-hidden shadow-2xl relative"
                   style={{ 
-                    background: '#0a0a0f',
+                    background: 'var(--arcade-bg)',
                     aspectRatio: '4/5'
                   }}
                 >
@@ -2334,7 +2335,7 @@ export default function Blitzgrid() {
                               <div className="flex flex-col items-center w-[80px] min-w-0" data-testid="share-card-2nd-place">
                                 <div className="text-2xl mb-1 shrink-0">{PLAYER_AVATARS.find(a => a.id === top3[1].avatar)?.emoji || <User className="w-6 h-6 shrink-0" aria-hidden="true" />}</div>
                                 <div className="text-xs font-bold text-white truncate w-full text-center mb-1" title={top3[1].name} data-testid="share-card-2nd-name">{top3[1].name}</div>
-                                <div className="w-full h-[70px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(148, 163, 184, 0.6)', boxShadow: '0 0 15px rgba(148, 163, 184, 0.3)' }}>
+                                <div className="w-full h-[70px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: 'var(--arcade-surface)', borderColor: 'rgba(148, 163, 184, 0.6)', boxShadow: '0 0 15px rgba(148, 163, 184, 0.3)' }}>
                                   <span className="text-2xl font-black text-slate-300" data-testid="share-card-2nd-rank">2</span>
                                   <span className="text-xs font-bold text-slate-400" data-testid="share-card-2nd-score">{top3[1].score} pts</span>
                                 </div>
@@ -2347,7 +2348,7 @@ export default function Blitzgrid() {
                                 <Crown className="w-6 h-6 text-yellow-400 mb-0.5 shrink-0" style={{ filter: 'drop-shadow(0 0 6px rgba(250, 204, 21, 0.6))' }} aria-hidden="true" />
                                 <div className="text-3xl mb-1 shrink-0">{PLAYER_AVATARS.find(a => a.id === top3[0].avatar)?.emoji || <User className="w-8 h-8 shrink-0" aria-hidden="true" />}</div>
                                 <div className="text-sm font-bold text-yellow-300 truncate w-full text-center mb-1" title={top3[0].name} data-testid="share-card-1st-name">{top3[0].name}</div>
-                                <div className="w-full h-[90px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(250, 204, 21, 0.8)', boxShadow: '0 0 25px rgba(250, 204, 21, 0.4)' }}>
+                                <div className="w-full h-[90px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: 'var(--arcade-surface)', borderColor: 'rgba(250, 204, 21, 0.8)', boxShadow: '0 0 25px rgba(250, 204, 21, 0.4)' }}>
                                   <Trophy className="w-5 h-5 text-yellow-400 mb-0.5 shrink-0" aria-hidden="true" />
                                   <span className="text-3xl font-black text-yellow-300" data-testid="share-card-1st-rank">1</span>
                                   <span className="text-sm font-bold text-yellow-400" data-testid="share-card-1st-score">{top3[0].score} pts</span>
@@ -2360,7 +2361,7 @@ export default function Blitzgrid() {
                               <div className="flex flex-col items-center w-[80px] min-w-0" data-testid="share-card-3rd-place">
                                 <div className="text-2xl mb-1 shrink-0">{PLAYER_AVATARS.find(a => a.id === top3[2].avatar)?.emoji || <User className="w-6 h-6 shrink-0" aria-hidden="true" />}</div>
                                 <div className="text-xs font-bold text-white truncate w-full text-center mb-1" title={top3[2].name} data-testid="share-card-3rd-name">{top3[2].name}</div>
-                                <div className="w-full h-[55px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: '#0d0d12', borderColor: 'rgba(251, 146, 60, 0.6)', boxShadow: '0 0 15px rgba(251, 146, 60, 0.3)' }}>
+                                <div className="w-full h-[55px] rounded-t-lg flex flex-col items-center justify-center border-t-2" style={{ background: 'var(--arcade-surface)', borderColor: 'rgba(251, 146, 60, 0.6)', boxShadow: '0 0 15px rgba(251, 146, 60, 0.3)' }}>
                                   <span className="text-2xl font-black text-orange-300" data-testid="share-card-3rd-rank">3</span>
                                   <span className="text-xs font-bold text-orange-400" data-testid="share-card-3rd-score">{top3[2].score} pts</span>
                                 </div>
@@ -2527,7 +2528,7 @@ export default function Blitzgrid() {
           {/* Question Modal - Clean hierarchy design */}
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
             <DialogContent 
-              className="max-w-2xl max-h-[90vh] overflow-y-auto bg-[#0d0d12] backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl"
+              className="max-w-2xl max-h-[90vh] overflow-y-auto arcade-surface backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl"
             >
               {(() => {
                 // Use the grid's single color for consistency
@@ -3376,9 +3377,9 @@ export default function Blitzgrid() {
           });
           setShowAnswer(false);
         }}
-        className="group text-left p-5 rounded-xl bg-[#0d0d12] transition-all duration-200"
+        className="group text-left p-5 rounded-xl arcade-surface transition-all duration-200"
         style={{
-          border: `1px solid ${isHovered ? neonColor.border : '#333'}`,
+          border: `1px solid ${isHovered ? neonColor.border : 'var(--arcade-border)'}`,
           boxShadow: isHovered 
             ? `0 0 25px ${neonColor.glow}, 0 0 40px ${neonColor.shadowColor}, inset 0 0 0 1px ${neonColor.border}` 
             : `0 0 8px ${neonColor.glow}`,
@@ -3401,7 +3402,7 @@ export default function Blitzgrid() {
               className="font-black truncate uppercase tracking-wide transition-colors duration-200 text-base"
               style={{ 
                 fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                color: isHovered ? neonColor.text : '#fff',
+                color: isHovered ? neonColor.text : 'var(--arcade-text)',
                 textShadow: isHovered ? `0 0 12px ${neonColor.shadowColor}` : 'none',
               }}
               title={grid.name}
@@ -3421,7 +3422,7 @@ export default function Blitzgrid() {
 
   // Main grid list view
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex flex-col relative" data-testid="page-blitzgrid">
+    <div className="min-h-screen arcade-bg flex flex-col relative" data-testid="page-blitzgrid">
       {/* Scanline background pattern */}
       <div className="fixed inset-0 pointer-events-none">
         <div 
@@ -3454,7 +3455,7 @@ export default function Blitzgrid() {
         {loadingGrids ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-20 rounded-xl bg-[#0d0d12] border border-white/10 animate-pulse" />
+              <div key={i} className="h-20 rounded-xl arcade-surface border border-white/10 animate-pulse" />
             ))}
           </div>
         ) : activeGrids.length === 0 ? (
@@ -3465,7 +3466,7 @@ export default function Blitzgrid() {
           >
             <div 
               className="w-20 h-20 rounded-xl flex items-center justify-center mx-auto mb-5"
-              style={{ border: '2px solid #333' }}
+              style={{ border: '2px solid var(--arcade-border)' }}
             >
               <Grid3X3 className="w-10 h-10 text-white/30 shrink-0" aria-hidden="true" />
             </div>

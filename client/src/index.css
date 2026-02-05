@@ -8,6 +8,26 @@
   --font-body: 'Inter', system-ui, sans-serif;
   --font-display: 'Archivo Black', 'Inter', system-ui, sans-serif;
 
+  /* Arcade theme colors - used in BlitzGrid gameplay */
+  --arcade-bg: #0a0a0f;
+  --arcade-surface: #0d0d12;
+  --arcade-border: #333333;
+  --arcade-border-dim: #555555;
+  --arcade-text: #ffffff;
+  --arcade-text-dim: rgba(255, 255, 255, 0.4);
+  --arcade-text-muted: rgba(255, 255, 255, 0.5);
+  --arcade-text-subtle: rgba(255, 255, 255, 0.6);
+  --arcade-overlay: rgba(255, 255, 255, 0.05);
+  --arcade-overlay-light: rgba(255, 255, 255, 0.10);
+  --arcade-overlay-medium: rgba(255, 255, 255, 0.15);
+  
+  /* Arcade neon accent colors */
+  --arcade-neon-cyan: #22d3ee;
+  --arcade-neon-rose: #e879f9;
+  --arcade-neon-emerald: #10b981;
+  --arcade-neon-emerald-light: #34d399;
+  --arcade-neon-rose-light: #fb7185;
+
   /* Pastel theme gradients */
   --theme-gradient-1: #C4B5FD;
   --theme-gradient-2: #DDD6FE;
@@ -229,6 +249,35 @@
     );
     background-size: 200% 100%;
     animation: shimmer 2s infinite;
+  }
+  
+  /* Arcade theme utilities for BlitzGrid gameplay */
+  .arcade-bg {
+    background-color: var(--arcade-bg);
+  }
+  
+  .arcade-surface {
+    background-color: var(--arcade-surface);
+  }
+  
+  .arcade-border {
+    border-color: var(--arcade-border);
+  }
+  
+  .arcade-border-dim {
+    border-color: var(--arcade-border-dim);
+  }
+  
+  .arcade-text {
+    color: var(--arcade-text);
+  }
+  
+  .arcade-text-dim {
+    color: var(--arcade-text-dim);
+  }
+  
+  .arcade-text-muted {
+    color: var(--arcade-text-muted);
   }
 }
 
