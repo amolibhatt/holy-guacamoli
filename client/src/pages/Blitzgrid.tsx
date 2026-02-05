@@ -864,6 +864,7 @@ export default function Blitzgrid() {
     // Reset shuffle selection state for next session
     setHasShuffleGridSelection(false);
     setSelectedShuffleGridIds(new Set());
+    setOriginalShuffleGridIds(new Set());
     setPlayedShuffleCategoryIds([]);
     // Clear sessionStorage to prevent resurrection of played IDs
     try {
@@ -876,23 +877,29 @@ export default function Blitzgrid() {
   
   // Track if user has made a grid selection this session
   const [hasShuffleGridSelection, setHasShuffleGridSelection] = useState(false);
+  // Track original selection when dialog opens (to restore on cancel)
+  const [originalShuffleGridIds, setOriginalShuffleGridIds] = useState<Set<number>>(new Set());
   
   // Open grid picker for shuffle play
   const openShuffleGridPicker = useCallback(() => {
     // Pre-select all eligible grids if no prior selection
     if (!hasShuffleGridSelection) {
       setSelectedShuffleGridIds(new Set(eligibleShuffleGridIds));
+      setOriginalShuffleGridIds(new Set(eligibleShuffleGridIds));
+    } else {
+      // Save current selection to restore if user cancels
+      setOriginalShuffleGridIds(new Set(selectedShuffleGridIds));
     }
     setShowShuffleGridPicker(true);
-  }, [eligibleShuffleGridIds, hasShuffleGridSelection]);
+  }, [eligibleShuffleGridIds, hasShuffleGridSelection, selectedShuffleGridIds]);
   
   // Execute shuffle with selected grids
   const executeShufflePlay = useCallback(async (gridIds: number[]) => {
     // Prevent double-clicks/race conditions
     if (isShuffling) return;
     setIsShuffling(true);
-    // Mark that user has made a selection (after isShuffling check to avoid race condition)
-    setHasShuffleGridSelection(true);
+    // Update original to match current selection before closing (so onOpenChange restore is a no-op)
+    setOriginalShuffleGridIds(new Set(selectedShuffleGridIds));
     setShowShuffleGridPicker(false);
     try {
       // Build query params
@@ -956,6 +963,8 @@ export default function Blitzgrid() {
           startTime: Date.now(),
           mvpMoments: []
         });
+        // Mark selection as complete only after successful shuffle
+        setHasShuffleGridSelection(true);
       } else {
         throw new Error("Not enough complete categories to shuffle");
       }
@@ -969,7 +978,7 @@ export default function Blitzgrid() {
     } finally {
       setIsShuffling(false);
     }
-  }, [toast, playedShuffleCategoryIds, isShuffling]);
+  }, [toast, playedShuffleCategoryIds, isShuffling, selectedShuffleGridIds]);
   
   // Wrapper for shuffle button - opens grid picker first time, then reuses selection
   const handleShufflePlay = useCallback(() => {
@@ -3777,7 +3786,13 @@ export default function Blitzgrid() {
       />
       
       {/* Shuffle Grid Picker Dialog - outside conditional blocks so it's always accessible */}
-      <Dialog open={showShuffleGridPicker} onOpenChange={setShowShuffleGridPicker}>
+      <Dialog open={showShuffleGridPicker} onOpenChange={(open) => {
+        if (!open) {
+          // Restore original selection when dialog is closed without confirming
+          setSelectedShuffleGridIds(originalShuffleGridIds);
+        }
+        setShowShuffleGridPicker(open);
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2" data-testid="dialog-title-shuffle">
