@@ -125,7 +125,7 @@ const POINT_TIERS = [10, 20, 30, 40, 50];
 
 export default function BlitzGridAdmin() {
   const { toast } = useToast();
-  const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
+  const { isLoading: isAuthLoading, isAuthenticated, user } = useAuth();
   const searchString = useSearch();
   
   const [selectedGridId, setSelectedGridId] = useState<number | null>(null);
@@ -467,6 +467,31 @@ export default function BlitzGridAdmin() {
         <div className="grid gap-4 grid-cols-3">
           {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 w-32" />)}
         </div>
+      </div>
+    );
+  }
+
+  // Access denied for non-admin users
+  if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              Access Denied
+            </CardTitle>
+            <CardDescription>
+              You don't have permission to access this page. Admin access is required to create and manage content.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/">
+              <Button className="w-full" data-testid="button-back-home">
+                Back to Home
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     );
   }

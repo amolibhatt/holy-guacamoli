@@ -1508,7 +1508,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post('/api/upload', isAuthenticated, upload.single('file'), (req, res) => {
+  app.post('/api/upload', isAuthenticated, isAdmin, upload.single('file'), (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
@@ -3243,7 +3243,7 @@ Be creative! Make facts surprising and fun to guess.`;
   // Supports two formats:
   // Format 1: Board, Category, Rule, Question, Answer, Points (simple)
   // Format 2: Board, Category, Question, Option A-D, Correct Answer, Points (multiple choice)
-  app.post("/api/import/excel", isAuthenticated, excelUpload.single('file'), async (req, res) => {
+  app.post("/api/import/excel", isAuthenticated, isAdmin, excelUpload.single('file'), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -3572,7 +3572,7 @@ Be creative! Make facts surprising and fun to guess.`;
   });
   
   // Update a grid
-  app.patch("/api/blitzgrid/grids/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/blitzgrid/grids/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       
@@ -4030,7 +4030,7 @@ Be creative! Make facts surprising and fun to guess.`;
       }
     }
   });
-  app.post("/api/blitzgrid/import", isAuthenticated, blitzgridExcelUpload.single("file"), async (req, res) => {
+  app.post("/api/blitzgrid/import", isAuthenticated, isAdmin, blitzgridExcelUpload.single("file"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       

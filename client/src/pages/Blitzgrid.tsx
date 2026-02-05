@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -91,7 +91,11 @@ const POINT_TIERS = [10, 20, 30, 40, 50];
 
 export default function Blitzgrid() {
   const { toast } = useToast();
-  const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
+  const { isLoading: isAuthLoading, isAuthenticated, user } = useAuth();
+  const [, setLocation] = useLocation();
+  
+  // Access check
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   
   // View state
   const [showRules, setShowRules] = useState(false);
@@ -1091,6 +1095,27 @@ export default function Blitzgrid() {
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-32" />)}
           </div>
         </main>
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated
+  if (!isAuthenticated) {
+    setLocation("/");
+    return null;
+  }
+
+  // Access denied for non-admin users
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md text-center">
+          <h2 className="text-xl font-bold text-destructive mb-2">Access Denied</h2>
+          <p className="text-muted-foreground mb-4">
+            You don't have permission to host games. Admin access is required.
+          </p>
+          <a href="/" className="text-primary hover:underline">Back to Home</a>
+        </div>
       </div>
     );
   }

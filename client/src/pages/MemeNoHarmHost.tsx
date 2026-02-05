@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
-import { Smile, Users, Play, MessageSquare, Image as ImageIcon, Trophy, Crown, ChevronRight, ChevronLeft, Ban } from "lucide-react";
+import { Smile, Users, Play, MessageSquare, Image as ImageIcon, Trophy, Crown, ChevronRight, ChevronLeft, Ban, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MemePrompt, MemeImage } from "@shared/schema";
 import { QRCodeSVG } from "qrcode.react";
@@ -33,7 +34,11 @@ interface Submission {
 }
 
 export default function MemeNoHarmHost() {
+  const { isLoading: isAuthLoading, isAuthenticated, user } = useAuth();
   const [, setLocation] = useLocation();
+  
+  // Access check
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const [phase, setPhase] = useState<GamePhase>("setup");
   const [roomCode, setRoomCode] = useState("");
   const [players, setPlayers] = useState<Player[]>([]);
@@ -222,6 +227,36 @@ export default function MemeNoHarmHost() {
   const isLoading = promptsLoading || imagesLoading;
   const isReady = prompts.length >= 5 && images.length >= 10;
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+
+  // Auth loading state
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated
+  if (!isAuthenticated) {
+    setLocation("/");
+    return null;
+  }
+
+  // Access denied for non-admin users
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md text-center">
+          <h2 className="text-xl font-bold text-destructive mb-2">Access Denied</h2>
+          <p className="text-muted-foreground mb-4">
+            You don't have permission to host games. Admin access is required.
+          </p>
+          <a href="/" className="text-primary hover:underline">Back to Home</a>
+        </div>
+      </div>
+    );
+  }
 
   if (phase === "finished") {
     const winner = sortedPlayers[0];

@@ -7,15 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
-import { Link } from "wouter";
-import { Plus, Trash2, Play, Smile, Image as ImageIcon, MessageSquare, Grid3X3, Brain, Clock } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { Plus, Trash2, Play, Smile, Image as ImageIcon, MessageSquare, Grid3X3, Brain, Clock, Loader2 } from "lucide-react";
 import type { MemePrompt, MemeImage } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function MemeNoHarmAdmin() {
+  const { isLoading: isAuthLoading, isAuthenticated, user } = useAuth();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  // Access denied check
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const [newPrompt, setNewPrompt] = useState("");
   const [newImageUrl, setNewImageUrl] = useState("");
   const [newImageCaption, setNewImageCaption] = useState("");
@@ -119,6 +125,36 @@ export default function MemeNoHarmAdmin() {
       });
     }
   };
+
+  // Auth loading state
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated
+  if (!isAuthenticated) {
+    setLocation("/");
+    return null;
+  }
+
+  // Access denied for non-admin users
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md text-center">
+          <h2 className="text-xl font-bold text-destructive mb-2">Access Denied</h2>
+          <p className="text-muted-foreground mb-4">
+            You don't have permission to access this page. Admin access is required.
+          </p>
+          <a href="/" className="text-primary hover:underline">Back to Home</a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background" data-testid="page-memenoharm-admin">

@@ -51,9 +51,12 @@ interface LeaderboardEntry {
 }
 
 export default function PsyOpHost() {
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading, user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  
+  // Access check
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   const [gameState, setGameState] = useState<GameState>("setup");
   const [showRules, setShowRules] = useState(false);
@@ -315,6 +318,21 @@ export default function PsyOpHost() {
   if (!isAuthenticated) {
     setLocation("/");
     return null;
+  }
+
+  // Access denied for non-admin users
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md text-center">
+          <h2 className="text-xl font-bold text-destructive mb-2">Access Denied</h2>
+          <p className="text-muted-foreground mb-4">
+            You don't have permission to host games. Admin access is required.
+          </p>
+          <a href="/" className="text-primary hover:underline">Back to Home</a>
+        </div>
+      </div>
+    );
   }
 
   const joinUrl = roomCode ? `${window.location.origin}/play/${roomCode}` : "";
