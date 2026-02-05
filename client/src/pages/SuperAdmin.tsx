@@ -637,15 +637,15 @@ export default function SuperAdmin() {
           <TabsList className="grid w-full grid-cols-3 max-w-md">
             <TabsTrigger value="dashboard" className="gap-2" data-testid="tab-dashboard">
               <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Dashboard</span>
+              <span className="hidden sm:inline">Overview</span>
             </TabsTrigger>
             <TabsTrigger value="content" className="gap-2" data-testid="tab-content">
               <Gamepad2 className="w-4 h-4" />
               <span className="hidden sm:inline">Content</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="gap-2" data-testid="tab-settings">
-              <Shield className="w-4 h-4" />
-              <span className="hidden sm:inline">Settings</span>
+            <TabsTrigger value="settings" className="gap-2 relative" data-testid="tab-settings">
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">Users</span>
             </TabsTrigger>
           </TabsList>
 
@@ -656,8 +656,8 @@ export default function SuperAdmin() {
             >
               <div className="flex items-center justify-between gap-4 mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-foreground">Platform Dashboard</h2>
-                  <p className="text-sm text-muted-foreground mt-1">Overview, users, and sessions in one place</p>
+                  <h2 className="text-2xl font-bold text-foreground">Platform Overview</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Key metrics and insights at a glance</p>
                 </div>
                 <Button
                   variant="outline"
@@ -675,6 +675,31 @@ export default function SuperAdmin() {
                   <RefreshCw className="w-4 h-4" />
                 </Button>
               </div>
+
+              {/* Flagged Content Alert */}
+              {flaggedBoards.length > 0 && (
+                <Card 
+                  className="mb-4 border-amber-500/50 bg-amber-50/50 dark:bg-amber-900/10 cursor-pointer hover-elevate"
+                  onClick={() => setActiveTab('content')}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && setActiveTab('content')}
+                  data-testid="alert-flagged-content"
+                >
+                  <CardContent className="p-3 flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                      <Flag className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-amber-900 dark:text-amber-200">
+                        {flaggedBoards.length} item{flaggedBoards.length !== 1 ? 's' : ''} need{flaggedBoards.length === 1 ? 's' : ''} review
+                      </p>
+                      <p className="text-xs text-amber-700 dark:text-amber-400">Click to review flagged content</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  </CardContent>
+                </Card>
+              )}
               
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <StatCard
@@ -1215,18 +1240,75 @@ export default function SuperAdmin() {
                   </CardContent>
                 </Card>
               </div>
-              
-              {/* Users Section */}
-              <Card className="mt-6">
-                <CardHeader 
-                  className="cursor-pointer hover-elevate"
-                  onClick={() => setUsersSectionExpanded(!usersSectionExpanded)}
-                  onKeyDown={(e) => e.key === 'Enter' && setUsersSectionExpanded(!usersSectionExpanded)}
-                  tabIndex={0}
-                  role="button"
-                  aria-expanded={usersSectionExpanded}
-                  data-testid="section-users-toggle"
-                >
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="content" className="space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-foreground">Game Content</h2>
+                <p className="text-sm text-muted-foreground mt-1">Manage games, view questions, and control starter packs</p>
+              </div>
+
+              {/* Flagged Content - At top for visibility */}
+              {(isLoadingFlagged || flaggedBoards.length > 0) && (
+                <Card className="mb-6 border-amber-500/50">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Flag className="w-5 h-5 text-amber-500" />
+                      Flagged Content
+                      {flaggedBoards.length > 0 && (
+                        <Badge variant="destructive" className="ml-2">{flaggedBoards.length}</Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription>Content requiring moderation review</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoadingFlagged ? (
+                      <div className="space-y-2">
+                        {[1, 2].map((i) => (
+                          <Skeleton key={i} className="h-10 w-full" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                        {flaggedBoards.map((board) => (
+                          <div key={board.id} className="flex items-center justify-between gap-3 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+                            <span className="text-sm font-medium truncate flex-1 min-w-0 max-w-[200px]" title={board.name}>{board.name}</span>
+                            <div className="flex gap-1 shrink-0">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => updateModerationMutation.mutate({ boardId: board.id, data: { moderationStatus: 'approved' } })}
+                                disabled={updateModerationMutation.isPending}
+                                data-testid={`button-approve-board-${board.id}`}
+                              >
+                                {updateModerationMutation.isPending ? '...' : 'Approve'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => setDeleteBoardId(board.id)}
+                                disabled={deleteBoardMutation.isPending}
+                                data-testid={`button-delete-flagged-${board.id}`}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {isLoadingGameTypes ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <Users className="w-5 h-5 text-violet-500" />
