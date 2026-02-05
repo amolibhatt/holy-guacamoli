@@ -210,7 +210,7 @@ export async function registerRoutes(
   });
 
   // Board routes - protected (hosts only, super_admin sees all)
-  app.get("/api/boards", isAuthenticated, async (req, res) => {
+  app.get("/api/boards", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -222,7 +222,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/boards/summary", isAuthenticated, async (req, res) => {
+  app.get("/api/boards/summary", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -235,7 +235,7 @@ export async function registerRoutes(
   });
 
   // Shuffle Play - get 5 random categories from user's grids (must be before :id route)
-  app.get("/api/boards/shuffle-play", isAuthenticated, async (req, res) => {
+  app.get("/api/boards/shuffle-play", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -324,7 +324,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/boards/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/boards/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const boardId = parseId(req.params.id);
       if (boardId === null) {
@@ -417,7 +417,7 @@ export async function registerRoutes(
   });
 
   // Board categories (junction table) - protected
-  app.get("/api/boards/:boardId/categories", isAuthenticated, async (req, res) => {
+  app.get("/api/boards/:boardId/categories", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const boardId = parseId(req.params.boardId);
       if (boardId === null) {
@@ -604,12 +604,12 @@ export async function registerRoutes(
   });
 
   // Legacy redirect for backwards compatibility with old endpoint
-  app.get("/api/admin/categories", isAuthenticated, (req, res) => {
+  app.get("/api/admin/categories", isAuthenticated, isAdmin, (req, res) => {
     res.redirect(307, "/api/categories");
   });
 
   // Categories owned by user (via their boards) - protected
-  app.get(api.categories.list.path, isAuthenticated, async (req, res) => {
+  app.get(api.categories.list.path, isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -623,7 +623,7 @@ export async function registerRoutes(
   });
 
   // Categories with question counts - for admin panel progress display
-  app.get("/api/categories/with-counts", isAuthenticated, async (req, res) => {
+  app.get("/api/categories/with-counts", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -642,7 +642,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get(api.categories.get.path, isAuthenticated, async (req, res) => {
+  app.get(api.categories.get.path, isAuthenticated, isAdmin, async (req, res) => {
     const categoryId = parseId(req.params.id);
     if (categoryId === null) {
       return res.status(400).json({ message: 'Invalid category ID' });
@@ -786,7 +786,7 @@ export async function registerRoutes(
   }
 
   // Questions (by category) - protected with ownership check
-  app.get("/api/categories/:categoryId/questions", isAuthenticated, async (req, res) => {
+  app.get("/api/categories/:categoryId/questions", isAuthenticated, isAdmin, async (req, res) => {
     const userId = req.session.userId!;
     const role = req.session.userRole;
     const categoryId = Number(req.params.categoryId);
@@ -1046,7 +1046,7 @@ export async function registerRoutes(
   });
 
   // Get full board data for gameplay - protected
-  app.get("/api/boards/:id/full", isAuthenticated, async (req, res) => {
+  app.get("/api/boards/:id/full", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -1063,14 +1063,14 @@ export async function registerRoutes(
   });
 
   // === GAMES ===
-  app.get("/api/games", isAuthenticated, async (req, res) => {
+  app.get("/api/games", isAuthenticated, isAdmin, async (req, res) => {
     const userId = req.session.userId!;
     const role = req.session.userRole;
     const allGames = await storage.getGames(userId, role);
     res.json(allGames);
   });
 
-  app.get("/api/games/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/games/:id", isAuthenticated, isAdmin, async (req, res) => {
     const userId = req.session.userId!;
     const role = req.session.userRole;
     const game = await storage.getGame(Number(req.params.id), userId, role);
@@ -1127,7 +1127,7 @@ export async function registerRoutes(
   });
 
   // === GAME BOARDS (junction) ===
-  app.get("/api/games/:gameId/boards", isAuthenticated, async (req, res) => {
+  app.get("/api/games/:gameId/boards", isAuthenticated, isAdmin, async (req, res) => {
     const userId = req.session.userId!;
     const role = req.session.userRole;
     const game = await storage.getGame(Number(req.params.gameId), userId, role);
@@ -1179,14 +1179,14 @@ export async function registerRoutes(
   });
 
   // === HEADS UP DECKS ===
-  app.get("/api/heads-up-decks", isAuthenticated, async (req, res) => {
+  app.get("/api/heads-up-decks", isAuthenticated, isAdmin, async (req, res) => {
     const userId = req.session.userId!;
     const role = req.session.userRole;
     const decks = await storage.getHeadsUpDecks(userId, role);
     res.json(decks);
   });
 
-  app.get("/api/heads-up-decks/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/heads-up-decks/:id", isAuthenticated, isAdmin, async (req, res) => {
     const userId = req.session.userId!;
     const role = req.session.userRole;
     const deck = await storage.getHeadsUpDeck(Number(req.params.id), userId, role);
@@ -1257,7 +1257,7 @@ export async function registerRoutes(
   });
 
   // === HEADS UP CARDS ===
-  app.get("/api/heads-up-decks/:deckId/cards", isAuthenticated, async (req, res) => {
+  app.get("/api/heads-up-decks/:deckId/cards", isAuthenticated, isAdmin, async (req, res) => {
     const userId = req.session.userId!;
     const role = req.session.userRole;
     const deck = await storage.getHeadsUpDeck(Number(req.params.deckId), userId, role);
@@ -1326,7 +1326,7 @@ export async function registerRoutes(
   });
 
   // === GAME DECKS (junction for heads up) ===
-  app.get("/api/games/:gameId/decks", isAuthenticated, async (req, res) => {
+  app.get("/api/games/:gameId/decks", isAuthenticated, isAdmin, async (req, res) => {
     const userId = req.session.userId!;
     const role = req.session.userRole;
     const game = await storage.getGame(Number(req.params.gameId), userId, role);
@@ -1485,7 +1485,7 @@ export async function registerRoutes(
   });
 
   // Host analytics - get session history
-  app.get("/api/host/sessions", isAuthenticated, async (req, res) => {
+  app.get("/api/host/sessions", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const sessions = await storage.getHostSessionsWithDetails(userId);
@@ -1497,7 +1497,7 @@ export async function registerRoutes(
   });
 
   // Host analytics - get summary stats
-  app.get("/api/host/analytics", isAuthenticated, async (req, res) => {
+  app.get("/api/host/analytics", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const analytics = await storage.getHostAnalytics(userId);
@@ -2186,7 +2186,7 @@ export async function registerRoutes(
   // Sort Circuit Routes
   // ============================================
   
-  app.get("/api/sequence-squeeze/questions", isAuthenticated, async (req, res) => {
+  app.get("/api/sequence-squeeze/questions", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -2577,7 +2577,7 @@ Be creative and fun! Make questions engaging and varied.`;
   });
 
   // PsyOp API routes
-  app.get("/api/psyop/questions", isAuthenticated, async (req, res) => {
+  app.get("/api/psyop/questions", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -2829,7 +2829,7 @@ Be creative! Make facts surprising and fun to guess.`;
 
   // ==================== TimeWarp API ====================
   
-  app.get("/api/pastforward/questions", isAuthenticated, async (req, res) => {
+  app.get("/api/pastforward/questions", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -2945,7 +2945,7 @@ Be creative! Make facts surprising and fun to guess.`;
 
   // ==================== Meme No Harm API ====================
   
-  app.get("/api/memenoharm/prompts", isAuthenticated, async (req, res) => {
+  app.get("/api/memenoharm/prompts", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -3020,7 +3020,7 @@ Be creative! Make facts surprising and fun to guess.`;
     }
   });
 
-  app.get("/api/memenoharm/images", isAuthenticated, async (req, res) => {
+  app.get("/api/memenoharm/images", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
@@ -3484,7 +3484,7 @@ Be creative! Make facts surprising and fun to guess.`;
   // ==================== BLITZGRID ROUTES ====================
   
   // Get all grids for current user with stats
-  app.get("/api/blitzgrid/grids", isAuthenticated, async (req, res) => {
+  app.get("/api/blitzgrid/grids", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       
@@ -3635,7 +3635,7 @@ Be creative! Make facts surprising and fun to guess.`;
   });
   
   // Get categories for a grid with question counts
-  app.get("/api/blitzgrid/grids/:id/categories", isAuthenticated, async (req, res) => {
+  app.get("/api/blitzgrid/grids/:id/categories", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       
@@ -3922,7 +3922,7 @@ Be creative! Make facts surprising and fun to guess.`;
   });
 
   // Export all grids for the current user
-  app.get("/api/blitzgrid/export", isAuthenticated, async (req, res) => {
+  app.get("/api/blitzgrid/export", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const allBoards = await storage.getBoards(userId);
