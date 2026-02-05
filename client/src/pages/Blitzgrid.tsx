@@ -1278,17 +1278,20 @@ export default function Blitzgrid() {
         toast({ title: "Fresh start!", description: "All questions unlocked. Round 2, fight!" });
       };
       
-      // Reveal next category
+      // Reveal next category (uses functional update to prevent race conditions from rapid clicks)
       const revealNextCategory = () => {
-        if (revealedCategoryCount < playCategories.length) {
+        setRevealedCategoryCount(prev => {
+          // Guard inside functional update to prevent exceeding category count on rapid clicks
+          if (prev >= playCategories.length) return prev;
+          const newCount = prev + 1;
           playRevealFlip();
-          setRevealedCategoryCount(prev => prev + 1);
           // Check if all categories revealed
-          if (revealedCategoryCount + 1 >= playCategories.length) {
+          if (newCount >= playCategories.length) {
             setCategoryRevealMode(false);
             playWhoosh();
           }
-        }
+          return newCount;
+        });
       };
       
       // Skip reveal mode and show all
