@@ -2551,7 +2551,7 @@ export class DatabaseStorage implements IStorage {
 
       return {
         ...session,
-        host: host || { id: session.hostId, username: 'Unknown', email: null },
+        host: host || { id: session.hostId, firstName: null, lastName: null, email: null },
         players,
         playerCount: players.length,
         winner,

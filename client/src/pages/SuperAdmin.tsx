@@ -4,12 +4,12 @@ import { Link } from "wouter";
 import { 
   Users, Shield, Trash2, TrendingUp, TrendingDown,
   Gamepad2, Clock, Activity, ListOrdered, Grid3X3,
-  Search, RefreshCw, Star, Megaphone, Flag, Download, 
+  Search, RefreshCw, Star, Megaphone, Download, 
   Send, User, Play, Image, Brain, Zap, Crown, Target, 
-  Eye, EyeOff, Check, X, AlertTriangle, BarChart3, Settings
+  Eye, EyeOff, Check, X, AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -144,24 +144,21 @@ export default function SuperAdmin() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { toast } = useToast();
   
-  // UI state
   const [activeTab, setActiveTab] = useState("overview");
   const [userSearch, setUserSearch] = useState("");
   const [contentSearch, setContentSearch] = useState("");
   const [sessionSearch, setSessionSearch] = useState("");
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [deleteBoardId, setDeleteBoardId] = useState<number | null>(null);
-  const [contentTab, setContentTab] = useState<'blitzgrid' | 'sequence' | 'psyop'>('blitzgrid');
+  const [contentTab, setContentTab] = useState<'games' | 'blitzgrid' | 'sequence' | 'psyop'>('games');
   
-  // Announcement form
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
   const [announcementType, setAnnouncementType] = useState<"info" | "warning" | "success">("info");
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
-  
   const [isExporting, setIsExporting] = useState(false);
 
-  // Queries - enable based on active tab
+  // Queries
   const { data: dashboard, isLoading: isLoadingDashboard, isError: isErrorDashboard, refetch: refetchDashboard } = useQuery<ComprehensiveDashboard>({
     queryKey: ['/api/super-admin/dashboard'],
     refetchInterval: 30000,
@@ -179,12 +176,11 @@ export default function SuperAdmin() {
 
   const { data: gameTypes = [], isLoading: isLoadingGameTypes, isError: isErrorGameTypes, refetch: refetchGameTypes } = useQuery<GameType[]>({
     queryKey: ['/api/super-admin/game-types'],
-    enabled: activeTab === 'overview',
+    enabled: activeTab === 'content',
   });
 
   const { data: flaggedBoards = [] } = useQuery<Board[]>({
     queryKey: ['/api/super-admin/boards/flagged'],
-    enabled: activeTab === 'overview',
   });
 
   const { data: allBoards = [], isLoading: isLoadingBoards, isError: isErrorBoards, refetch: refetchBoards } = useQuery<BoardWithOwner[]>({
@@ -194,7 +190,6 @@ export default function SuperAdmin() {
 
   const { data: announcements = [] } = useQuery<Announcement[]>({
     queryKey: ['/api/super-admin/announcements'],
-    enabled: activeTab === 'overview',
   });
 
   const { data: sequenceQuestions = [], isLoading: isLoadingSequence, isError: isErrorSequence, refetch: refetchSequence } = useQuery<SequenceQuestionWithCreator[]>({
@@ -351,7 +346,6 @@ export default function SuperAdmin() {
     }
   };
 
-  // Helpers
   const formatRelativeDate = (dateStr: string | Date | null) => {
     if (!dateStr) return 'Never';
     const date = new Date(dateStr);
@@ -376,6 +370,14 @@ export default function SuperAdmin() {
       case 'memenoharm': return Image;
       default: return Gamepad2;
     }
+  };
+
+  const getHostDisplay = (host: GameSessionDetailed['host']) => {
+    if (host.firstName || host.lastName) {
+      return `${host.firstName || ''} ${host.lastName || ''}`.trim();
+    }
+    if (host.email) return host.email;
+    return `ID: ${host.id.slice(0, 8)}...`;
   };
 
   // Search filtering
@@ -405,7 +407,6 @@ export default function SuperAdmin() {
       )
     : allBoards;
 
-  // Auth loading/check
   if (isAuthLoading) {
     return (
       <div className="min-h-screen gradient-game flex items-center justify-center">
@@ -435,7 +436,7 @@ export default function SuperAdmin() {
       <RefreshCw className="w-8 h-8 text-muted-foreground mb-2" />
       <p className="text-sm text-muted-foreground mb-3">{message}</p>
       {onRetry && (
-        <Button variant="outline" size="sm" onClick={onRetry}>Try again</Button>
+        <Button variant="outline" size="sm" onClick={onRetry} data-testid="button-retry">Try again</Button>
       )}
     </div>
   );
@@ -456,7 +457,7 @@ export default function SuperAdmin() {
 
       <main className="px-4 py-6 max-w-5xl mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-black/20">
+          <TabsList className="grid w-full grid-cols-4 bg-black/20">
             <TabsTrigger value="overview" className="flex items-center gap-2" data-testid="tab-overview">
               <Activity className="w-4 h-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -466,28 +467,24 @@ export default function SuperAdmin() {
               <span className="hidden sm:inline">Users</span>
             </TabsTrigger>
             <TabsTrigger value="content" className="flex items-center gap-2" data-testid="tab-content">
-              <Grid3X3 className="w-4 h-4" />
+              <Gamepad2 className="w-4 h-4" />
               <span className="hidden sm:inline">Content</span>
             </TabsTrigger>
             <TabsTrigger value="sessions" className="flex items-center gap-2" data-testid="tab-sessions">
               <Play className="w-4 h-4" />
               <span className="hidden sm:inline">Sessions</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2" data-testid="tab-analytics">
-              <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Analytics</span>
-            </TabsTrigger>
           </TabsList>
 
-          {/* OVERVIEW TAB */}
+          {/* OVERVIEW TAB - Pulse + Analytics + Actions */}
           <TabsContent value="overview" className="space-y-6">
-            {/* Pulse Stats */}
+            {/* Live Pulse */}
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <CardTitle className="text-lg">Platform Pulse</CardTitle>
+                    <CardTitle className="text-lg">Live Now</CardTitle>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => refetchDashboard()} data-testid="button-refresh-pulse">
                     <RefreshCw className="w-4 h-4" />
@@ -506,26 +503,24 @@ export default function SuperAdmin() {
                     <div className="p-3 rounded-lg bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30">
                       <div className="flex items-center gap-2 mb-1">
                         <Zap className="w-4 h-4 text-green-400" />
-                        <span className="text-xs text-muted-foreground">Live Now</span>
+                        <span className="text-xs text-muted-foreground">Active Games</span>
                       </div>
                       <p className="text-2xl font-bold text-green-400">{dashboard.realtime.activeGames}</p>
-                      <p className="text-xs text-muted-foreground">{dashboard.realtime.activePlayers} players</p>
                     </div>
                     <div className="p-3 rounded-lg bg-muted/30">
                       <div className="flex items-center gap-2 mb-1">
-                        <Target className="w-4 h-4 text-blue-400" />
-                        <span className="text-xs text-muted-foreground">Today</span>
+                        <Users className="w-4 h-4 text-blue-400" />
+                        <span className="text-xs text-muted-foreground">Active Players</span>
+                      </div>
+                      <p className="text-2xl font-bold">{dashboard.realtime.activePlayers}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-muted/30">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Target className="w-4 h-4 text-purple-400" />
+                        <span className="text-xs text-muted-foreground">Games Today</span>
                       </div>
                       <p className="text-2xl font-bold">{dashboard.today.games}</p>
-                      <p className="text-xs text-muted-foreground">games <TrendBadge value={dashboard.today.gamesChange} /></p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-muted/30">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Users className="w-4 h-4 text-purple-400" />
-                        <span className="text-xs text-muted-foreground">Players Today</span>
-                      </div>
-                      <p className="text-2xl font-bold">{dashboard.today.players}</p>
-                      <TrendBadge value={dashboard.today.playersChange} />
+                      <TrendBadge value={dashboard.today.gamesChange} />
                     </div>
                     <div className="p-3 rounded-lg bg-muted/30">
                       <div className="flex items-center gap-2 mb-1">
@@ -533,14 +528,13 @@ export default function SuperAdmin() {
                         <span className="text-xs text-muted-foreground">Total Users</span>
                       </div>
                       <p className="text-2xl font-bold">{dashboard.totals.users}</p>
-                      <p className="text-xs text-muted-foreground">+{dashboard.today.newUsers} today</p>
                     </div>
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Needs Attention */}
+            {/* Needs Review */}
             {flaggedBoards.length > 0 && (
               <Card className="border-amber-500/50">
                 <CardHeader className="pb-3">
@@ -583,68 +577,128 @@ export default function SuperAdmin() {
               </Card>
             )}
 
-            {/* Game Controls */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Gamepad2 className="w-5 h-5" /> Game Controls
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoadingGameTypes ? (
-                  <div className="space-y-2">
-                    {[1,2,3].map(i => <Skeleton key={i} className="h-12" />)}
-                  </div>
-                ) : isErrorGameTypes ? (
-                  <ErrorState message="Couldn't load games" onRetry={() => refetchGameTypes()} />
-                ) : (
-                  <div className="space-y-2">
-                    {gameTypes.map(game => {
-                      const Icon = getGameIcon(game.slug);
-                      return (
-                        <div key={game.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                          <div className="flex items-center gap-3">
-                            <Icon className="w-5 h-5" />
-                            <div>
-                              <p className="font-medium">{game.displayName}</p>
-                              <p className="text-xs text-muted-foreground">{game.slug}</p>
+            {/* Analytics Summary */}
+            {dashboard && (
+              <div className="grid md:grid-cols-3 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">This Week</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Games</span>
+                      <span className="font-bold">{dashboard.week.games}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Players</span>
+                      <span className="font-bold">{dashboard.week.players}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">New Users</span>
+                      <span className="font-bold">{dashboard.week.newUsers}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">Platform Totals</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Sessions</span>
+                      <span className="font-bold">{dashboard.totals.sessions}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Grids</span>
+                      <span className="font-bold">{dashboard.totals.boards}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Starter Packs</span>
+                      <span className="font-bold">{dashboard.totals.starterPacks}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">Performance</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Avg Score</span>
+                      <span className="font-bold">{dashboard.performance.avgScore}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">High Score</span>
+                      <span className="font-bold">{dashboard.performance.highScore}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Completion</span>
+                      <span className="font-bold">{dashboard.performance.completionRate}%</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Top Hosts & Popular Grids */}
+            {dashboard && (
+              <div className="grid md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Crown className="w-5 h-5 text-amber-400" /> Top Hosts
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {dashboard.topHostsWeek.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">No data yet</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {dashboard.topHostsWeek.slice(0, 5).map((h, i) => (
+                          <div key={i} className="flex items-center justify-between p-2 rounded bg-muted/30">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-muted-foreground w-5">#{i + 1}</span>
+                              <span className="text-sm">{h.name}</span>
                             </div>
+                            <Badge variant="secondary">{h.games} games</Badge>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Select
-                              value={game.status}
-                              onValueChange={(status) => updateGameTypeMutation.mutate({
-                                id: game.id,
-                                data: { status: status as GameStatus }
-                              })}
-                            >
-                              <SelectTrigger className="w-32 h-8" data-testid={`select-game-status-${game.id}`}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="active">
-                                  <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> Active</span>
-                                </SelectItem>
-                                <SelectItem value="hidden">
-                                  <span className="flex items-center gap-1"><EyeOff className="w-3 h-3" /> Hidden</span>
-                                </SelectItem>
-                                <SelectItem value="coming_soon">
-                                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Coming Soon</span>
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Star className="w-5 h-5 text-amber-400" /> Popular Grids
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {dashboard.popularGridsWeek.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">No data yet</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {dashboard.popularGridsWeek.slice(0, 5).map((g, i) => (
+                          <div key={i} className="flex items-center justify-between p-2 rounded bg-muted/30">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-muted-foreground w-5">#{i + 1}</span>
+                              <span className="text-sm truncate">{g.name}</span>
+                            </div>
+                            <Badge variant="secondary">{g.plays} plays</Badge>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {/* Quick Actions */}
             <div className="grid md:grid-cols-2 gap-4">
-              {/* Announcements */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -711,6 +765,7 @@ export default function SuperAdmin() {
                               variant="ghost"
                               className="h-6 w-6"
                               onClick={() => deleteAnnouncementMutation.mutate(a.id)}
+                              data-testid={`button-delete-announcement-${a.id}`}
                             >
                               <Trash2 className="w-3 h-3" />
                             </Button>
@@ -731,7 +786,6 @@ export default function SuperAdmin() {
                 </CardContent>
               </Card>
 
-              {/* Export */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -740,7 +794,7 @@ export default function SuperAdmin() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Export all platform data including users, content, and sessions as JSON.
+                    Export all platform data as JSON.
                   </p>
                   <Button
                     onClick={handleExportData}
@@ -762,16 +816,16 @@ export default function SuperAdmin() {
           <TabsContent value="users" className="space-y-4">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <CardTitle className="text-lg">All Users</CardTitle>
                   <div className="flex items-center gap-2">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
-                        placeholder="Search users..."
+                        placeholder="Search..."
                         value={userSearch}
                         onChange={(e) => setUserSearch(e.target.value)}
-                        className="pl-9 w-48"
+                        className="pl-9 w-40"
                         data-testid="input-search-users"
                       />
                     </div>
@@ -793,9 +847,9 @@ export default function SuperAdmin() {
                 ) : (
                   <div className="space-y-2 max-h-[600px] overflow-y-auto">
                     {filteredUsers.map(u => (
-                      <div key={u.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                      <div key={u.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
                             <User className="w-4 h-4" />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -805,10 +859,7 @@ export default function SuperAdmin() {
                             <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={u.role === 'super_admin' ? 'default' : u.role === 'admin' ? 'secondary' : 'outline'}>
-                            {u.role}
-                          </Badge>
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           <Select
                             value={u.role}
                             onValueChange={(role) => updateRoleMutation.mutate({ userId: u.id, role })}
@@ -841,29 +892,37 @@ export default function SuperAdmin() {
             </Card>
           </TabsContent>
 
-          {/* CONTENT TAB */}
+          {/* CONTENT TAB - Games + BlitzGrid + Sort Circuit + PsyOp */}
           <TabsContent value="content" className="space-y-4">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Content & Starter Packs</CardTitle>
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <CardTitle className="text-lg">Content & Games</CardTitle>
+                  {contentTab !== 'games' && (
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
-                        placeholder="Search content..."
+                        placeholder="Search..."
                         value={contentSearch}
                         onChange={(e) => setContentSearch(e.target.value)}
-                        className="pl-9 w-48"
+                        className="pl-9 w-40"
                         data-testid="input-search-content"
                       />
                     </div>
-                  </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Content Type Tabs */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant={contentTab === 'games' ? 'default' : 'outline'}
+                    onClick={() => setContentTab('games')}
+                    data-testid="button-content-games"
+                  >
+                    <Gamepad2 className="w-4 h-4 mr-1" /> Games
+                  </Button>
                   <Button
                     size="sm"
                     variant={contentTab === 'blitzgrid' ? 'default' : 'outline'}
@@ -890,11 +949,61 @@ export default function SuperAdmin() {
                   </Button>
                 </div>
 
+                {/* Games Control */}
+                {contentTab === 'games' && (
+                  isLoadingGameTypes ? (
+                    <div className="space-y-2">
+                      {[1,2,3].map(i => <Skeleton key={i} className="h-14" />)}
+                    </div>
+                  ) : isErrorGameTypes ? (
+                    <ErrorState message="Couldn't load games" onRetry={() => refetchGameTypes()} />
+                  ) : (
+                    <div className="space-y-2">
+                      {gameTypes.map(game => {
+                        const Icon = getGameIcon(game.slug);
+                        return (
+                          <div key={game.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                            <div className="flex items-center gap-3">
+                              <Icon className="w-5 h-5" />
+                              <div>
+                                <p className="font-medium">{game.displayName}</p>
+                                <p className="text-xs text-muted-foreground">{game.slug}</p>
+                              </div>
+                            </div>
+                            <Select
+                              value={game.status}
+                              onValueChange={(status) => updateGameTypeMutation.mutate({
+                                id: game.id,
+                                data: { status: status as GameStatus }
+                              })}
+                            >
+                              <SelectTrigger className="w-32 h-8" data-testid={`select-game-status-${game.id}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="active">
+                                  <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> Active</span>
+                                </SelectItem>
+                                <SelectItem value="hidden">
+                                  <span className="flex items-center gap-1"><EyeOff className="w-3 h-3" /> Hidden</span>
+                                </SelectItem>
+                                <SelectItem value="coming_soon">
+                                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Coming Soon</span>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )
+                )}
+
                 {/* BlitzGrid Grids */}
                 {contentTab === 'blitzgrid' && (
                   isLoadingBoards ? (
                     <div className="space-y-2">
-                      {[1,2,3].map(i => <Skeleton key={i} className="h-16" />)}
+                      {[1,2,3].map(i => <Skeleton key={i} className="h-14" />)}
                     </div>
                   ) : isErrorBoards ? (
                     <ErrorState message="Couldn't load grids" onRetry={() => refetchBoards()} />
@@ -903,17 +1012,17 @@ export default function SuperAdmin() {
                   ) : (
                     <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {filteredBoards.map(b => (
-                        <div key={b.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                        <div key={b.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="font-medium truncate">{b.name}</p>
                               {b.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              by {b.ownerName || b.ownerEmail} • {b.categoryCount} categories • {b.questionCount} questions
+                              by {b.ownerName || b.ownerEmail} • {b.categoryCount} cat • {b.questionCount} Q
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-shrink-0">
                             <Button
                               size="sm"
                               variant={b.isStarterPack ? 'secondary' : 'outline'}
@@ -927,6 +1036,7 @@ export default function SuperAdmin() {
                               variant="ghost"
                               className="h-8 w-8 text-destructive"
                               onClick={() => setDeleteBoardId(b.id)}
+                              data-testid={`button-delete-board-${b.id}`}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -941,7 +1051,7 @@ export default function SuperAdmin() {
                 {contentTab === 'sequence' && (
                   isLoadingSequence ? (
                     <div className="space-y-2">
-                      {[1,2,3].map(i => <Skeleton key={i} className="h-16" />)}
+                      {[1,2,3].map(i => <Skeleton key={i} className="h-14" />)}
                     </div>
                   ) : isErrorSequence ? (
                     <ErrorState message="Couldn't load questions" onRetry={() => refetchSequence()} />
@@ -950,7 +1060,7 @@ export default function SuperAdmin() {
                   ) : (
                     <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {sequenceQuestions.map(q => (
-                        <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                        <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="font-medium truncate">{q.title}</p>
@@ -978,7 +1088,7 @@ export default function SuperAdmin() {
                 {contentTab === 'psyop' && (
                   isLoadingPsyop ? (
                     <div className="space-y-2">
-                      {[1,2,3].map(i => <Skeleton key={i} className="h-16" />)}
+                      {[1,2,3].map(i => <Skeleton key={i} className="h-14" />)}
                     </div>
                   ) : isErrorPsyop ? (
                     <ErrorState message="Couldn't load questions" onRetry={() => refetchPsyop()} />
@@ -987,7 +1097,7 @@ export default function SuperAdmin() {
                   ) : (
                     <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {psyopQuestions.map(q => (
-                        <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                        <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="font-medium truncate">{q.factText}</p>
@@ -1018,16 +1128,16 @@ export default function SuperAdmin() {
           <TabsContent value="sessions" className="space-y-4">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <CardTitle className="text-lg">Game Sessions</CardTitle>
                   <div className="flex items-center gap-2">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
-                        placeholder="Search sessions..."
+                        placeholder="Search..."
                         value={sessionSearch}
                         onChange={(e) => setSessionSearch(e.target.value)}
-                        className="pl-9 w-48"
+                        className="pl-9 w-40"
                         data-testid="input-search-sessions"
                       />
                     </div>
@@ -1049,9 +1159,9 @@ export default function SuperAdmin() {
                 ) : (
                   <div className="space-y-2 max-h-[600px] overflow-y-auto">
                     {filteredSessions.map(s => (
-                      <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                      <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className="text-center">
+                          <div className="text-center flex-shrink-0">
                             <p className="font-mono font-bold text-lg">{s.code}</p>
                             <Badge variant={s.state === 'active' ? 'default' : 'outline'} className="text-xs">
                               {s.state}
@@ -1059,183 +1169,24 @@ export default function SuperAdmin() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium truncate">
-                              Host: {s.host?.firstName || s.host?.lastName ? `${s.host.firstName || ''} ${s.host.lastName || ''}`.trim() : s.host?.email || 'Unknown'}
+                              {getHostDisplay(s.host)}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {s.playerCount} players • {formatRelativeDate(s.createdAt)}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {s.winner && (
-                            <Badge variant="secondary">
-                              <Crown className="w-3 h-3 mr-1" /> {s.winner.name}
-                            </Badge>
-                          )}
-                        </div>
+                        {s.winner && (
+                          <Badge variant="secondary" className="flex-shrink-0">
+                            <Crown className="w-3 h-3 mr-1" /> {s.winner.name}
+                          </Badge>
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* ANALYTICS TAB */}
-          <TabsContent value="analytics" className="space-y-4">
-            {isLoadingDashboard ? (
-              <div className="grid gap-4">
-                <Skeleton className="h-32" />
-                <Skeleton className="h-48" />
-              </div>
-            ) : isErrorDashboard ? (
-              <ErrorState message="Couldn't load analytics" onRetry={() => refetchDashboard()} />
-            ) : dashboard && (
-              <>
-                {/* Platform Totals */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">Platform Totals</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <div className="p-3 rounded-lg bg-muted/30 text-center">
-                        <p className="text-2xl font-bold">{dashboard.totals.users}</p>
-                        <p className="text-xs text-muted-foreground">Users</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/30 text-center">
-                        <p className="text-2xl font-bold">{dashboard.totals.sessions}</p>
-                        <p className="text-xs text-muted-foreground">Sessions</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/30 text-center">
-                        <p className="text-2xl font-bold">{dashboard.totals.boards}</p>
-                        <p className="text-xs text-muted-foreground">Grids</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/30 text-center">
-                        <p className="text-2xl font-bold">{dashboard.totals.starterPacks}</p>
-                        <p className="text-xs text-muted-foreground">Starter Packs</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* This Week */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">This Week</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="p-3 rounded-lg bg-muted/30 text-center">
-                        <p className="text-2xl font-bold">{dashboard.week.games}</p>
-                        <p className="text-xs text-muted-foreground">Games</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/30 text-center">
-                        <p className="text-2xl font-bold">{dashboard.week.players}</p>
-                        <p className="text-xs text-muted-foreground">Players</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/30 text-center">
-                        <p className="text-2xl font-bold">{dashboard.week.newUsers}</p>
-                        <p className="text-xs text-muted-foreground">New Users</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Performance */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">Performance</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="p-3 rounded-lg bg-muted/30 text-center">
-                        <p className="text-2xl font-bold">{dashboard.performance.avgScore}</p>
-                        <p className="text-xs text-muted-foreground">Avg Score</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/30 text-center">
-                        <p className="text-2xl font-bold">{dashboard.performance.highScore}</p>
-                        <p className="text-xs text-muted-foreground">High Score</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/30 text-center">
-                        <p className="text-2xl font-bold">{dashboard.performance.completionRate}%</p>
-                        <p className="text-xs text-muted-foreground">Completion</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Top Hosts & Popular Grids */}
-                <div className="grid md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Crown className="w-5 h-5 text-amber-400" /> Top Hosts This Week
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {dashboard.topHostsWeek.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-4">No data yet</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {dashboard.topHostsWeek.slice(0, 5).map((h, i) => (
-                            <div key={i} className="flex items-center justify-between p-2 rounded bg-muted/30">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold text-muted-foreground">#{i + 1}</span>
-                                <span className="text-sm font-medium">{h.name}</span>
-                              </div>
-                              <Badge variant="secondary">{h.games} games</Badge>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Star className="w-5 h-5 text-amber-400" /> Popular Grids This Week
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {dashboard.popularGridsWeek.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-4">No data yet</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {dashboard.popularGridsWeek.slice(0, 5).map((g, i) => (
-                            <div key={i} className="flex items-center justify-between p-2 rounded bg-muted/30">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold text-muted-foreground">#{i + 1}</span>
-                                <span className="text-sm font-medium truncate">{g.name}</span>
-                              </div>
-                              <Badge variant="secondary">{g.plays} plays</Badge>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Users by Role */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">Users by Role</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-3 gap-3">
-                      {Object.entries(dashboard.usersByRole).map(([role, count]) => (
-                        <div key={role} className="p-3 rounded-lg bg-muted/30 text-center">
-                          <p className="text-2xl font-bold">{count}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{role.replace('_', ' ')}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
-            )}
           </TabsContent>
         </Tabs>
 
@@ -1245,7 +1196,7 @@ export default function SuperAdmin() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete User?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete the user and all their content. This cannot be undone.
+                This will permanently delete the user and all their content.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -1268,7 +1219,7 @@ export default function SuperAdmin() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Content?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete this content. This cannot be undone.
+                This will permanently delete this content.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
