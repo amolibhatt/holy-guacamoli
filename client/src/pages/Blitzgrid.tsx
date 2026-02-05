@@ -226,6 +226,7 @@ export default function Blitzgrid() {
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [scoreAnimations, setScoreAnimations] = useState<Map<string, { delta: number; timestamp: number }>>(new Map());
   const [reactions, setReactions] = useState<Array<{ id: string; type: string; playerId?: string; timestamp: number }>>([]);
+  const reactionTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const shareCardRef = useRef<HTMLDivElement | null>(null);
   const gameOverTimers = useRef<NodeJS.Timeout[]>([]);
   const joinNotificationTimer = useRef<NodeJS.Timeout | null>(null);
@@ -567,9 +568,11 @@ export default function Blitzgrid() {
                 timestamp: Date.now() 
               }]);
               playReaction();
-              setTimeout(() => {
+              const timeout = setTimeout(() => {
                 setReactions(prev => prev.filter(r => r.id !== reactionId));
+                reactionTimeouts.current.delete(reactionId);
               }, 2500);
+              reactionTimeouts.current.set(reactionId, timeout);
             }
             break;
           case 'player:disconnected':
@@ -1177,6 +1180,9 @@ export default function Blitzgrid() {
       // Clear game over timers on unmount
       gameOverTimers.current.forEach(clearTimeout);
       gameOverTimers.current = [];
+      // Clear reaction timeouts on unmount
+      reactionTimeouts.current.forEach(clearTimeout);
+      reactionTimeouts.current.clear();
     };
   }, [playMode, gridPickerMode, connectWebSocket, disconnectWebSocket]);
 
