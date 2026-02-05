@@ -237,6 +237,10 @@ export class DatabaseStorage implements IStorage {
     const updateData: Record<string, any> = {};
     for (const [key, value] of Object.entries(data)) {
       if (value !== undefined) {
+        // Only super_admin can set isGlobal, isStarterPack, or visibility
+        if ((key === 'isGlobal' || key === 'isStarterPack' || key === 'visibility') && role !== 'super_admin') {
+          continue;
+        }
         updateData[key] = value;
       }
     }
