@@ -864,15 +864,22 @@ export default function Blitzgrid() {
     toast({ title: "Session ended", description: "All players have been disconnected." });
   }, [clearStoredSession, disconnectWebSocket, toast]);
   
+  // Track if user has made a grid selection this session
+  const [hasShuffleGridSelection, setHasShuffleGridSelection] = useState(false);
+  
   // Open grid picker for shuffle play
   const openShuffleGridPicker = useCallback(() => {
-    // Pre-select all eligible grids and prune any stale IDs
-    setSelectedShuffleGridIds(new Set(eligibleShuffleGridIds));
+    // Pre-select all eligible grids if no prior selection
+    if (!hasShuffleGridSelection) {
+      setSelectedShuffleGridIds(new Set(eligibleShuffleGridIds));
+    }
     setShowShuffleGridPicker(true);
-  }, [eligibleShuffleGridIds]);
+  }, [eligibleShuffleGridIds, hasShuffleGridSelection]);
   
   // Execute shuffle with selected grids
   const executeShufflePlay = useCallback(async (gridIds: number[]) => {
+    // Mark that user has made a selection
+    setHasShuffleGridSelection(true);
     // Prevent double-clicks/race conditions
     if (isShuffling) return;
     setIsShuffling(true);
@@ -958,10 +965,16 @@ export default function Blitzgrid() {
     }
   }, [toast, playedShuffleCategoryIds, isShuffling]);
   
-  // Wrapper for shuffle button - opens grid picker
+  // Wrapper for shuffle button - opens grid picker first time, then reuses selection
   const handleShufflePlay = useCallback(() => {
-    openShuffleGridPicker();
-  }, [openShuffleGridPicker]);
+    if (hasShuffleGridSelection && selectedShuffleGridIds.size > 0) {
+      // Reuse existing selection - skip the picker
+      executeShufflePlay(Array.from(selectedShuffleGridIds));
+    } else {
+      // First time - show the picker
+      openShuffleGridPicker();
+    }
+  }, [hasShuffleGridSelection, selectedShuffleGridIds, executeShufflePlay, openShuffleGridPicker]);
   
   // Fire celebratory confetti with fireworks
   const fireConfetti = useCallback(() => {
@@ -1843,15 +1856,24 @@ export default function Blitzgrid() {
                     Reset Questions
                   </DropdownMenuItem>
                   {shuffleMode && (
-                    <DropdownMenuItem 
-                      onClick={() => {
-                        handleShufflePlay();
-                      }}
-                      data-testid="button-reshuffle"
-                    >
-                      <Shuffle className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
-                      Reshuffle Categories
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          handleShufflePlay();
+                        }}
+                        data-testid="button-reshuffle"
+                      >
+                        <Shuffle className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
+                        Reshuffle Categories
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => openShuffleGridPicker()}
+                        data-testid="button-change-grids"
+                      >
+                        <Grid3X3 className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
+                        Change Grid Selection
+                      </DropdownMenuItem>
+                    </>
                   )}
                   <DropdownMenuItem 
                     onClick={() => setShowEndSessionDialog(true)}
