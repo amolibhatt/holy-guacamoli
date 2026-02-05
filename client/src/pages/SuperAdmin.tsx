@@ -155,6 +155,7 @@ export default function SuperAdmin() {
   const [sequenceSearch, setSequenceSearch] = useState("");
   const [psyopSearch, setPsyopSearch] = useState("");
   const [blitzgridSearch, setBlitzgridSearch] = useState("");
+  const [sessionsSectionExpanded, setSessionsSectionExpanded] = useState(false);
 
   const { data: allUsers = [], isLoading: isLoadingUsers } = useQuery<UserWithStats[]>({
     queryKey: ['/api/super-admin/users'],
@@ -193,6 +194,25 @@ export default function SuperAdmin() {
   const { data: blitzgridQuestions = [], isLoading: isLoadingBlitzgridQuestions } = useQuery<BlitzgridQuestionWithCreator[]>({
     queryKey: ['/api/super-admin/questions/blitzgrid'],
     enabled: expandedGameSlug === 'blitzgrid',
+  });
+
+  interface GameSessionDetailed {
+    id: number;
+    code: string;
+    hostId: string;
+    currentMode: string | null;
+    state: string;
+    createdAt: string;
+    updatedAt: string;
+    host: { id: string; firstName: string | null; lastName: string | null; email: string | null };
+    players: { id: number; name: string; avatar: string; score: number; isConnected: boolean; joinedAt: string }[];
+    playerCount: number;
+    winner: { id: number; name: string; score: number } | null;
+  }
+
+  const { data: allSessions = [], isLoading: isLoadingSessions } = useQuery<GameSessionDetailed[]>({
+    queryKey: ['/api/super-admin/sessions'],
+    enabled: sessionsSectionExpanded,
   });
 
   const updateGameTypeMutation = useMutation({
@@ -1297,6 +1317,120 @@ export default function SuperAdmin() {
                   )}
                 </AnimatePresence>
               </Card>
+
+          {/* Sessions Section */}
+          <Card className="mb-6">
+            <CardHeader 
+              className="cursor-pointer hover-elevate"
+              onClick={() => setSessionsSectionExpanded(!sessionsSectionExpanded)}
+              onKeyDown={(e) => e.key === 'Enter' && setSessionsSectionExpanded(!sessionsSectionExpanded)}
+              tabIndex={0}
+              role="button"
+              aria-expanded={sessionsSectionExpanded}
+              data-testid="section-sessions-toggle"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <Play className="w-5 h-5 text-teal-500" />
+                  <div>
+                    <CardTitle className="text-lg">Game Sessions</CardTitle>
+                    <CardDescription>View all games played on the platform</CardDescription>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">{allSessions.length} sessions</Badge>
+                  <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${sessionsSectionExpanded ? 'rotate-180' : ''}`} />
+                </div>
+              </div>
+            </CardHeader>
+            <AnimatePresence>
+              {sessionsSectionExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <CardContent className="pt-0">
+                    {isLoadingSessions ? (
+                      <div className="space-y-2">
+                        {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
+                      </div>
+                    ) : allSessions.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-6">No game sessions yet</p>
+                    ) : (
+                      <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                        {allSessions.map((session) => (
+                          <div key={session.id} className="rounded-lg border bg-muted/30 p-3" data-testid={`session-row-${session.id}`}>
+                            <div className="flex items-center justify-between gap-4 mb-2">
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <Badge 
+                                  variant={session.state === 'ended' ? 'secondary' : session.state === 'active' ? 'default' : 'outline'}
+                                  className={session.state === 'active' ? 'bg-green-500' : ''}
+                                >
+                                  {session.state}
+                                </Badge>
+                                <span className="font-mono text-sm bg-muted px-2 py-0.5 rounded" data-testid={`session-code-${session.id}`}>
+                                  {session.code}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {formatRelativeDate(session.createdAt)}
+                                </span>
+                              </div>
+                              <div className="text-xs text-muted-foreground shrink-0">
+                                {session.playerCount} player{session.playerCount !== 1 ? 's' : ''}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="text-sm">
+                                <span className="text-muted-foreground">Host: </span>
+                                <span className="font-medium" data-testid={`session-host-${session.id}`}>
+                                  {session.host?.firstName || session.host?.lastName 
+                                    ? `${session.host.firstName || ''} ${session.host.lastName || ''}`.trim()
+                                    : session.host?.email || 'Unknown'}
+                                </span>
+                              </div>
+                              {session.winner && (
+                                <div className="text-sm">
+                                  <span className="text-muted-foreground">Winner: </span>
+                                  <span className="font-medium text-amber-500" data-testid={`session-winner-${session.id}`}>
+                                    {session.winner.name} ({session.winner.score} pts)
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {session.players.length > 0 && (
+                              <div className="mt-2 pt-2 border-t">
+                                <div className="flex flex-wrap gap-1">
+                                  {session.players.slice(0, 8).map((player) => (
+                                    <Badge 
+                                      key={player.id} 
+                                      variant="outline" 
+                                      className="text-xs"
+                                      data-testid={`session-player-${session.id}-${player.id}`}
+                                    >
+                                      {player.name}: {player.score}
+                                    </Badge>
+                                  ))}
+                                  {session.players.length > 8 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{session.players.length - 8} more
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Card>
 
               <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                 <Megaphone className="w-4 h-4 text-violet-500" />
