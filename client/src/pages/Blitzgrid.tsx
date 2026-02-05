@@ -2129,14 +2129,14 @@ export default function Blitzgrid() {
                 <motion.div 
                   className="px-6 py-3 rounded-full flex items-center gap-3 shadow-lg border"
                   style={{
-                    background: 'rgba(232, 121, 249, 0.1)',
-                    borderColor: 'rgba(232, 121, 249, 0.4)',
-                    boxShadow: '0 0 30px rgba(232, 121, 249, 0.2)',
+                    background: `${neonColor.primary}15`,
+                    borderColor: `${neonColor.primary}66`,
+                    boxShadow: `0 0 30px ${neonColor.primary}33`,
                   }}
                   animate={{ scale: [1, 1.02, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  <span className="text-sm md:text-base font-medium text-fuchsia-300">
+                  <span className="text-sm md:text-base font-medium" style={{ color: neonColor.primary }}>
                     Click to reveal ({revealedCategoryCount}/{playCategories.length})
                   </span>
                   <Button
