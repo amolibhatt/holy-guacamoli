@@ -1881,96 +1881,6 @@ export default function Blitzgrid() {
               </AlertDialogContent>
             </AlertDialog>
           
-          {/* Shuffle Grid Picker Dialog */}
-          <Dialog open={showShuffleGridPicker} onOpenChange={setShowShuffleGridPicker}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2" data-testid="dialog-title-shuffle">
-                  <Shuffle className="w-5 h-5 text-cyan-400" />
-                  Select Grids to Shuffle
-                </DialogTitle>
-                <DialogDescription data-testid="dialog-description-shuffle">
-                  Pick which grids to include. Categories will be randomly mixed from your selection.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-3 max-h-[300px] overflow-y-auto py-2">
-                {eligibleShuffleGrids.map(grid => {
-                  // Only consider selected if grid is still eligible
-                  const isSelected = selectedShuffleGridIds.has(grid.id) && eligibleShuffleGridIds.has(grid.id);
-                  return (
-                    <label 
-                      key={grid.id}
-                      className="flex items-center gap-3 p-3 rounded-lg border border-border cursor-pointer transition-colors"
-                    >
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={(checked) => {
-                          const newSet = new Set(selectedShuffleGridIds);
-                          if (checked) {
-                            newSet.add(grid.id);
-                          } else {
-                            newSet.delete(grid.id);
-                          }
-                          setSelectedShuffleGridIds(newSet);
-                        }}
-                        data-testid={`checkbox-grid-${grid.id}`}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate" data-testid={`text-grid-name-${grid.id}`}>{grid.name}</p>
-                        <p className="text-xs text-muted-foreground" data-testid={`text-grid-categories-${grid.id}`}>
-                          {grid.categoryCount || 0} categories
-                        </p>
-                      </div>
-                    </label>
-                  );
-                })}
-                {eligibleShuffleGrids.length === 0 && (
-                  <p className="text-center text-muted-foreground py-4" data-testid="text-no-grids">
-                    No grids with categories available
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center justify-between pt-2 border-t">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    // Prune to only eligible IDs for comparison
-                    const selectedEligibleCount = Array.from(selectedShuffleGridIds).filter(id => eligibleShuffleGridIds.has(id)).length;
-                    const allSelected = selectedEligibleCount === eligibleShuffleGridIds.size;
-                    setSelectedShuffleGridIds(allSelected ? new Set() : new Set(eligibleShuffleGridIds));
-                  }}
-                  data-testid="button-toggle-all-grids"
-                >
-                  {(() => {
-                    const selectedEligibleCount = Array.from(selectedShuffleGridIds).filter(id => eligibleShuffleGridIds.has(id)).length;
-                    return selectedEligibleCount === eligibleShuffleGridIds.size ? 'Deselect All' : 'Select All';
-                  })()}
-                </Button>
-                <Button
-                  onClick={() => {
-                    // Only pass eligible grid IDs
-                    const validIds = Array.from(selectedShuffleGridIds).filter(id => eligibleShuffleGridIds.has(id));
-                    executeShufflePlay(validIds);
-                  }}
-                  disabled={Array.from(selectedShuffleGridIds).filter(id => eligibleShuffleGridIds.has(id)).length === 0 || isShuffling}
-                  className="gap-2"
-                  data-testid="button-start-shuffle"
-                >
-                  {isShuffling ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Shuffle className="w-4 h-4" />
-                  )}
-                  {(() => {
-                    const count = Array.from(selectedShuffleGridIds).filter(id => eligibleShuffleGridIds.has(id)).length;
-                    return `Shuffle (${count} grid${count !== 1 ? 's' : ''})`;
-                  })()}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-          
           {/* Join Notification */}
           <AnimatePresence>
             {lastJoinedPlayer && (
@@ -3827,6 +3737,93 @@ export default function Blitzgrid() {
         open={showRules} 
         onOpenChange={setShowRules} 
       />
+      
+      {/* Shuffle Grid Picker Dialog - outside conditional blocks so it's always accessible */}
+      <Dialog open={showShuffleGridPicker} onOpenChange={setShowShuffleGridPicker}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2" data-testid="dialog-title-shuffle">
+              <Shuffle className="w-5 h-5 text-cyan-400" />
+              Select Grids to Shuffle
+            </DialogTitle>
+            <DialogDescription data-testid="dialog-description-shuffle">
+              Pick which grids to include. Categories will be randomly mixed from your selection.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[300px] overflow-y-auto py-2">
+            {eligibleShuffleGrids.map(grid => {
+              const isSelected = selectedShuffleGridIds.has(grid.id) && eligibleShuffleGridIds.has(grid.id);
+              return (
+                <label 
+                  key={grid.id}
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border cursor-pointer transition-colors"
+                >
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={(checked) => {
+                      const newSet = new Set(selectedShuffleGridIds);
+                      if (checked) {
+                        newSet.add(grid.id);
+                      } else {
+                        newSet.delete(grid.id);
+                      }
+                      setSelectedShuffleGridIds(newSet);
+                    }}
+                    data-testid={`checkbox-grid-${grid.id}`}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate" data-testid={`text-grid-name-${grid.id}`}>{grid.name}</p>
+                    <p className="text-xs text-muted-foreground" data-testid={`text-grid-categories-${grid.id}`}>
+                      {grid.categoryCount || 0} categories
+                    </p>
+                  </div>
+                </label>
+              );
+            })}
+            {eligibleShuffleGrids.length === 0 && (
+              <p className="text-center text-muted-foreground py-4" data-testid="text-no-grids">
+                No grids with categories available
+              </p>
+            )}
+          </div>
+          <div className="flex items-center justify-between pt-2 border-t">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const selectedEligibleCount = Array.from(selectedShuffleGridIds).filter(id => eligibleShuffleGridIds.has(id)).length;
+                const allSelected = selectedEligibleCount === eligibleShuffleGridIds.size;
+                setSelectedShuffleGridIds(allSelected ? new Set() : new Set(eligibleShuffleGridIds));
+              }}
+              data-testid="button-toggle-all-grids"
+            >
+              {(() => {
+                const selectedEligibleCount = Array.from(selectedShuffleGridIds).filter(id => eligibleShuffleGridIds.has(id)).length;
+                return selectedEligibleCount === eligibleShuffleGridIds.size ? 'Deselect All' : 'Select All';
+              })()}
+            </Button>
+            <Button
+              onClick={() => {
+                const validIds = Array.from(selectedShuffleGridIds).filter(id => eligibleShuffleGridIds.has(id));
+                executeShufflePlay(validIds);
+              }}
+              disabled={Array.from(selectedShuffleGridIds).filter(id => eligibleShuffleGridIds.has(id)).length === 0 || isShuffling}
+              className="gap-2"
+              data-testid="button-start-shuffle"
+            >
+              {isShuffling ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Shuffle className="w-4 h-4" />
+              )}
+              {(() => {
+                const count = Array.from(selectedShuffleGridIds).filter(id => eligibleShuffleGridIds.has(id)).length;
+                return `Shuffle (${count} grid${count !== 1 ? 's' : ''})`;
+              })()}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       <AppFooter />
     </div>
