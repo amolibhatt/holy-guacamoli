@@ -1204,7 +1204,6 @@ export default function SuperAdmin() {
                                             </SelectTrigger>
                                             <SelectContent>
                                               <SelectItem value="host">Host</SelectItem>
-                                              <SelectItem value="admin">Admin</SelectItem>
                                               <SelectItem value="super_admin">Super Admin</SelectItem>
                                             </SelectContent>
                                           </Select>

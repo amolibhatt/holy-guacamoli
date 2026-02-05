@@ -77,10 +77,14 @@ Preferred communication style: Simple, everyday language.
 - **Super Admin Starter Packs**: Super admin can promote any complete grid to "starter pack" status via toggle in SuperAdmin > All Grids tab. Starter packs are automatically copied to new users on signup, giving them ready-to-play content. Uses isStarterPack boolean on boards table.
 - **Fun Interactive Themes**: 9 playful themes (Sports, Birthday, Beach, Office, Dogs, Cats, Space, Music, Nature) each with animated floating elements - trophies, balloons, waves, paw prints, stars, music notes, trees, etc. Theme elements animate continuously during gameplay.
 - **Excel Import/Export**: BlitzGrid grids can be exported to and imported from Excel (.xlsx) files. Template includes sample data and instructions sheet. Row-based format with columns: Grid Name, Grid Description, Category Name, Category Description, Points, Question, Answer, Options (pipe-delimited), Image URL, Audio URL, Video URL.
-- **Simplified Super Admin Dashboard**: Consolidated from 3 tabs to 2 tabs for actionable-focused design:
-  - **Dashboard tab**: "How's the platform?" - Health monitoring with 4 key metrics (users, content, active games, players today), flagged content alerts, and live activity feed
-  - **Manage tab**: "Take action" - Unified games management (enable/disable, starter packs), users (role changes, activity), and admin tools (announcements, data export)
-  - Removed low-value observational metrics (DAU/WAU/MAU, conversion funnel, top performers, session analytics) to focus on what admins actually DO vs. observe
+- **Simplified Super Admin Dashboard**: Single-view design focused on actionable tasks:
+  - Platform Status header with Live Pulse stats (Active Now, Games Today, Players Today)
+  - Needs Review section for flagged content moderation (only shows when needed)
+  - Collapsible Games section with status toggles and starter pack controls
+  - Collapsible Users section with role management and expandable details
+  - Admin Tools for announcements and data export
+  - Removed drill-down overlays, enterprise analytics, and vanity metrics to focus on what admins DO
+- **Simplified Role System**: Two roles only - Host (regular users who create/host games) and Super Admin (platform owner). Removed unused "Admin" role that had no special permissions.
 - **Admin Announcements**: Broadcast system for super admins to send platform-wide announcements with title, message, type (info/warning/success), and optional expiration.
 - **Content Moderation**: Boards can be flagged (moderationStatus), featured (isFeatured), with tracking of moderatedBy and moderatedAt timestamps.
 - **User Activity Tracking**: lastLoginAt field on users table, activity API showing games hosted and recent sessions.

@@ -1928,7 +1928,7 @@ export async function registerRoutes(
     try {
       const { id } = req.params;
       const { role } = req.body;
-      if (!role || !['host', 'admin', 'super_admin'].includes(role)) {
+      if (!role || !['host', 'super_admin'].includes(role)) {
         return res.status(400).json({ message: "Invalid role" });
       }
       const updated = await storage.updateUserRole(id, role);
