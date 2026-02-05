@@ -985,6 +985,28 @@ export default function Blitzgrid() {
     gameOverTimers.current.forEach(clearTimeout);
     gameOverTimers.current = [];
     
+    // Send player stats to server for persistence
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      const winnerId = sortedPlayers[0]?.id;
+      const playerStatsArray = players.map(player => {
+        const stats = gameStats.playerStats.get(player.id);
+        return {
+          playerId: player.id,
+          correctAnswers: stats?.correctAnswers || 0,
+          wrongAnswers: stats?.wrongAnswers || 0,
+          totalPoints: player.score,
+          bestStreak: stats?.bestStreak || 0,
+          won: player.id === winnerId,
+        };
+      });
+      
+      wsRef.current.send(JSON.stringify({
+        type: 'host:endGame',
+        gameSlug: 'blitzgrid',
+        playerStats: playerStatsArray,
+      }));
+    }
+    
     setShowGameOver(true);
     setGameOverPhase(0);
     
@@ -1006,7 +1028,7 @@ export default function Blitzgrid() {
       }, delay);
       gameOverTimers.current.push(timer);
     });
-  }, [players, endSession, fireConfetti]);
+  }, [players, endSession, fireConfetti, gameStats]);
   
   // Close game over and actually end session
   const closeGameOver = useCallback(() => {

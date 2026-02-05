@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles, Users, ChevronUp, ChevronDown, Volume2, VolumeX, Lock, Grid3X3, Hand, Flame, Laugh, CircleDot, ThumbsUp, Eye } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
+import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { soundManager } from "@/lib/sounds";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { PLAYER_AVATARS, type AvatarId } from "@shared/schema";
@@ -56,6 +57,9 @@ export default function PlayerPage() {
   const savedSession = getSession();
   const [roomCode, setRoomCode] = useState(codeFromUrl || savedSession?.roomCode || "");
   const [playerName, setPlayerName] = useState(savedSession?.playerName || "");
+  
+  // Get player profile for stat tracking
+  const { profile } = usePlayerProfile(playerName);
   const [playerId, setPlayerId] = useState<string | null>(savedSession?.playerId || null);
   const [selectedAvatar, setSelectedAvatar] = useState<AvatarId>(savedSession?.avatar || "cat");
   const [joined, setJoined] = useState(false);
@@ -111,6 +115,7 @@ export default function PlayerPage() {
         name: playerName,
         avatar: selectedAvatar,
         playerId: playerIdRef.current || playerId || undefined,
+        profileId: profile?.profile?.id, // Include profile ID for stat tracking
       }));
       
       if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);

@@ -13,6 +13,7 @@ import { registerReplitAuthRoutes, registerReplitAuthApiRoutes } from "./replit_
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { razorpayRouter } from "./razorpay";
 import playerProfileRouter from "./routes/playerProfile";
+import { playerProfileService } from "./services/playerProfile";
 import { SOURCE_GROUPS, type SourceGroup, type Question } from "@shared/schema";
 
 // Required point values for a category to go LIVE
@@ -4224,6 +4225,7 @@ Be creative! Make facts surprising and fun to guess.`;
     totalTimeMs: number;
     currentStreak: number;
     bestStreak: number;
+    profileId?: string; // Player profile ID for stat tracking
   }
 
   interface SequenceSubmission {
@@ -4252,6 +4254,7 @@ Be creative! Make facts surprising and fun to guess.`;
     currentQuestion?: object;
     questionStartTime?: number;
     pointsPerRound?: number;
+    gameEnded?: boolean; // Idempotency flag to prevent duplicate stat persistence
   }
 
   const rooms = new Map<string, Room>();
@@ -4453,6 +4456,10 @@ Be creative! Make facts surprising and fun to guess.`;
               existingPlayer.isConnected = true;
               existingPlayer.name = data.name || existingPlayer.name;
               existingPlayer.avatar = data.avatar || existingPlayer.avatar;
+              // Update profileId on reconnect (e.g., after guest-to-auth conversion)
+              if (data.profileId) {
+                existingPlayer.profileId = data.profileId;
+              }
               wsToRoom.set(ws, { roomCode: room.code, isHost: false, playerId });
 
               ws.send(JSON.stringify({
@@ -4498,6 +4505,7 @@ Be creative! Make facts surprising and fun to guess.`;
                 totalTimeMs: 0,
                 currentStreak: 0,
                 bestStreak: 0,
+                profileId: data.profileId, // Store player profile ID for stat tracking
               };
               room.players.set(playerId, player);
               wsToRoom.set(ws, { roomCode: room.code, isHost: false, playerId });
@@ -4881,6 +4889,82 @@ Be creative! Make facts surprising and fun to guess.`;
             wsToRoom.delete(ws);
             ws.send(JSON.stringify({ type: 'room:closed', reason: 'Room closed' }));
             console.log(`[WebSocket] Host closed room ${room.code}`);
+            break;
+          }
+
+          // End game and persist player stats before closing
+          case 'host:endGame': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            // Idempotency guard: skip if already ended
+            if (room.gameEnded) {
+              ws.send(JSON.stringify({ 
+                type: 'game:ended', 
+                alreadyEnded: true,
+                persistedPlayers: [],
+                totalPlayers: room.players.size,
+              }));
+              break;
+            }
+            room.gameEnded = true;
+
+            const gameSlug = data.gameSlug || 'blitzgrid';
+            const playerStats = data.playerStats as Array<{
+              playerId: string;
+              correctAnswers: number;
+              wrongAnswers: number;
+              totalPoints: number;
+              bestStreak: number;
+              won: boolean;
+            }> | undefined;
+
+            // Persist stats for all players with profile IDs
+            const persistedPlayers: string[] = [];
+            if (playerStats) {
+              for (const stat of playerStats) {
+                const player = room.players.get(stat.playerId);
+                if (player?.profileId) {
+                  try {
+                    await playerProfileService.updateGameStats(player.profileId, gameSlug, {
+                      points: stat.totalPoints,
+                      won: stat.won,
+                      correctAnswers: stat.correctAnswers,
+                      incorrectAnswers: stat.wrongAnswers,
+                    });
+                    persistedPlayers.push(player.name);
+                    console.log(`[WebSocket] Persisted stats for ${player.name} (profile ${player.profileId})`);
+                  } catch (err) {
+                    console.error(`[WebSocket] Failed to persist stats for ${player.name}:`, err);
+                  }
+                }
+              }
+            }
+
+            // Notify players that game has ended with their stats
+            room.players.forEach((player) => {
+              const stat = playerStats?.find(s => s.playerId === player.id);
+              sendToPlayer(player, { 
+                type: 'game:ended', 
+                stats: stat,
+                statsPersisted: !!player.profileId,
+              });
+            });
+
+            // Send confirmation to host
+            ws.send(JSON.stringify({ 
+              type: 'game:ended', 
+              persistedPlayers,
+              totalPlayers: room.players.size,
+            }));
+
+            console.log(`[WebSocket] Game ended in room ${room.code}, persisted stats for ${persistedPlayers.length}/${room.players.size} players`);
+            
+            // Note: Room stays open so host can continue showing game over screen.
+            // Room cleanup happens when host explicitly calls host:closeRoom or disconnects.
             break;
           }
 
