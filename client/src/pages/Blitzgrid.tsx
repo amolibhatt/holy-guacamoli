@@ -3304,8 +3304,9 @@ export default function Blitzgrid() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {grids.filter(g => g.isActive).map((grid, idx) => {
+                // Use grid's stored color, or fallback to stable color based on grid ID (not position)
                 const effectiveColor = grid.colorCode?.startsWith('#') ? null : grid.colorCode;
-                const colorConfig = getBoardColorConfig(effectiveColor || BOARD_COLORS[idx % BOARD_COLORS.length]);
+                const colorConfig = getBoardColorConfig(effectiveColor || BOARD_COLORS[grid.id % BOARD_COLORS.length]);
                 return (
                   <Card
                     key={grid.id}
@@ -3350,8 +3351,9 @@ export default function Blitzgrid() {
   // Grid card component - retro gaming design with varied neon colors
   const GridCard = ({ grid, index }: { grid: typeof activeGrids[0], index: number }) => {
     const [isHovered, setIsHovered] = useState(false);
-    // Cycle through neon colors for variety
-    const colorKey = BOARD_COLORS[index % BOARD_COLORS.length];
+    // Use grid's stored color, or fallback to stable color based on grid ID (not position)
+    const effectiveColor = grid.colorCode?.startsWith('#') ? null : grid.colorCode;
+    const colorKey = effectiveColor as BoardColor || BOARD_COLORS[grid.id % BOARD_COLORS.length];
     const neonColor = neonColorConfig[colorKey];
     
     return (
