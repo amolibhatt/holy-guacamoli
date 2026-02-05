@@ -1822,34 +1822,37 @@ export default function Blitzgrid() {
             
             {/* Right: Room Code + Invite + Settings */}
             <div className="flex items-center gap-2">
-              {roomCode && (
-                <motion.div 
-                  initial={{ scale: 0 }} 
-                  animate={{ scale: 1 }} 
-                  transition={{ type: "spring", delay: 0.2 }}
-                  className="flex items-center gap-2"
-                >
-                  <Badge 
-                    className="font-mono font-bold px-3 py-1.5 border"
-                    style={{
-                      background: 'rgba(34, 211, 238, 0.1)',
-                      borderColor: 'rgba(34, 211, 238, 0.4)',
-                      color: 'var(--arcade-neon-cyan)',
-                    }}
+              {roomCode && (() => {
+                const gridNeonColor = neonColorConfig[colorName];
+                return (
+                  <motion.div 
+                    initial={{ scale: 0 }} 
+                    animate={{ scale: 1 }} 
+                    transition={{ type: "spring", delay: 0.2 }}
+                    className="flex items-center gap-2"
                   >
-                    {roomCode}
-                  </Badge>
-                  <Button 
-                    size="sm" 
-                    variant="ghost"
-                    onClick={() => setShowQRCode(true)} 
-                    className="text-cyan-400"
-                    data-testid="button-show-qr"
-                  >
-                    <QrCode className="w-4 h-4 shrink-0" aria-hidden="true" />
-                  </Button>
-                </motion.div>
-              )}
+                    <Badge 
+                      className="font-mono font-bold px-3 py-1.5 border"
+                      style={{
+                        background: `${gridNeonColor.border}15`,
+                        borderColor: `${gridNeonColor.border}60`,
+                        color: gridNeonColor.text,
+                      }}
+                    >
+                      {roomCode}
+                    </Badge>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      onClick={() => setShowQRCode(true)} 
+                      style={{ color: gridNeonColor.icon }}
+                      data-testid="button-show-qr"
+                    >
+                      <QrCode className="w-4 h-4 shrink-0" aria-hidden="true" />
+                    </Button>
+                  </motion.div>
+                );
+              })()}
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -2300,7 +2303,7 @@ export default function Blitzgrid() {
           
           {/* QR Code Modal */}
           <Dialog open={showQRCode} onOpenChange={setShowQRCode}>
-            <DialogContent className="max-w-sm">
+            <DialogContent className="max-w-sm" style={{ borderColor: `${neonColorConfig[colorName].border}40` }}>
               <DialogHeader>
                 <DialogTitle className="text-center text-2xl">Join the Game</DialogTitle>
                 <DialogDescription className="text-center">
@@ -2311,7 +2314,7 @@ export default function Blitzgrid() {
               {roomCode && (
                 <div className="text-center py-2">
                   <p className="text-sm text-white/60 mb-1">Room Code</p>
-                  <p className="text-4xl font-bold tracking-widest text-cyan-400">{roomCode}</p>
+                  <p className="text-4xl font-bold tracking-widest" style={{ color: neonColorConfig[colorName].text }}>{roomCode}</p>
                 </div>
               )}
               
