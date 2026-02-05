@@ -129,6 +129,21 @@ interface BlitzgridQuestionWithCreator {
   creator: QuestionCreator | null;
 }
 
+interface BlitzgridGrid {
+  id: number;
+  name: string;
+  description: string | null;
+  theme: string | null;
+  userId: string | null;
+  isStarterPack: boolean;
+  isGlobal: boolean;
+  createdAt: string;
+  ownerEmail: string;
+  ownerName: string | null;
+  categoryCount: number;
+  questionCount: number;
+}
+
 interface GameSessionDetailed {
   id: number;
   code: string;
@@ -211,6 +226,13 @@ export default function SuperAdmin() {
     queryKey: ['/api/super-admin/questions/blitzgrid'],
     enabled: expandedGameSlug === 'blitzgrid',
   });
+
+  const { data: allBoards = [], isLoading: isLoadingBlitzgridGrids } = useQuery<BoardWithOwner[]>({
+    queryKey: ['/api/super-admin/boards'],
+    enabled: expandedGameSlug === 'blitzgrid',
+  });
+
+  const blitzgridGrids = allBoards.filter(b => b.theme === 'blitzgrid');
 
   const updateGameTypeMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: { hostEnabled?: boolean; playerEnabled?: boolean; status?: GameStatus } }) => {
@@ -580,7 +602,7 @@ export default function SuperAdmin() {
                       value={dashboard.realtime.activeGames} 
                       icon={Zap} 
                       color="from-green-500 to-emerald-500"
-                      subtitle="right now"
+                      subtitle="games in progress"
                     />
                     <StatCard 
                       title="Active Players" 
@@ -755,27 +777,6 @@ export default function SuperAdmin() {
                     </Card>
                   </div>
 
-                  {/* Recent Activity Feed */}
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Activity className="w-5 h-5 text-blue-500" />Recent Activity
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        {dashboard.recentActivity.map((activity) => (
-                          <Badge key={activity.id} variant={activity.state === 'active' ? 'default' : 'secondary'} className={activity.state === 'active' ? 'bg-green-500' : ''}>
-                            <span className="font-mono">{activity.code}</span>
-                            <span className="mx-1">·</span>
-                            <span>{activity.state}</span>
-                            <span className="mx-1">·</span>
-                            <span>{formatRelativeDate(activity.createdAt)}</span>
-                          </Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
                 </>
               )}
             </motion.div>
@@ -788,7 +789,7 @@ export default function SuperAdmin() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search by code, host, or player name..."
+                    placeholder="Type room code (e.g. ABCD), host email, or player name..."
                     value={sessionSearch}
                     onChange={(e) => setSessionSearch(e.target.value)}
                     className="pl-9"
@@ -1108,21 +1109,40 @@ export default function SuperAdmin() {
                                 )}
 
                                 {gameType.slug === 'blitzgrid' && (
-                                  <div className="space-y-2">
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                      <p className="text-sm text-muted-foreground">All BlitzGrid grids with starter pack controls</p>
+                                      <Badge variant="secondary">{blitzgridGrids.length} grids</Badge>
+                                    </div>
                                     <div className="relative">
                                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                      <Input placeholder="Search BlitzGrid questions..." value={blitzgridSearch} onChange={(e) => setBlitzgridSearch(e.target.value)} className="pl-9" />
+                                      <Input placeholder="Search grids by name..." value={blitzgridSearch} onChange={(e) => setBlitzgridSearch(e.target.value)} className="pl-9" />
                                     </div>
-                                    {isLoadingBlitzgridQuestions ? (
+                                    {isLoadingBlitzgridGrids ? (
                                       <Skeleton className="h-20" />
+                                    ) : blitzgridGrids.length === 0 ? (
+                                      <p className="text-sm text-muted-foreground text-center py-4">No BlitzGrid grids found</p>
                                     ) : (
-                                      <div className="max-h-[300px] overflow-y-auto space-y-1">
-                                        {blitzgridQuestions.filter(q => !blitzgridSearch || q.question.toLowerCase().includes(blitzgridSearch.toLowerCase())).slice(0, 20).map((q) => (
-                                          <div key={q.id} className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm">
+                                      <div className="max-h-[400px] overflow-y-auto space-y-2">
+                                        {blitzgridGrids.filter(g => !blitzgridSearch || g.name.toLowerCase().includes(blitzgridSearch.toLowerCase())).map((grid) => (
+                                          <div key={grid.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 gap-3">
                                             <div className="min-w-0 flex-1">
-                                              <span className="truncate block">{q.question}</span>
-                                              <span className="text-xs text-muted-foreground">{q.board?.name} · {q.category?.name} · {q.points}pts</span>
+                                              <div className="flex items-center gap-2">
+                                                <span className="font-medium truncate">{grid.name}</span>
+                                                {grid.isStarterPack && <Star className="w-4 h-4 text-amber-500 shrink-0" />}
+                                              </div>
+                                              <div className="text-xs text-muted-foreground mt-0.5">
+                                                {grid.ownerName || grid.ownerEmail} · {grid.categoryCount} categories · {grid.questionCount} questions
+                                              </div>
                                             </div>
+                                            <Button 
+                                              size="sm" 
+                                              variant={grid.isStarterPack ? "default" : "outline"}
+                                              onClick={() => toggleStarterPackMutation.mutate({ boardId: grid.id, isStarterPack: !grid.isStarterPack })}
+                                              disabled={toggleStarterPackMutation.isPending}
+                                            >
+                                              {grid.isStarterPack ? 'Remove Starter' : 'Make Starter'}
+                                            </Button>
                                           </div>
                                         ))}
                                       </div>
