@@ -537,7 +537,7 @@ export default function SuperAdmin() {
             </Card>
 
             {/* Needs Review */}
-            {(isLoadingFlagged || flaggedBoards.length > 0) && (
+            {(isLoadingFlagged || isErrorFlagged || flaggedBoards.length > 0) && (
               <Card className="border-amber-500/50">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
@@ -588,7 +588,9 @@ export default function SuperAdmin() {
             )}
 
             {/* Analytics Summary */}
-            {dashboard && (
+            {isErrorDashboard ? (
+              <ErrorState message="Couldn't load analytics" onRetry={() => refetchDashboard()} />
+            ) : dashboard && (
               <div className="grid md:grid-cols-3 gap-4">
                 <Card>
                   <CardHeader className="pb-2">
@@ -653,7 +655,7 @@ export default function SuperAdmin() {
             )}
 
             {/* Top Hosts & Popular Grids */}
-            {dashboard && (
+            {dashboard && !isErrorDashboard && (
               <div className="grid md:grid-cols-2 gap-4">
                 <Card>
                   <CardHeader className="pb-3">
@@ -760,7 +762,7 @@ export default function SuperAdmin() {
                         >
                           <Send className="w-4 h-4 mr-1" /> Send
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => setShowAnnouncementForm(false)}>
+                        <Button size="sm" variant="outline" onClick={() => setShowAnnouncementForm(false)} data-testid="button-cancel-announcement">
                           Cancel
                         </Button>
                       </div>
@@ -779,11 +781,10 @@ export default function SuperAdmin() {
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-6 w-6"
                               onClick={() => deleteAnnouncementMutation.mutate(a.id)}
                               data-testid={`button-delete-announcement-${a.id}`}
                             >
-                              <Trash2 className="w-3 h-3" />
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
                         ))
