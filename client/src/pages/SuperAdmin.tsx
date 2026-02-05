@@ -5,15 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Users, Shield, Trash2, TrendingUp, TrendingDown,
   Gamepad2, Clock, Activity, ListOrdered, Grid3X3,
-  Search, RefreshCw, ChevronDown, Star, Trophy,
+  Search, RefreshCw, ChevronDown, ChevronRight, Star,
   Megaphone, Flag, Download, Send, User, Play, Image, Brain,
-  BarChart3, Zap, Crown, Target, Calendar, Hash
+  Zap, Crown, Target, Eye, EyeOff, Check, X, AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -23,8 +22,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { GameStatus } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -85,6 +90,32 @@ interface Announcement {
   expiresAt: string | null;
 }
 
+interface GameSessionDetailed {
+  id: number;
+  code: string;
+  hostId: string;
+  currentMode: string | null;
+  state: string;
+  createdAt: string;
+  updatedAt: string;
+  host: { id: string; firstName: string | null; lastName: string | null; email: string | null };
+  players: { id: number; name: string; avatar: string; score: number; isConnected: boolean; joinedAt: string }[];
+  playerCount: number;
+  winner: { id: number; name: string; score: number } | null;
+}
+
+interface ComprehensiveDashboard {
+  realtime: { activeGames: number; activePlayers: number };
+  today: { games: number; players: number; newUsers: number; gamesChange: number; playersChange: number; usersChange: number };
+  week: { games: number; players: number; newUsers: number };
+  totals: { users: number; sessions: number; boards: number; blitzgridQuestions: number; sortCircuitQuestions: number; psyopQuestions: number; starterPacks: number; flaggedContent: number };
+  usersByRole: Record<string, number>;
+  recentActivity: { id: number; code: string; state: string; createdAt: string }[];
+  topHostsWeek: { name: string; games: number }[];
+  popularGridsWeek: { name: string; plays: number }[];
+  performance: { avgScore: number; highScore: number; completionRate: number };
+}
+
 interface QuestionCreator {
   id: string;
   username: string;
@@ -114,126 +145,77 @@ interface PsyopQuestionWithCreator {
   creator: QuestionCreator | null;
 }
 
-interface BlitzgridQuestionWithCreator {
-  id: number;
-  question: string;
-  options: string[];
-  correctAnswer: string;
-  points: number;
-  imageUrl: string | null;
-  audioUrl: string | null;
-  videoUrl: string | null;
-  categoryId: number;
-  category: { id: number; name: string } | null;
-  board: { id: number; name: string; userId: string | null } | null;
-  creator: QuestionCreator | null;
-}
-
-interface BlitzgridGrid {
-  id: number;
-  name: string;
-  description: string | null;
-  theme: string | null;
-  userId: string | null;
-  isStarterPack: boolean;
-  isGlobal: boolean;
-  createdAt: string;
-  ownerEmail: string;
-  ownerName: string | null;
-  categoryCount: number;
-  questionCount: number;
-}
-
-interface GameSessionDetailed {
-  id: number;
-  code: string;
-  hostId: string;
-  currentMode: string | null;
-  state: string;
-  createdAt: string;
-  updatedAt: string;
-  host: { id: string; firstName: string | null; lastName: string | null; email: string | null };
-  players: { id: number; name: string; avatar: string; score: number; isConnected: boolean; joinedAt: string }[];
-  playerCount: number;
-  winner: { id: number; name: string; score: number } | null;
-}
-
-interface ComprehensiveDashboard {
-  realtime: { activeGames: number; activePlayers: number };
-  today: { games: number; players: number; newUsers: number; gamesChange: number; playersChange: number; usersChange: number };
-  week: { games: number; players: number; newUsers: number };
-  totals: { users: number; sessions: number; boards: number; blitzgridQuestions: number; sortCircuitQuestions: number; psyopQuestions: number; starterPacks: number; flaggedContent: number };
-  usersByRole: Record<string, number>;
-  recentActivity: { id: number; code: string; state: string; createdAt: string }[];
-  topHostsWeek: { name: string; games: number }[];
-  popularGridsWeek: { name: string; plays: number }[];
-  performance: { avgScore: number; highScore: number; completionRate: number };
-}
-
 export default function SuperAdmin() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { toast } = useToast();
+  
+  // UI state
+  const [globalSearch, setGlobalSearch] = useState("");
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [deleteBoardId, setDeleteBoardId] = useState<number | null>(null);
-  const [expandedGameSlug, setExpandedGameSlug] = useState<string | null>(null);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
-  const [userSearch, setUserSearch] = useState("");
-  const [sessionSearch, setSessionSearch] = useState("");
+  
+  // Section visibility
+  const [showUsers, setShowUsers] = useState(false);
+  const [showSessions, setShowSessions] = useState(false);
+  const [showGames, setShowGames] = useState(false);
+  const [showContent, setShowContent] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [contentTab, setContentTab] = useState<'blitzgrid' | 'sequence' | 'psyop'>('blitzgrid');
+  
+  // Announcement form
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
   const [announcementType, setAnnouncementType] = useState<"info" | "warning" | "success">("info");
+  const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
+  
   const [isExporting, setIsExporting] = useState(false);
-  const [sequenceSearch, setSequenceSearch] = useState("");
-  const [psyopSearch, setPsyopSearch] = useState("");
-  const [blitzgridSearch, setBlitzgridSearch] = useState("");
 
+  // Queries
   const { data: dashboard, isLoading: isLoadingDashboard, isError: isErrorDashboard, refetch: refetchDashboard } = useQuery<ComprehensiveDashboard>({
     queryKey: ['/api/super-admin/dashboard'],
     refetchInterval: 30000,
   });
 
-  const { data: allUsers = [], isLoading: isLoadingUsers, isError: isErrorUsers } = useQuery<UserWithStats[]>({
+  const { data: allUsers = [], isLoading: isLoadingUsers, isError: isErrorUsers, refetch: refetchUsers } = useQuery<UserWithStats[]>({
     queryKey: ['/api/super-admin/users'],
+    enabled: showUsers || globalSearch.length > 0,
   });
 
-  const { data: allSessions = [], isLoading: isLoadingSessions, isError: isErrorSessions } = useQuery<GameSessionDetailed[]>({
+  const { data: allSessions = [], isLoading: isLoadingSessions, isError: isErrorSessions, refetch: refetchSessions } = useQuery<GameSessionDetailed[]>({
     queryKey: ['/api/super-admin/sessions'],
+    enabled: showSessions || globalSearch.length > 0,
   });
 
-  const { data: gameTypes = [], isLoading: isLoadingGameTypes, isError: isErrorGameTypes } = useQuery<GameType[]>({
+  const { data: gameTypes = [], isLoading: isLoadingGameTypes, isError: isErrorGameTypes, refetch: refetchGameTypes } = useQuery<GameType[]>({
     queryKey: ['/api/super-admin/game-types'],
-  });
-
-  const { data: announcements = [], isLoading: isLoadingAnnouncements, isError: isErrorAnnouncements } = useQuery<Announcement[]>({
-    queryKey: ['/api/super-admin/announcements'],
+    enabled: showGames,
   });
 
   const { data: flaggedBoards = [], isError: isErrorFlagged } = useQuery<Board[]>({
     queryKey: ['/api/super-admin/boards/flagged'],
   });
 
-  const { data: sequenceQuestions = [], isLoading: isLoadingSequenceQuestions } = useQuery<SequenceQuestionWithCreator[]>({
-    queryKey: ['/api/super-admin/questions/sequence'],
-    enabled: expandedGameSlug === 'sequence_squeeze',
-  });
-
-  const { data: psyopQuestions = [], isLoading: isLoadingPsyopQuestions } = useQuery<PsyopQuestionWithCreator[]>({
-    queryKey: ['/api/super-admin/questions/psyop'],
-    enabled: expandedGameSlug === 'psyop',
-  });
-
-  const { data: blitzgridQuestions = [], isLoading: isLoadingBlitzgridQuestions } = useQuery<BlitzgridQuestionWithCreator[]>({
-    queryKey: ['/api/super-admin/questions/blitzgrid'],
-    enabled: expandedGameSlug === 'blitzgrid',
-  });
-
-  const { data: allBoards = [], isLoading: isLoadingBlitzgridGrids } = useQuery<BoardWithOwner[]>({
+  const { data: allBoards = [], isLoading: isLoadingBoards, isError: isErrorBoards, refetch: refetchBoards } = useQuery<BoardWithOwner[]>({
     queryKey: ['/api/super-admin/boards'],
-    enabled: expandedGameSlug === 'blitzgrid',
+    enabled: showContent || globalSearch.length > 0,
   });
 
-  const blitzgridGrids = allBoards.filter(b => b.theme === 'blitzgrid');
+  const { data: announcements = [], isError: isErrorAnnouncements } = useQuery<Announcement[]>({
+    queryKey: ['/api/super-admin/announcements'],
+  });
 
+  const { data: sequenceQuestions = [], isLoading: isLoadingSequence, isError: isErrorSequence, refetch: refetchSequence } = useQuery<SequenceQuestionWithCreator[]>({
+    queryKey: ['/api/super-admin/questions/sequence'],
+    enabled: showContent && contentTab === 'sequence',
+  });
+
+  const { data: psyopQuestions = [], isLoading: isLoadingPsyop, isError: isErrorPsyop, refetch: refetchPsyop } = useQuery<PsyopQuestionWithCreator[]>({
+    queryKey: ['/api/super-admin/questions/psyop'],
+    enabled: showContent && contentTab === 'psyop',
+  });
+
+  // Mutations
   const updateGameTypeMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: { hostEnabled?: boolean; playerEnabled?: boolean; status?: GameStatus } }) => {
       await apiRequest('PATCH', `/api/super-admin/game-types/${id}`, data);
@@ -241,12 +223,9 @@ export default function SuperAdmin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/game-types'] });
       queryClient.invalidateQueries({ queryKey: ['/api/game-types'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/game-types/homepage'] });
       toast({ title: "Game updated" });
     },
-    onError: () => {
-      toast({ title: "Couldn't update game", description: "Please try again.", variant: "destructive" });
-    },
+    onError: () => toast({ title: "Couldn't update game", variant: "destructive" }),
   });
 
   const deleteUserMutation = useMutation({
@@ -256,12 +235,10 @@ export default function SuperAdmin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/users'] });
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
-      toast({ title: "User deleted successfully" });
+      toast({ title: "User deleted" });
       setDeleteUserId(null);
     },
-    onError: () => {
-      toast({ title: "Couldn't delete user", description: "Please try again.", variant: "destructive" });
-    },
+    onError: () => toast({ title: "Couldn't delete user", variant: "destructive" }),
   });
 
   const deleteBoardMutation = useMutation({
@@ -272,12 +249,10 @@ export default function SuperAdmin() {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards/flagged'] });
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
-      toast({ title: "Grid deleted successfully" });
+      toast({ title: "Content deleted" });
       setDeleteBoardId(null);
     },
-    onError: () => {
-      toast({ title: "Couldn't delete grid", description: "Please try again.", variant: "destructive" });
-    },
+    onError: () => toast({ title: "Couldn't delete content", variant: "destructive" }),
   });
 
   const toggleStarterPackMutation = useMutation({
@@ -287,11 +262,9 @@ export default function SuperAdmin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
-      toast({ title: "Starter pack status updated" });
+      toast({ title: "Starter pack updated" });
     },
-    onError: () => {
-      toast({ title: "Couldn't update starter pack status", description: "Please try again.", variant: "destructive" });
-    },
+    onError: () => toast({ title: "Couldn't update starter pack", variant: "destructive" }),
   });
 
   const toggleSequenceStarterPackMutation = useMutation({
@@ -300,11 +273,9 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/sequence'] });
-      toast({ title: "Starter pack status updated" });
+      toast({ title: "Starter pack updated" });
     },
-    onError: () => {
-      toast({ title: "Couldn't update starter pack status", variant: "destructive" });
-    },
+    onError: () => toast({ title: "Couldn't update starter pack", variant: "destructive" }),
   });
 
   const togglePsyopStarterPackMutation = useMutation({
@@ -313,11 +284,9 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/psyop'] });
-      toast({ title: "Starter pack status updated" });
+      toast({ title: "Starter pack updated" });
     },
-    onError: () => {
-      toast({ title: "Couldn't update starter pack status", variant: "destructive" });
-    },
+    onError: () => toast({ title: "Couldn't update starter pack", variant: "destructive" }),
   });
 
   const createAnnouncementMutation = useMutation({
@@ -329,11 +298,10 @@ export default function SuperAdmin() {
       setAnnouncementTitle("");
       setAnnouncementMessage("");
       setAnnouncementType("info");
+      setShowAnnouncementForm(false);
       toast({ title: "Announcement sent" });
     },
-    onError: () => {
-      toast({ title: "Couldn't create announcement", variant: "destructive" });
-    },
+    onError: () => toast({ title: "Couldn't send announcement", variant: "destructive" }),
   });
 
   const deleteAnnouncementMutation = useMutation({
@@ -344,9 +312,7 @@ export default function SuperAdmin() {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/announcements'] });
       toast({ title: "Announcement deleted" });
     },
-    onError: () => {
-      toast({ title: "Couldn't delete announcement", variant: "destructive" });
-    },
+    onError: () => toast({ title: "Couldn't delete announcement", variant: "destructive" }),
   });
 
   const updateRoleMutation = useMutation({
@@ -358,9 +324,7 @@ export default function SuperAdmin() {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
       toast({ title: "Role updated" });
     },
-    onError: () => {
-      toast({ title: "Couldn't update role", variant: "destructive" });
-    },
+    onError: () => toast({ title: "Couldn't update role", variant: "destructive" }),
   });
 
   const updateModerationMutation = useMutation({
@@ -370,11 +334,9 @@ export default function SuperAdmin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards/flagged'] });
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
-      toast({ title: "Moderation status updated" });
+      toast({ title: "Content reviewed" });
     },
-    onError: () => {
-      toast({ title: "Couldn't update moderation status", variant: "destructive" });
-    },
+    onError: () => toast({ title: "Couldn't update status", variant: "destructive" }),
   });
 
   const handleExportData = async () => {
@@ -397,6 +359,7 @@ export default function SuperAdmin() {
     }
   };
 
+  // Helpers
   const formatRelativeDate = (dateStr: string | Date | null) => {
     if (!dateStr) return 'Never';
     const date = new Date(dateStr);
@@ -423,17 +386,30 @@ export default function SuperAdmin() {
     }
   };
 
-  const getGameGradient = (slug: string) => {
-    switch (slug) {
-      case 'blitzgrid': return 'from-rose-500 to-fuchsia-500';
-      case 'sequence_squeeze': return 'from-emerald-500 to-cyan-500';
-      case 'psyop': return 'from-violet-500 to-indigo-500';
-      case 'timewarp': return 'from-sky-500 to-blue-500';
-      case 'memenoharm': return 'from-amber-500 to-orange-500';
-      default: return 'from-gray-500 to-slate-500';
-    }
-  };
+  // Global search filtering
+  const searchLower = globalSearch.toLowerCase().trim();
+  
+  const filteredUsers = searchLower ? allUsers.filter(u => {
+    const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
+    return u.email.toLowerCase().includes(searchLower) || fullName.includes(searchLower);
+  }) : [];
 
+  const filteredSessions = searchLower ? allSessions.filter(s => {
+    const hostName = `${s.host?.firstName || ''} ${s.host?.lastName || ''}`.toLowerCase();
+    return s.code.toLowerCase().includes(searchLower) ||
+      hostName.includes(searchLower) ||
+      s.host?.email?.toLowerCase().includes(searchLower) ||
+      s.players.some(p => p.name.toLowerCase().includes(searchLower));
+  }) : [];
+
+  const filteredBoards = searchLower ? allBoards.filter(b => 
+    b.name.toLowerCase().includes(searchLower) ||
+    b.ownerEmail?.toLowerCase().includes(searchLower)
+  ) : [];
+
+  const hasSearchResults = filteredUsers.length > 0 || filteredSessions.length > 0 || filteredBoards.length > 0;
+
+  // Auth loading/check
   if (isAuthLoading) {
     return (
       <div className="min-h-screen gradient-game flex items-center justify-center">
@@ -459,809 +435,977 @@ export default function SuperAdmin() {
   }
 
   const ErrorState = ({ message = "Couldn't load data", onRetry }: { message?: string; onRetry?: () => void }) => (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-        <RefreshCw className="w-6 h-6 text-destructive" />
-      </div>
-      <p className="text-muted-foreground mb-4">{message}</p>
+    <div className="flex flex-col items-center justify-center py-8 text-center">
+      <RefreshCw className="w-8 h-8 text-muted-foreground mb-2" />
+      <p className="text-sm text-muted-foreground mb-3">{message}</p>
       {onRetry && (
-        <Button variant="outline" size="sm" onClick={onRetry}>
-          Try again
-        </Button>
+        <Button variant="outline" size="sm" onClick={onRetry}>Try again</Button>
       )}
     </div>
   );
 
-  const TrendIndicator = ({ value, suffix = "" }: { value: number; suffix?: string }) => {
+  const TrendBadge = ({ value }: { value: number }) => {
     if (value === 0) return null;
     return (
-      <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${value > 0 ? 'text-green-500' : 'text-red-500'}`}>
-        {value > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-        {value > 0 ? '+' : ''}{value}{suffix}
+      <span className={`text-xs font-medium ${value > 0 ? 'text-green-400' : 'text-red-400'}`}>
+        {value > 0 ? <TrendingUp className="w-3 h-3 inline mr-0.5" /> : <TrendingDown className="w-3 h-3 inline mr-0.5" />}
+        {value > 0 ? '+' : ''}{value}
       </span>
     );
   };
 
-  const StatCard = ({ title, value, change, icon: Icon, color, subtitle }: { 
-    title: string; value: number | string; change?: number; icon: any; color: string; subtitle?: string 
-  }) => (
-    <Card className="relative overflow-hidden">
-      <div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-5`} />
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{title}</p>
-            <div className="flex items-baseline gap-2 mt-1">
-              <p className="text-2xl font-bold">{value}</p>
-              {change !== undefined && <TrendIndicator value={change} />}
-            </div>
-            {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
-          </div>
-          <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center shrink-0`}>
-            <Icon className="w-5 h-5 text-white" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  const filteredSessions = allSessions.filter(s => {
-    if (!sessionSearch.trim()) return true;
-    const searchLower = sessionSearch.toLowerCase();
-    const hostName = `${s.host?.firstName || ''} ${s.host?.lastName || ''}`.toLowerCase();
-    return (
-      s.code.toLowerCase().includes(searchLower) ||
-      hostName.includes(searchLower) ||
-      s.host?.email?.toLowerCase().includes(searchLower) ||
-      s.players.some(p => p.name.toLowerCase().includes(searchLower))
-    );
-  });
-
-  const filteredUsers = allUsers.filter(u => {
-    if (!userSearch.trim()) return true;
-    const searchLower = userSearch.toLowerCase();
-    const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
-    return (
-      u.email.toLowerCase().includes(searchLower) ||
-      u.firstName?.toLowerCase().includes(searchLower) ||
-      u.lastName?.toLowerCase().includes(searchLower) ||
-      fullName.includes(searchLower)
-    );
-  });
-
   return (
     <div className="min-h-screen gradient-game">
-      <AppHeader minimal backHref="/" title="Super Admin" />
+      <AppHeader minimal backHref="/" title="Command Center" />
 
-      <main className="px-4 py-6 max-w-6xl mx-auto w-full">
-        <Tabs defaultValue="overview" className="w-full">
-          <div className="flex items-center justify-between gap-4 mb-6">
-            <TabsList className="bg-background/50 backdrop-blur">
-              <TabsTrigger value="overview" data-testid="tab-overview">
-                <BarChart3 className="w-4 h-4 mr-2" />Overview
-              </TabsTrigger>
-              <TabsTrigger value="sessions" data-testid="tab-sessions">
-                <Play className="w-4 h-4 mr-2" />Sessions
-              </TabsTrigger>
-              <TabsTrigger value="users" data-testid="tab-users">
-                <Users className="w-4 h-4 mr-2" />Users
-              </TabsTrigger>
-              <TabsTrigger value="content" data-testid="tab-content">
-                <Gamepad2 className="w-4 h-4 mr-2" />Content
-              </TabsTrigger>
-              <TabsTrigger value="tools" data-testid="tab-tools">
-                <Megaphone className="w-4 h-4 mr-2" />Tools
-              </TabsTrigger>
-            </TabsList>
+      <main className="px-4 py-6 max-w-5xl mx-auto space-y-6">
+        
+        {/* PULSE - Real-time health at a glance */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-sm font-medium text-white/70">Platform Pulse</span>
+              </div>
+              {flaggedBoards.length > 0 && (
+                <Badge variant="destructive" className="animate-pulse">
+                  <AlertTriangle className="w-3 h-3 mr-1" />{flaggedBoards.length} need review
+                </Badge>
+              )}
+            </div>
             <Button
-              variant="outline"
-              size="icon"
-              onClick={() => {
-                refetchDashboard();
-                queryClient.invalidateQueries({ queryKey: ['/api/super-admin/sessions'] });
-                queryClient.invalidateQueries({ queryKey: ['/api/super-admin/users'] });
-              }}
-              data-testid="button-refresh-all"
+              variant="ghost"
+              size="sm"
+              onClick={() => refetchDashboard()}
+              className="text-white/50 hover:text-white"
+              data-testid="button-refresh"
             >
               <RefreshCw className="w-4 h-4" />
             </Button>
           </div>
 
-          {/* OVERVIEW TAB */}
-          <TabsContent value="overview">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-              {/* Live Activity */}
-              <div className="flex items-center gap-4 mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-sm font-medium text-muted-foreground">Live</span>
-                </div>
-                {isErrorFlagged ? (
-                  <Badge variant="outline" className="text-muted-foreground">
-                    <Flag className="w-3 h-3 mr-1" />Flagged status unavailable
-                  </Badge>
-                ) : flaggedBoards.length > 0 && (
-                  <Badge variant="destructive" className="animate-pulse">
-                    <Flag className="w-3 h-3 mr-1" />{flaggedBoards.length} flagged
-                  </Badge>
-                )}
-              </div>
-
-              {isLoadingDashboard ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[1,2,3,4].map(i => <Skeleton key={i} className="h-24" />)}
-                </div>
-              ) : isErrorDashboard ? (
-                <ErrorState message="Couldn't load dashboard stats" onRetry={() => refetchDashboard()} />
-              ) : dashboard && (
-                <>
-                  {/* Real-time Stats */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <StatCard 
-                      title="Active Games" 
-                      value={dashboard.realtime.activeGames} 
-                      icon={Zap} 
-                      color="from-green-500 to-emerald-500"
-                      subtitle="games in progress"
-                    />
-                    <StatCard 
-                      title="Active Players" 
-                      value={dashboard.realtime.activePlayers} 
-                      icon={Users} 
-                      color="from-blue-500 to-cyan-500"
-                      subtitle="connected"
-                    />
-                    <StatCard 
-                      title="Games Today" 
-                      value={dashboard.today.games} 
-                      change={dashboard.today.gamesChange}
-                      icon={Play} 
-                      color="from-pink-500 to-rose-500"
-                      subtitle="vs yesterday"
-                    />
-                    <StatCard 
-                      title="Players Today" 
-                      value={dashboard.today.players} 
-                      change={dashboard.today.playersChange}
-                      icon={Target} 
-                      color="from-violet-500 to-purple-500"
-                      subtitle="vs yesterday"
-                    />
+          {isLoadingDashboard ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[1,2,3,4].map(i => <Skeleton key={i} className="h-20" />)}
+            </div>
+          ) : isErrorDashboard ? (
+            <Card className="border-destructive/50">
+              <CardContent className="py-6 text-center">
+                <p className="text-muted-foreground mb-3">Couldn't load dashboard</p>
+                <Button variant="outline" size="sm" onClick={() => refetchDashboard()}>Try again</Button>
+              </CardContent>
+            </Card>
+          ) : dashboard && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Zap className="w-4 h-4 text-green-400" />
+                    <span className="text-xs text-white/60 uppercase tracking-wide">Live Now</span>
                   </div>
+                  <p className="text-2xl font-bold text-white">{dashboard.realtime.activeGames}</p>
+                  <p className="text-xs text-white/50">games in progress</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users className="w-4 h-4 text-blue-400" />
+                    <span className="text-xs text-white/60 uppercase tracking-wide">Playing</span>
+                  </div>
+                  <p className="text-2xl font-bold text-white">{dashboard.realtime.activePlayers}</p>
+                  <p className="text-xs text-white/50">active players</p>
+                </CardContent>
+              </Card>
 
-                  {/* Weekly Summary */}
+              <Card className="bg-gradient-to-br from-purple-500/10 to-violet-500/10 border-purple-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Activity className="w-4 h-4 text-purple-400" />
+                    <span className="text-xs text-white/60 uppercase tracking-wide">Today</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-2xl font-bold text-white">{dashboard.today.games}</p>
+                    <TrendBadge value={dashboard.today.gamesChange} />
+                  </div>
+                  <p className="text-xs text-white/50">games played</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Crown className="w-4 h-4 text-amber-400" />
+                    <span className="text-xs text-white/60 uppercase tracking-wide">Total</span>
+                  </div>
+                  <p className="text-2xl font-bold text-white">{dashboard.totals.users}</p>
+                  <p className="text-xs text-white/50">registered users</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </section>
+
+        {/* NEEDS ATTENTION - Flagged content requiring action */}
+        {flaggedBoards.length > 0 && (
+          <section>
+            <Card className="border-amber-500/30 bg-amber-500/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2 text-amber-400">
+                  <Flag className="w-5 h-5" />
+                  Needs Review ({flaggedBoards.length})
+                </CardTitle>
+                <CardDescription>Content flagged for moderation</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {flaggedBoards.slice(0, 5).map(board => (
+                  <div key={board.id} className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{board.name}</p>
+                      <p className="text-xs text-muted-foreground">Grid ID: {board.id}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-green-500 border-green-500/30 hover:bg-green-500/10"
+                        onClick={() => updateModerationMutation.mutate({ boardId: board.id, data: { moderationStatus: 'approved' } })}
+                        data-testid={`button-approve-${board.id}`}
+                      >
+                        <Check className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-red-500 border-red-500/30 hover:bg-red-500/10"
+                        onClick={() => setDeleteBoardId(board.id)}
+                        data-testid={`button-reject-${board.id}`}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
+        {/* UNIVERSAL SEARCH */}
+        <section>
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              placeholder="Search users, sessions, or content..."
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
+              className="pl-12 h-12 text-base bg-background/50"
+              data-testid="input-global-search"
+            />
+          </div>
+
+          {/* Search Results */}
+          <AnimatePresence>
+            {searchLower && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-3 space-y-3"
+              >
+                {!hasSearchResults && (
                   <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-amber-500" />This Week
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-3 gap-6">
-                        <div className="text-center">
-                          <p className="text-3xl font-bold text-amber-500">{dashboard.week.games}</p>
-                          <p className="text-sm text-muted-foreground">Games Played</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-3xl font-bold text-emerald-500">{dashboard.week.players}</p>
-                          <p className="text-sm text-muted-foreground">Players Joined</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-3xl font-bold text-violet-500">{dashboard.week.newUsers}</p>
-                          <p className="text-sm text-muted-foreground">New Users</p>
-                        </div>
-                      </div>
+                    <CardContent className="py-8 text-center text-muted-foreground">
+                      No results for "{globalSearch}"
                     </CardContent>
                   </Card>
+                )}
 
-                  {/* Leaderboards */}
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <Crown className="w-5 h-5 text-amber-500" />Top Hosts This Week
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {dashboard.topHostsWeek.length === 0 ? (
-                          <p className="text-muted-foreground text-sm text-center py-4">No hosts this week</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {dashboard.topHostsWeek.map((host, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                                <div className="flex items-center gap-3">
-                                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? 'bg-amber-500 text-white' : idx === 1 ? 'bg-gray-300 text-gray-700' : idx === 2 ? 'bg-amber-700 text-white' : 'bg-muted text-muted-foreground'}`}>
-                                    {idx + 1}
-                                  </span>
-                                  <span className="font-medium truncate max-w-[150px]" title={host.name}>{host.name}</span>
-                                </div>
-                                <Badge variant="secondary">{host.games} games</Badge>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <Trophy className="w-5 h-5 text-fuchsia-500" />Popular Grids This Week
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {dashboard.popularGridsWeek.length === 0 ? (
-                          <p className="text-muted-foreground text-sm text-center py-4">No grids played this week</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {dashboard.popularGridsWeek.map((grid, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                                <div className="flex items-center gap-3">
-                                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? 'bg-fuchsia-500 text-white' : idx === 1 ? 'bg-gray-300 text-gray-700' : idx === 2 ? 'bg-fuchsia-700 text-white' : 'bg-muted text-muted-foreground'}`}>
-                                    {idx + 1}
-                                  </span>
-                                  <span className="font-medium truncate max-w-[150px]" title={grid.name}>{grid.name}</span>
-                                </div>
-                                <Badge variant="secondary">{grid.plays} plays</Badge>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Platform Totals & Performance */}
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <Hash className="w-5 h-5 text-cyan-500" />Platform Totals
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="p-3 rounded-lg bg-muted/50">
-                            <p className="text-xl font-bold">{dashboard.totals.users}</p>
-                            <p className="text-xs text-muted-foreground">Total Users</p>
-                          </div>
-                          <div className="p-3 rounded-lg bg-muted/50">
-                            <p className="text-xl font-bold">{dashboard.totals.sessions}</p>
-                            <p className="text-xs text-muted-foreground">Total Sessions</p>
-                          </div>
-                          <div className="p-3 rounded-lg bg-muted/50">
-                            <p className="text-xl font-bold">{dashboard.totals.boards}</p>
-                            <p className="text-xs text-muted-foreground">BlitzGrid Grids</p>
-                          </div>
-                          <div className="p-3 rounded-lg bg-muted/50">
-                            <p className="text-xl font-bold">{dashboard.totals.blitzgridQuestions + dashboard.totals.sortCircuitQuestions + dashboard.totals.psyopQuestions}</p>
-                            <p className="text-xs text-muted-foreground">Total Questions</p>
-                          </div>
-                        </div>
-                        <div className="mt-4 pt-4 border-t flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Starter Packs: <span className="font-medium text-foreground">{dashboard.totals.starterPacks}</span></span>
-                          <span className="text-muted-foreground">User Roles: <span className="font-medium text-foreground">{dashboard.usersByRole.admin || 0} admins, {dashboard.usersByRole.user || 0} users</span></span>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <Activity className="w-5 h-5 text-emerald-500" />Performance
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
+                {filteredUsers.length > 0 && (
+                  <Card>
+                    <CardHeader className="py-3 flex flex-row items-center justify-between gap-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Users className="w-4 h-4" />Users ({filteredUsers.length})
+                      </CardTitle>
+                      {filteredUsers.length > 5 && (
+                        <Button variant="ghost" size="sm" onClick={() => { setShowUsers(true); setGlobalSearch(''); }}>
+                          View all
+                        </Button>
+                      )}
+                    </CardHeader>
+                    <CardContent className="pt-0 space-y-2">
+                      {filteredUsers.slice(0, 5).map(u => (
+                        <div key={u.id} className="flex items-center justify-between p-2 rounded bg-muted/30">
                           <div>
-                            <div className="flex items-center justify-between text-sm mb-1">
-                              <span className="text-muted-foreground">Game Completion Rate</span>
-                              <span className="font-medium">{dashboard.performance.completionRate}%</span>
-                            </div>
-                            <div className="h-2 bg-muted rounded-full overflow-hidden">
-                              <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${dashboard.performance.completionRate}%` }} />
-                            </div>
+                            <p className="font-medium">{u.firstName} {u.lastName}</p>
+                            <p className="text-xs text-muted-foreground">{u.email}</p>
                           </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="p-3 rounded-lg bg-muted/50 text-center">
-                              <p className="text-xl font-bold text-amber-500">{dashboard.performance.avgScore}</p>
-                              <p className="text-xs text-muted-foreground">Avg Score</p>
-                            </div>
-                            <div className="p-3 rounded-lg bg-muted/50 text-center">
-                              <p className="text-xl font-bold text-pink-500">{dashboard.performance.highScore}</p>
-                              <p className="text-xs text-muted-foreground">High Score</p>
-                            </div>
-                          </div>
+                          <Badge variant={u.role === 'super_admin' ? 'default' : u.role === 'admin' ? 'secondary' : 'outline'}>
+                            {u.role}
+                          </Badge>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
 
-                </>
-              )}
-            </motion.div>
-          </TabsContent>
-
-          {/* SESSIONS TAB */}
-          <TabsContent value="sessions">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Type room code (e.g. ABCD), host email, or player name..."
-                    value={sessionSearch}
-                    onChange={(e) => setSessionSearch(e.target.value)}
-                    className="pl-9"
-                    data-testid="input-session-search"
-                  />
-                </div>
-                <Badge variant="secondary">{filteredSessions.length} sessions</Badge>
-              </div>
-
-              {isLoadingSessions ? (
-                <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-20" />)}</div>
-              ) : isErrorSessions ? (
-                <ErrorState message="Couldn't load sessions" onRetry={() => queryClient.invalidateQueries({ queryKey: ['/api/super-admin/sessions'] })} />
-              ) : filteredSessions.length === 0 ? (
-                <Card><CardContent className="py-8 text-center text-muted-foreground">No sessions found</CardContent></Card>
-              ) : (
-                <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                  {filteredSessions.map((session) => (
-                    <Card key={session.id} data-testid={`session-card-${session.id}`}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between gap-4 mb-2">
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <Badge variant={session.state === 'ended' ? 'secondary' : session.state === 'active' ? 'default' : 'outline'} className={session.state === 'active' ? 'bg-green-500' : ''}>
-                              {session.state}
-                            </Badge>
-                            <span className="font-mono text-sm bg-muted px-2 py-0.5 rounded">{session.code}</span>
-                            <span className="text-xs text-muted-foreground">{formatRelativeDate(session.createdAt)}</span>
+                {filteredSessions.length > 0 && (
+                  <Card>
+                    <CardHeader className="py-3 flex flex-row items-center justify-between gap-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Play className="w-4 h-4" />Sessions ({filteredSessions.length})
+                      </CardTitle>
+                      {filteredSessions.length > 5 && (
+                        <Button variant="ghost" size="sm" onClick={() => { setShowSessions(true); setGlobalSearch(''); }}>
+                          View all
+                        </Button>
+                      )}
+                    </CardHeader>
+                    <CardContent className="pt-0 space-y-2">
+                      {filteredSessions.slice(0, 5).map(s => (
+                        <div key={s.id} className="flex items-center justify-between p-2 rounded bg-muted/30">
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="font-mono">{s.code}</Badge>
+                            <div>
+                              <p className="text-sm">{s.host?.firstName || s.host?.email || 'Unknown host'}</p>
+                              <p className="text-xs text-muted-foreground">{s.playerCount} players</p>
+                            </div>
                           </div>
-                          <Badge variant="outline">{session.playerCount} player{session.playerCount !== 1 ? 's' : ''}</Badge>
+                          <Badge variant={s.state === 'playing' ? 'default' : 'secondary'}>{s.state}</Badge>
                         </div>
-                        
-                        <div className="flex items-center justify-between gap-4 text-sm">
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {filteredBoards.length > 0 && (
+                  <Card>
+                    <CardHeader className="py-3 flex flex-row items-center justify-between gap-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Grid3X3 className="w-4 h-4" />Content ({filteredBoards.length})
+                      </CardTitle>
+                      {filteredBoards.length > 5 && (
+                        <Button variant="ghost" size="sm" onClick={() => { setShowContent(true); setGlobalSearch(''); }}>
+                          View all
+                        </Button>
+                      )}
+                    </CardHeader>
+                    <CardContent className="pt-0 space-y-2">
+                      {filteredBoards.slice(0, 5).map(b => (
+                        <div key={b.id} className="flex items-center justify-between p-2 rounded bg-muted/30">
                           <div>
-                            <span className="text-muted-foreground">Host: </span>
-                            <span className="font-medium">
-                              {session.host?.firstName || session.host?.lastName 
-                                ? `${session.host.firstName || ''} ${session.host.lastName || ''}`.trim()
-                                : session.host?.email || 'Unknown'}
-                            </span>
+                            <p className="font-medium">{b.name}</p>
+                            <p className="text-xs text-muted-foreground">{b.ownerEmail || 'System'}</p>
                           </div>
-                          {session.winner && (
-                            <div className="flex items-center gap-1">
-                              <Trophy className="w-4 h-4 text-amber-500" />
-                              <span className="font-medium text-amber-500">{session.winner.name}</span>
-                              <span className="text-muted-foreground">({session.winner.score} pts)</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {session.players.length > 0 && (
-                          <div className="mt-3 pt-3 border-t flex flex-wrap gap-1">
-                            {session.players.slice(0, 10).map((player) => (
-                              <Badge key={player.id} variant="outline" className="text-xs">
-                                {player.name}: {player.score}
-                              </Badge>
-                            ))}
-                            {session.players.length > 10 && (
-                              <Badge variant="outline" className="text-xs">+{session.players.length - 10} more</Badge>
-                            )}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          </TabsContent>
-
-          {/* USERS TAB */}
-          <TabsContent value="users">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search users..."
-                    value={userSearch}
-                    onChange={(e) => setUserSearch(e.target.value)}
-                    className="pl-9"
-                    data-testid="input-user-search"
-                  />
-                </div>
-                <Badge variant="secondary">{filteredUsers.length} users</Badge>
-              </div>
-
-              {isLoadingUsers ? (
-                <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-16" />)}</div>
-              ) : isErrorUsers ? (
-                <ErrorState message="Couldn't load users" onRetry={() => queryClient.invalidateQueries({ queryKey: ['/api/super-admin/users'] })} />
-              ) : filteredUsers.length === 0 ? (
-                <Card><CardContent className="py-8 text-center text-muted-foreground">No users found</CardContent></Card>
-              ) : (
-                <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                  {filteredUsers.slice(0, 50).map((u) => {
-                    const isUserExpanded = expandedUserId === u.id;
-                    return (
-                      <Card key={u.id} data-testid={`user-card-${u.id}`}>
-                        <div 
-                          className="p-3 flex items-center justify-between gap-4 cursor-pointer hover-elevate"
-                          onClick={() => setExpandedUserId(isUserExpanded ? null : u.id)}
-                        >
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white font-bold shrink-0">
-                              {u.firstName?.[0] || u.email[0].toUpperCase()}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 flex-wrap min-w-0">
-                                <span className="font-medium truncate max-w-[150px]">{u.firstName || 'User'} {u.lastName || ''}</span>
-                                <Badge variant={u.role === 'super_admin' ? 'destructive' : u.role === 'admin' ? 'default' : 'secondary'} className="text-xs">
-                                  {u.role}
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground truncate">{u.email}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <Badge variant="outline" className="text-xs">{u.gamesHosted} games</Badge>
-                            <Badge variant="outline" className="text-xs">{u.boardCount} grids</Badge>
-                            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isUserExpanded ? 'rotate-180' : ''}`} />
-                          </div>
-                        </div>
-                        
-                        <AnimatePresence>
-                          {isUserExpanded && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              className="border-t"
-                            >
-                              <div className="p-4 space-y-4">
-                                <div className="flex items-center justify-between">
-                                  <Select value={u.role} onValueChange={(role) => updateRoleMutation.mutate({ userId: u.id, role })}>
-                                    <SelectTrigger className="w-[140px]" data-testid={`select-role-${u.id}`}>
-                                      <SelectValue placeholder="Role" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="user">User</SelectItem>
-                                      <SelectItem value="admin">Admin</SelectItem>
-                                      <SelectItem value="super_admin">Super Admin</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={(e) => { e.stopPropagation(); setDeleteUserId(u.id); }}
-                                    data-testid={`button-delete-user-${u.id}`}
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                                
-                                {u.recentSessions?.length > 0 && (
-                                  <div>
-                                    <p className="text-xs font-medium text-muted-foreground mb-2">Recent Sessions</p>
-                                    <div className="flex flex-wrap gap-1">
-                                      {u.recentSessions.slice(0, 5).map((s) => (
-                                        <Badge key={s.id} variant="outline" className="text-xs">
-                                          {s.code} · {s.playerCount}p · {formatRelativeDate(s.createdAt)}
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </Card>
-                    );
-                  })}
-                  {filteredUsers.length > 50 && (
-                    <p className="text-center text-muted-foreground text-sm py-2">Showing 50 of {filteredUsers.length} users</p>
-                  )}
-                </div>
-              )}
-            </motion.div>
-          </TabsContent>
-
-          {/* CONTENT TAB */}
-          <TabsContent value="content">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-              {/* Flagged Content Alert */}
-              {flaggedBoards.length > 0 && (
-                <Card className="border-amber-500/50 bg-amber-50/30 dark:bg-amber-900/10">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Flag className="w-4 h-4 text-amber-500" />Needs Review ({flaggedBoards.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {flaggedBoards.slice(0, 5).map((board) => (
-                        <div key={board.id} className="flex items-center justify-between gap-3 p-2 rounded-lg bg-background">
-                          <span className="text-sm font-medium truncate flex-1">{board.name}</span>
-                          <div className="flex gap-1">
-                            <Button size="sm" variant="ghost" onClick={() => updateModerationMutation.mutate({ boardId: board.id, data: { moderationStatus: 'approved' } })}>Approve</Button>
-                            <Button size="sm" variant="destructive" onClick={() => setDeleteBoardId(board.id)}>Remove</Button>
+                          <div className="flex items-center gap-2">
+                            {b.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" />Starter</Badge>}
                           </div>
                         </div>
                       ))}
+                    </CardContent>
+                  </Card>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </section>
+
+        {/* QUICK ACTIONS */}
+        <section className="flex flex-wrap gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setShowAnnouncementForm(!showAnnouncementForm)}
+            className="gap-2"
+            data-testid="button-announcement"
+          >
+            <Megaphone className="w-4 h-4" />
+            {showAnnouncementForm ? 'Cancel' : 'Announcement'}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleExportData}
+            disabled={isExporting}
+            className="gap-2"
+            data-testid="button-export"
+          >
+            <Download className="w-4 h-4" />
+            {isExporting ? 'Exporting...' : 'Export Data'}
+          </Button>
+        </section>
+
+        {/* Announcement Form */}
+        <AnimatePresence>
+          {showAnnouncementForm && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Send Announcement</CardTitle>
+                  <CardDescription>Broadcast a message to all users</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Input
+                    placeholder="Title"
+                    value={announcementTitle}
+                    onChange={(e) => setAnnouncementTitle(e.target.value)}
+                    data-testid="input-announcement-title"
+                  />
+                  <Textarea
+                    placeholder="Message..."
+                    value={announcementMessage}
+                    onChange={(e) => setAnnouncementMessage(e.target.value)}
+                    rows={3}
+                    data-testid="input-announcement-message"
+                  />
+                  <div className="flex items-center gap-3">
+                    <Select value={announcementType} onValueChange={(v: any) => setAnnouncementType(v)}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="info">Info</SelectItem>
+                        <SelectItem value="warning">Warning</SelectItem>
+                        <SelectItem value="success">Success</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={() => createAnnouncementMutation.mutate({ title: announcementTitle, message: announcementMessage, type: announcementType })}
+                      disabled={!announcementTitle.trim() || !announcementMessage.trim() || createAnnouncementMutation.isPending}
+                      data-testid="button-send-announcement"
+                    >
+                      <Send className="w-4 h-4 mr-2" />Send
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Active Announcements */}
+        {announcements.length > 0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-2">
+              <Megaphone className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-muted-foreground">Active Announcements</span>
+            </div>
+            <div className="space-y-2">
+              {announcements.map(a => (
+                <Card key={a.id} className="bg-muted/20">
+                  <CardContent className="py-3 flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium">{a.title}</p>
+                      <p className="text-sm text-muted-foreground truncate">{a.message}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={a.type === 'warning' ? 'destructive' : a.type === 'success' ? 'default' : 'secondary'}>
+                        {a.type}
+                      </Badge>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => deleteAnnouncementMutation.mutate(a.id)}
+                        data-testid={`button-delete-announcement-${a.id}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
-              )}
+              ))}
+            </div>
+          </section>
+        )}
 
-              {/* Games List */}
-              {isLoadingGameTypes ? (
-                <div className="space-y-4">{[1,2,3].map(i => <Skeleton key={i} className="h-20" />)}</div>
-              ) : isErrorGameTypes ? (
-                <ErrorState message="Couldn't load games" onRetry={() => queryClient.invalidateQueries({ queryKey: ['/api/super-admin/game-types'] })} />
-              ) : (
-                <div className="space-y-4">
-                  {gameTypes.map((gameType) => {
-                    const isExpanded = expandedGameSlug === gameType.slug;
-                    const GameIcon = getGameIcon(gameType.slug);
-                    const gradient = getGameGradient(gameType.slug);
-                    const status = gameType.status || 'active';
-                    
-                    return (
-                      <Card key={gameType.id} className={isExpanded ? 'border-primary' : ''}>
-                        <div 
-                          className="p-4 flex items-center justify-between gap-4 cursor-pointer hover-elevate"
-                          onClick={() => setExpandedGameSlug(isExpanded ? null : gameType.slug)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center`}>
-                              <GameIcon className="w-5 h-5 text-white" />
+        {/* COLLAPSIBLE SECTIONS */}
+        <div className="space-y-3">
+          
+          {/* Users Section */}
+          <Collapsible open={showUsers} onOpenChange={setShowUsers}>
+            <Card>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Users className="w-5 h-5 text-blue-400" />
+                      Users
+                      {dashboard && <Badge variant="secondary" className="ml-2">{dashboard.totals.users}</Badge>}
+                    </CardTitle>
+                    {showUsers ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  {isLoadingUsers ? (
+                    <div className="space-y-2">
+                      {[1,2,3].map(i => <Skeleton key={i} className="h-16" />)}
+                    </div>
+                  ) : isErrorUsers ? (
+                    <ErrorState message="Couldn't load users" onRetry={() => refetchUsers()} />
+                  ) : (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {allUsers.slice(0, 20).map(u => (
+                        <div key={u.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{u.firstName || ''} {u.lastName || ''}</p>
+                              <Badge variant={u.role === 'super_admin' ? 'default' : u.role === 'admin' ? 'secondary' : 'outline'} className="text-xs">
+                                {u.role}
+                              </Badge>
                             </div>
-                            <div>
-                              <h3 className="font-semibold">{gameType.displayName}</h3>
-                              <p className="text-xs text-muted-foreground">{gameType.description}</p>
-                            </div>
+                            <p className="text-xs text-muted-foreground">{u.email}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {u.boardCount} grids • {u.gamesHosted} games hosted • Last login: {formatRelativeDate(u.lastLoginAt)}
+                            </p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge variant={status === 'active' ? 'default' : status === 'coming_soon' ? 'secondary' : 'outline'}>
-                              {status}
-                            </Badge>
-                            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                          </div>
-                        </div>
-                        
-                        <AnimatePresence>
-                          {isExpanded && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              className="border-t"
+                            <Select 
+                              value={u.role} 
+                              onValueChange={(role) => updateRoleMutation.mutate({ userId: u.id, role })}
                             >
-                              <div className="p-4 space-y-4">
-                                <div className="flex items-center gap-2">
-                                  <Select value={status} onValueChange={(v: GameStatus) => updateGameTypeMutation.mutate({ id: gameType.id, data: { status: v } })}>
-                                    <SelectTrigger className="w-[140px]">
-                                      <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="active">Active</SelectItem>
-                                      <SelectItem value="coming_soon">Coming Soon</SelectItem>
-                                      <SelectItem value="hidden">Hidden</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-
-                                {/* Questions for this game */}
-                                {gameType.slug === 'sequence_squeeze' && (
-                                  <div className="space-y-2">
-                                    <div className="relative">
-                                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                      <Input placeholder="Search Sort Circuit questions..." value={sequenceSearch} onChange={(e) => setSequenceSearch(e.target.value)} className="pl-9" />
-                                    </div>
-                                    {isLoadingSequenceQuestions ? (
-                                      <Skeleton className="h-20" />
-                                    ) : (
-                                      <div className="max-h-[300px] overflow-y-auto space-y-1">
-                                        {sequenceQuestions.filter(q => !sequenceSearch || q.title.toLowerCase().includes(sequenceSearch.toLowerCase())).slice(0, 20).map((q) => (
-                                          <div key={q.id} className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm">
-                                            <span className="truncate flex-1">{q.title}</span>
-                                            <div className="flex items-center gap-1">
-                                              {q.isStarterPack && <Star className="w-3 h-3 text-amber-500" />}
-                                              <Button size="sm" variant="ghost" onClick={() => toggleSequenceStarterPackMutation.mutate({ questionId: q.id, isStarterPack: !q.isStarterPack })}>
-                                                {q.isStarterPack ? 'Unmark' : 'Starter'}
-                                              </Button>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {gameType.slug === 'psyop' && (
-                                  <div className="space-y-2">
-                                    <div className="relative">
-                                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                      <Input placeholder="Search PsyOp questions..." value={psyopSearch} onChange={(e) => setPsyopSearch(e.target.value)} className="pl-9" />
-                                    </div>
-                                    {isLoadingPsyopQuestions ? (
-                                      <Skeleton className="h-20" />
-                                    ) : (
-                                      <div className="max-h-[300px] overflow-y-auto space-y-1">
-                                        {psyopQuestions.filter(q => !psyopSearch || q.factText.toLowerCase().includes(psyopSearch.toLowerCase())).slice(0, 20).map((q) => (
-                                          <div key={q.id} className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm">
-                                            <span className="truncate flex-1">{q.factText}</span>
-                                            <div className="flex items-center gap-1">
-                                              {q.isStarterPack && <Star className="w-3 h-3 text-amber-500" />}
-                                              <Button size="sm" variant="ghost" onClick={() => togglePsyopStarterPackMutation.mutate({ questionId: q.id, isStarterPack: !q.isStarterPack })}>
-                                                {q.isStarterPack ? 'Unmark' : 'Starter'}
-                                              </Button>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {gameType.slug === 'blitzgrid' && (
-                                  <div className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                      <p className="text-sm text-muted-foreground">All BlitzGrid grids with starter pack controls</p>
-                                      <Badge variant="secondary">{blitzgridGrids.length} grids</Badge>
-                                    </div>
-                                    <div className="relative">
-                                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                      <Input placeholder="Search grids by name..." value={blitzgridSearch} onChange={(e) => setBlitzgridSearch(e.target.value)} className="pl-9" />
-                                    </div>
-                                    {isLoadingBlitzgridGrids ? (
-                                      <Skeleton className="h-20" />
-                                    ) : blitzgridGrids.length === 0 ? (
-                                      <p className="text-sm text-muted-foreground text-center py-4">No BlitzGrid grids found</p>
-                                    ) : (
-                                      <div className="max-h-[400px] overflow-y-auto space-y-2">
-                                        {blitzgridGrids.filter(g => !blitzgridSearch || g.name.toLowerCase().includes(blitzgridSearch.toLowerCase())).map((grid) => (
-                                          <div key={grid.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 gap-3">
-                                            <div className="min-w-0 flex-1">
-                                              <div className="flex items-center gap-2">
-                                                <span className="font-medium truncate">{grid.name}</span>
-                                                {grid.isStarterPack && <Star className="w-4 h-4 text-amber-500 shrink-0" />}
-                                              </div>
-                                              <div className="text-xs text-muted-foreground mt-0.5">
-                                                {grid.ownerName || grid.ownerEmail} · {grid.categoryCount} categories · {grid.questionCount} questions
-                                              </div>
-                                            </div>
-                                            <Button 
-                                              size="sm" 
-                                              variant={grid.isStarterPack ? "default" : "outline"}
-                                              onClick={() => toggleStarterPackMutation.mutate({ boardId: grid.id, isStarterPack: !grid.isStarterPack })}
-                                              disabled={toggleStarterPackMutation.isPending}
-                                            >
-                                              {grid.isStarterPack ? 'Remove Starter' : 'Make Starter'}
-                                            </Button>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </motion.div>
-          </TabsContent>
-
-          {/* TOOLS TAB */}
-          <TabsContent value="tools">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Megaphone className="w-5 h-5 text-violet-500" />Announcements
-                  </CardTitle>
-                  <CardDescription>Broadcast messages to all users</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Input placeholder="Title" value={announcementTitle} onChange={(e) => setAnnouncementTitle(e.target.value)} data-testid="input-announcement-title" />
-                  <Input placeholder="Message" value={announcementMessage} onChange={(e) => setAnnouncementMessage(e.target.value)} data-testid="input-announcement-message" />
-                  <Select value={announcementType} onValueChange={(v: "info" | "warning" | "success") => setAnnouncementType(v)}>
-                    <SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="info">Info</SelectItem>
-                      <SelectItem value="warning">Warning</SelectItem>
-                      <SelectItem value="success">Success</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button className="w-full" disabled={!announcementTitle || !announcementMessage || createAnnouncementMutation.isPending} onClick={() => createAnnouncementMutation.mutate({ title: announcementTitle, message: announcementMessage, type: announcementType })} data-testid="button-send-announcement">
-                    <Send className="w-4 h-4 mr-2" />{createAnnouncementMutation.isPending ? 'Sending...' : 'Broadcast'}
-                  </Button>
-                  
-                  {isLoadingAnnouncements ? (
-                    <Skeleton className="h-12" />
-                  ) : isErrorAnnouncements ? (
-                    <p className="text-sm text-destructive text-center py-2">Couldn't load announcements</p>
-                  ) : announcements.length > 0 && (
-                    <div className="pt-3 border-t space-y-2 max-h-[200px] overflow-y-auto">
-                      {announcements.map((a) => (
-                        <div key={a.id} className="flex items-center justify-between gap-3 p-2 rounded-lg bg-muted/50">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-medium truncate">{a.title}</p>
-                              <Badge variant={a.type === 'warning' ? 'destructive' : a.type === 'success' ? 'default' : 'secondary'} className={`text-xs ${a.type === 'success' ? 'bg-green-500' : ''}`}>{a.type}</Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground">{formatRelativeDate(a.createdAt)}</p>
+                              <SelectTrigger className="w-28 h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="user">User</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="super_admin">Super Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {u.id !== user?.id && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => setDeleteUserId(u.id)}
+                                data-testid={`button-delete-user-${u.id}`}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
                           </div>
-                          <Button size="icon" variant="ghost" onClick={() => deleteAnnouncementMutation.mutate(a.id)} disabled={deleteAnnouncementMutation.isPending}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
                         </div>
                       ))}
                     </div>
                   )}
                 </CardContent>
-              </Card>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Download className="w-5 h-5 text-teal-500" />Data Export
-                  </CardTitle>
-                  <CardDescription>Download all platform data</CardDescription>
+          {/* Sessions Section */}
+          <Collapsible open={showSessions} onOpenChange={setShowSessions}>
+            <Card>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Play className="w-5 h-5 text-green-400" />
+                      Sessions
+                      {dashboard && <Badge variant="secondary" className="ml-2">{dashboard.totals.sessions}</Badge>}
+                    </CardTitle>
+                    {showSessions ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                  </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">Export all users, sessions, boards, and questions as JSON for backup or analysis.</p>
-                  <Button className="w-full" variant="outline" onClick={handleExportData} disabled={isExporting} data-testid="button-export-data">
-                    {isExporting ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                    {isExporting ? 'Exporting...' : 'Export All Data'}
-                  </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  {isLoadingSessions ? (
+                    <div className="space-y-2">
+                      {[1,2,3].map(i => <Skeleton key={i} className="h-16" />)}
+                    </div>
+                  ) : isErrorSessions ? (
+                    <ErrorState message="Couldn't load sessions" onRetry={() => refetchSessions()} />
+                  ) : (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {allSessions.slice(0, 20).map(s => (
+                        <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="font-mono text-base">{s.code}</Badge>
+                            <div>
+                              <p className="font-medium">
+                                {s.host?.firstName && s.host?.lastName 
+                                  ? `${s.host.firstName} ${s.host.lastName}`
+                                  : s.host?.email || 'Unknown host'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {s.playerCount} players • {formatRelativeDate(s.createdAt)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={s.state === 'playing' ? 'default' : s.state === 'waiting' ? 'secondary' : 'outline'}>
+                              {s.state}
+                            </Badge>
+                            {s.winner && (
+                              <Badge variant="outline" className="text-amber-400 border-amber-400/30">
+                                <Crown className="w-3 h-3 mr-1" />{s.winner.name}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
-        </Tabs>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          {/* Games Section */}
+          <Collapsible open={showGames} onOpenChange={setShowGames}>
+            <Card>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Gamepad2 className="w-5 h-5 text-purple-400" />
+                      Game Controls
+                    </CardTitle>
+                    {showGames ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  {isLoadingGameTypes ? (
+                    <div className="space-y-2">
+                      {[1,2,3].map(i => <Skeleton key={i} className="h-16" />)}
+                    </div>
+                  ) : isErrorGameTypes ? (
+                    <ErrorState message="Couldn't load game types" onRetry={() => refetchGameTypes()} />
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {gameTypes.map(game => {
+                        const Icon = getGameIcon(game.slug);
+                        return (
+                          <Card key={game.id} className="bg-muted/20">
+                            <CardContent className="p-4">
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br flex items-center justify-center
+                                  ${game.slug === 'blitzgrid' ? 'from-rose-500 to-fuchsia-500' :
+                                    game.slug === 'sequence_squeeze' ? 'from-emerald-500 to-cyan-500' :
+                                    game.slug === 'psyop' ? 'from-violet-500 to-indigo-500' : 'from-gray-500 to-slate-500'}`}>
+                                  <Icon className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                  <p className="font-medium">{game.displayName}</p>
+                                  <p className="text-xs text-muted-foreground">{game.slug}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">Status</span>
+                                <Select
+                                  value={game.status}
+                                  onValueChange={(status: GameStatus) => updateGameTypeMutation.mutate({ id: game.id, data: { status } })}
+                                >
+                                  <SelectTrigger className="w-32 h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="active">Active</SelectItem>
+                                    <SelectItem value="coming_soon">Coming Soon</SelectItem>
+                                    <SelectItem value="hidden">Hidden</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          {/* Content Section - All Game Types */}
+          <Collapsible open={showContent} onOpenChange={setShowContent}>
+            <Card>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Star className="w-5 h-5 text-amber-400" />
+                      Content & Starter Packs
+                      {dashboard && <Badge variant="secondary" className="ml-2">{dashboard.totals.starterPacks}</Badge>}
+                    </CardTitle>
+                    {showContent ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Starter packs are automatically given to new users. Manage content for each game type.
+                  </p>
+                  
+                  {/* Content Tabs */}
+                  <div className="flex gap-2 mb-4">
+                    <Button
+                      size="sm"
+                      variant={contentTab === 'blitzgrid' ? 'default' : 'outline'}
+                      onClick={() => setContentTab('blitzgrid')}
+                      className="gap-2"
+                    >
+                      <Grid3X3 className="w-4 h-4" />BlitzGrid
+                      {dashboard && <Badge variant="secondary" className="ml-1">{dashboard.totals.blitzgridQuestions}</Badge>}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={contentTab === 'sequence' ? 'default' : 'outline'}
+                      onClick={() => setContentTab('sequence')}
+                      className="gap-2"
+                    >
+                      <ListOrdered className="w-4 h-4" />Sort Circuit
+                      {dashboard && <Badge variant="secondary" className="ml-1">{dashboard.totals.sortCircuitQuestions}</Badge>}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={contentTab === 'psyop' ? 'default' : 'outline'}
+                      onClick={() => setContentTab('psyop')}
+                      className="gap-2"
+                    >
+                      <Brain className="w-4 h-4" />PsyOp
+                      {dashboard && <Badge variant="secondary" className="ml-1">{dashboard.totals.psyopQuestions}</Badge>}
+                    </Button>
+                  </div>
+
+                  {/* BlitzGrid Grids */}
+                  {contentTab === 'blitzgrid' && (
+                    isLoadingBoards ? (
+                      <div className="space-y-2">
+                        {[1,2,3].map(i => <Skeleton key={i} className="h-16" />)}
+                      </div>
+                    ) : isErrorBoards ? (
+                      <ErrorState message="Couldn't load grids" onRetry={() => refetchBoards()} />
+                    ) : (
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {allBoards
+                          .filter(b => b.theme === 'blitzgrid')
+                          .slice(0, 30)
+                          .map(board => (
+                            <div key={board.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium">{board.name}</p>
+                                  {board.isStarterPack && (
+                                    <Badge variant="default" className="bg-amber-500">
+                                      <Star className="w-3 h-3 mr-1" />Starter
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  {board.categoryCount} categories • {board.questionCount} questions • by {board.ownerEmail || 'System'}
+                                </p>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant={board.isStarterPack ? "default" : "outline"}
+                                onClick={() => toggleStarterPackMutation.mutate({ boardId: board.id, isStarterPack: !board.isStarterPack })}
+                                disabled={toggleStarterPackMutation.isPending}
+                                data-testid={`button-toggle-starter-${board.id}`}
+                              >
+                                {board.isStarterPack ? (
+                                  <><Check className="w-4 h-4 mr-1" />Active</>
+                                ) : (
+                                  <><Star className="w-4 h-4 mr-1" />Make Starter</>
+                                )}
+                              </Button>
+                            </div>
+                          ))}
+                      </div>
+                    )
+                  )}
+
+                  {/* Sequence/Sort Circuit Questions */}
+                  {contentTab === 'sequence' && (
+                    isLoadingSequence ? (
+                      <div className="space-y-2">
+                        {[1,2,3].map(i => <Skeleton key={i} className="h-16" />)}
+                      </div>
+                    ) : isErrorSequence ? (
+                      <ErrorState message="Couldn't load questions" onRetry={() => refetchSequence()} />
+                    ) : (
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {sequenceQuestions.slice(0, 30).map(q => (
+                          <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{q.title}</p>
+                                {q.isStarterPack && (
+                                  <Badge variant="default" className="bg-amber-500">
+                                    <Star className="w-3 h-3 mr-1" />Starter
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {q.category || 'No category'} • by {q.creator?.email || 'Unknown'}
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant={q.isStarterPack ? "default" : "outline"}
+                              onClick={() => toggleSequenceStarterPackMutation.mutate({ questionId: q.id, isStarterPack: !q.isStarterPack })}
+                              disabled={toggleSequenceStarterPackMutation.isPending}
+                              data-testid={`button-toggle-sequence-${q.id}`}
+                            >
+                              {q.isStarterPack ? (
+                                <><Check className="w-4 h-4 mr-1" />Active</>
+                              ) : (
+                                <><Star className="w-4 h-4 mr-1" />Make Starter</>
+                              )}
+                            </Button>
+                          </div>
+                        ))}
+                        {sequenceQuestions.length === 0 && (
+                          <p className="text-sm text-muted-foreground text-center py-4">No Sort Circuit questions yet</p>
+                        )}
+                      </div>
+                    )
+                  )}
+
+                  {/* PsyOp Questions */}
+                  {contentTab === 'psyop' && (
+                    isLoadingPsyop ? (
+                      <div className="space-y-2">
+                        {[1,2,3].map(i => <Skeleton key={i} className="h-16" />)}
+                      </div>
+                    ) : isErrorPsyop ? (
+                      <ErrorState message="Couldn't load questions" onRetry={() => refetchPsyop()} />
+                    ) : (
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {psyopQuestions.slice(0, 30).map(q => (
+                          <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium truncate">{q.factText}</p>
+                                {q.isStarterPack && (
+                                  <Badge variant="default" className="bg-amber-500">
+                                    <Star className="w-3 h-3 mr-1" />Starter
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Answer: {q.correctAnswer} • {q.category || 'No category'} • by {q.creator?.email || 'Unknown'}
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant={q.isStarterPack ? "default" : "outline"}
+                              onClick={() => togglePsyopStarterPackMutation.mutate({ questionId: q.id, isStarterPack: !q.isStarterPack })}
+                              disabled={togglePsyopStarterPackMutation.isPending}
+                              data-testid={`button-toggle-psyop-${q.id}`}
+                            >
+                              {q.isStarterPack ? (
+                                <><Check className="w-4 h-4 mr-1" />Active</>
+                              ) : (
+                                <><Star className="w-4 h-4 mr-1" />Make Starter</>
+                              )}
+                            </Button>
+                          </div>
+                        ))}
+                        {psyopQuestions.length === 0 && (
+                          <p className="text-sm text-muted-foreground text-center py-4">No PsyOp questions yet</p>
+                        )}
+                      </div>
+                    )
+                  )}
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          {/* Analytics Section */}
+          <Collapsible open={showAnalytics} onOpenChange={setShowAnalytics}>
+            <Card>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-cyan-400" />
+                      Analytics & Performance
+                    </CardTitle>
+                    {showAnalytics ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0 space-y-6">
+                  {dashboard ? (
+                    <>
+                      {/* Platform Totals */}
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-3">Platform Totals</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div className="p-3 rounded-lg bg-muted/30 text-center">
+                            <p className="text-xl font-bold">{dashboard.totals.users}</p>
+                            <p className="text-xs text-muted-foreground">Users</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-muted/30 text-center">
+                            <p className="text-xl font-bold">{dashboard.totals.sessions}</p>
+                            <p className="text-xs text-muted-foreground">Sessions</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-muted/30 text-center">
+                            <p className="text-xl font-bold">{dashboard.totals.boards}</p>
+                            <p className="text-xs text-muted-foreground">Grids</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-muted/30 text-center">
+                            <p className="text-xl font-bold">{dashboard.totals.starterPacks}</p>
+                            <p className="text-xs text-muted-foreground">Starter Packs</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Performance Metrics */}
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-3">Performance</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="p-3 rounded-lg bg-muted/30 text-center">
+                            <p className="text-xl font-bold">{dashboard.performance.avgScore}</p>
+                            <p className="text-xs text-muted-foreground">Avg Score</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-muted/30 text-center">
+                            <p className="text-xl font-bold">{dashboard.performance.highScore}</p>
+                            <p className="text-xs text-muted-foreground">High Score</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-muted/30 text-center">
+                            <p className="text-xl font-bold">{dashboard.performance.completionRate}%</p>
+                            <p className="text-xs text-muted-foreground">Completion Rate</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* This Week */}
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-3">This Week</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="p-3 rounded-lg bg-muted/30 text-center">
+                            <p className="text-xl font-bold">{dashboard.week.games}</p>
+                            <p className="text-xs text-muted-foreground">Games</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-muted/30 text-center">
+                            <p className="text-xl font-bold">{dashboard.week.players}</p>
+                            <p className="text-xs text-muted-foreground">Players</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-muted/30 text-center">
+                            <p className="text-xl font-bold">{dashboard.week.newUsers}</p>
+                            <p className="text-xs text-muted-foreground">New Users</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Top Hosts & Popular Grids */}
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {dashboard.topHostsWeek.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-medium text-muted-foreground mb-3">Top Hosts This Week</h4>
+                            <div className="space-y-2">
+                              {dashboard.topHostsWeek.slice(0, 5).map((host, i) => (
+                                <div key={i} className="flex items-center justify-between p-2 rounded bg-muted/30">
+                                  <div className="flex items-center gap-2">
+                                    {i === 0 && <Crown className="w-4 h-4 text-amber-400" />}
+                                    <span className="text-sm">{host.name}</span>
+                                  </div>
+                                  <Badge variant="secondary">{host.games} games</Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {dashboard.popularGridsWeek.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-medium text-muted-foreground mb-3">Popular Grids This Week</h4>
+                            <div className="space-y-2">
+                              {dashboard.popularGridsWeek.slice(0, 5).map((grid, i) => (
+                                <div key={i} className="flex items-center justify-between p-2 rounded bg-muted/30">
+                                  <div className="flex items-center gap-2">
+                                    {i === 0 && <Target className="w-4 h-4 text-rose-400" />}
+                                    <span className="text-sm truncate">{grid.name}</span>
+                                  </div>
+                                  <Badge variant="secondary">{grid.plays} plays</Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Users by Role */}
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-3">Users by Role</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(dashboard.usersByRole).map(([role, count]) => (
+                            <Badge key={role} variant="outline" className="text-sm">
+                              {role}: {count}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  ) : isErrorDashboard ? (
+                    <ErrorState message="Couldn't load analytics" onRetry={() => refetchDashboard()} />
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">Loading analytics...</p>
+                  )}
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+        </div>
+
+        {/* Delete User Dialog */}
+        <AlertDialog open={!!deleteUserId} onOpenChange={() => setDeleteUserId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this user?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete the user and all their content. This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <Button
+                variant="destructive"
+                onClick={() => deleteUserId && deleteUserMutation.mutate(deleteUserId)}
+                disabled={deleteUserMutation.isPending}
+              >
+                {deleteUserMutation.isPending ? 'Deleting...' : 'Delete'}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete Board Dialog */}
+        <AlertDialog open={!!deleteBoardId} onOpenChange={() => setDeleteBoardId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this content?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete the grid and all its questions. This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <Button
+                variant="destructive"
+                onClick={() => deleteBoardId && deleteBoardMutation.mutate(deleteBoardId)}
+                disabled={deleteBoardMutation.isPending}
+              >
+                {deleteBoardMutation.isPending ? 'Deleting...' : 'Delete'}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
-
-      {/* Delete User Dialog */}
-      <AlertDialog open={!!deleteUserId} onOpenChange={() => setDeleteUserId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete User?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete the user and all their content. This action cannot be undone.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <Button variant="destructive" onClick={() => deleteUserId && deleteUserMutation.mutate(deleteUserId)} disabled={deleteUserMutation.isPending}>
-              {deleteUserMutation.isPending ? 'Deleting...' : 'Delete User'}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Delete Board Dialog */}
-      <AlertDialog open={!!deleteBoardId} onOpenChange={() => setDeleteBoardId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Grid?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete the grid and all its categories and questions.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <Button variant="destructive" onClick={() => deleteBoardId && deleteBoardMutation.mutate(deleteBoardId)} disabled={deleteBoardMutation.isPending}>
-              {deleteBoardMutation.isPending ? 'Deleting...' : 'Delete Grid'}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
