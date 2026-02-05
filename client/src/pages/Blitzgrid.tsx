@@ -1299,6 +1299,8 @@ export default function Blitzgrid() {
       
       const handleRevealAnswer = () => {
         setShowAnswer(true);
+        // Lock buzzers when answer is revealed to prevent late buzzes
+        lockBuzzer();
         if (activeQuestion) {
           const cat = playCategories.find(c => c.questions?.some(q => q.id === activeQuestion.id));
           if (cat) {
