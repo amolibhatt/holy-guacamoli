@@ -100,10 +100,13 @@ function GameCardSkeleton() {
 }
 
 export default function Home() {
-  const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
+  const { isLoading: isAuthLoading, isAuthenticated, user } = useAuth();
   const [, setLocation] = useLocation();
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [gameCode, setGameCode] = useState("");
+  
+  // Check if user can create/host content (admin or super_admin)
+  const canHost = user?.role === 'admin' || user?.role === 'super_admin';
 
   const handleJoinGame = () => {
     if (gameCode.trim()) {
@@ -286,19 +289,21 @@ export default function Home() {
             </div>
           </motion.div>
 
-          {/* Host a Game Section */}
-          <motion.div 
-            className="mb-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h2 className="text-white text-lg font-bold mb-1">Host a Game</h2>
-            <p className="text-white/40 text-sm">Pick one and get a code to share with players</p>
-          </motion.div>
+          {/* Host a Game Section - Only for admins */}
+          {canHost && (
+            <>
+              <motion.div 
+                className="mb-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <h2 className="text-white text-lg font-bold mb-1">Host a Game</h2>
+                <p className="text-white/40 text-sm">Pick one and get a code to share with players</p>
+              </motion.div>
 
-          {/* Game Cards - 2 column grid on medium+ screens */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+              {/* Game Cards - 2 column grid on medium+ screens */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
             {isLoadingGames ? (
               <>
                 <GameCardSkeleton />
@@ -426,7 +431,9 @@ export default function Home() {
                 );
               })
             )}
-          </div>
+              </div>
+            </>
+          )}
 
         </div>
       </main>

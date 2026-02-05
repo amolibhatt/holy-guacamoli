@@ -110,12 +110,14 @@ export function AppHeader({
                   </DropdownMenuItem>
                 </Link>
                 
-                <Link href={adminHref}>
-                  <DropdownMenuItem className="cursor-pointer py-2.5" data-testid="menu-admin">
-                    <Settings className="w-4 h-4 mr-3" />
-                    Admin Dashboard
-                  </DropdownMenuItem>
-                </Link>
+                {(user?.role === 'admin' || user?.role === 'super_admin') && (
+                  <Link href={adminHref}>
+                    <DropdownMenuItem className="cursor-pointer py-2.5" data-testid="menu-admin">
+                      <Settings className="w-4 h-4 mr-3" />
+                      Admin Dashboard
+                    </DropdownMenuItem>
+                  </Link>
+                )}
                 
                 {user?.role === 'super_admin' && (
                   <Link href="/admin/super">
