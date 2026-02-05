@@ -247,9 +247,20 @@ export async function registerRoutes(
         ? excludeParam.split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id))
         : [];
       
+      // Parse grid IDs filter (optional - if provided, only shuffle from these grids)
+      const gridIdsParam = req.query.gridIds as string | undefined;
+      const selectedGridIds = gridIdsParam
+        ? gridIdsParam.split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id))
+        : [];
+      
       // Get all active blitzgrid boards for this user (theme can be "blitzgrid" or "blitzgrid:space", etc.)
       const allBoards = await storage.getBoards(userId, role);
-      const blitzgridBoards = allBoards.filter(b => b.theme && b.theme.startsWith('blitzgrid'));
+      let blitzgridBoards = allBoards.filter(b => b.theme && b.theme.startsWith('blitzgrid'));
+      
+      // Filter to selected grids if specified
+      if (selectedGridIds.length > 0) {
+        blitzgridBoards = blitzgridBoards.filter(b => selectedGridIds.includes(b.id));
+      }
       
       // Collect all categories with their questions from active boards
       const allCategories: Array<{

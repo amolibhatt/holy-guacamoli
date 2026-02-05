@@ -9,6 +9,7 @@ import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -130,6 +131,8 @@ export default function Blitzgrid() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
   const [showEndSessionDialog, setShowEndSessionDialog] = useState(false);
+  const [showShuffleGridPicker, setShowShuffleGridPicker] = useState(false);
+  const [selectedShuffleGridIds, setSelectedShuffleGridIds] = useState<Set<number>>(new Set());
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(soundManager.isEnabled());
   
@@ -297,6 +300,10 @@ export default function Blitzgrid() {
     queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'],
     enabled: !!selectedGridId,
   });
+
+  // Memoize eligible grids for shuffle (grids with at least 1 category)
+  const eligibleShuffleGrids = grids.filter(g => (g.categoryCount || 0) >= 1);
+  const eligibleShuffleGridIds = new Set(eligibleShuffleGrids.map(g => g.id));
 
   // Use shuffled categories when in shuffle mode, otherwise use grid categories
   const playCategories = shuffleMode ? (shuffledCategories || []) : gridCategories;
@@ -852,18 +859,30 @@ export default function Blitzgrid() {
     toast({ title: "Session ended", description: "All players have been disconnected." });
   }, [clearStoredSession, disconnectWebSocket, toast]);
   
-  // Shuffle Play - randomly select 5 categories from all grids
-  const handleShufflePlay = useCallback(async () => {
+  // Open grid picker for shuffle play
+  const openShuffleGridPicker = useCallback(() => {
+    // Pre-select all eligible grids and prune any stale IDs
+    setSelectedShuffleGridIds(new Set(eligibleShuffleGridIds));
+    setShowShuffleGridPicker(true);
+  }, [eligibleShuffleGridIds]);
+  
+  // Execute shuffle with selected grids
+  const executeShufflePlay = useCallback(async (gridIds: number[]) => {
     // Prevent double-clicks/race conditions
     if (isShuffling) return;
     setIsShuffling(true);
+    setShowShuffleGridPicker(false);
     try {
-      // Always exclude all previously played categories (including current shuffle set)
-      // This ensures reshuffle always gives fresh categories
-      const excludeParam = playedShuffleCategoryIds.length > 0 
-        ? `?exclude=${playedShuffleCategoryIds.join(',')}` 
-        : '';
-      const response = await apiRequest('GET', `/api/boards/shuffle-play${excludeParam}`);
+      // Build query params
+      const params = new URLSearchParams();
+      if (playedShuffleCategoryIds.length > 0) {
+        params.set('exclude', playedShuffleCategoryIds.join(','));
+      }
+      if (gridIds.length > 0) {
+        params.set('gridIds', gridIds.join(','));
+      }
+      const queryString = params.toString();
+      const response = await apiRequest('GET', `/api/boards/shuffle-play${queryString ? '?' + queryString : ''}`);
       const data = await response.json();
       
       // Check for server error responses
@@ -933,6 +952,11 @@ export default function Blitzgrid() {
       setIsShuffling(false);
     }
   }, [toast, playedShuffleCategoryIds, isShuffling]);
+  
+  // Wrapper for shuffle button - opens grid picker
+  const handleShufflePlay = useCallback(() => {
+    openShuffleGridPicker();
+  }, [openShuffleGridPicker]);
   
   // Fire celebratory confetti with fireworks
   const fireConfetti = useCallback(() => {
@@ -1856,6 +1880,96 @@ export default function Blitzgrid() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+          
+          {/* Shuffle Grid Picker Dialog */}
+          <Dialog open={showShuffleGridPicker} onOpenChange={setShowShuffleGridPicker}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2" data-testid="dialog-title-shuffle">
+                  <Shuffle className="w-5 h-5 text-cyan-400" />
+                  Select Grids to Shuffle
+                </DialogTitle>
+                <DialogDescription data-testid="dialog-description-shuffle">
+                  Pick which grids to include. Categories will be randomly mixed from your selection.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 max-h-[300px] overflow-y-auto py-2">
+                {eligibleShuffleGrids.map(grid => {
+                  // Only consider selected if grid is still eligible
+                  const isSelected = selectedShuffleGridIds.has(grid.id) && eligibleShuffleGridIds.has(grid.id);
+                  return (
+                    <label 
+                      key={grid.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border border-border cursor-pointer transition-colors"
+                    >
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={(checked) => {
+                          const newSet = new Set(selectedShuffleGridIds);
+                          if (checked) {
+                            newSet.add(grid.id);
+                          } else {
+                            newSet.delete(grid.id);
+                          }
+                          setSelectedShuffleGridIds(newSet);
+                        }}
+                        data-testid={`checkbox-grid-${grid.id}`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate" data-testid={`text-grid-name-${grid.id}`}>{grid.name}</p>
+                        <p className="text-xs text-muted-foreground" data-testid={`text-grid-categories-${grid.id}`}>
+                          {grid.categoryCount || 0} categories
+                        </p>
+                      </div>
+                    </label>
+                  );
+                })}
+                {eligibleShuffleGrids.length === 0 && (
+                  <p className="text-center text-muted-foreground py-4" data-testid="text-no-grids">
+                    No grids with categories available
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    // Prune to only eligible IDs for comparison
+                    const selectedEligibleCount = Array.from(selectedShuffleGridIds).filter(id => eligibleShuffleGridIds.has(id)).length;
+                    const allSelected = selectedEligibleCount === eligibleShuffleGridIds.size;
+                    setSelectedShuffleGridIds(allSelected ? new Set() : new Set(eligibleShuffleGridIds));
+                  }}
+                  data-testid="button-toggle-all-grids"
+                >
+                  {(() => {
+                    const selectedEligibleCount = Array.from(selectedShuffleGridIds).filter(id => eligibleShuffleGridIds.has(id)).length;
+                    return selectedEligibleCount === eligibleShuffleGridIds.size ? 'Deselect All' : 'Select All';
+                  })()}
+                </Button>
+                <Button
+                  onClick={() => {
+                    // Only pass eligible grid IDs
+                    const validIds = Array.from(selectedShuffleGridIds).filter(id => eligibleShuffleGridIds.has(id));
+                    executeShufflePlay(validIds);
+                  }}
+                  disabled={Array.from(selectedShuffleGridIds).filter(id => eligibleShuffleGridIds.has(id)).length === 0 || isShuffling}
+                  className="gap-2"
+                  data-testid="button-start-shuffle"
+                >
+                  {isShuffling ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Shuffle className="w-4 h-4" />
+                  )}
+                  {(() => {
+                    const count = Array.from(selectedShuffleGridIds).filter(id => eligibleShuffleGridIds.has(id)).length;
+                    return `Shuffle (${count} grid${count !== 1 ? 's' : ''})`;
+                  })()}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
           
           {/* Join Notification */}
           <AnimatePresence>
