@@ -956,6 +956,17 @@ export default function Blitzgrid() {
         setCategoryRevealMode(true);
         setRevealedCategoryCount(0);
         setRevealedCells(new Set());
+        // Close any open question modal and reset answer state
+        setActiveQuestion(null);
+        setShowAnswer(false);
+        // Reset timer state
+        setTimerActive(false);
+        setTimeLeft(10);
+        // Reset buzzer state
+        setBuzzQueue([]);
+        setBuzzerLocked(true);
+        setIsJudging(false);
+        setLastScoreChange(null);
         // Reset game stats for new game
         setGameStats({
           playerStats: new Map(),
@@ -1121,6 +1132,10 @@ export default function Blitzgrid() {
     setBuzzQueue([]);
     setBuzzerLocked(true);
     setIsJudging(false);
+    setLastScoreChange(null);
+    // Reset timer state
+    setTimerActive(false);
+    setTimeLeft(10);
     setSelectedGridId(null);
     setPlayMode(false);
     setShuffleMode(false);
@@ -1244,6 +1259,17 @@ export default function Blitzgrid() {
       };
       
       const resetGame = () => {
+        // Close any open question modal first
+        setActiveQuestion(null);
+        setShowAnswer(false);
+        setTimerActive(false);
+        setTimeLeft(10);
+        // Reset buzzer state
+        setBuzzQueue([]);
+        setBuzzerLocked(true);
+        setIsJudging(false);
+        setLastScoreChange(null);
+        // Reset revealed state
         setRevealedCells(new Set());
         setRevealedCategoryCount(0);
         setCategoryRevealMode(true);
