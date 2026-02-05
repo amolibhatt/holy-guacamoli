@@ -2417,7 +2417,9 @@ export default function Blitzgrid() {
                   variant="outline"
                   size="sm"
                   className="flex-1 gap-2 text-green-500 hover:text-green-400 hover:bg-green-950"
+                  disabled={!roomCode}
                   onClick={() => {
+                    if (!roomCode) return;
                     const message = `Join my game! 🎮\n\nRoom Code: ${roomCode}\n${joinUrl}`;
                     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
                   }}
@@ -2674,7 +2676,8 @@ export default function Blitzgrid() {
                         className="flex-1 gap-2"
                         onClick={() => {
                           const link = document.createElement('a');
-                          link.download = `blitzgrid-${grid?.name?.replace(/\s+/g, '-').toLowerCase() || 'results'}-${Date.now()}.png`;
+                          const gridName = shuffleMode ? 'shuffle' : (grid?.name?.replace(/\s+/g, '-').toLowerCase() || 'results');
+                          link.download = `blitzgrid-${gridName}-${Date.now()}.png`;
                           link.href = shareImageUrl;
                           link.click();
                           toast({ title: "Downloaded!", description: "Image saved to your device" });
