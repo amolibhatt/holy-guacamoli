@@ -586,237 +586,143 @@ export default function SuperAdmin() {
       <AppHeader minimal backHref="/" title="Super Admin" />
 
       <main className="px-4 py-6 max-w-4xl mx-auto w-full">
-        <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 max-w-xs">
-            <TabsTrigger value="dashboard" className="gap-2" data-testid="tab-dashboard">
-              <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Dashboard</span>
-            </TabsTrigger>
-            <TabsTrigger value="manage" className="gap-2" data-testid="tab-manage">
-              <Shield className="w-4 h-4" />
-              <span className="hidden sm:inline">Manage</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="dashboard" className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="flex items-center justify-between gap-4 mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">Platform Overview</h2>
-                  <p className="text-sm text-muted-foreground mt-1">Key metrics and insights at a glance</p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
-                    queryClient.invalidateQueries({ queryKey: ['/api/super-admin/users'] });
-                    queryClient.invalidateQueries({ queryKey: ['/api/super-admin/sessions'] });
-                    queryClient.invalidateQueries({ queryKey: ['/api/super-admin/room-stats'] });
-                  }}
-                  data-testid="button-refresh-dashboard"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </Button>
-              </div>
-
-              {/* Flagged Content Alert */}
-              {flaggedBoards.length > 0 && (
-                <Card 
-                  className="mb-4 border-amber-500/50 bg-amber-50/50 dark:bg-amber-900/10 cursor-pointer hover-elevate"
-                  onClick={() => setActiveTab('manage')}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && setActiveTab('manage')}
-                  data-testid="alert-flagged-content"
-                >
-                  <CardContent className="p-3 flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                      <Flag className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-amber-900 dark:text-amber-200">
-                        {flaggedBoards.length} item{flaggedBoards.length !== 1 ? 's' : ''} need{flaggedBoards.length === 1 ? 's' : ''} review
-                      </p>
-                      <p className="text-xs text-amber-700 dark:text-amber-400">Click to review flagged content</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                  </CardContent>
-                </Card>
-              )}
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                <StatCard
-                  title="Total Users"
-                  value={stats?.totalUsers ?? 0}
-                  icon={Users}
-                  color="from-emerald-300 via-teal-300 to-cyan-300"
-                  isLoading={isLoadingStats}
-                  clickable
-                  onClick={() => { setDrillDownType('users'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
-                />
-                <StatCard
-                  title="Total Content"
-                  value={stats?.totalContent ?? 0}
-                  icon={Database}
-                  color="from-amber-300 via-yellow-300 to-amber-300"
-                  isLoading={isLoadingStats}
-                  clickable
-                  onClick={() => { setActiveTab('manage'); }}
-                />
-                <StatCard
-                  title="Games Played"
-                  value={stats?.totalGamesPlayed ?? 0}
-                  icon={Gamepad2}
-                  color="from-emerald-300 via-teal-300 to-cyan-300"
-                  isLoading={isLoadingStats}
-                  clickable
-                  onClick={() => { setDrillDownType('sessions'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
-                />
-                <StatCard
-                  title="New This Week"
-                  value={stats?.newUsersThisWeek ?? 0}
-                  icon={TrendingUp}
-                  color="from-violet-300 via-purple-300 to-indigo-300"
-                  isLoading={isLoadingStats}
-                  clickable
-                  onClick={() => { setDrillDownType('users'); setDrillDownFilter(''); setDateRangeFilter('week'); }}
-                />
-              </div>
-
-              <h3 className="text-xl font-semibold text-foreground mt-8 mb-4 flex items-center gap-2">
-                <Zap className="w-5 h-5 text-amber-500" />
-                Live Activity
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                {isLoadingRoomStats ? (
-                  [1, 2, 3].map((i) => (
-                    <Card key={i}>
-                      <CardContent className="p-4">
-                        <Skeleton className="h-8 w-16 mb-1" />
-                        <Skeleton className="h-3 w-20" />
-                      </CardContent>
-                    </Card>
-                  ))
+        <div className="space-y-6">
+          {/* Health Status Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold text-foreground">Platform Status</h2>
+                {flaggedBoards.length > 0 ? (
+                  <Badge variant="destructive" className="animate-pulse">
+                    {flaggedBoards.length} needs review
+                  </Badge>
                 ) : (
-                  <>
-                    <Card 
-                      className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 cursor-pointer hover-elevate active-elevate-2"
-                      onClick={() => { setDrillDownType('active-sessions'); setDrillDownFilter(''); setDateRangeFilter('all'); }}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && (setDrillDownType('active-sessions'), setDrillDownFilter(''), setDateRangeFilter('all'))}
-                      data-testid="card-active-rooms"
-                    >
-                      <CardContent className="p-4 text-center">
-                        <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">{roomStats?.activeRooms ?? 0}</p>
-                        <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
-                          Active Rooms <Eye className="w-3 h-3" />
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card 
-                      className="bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20 cursor-pointer hover-elevate active-elevate-2"
-                      onClick={() => { setDrillDownType('sessions'); setDrillDownFilter(''); setDateRangeFilter('today'); }}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && (setDrillDownType('sessions'), setDrillDownFilter(''), setDateRangeFilter('today'))}
-                      data-testid="card-sessions-today"
-                    >
-                      <CardContent className="p-4 text-center">
-                        <p className="text-3xl font-bold text-pink-600 dark:text-pink-400">{roomStats?.sessionsToday ?? 0}</p>
-                        <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
-                          Sessions Today <Eye className="w-3 h-3" />
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card 
-                      className="bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 cursor-pointer hover-elevate active-elevate-2"
-                      onClick={() => { setDrillDownType('players'); setDrillDownFilter(''); setDateRangeFilter('today'); }}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && (setDrillDownType('players'), setDrillDownFilter(''), setDateRangeFilter('today'))}
-                      data-testid="card-players-today"
-                    >
-                      <CardContent className="p-4 text-center">
-                        <p className="text-3xl font-bold text-violet-600 dark:text-violet-400">{roomStats?.playersToday ?? 0}</p>
-                        <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
-                          Players Today <Eye className="w-3 h-3" />
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </>
+                  <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
+                    All good
+                  </Badge>
                 )}
               </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  queryClient.invalidateQueries({ queryKey: ['/api/super-admin/stats'] });
+                  queryClient.invalidateQueries({ queryKey: ['/api/super-admin/users'] });
+                  queryClient.invalidateQueries({ queryKey: ['/api/super-admin/sessions'] });
+                  queryClient.invalidateQueries({ queryKey: ['/api/super-admin/room-stats'] });
+                  queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards/flagged'] });
+                }}
+                data-testid="button-refresh-dashboard"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
 
-            </motion.div>
-          </TabsContent>
-
-          <TabsContent value="manage" className="space-y-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-foreground">Game Content</h2>
-                <p className="text-sm text-muted-foreground mt-1">Manage games, view questions, and control starter packs</p>
-              </div>
-
-              {/* Flagged Content - At top for visibility */}
-              {(isLoadingFlagged || flaggedBoards.length > 0) && (
-                <Card className="mb-6 border-amber-500/50">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Flag className="w-5 h-5 text-amber-500" />
-                      Flagged Content
-                      {flaggedBoards.length > 0 && (
-                        <Badge variant="destructive" className="ml-2">{flaggedBoards.length}</Badge>
-                      )}
-                    </CardTitle>
-                    <CardDescription>Content requiring moderation review</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoadingFlagged ? (
-                      <div className="space-y-2">
-                        {[1, 2].map((i) => (
-                          <Skeleton key={i} className="h-10 w-full" />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                        {flaggedBoards.map((board) => (
-                          <div key={board.id} className="flex items-center justify-between gap-3 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
-                            <span className="text-sm font-medium truncate flex-1 min-w-0 max-w-[200px]" title={board.name}>{board.name}</span>
-                            <div className="flex gap-1 shrink-0">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => updateModerationMutation.mutate({ boardId: board.id, data: { moderationStatus: 'approved' } })}
-                                disabled={updateModerationMutation.isPending}
-                                data-testid={`button-approve-board-${board.id}`}
-                              >
-                                {updateModerationMutation.isPending ? '...' : 'Approve'}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => setDeleteBoardId(board.id)}
-                                disabled={deleteBoardMutation.isPending}
-                                data-testid={`button-delete-flagged-${board.id}`}
-                              >
-                                Remove
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+            {/* Live Pulse - Simple sanity check */}
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              {isLoadingRoomStats ? (
+                [1, 2, 3].map((i) => <Skeleton key={i} className="h-16" />)
+              ) : (
+                <>
+                  <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
+                    <CardContent className="p-3 text-center">
+                      <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{roomStats?.activeRooms ?? 0}</p>
+                      <p className="text-xs text-muted-foreground">Active Now</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20">
+                    <CardContent className="p-3 text-center">
+                      <p className="text-2xl font-bold text-pink-600 dark:text-pink-400">{roomStats?.sessionsToday ?? 0}</p>
+                      <p className="text-xs text-muted-foreground">Games Today</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20">
+                    <CardContent className="p-3 text-center">
+                      <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">{roomStats?.playersToday ?? 0}</p>
+                      <p className="text-xs text-muted-foreground">Players Today</p>
+                    </CardContent>
+                  </Card>
+                </>
               )}
+            </div>
+
+            {/* NEEDS ATTENTION - Only shows if there are flagged items */}
+            {flaggedBoards.length > 0 && (
+              <Card className="mb-6 border-amber-500/50 bg-amber-50/30 dark:bg-amber-900/10">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Flag className="w-4 h-4 text-amber-500" />
+                    Needs Review
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-2">
+                    {flaggedBoards.slice(0, 5).map((board) => (
+                      <div key={board.id} className="flex items-center justify-between gap-3 p-2 rounded-lg bg-background">
+                        <span className="text-sm font-medium truncate flex-1" title={board.name}>{board.name}</span>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => updateModerationMutation.mutate({ boardId: board.id, data: { moderationStatus: 'approved' } })}
+                            disabled={updateModerationMutation.isPending}
+                            data-testid={`button-approve-board-${board.id}`}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => setDeleteBoardId(board.id)}
+                            data-testid={`button-delete-flagged-${board.id}`}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    {flaggedBoards.length > 5 && (
+                      <p className="text-xs text-muted-foreground text-center">+{flaggedBoards.length - 5} more</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </motion.div>
+
+          {/* GAMES - Collapsible section */}
+          <Card>
+            <CardHeader 
+              className="cursor-pointer hover-elevate"
+              onClick={() => setExpandedGameSlug(expandedGameSlug === 'games-section' ? null : 'games-section')}
+              data-testid="section-games-toggle"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Gamepad2 className="w-5 h-5 text-emerald-500" />
+                  <div>
+                    <CardTitle className="text-lg">Games</CardTitle>
+                    <CardDescription>Manage game status, content, and starter packs</CardDescription>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">{gameTypes.length} games</Badge>
+                  <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${expandedGameSlug === 'games-section' ? 'rotate-180' : ''}`} />
+                </div>
+              </div>
+            </CardHeader>
+            <AnimatePresence>
+              {expandedGameSlug === 'games-section' && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <CardContent className="pt-0">
 
               {isLoadingGameTypes ? (
                 <div className="space-y-4">
