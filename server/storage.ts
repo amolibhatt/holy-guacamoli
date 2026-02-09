@@ -259,6 +259,12 @@ export class DatabaseStorage implements IStorage {
   async deleteBoard(id: number, userId: string, role?: string): Promise<boolean> {
     const board = await this.getBoard(id, userId, role);
     if (!board) return false;
+    // Clear board references from active game sessions
+    await db.update(gameSessions)
+      .set({ currentBoardId: null })
+      .where(eq(gameSessions.currentBoardId, id));
+    // Remove game-board links
+    await db.delete(gameBoards).where(eq(gameBoards.boardId, id));
     // Remove board-category links (questions belong to categories, not boards)
     await db.delete(boardCategories).where(eq(boardCategories.boardId, id));
     if (role === 'super_admin') {
@@ -387,7 +393,7 @@ export class DatabaseStorage implements IStorage {
       .from(boardCategories)
       .where(eq(boardCategories.boardId, data.boardId));
     const maxPosition = existing.length > 0 ? Math.max(...existing.map(e => e.position ?? 0)) : -1;
-    const position = data.position ?? (maxPosition + 1);
+    const position = maxPosition + 1;
     const [newBc] = await db.insert(boardCategories).values({ ...data, position }).returning();
     return newBc;
   }

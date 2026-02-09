@@ -893,7 +893,7 @@ export default function BlitzGridAdmin() {
                               updateGridMutation.mutate({ 
                                 id: selectedGridId, 
                                 name: editGridName.trim(), 
-                                description: editGridDescription.trim() || undefined 
+                                description: editGridDescription.trim() 
                               });
                             }
                           }}
@@ -915,7 +915,7 @@ export default function BlitzGridAdmin() {
                             updateGridMutation.mutate({ 
                               id: selectedGridId, 
                               name: editGridName.trim(), 
-                              description: editGridDescription.trim() || undefined 
+                              description: editGridDescription.trim() 
                             });
                           }
                         }}
@@ -939,7 +939,7 @@ export default function BlitzGridAdmin() {
                             updateGridMutation.mutate({ 
                               id: selectedGridId, 
                               name: editGridName.trim(), 
-                              description: editGridDescription.trim() || undefined 
+                              description: editGridDescription.trim() 
                             });
                           }}
                           disabled={!editGridName.trim() || updateGridMutation.isPending}
@@ -1465,7 +1465,7 @@ export default function BlitzGridAdmin() {
                                         await updateCategoryMutation.mutateAsync({ 
                                           categoryId: category.id, 
                                           name: editCategoryName.trim(),
-                                          description: editCategoryDescription.trim() || undefined
+                                          description: editCategoryDescription.trim()
                                         });
                                       }
                                       let savedCount = 0;
@@ -1790,7 +1790,7 @@ export default function BlitzGridAdmin() {
                                 updateGridMutation.mutate({ 
                                   id: grid.id, 
                                   name: editGridName.trim(),
-                                  description: editGridDescription.trim() || undefined
+                                  description: editGridDescription.trim()
                                 });
                               }
                             }}
@@ -1810,7 +1810,7 @@ export default function BlitzGridAdmin() {
                               updateGridMutation.mutate({ 
                                 id: grid.id, 
                                 name: editGridName.trim(),
-                                description: editGridDescription.trim() || undefined
+                                description: editGridDescription.trim()
                               });
                             }
                           }}
@@ -1824,7 +1824,7 @@ export default function BlitzGridAdmin() {
                                 updateGridMutation.mutate({ 
                                   id: grid.id, 
                                   name: editGridName.trim(),
-                                  description: editGridDescription.trim() || undefined
+                                  description: editGridDescription.trim()
                                 });
                               }
                             }}

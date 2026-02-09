@@ -400,7 +400,7 @@ export async function registerRoutes(
         }
         updateData.name = name.trim();
       }
-      if (description !== undefined) updateData.description = typeof description === "string" ? description.trim() : description;
+      if (description !== undefined) updateData.description = typeof description === "string" ? (description.trim() || null) : description;
       if (pointValues !== undefined) updateData.pointValues = pointValues;
       if (theme !== undefined) updateData.theme = theme;
       if (isGlobal !== undefined) updateData.isGlobal = isGlobal;
@@ -603,7 +603,7 @@ export async function registerRoutes(
       
       let bc;
       try {
-        bc = await storage.createBoardCategory({ boardId, categoryId: category.id, position: currentCategories.length });
+        bc = await storage.createBoardCategory({ boardId, categoryId: category.id });
       } catch (linkErr) {
         try {
           await storage.deleteCategory(category.id);
@@ -739,7 +739,7 @@ export async function registerRoutes(
         }
         updateData.name = name.trim();
       }
-      if (description !== undefined) updateData.description = typeof description === "string" ? description.trim() : description;
+      if (description !== undefined) updateData.description = typeof description === "string" ? (description.trim() || null) : description;
       if (rule !== undefined) updateData.rule = rule;
       if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
       if (isActive !== undefined) updateData.isActive = isActive;
@@ -3953,7 +3953,6 @@ Generate exactly ${promptCount} prompts.`
               const newBC = await storage.createBoardCategory({
                 boardId,
                 categoryId: categoryInfo.id,
-                position: boardCats.length,
               });
               boardCategoryMap.set(bcKey, newBC.id);
               results.categoriesLinked++;
@@ -4159,7 +4158,7 @@ Generate exactly ${promptCount} prompts.`
         return res.status(404).json({ message: "Grid not found" });
       }
       
-      const updateData: { name?: string; description?: string } = {};
+      const updateData: { name?: string; description?: string | null } = {};
       if (name !== undefined && typeof name === "string") {
         const trimmedName = name.trim();
         if (!trimmedName) {
@@ -4168,7 +4167,7 @@ Generate exactly ${promptCount} prompts.`
         updateData.name = trimmedName;
       }
       if (typeof description === "string") {
-        updateData.description = description.trim();
+        updateData.description = description.trim() || null;
       }
       
       if (Object.keys(updateData).length === 0) {
@@ -4291,7 +4290,6 @@ Generate exactly ${promptCount} prompts.`
       const boardCategory = await storage.createBoardCategory({
         boardId: gridId,
         categoryId,
-        position: existing.length,
       });
       
       res.status(201).json(boardCategory);
@@ -4338,7 +4336,6 @@ Generate exactly ${promptCount} prompts.`
         await storage.createBoardCategory({
           boardId: gridId,
           categoryId: category.id,
-          position: existing.length,
         });
       } catch (linkErr) {
         try { await storage.deleteCategory(category.id); } catch (_) { /* cleanup best effort */ }
@@ -4592,7 +4589,8 @@ Generate exactly ${promptCount} prompts.`
         ["Each grid can have 1-5 categories."],
         [""],
         ["Options: For multiple choice, separate options with | (pipe). Leave empty for open-ended questions."],
-        ["Media URLs: Image/Audio/Video URLs are optional. Leave empty if not needed."],
+        ["Question Media: Image URL, Audio URL, Video URL are shown WITH the question. Optional."],
+        ["Answer Media: Answer Image URL, Answer Audio URL, Answer Video URL are shown AFTER answering. Optional."],
       ];
       
       const ws = XLSX.utils.aoa_to_sheet(rows);
@@ -4728,7 +4726,6 @@ Generate exactly ${promptCount} prompts.`
           
           const createdCategoryIds: number[] = [];
           try {
-            let catPosition = 0;
             for (const [catName, catData] of Array.from(gridData.categories.entries())) {
               const category = await storage.createCategory({
                 name: catName.trim(),
@@ -4740,7 +4737,6 @@ Generate exactly ${promptCount} prompts.`
               await storage.createBoardCategory({
                 boardId: board.id,
                 categoryId: category.id,
-                position: catPosition++,
               });
               
               for (const q of catData.questions) {
