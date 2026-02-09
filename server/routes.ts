@@ -174,7 +174,6 @@ export async function registerRoutes(
       res.status(500).json({ 
         status: "error", 
         database: "disconnected",
-        error: err instanceof Error ? err.message : "Unknown error"
       });
     }
   });
@@ -367,7 +366,7 @@ export async function registerRoutes(
       const userId = req.session.userId!;
       const role = req.session.userRole;
       const { name, description, pointValues, theme } = req.body;
-      if (!name) {
+      if (!name || typeof name !== "string" || !name.trim()) {
         return res.status(400).json({ message: "Name is required" });
       }
       // Auto-assign a color based on total board count (use super_admin view to get all boards)
@@ -376,8 +375,8 @@ export async function registerRoutes(
       const autoColor = BOARD_COLORS[colorIndex];
       
       const board = await storage.createBoard({
-        name,
-        description: description || null,
+        name: name.trim(),
+        description: (typeof description === "string" && description.trim()) ? description.trim() : null,
         pointValues: pointValues || [10, 20, 30, 40, 50],
         colorCode: autoColor,
         theme: theme || "blitzgrid",
@@ -400,8 +399,13 @@ export async function registerRoutes(
       const role = req.session.userRole;
       const { name, description, pointValues, theme, isGlobal, sortOrder } = req.body;
       const updateData: Record<string, any> = {};
-      if (name !== undefined) updateData.name = name;
-      if (description !== undefined) updateData.description = description;
+      if (name !== undefined) {
+        if (typeof name !== "string" || !name.trim()) {
+          return res.status(400).json({ message: "Board name cannot be empty" });
+        }
+        updateData.name = name.trim();
+      }
+      if (description !== undefined) updateData.description = typeof description === "string" ? description.trim() : description;
       if (pointValues !== undefined) updateData.pointValues = pointValues;
       if (theme !== undefined) updateData.theme = theme;
       if (isGlobal !== undefined) updateData.isGlobal = isGlobal;
@@ -481,8 +485,8 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Board not found" });
       }
       const { categoryId } = req.body;
-      if (!categoryId || typeof categoryId !== 'number') {
-        return res.status(400).json({ message: "categoryId is required and must be a number" });
+      if (typeof categoryId !== 'number' || isNaN(categoryId) || !Number.isInteger(categoryId) || categoryId <= 0) {
+        return res.status(400).json({ message: "A valid categoryId is required" });
       }
       // Verify category exists
       const category = await storage.getCategory(categoryId);
@@ -553,8 +557,12 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Board not found" });
       }
       const { orderedIds } = req.body;
-      if (!Array.isArray(orderedIds) || !orderedIds.every(id => typeof id === 'number')) {
-        return res.status(400).json({ message: "orderedIds must be an array of numbers" });
+      if (!Array.isArray(orderedIds) || !orderedIds.every(id => typeof id === 'number' && Number.isInteger(id))) {
+        return res.status(400).json({ message: "orderedIds must be an array of integers" });
+      }
+      const uniqueIds = new Set(orderedIds);
+      if (uniqueIds.size !== orderedIds.length) {
+        return res.status(400).json({ message: "orderedIds must not contain duplicates" });
       }
       const currentCategories = await storage.getBoardCategories(boardId);
       const validIds = new Set(currentCategories.map(bc => bc.id));
@@ -587,7 +595,7 @@ export async function registerRoutes(
       }
       
       const { name, description, rule, sourceGroup } = req.body;
-      if (!name || !name.trim()) {
+      if (!name || typeof name !== "string" || !name.trim()) {
         return res.status(400).json({ message: "Category name is required" });
       }
       
@@ -707,8 +715,8 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const categoryId = Number(req.params.id);
-      if (isNaN(categoryId)) {
+      const categoryId = parseId(req.params.id);
+      if (categoryId === null) {
         return res.status(400).json({ message: "Invalid category ID" });
       }
       
@@ -730,8 +738,13 @@ export async function registerRoutes(
       }
       
       const updateData: Record<string, any> = {};
-      if (name !== undefined) updateData.name = name;
-      if (description !== undefined) updateData.description = description;
+      if (name !== undefined) {
+        if (typeof name !== "string" || !name.trim()) {
+          return res.status(400).json({ message: "Category name cannot be empty" });
+        }
+        updateData.name = name.trim();
+      }
+      if (description !== undefined) updateData.description = typeof description === "string" ? description.trim() : description;
       if (rule !== undefined) updateData.rule = rule;
       if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
       if (isActive !== undefined) updateData.isActive = isActive;
@@ -752,8 +765,8 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const categoryId = Number(req.params.id);
-      if (isNaN(categoryId)) {
+      const categoryId = parseId(req.params.id);
+      if (categoryId === null) {
         return res.status(400).json({ message: "Invalid category ID" });
       }
       
@@ -812,8 +825,8 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const categoryId = Number(req.params.categoryId);
-      if (isNaN(categoryId)) {
+      const categoryId = parseId(req.params.categoryId);
+      if (categoryId === null) {
         return res.status(400).json({ message: "Invalid category ID" });
       }
       
@@ -867,8 +880,7 @@ export async function registerRoutes(
         });
       }
       console.error("Error creating question:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to create question";
-      res.status(500).json({ message: errorMessage });
+      res.status(500).json({ message: "Failed to create question" });
     }
   });
 
@@ -954,8 +966,8 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const categoryId = Number(req.params.categoryId);
-      if (isNaN(categoryId)) {
+      const categoryId = parseId(req.params.categoryId);
+      if (categoryId === null) {
         return res.status(400).json({ message: "Invalid category ID" });
       }
       const category = await verifyCategoryExists(categoryId);
