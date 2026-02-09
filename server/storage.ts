@@ -1719,7 +1719,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createSequenceQuestion(data: InsertSequenceQuestion): Promise<SequenceQuestion> {
-    const [question] = await db.insert(sequenceQuestions).values([data] as any).returning();
+    const [question] = await db.insert(sequenceQuestions).values(data as any).returning();
     return question;
   }
 
@@ -1728,8 +1728,17 @@ export class DatabaseStorage implements IStorage {
       ? eq(sequenceQuestions.id, id)
       : and(eq(sequenceQuestions.id, id), eq(sequenceQuestions.userId, userId));
     
+    const allowedFields = new Set(['question', 'optionA', 'optionB', 'optionC', 'optionD', 'correctOrder', 'hint', 'isActive']);
+    const safeData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (allowedFields.has(key) && value !== undefined) {
+        safeData[key] = value;
+      }
+    }
+    if (Object.keys(safeData).length === 0) return null;
+    
     const [updated] = await db.update(sequenceQuestions)
-      .set(data as any)
+      .set(safeData)
       .where(condition)
       .returning();
     return updated || null;

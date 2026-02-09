@@ -2496,28 +2496,35 @@ export async function registerRoutes(
         return res.status(400).json({ message: "correctOrder must contain exactly A, B, C, D in some order" });
       }
       
-      if (question.length > 500) {
+      const tQuestion = question.trim();
+      const tOptionA = optionA.trim();
+      const tOptionB = optionB.trim();
+      const tOptionC = optionC.trim();
+      const tOptionD = optionD.trim();
+      const tHint = (hint && typeof hint === 'string') ? hint.trim() : null;
+      
+      if (tQuestion.length > 500) {
         return res.status(400).json({ message: "Question text must be 500 characters or less" });
       }
-      if (optionA.length > 200 || optionB.length > 200 || optionC.length > 200 || optionD.length > 200) {
+      if (tOptionA.length > 200 || tOptionB.length > 200 || tOptionC.length > 200 || tOptionD.length > 200) {
         return res.status(400).json({ message: "Each option must be 200 characters or less" });
       }
       if (hint !== undefined && hint !== null && typeof hint !== 'string') {
         return res.status(400).json({ message: "Hint must be text" });
       }
-      if (hint && hint.length > 200) {
+      if (tHint && tHint.length > 200) {
         return res.status(400).json({ message: "Hint must be 200 characters or less" });
       }
       
       const newQuestion = await storage.createSequenceQuestion({
         userId,
-        question: question.trim(),
-        optionA: optionA.trim(),
-        optionB: optionB.trim(),
-        optionC: optionC.trim(),
-        optionD: optionD.trim(),
+        question: tQuestion,
+        optionA: tOptionA,
+        optionB: tOptionB,
+        optionC: tOptionC,
+        optionD: tOptionD,
         correctOrder,
-        hint: hint?.trim() || null,
+        hint: tHint || null,
         isActive: isActive === true,
       });
       
@@ -2551,10 +2558,11 @@ export async function registerRoutes(
         if (typeof question !== 'string' || question.trim().length === 0) {
           return res.status(400).json({ message: "Question text cannot be empty" });
         }
-        if (question.length > 500) {
+        const trimmedQuestion = question.trim();
+        if (trimmedQuestion.length > 500) {
           return res.status(400).json({ message: "Question text must be 500 characters or less" });
         }
-        updateData.question = question.trim();
+        updateData.question = trimmedQuestion;
       }
       
       for (const [key, label] of [['optionA', 'Option A'], ['optionB', 'Option B'], ['optionC', 'Option C'], ['optionD', 'Option D']] as const) {
@@ -2563,10 +2571,11 @@ export async function registerRoutes(
           if (typeof val !== 'string' || val.trim().length === 0) {
             return res.status(400).json({ message: `${label} cannot be empty` });
           }
-          if (val.length > 200) {
+          const trimmedVal = val.trim();
+          if (trimmedVal.length > 200) {
             return res.status(400).json({ message: `${label} must be 200 characters or less` });
           }
-          updateData[key] = val.trim();
+          updateData[key] = trimmedVal;
         }
       }
       
@@ -2586,10 +2595,11 @@ export async function registerRoutes(
         if (hint !== null && typeof hint !== 'string') {
           return res.status(400).json({ message: "Hint must be text or null" });
         }
-        if (hint && hint.length > 200) {
+        const trimmedHint = (typeof hint === 'string') ? hint.trim() : null;
+        if (trimmedHint && trimmedHint.length > 200) {
           return res.status(400).json({ message: "Hint must be 200 characters or less" });
         }
-        updateData.hint = (typeof hint === 'string' && hint.trim().length > 0) ? hint.trim() : null;
+        updateData.hint = (trimmedHint && trimmedHint.length > 0) ? trimmedHint : null;
       }
       
       if (Object.keys(updateData).length === 0) {
@@ -2653,8 +2663,11 @@ export async function registerRoutes(
             results.errors.push(`Row ${i + 1}: Question text is required`);
             continue;
           }
-          if (!q.optionA || typeof q.optionA !== 'string' || !q.optionB || typeof q.optionB !== 'string' || !q.optionC || typeof q.optionC !== 'string' || !q.optionD || typeof q.optionD !== 'string') {
-            results.errors.push(`Row ${i + 1}: All four options are required and must be text`);
+          if (!q.optionA || typeof q.optionA !== 'string' || q.optionA.trim().length === 0 ||
+              !q.optionB || typeof q.optionB !== 'string' || q.optionB.trim().length === 0 ||
+              !q.optionC || typeof q.optionC !== 'string' || q.optionC.trim().length === 0 ||
+              !q.optionD || typeof q.optionD !== 'string' || q.optionD.trim().length === 0) {
+            results.errors.push(`Row ${i + 1}: All four options are required and must be non-empty text`);
             continue;
           }
           if (!Array.isArray(q.correctOrder) || q.correctOrder.length !== 4) {
@@ -2666,28 +2679,34 @@ export async function registerRoutes(
             results.errors.push(`Row ${i + 1}: correctOrder must contain A, B, C, D exactly once`);
             continue;
           }
-          if (q.question.length > 500) {
+          const trimmedQ = q.question.trim();
+          const trimmedA = q.optionA.trim();
+          const trimmedB = q.optionB.trim();
+          const trimmedC = q.optionC.trim();
+          const trimmedD = q.optionD.trim();
+          const trimmedHint = (q.hint && typeof q.hint === 'string') ? q.hint.trim() : null;
+          if (trimmedQ.length > 500) {
             results.errors.push(`Row ${i + 1}: Question too long (max 500 chars)`);
             continue;
           }
-          if (q.optionA.length > 200 || q.optionB.length > 200 || q.optionC.length > 200 || q.optionD.length > 200) {
+          if (trimmedA.length > 200 || trimmedB.length > 200 || trimmedC.length > 200 || trimmedD.length > 200) {
             results.errors.push(`Row ${i + 1}: Option too long (max 200 chars)`);
             continue;
           }
-          if (q.hint && (typeof q.hint !== 'string' || q.hint.length > 200)) {
-            results.errors.push(`Row ${i + 1}: Hint must be text and 200 characters or less`);
+          if (trimmedHint && trimmedHint.length > 200) {
+            results.errors.push(`Row ${i + 1}: Hint must be 200 characters or less`);
             continue;
           }
           
           await storage.createSequenceQuestion({
             userId,
-            question: q.question.trim(),
-            optionA: q.optionA.trim(),
-            optionB: q.optionB.trim(),
-            optionC: q.optionC.trim(),
-            optionD: q.optionD.trim(),
+            question: trimmedQ,
+            optionA: trimmedA,
+            optionB: trimmedB,
+            optionC: trimmedC,
+            optionD: trimmedD,
             correctOrder: q.correctOrder,
-            hint: q.hint?.trim() || null,
+            hint: trimmedHint || null,
             isActive: true,
           });
           results.success++;
@@ -2700,147 +2719,6 @@ export async function registerRoutes(
     } catch (err) {
       console.error("Error bulk importing sequence questions:", err);
       res.status(500).json({ message: "Failed to import questions" });
-    }
-  });
-
-  // AI-generated Sort Circuit questions
-  app.post("/api/sequence-squeeze/questions/generate", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { topic, count = 3 } = req.body;
-      
-      if (!topic || typeof topic !== 'string' || topic.trim().length === 0) {
-        return res.status(400).json({ message: "Topic is required" });
-      }
-      if (topic.trim().length > 200) {
-        return res.status(400).json({ message: "Topic must be 200 characters or less" });
-      }
-      
-      const parsedCount = Number(count);
-      const questionCount = Math.min(Math.max(1, isNaN(parsedCount) ? 3 : parsedCount), 5);
-      
-      const apiKey = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY;
-      if (!apiKey) {
-        return res.status(500).json({ message: "AI service not configured. Please set GROQ_API_KEY." });
-      }
-
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            {
-              role: 'system',
-              content: `You are a trivia game question generator for a game called "Sort Circuit" where players must put 4 items in the correct order. Generate ordering/ranking questions where there's a clear, factual correct order.
-
-Examples of good question types:
-- Chronological: historical events, movie releases, inventions
-- Rankings: populations, heights, distances, speeds, temperatures
-- Sequences: steps in a process, stages of development
-- Numerical order: dates, sizes, quantities
-
-Each question needs:
-- A clear question asking players to order items
-- 4 distinct items (A, B, C, D) that have a definitive order
-- The items should be listed in their CORRECT order (A=1st, B=2nd, C=3rd, D=4th)
-- An optional hint
-
-Return JSON array with this exact format:
-[
-  {
-    "question": "Order these countries by population (largest to smallest)",
-    "optionA": "China",
-    "optionB": "India", 
-    "optionC": "USA",
-    "optionD": "Indonesia",
-    "hint": "Think about the most populous continent"
-  }
-]
-
-Keep options SHORT (max 50 chars each). Questions should be fun and educational.`
-            },
-            {
-              role: 'user',
-              content: `Generate ${questionCount} Sort Circuit ordering questions about: ${topic.trim()}`
-            }
-          ],
-          temperature: 0.8,
-          max_tokens: 1500
-        })
-      });
-
-      if (!response.ok) {
-        const error = await response.text();
-        console.error('Groq API error:', error);
-        return res.status(500).json({ message: "Failed to generate questions" });
-      }
-
-      const data = await response.json();
-      const content = data.choices?.[0]?.message?.content;
-      
-      if (!content) {
-        return res.status(500).json({ message: "No response from AI" });
-      }
-
-      // Parse JSON from response (handle markdown code blocks)
-      let questions;
-      try {
-        const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-        const jsonStr = codeBlockMatch ? codeBlockMatch[1] : content;
-        const jsonMatch = jsonStr.match(/\[[\s\S]*?\]/);
-        if (!jsonMatch) {
-          throw new Error('No JSON array found');
-        }
-        questions = JSON.parse(jsonMatch[0]);
-        if (!Array.isArray(questions)) {
-          throw new Error('Parsed result is not an array');
-        }
-      } catch (parseErr) {
-        console.error('Failed to parse AI response:', content);
-        return res.status(500).json({ message: "Failed to parse AI response" });
-      }
-
-      // Cap to requested count to prevent AI from saving more than intended
-      questions = questions.slice(0, questionCount);
-
-      // Validate and save questions
-      const results = { success: 0, questions: [] as any[], errors: [] as string[] };
-      
-      for (let i = 0; i < questions.length; i++) {
-        const q = questions[i];
-        try {
-          if (!q.question || typeof q.question !== 'string' || !q.optionA || typeof q.optionA !== 'string' || !q.optionB || typeof q.optionB !== 'string' || !q.optionC || typeof q.optionC !== 'string' || !q.optionD || typeof q.optionD !== 'string') {
-            results.errors.push(`Question ${i + 1}: Missing or invalid required fields`);
-            continue;
-          }
-
-          const saved = await storage.createSequenceQuestion({
-            userId,
-            question: q.question.trim().slice(0, 500),
-            optionA: q.optionA.trim().slice(0, 200),
-            optionB: q.optionB.trim().slice(0, 200),
-            optionC: q.optionC.trim().slice(0, 200),
-            optionD: q.optionD.trim().slice(0, 200),
-            correctOrder: ['A', 'B', 'C', 'D'],
-            hint: q.hint?.trim()?.slice(0, 200) || null,
-            isActive: true,
-          });
-          
-          results.questions.push(saved);
-          results.success++;
-        } catch (err) {
-          results.errors.push(`Question ${i + 1}: Failed to save`);
-        }
-      }
-
-      res.json(results);
-    } catch (err) {
-      console.error("Error generating AI questions:", err);
-      res.status(500).json({ message: "Failed to generate questions" });
     }
   });
 
