@@ -2502,6 +2502,9 @@ export async function registerRoutes(
       if (optionA.length > 200 || optionB.length > 200 || optionC.length > 200 || optionD.length > 200) {
         return res.status(400).json({ message: "Each option must be 200 characters or less" });
       }
+      if (hint !== undefined && hint !== null && typeof hint !== 'string') {
+        return res.status(400).json({ message: "Hint must be text" });
+      }
       if (hint && hint.length > 200) {
         return res.status(400).json({ message: "Hint must be 200 characters or less" });
       }
@@ -2580,10 +2583,13 @@ export async function registerRoutes(
       }
       
       if (hint !== undefined) {
+        if (hint !== null && typeof hint !== 'string') {
+          return res.status(400).json({ message: "Hint must be text or null" });
+        }
         if (hint && hint.length > 200) {
           return res.status(400).json({ message: "Hint must be 200 characters or less" });
         }
-        updateData.hint = hint?.trim() || null;
+        updateData.hint = (typeof hint === 'string' && hint.trim().length > 0) ? hint.trim() : null;
       }
       
       if (Object.keys(updateData).length === 0) {
@@ -2706,6 +2712,9 @@ export async function registerRoutes(
       if (!topic || typeof topic !== 'string' || topic.trim().length === 0) {
         return res.status(400).json({ message: "Topic is required" });
       }
+      if (topic.trim().length > 200) {
+        return res.status(400).json({ message: "Topic must be 200 characters or less" });
+      }
       
       const parsedCount = Number(count);
       const questionCount = Math.min(Math.max(1, isNaN(parsedCount) ? 3 : parsedCount), 5);
@@ -2780,15 +2789,23 @@ Keep options SHORT (max 50 chars each). Questions should be fun and educational.
       // Parse JSON from response (handle markdown code blocks)
       let questions;
       try {
-        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        const jsonStr = codeBlockMatch ? codeBlockMatch[1] : content;
+        const jsonMatch = jsonStr.match(/\[[\s\S]*?\]/);
         if (!jsonMatch) {
           throw new Error('No JSON array found');
         }
         questions = JSON.parse(jsonMatch[0]);
+        if (!Array.isArray(questions)) {
+          throw new Error('Parsed result is not an array');
+        }
       } catch (parseErr) {
         console.error('Failed to parse AI response:', content);
         return res.status(500).json({ message: "Failed to parse AI response" });
       }
+
+      // Cap to requested count to prevent AI from saving more than intended
+      questions = questions.slice(0, questionCount);
 
       // Validate and save questions
       const results = { success: 0, questions: [] as any[], errors: [] as string[] };
@@ -5840,6 +5857,15 @@ Generate exactly ${promptCount} prompts.`
 
             room.gameMode = 'sequence';
             room.sequenceSubmissions = [];
+            room.sequencePhase = 'waiting';
+            room.sequencePaused = false;
+            room.currentCorrectOrder = undefined;
+            room.currentQuestion = undefined;
+            room.questionStartTime = undefined;
+            room.pointsPerRound = undefined;
+            room.sequencePauseStartTime = undefined;
+            room.sequenceQuestionIndex = undefined;
+            room.sequenceTotalQuestions = undefined;
             
             ws.send(JSON.stringify({
               type: 'sequence:mode:switched',
@@ -6159,11 +6185,17 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            if (room.sequencePhase !== 'animatedReveal') {
+              ws.send(JSON.stringify({ type: 'error', message: 'Can only start answering from animated reveal phase' }));
+              break;
+            }
+
             if (!room.currentQuestion) {
               console.warn(`[WebSocket] startAnswering called but no currentQuestion stored for room ${room.code}`);
               break;
             }
 
+            room.sequenceSubmissions = [];
             room.questionStartTime = Date.now();
             room.sequencePhase = 'playing';
 
@@ -6189,6 +6221,8 @@ Generate exactly ${promptCount} prompts.`
             if (!mapping || !mapping.isHost) break;
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
+            if (room.sequencePhase !== 'playing') break;
+            if (room.sequencePaused) break;
             room.sequencePaused = true;
             room.sequencePauseStartTime = Date.now();
             room.players.forEach((player) => {
@@ -6204,6 +6238,7 @@ Generate exactly ${promptCount} prompts.`
             if (!mapping || !mapping.isHost) break;
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
+            if (!room.sequencePaused) break;
             room.sequencePaused = false;
             if (room.sequencePauseStartTime && room.questionStartTime) {
               const pauseDuration = Date.now() - room.sequencePauseStartTime;
@@ -6451,6 +6486,9 @@ Generate exactly ${promptCount} prompts.`
             room.sequenceSubmissions = [];
             room.currentCorrectOrder = undefined;
             room.currentQuestion = undefined;
+            room.questionStartTime = undefined;
+            room.pointsPerRound = undefined;
+            room.sequencePauseStartTime = undefined;
             room.sequenceQuestionIndex = undefined;
             room.sequenceTotalQuestions = undefined;
 
@@ -6482,6 +6520,9 @@ Generate exactly ${promptCount} prompts.`
             room.currentQuestion = undefined;
             room.sequencePhase = 'waiting';
             room.sequencePaused = false;
+            room.questionStartTime = undefined;
+            room.pointsPerRound = undefined;
+            room.sequencePauseStartTime = undefined;
             room.sequenceQuestionIndex = undefined;
             room.sequenceTotalQuestions = undefined;
 
