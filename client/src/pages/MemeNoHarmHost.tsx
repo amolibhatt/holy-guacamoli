@@ -74,7 +74,11 @@ export default function MemeNoHarmHost() {
 
   useEffect(() => {
     if (prompts.length > 0 && shuffledPrompts.length === 0) {
-      const shuffled = [...prompts].sort(() => Math.random() - 0.5);
+      const shuffled = [...prompts];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
       setShuffledPrompts(shuffled);
     }
   }, [prompts, shuffledPrompts.length]);
@@ -219,6 +223,10 @@ export default function MemeNoHarmHost() {
         case "meme:allVoted":
           break;
 
+        case "meme:round:started":
+          setPhase("selecting");
+          break;
+
         case "meme:voting:started":
           setVotingSubmissions(data.submissions.map((s: any) => ({
             playerId: s.id,
@@ -228,6 +236,7 @@ export default function MemeNoHarmHost() {
             votes: 0,
             points: 0,
           })));
+          setPhase("voting");
           break;
 
         case "meme:reveal:complete":
@@ -302,36 +311,31 @@ export default function MemeNoHarmHost() {
 
   const startGame = () => {
     if (connectedPlayers.length < 2) return;
+    if (shuffledPrompts.length === 0) return;
     usedPromptsRef.current.clear();
     setCurrentRound(1);
     const prompt = shuffledPrompts[0];
     usedPromptsRef.current.add(prompt.prompt);
     setCurrentPromptText(prompt.prompt);
     setPlayers(prev => prev.map(p => ({ ...p, submitted: false, voted: false })));
-    setPhase("selecting");
 
     sendWs({
       type: "meme:host:startRound",
       prompt: prompt.prompt,
-      round: 1,
-      deadline: Date.now() + 60000,
     });
   };
 
   const startVoting = () => {
     setPlayers(prev => prev.map(p => ({ ...p, voted: false })));
-    setPhase("voting");
 
     sendWs({
       type: "meme:host:startVoting",
-      deadline: Date.now() + 30000,
     });
   };
 
   const revealResults = () => {
     sendWs({
       type: "meme:host:reveal",
-      pointsPerVote: 100,
     });
   };
 
@@ -353,13 +357,10 @@ export default function MemeNoHarmHost() {
     setResults([]);
     setVotingSubmissions([]);
     setPlayers(prev => prev.map(p => ({ ...p, submitted: false, voted: false })));
-    setPhase("selecting");
 
     sendWs({
       type: "meme:host:startRound",
       prompt: prompt.prompt,
-      round: nextRoundNum,
-      deadline: Date.now() + 60000,
     });
   };
 
@@ -375,7 +376,11 @@ export default function MemeNoHarmHost() {
     setLeaderboard([]);
     setRoundWinnerId(null);
     setVotingSubmissions([]);
-    const shuffled = [...prompts].sort(() => Math.random() - 0.5);
+    const shuffled = [...prompts];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
     setShuffledPrompts(shuffled);
     setPhase("setup");
   }, [prompts]);

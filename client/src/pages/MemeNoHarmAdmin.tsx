@@ -122,9 +122,14 @@ export default function MemeNoHarmAdmin() {
   const handleSaveEdit = () => {
     if (editingId === null) return;
     const trimmed = editText.trim();
-    if (trimmed && trimmed.length <= MAX_PROMPT_LENGTH) {
-      updatePromptMutation.mutate({ id: editingId, prompt: trimmed });
+    if (!trimmed || trimmed.length > MAX_PROMPT_LENGTH) return;
+    const original = prompts.find(p => p.id === editingId);
+    if (original && original.prompt === trimmed) {
+      setEditingId(null);
+      setEditText("");
+      return;
     }
+    updatePromptMutation.mutate({ id: editingId, prompt: trimmed });
   };
 
   const handleAiGenerate = async () => {
@@ -493,12 +498,20 @@ export default function MemeNoHarmAdmin() {
                     data-testid="textarea-bulk-prompts"
                   />
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="text-sm text-muted-foreground">
-                      {bulkPrompts.split("\n").filter(l => l.trim().length > 0).length} prompts ready
-                    </span>
+                    {(() => {
+                      const allLines = bulkPrompts.split("\n").filter(l => l.trim().length > 0);
+                      const validLines = allLines.filter(l => l.trim().length <= MAX_PROMPT_LENGTH);
+                      const tooLong = allLines.length - validLines.length;
+                      return (
+                        <span className="text-sm text-muted-foreground">
+                          {validLines.length} prompt{validLines.length !== 1 ? 's' : ''} ready
+                          {tooLong > 0 && <span className="text-destructive ml-1">({tooLong} too long, max {MAX_PROMPT_LENGTH} chars)</span>}
+                        </span>
+                      );
+                    })()}
                     <Button
                       onClick={handleBulkImportPrompts}
-                      disabled={bulkPrompts.split("\n").filter(l => l.trim().length > 0).length === 0 || bulkImporting}
+                      disabled={bulkPrompts.split("\n").filter(l => l.trim().length > 0 && l.trim().length <= MAX_PROMPT_LENGTH).length === 0 || bulkImporting}
                       data-testid="button-bulk-import-prompts"
                     >
                       {bulkImporting ? (

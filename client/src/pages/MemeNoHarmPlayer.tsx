@@ -109,6 +109,8 @@ export default function MemeNoHarmPlayer() {
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const playerIdRef = useRef<string | null>(playerId);
   const reconnectTokenRef = useRef<string | null>(savedSession?.reconnectToken || null);
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
   const shouldReconnectRef = useRef(true);
   const reconnectAttemptsRef = useRef(0);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -125,20 +127,25 @@ export default function MemeNoHarmPlayer() {
     } catch {}
   }, []);
 
+  const searchRequestIdRef = useRef(0);
+
   const searchGiphy = useCallback(async (query: string) => {
     if (!query.trim()) {
       setSearchResults([]);
       return;
     }
     setIsSearching(true);
+    const requestId = ++searchRequestIdRef.current;
     try {
       const res = await fetch(`/api/giphy/search?q=${encodeURIComponent(query)}&limit=20`);
-      if (res.ok) {
+      if (res.ok && requestId === searchRequestIdRef.current) {
         const data = await res.json();
         setSearchResults(data.results || []);
       }
     } catch {}
-    setIsSearching(false);
+    if (requestId === searchRequestIdRef.current) {
+      setIsSearching(false);
+    }
   }, []);
 
   const handleSearchChange = (value: string) => {
@@ -168,7 +175,7 @@ export default function MemeNoHarmPlayer() {
         avatar: selectedAvatar,
         playerId: playerIdRef.current || undefined,
         reconnectToken: reconnectTokenRef.current || undefined,
-        profileId: profile?.profile?.id,
+        profileId: profileRef.current?.profile?.id,
       }));
 
       if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
