@@ -195,17 +195,12 @@ export async function registerRoutes(
   // Public debug endpoint (no auth required) - to verify routing works
   app.get("/api/debug/ping", async (_req, res) => {
     try {
-      const categoryCount = (await storage.getCategories()).length;
       res.json({
         pong: true,
         timestamp: new Date().toISOString(),
-        env: process.env.NODE_ENV || 'unknown',
-        categoryCount
       });
     } catch (err) {
-      res.status(500).json({ 
-        error: err instanceof Error ? err.message : 'Unknown error'
-      });
+      res.status(500).json({ message: "Service unavailable" });
     }
   });
 
@@ -1084,13 +1079,14 @@ export async function registerRoutes(
         points: isCorrect ? question.points : 0
       });
     } catch (err) {
-       if (err instanceof z.ZodError) {
+      if (err instanceof z.ZodError) {
         return res.status(400).json({
           message: err.errors[0].message,
           field: err.errors[0].path.join('.'),
         });
       }
-      throw err;
+      console.error("Error verifying answer:", err);
+      res.status(500).json({ message: "Failed to verify answer" });
     }
   });
 
@@ -1693,8 +1689,8 @@ export async function registerRoutes(
 
   app.delete("/api/super-admin/boards/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
-      const boardId = Number(req.params.id);
-      if (isNaN(boardId) || boardId <= 0) {
+      const boardId = parseId(req.params.id);
+      if (boardId === null) {
         return res.status(400).json({ message: "Invalid board ID" });
       }
       await storage.deleteBoardFully(boardId);
@@ -1707,8 +1703,8 @@ export async function registerRoutes(
 
   app.patch("/api/super-admin/boards/:id/global", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
-      const boardId = Number(req.params.id);
-      if (isNaN(boardId) || boardId <= 0) {
+      const boardId = parseId(req.params.id);
+      if (boardId === null) {
         return res.status(400).json({ message: "Invalid board ID" });
       }
       const { isGlobal } = req.body;
@@ -1738,8 +1734,8 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid request body" });
       }
       
-      const boardId = Number(req.params.id);
-      if (isNaN(boardId) || boardId <= 0) {
+      const boardId = parseId(req.params.id);
+      if (boardId === null) {
         return res.status(400).json({ message: "Invalid board ID" });
       }
       const { isStarterPack } = parsed.data;
@@ -1778,8 +1774,8 @@ export async function registerRoutes(
 
   app.patch("/api/super-admin/game-types/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
-      const id = Number(req.params.id);
-      if (isNaN(id) || id <= 0) {
+      const id = parseId(req.params.id);
+      if (id === null) {
         return res.status(400).json({ message: "Invalid game type ID" });
       }
       const { hostEnabled, playerEnabled, description, sortOrder, status } = req.body;
@@ -1951,8 +1947,13 @@ export async function registerRoutes(
             categoryId: category.id,
           });
           
-          // Create questions for this category
+          // Create questions for this category (skip duplicates by point value)
+          const existingCatQuestions = await storage.getQuestionsByCategory(category.id);
+          const existingPointSet = new Set(existingCatQuestions.map(q => q.points));
           for (const q of cat.questions || []) {
+            if (existingPointSet.has(q.points)) {
+              continue;
+            }
             await storage.createQuestion({
               categoryId: category.id,
               question: q.question,
@@ -1960,6 +1961,7 @@ export async function registerRoutes(
               points: q.points,
               options: q.options || [],
             });
+            existingPointSet.add(q.points);
             questionsCreated++;
           }
         }
@@ -3739,7 +3741,8 @@ Generate exactly ${promptCount} prompts.`
         const optB = getField(['Option B', 'option_b', 'B']);
         const optC = getField(['Option C', 'option_c', 'C']);
         const optD = getField(['Option D', 'option_d', 'D']);
-        const points = Number(getField(['Points', 'points', 'Point', 'point'])) || 10;
+        const rawPoints = Number(getField(['Points', 'points', 'Point', 'point']));
+        const points = Number.isFinite(rawPoints) && Number.isInteger(rawPoints) && rawPoints > 0 ? rawPoints : 0;
         const imageUrl = getField(['Image URL', 'image_url', 'ImageUrl', 'Image']);
         
         // Track flagged data for manual fixes
@@ -3751,7 +3754,11 @@ Generate exactly ${promptCount} prompts.`
         if (answer) rowData.answer = answer;
         rowData.points = String(points);
         
-        // Flag missing required fields
+        // Flag missing/invalid required fields
+        if (points === 0) {
+          results.flagged.push({ row: rowNum, issue: "Invalid or missing point value", data: rowData });
+          continue;
+        }
         if (!boardName) {
           results.flagged.push({ row: rowNum, issue: "Missing board name", data: rowData });
           continue;
@@ -3889,7 +3896,7 @@ Generate exactly ${promptCount} prompts.`
             results.flagged.push({ row: rowNum, issue: "Has answer but missing question", data: rowData });
           }
         } catch (err) {
-          results.errors.push(`Row ${rowNum}: Database error - ${err instanceof Error ? err.message : 'Unknown'}`);
+          results.errors.push(`Row ${rowNum}: Database error`);
           console.error(`Import error row ${rowNum}:`, err);
         }
       }
@@ -4578,12 +4585,16 @@ Generate exactly ${promptCount} prompts.`
           
           if (!allValid) continue;
           
+          const existingBoards = await storage.getBoards(userId, 'super_admin');
+          const colorIndex = existingBoards.length % BOARD_COLORS.length;
+          
           const board = await storage.createBoard({
             name: gridName.trim(),
             description: gridData.description?.trim() || "BlitzGrid",
             userId,
             theme: "blitzgrid",
             pointValues: [10, 20, 30, 40, 50],
+            colorCode: BOARD_COLORS[colorIndex],
             visibility: "private",
             isGlobal: false,
           });
