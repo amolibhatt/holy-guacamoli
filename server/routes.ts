@@ -2668,6 +2668,14 @@ export async function registerRoutes(
             results.errors.push(`Row ${i + 1}: Option too long (max 200 chars)`);
             continue;
           }
+          if (q.hint && (typeof q.hint !== 'string' || q.hint.length > 200)) {
+            results.errors.push(`Row ${i + 1}: Hint must be text and 200 characters or less`);
+            continue;
+          }
+          if (!q.correctOrder.every((item: any) => typeof item === 'string')) {
+            results.errors.push(`Row ${i + 1}: correctOrder items must be text`);
+            continue;
+          }
           
           await storage.createSequenceQuestion({
             userId,
@@ -2703,7 +2711,8 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Topic is required" });
       }
       
-      const questionCount = Math.min(Math.max(1, Number(count)), 5);
+      const parsedCount = Number(count);
+      const questionCount = Math.min(Math.max(1, isNaN(parsedCount) ? 3 : parsedCount), 5);
       
       const apiKey = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY;
       if (!apiKey) {
@@ -2791,8 +2800,8 @@ Keep options SHORT (max 50 chars each). Questions should be fun and educational.
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
         try {
-          if (!q.question || !q.optionA || !q.optionB || !q.optionC || !q.optionD) {
-            results.errors.push(`Question ${i + 1}: Missing required fields`);
+          if (!q.question || typeof q.question !== 'string' || !q.optionA || typeof q.optionA !== 'string' || !q.optionB || typeof q.optionB !== 'string' || !q.optionC || typeof q.optionC !== 'string' || !q.optionD || typeof q.optionD !== 'string') {
+            results.errors.push(`Question ${i + 1}: Missing or invalid required fields`);
             continue;
           }
 
@@ -2829,6 +2838,15 @@ Keep options SHORT (max 50 chars each). Questions should be fun and educational.
       
       if (!Array.isArray(messages) || messages.length === 0) {
         return res.status(400).json({ message: "Messages required" });
+      }
+      
+      const validRoles = new Set(['user', 'assistant']);
+      const sanitizedMessages = messages
+        .filter((m: any) => m && typeof m.role === 'string' && validRoles.has(m.role) && typeof m.content === 'string' && m.content.trim().length > 0)
+        .map((m: any) => ({ role: m.role, content: m.content.slice(0, 2000) }));
+      
+      if (sanitizedMessages.length === 0) {
+        return res.status(400).json({ message: "At least one valid message is required" });
       }
       
       const apiKey = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY;
@@ -2873,7 +2891,7 @@ Be creative and fun! Make questions engaging and varied.`;
           model: 'llama-3.3-70b-versatile',
           messages: [
             { role: 'system', content: systemPrompt },
-            ...messages.slice(-10) // Keep last 10 messages for context
+            ...sanitizedMessages.slice(-10) // Keep last 10 messages for context
           ],
           temperature: 0.8,
           max_tokens: 2000
@@ -6156,8 +6174,24 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room || !mapping.playerId) break;
 
+            if (room.sequencePhase !== 'playing') {
+              ws.send(JSON.stringify({ type: 'error', message: 'Not accepting answers right now' }));
+              break;
+            }
+
             if (room.sequencePaused) {
               ws.send(JSON.stringify({ type: 'error', message: 'Game is paused' }));
+              break;
+            }
+
+            if (!Array.isArray(data.sequence) || data.sequence.length !== 4 || !data.sequence.every((item: any) => typeof item === 'string' && ['A', 'B', 'C', 'D'].includes(item))) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Invalid sequence format' }));
+              break;
+            }
+
+            const seqSet = new Set(data.sequence);
+            if (seqSet.size !== 4) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Sequence must contain A, B, C, D exactly once' }));
               break;
             }
 
@@ -6286,6 +6320,7 @@ Generate exactly ${promptCount} prompts.`
                 sendToPlayer(player, {
                   type: 'sequence:reveal',
                   correctOrder,
+                  isCorrect: playerSub?.isCorrect || false,
                   rank: playerRank,
                   myScore: player.score,
                   leaderboard,

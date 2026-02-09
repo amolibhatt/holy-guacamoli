@@ -1737,11 +1737,11 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSequenceQuestion(id: number, userId: string, role?: string): Promise<boolean> {
     if (role === 'super_admin') {
-      const result = await db.delete(sequenceQuestions).where(eq(sequenceQuestions.id, id));
-      return !!result;
+      const result = await db.delete(sequenceQuestions).where(eq(sequenceQuestions.id, id)).returning();
+      return result.length > 0;
     }
-    const result = await db.delete(sequenceQuestions).where(and(eq(sequenceQuestions.id, id), eq(sequenceQuestions.userId, userId)));
-    return !!result;
+    const result = await db.delete(sequenceQuestions).where(and(eq(sequenceQuestions.id, id), eq(sequenceQuestions.userId, userId))).returning();
+    return result.length > 0;
   }
 
   async getPsyopQuestions(userId: string, role?: string): Promise<PsyopQuestion[]> {
