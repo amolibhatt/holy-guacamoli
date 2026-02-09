@@ -1147,11 +1147,11 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId!;
       const { name, mode, settings } = req.body;
-      if (!name) {
+      if (!name || typeof name !== 'string' || !name.trim()) {
         return res.status(400).json({ message: "Name is required" });
       }
       const game = await storage.createGame({
-        name,
+        name: name.trim(),
         mode: mode || "jeopardy",
         settings: settings || {},
         userId,
@@ -1172,7 +1172,14 @@ export async function registerRoutes(
       const userId = req.session.userId!;
       const role = req.session.userRole;
       const { name, mode, settings } = req.body;
-      const game = await storage.updateGame(gameId, { name, mode, settings }, userId, role);
+      if (name !== undefined && (typeof name !== 'string' || !name.trim())) {
+        return res.status(400).json({ message: "Name cannot be empty" });
+      }
+      const game = await storage.updateGame(gameId, { 
+        name: typeof name === 'string' ? name.trim() : name, 
+        mode, 
+        settings 
+      }, userId, role);
       if (!game) {
         return res.status(404).json({ message: "Game not found" });
       }
@@ -1236,8 +1243,8 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Game not found" });
       }
       const { boardId } = req.body;
-      if (!boardId) {
-        return res.status(400).json({ message: "boardId is required" });
+      if (typeof boardId !== 'number' || !Number.isInteger(boardId) || boardId <= 0) {
+        return res.status(400).json({ message: "A valid boardId is required" });
       }
       const board = await storage.getBoard(boardId, userId, role);
       if (!board) {
@@ -1277,20 +1284,34 @@ export async function registerRoutes(
 
   // === HEADS UP DECKS ===
   app.get("/api/heads-up-decks", isAuthenticated, isAdmin, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const decks = await storage.getHeadsUpDecks(userId, role);
-    res.json(decks);
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const decks = await storage.getHeadsUpDecks(userId, role);
+      res.json(decks);
+    } catch (err) {
+      console.error("Error fetching decks:", err);
+      res.status(500).json({ message: "Failed to fetch decks" });
+    }
   });
 
   app.get("/api/heads-up-decks/:id", isAuthenticated, isAdmin, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const deck = await storage.getHeadsUpDeck(Number(req.params.id), userId, role);
-    if (!deck) {
-      return res.status(404).json({ message: "Deck not found" });
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const deckId = parseId(req.params.id);
+      if (deckId === null) {
+        return res.status(400).json({ message: "Invalid deck ID" });
+      }
+      const deck = await storage.getHeadsUpDeck(deckId, userId, role);
+      if (!deck) {
+        return res.status(404).json({ message: "Deck not found" });
+      }
+      res.json(deck);
+    } catch (err) {
+      console.error("Error fetching deck:", err);
+      res.status(500).json({ message: "Failed to fetch deck" });
     }
-    res.json(deck);
   });
 
   app.post("/api/heads-up-decks", isAuthenticated, isAdmin, async (req, res) => {
@@ -1302,12 +1323,12 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Only Super Admins can create decks" });
       }
       const { name, description, imageUrl, timerSeconds } = req.body;
-      if (!name) {
+      if (!name || typeof name !== 'string' || !name.trim()) {
         return res.status(400).json({ message: "Name is required" });
       }
       const deck = await storage.createHeadsUpDeck({
-        name,
-        description: description || null,
+        name: name.trim(),
+        description: typeof description === 'string' ? description.trim() || null : null,
         imageUrl: imageUrl || null,
         timerSeconds: timerSeconds || 60,
         userId,
@@ -1328,7 +1349,11 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Only Super Admins can update decks" });
       }
       const { name, description, imageUrl, timerSeconds } = req.body;
-      const deck = await storage.updateHeadsUpDeck(Number(req.params.id), { name, description, imageUrl, timerSeconds }, userId, role);
+      const deckId = parseId(req.params.id);
+      if (deckId === null) {
+        return res.status(400).json({ message: "Invalid deck ID" });
+      }
+      const deck = await storage.updateHeadsUpDeck(deckId, { name, description, imageUrl, timerSeconds }, userId, role);
       if (!deck) {
         return res.status(404).json({ message: "Deck not found" });
       }
@@ -1340,29 +1365,46 @@ export async function registerRoutes(
   });
 
   app.delete("/api/heads-up-decks/:id", isAuthenticated, isAdmin, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    // Only Super Admins can delete decks
-    if (role !== 'super_admin') {
-      return res.status(403).json({ message: "Only Super Admins can delete decks" });
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      if (role !== 'super_admin') {
+        return res.status(403).json({ message: "Only Super Admins can delete decks" });
+      }
+      const deckId = parseId(req.params.id);
+      if (deckId === null) {
+        return res.status(400).json({ message: "Invalid deck ID" });
+      }
+      const deleted = await storage.deleteHeadsUpDeck(deckId, userId, role);
+      if (!deleted) {
+        return res.status(404).json({ message: "Deck not found" });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting deck:", err);
+      res.status(500).json({ message: "Failed to delete deck" });
     }
-    const deleted = await storage.deleteHeadsUpDeck(Number(req.params.id), userId, role);
-    if (!deleted) {
-      return res.status(404).json({ message: "Deck not found" });
-    }
-    res.json({ success: true });
   });
 
   // === HEADS UP CARDS ===
   app.get("/api/heads-up-decks/:deckId/cards", isAuthenticated, isAdmin, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const deck = await storage.getHeadsUpDeck(Number(req.params.deckId), userId, role);
-    if (!deck) {
-      return res.status(404).json({ message: "Deck not found" });
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const deckId = parseId(req.params.deckId);
+      if (deckId === null) {
+        return res.status(400).json({ message: "Invalid deck ID" });
+      }
+      const deck = await storage.getHeadsUpDeck(deckId, userId, role);
+      if (!deck) {
+        return res.status(404).json({ message: "Deck not found" });
+      }
+      const cards = await storage.getHeadsUpCards(deckId);
+      res.json(cards);
+    } catch (err) {
+      console.error("Error fetching cards:", err);
+      res.status(500).json({ message: "Failed to fetch cards" });
     }
-    const cards = await storage.getHeadsUpCards(Number(req.params.deckId));
-    res.json(cards);
   });
 
   app.post("/api/heads-up-decks/:deckId/cards", isAuthenticated, isAdmin, async (req, res) => {
@@ -1373,16 +1415,19 @@ export async function registerRoutes(
       if (role !== 'super_admin') {
         return res.status(403).json({ message: "Only Super Admins can create cards" });
       }
-      const deckId = Number(req.params.deckId);
+      const deckId = parseId(req.params.deckId);
+      if (deckId === null) {
+        return res.status(400).json({ message: "Invalid deck ID" });
+      }
       const deck = await storage.getHeadsUpDeck(deckId, userId, role);
       if (!deck) {
         return res.status(404).json({ message: "Deck not found" });
       }
       const { prompt, hints } = req.body;
-      if (!prompt) {
+      if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
         return res.status(400).json({ message: "Prompt is required" });
       }
-      const card = await storage.createHeadsUpCard({ deckId, prompt, hints: hints || [] });
+      const card = await storage.createHeadsUpCard({ deckId, prompt: prompt.trim(), hints: hints || [] });
       res.status(201).json(card);
     } catch (err) {
       console.error("Error creating card:", err);
@@ -1398,7 +1443,11 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Only Super Admins can update cards" });
       }
       const { prompt, hints } = req.body;
-      const card = await storage.updateHeadsUpCard(Number(req.params.id), { prompt, hints });
+      const cardId = parseId(req.params.id);
+      if (cardId === null) {
+        return res.status(400).json({ message: "Invalid card ID" });
+      }
+      const card = await storage.updateHeadsUpCard(cardId, { prompt, hints });
       if (!card) {
         return res.status(404).json({ message: "Card not found" });
       }
@@ -1410,42 +1459,62 @@ export async function registerRoutes(
   });
 
   app.delete("/api/heads-up-cards/:id", isAuthenticated, isAdmin, async (req, res) => {
-    const role = req.session.userRole;
-    // Only Super Admins can delete cards
-    if (role !== 'super_admin') {
-      return res.status(403).json({ message: "Only Super Admins can delete cards" });
+    try {
+      const role = req.session.userRole;
+      if (role !== 'super_admin') {
+        return res.status(403).json({ message: "Only Super Admins can delete cards" });
+      }
+      const cardId = parseId(req.params.id);
+      if (cardId === null) {
+        return res.status(400).json({ message: "Invalid card ID" });
+      }
+      const deleted = await storage.deleteHeadsUpCard(cardId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Card not found" });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting card:", err);
+      res.status(500).json({ message: "Failed to delete card" });
     }
-    const deleted = await storage.deleteHeadsUpCard(Number(req.params.id));
-    if (!deleted) {
-      return res.status(404).json({ message: "Card not found" });
-    }
-    res.json({ success: true });
   });
 
   // === GAME DECKS (junction for heads up) ===
   app.get("/api/games/:gameId/decks", isAuthenticated, isAdmin, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const game = await storage.getGame(Number(req.params.gameId), userId, role);
-    if (!game) {
-      return res.status(404).json({ message: "Game not found" });
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const gameId = parseId(req.params.gameId);
+      if (gameId === null) {
+        return res.status(400).json({ message: "Invalid game ID" });
+      }
+      const game = await storage.getGame(gameId, userId, role);
+      if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+      const gds = await storage.getGameDecks(gameId);
+      res.json(gds);
+    } catch (err) {
+      console.error("Error fetching game decks:", err);
+      res.status(500).json({ message: "Failed to fetch game decks" });
     }
-    const gds = await storage.getGameDecks(Number(req.params.gameId));
-    res.json(gds);
   });
 
   app.post("/api/games/:gameId/decks", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const gameId = Number(req.params.gameId);
+      const gameId = parseId(req.params.gameId);
+      if (gameId === null) {
+        return res.status(400).json({ message: "Invalid game ID" });
+      }
       const game = await storage.getGame(gameId, userId, role);
       if (!game) {
         return res.status(404).json({ message: "Game not found" });
       }
       const { deckId } = req.body;
-      if (!deckId) {
-        return res.status(400).json({ message: "deckId is required" });
+      if (typeof deckId !== 'number' || !Number.isInteger(deckId) || deckId <= 0) {
+        return res.status(400).json({ message: "A valid deckId is required" });
       }
       const deck = await storage.getHeadsUpDeck(deckId, userId, role);
       if (!deck) {
@@ -1460,18 +1529,30 @@ export async function registerRoutes(
   });
 
   app.delete("/api/games/:gameId/decks/:deckId", isAuthenticated, isAdmin, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const gameId = Number(req.params.gameId);
-    const game = await storage.getGame(gameId, userId, role);
-    if (!game) {
-      return res.status(404).json({ message: "Game not found" });
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const gameId = parseId(req.params.gameId);
+      if (gameId === null) {
+        return res.status(400).json({ message: "Invalid game ID" });
+      }
+      const deckId = parseId(req.params.deckId);
+      if (deckId === null) {
+        return res.status(400).json({ message: "Invalid deck ID" });
+      }
+      const game = await storage.getGame(gameId, userId, role);
+      if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+      const deleted = await storage.removeDeckFromGame(gameId, deckId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Deck not linked to this game" });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error removing deck from game:", err);
+      res.status(500).json({ message: "Failed to remove deck from game" });
     }
-    const deleted = await storage.removeDeckFromGame(gameId, Number(req.params.deckId));
-    if (!deleted) {
-      return res.status(404).json({ message: "Deck not linked to this game" });
-    }
-    res.json({ success: true });
   });
 
   // Session API routes
@@ -1899,6 +1980,10 @@ export async function registerRoutes(
         }
       }
       
+      // Pre-compute board count once for deterministic color assignment
+      const allBoardsForColor = await storage.getBoards(userId, 'super_admin');
+      let boardColorCounter = allBoardsForColor.length;
+      
       for (const pack of starterPacks) {
         // Check if board with same name already exists
         const existingBoards = await storage.getGlobalBoards();
@@ -1909,13 +1994,16 @@ export async function registerRoutes(
           continue;
         }
         
-        // Create the board
+        // Create the board with auto-assigned color and preserved colorCode from export
+        const starterColorIndex = boardColorCounter % BOARD_COLORS.length;
         const board = await storage.createBoard({
           name: pack.boardName,
           description: pack.boardDescription || '',
           pointValues: pack.pointValues || [10, 20, 30, 40, 50],
+          colorCode: pack.colorCode || BOARD_COLORS[starterColorIndex],
           userId: userId,
         });
+        boardColorCounter++;
         
         // Mark as global
         await storage.setGlobalBoard(board.id, true);
@@ -2107,8 +2195,8 @@ export async function registerRoutes(
   
   app.patch("/api/super-admin/boards/:id/moderation", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
-      const boardId = parseInt(req.params.id);
-      if (isNaN(boardId) || boardId <= 0) {
+      const boardId = parseId(req.params.id);
+      if (boardId === null) {
         return res.status(400).json({ message: "Invalid board ID" });
       }
       const { moderationStatus, isFeatured, flagReason } = req.body;
@@ -2156,13 +2244,18 @@ export async function registerRoutes(
   app.post("/api/super-admin/announcements", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
       const { title, message, type, expiresAt } = req.body;
-      if (!title || !message) {
-        return res.status(400).json({ message: "Title and message are required" });
+      if (!title || typeof title !== 'string' || !title.trim()) {
+        return res.status(400).json({ message: "Title is required" });
       }
+      if (!message || typeof message !== 'string' || !message.trim()) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+      const validTypes = ['info', 'warning', 'error', 'success'];
+      const announcementType = (type && validTypes.includes(type)) ? type : 'info';
       const announcement = await storage.createAnnouncement({
-        title,
-        message,
-        type: type || 'info',
+        title: title.trim(),
+        message: message.trim(),
+        type: announcementType,
         createdBy: req.session.userId!,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
       });
@@ -2185,8 +2278,8 @@ export async function registerRoutes(
 
   app.delete("/api/super-admin/announcements/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id) || id <= 0) {
+      const id = parseId(req.params.id);
+      if (id === null) {
         return res.status(400).json({ message: "Invalid announcement ID" });
       }
       await storage.deleteAnnouncement(id);
@@ -2255,8 +2348,8 @@ export async function registerRoutes(
 
   app.patch("/api/super-admin/questions/sequence/:id/starter-pack", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
-      const questionId = parseInt(req.params.id);
-      if (isNaN(questionId) || questionId <= 0) {
+      const questionId = parseId(req.params.id);
+      if (questionId === null) {
         return res.status(400).json({ message: "Invalid question ID" });
       }
       const { isStarterPack } = req.body;
@@ -2273,8 +2366,8 @@ export async function registerRoutes(
 
   app.patch("/api/super-admin/questions/psyop/:id/starter-pack", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
-      const questionId = parseInt(req.params.id);
-      if (isNaN(questionId) || questionId <= 0) {
+      const questionId = parseId(req.params.id);
+      if (questionId === null) {
         return res.status(400).json({ message: "Invalid question ID" });
       }
       const { isStarterPack } = req.body;
@@ -2410,8 +2503,8 @@ export async function registerRoutes(
 
   app.patch("/api/sequence-squeeze/questions/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id) || id <= 0) {
+      const id = parseId(req.params.id);
+      if (id === null) {
         return res.status(400).json({ message: "Invalid question ID" });
       }
       const userId = req.session.userId!;
@@ -2480,7 +2573,10 @@ export async function registerRoutes(
 
   app.delete("/api/sequence-squeeze/questions/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
       const userId = req.session.userId!;
       const role = req.session.userRole;
       
@@ -2846,7 +2942,10 @@ Be creative and fun! Make questions engaging and varied.`;
 
   app.put("/api/psyop/questions/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
       const userId = req.session.userId!;
       const role = req.session.userRole;
       const { factText, correctAnswer, category } = req.body;
@@ -2885,7 +2984,10 @@ Be creative and fun! Make questions engaging and varied.`;
 
   app.delete("/api/psyop/questions/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
       const userId = req.session.userId!;
       const role = req.session.userRole;
       
@@ -3116,7 +3218,10 @@ Be creative! Make facts surprising and fun to guess.`;
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const id = parseInt(req.params.id);
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
       
       const parsed = updateTimeWarpSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -3149,7 +3254,10 @@ Be creative! Make facts surprising and fun to guess.`;
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const id = parseInt(req.params.id);
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
       
       const deleted = await storage.deleteTimeWarpQuestion(id, userId, role);
       if (!deleted) {
@@ -3411,7 +3519,10 @@ Generate exactly ${promptCount} prompts.`
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const id = parseInt(req.params.id);
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid image ID" });
+      }
       
       const updated = await storage.updateMemeImage(id, req.body, userId, role);
       
@@ -3430,7 +3541,10 @@ Generate exactly ${promptCount} prompts.`
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const id = parseInt(req.params.id);
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid image ID" });
+      }
       
       const deleted = await storage.deleteMemeImage(id, userId, role);
       if (!deleted) {
@@ -4003,12 +4117,17 @@ Generate exactly ${promptCount} prompts.`
         }
       }
       
+      // Auto-assign color for new grids
+      const existingBoards = await storage.getBoards(userId, 'super_admin');
+      const colorIndex = existingBoards.length % BOARD_COLORS.length;
+      
       const board = await storage.createBoard({
         userId,
         name: name.trim(),
         description: (typeof description === "string" && description.trim()) ? description.trim() : "BlitzGrid",
         pointValues: [10, 20, 30, 40, 50],
         theme: gridTheme,
+        colorCode: BOARD_COLORS[colorIndex],
         visibility: "private",
         isGlobal: false,
         sortOrder: 0,
