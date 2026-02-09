@@ -317,7 +317,7 @@ export const memeSessions = pgTable("meme_sessions", {
   id: serial("id").primaryKey(),
   roomCode: text("room_code").notNull().unique(),
   hostId: text("host_id").notNull(),
-  status: text("status").notNull().$type<"lobby" | "playing" | "voting" | "results" | "finished">().default("lobby"),
+  status: text("status").notNull().$type<"lobby" | "selecting" | "voting" | "reveal" | "gameComplete" | "finished">().default("lobby"),
   currentRound: integer("current_round").notNull().default(0),
   totalRounds: integer("total_rounds").notNull().default(5),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -325,7 +325,7 @@ export const memeSessions = pgTable("meme_sessions", {
 
 export const memePlayers = pgTable("meme_players", {
   id: serial("id").primaryKey(),
-  sessionId: integer("session_id").notNull(),
+  sessionId: integer("session_id").notNull().references(() => memeSessions.id),
   name: text("name").notNull(),
   score: integer("score").notNull().default(0),
   hand: jsonb("hand").$type<number[]>().notNull().default([]),
@@ -336,9 +336,9 @@ export const memePlayers = pgTable("meme_players", {
 
 export const memeRounds = pgTable("meme_rounds", {
   id: serial("id").primaryKey(),
-  sessionId: integer("session_id").notNull(),
+  sessionId: integer("session_id").notNull().references(() => memeSessions.id),
   roundNumber: integer("round_number").notNull(),
-  promptId: integer("prompt_id").notNull(),
+  promptId: integer("prompt_id").notNull().references(() => memePrompts.id),
   status: text("status").notNull().$type<"selecting" | "voting" | "results">().default("selecting"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
@@ -348,9 +348,9 @@ export const memeRounds = pgTable("meme_rounds", {
 
 export const memeSubmissions = pgTable("meme_submissions", {
   id: serial("id").primaryKey(),
-  roundId: integer("round_id").notNull(),
-  playerId: integer("player_id").notNull(),
-  imageId: integer("image_id").notNull(),
+  roundId: integer("round_id").notNull().references(() => memeRounds.id),
+  playerId: integer("player_id").notNull().references(() => memePlayers.id),
+  imageId: integer("image_id").notNull().references(() => memeImages.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   index("idx_meme_submissions_round").on(table.roundId),
@@ -359,9 +359,9 @@ export const memeSubmissions = pgTable("meme_submissions", {
 
 export const memeVotes = pgTable("meme_votes", {
   id: serial("id").primaryKey(),
-  roundId: integer("round_id").notNull(),
+  roundId: integer("round_id").notNull().references(() => memeRounds.id),
   voterId: integer("voter_id").notNull(),
-  submissionId: integer("submission_id").notNull(),
+  submissionId: integer("submission_id").notNull().references(() => memeSubmissions.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   index("idx_meme_votes_round").on(table.roundId),

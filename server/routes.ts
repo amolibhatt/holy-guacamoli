@@ -3284,8 +3284,8 @@ Be creative! Make facts surprising and fun to guess.`;
         return res.status(400).json({ message: parsed.error.errors[0].message });
       }
 
-      const existingPrompts = await storage.getMemePrompts(userId, role);
-      const duplicate = existingPrompts.find(
+      const allPromptTexts = await storage.getAllMemePromptTexts();
+      const duplicate = allPromptTexts.find(
         p => p.prompt.toLowerCase().trim() === parsed.data.prompt.toLowerCase().trim()
       );
       if (duplicate) {
@@ -3330,8 +3330,8 @@ Be creative! Make facts surprising and fun to guess.`;
         if (!trimmedPrompt) {
           return res.status(400).json({ message: "Prompt cannot be empty" });
         }
-        const existingPrompts = await storage.getMemePrompts(userId, role);
-        const duplicate = existingPrompts.find(
+        const allPromptTexts = await storage.getAllMemePromptTexts();
+        const duplicate = allPromptTexts.find(
           p => p.id !== id && p.prompt.toLowerCase().trim() === trimmedPrompt.toLowerCase()
         );
         if (duplicate) {
@@ -3381,15 +3381,18 @@ Be creative! Make facts surprising and fun to guess.`;
     }
   });
 
-  const VALID_AI_CATEGORIES = ['work', 'dating', 'history', 'pop_culture', 'family', 'school', 'technology', 'existential', 'mixed'] as const;
+  const generatePromptsSchema = z.object({
+    category: z.enum(['work', 'dating', 'history', 'pop_culture', 'family', 'school', 'technology', 'existential', 'mixed']).default('mixed'),
+    count: z.coerce.number().int().min(1).max(20).default(10),
+  });
 
   app.post("/api/memenoharm/prompts/generate", isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const { category: rawCategory = "mixed", count = 10 } = req.body;
-      const parsedCount = parseInt(String(count), 10);
-      const promptCount = Math.min(Math.max(1, Number.isNaN(parsedCount) ? 10 : parsedCount), 20);
-
-      const category = VALID_AI_CATEGORIES.includes(rawCategory) ? rawCategory : 'mixed';
+      const parsed = generatePromptsSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.errors[0].message });
+      }
+      const { category, count: promptCount } = parsed.data;
 
       const groqKey = process.env.GROQ_API_KEY;
       const openaiKey = process.env.OPENAI_API_KEY;
@@ -3488,10 +3491,8 @@ Generate exactly ${promptCount} prompts.`
         return res.status(500).json({ message: "Failed to parse AI response" });
       }
 
-      const userId = req.session.userId!;
-      const role = req.session.userRole;
-      const existingPrompts = await storage.getMemePrompts(userId, role);
-      const existingSet = new Set(existingPrompts.map(p => p.prompt.toLowerCase().trim()));
+      const allPromptTexts = await storage.getAllMemePromptTexts();
+      const existingSet = new Set(allPromptTexts.map(p => p.prompt.toLowerCase().trim()));
       const dedupedPrompts = prompts.filter(p => !existingSet.has(p.toLowerCase()));
 
       res.json({ prompts: dedupedPrompts, totalGenerated: prompts.length, duplicatesRemoved: prompts.length - dedupedPrompts.length });
@@ -3532,8 +3533,8 @@ Generate exactly ${promptCount} prompts.`
       }
 
       const trimmedUrl = parsed.data.imageUrl.trim();
-      const existingImages = await storage.getMemeImages(userId, role);
-      const duplicate = existingImages.find(
+      const allImageUrls = await storage.getAllMemeImageUrls();
+      const duplicate = allImageUrls.find(
         img => img.imageUrl.trim().toLowerCase() === trimmedUrl.toLowerCase()
       );
       if (duplicate) {
@@ -3577,8 +3578,8 @@ Generate exactly ${promptCount} prompts.`
       const updateData: Record<string, any> = {};
       if (parsed.data.imageUrl !== undefined) {
         const trimmedUrl = parsed.data.imageUrl.trim();
-        const existingImages = await storage.getMemeImages(userId, role);
-        const duplicate = existingImages.find(
+        const allImageUrls = await storage.getAllMemeImageUrls();
+        const duplicate = allImageUrls.find(
           img => img.id !== id && img.imageUrl.trim().toLowerCase() === trimmedUrl.toLowerCase()
         );
         if (duplicate) {
