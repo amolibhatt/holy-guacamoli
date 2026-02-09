@@ -366,7 +366,7 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const { name, description, pointValues } = req.body;
+      const { name, description, pointValues, theme } = req.body;
       if (!name) {
         return res.status(400).json({ message: "Name is required" });
       }
@@ -380,6 +380,7 @@ export async function registerRoutes(
         description: description || null,
         pointValues: pointValues || [10, 20, 30, 40, 50],
         colorCode: autoColor,
+        theme: theme || "blitzgrid",
         userId,
       });
       res.status(201).json(board);
@@ -398,14 +399,14 @@ export async function registerRoutes(
       const userId = req.session.userId!;
       const role = req.session.userRole;
       const { name, description, pointValues, theme, isGlobal, sortOrder } = req.body;
-      const board = await storage.updateBoard(boardId, {
-        name,
-        description,
-        pointValues,
-        theme,
-        isGlobal,
-        sortOrder,
-      }, userId, role);
+      const updateData: Record<string, any> = {};
+      if (name !== undefined) updateData.name = name;
+      if (description !== undefined) updateData.description = description;
+      if (pointValues !== undefined) updateData.pointValues = pointValues;
+      if (theme !== undefined) updateData.theme = theme;
+      if (isGlobal !== undefined) updateData.isGlobal = isGlobal;
+      if (sortOrder !== undefined) updateData.sortOrder = sortOrder;
+      const board = await storage.updateBoard(boardId, updateData, userId, role);
       if (!board) {
         return res.status(404).json({ message: "Board not found" });
       }
@@ -424,9 +425,20 @@ export async function registerRoutes(
       }
       const userId = req.session.userId!;
       const role = req.session.userRole;
+      const board = await storage.getBoard(boardId, userId, role);
+      if (!board) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      const boardCats = await storage.getBoardCategories(boardId);
       const deleted = await storage.deleteBoard(boardId, userId, role);
       if (!deleted) {
         return res.status(404).json({ message: "Board not found" });
+      }
+      for (const bc of boardCats) {
+        const otherLinks = await storage.getBoardCategoriesByCategoryId(bc.categoryId);
+        if (otherLinks.length === 0) {
+          await storage.deleteCategory(bc.categoryId);
+        }
       }
       res.json({ success: true });
     } catch (err) {
@@ -556,52 +568,35 @@ export async function registerRoutes(
   });
 
   app.post("/api/boards/:boardId/categories/create-and-link", isAuthenticated, isAdmin, async (req, res) => {
-    const debugInfo: Record<string, any> = { timestamp: new Date().toISOString() };
     try {
-      debugInfo.step = "parseId";
       const boardId = parseId(req.params.boardId);
-      debugInfo.boardId = boardId;
       if (boardId === null) {
-        return res.status(400).json({ message: "Invalid board ID", debug: debugInfo });
+        return res.status(400).json({ message: "Invalid board ID" });
       }
-      debugInfo.step = "getSession";
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      debugInfo.userId = userId;
-      debugInfo.role = role;
       
-      debugInfo.step = "getBoard";
       const board = await storage.getBoard(boardId, userId, role);
-      debugInfo.boardFound = !!board;
       if (!board) {
-        return res.status(404).json({ message: "Board not found", debug: debugInfo });
+        return res.status(404).json({ message: "Board not found" });
       }
-      debugInfo.boardName = board.name;
       
       const { name, description, rule, sourceGroup } = req.body;
-      debugInfo.categoryName = name;
       if (!name || !name.trim()) {
-        return res.status(400).json({ message: "Category name is required", debug: debugInfo });
+        return res.status(400).json({ message: "Category name is required" });
       }
       
-      debugInfo.step = "getBoardCategories";
       const currentCategories = await storage.getBoardCategories(boardId);
-      debugInfo.currentCategoryCount = currentCategories.length;
       if (currentCategories.length >= 5) {
-        return res.status(400).json({ message: "Board already has 5 categories (maximum)", debug: debugInfo });
+        return res.status(400).json({ message: "Board already has 5 categories (maximum)" });
       }
       
-      debugInfo.step = "createCategory";
       const category = await storage.createCategory({ name: name.trim(), description: description?.trim() || '', rule: rule?.trim() || null, imageUrl: '', sourceGroup: sourceGroup || null });
-      debugInfo.categoryId = category.id;
       
-      debugInfo.step = "createBoardCategory";
       let bc;
       try {
-        bc = await storage.createBoardCategory({ boardId, categoryId: category.id });
-        debugInfo.boardCategoryId = bc.id;
+        bc = await storage.createBoardCategory({ boardId, categoryId: category.id, position: currentCategories.length });
       } catch (linkErr) {
-        debugInfo.linkError = linkErr instanceof Error ? linkErr.message : String(linkErr);
         try {
           await storage.deleteCategory(category.id);
         } catch (cleanupErr) {
@@ -610,15 +605,10 @@ export async function registerRoutes(
         throw linkErr;
       }
       
-      debugInfo.step = "success";
-      console.log("Category created successfully:", debugInfo);
       res.status(201).json({ category, boardCategory: bc });
     } catch (err) {
-      debugInfo.error = err instanceof Error ? err.message : String(err);
-      debugInfo.errorStack = err instanceof Error ? err.stack : undefined;
-      console.error("Error creating category:", debugInfo);
-      const errorMessage = err instanceof Error ? err.message : "Failed to create category";
-      res.status(500).json({ message: errorMessage, debug: debugInfo });
+      console.error("Error creating category:", err);
+      res.status(500).json({ message: "Failed to create category" });
     }
   });
 
@@ -711,12 +701,11 @@ export async function registerRoutes(
       const userId = req.session.userId!;
       const role = req.session.userRole;
       const categoryId = Number(req.params.id);
+      if (isNaN(categoryId)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
       
-      console.log("[PUT /api/categories/:id] userId:", userId, "role:", role, "categoryId:", categoryId);
-      
-      // Verify ownership
       const hasAccess = await verifyCategoryOwnership(categoryId, userId, role);
-      console.log("[PUT /api/categories/:id] hasAccess:", hasAccess);
       if (!hasAccess) {
         return res.status(403).json({ message: "You don't have permission to modify this category" });
       }
@@ -753,21 +742,28 @@ export async function registerRoutes(
   });
 
   app.delete(api.categories.delete.path, isAuthenticated, isAdmin, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const categoryId = Number(req.params.id);
-    
-    // Verify ownership
-    const hasAccess = await verifyCategoryOwnership(categoryId, userId, role);
-    if (!hasAccess) {
-      return res.status(403).json({ message: "You don't have permission to delete this category" });
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const categoryId = Number(req.params.id);
+      if (isNaN(categoryId)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+      
+      const hasAccess = await verifyCategoryOwnership(categoryId, userId, role);
+      if (!hasAccess) {
+        return res.status(403).json({ message: "You don't have permission to delete this category" });
+      }
+      
+      const deleted = await storage.deleteCategory(categoryId);
+      if (!deleted) {
+        return res.status(404).json({ message: 'Category not found' });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting category:", err);
+      res.status(500).json({ message: "Failed to delete category" });
     }
-    
-    const deleted = await storage.deleteCategory(categoryId);
-    if (!deleted) {
-      return res.status(404).json({ message: 'Category not found' });
-    }
-    res.json({ success: true });
   });
 
   // Helper to verify category exists (categories are global, no ownership check needed for read)
@@ -806,22 +802,29 @@ export async function registerRoutes(
 
   // Questions (by category) - protected with ownership check
   app.get("/api/categories/:categoryId/questions", isAuthenticated, isAdmin, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const categoryId = Number(req.params.categoryId);
-    
-    // Verify ownership
-    const hasAccess = await verifyCategoryOwnership(categoryId, userId, role);
-    if (!hasAccess) {
-      return res.status(404).json({ message: "Category not found" });
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const categoryId = Number(req.params.categoryId);
+      if (isNaN(categoryId)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+      
+      const hasAccess = await verifyCategoryOwnership(categoryId, userId, role);
+      if (!hasAccess) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      const category = await verifyCategoryExists(categoryId);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      const questions = await storage.getQuestionsByCategory(categoryId);
+      res.json(questions);
+    } catch (err) {
+      console.error("Error fetching questions:", err);
+      res.status(500).json({ message: "Failed to fetch questions" });
     }
-    
-    const category = await verifyCategoryExists(categoryId);
-    if (!category) {
-      return res.status(404).json({ message: "Category not found" });
-    }
-    const questions = await storage.getQuestionsByCategory(categoryId);
-    res.json(questions);
   });
 
   app.post(api.questions.create.path, isAuthenticated, isAdmin, async (req, res) => {
@@ -906,32 +909,32 @@ export async function registerRoutes(
   });
 
   app.delete(api.questions.delete.path, isAuthenticated, isAdmin, async (req, res) => {
-    const questionId = parseId(req.params.id);
-    if (questionId === null) {
-      return res.status(400).json({ message: 'Invalid question ID' });
+    try {
+      const questionId = parseId(req.params.id);
+      if (questionId === null) {
+        return res.status(400).json({ message: 'Invalid question ID' });
+      }
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const existingQuestion = await storage.getQuestion(questionId);
+      if (!existingQuestion) {
+        return res.status(404).json({ message: 'Question not found' });
+      }
+      
+      const hasAccess = await verifyCategoryOwnership(existingQuestion.categoryId, userId, role);
+      if (!hasAccess) {
+        return res.status(403).json({ message: "You don't have permission to delete this question" });
+      }
+      
+      const deleted = await storage.deleteQuestion(questionId);
+      if (!deleted) {
+        return res.status(404).json({ message: 'Question not found' });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting question:", err);
+      res.status(500).json({ message: "Failed to delete question" });
     }
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const existingQuestion = await storage.getQuestion(questionId);
-    if (!existingQuestion) {
-      return res.status(404).json({ message: 'Question not found' });
-    }
-    
-    // Verify ownership
-    const hasAccess = await verifyCategoryOwnership(existingQuestion.categoryId, userId, role);
-    if (!hasAccess) {
-      return res.status(403).json({ message: "You don't have permission to delete this question" });
-    }
-    
-    const category = await verifyCategoryExists(existingQuestion.categoryId);
-    if (!category) {
-      return res.status(404).json({ message: "Category not found" });
-    }
-    const deleted = await storage.deleteQuestion(questionId);
-    if (!deleted) {
-      return res.status(404).json({ message: 'Question not found' });
-    }
-    res.json({ success: true });
   });
 
   // Bulk import questions with validation
@@ -944,6 +947,9 @@ export async function registerRoutes(
       const userId = req.session.userId!;
       const role = req.session.userRole;
       const categoryId = Number(req.params.categoryId);
+      if (isNaN(categoryId)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
       const category = await verifyCategoryExists(categoryId);
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
@@ -4102,19 +4108,22 @@ Generate exactly ${promptCount} prompts.`
         return res.status(400).json({ message: "Grid already has 5 categories (maximum)" });
       }
       
-      // Create the category
       const category = await storage.createCategory({
         name: name.trim(),
         description: typeof description === "string" ? description.trim() : "",
         imageUrl: "",
       });
       
-      // Link to grid
-      await storage.createBoardCategory({
-        boardId: gridId,
-        categoryId: category.id,
-        position: existing.length,
-      });
+      try {
+        await storage.createBoardCategory({
+          boardId: gridId,
+          categoryId: category.id,
+          position: existing.length,
+        });
+      } catch (linkErr) {
+        try { await storage.deleteCategory(category.id); } catch (_) { /* cleanup best effort */ }
+        throw linkErr;
+      }
       
       res.json(category);
     } catch (err) {
@@ -4140,14 +4149,17 @@ Generate exactly ${promptCount} prompts.`
         return res.status(404).json({ message: "Grid not found" });
       }
       
-      // Find and delete the board-category link
-      const boardCategories = await storage.getBoardCategories(gridId);
-      const bc = boardCategories.find(x => x.categoryId === categoryId);
+      const boardCats = await storage.getBoardCategories(gridId);
+      const bc = boardCats.find(x => x.categoryId === categoryId);
       if (!bc) {
         return res.status(404).json({ message: "Category not linked to this grid" });
       }
       
       await storage.deleteBoardCategory(bc.id);
+      const otherLinks = await storage.getBoardCategoriesByCategoryId(categoryId);
+      if (otherLinks.length === 0) {
+        await storage.deleteCategory(categoryId);
+      }
       res.json({ success: true });
     } catch (err) {
       console.error("Error removing category from blitzgrid:", err);
@@ -4284,26 +4296,18 @@ Generate exactly ${promptCount} prompts.`
     try {
       const userId = req.session.userId!;
       const allBoards = await storage.getBoards(userId);
-      console.log("[EXPORT] All boards for user:", allBoards.length, allBoards.map(b => ({ id: b.id, name: b.name, theme: b.theme })));
       const boards = allBoards.filter(b => b.theme === "blitzgrid" || b.theme?.startsWith("blitzgrid:"));
-      console.log("[EXPORT] Filtered blitzgrid boards:", boards.length);
       
       const rows: any[] = [];
       rows.push(["Grid Name", "Grid Description", "Category Name", "Category Description", "Points", "Question", "Answer", "Options", "Image URL", "Audio URL", "Video URL"]);
       
       for (const board of boards) {
         const boardCategories = await storage.getBoardCategories(board.id);
-        console.log("[EXPORT] Board", board.id, board.name, "has", boardCategories.length, "categories");
-        
         for (const bc of boardCategories) {
           const category = await storage.getCategory(bc.categoryId);
-          if (!category) {
-            console.log("[EXPORT] Category not found for bc:", bc.categoryId);
-            continue;
-          }
+          if (!category) continue;
           
           const questions = await storage.getQuestionsByCategory(category.id);
-          console.log("[EXPORT] Category", category.id, category.name, "has", questions.length, "questions");
           for (const q of questions) {
             rows.push([
               board.name,
@@ -4474,6 +4478,7 @@ Generate exactly ${promptCount} prompts.`
             pointValues: [10, 20, 30, 40, 50],
           });
           
+          let catPosition = 0;
           for (const [catName, catData] of Array.from(gridData.categories.entries())) {
             const category = await storage.createCategory({
               name: catName.trim(),
@@ -4484,6 +4489,7 @@ Generate exactly ${promptCount} prompts.`
             await storage.createBoardCategory({
               boardId: board.id,
               categoryId: category.id,
+              position: catPosition++,
             });
             
             for (const q of catData.questions) {
