@@ -1846,8 +1846,13 @@ export class DatabaseStorage implements IStorage {
       ? eq(memePrompts.id, id)
       : and(eq(memePrompts.id, id), eq(memePrompts.userId, userId));
     
+    const safeData: Record<string, any> = {};
+    if (data.prompt !== undefined) safeData.prompt = data.prompt;
+    if (data.isActive !== undefined) safeData.isActive = data.isActive;
+    if (data.isStarterPack !== undefined) safeData.isStarterPack = data.isStarterPack;
+
     const [updated] = await db.update(memePrompts)
-      .set(data as any)
+      .set(safeData)
       .where(condition)
       .returning();
     return updated || null;
@@ -1879,8 +1884,14 @@ export class DatabaseStorage implements IStorage {
       ? eq(memeImages.id, id)
       : and(eq(memeImages.id, id), eq(memeImages.userId, userId));
     
+    const safeData: Record<string, any> = {};
+    if (data.imageUrl !== undefined) safeData.imageUrl = data.imageUrl;
+    if (data.caption !== undefined) safeData.caption = data.caption;
+    if (data.isActive !== undefined) safeData.isActive = data.isActive;
+    if (data.isStarterPack !== undefined) safeData.isStarterPack = data.isStarterPack;
+
     const [updated] = await db.update(memeImages)
-      .set(data as any)
+      .set(safeData)
       .where(condition)
       .returning();
     return updated || null;

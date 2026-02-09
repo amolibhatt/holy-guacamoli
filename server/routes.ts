@@ -3386,7 +3386,8 @@ Be creative! Make facts surprising and fun to guess.`;
   app.post("/api/memenoharm/prompts/generate", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { category: rawCategory = "mixed", count = 10 } = req.body;
-      const promptCount = Math.min(Math.max(1, Number(count)), 20);
+      const parsedCount = parseInt(String(count), 10);
+      const promptCount = Math.min(Math.max(1, Number.isNaN(parsedCount) ? 10 : parsedCount), 20);
 
       const category = VALID_AI_CATEGORIES.includes(rawCategory) ? rawCategory : 'mixed';
 
@@ -3417,12 +3418,16 @@ Be creative! Make facts surprising and fun to guess.`;
       const apiKey = groqKey || openaiKey;
       const model = useGroq ? 'llama-3.3-70b-versatile' : 'gpt-4o-mini';
 
+      const aiController = new AbortController();
+      const aiTimeout = setTimeout(() => aiController.abort(), 30000);
+
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
         },
+        signal: aiController.signal,
         body: JSON.stringify({
           model,
           messages: [
@@ -3455,6 +3460,8 @@ Generate exactly ${promptCount} prompts.`
         })
       });
 
+      clearTimeout(aiTimeout);
+
       if (!response.ok) {
         const error = await response.text();
         console.error(`${useGroq ? 'Groq' : 'OpenAI'} API error:`, error);
@@ -3481,9 +3488,18 @@ Generate exactly ${promptCount} prompts.`
         return res.status(500).json({ message: "Failed to parse AI response" });
       }
 
-      res.json({ prompts });
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const existingPrompts = await storage.getMemePrompts(userId, role);
+      const existingSet = new Set(existingPrompts.map(p => p.prompt.toLowerCase().trim()));
+      const dedupedPrompts = prompts.filter(p => !existingSet.has(p.toLowerCase()));
+
+      res.json({ prompts: dedupedPrompts, totalGenerated: prompts.length, duplicatesRemoved: prompts.length - dedupedPrompts.length });
     } catch (err) {
       console.error("Error generating Meme prompts:", err);
+      if (err instanceof Error && err.name === 'AbortError') {
+        return res.status(504).json({ message: "AI service timed out. Please try again." });
+      }
       res.status(500).json({ message: "Failed to generate prompts" });
     }
   });
@@ -3559,7 +3575,17 @@ Generate exactly ${promptCount} prompts.`
       }
 
       const updateData: Record<string, any> = {};
-      if (parsed.data.imageUrl !== undefined) updateData.imageUrl = parsed.data.imageUrl.trim();
+      if (parsed.data.imageUrl !== undefined) {
+        const trimmedUrl = parsed.data.imageUrl.trim();
+        const existingImages = await storage.getMemeImages(userId, role);
+        const duplicate = existingImages.find(
+          img => img.id !== id && img.imageUrl.trim().toLowerCase() === trimmedUrl.toLowerCase()
+        );
+        if (duplicate) {
+          return res.status(409).json({ message: "An image with this URL already exists" });
+        }
+        updateData.imageUrl = trimmedUrl;
+      }
       if (parsed.data.caption !== undefined) updateData.caption = parsed.data.caption?.trim() || null;
       if (parsed.data.isActive !== undefined) updateData.isActive = parsed.data.isActive;
 
@@ -3620,7 +3646,8 @@ Generate exactly ${promptCount} prompts.`
         return res.status(500).json({ message: "GIPHY API key not configured" });
       }
       
-      const url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(trimmedQuery)}&limit=${limit}&offset=${offset}&rating=pg-13&lang=en`;
+      const clampedOffset = Math.min(offset, 4999);
+      const url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(trimmedQuery)}&limit=${limit}&offset=${clampedOffset}&rating=pg-13&lang=en`;
       const response = await fetch(url);
       
       if (!response.ok) {
@@ -3630,8 +3657,9 @@ Generate exactly ${promptCount} prompts.`
       }
       
       const data = await response.json();
+      const gifs = Array.isArray(data?.data) ? data.data : [];
       
-      const results = data.data
+      const results = gifs
         .filter((gif: any) => gif?.images?.fixed_height_small?.url && gif?.images?.original?.url)
         .map((gif: any) => ({
           id: gif.id,
@@ -3644,8 +3672,8 @@ Generate exactly ${promptCount} prompts.`
       
       res.json({
         results,
-        totalCount: data.pagination.total_count,
-        offset: data.pagination.offset,
+        totalCount: data?.pagination?.total_count ?? 0,
+        offset: data?.pagination?.offset ?? 0,
       });
     } catch (err) {
       console.error("Error searching GIPHY:", err);
@@ -3663,7 +3691,8 @@ Generate exactly ${promptCount} prompts.`
         return res.status(500).json({ message: "GIPHY API key not configured" });
       }
       
-      const url = `https://api.giphy.com/v1/gifs/trending?api_key=${encodeURIComponent(apiKey)}&limit=${limit}&offset=${offset}&rating=pg-13`;
+      const clampedOffset = Math.min(offset, 4999);
+      const url = `https://api.giphy.com/v1/gifs/trending?api_key=${encodeURIComponent(apiKey)}&limit=${limit}&offset=${clampedOffset}&rating=pg-13`;
       const response = await fetch(url);
       
       if (!response.ok) {
@@ -3671,8 +3700,9 @@ Generate exactly ${promptCount} prompts.`
       }
       
       const data = await response.json();
+      const gifs = Array.isArray(data?.data) ? data.data : [];
       
-      const results = data.data
+      const results = gifs
         .filter((gif: any) => gif?.images?.fixed_height_small?.url && gif?.images?.original?.url)
         .map((gif: any) => ({
           id: gif.id,
@@ -3685,8 +3715,8 @@ Generate exactly ${promptCount} prompts.`
       
       res.json({
         results,
-        totalCount: data.pagination.total_count,
-        offset: data.pagination.offset,
+        totalCount: data?.pagination?.total_count ?? 0,
+        offset: data?.pagination?.offset ?? 0,
       });
     } catch (err) {
       console.error("Error fetching GIPHY trending:", err);
