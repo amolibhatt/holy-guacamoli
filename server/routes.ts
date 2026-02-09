@@ -4940,7 +4940,7 @@ Generate exactly ${promptCount} prompts.`
     memeRound?: number;
     memeTotalRounds?: number;
     memeSittingOut?: Set<string>;
-    memePhase?: 'lobby' | 'selecting' | 'voting' | 'reveal';
+    memePhase?: 'lobby' | 'selecting' | 'voting' | 'reveal' | 'gameComplete';
     memeUsedPrompts?: string[];
   }
 
@@ -6801,8 +6801,12 @@ Generate exactly ${promptCount} prompts.`
               }
               existingPlayer.ws = ws;
               existingPlayer.isConnected = true;
-              existingPlayer.name = data.name || existingPlayer.name;
-              existingPlayer.avatar = data.avatar || existingPlayer.avatar;
+              if (typeof data.name === 'string' && data.name.trim()) {
+                existingPlayer.name = data.name.trim().slice(0, 30);
+              }
+              if (typeof data.avatar === 'string' && data.avatar.trim()) {
+                existingPlayer.avatar = data.avatar.trim().slice(0, 50);
+              }
               wsToRoom.set(ws, { roomCode: room.code, isHost: false, playerId });
 
               ws.send(JSON.stringify({
@@ -6914,11 +6918,13 @@ Generate exactly ${promptCount} prompts.`
               console.log(`[WebSocket] Player ${existingPlayer.name} rejoined Meme No Harm room ${room.code}`);
             } else {
               const reconnectToken = crypto.randomUUID();
+              const playerName = (typeof data.name === 'string' && data.name.trim()) ? data.name.trim().slice(0, 30) : 'Player';
+              const playerAvatar = (typeof data.avatar === 'string' && data.avatar.trim()) ? data.avatar.trim().slice(0, 50) : 'cat';
               const player: RoomPlayer = {
                 id: playerId,
                 reconnectToken,
-                name: data.name || 'Player',
-                avatar: data.avatar || 'cat',
+                name: playerName,
+                avatar: playerAvatar,
                 score: 0,
                 ws,
                 isConnected: true,
@@ -6998,6 +7004,8 @@ Generate exactly ${promptCount} prompts.`
               room.memeUsedPrompts.push(room.memePrompt);
             }
 
+            const roundDeadline = Date.now() + 60000;
+
             room.players.forEach((player) => {
               if (player.ws && player.isConnected && !room.memeSittingOut?.has(player.id)) {
                 sendToPlayer(player, {
@@ -7005,10 +7013,17 @@ Generate exactly ${promptCount} prompts.`
                   prompt: room.memePrompt,
                   round: room.memeRound,
                   totalRounds: room.memeTotalRounds,
-                  deadline: data.deadline,
+                  deadline: roundDeadline,
                 });
               }
             });
+
+            sendToHost(room, {
+              type: 'meme:round:started',
+              round: room.memeRound,
+              deadline: roundDeadline,
+            });
+
             console.log(`[WebSocket] Meme No Harm round ${room.memeRound} started in room ${room.code}: "${room.memePrompt}"`);
             break;
           }
@@ -7031,12 +7046,25 @@ Generate exactly ${promptCount} prompts.`
               break;
             }
 
+            const gifUrl = data.gifUrl.trim().slice(0, 2048);
+            try {
+              const parsed = new URL(gifUrl);
+              if (!['http:', 'https:'].includes(parsed.protocol)) {
+                ws.send(JSON.stringify({ type: 'error', message: 'Invalid GIF URL' }));
+                break;
+              }
+            } catch {
+              ws.send(JSON.stringify({ type: 'error', message: 'Invalid GIF URL' }));
+              break;
+            }
+            const gifTitle = (typeof data.gifTitle === 'string' ? data.gifTitle : '').trim().slice(0, 200);
+
             const submission: MemeSubmission = {
               playerId: player.id,
               playerName: player.name,
               playerAvatar: player.avatar,
-              gifUrl: data.gifUrl,
-              gifTitle: data.gifTitle || '',
+              gifUrl,
+              gifTitle,
             };
 
             if (!room.memeSubmissions) room.memeSubmissions = new Map();
@@ -7064,6 +7092,11 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            if (room.memePhase !== 'selecting') {
+              ws.send(JSON.stringify({ type: 'error', message: 'Can only start voting during selecting phase' }));
+              break;
+            }
+
             if ((room.memeSubmissions?.size || 0) < 2) {
               ws.send(JSON.stringify({ type: 'error', message: 'Need at least 2 submissions to start voting' }));
               break;
@@ -7073,7 +7106,13 @@ Generate exactly ${promptCount} prompts.`
             room.memePhase = 'voting';
 
             const submissions = Array.from(room.memeSubmissions?.values() || []);
-            const shuffled = submissions.sort(() => Math.random() - 0.5);
+            const shuffled = [...submissions];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+
+            const votingDeadline = Date.now() + 30000;
 
             room.players.forEach((player) => {
               if (player.ws && player.isConnected && !room.memeSittingOut?.has(player.id)) {
@@ -7089,7 +7128,7 @@ Generate exactly ${promptCount} prompts.`
                   type: 'meme:voting:start',
                   submissions: filteredSubmissions,
                   prompt: room.memePrompt,
-                  deadline: data.deadline,
+                  deadline: votingDeadline,
                 });
                 console.log(`[WebSocket] Sent voting to player ${player.name} (${player.id}) with ${filteredSubmissions.length} submissions`);
               } else {
@@ -7105,6 +7144,7 @@ Generate exactly ${promptCount} prompts.`
                 gifUrl: s.gifUrl,
                 gifTitle: s.gifTitle,
               })),
+              deadline: votingDeadline,
             });
             console.log(`[WebSocket] Voting started in Meme No Harm room ${room.code}`);
             break;
@@ -7146,16 +7186,26 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            if (room.memePhase !== 'voting') {
+              ws.send(JSON.stringify({ type: 'error', message: 'Can only reveal during voting phase' }));
+              break;
+            }
+
+            const submissions = room.memeSubmissions || new Map();
+            if (submissions.size === 0) {
+              ws.send(JSON.stringify({ type: 'error', message: 'No submissions to reveal' }));
+              break;
+            }
+
             room.memePhase = 'reveal';
             const votes = room.memeVotes || new Map();
-            const submissions = room.memeSubmissions || new Map();
 
             const voteCount: Record<string, number> = {};
             votes.forEach((votedForId) => {
               voteCount[votedForId] = (voteCount[votedForId] || 0) + 1;
             });
 
-            const pointsPerVote = data.pointsPerVote || 100;
+            const pointsPerVote = 100;
             let roundWinnerId: string | null = null;
             let maxVotes = 0;
 
@@ -7358,6 +7408,12 @@ Generate exactly ${promptCount} prompts.`
             if (!mapping || !mapping.isHost) break;
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
+
+            if (room.memePhase === 'gameComplete') break;
+            if (room.memePhase === 'lobby') {
+              ws.send(JSON.stringify({ type: 'error', message: 'Game has not started yet' }));
+              break;
+            }
 
             room.memePhase = 'gameComplete';
 
