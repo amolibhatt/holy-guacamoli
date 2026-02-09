@@ -202,8 +202,20 @@ export default function MemeNoHarmPlayer() {
           }
           break;
 
+        case "meme:phaseSync":
+          if (data.phase === 'submitted') {
+            setPhase("submitted");
+          } else if (data.phase === 'voted') {
+            setPhase("voted");
+          }
+          break;
+
         case "host:disconnected":
           toast({ title: "Host disconnected", description: "Waiting for reconnection...", variant: "destructive" });
+          break;
+
+        case "host:reconnected":
+          toast({ title: "Host reconnected", description: "Game continues!" });
           break;
 
         case "error":

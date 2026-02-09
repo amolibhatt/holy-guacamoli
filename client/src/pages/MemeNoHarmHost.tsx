@@ -52,7 +52,7 @@ export default function MemeNoHarmHost() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [currentRound, setCurrentRound] = useState(0);
   const [totalRounds, setTotalRounds] = useState(5);
-  const [currentPrompt, setCurrentPrompt] = useState<MemePrompt | null>(null);
+  const [currentPromptText, setCurrentPromptText] = useState<string>("");
   const [shuffledPrompts, setShuffledPrompts] = useState<MemePrompt[]>([]);
   const [results, setResults] = useState<MemeResult[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -61,6 +61,8 @@ export default function MemeNoHarmHost() {
   const [submissionCount, setSubmissionCount] = useState(0);
   const [voteCount, setVoteCount] = useState(0);
   const [votingSubmissions, setVotingSubmissions] = useState<MemeResult[]>([]);
+  const [allSubmitted, setAllSubmitted] = useState(false);
+  const [allVoted, setAllVoted] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -118,6 +120,8 @@ export default function MemeNoHarmHost() {
           setCurrentRound(data.round || 0);
           setSubmissionCount(data.submissionCount || 0);
           setVoteCount(data.voteCount || 0);
+          setAllSubmitted(false);
+          setAllVoted(false);
 
           const restoredPlayers = (data.players || []).map((p: any) => ({
             id: p.id,
@@ -125,7 +129,7 @@ export default function MemeNoHarmHost() {
             avatar: p.avatar || 'cat',
             score: p.score || 0,
             submitted: p.submitted || false,
-            voted: false,
+            voted: p.voted || false,
             sittingOut: p.sittingOut || false,
           }));
           setPlayers(restoredPlayers);
@@ -142,8 +146,7 @@ export default function MemeNoHarmHost() {
           }
 
           if (data.prompt) {
-            const matchingPrompt = prompts.find(p => p.prompt === data.prompt);
-            if (matchingPrompt) setCurrentPrompt(matchingPrompt);
+            setCurrentPromptText(data.prompt);
           }
 
           if (data.results) {
@@ -193,6 +196,7 @@ export default function MemeNoHarmHost() {
           break;
 
         case "meme:allSubmitted":
+          setAllSubmitted(true);
           break;
 
         case "meme:vote":
@@ -203,6 +207,7 @@ export default function MemeNoHarmHost() {
           break;
 
         case "meme:allVoted":
+          setAllVoted(true);
           break;
 
         case "meme:voting:started":
@@ -242,9 +247,6 @@ export default function MemeNoHarmHost() {
           break;
 
         case "player:disconnected":
-          setPlayers(prev => prev.map(p =>
-            p.id === data.playerId ? { ...p, submitted: false } : p
-          ));
           break;
 
         case "error":
@@ -267,7 +269,7 @@ export default function MemeNoHarmHost() {
         }
       }, 3000);
     };
-  }, [user?.id, totalRounds, prompts]);
+  }, [user?.id, totalRounds]);
 
   useEffect(() => {
     return () => {
@@ -289,8 +291,9 @@ export default function MemeNoHarmHost() {
     if (players.length < 2) return;
     setCurrentRound(1);
     const prompt = shuffledPrompts[0];
-    setCurrentPrompt(prompt);
+    setCurrentPromptText(prompt.prompt);
     setSubmissionCount(0);
+    setAllSubmitted(false);
     setPlayers(prev => prev.map(p => ({ ...p, submitted: false, voted: false })));
     setPhase("selecting");
 
@@ -304,6 +307,7 @@ export default function MemeNoHarmHost() {
 
   const startVoting = () => {
     setVoteCount(0);
+    setAllVoted(false);
     setPlayers(prev => prev.map(p => ({ ...p, voted: false })));
     setPhase("voting");
 
@@ -329,8 +333,9 @@ export default function MemeNoHarmHost() {
 
     setCurrentRound(nextRoundNum);
     const prompt = shuffledPrompts[nextRoundNum - 1];
-    setCurrentPrompt(prompt);
+    setCurrentPromptText(prompt.prompt);
     setSubmissionCount(0);
+    setAllSubmitted(false);
     setResults([]);
     setVotingSubmissions([]);
     setPlayers(prev => prev.map(p => ({ ...p, submitted: false, voted: false })));
@@ -343,6 +348,27 @@ export default function MemeNoHarmHost() {
       deadline: Date.now() + 60000,
     });
   };
+
+  const resetGame = useCallback(() => {
+    wsRef.current?.close();
+    wsRef.current = null;
+    setRoomCode("");
+    setPlayers([]);
+    setCurrentRound(0);
+    setCurrentPromptText("");
+    setResults([]);
+    setLeaderboard([]);
+    setRoundWinnerId(null);
+    setRevealIndex(0);
+    setSubmissionCount(0);
+    setVoteCount(0);
+    setVotingSubmissions([]);
+    setAllSubmitted(false);
+    setAllVoted(false);
+    const shuffled = [...prompts].sort(() => Math.random() - 0.5);
+    setShuffledPrompts(shuffled);
+    setPhase("setup");
+  }, [prompts]);
 
   const sitOutPlayer = (playerId: string) => {
     sendWs({ type: "meme:host:sitOut", playerId });
@@ -431,7 +457,7 @@ export default function MemeNoHarmHost() {
           </Card>
 
           <div className="flex gap-4 justify-center">
-            <Button variant="outline" onClick={() => setLocation("/memenoharm/host")} className="text-white border-white/30" data-testid="button-play-again">
+            <Button variant="outline" onClick={resetGame} className="text-white border-white/30" data-testid="button-play-again">
               Play Again
             </Button>
             <Button onClick={() => setLocation("/")} data-testid="button-go-home-finished">
@@ -452,7 +478,7 @@ export default function MemeNoHarmHost() {
         <main className="max-w-3xl mx-auto px-4 py-8 flex-1 w-full">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-white mb-2">Round {currentRound} Results</h2>
-            <p className="text-white/60 text-lg">"{currentPrompt?.prompt}"</p>
+            <p className="text-white/60 text-lg">"{currentPromptText}"</p>
           </div>
 
           <div className="space-y-4 mb-8">
@@ -532,7 +558,7 @@ export default function MemeNoHarmHost() {
         <main className="max-w-3xl mx-auto px-4 py-8 flex-1 w-full">
           <div className="text-center mb-6">
             <h2 className="text-xl font-bold text-white mb-1">Voting Time!</h2>
-            <p className="text-white/60 text-lg mb-2">"{currentPrompt?.prompt}"</p>
+            <p className="text-white/60 text-lg mb-2">"{currentPromptText}"</p>
             <p className="text-white/40 text-sm">Players are voting for their favorite GIF</p>
           </div>
 
@@ -553,8 +579,8 @@ export default function MemeNoHarmHost() {
 
           <Card className="bg-white/5 border-white/10 mb-6">
             <CardContent className="pt-6">
-              <div className="text-center text-white/60 mb-4">
-                Votes received: {voteCount}
+              <div className={`text-center mb-4 ${allVoted ? 'text-green-400 font-bold' : 'text-white/60'}`}>
+                {allVoted ? 'All votes in!' : `Votes received: ${voteCount}`}
               </div>
               <div className="space-y-2">
                 {activePlayers.map(player => (
@@ -587,14 +613,14 @@ export default function MemeNoHarmHost() {
           <div className="text-center mb-6">
             <p className="text-green-400 text-sm font-medium mb-1">Round {currentRound} of {totalRounds}</p>
             <h2 className="text-2xl font-bold text-white mb-2">Find the Perfect GIF!</h2>
-            <p className="text-white/60 text-xl font-bold mt-4 mb-2">"{currentPrompt?.prompt}"</p>
+            <p className="text-white/60 text-xl font-bold mt-4 mb-2">"{currentPromptText}"</p>
             <p className="text-white/40 text-sm">Players are searching GIPHY on their phones</p>
           </div>
 
           <Card className="bg-white/5 border-white/10 mb-6">
             <CardContent className="pt-6">
-              <div className="text-center text-white/60 mb-4">
-                Waiting for submissions ({submissionCount}/{activePlayers.length} ready)
+              <div className={`text-center mb-4 ${allSubmitted ? 'text-green-400 font-bold' : 'text-white/60'}`}>
+                {allSubmitted ? 'All submissions in!' : `Waiting for submissions (${submissionCount}/${activePlayers.length} ready)`}
               </div>
               {activePlayers.length < 2 && (
                 <div className="text-center text-orange-400 text-sm mb-4">
