@@ -131,6 +131,7 @@ export default function MemeNoHarmPlayer() {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      console.log('[MemePlayer] Received:', data.type, data);
 
       switch (data.type) {
         case "meme:joined":

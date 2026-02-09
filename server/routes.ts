@@ -4501,6 +4501,7 @@ Generate exactly ${promptCount} prompts.`
     memeRound?: number;
     memeTotalRounds?: number;
     memeSittingOut?: Set<string>;
+    memePhase?: 'lobby' | 'selecting' | 'voting' | 'reveal';
   }
 
   interface MemeSubmission {
@@ -5929,15 +5930,32 @@ Generate exactly ${promptCount} prompts.`
               }));
 
               if (room.memePrompt && room.memeRound) {
-                const hasSubmitted = room.memeSubmissions?.has(playerId);
-                if (!hasSubmitted) {
+                if (room.memePhase === 'voting' && !room.memeVotes?.has(playerId)) {
+                  const submissions = Array.from(room.memeSubmissions?.values() || []);
+                  const filteredSubmissions = submissions
+                    .filter(s => s.playerId !== playerId)
+                    .map(s => ({
+                      id: s.playerId,
+                      gifUrl: s.gifUrl,
+                      gifTitle: s.gifTitle,
+                    }));
                   sendToPlayer(existingPlayer, {
-                    type: 'meme:round:start',
+                    type: 'meme:voting:start',
+                    submissions: filteredSubmissions,
                     prompt: room.memePrompt,
-                    round: room.memeRound,
-                    totalRounds: room.memeTotalRounds,
-                    deadline: Date.now() + 45000,
+                    deadline: Date.now() + 30000,
                   });
+                } else if (room.memePhase === 'selecting') {
+                  const hasSubmitted = room.memeSubmissions?.has(playerId);
+                  if (!hasSubmitted) {
+                    sendToPlayer(existingPlayer, {
+                      type: 'meme:round:start',
+                      prompt: room.memePrompt,
+                      round: room.memeRound,
+                      totalRounds: room.memeTotalRounds,
+                      deadline: Date.now() + 45000,
+                    });
+                  }
                 }
               }
 
@@ -5994,6 +6012,7 @@ Generate exactly ${promptCount} prompts.`
             room.memeVotes = new Map();
             room.memePrompt = data.prompt;
             room.memeRound = data.round;
+            room.memePhase = 'selecting';
 
             room.players.forEach((player) => {
               if (player.ws && player.isConnected && !room.memeSittingOut?.has(player.id)) {
@@ -6054,6 +6073,7 @@ Generate exactly ${promptCount} prompts.`
             if (!room) break;
 
             room.memeVotes = new Map();
+            room.memePhase = 'voting';
 
             const submissions = Array.from(room.memeSubmissions?.values() || []);
             const shuffled = submissions.sort(() => Math.random() - 0.5);
@@ -6074,6 +6094,9 @@ Generate exactly ${promptCount} prompts.`
                   prompt: room.memePrompt,
                   deadline: data.deadline,
                 });
+                console.log(`[WebSocket] Sent voting to player ${player.name} (${player.id}) with ${filteredSubmissions.length} submissions`);
+              } else {
+                console.log(`[WebSocket] Skipped voting for player ${player.name} (${player.id}): ws=${!!player.ws}, connected=${player.isConnected}, sittingOut=${room.memeSittingOut?.has(player.id)}`);
               }
             });
 
@@ -6126,6 +6149,7 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            room.memePhase = 'reveal';
             const votes = room.memeVotes || new Map();
             const submissions = room.memeSubmissions || new Map();
 
