@@ -8,6 +8,7 @@ import { Smile, Wifi, WifiOff, Trophy, Crown, Search, Loader2, Star, TrendingUp 
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { PLAYER_AVATARS, type AvatarId } from "@shared/schema";
+import { Logo } from "@/components/Logo";
 
 type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
 type GamePhase = "waiting" | "searching" | "submitted" | "voting" | "voted" | "reveal" | "gameComplete";
@@ -316,6 +317,9 @@ export default function MemeNoHarmPlayer() {
   if (!joined) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-join">
+        <div className="w-full flex justify-center pt-3 pb-1">
+          <Logo size="compact" />
+        </div>
         <div className="flex-1 flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -408,6 +412,9 @@ export default function MemeNoHarmPlayer() {
     const myRank = leaderboard.findIndex(e => e.playerId === playerId) + 1;
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col p-4" data-testid="page-memenoharm-complete">
+        <div className="w-full flex justify-center pt-3 pb-1">
+          <Logo size="compact" />
+        </div>
         <div className="flex-1 flex flex-col items-center justify-center max-w-sm mx-auto w-full">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-center mb-6">
             <Trophy className="w-16 h-16 text-yellow-400 mx-auto mb-3" />
@@ -448,6 +455,9 @@ export default function MemeNoHarmPlayer() {
     const myRank = leaderboard.findIndex(e => e.playerId === playerId) + 1;
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col p-4" data-testid="page-memenoharm-player-reveal">
+        <div className="w-full flex justify-center pt-3 pb-1">
+          <Logo size="compact" />
+        </div>
         <div className="flex-1 flex flex-col items-center justify-center max-w-sm mx-auto w-full">
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-4">
             {roundWinnerId === playerId ? (
@@ -476,6 +486,9 @@ export default function MemeNoHarmPlayer() {
   if (phase === "voted") {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col p-4" data-testid="page-memenoharm-voted">
+        <div className="w-full flex justify-center pt-3 pb-1">
+          <Logo size="compact" />
+        </div>
         <div className="flex-1 flex items-center justify-center">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-center">
             <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -492,6 +505,9 @@ export default function MemeNoHarmPlayer() {
   if (phase === "voting") {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-player-voting">
+        <div className="w-full flex justify-center pt-3 pb-1">
+          <Logo size="compact" />
+        </div>
         <div className="p-4 text-center">
           <h2 className="text-lg font-bold text-white mb-1">Vote for the Best GIF!</h2>
           <p className="text-green-200/60 text-sm">"{prompt}"</p>
@@ -531,6 +547,9 @@ export default function MemeNoHarmPlayer() {
   if (phase === "submitted") {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col p-4" data-testid="page-memenoharm-submitted">
+        <div className="w-full flex justify-center pt-3 pb-1">
+          <Logo size="compact" />
+        </div>
         <div className="flex-1 flex flex-col items-center justify-center">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-center">
             <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -552,6 +571,9 @@ export default function MemeNoHarmPlayer() {
   if (phase === "searching") {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-searching">
+        <div className="w-full flex justify-center pt-3 pb-1">
+          <Logo size="compact" />
+        </div>
         <div className="p-4 text-center sticky top-0 z-10 bg-green-900/90 backdrop-blur-sm">
           <p className="text-green-400 text-xs font-medium">Round {round} of {totalRounds}</p>
           <h2 className="text-lg font-bold text-white mb-2">"{prompt}"</h2>
@@ -646,6 +668,9 @@ export default function MemeNoHarmPlayer() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col p-4" data-testid="page-memenoharm-waiting">
+      <div className="w-full flex justify-center pt-3 pb-1">
+        <Logo size="compact" />
+      </div>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           {status === "connected" ? (

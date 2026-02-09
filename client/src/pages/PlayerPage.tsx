@@ -11,6 +11,7 @@ import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { soundManager } from "@/lib/sounds";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { PLAYER_AVATARS, type AvatarId } from "@shared/schema";
+import { Logo } from "@/components/Logo";
 
 type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error" | "reconnecting";
 
@@ -467,7 +468,10 @@ export default function PlayerPage() {
 
   if (!joined) {
     return (
-      <div className="min-h-screen gradient-game flex items-center justify-center p-4">
+      <div className="min-h-screen gradient-game flex flex-col items-center justify-center p-4">
+        <div className="w-full flex justify-center pb-4">
+          <Logo size="compact" />
+        </div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -566,6 +570,9 @@ export default function PlayerPage() {
 
   return (
     <div className="min-h-screen gradient-game flex flex-col" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="w-full flex justify-center pt-3 pb-1">
+        <Logo size="compact" />
+      </div>
       <InstallPrompt />
       <FullScreenFlash show={showBuzzFlash} color="bg-amber-400/60" />
       <FullScreenFlash show={showCorrectFlash} color="bg-emerald-400/60" />

@@ -10,6 +10,7 @@ import { ListOrdered, Wifi, WifiOff, Trophy, Timer, Check, X, RotateCcw, Sparkle
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { PLAYER_AVATARS, type AvatarId } from "@shared/schema";
+import { Logo } from "@/components/Logo";
 
 type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
 type GamePhase = "waiting" | "animatedReveal" | "playing" | "submitted" | "revealing" | "results" | "leaderboard" | "gameComplete";
@@ -272,6 +273,9 @@ export default function SequencePlayer() {
   if (!joined) {
     return (
       <div className="min-h-screen bg-teal-900 flex flex-col items-center justify-center p-6">
+        <div className="w-full flex justify-center pb-4">
+          <Logo size="compact" />
+        </div>
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-teal-500 flex items-center justify-center shadow-xl">
@@ -353,6 +357,9 @@ export default function SequencePlayer() {
 
   return (
     <div className="min-h-screen bg-teal-900 flex flex-col" data-testid="page-sequence-player">
+      <div className="w-full flex justify-center pt-3 pb-1">
+        <Logo size="compact" />
+      </div>
       <header className="p-4 flex items-center justify-between border-b border-white/10">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center shrink-0">
