@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Plus, Trash2, X, ListOrdered, Lightbulb, Check, Upload, ChevronDown, Loader2, Sparkles, Edit, Save } from "lucide-react";
+import { Plus, Trash2, X, ListOrdered, Lightbulb, Check, Upload, ChevronDown, Loader2, Sparkles, Edit, Save, RotateCcw } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import type { SequenceQuestion } from "@shared/schema";
@@ -38,7 +38,7 @@ export function SequenceSqueezeAdmin() {
   const [bulkPreviewMode, setBulkPreviewMode] = useState(false);
   
   const [aiGenerateOpen, setAiGenerateOpen] = useState(false);
-  const [aiMessages, setAiMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const [aiMessages, setAiMessages] = useState<{ role: 'user' | 'assistant' | 'error'; content: string }[]>([]);
   const [aiInput, setAiInput] = useState("");
   const [aiGeneratedQuestions, setAiGeneratedQuestions] = useState<ParsedQuestion[]>([]);
   const [savingQuestionIdx, setSavingQuestionIdx] = useState<number | null>(null);
@@ -79,7 +79,6 @@ export function SequenceSqueezeAdmin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sequence-squeeze/questions"] });
       toast({ title: "Question created!" });
-      resetForm();
     },
     onError: (error: Error) => {
       toast({ title: error.message || "Failed to create question", variant: "destructive" });
@@ -171,14 +170,14 @@ export function SequenceSqueezeAdmin() {
       }
     },
     onError: (error: Error) => {
-      toast({ title: error.message || "Failed to generate", variant: "destructive" });
+      setAiMessages(prev => [...prev, { role: 'error', content: error.message || "Something went wrong. Try again." }]);
     },
   });
 
   const saveGeneratedQuestion = async (q: ParsedQuestion, idx: number) => {
     setSavingQuestionIdx(idx);
     try {
-      await createMutation.mutateAsync({
+      const res = await apiRequest("POST", "/api/sequence-squeeze/questions", {
         question: q.question,
         optionA: q.optionA,
         optionB: q.optionB,
@@ -188,7 +187,15 @@ export function SequenceSqueezeAdmin() {
         hint: q.hint,
         isActive: true,
       });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to save question");
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/sequence-squeeze/questions"] });
+      toast({ title: "Question saved!" });
       setAiGeneratedQuestions(prev => prev.filter((_, i) => i !== idx));
+    } catch (error: any) {
+      toast({ title: error.message || "Failed to save question", variant: "destructive" });
     } finally {
       setSavingQuestionIdx(null);
     }
@@ -196,10 +203,14 @@ export function SequenceSqueezeAdmin() {
 
   const handleAiSend = () => {
     if (!aiInput.trim() || aiChatMutation.isPending) return;
-    const newMessages = [...aiMessages, { role: 'user' as const, content: aiInput }];
-    setAiMessages(newMessages);
+    const userMsg = { role: 'user' as const, content: aiInput };
+    const updatedMessages = [...aiMessages, userMsg];
+    setAiMessages(updatedMessages);
     setAiInput("");
-    aiChatMutation.mutate({ messages: newMessages });
+    const apiMessages = updatedMessages
+      .filter(m => m.role !== 'error')
+      .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+    aiChatMutation.mutate({ messages: apiMessages });
   };
 
   const parseBulkImport = (text: string): ParsedQuestion[] => {
@@ -227,6 +238,8 @@ export function SequenceSqueezeAdmin() {
     return parsed;
   };
 
+  const parsedBulkQuestions = useMemo(() => parseBulkImport(bulkImportText), [bulkImportText]);
+
   const resetForm = () => {
     setShowForm(false);
     setQuestion("");
@@ -237,24 +250,34 @@ export function SequenceSqueezeAdmin() {
     setHint("");
   };
 
-  const handleSubmit = () => {
-    if (!question || !option1 || !option2 || !option3 || !option4) {
+  const handleSubmit = async () => {
+    const q = question.trim();
+    const o1 = option1.trim();
+    const o2 = option2.trim();
+    const o3 = option3.trim();
+    const o4 = option4.trim();
+    if (!q || !o1 || !o2 || !o3 || !o4) {
       toast({ title: "Please fill in all options", variant: "destructive" });
       return;
     }
-    createMutation.mutate({
-      question,
-      optionA: option1,
-      optionB: option2,
-      optionC: option3,
-      optionD: option4,
-      correctOrder: ["A", "B", "C", "D"],
-      hint: hint || null,
-      isActive: true,
-    });
+    try {
+      await createMutation.mutateAsync({
+        question: q,
+        optionA: o1,
+        optionB: o2,
+        optionC: o3,
+        optionD: o4,
+        correctOrder: ["A", "B", "C", "D"],
+        hint: hint.trim() || null,
+        isActive: true,
+      });
+      resetForm();
+    } catch {
+    }
   };
 
   const startEditing = (q: SequenceQuestion) => {
+    setShowForm(false);
     setEditingId(q.id);
     setEditQuestion(q.question);
     setEditOptionA(q.optionA);
@@ -267,7 +290,12 @@ export function SequenceSqueezeAdmin() {
 
   const handleEditSave = () => {
     if (!editingId) return;
-    if (!editQuestion || !editOptionA || !editOptionB || !editOptionC || !editOptionD) {
+    const q = editQuestion.trim();
+    const a = editOptionA.trim();
+    const b = editOptionB.trim();
+    const c = editOptionC.trim();
+    const d = editOptionD.trim();
+    if (!q || !a || !b || !c || !d) {
       toast({ title: "Please fill in all fields", variant: "destructive" });
       return;
     }
@@ -278,21 +306,22 @@ export function SequenceSqueezeAdmin() {
     updateMutation.mutate({
       id: editingId,
       data: {
-        question: editQuestion,
-        optionA: editOptionA,
-        optionB: editOptionB,
-        optionC: editOptionC,
-        optionD: editOptionD,
+        question: q,
+        optionA: a,
+        optionB: b,
+        optionC: c,
+        optionD: d,
         correctOrder: editCorrectOrder,
-        hint: editHint || null,
+        hint: editHint.trim() || null,
       },
     });
   };
 
   const handleEditLetterClick = (letter: string) => {
-    if (editCorrectOrder.includes(letter)) {
-      setEditCorrectOrder(editCorrectOrder.filter(l => l !== letter));
-    } else if (editCorrectOrder.length < 4) {
+    const lastIdx = editCorrectOrder.length - 1;
+    if (editCorrectOrder[lastIdx] === letter) {
+      setEditCorrectOrder(editCorrectOrder.slice(0, lastIdx));
+    } else if (!editCorrectOrder.includes(letter) && editCorrectOrder.length < 4) {
       setEditCorrectOrder([...editCorrectOrder, letter]);
     }
   };
@@ -312,6 +341,21 @@ export function SequenceSqueezeAdmin() {
     }));
   };
 
+  const handleBulkImportOpenChange = (open: boolean) => {
+    setBulkImportOpen(open);
+    if (!open) {
+      setBulkPreviewMode(false);
+    }
+  };
+
+  const handleToggleCreateForm = () => {
+    const next = !showForm;
+    setShowForm(next);
+    if (next) {
+      setEditingId(null);
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto space-y-6" data-testid="section-sequence-squeeze-admin">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -328,7 +372,7 @@ export function SequenceSqueezeAdmin() {
             {aiGenerateOpen ? "Cancel" : "AI Generate"}
           </Button>
           <Button
-            onClick={() => setShowForm(!showForm)}
+            onClick={handleToggleCreateForm}
             variant={showForm ? "outline" : "default"}
             data-testid="button-toggle-sequence-form"
           >
@@ -371,7 +415,16 @@ export function SequenceSqueezeAdmin() {
                 ) : (
                   <div className="max-h-48 overflow-y-auto space-y-2 text-sm">
                     {aiMessages.map((msg, i) => (
-                      <div key={i} className={`p-2 rounded ${msg.role === 'user' ? 'bg-purple-500/20 ml-8' : 'bg-muted mr-8'}`}>
+                      <div
+                        key={i}
+                        className={`p-2 rounded ${
+                          msg.role === 'user'
+                            ? 'bg-purple-500/20 ml-8'
+                            : msg.role === 'error'
+                            ? 'bg-destructive/20 text-destructive mr-8'
+                            : 'bg-muted mr-8'
+                        }`}
+                      >
                         {msg.content}
                       </div>
                     ))}
@@ -518,7 +571,7 @@ export function SequenceSqueezeAdmin() {
         )}
       </AnimatePresence>
 
-      <Collapsible open={bulkImportOpen} onOpenChange={setBulkImportOpen}>
+      <Collapsible open={bulkImportOpen} onOpenChange={handleBulkImportOpenChange}>
         <CollapsibleTrigger asChild>
           <Button 
             variant="outline" 
@@ -551,12 +604,12 @@ export function SequenceSqueezeAdmin() {
                     />
                     <div className="flex justify-between items-center gap-4 mt-3">
                       <p className="text-xs text-muted-foreground">
-                        {parseBulkImport(bulkImportText).length} valid question(s)
+                        {parsedBulkQuestions.length} valid question(s)
                       </p>
                       <Button
                         size="sm"
                         onClick={() => setBulkPreviewMode(true)}
-                        disabled={parseBulkImport(bulkImportText).length === 0}
+                        disabled={parsedBulkQuestions.length === 0}
                         data-testid="button-preview-import"
                       >
                         Preview
@@ -569,7 +622,7 @@ export function SequenceSqueezeAdmin() {
                   <div className="rounded-lg border overflow-hidden">
                     <div className="bg-muted px-3 py-2 text-xs font-medium">Preview</div>
                     <div className="max-h-48 overflow-y-auto divide-y">
-                      {parseBulkImport(bulkImportText).map((q, idx) => (
+                      {parsedBulkQuestions.map((q, idx) => (
                         <div key={idx} className="px-3 py-2 text-sm" data-testid={`preview-row-${idx}`}>
                           <p className="font-medium truncate">{q.question}</p>
                           <p className="text-xs text-muted-foreground mt-1">
@@ -591,16 +644,15 @@ export function SequenceSqueezeAdmin() {
                     <Button
                       size="sm"
                       onClick={() => {
-                        const questions = parseBulkImport(bulkImportText);
-                        if (questions.length > 0) {
-                          bulkImportMutation.mutate(questions);
+                        if (parsedBulkQuestions.length > 0) {
+                          bulkImportMutation.mutate(parsedBulkQuestions);
                         }
                       }}
                       disabled={bulkImportMutation.isPending}
                       data-testid="button-confirm-import"
                     >
                       {bulkImportMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                      Import {parseBulkImport(bulkImportText).length}
+                      Import {parsedBulkQuestions.length}
                     </Button>
                   </div>
                 </>
@@ -622,7 +674,7 @@ export function SequenceSqueezeAdmin() {
             <p className="text-sm text-muted-foreground mb-4">
               Add your first ordering question
             </p>
-            <Button onClick={() => setShowForm(true)} data-testid="button-create-first-sequence">
+            <Button onClick={() => { setShowForm(true); setEditingId(null); }} data-testid="button-create-first-sequence">
               <Plus className="w-4 h-4 mr-2" /> Add Question
             </Button>
           </CardContent>
@@ -663,10 +715,26 @@ export function SequenceSqueezeAdmin() {
                       ))}
                     </div>
                     <div>
-                      <Label className="text-sm font-medium mb-1.5 block">Correct Order (tap in order)</Label>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <Label className="text-sm font-medium">Correct Order (tap in order)</Label>
+                        {editCorrectOrder.length > 0 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditCorrectOrder([])}
+                            className="text-xs text-muted-foreground"
+                            data-testid={`edit-order-reset-${q.id}`}
+                          >
+                            <RotateCcw className="w-3 h-3 mr-1" />
+                            Reset
+                          </Button>
+                        )}
+                      </div>
                       <div className="flex gap-2 mb-2">
                         {["A", "B", "C", "D"].map((letter) => {
                           const idx = editCorrectOrder.indexOf(letter);
+                          const isLast = idx === editCorrectOrder.length - 1;
                           return (
                             <Button
                               key={letter}
@@ -674,6 +742,7 @@ export function SequenceSqueezeAdmin() {
                               variant={idx >= 0 ? "default" : "outline"}
                               className="w-10 h-10"
                               onClick={() => handleEditLetterClick(letter)}
+                              disabled={idx >= 0 && !isLast}
                               data-testid={`edit-order-${letter}-${q.id}`}
                             >
                               {idx >= 0 ? idx + 1 : letter}
