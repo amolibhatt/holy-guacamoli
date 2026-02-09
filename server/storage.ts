@@ -164,6 +164,7 @@ export interface IStorage {
   
   // Sort Circuit
   getSequenceQuestions(userId: string, role?: string): Promise<SequenceQuestion[]>;
+  getSequenceQuestionById(id: number): Promise<SequenceQuestion | null>;
   createSequenceQuestion(data: InsertSequenceQuestion): Promise<SequenceQuestion>;
   updateSequenceQuestion(id: number, data: Partial<InsertSequenceQuestion>, userId: string, role?: string): Promise<SequenceQuestion | null>;
   deleteSequenceQuestion(id: number, userId: string, role?: string): Promise<boolean>;
@@ -1718,6 +1719,11 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(sequenceQuestions).where(eq(sequenceQuestions.userId, userId)).orderBy(desc(sequenceQuestions.createdAt));
   }
 
+  async getSequenceQuestionById(id: number): Promise<SequenceQuestion | null> {
+    const [question] = await db.select().from(sequenceQuestions).where(eq(sequenceQuestions.id, id));
+    return question || null;
+  }
+
   async createSequenceQuestion(data: InsertSequenceQuestion): Promise<SequenceQuestion> {
     const [question] = await db.insert(sequenceQuestions).values(data as any).returning();
     return question;
@@ -2717,7 +2723,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllSequenceQuestionsWithCreators() {
-    const allQuestions = await db.select({
+    const rows = await db.select({
       id: sequenceQuestions.id,
       userId: sequenceQuestions.userId,
       question: sequenceQuestions.question,
@@ -2730,30 +2736,23 @@ export class DatabaseStorage implements IStorage {
       isActive: sequenceQuestions.isActive,
       isStarterPack: sequenceQuestions.isStarterPack,
       createdAt: sequenceQuestions.createdAt,
+      creatorId: users.id,
+      creatorFirstName: users.firstName,
+      creatorLastName: users.lastName,
+      creatorEmail: users.email,
     }).from(sequenceQuestions)
+      .leftJoin(users, eq(sequenceQuestions.userId, users.id))
       .orderBy(desc(sequenceQuestions.createdAt));
 
-    const questionsWithCreators = await Promise.all(allQuestions.map(async (q) => {
-      let creator = null;
-      if (q.userId) {
-        const [user] = await db.select({
-          id: users.id,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          email: users.email,
-        }).from(users).where(eq(users.id, q.userId));
-        if (user) {
-          creator = {
-            id: user.id,
-            username: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || 'Unknown',
-            email: user.email,
-          };
-        }
-      }
+    return rows.map(row => {
+      const { creatorId, creatorFirstName, creatorLastName, creatorEmail, ...q } = row;
+      const creator = creatorId ? {
+        id: creatorId,
+        username: [creatorFirstName, creatorLastName].filter(Boolean).join(' ') || creatorEmail || 'Unknown',
+        email: creatorEmail,
+      } : null;
       return { ...q, creator };
-    }));
-
-    return questionsWithCreators;
+    });
   }
 
   async getAllPsyopQuestionsWithCreators() {

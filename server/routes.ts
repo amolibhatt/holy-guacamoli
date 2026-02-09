@@ -2492,7 +2492,7 @@ export async function registerRoutes(
       
       const validLetters = new Set(['A', 'B', 'C', 'D']);
       const orderSet = new Set(correctOrder);
-      if (orderSet.size !== 4 || !correctOrder.every((l: string) => validLetters.has(l))) {
+      if (orderSet.size !== 4 || !correctOrder.every((l: any) => typeof l === 'string' && validLetters.has(l))) {
         return res.status(400).json({ message: "correctOrder must contain exactly A, B, C, D in some order" });
       }
       
@@ -2509,6 +2509,12 @@ export async function registerRoutes(
       if (tOptionA.length > 200 || tOptionB.length > 200 || tOptionC.length > 200 || tOptionD.length > 200) {
         return res.status(400).json({ message: "Each option must be 200 characters or less" });
       }
+      
+      const optionValues = new Set([tOptionA.toLowerCase(), tOptionB.toLowerCase(), tOptionC.toLowerCase(), tOptionD.toLowerCase()]);
+      if (optionValues.size < 4) {
+        return res.status(400).json({ message: "All four options must be unique" });
+      }
+      
       if (hint !== undefined && hint !== null && typeof hint !== 'string') {
         return res.status(400).json({ message: "Hint must be text" });
       }
@@ -2525,7 +2531,7 @@ export async function registerRoutes(
         optionD: tOptionD,
         correctOrder,
         hint: tHint || null,
-        isActive: isActive === true,
+        isActive: isActive !== false,
       });
       
       res.status(201).json(newQuestion);
@@ -2585,7 +2591,7 @@ export async function registerRoutes(
         }
         const validLetters = new Set(['A', 'B', 'C', 'D']);
         const orderSet = new Set(correctOrder);
-        if (orderSet.size !== 4 || !correctOrder.every((l: string) => validLetters.has(l))) {
+        if (orderSet.size !== 4 || !correctOrder.every((l: any) => typeof l === 'string' && validLetters.has(l))) {
           return res.status(400).json({ message: "correctOrder must contain exactly A, B, C, D in some order" });
         }
         updateData.correctOrder = correctOrder;
@@ -2604,6 +2610,19 @@ export async function registerRoutes(
       
       if (Object.keys(updateData).length === 0) {
         return res.status(400).json({ message: "No fields to update" });
+      }
+      
+      if (updateData.optionA !== undefined || updateData.optionB !== undefined || updateData.optionC !== undefined || updateData.optionD !== undefined) {
+        const currentQ = await storage.getSequenceQuestionById(id);
+        if (currentQ) {
+          const finalA = (updateData.optionA || currentQ.optionA).toLowerCase();
+          const finalB = (updateData.optionB || currentQ.optionB).toLowerCase();
+          const finalC = (updateData.optionC || currentQ.optionC).toLowerCase();
+          const finalD = (updateData.optionD || currentQ.optionD).toLowerCase();
+          if (new Set([finalA, finalB, finalC, finalD]).size < 4) {
+            return res.status(400).json({ message: "All four options must be unique" });
+          }
+        }
       }
       
       const updated = await storage.updateSequenceQuestion(id, updateData, userId, role);
@@ -2675,7 +2694,7 @@ export async function registerRoutes(
             continue;
           }
           const orderSet = new Set(q.correctOrder);
-          if (orderSet.size !== 4 || !q.correctOrder.every((l: string) => validLetters.has(l))) {
+          if (orderSet.size !== 4 || !q.correctOrder.every((l: any) => typeof l === 'string' && validLetters.has(l))) {
             results.errors.push(`Row ${i + 1}: correctOrder must contain A, B, C, D exactly once`);
             continue;
           }
@@ -2684,6 +2703,11 @@ export async function registerRoutes(
           const trimmedB = q.optionB.trim();
           const trimmedC = q.optionC.trim();
           const trimmedD = q.optionD.trim();
+          const bulkOptionValues = new Set([trimmedA.toLowerCase(), trimmedB.toLowerCase(), trimmedC.toLowerCase(), trimmedD.toLowerCase()]);
+          if (bulkOptionValues.size < 4) {
+            results.errors.push(`Row ${i + 1}: All four options must be unique`);
+            continue;
+          }
           const trimmedHint = (q.hint && typeof q.hint === 'string') ? q.hint.trim() : null;
           if (trimmedQ.length > 500) {
             results.errors.push(`Row ${i + 1}: Question too long (max 500 chars)`);
@@ -2740,10 +2764,18 @@ export async function registerRoutes(
         return res.status(400).json({ message: "At least one valid message is required" });
       }
       
-      const apiKey = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY;
-      if (!apiKey) {
-        return res.status(500).json({ message: "AI service not configured. Please set GROQ_API_KEY." });
+      const groqKey = process.env.GROQ_API_KEY;
+      const openaiKey = process.env.OPENAI_API_KEY;
+      if (!groqKey && !openaiKey) {
+        return res.status(500).json({ message: "AI service not configured. Please set GROQ_API_KEY or OPENAI_API_KEY." });
       }
+
+      const useGroq = !!groqKey;
+      const apiKey = groqKey || openaiKey!;
+      const apiUrl = useGroq
+        ? 'https://api.groq.com/openai/v1/chat/completions'
+        : 'https://api.openai.com/v1/chat/completions';
+      const model = useGroq ? 'llama-3.3-70b-versatile' : 'gpt-4o-mini';
 
       const systemPrompt = `You are a friendly assistant helping create "Sort Circuit" game questions. These are ordering/ranking questions where players put 4 items in correct order.
 
@@ -2772,17 +2804,17 @@ If the user just wants to chat or asks for changes, respond conversationally. On
 
 Be creative and fun! Make questions engaging and varied.`;
 
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model,
           messages: [
             { role: 'system', content: systemPrompt },
-            ...sanitizedMessages.slice(-10) // Keep last 10 messages for context
+            ...sanitizedMessages.slice(-10)
           ],
           temperature: 0.8,
           max_tokens: 2000
