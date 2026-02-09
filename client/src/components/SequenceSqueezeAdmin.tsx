@@ -209,6 +209,7 @@ export function SequenceSqueezeAdmin() {
   }, [aiMessages, aiChatMutation.isPending]);
 
   const saveGeneratedQuestion = async (q: ParsedQuestion, idx: number) => {
+    if (savingQuestionIdx !== null) return;
     setSavingQuestionIdx(idx);
     try {
       const res = await apiRequest("POST", "/api/sequence-squeeze/questions", {
@@ -276,13 +277,7 @@ export function SequenceSqueezeAdmin() {
 
   const resetForm = () => {
     setShowForm(false);
-    setQuestion("");
-    setOption1("");
-    setOption2("");
-    setOption3("");
-    setOption4("");
-    setHint("");
-    setCreateCorrectOrder([]);
+    clearCreateForm();
   };
 
   const handleCreateLetterClick = (letter: string) => {
@@ -295,13 +290,14 @@ export function SequenceSqueezeAdmin() {
   };
 
   const handleSubmit = async () => {
+    if (createMutation.isPending) return;
     const q = question.trim();
     const o1 = option1.trim();
     const o2 = option2.trim();
     const o3 = option3.trim();
     const o4 = option4.trim();
     if (!q || !o1 || !o2 || !o3 || !o4) {
-      toast({ title: "Please fill in all options", variant: "destructive" });
+      toast({ title: "Please fill in the question and all options", variant: "destructive" });
       return;
     }
     const order = createCorrectOrder.length === 4 ? createCorrectOrder : ["A", "B", "C", "D"];
@@ -324,6 +320,7 @@ export function SequenceSqueezeAdmin() {
   const startEditing = (q: SequenceQuestion) => {
     setShowForm(false);
     setAiGenerateOpen(false);
+    setBulkImportOpen(false);
     setEditingId(q.id);
     setEditQuestion(q.question);
     setEditOptionA(q.optionA);
@@ -389,15 +386,30 @@ export function SequenceSqueezeAdmin() {
 
   const handleBulkImportOpenChange = (open: boolean) => {
     setBulkImportOpen(open);
-    if (!open) {
+    if (open) {
+      setShowForm(false);
+      setAiGenerateOpen(false);
+      setEditingId(null);
+    } else {
       setBulkPreviewMode(false);
     }
+  };
+
+  const clearCreateForm = () => {
+    setQuestion("");
+    setOption1("");
+    setOption2("");
+    setOption3("");
+    setOption4("");
+    setHint("");
+    setCreateCorrectOrder([]);
   };
 
   const handleToggleCreateForm = () => {
     const next = !showForm;
     setShowForm(next);
     if (next) {
+      clearCreateForm();
       setEditingId(null);
       setAiGenerateOpen(false);
       setBulkImportOpen(false);
@@ -506,13 +518,14 @@ export function SequenceSqueezeAdmin() {
                           <p className="text-xs text-muted-foreground">{getOrderedOptionsFromParsed(q).join(' → ')}</p>
                         </div>
                         <Button
-                          size="sm"
+                          size="icon"
+                          variant="ghost"
                           onClick={() => saveGeneratedQuestion(q, idx)}
                           disabled={savingQuestionIdx !== null}
                           className="shrink-0"
                           data-testid={`button-save-ai-question-${idx}`}
                         >
-                          {savingQuestionIdx === idx ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                          {savingQuestionIdx === idx ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                         </Button>
                       </div>
                     ))}
@@ -529,6 +542,7 @@ export function SequenceSqueezeAdmin() {
                     data-testid="input-ai-chat"
                   />
                   <Button
+                    size="icon"
                     onClick={handleAiSend}
                     disabled={!aiInput.trim() || aiChatMutation.isPending}
                     data-testid="button-send-ai"
@@ -616,8 +630,8 @@ export function SequenceSqueezeAdmin() {
                         <Button
                           key={letter}
                           type="button"
+                          size="icon"
                           variant={idx >= 0 ? "default" : "outline"}
-                          className="w-10 h-10"
                           onClick={() => handleCreateLetterClick(letter)}
                           disabled={idx >= 0 && !isLast}
                           data-testid={`create-order-${letter}`}
@@ -780,7 +794,7 @@ export function SequenceSqueezeAdmin() {
             <p className="text-sm text-muted-foreground mb-4">
               Add your first ordering question
             </p>
-            <Button onClick={() => { setShowForm(true); setEditingId(null); setAiGenerateOpen(false); setBulkImportOpen(false); setCreateCorrectOrder([]); }} data-testid="button-create-first-sequence">
+            <Button onClick={() => { clearCreateForm(); setShowForm(true); setEditingId(null); setAiGenerateOpen(false); setBulkImportOpen(false); }} data-testid="button-create-first-sequence">
               <Plus className="w-4 h-4 mr-2" /> Add Question
             </Button>
           </CardContent>
@@ -845,8 +859,8 @@ export function SequenceSqueezeAdmin() {
                             <Button
                               key={letter}
                               type="button"
+                              size="icon"
                               variant={idx >= 0 ? "default" : "outline"}
-                              className="w-10 h-10"
                               onClick={() => handleEditLetterClick(letter)}
                               disabled={idx >= 0 && !isLast}
                               data-testid={`edit-order-${letter}-${q.id}`}
