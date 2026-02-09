@@ -171,13 +171,17 @@ export default function MemeNoHarmPlayer() {
           setLeaderboard(data.leaderboard);
           setRoundWinnerId(data.roundWinnerId);
           setPhase("reveal");
-          if (data.roundWinnerId === playerId) {
+          if (data.roundWinnerId === playerIdRef.current) {
             confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
           }
           break;
 
         case "meme:sittingOut":
           toast({ title: "You're sitting out this round", description: "The host has benched you for now." });
+          if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+            searchTimeoutRef.current = null;
+          }
           setPhase("waiting");
           break;
 
@@ -188,7 +192,7 @@ export default function MemeNoHarmPlayer() {
             setLeaderboard(data.leaderboard);
             setRoundWinnerId(data.roundWinnerId);
             setPhase("reveal");
-            if (data.roundWinnerId === playerId) {
+            if (data.roundWinnerId === playerIdRef.current) {
               confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
             }
           } else if (data.phase === 'gameComplete' && data.leaderboard) {
@@ -196,7 +200,7 @@ export default function MemeNoHarmPlayer() {
             setLeaderboard(data.leaderboard);
             setWinner(data.winner);
             setPhase("gameComplete");
-            if (data.winner?.playerId === playerId) {
+            if (data.winner?.playerId === playerIdRef.current) {
               confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
             }
           } else if (data.phase === 'voting' && data.submissions) {
@@ -223,7 +227,7 @@ export default function MemeNoHarmPlayer() {
           setLeaderboard(data.leaderboard);
           setWinner(data.winner);
           setPhase("gameComplete");
-          if (data.winner?.playerId === playerId) {
+          if (data.winner?.playerId === playerIdRef.current) {
             confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
           }
           break;
@@ -252,6 +256,7 @@ export default function MemeNoHarmPlayer() {
             joinedRef.current = false;
             setJoined(false);
             setPhase("waiting");
+            ws.close();
           }
           break;
       }
@@ -280,7 +285,7 @@ export default function MemeNoHarmPlayer() {
   const votedRef = useRef(false);
 
   const submitGif = () => {
-    if (!selectedGif || !wsRef.current || submittedRef.current) return;
+    if (!selectedGif || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN || submittedRef.current) return;
     submittedRef.current = true;
     wsRef.current.send(JSON.stringify({
       type: "meme:player:submit",
@@ -291,7 +296,7 @@ export default function MemeNoHarmPlayer() {
   };
 
   const submitVote = (votedForId: string) => {
-    if (!wsRef.current || votedRef.current) return;
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN || votedRef.current) return;
     votedRef.current = true;
     wsRef.current.send(JSON.stringify({
       type: "meme:player:vote",

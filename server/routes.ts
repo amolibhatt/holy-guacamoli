@@ -6323,6 +6323,7 @@ Generate exactly ${promptCount} prompts.`
 
             if (room.memeVotes?.has(mapping.playerId)) break;
             if (data.votedForId === mapping.playerId) break;
+            if (!room.memeSubmissions?.has(data.votedForId)) break;
 
             if (!room.memeVotes) room.memeVotes = new Map();
             room.memeVotes.set(mapping.playerId, data.votedForId);

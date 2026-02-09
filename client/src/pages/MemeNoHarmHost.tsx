@@ -186,7 +186,7 @@ export default function MemeNoHarmHost() {
         case "meme:player:joined":
           setPlayers(prev => {
             if (data.isReconnect) {
-              return prev.map(p => p.id === data.playerId ? { ...p, name: data.playerName, connected: true } : p);
+              return prev.map(p => p.id === data.playerId ? { ...p, name: data.playerName, avatar: data.playerAvatar || p.avatar, connected: true } : p);
             }
             if (prev.find(p => p.id === data.playerId)) return prev;
             return [...prev, {
