@@ -2705,9 +2705,9 @@ export async function registerRoutes(
       
       const questionCount = Math.min(Math.max(1, Number(count)), 5);
       
-      const apiKey = process.env.OPENAI_API_KEY;
+      const apiKey = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY;
       if (!apiKey) {
-        return res.status(500).json({ message: "AI service not configured" });
+        return res.status(500).json({ message: "AI service not configured. Please set GROQ_API_KEY." });
       }
 
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -2831,9 +2831,9 @@ Keep options SHORT (max 50 chars each). Questions should be fun and educational.
         return res.status(400).json({ message: "Messages required" });
       }
       
-      const apiKey = process.env.OPENAI_API_KEY;
+      const apiKey = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY;
       if (!apiKey) {
-        return res.status(500).json({ message: "AI service not configured" });
+        return res.status(500).json({ message: "AI service not configured. Please set GROQ_API_KEY." });
       }
 
       const systemPrompt = `You are a friendly assistant helping create "Sort Circuit" game questions. These are ordering/ranking questions where players put 4 items in correct order.
@@ -3096,9 +3096,9 @@ Be creative and fun! Make questions engaging and varied.`;
         return res.status(400).json({ message: "Messages required" });
       }
       
-      const apiKey = process.env.OPENAI_API_KEY;
+      const apiKey = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY;
       if (!apiKey) {
-        return res.status(500).json({ message: "AI service not configured" });
+        return res.status(500).json({ message: "AI service not configured. Please set GROQ_API_KEY." });
       }
 
       const systemPrompt = `You are a friendly assistant helping create "PsyOp" game questions. PsyOp is a deception game where:
@@ -3419,9 +3419,9 @@ Be creative! Make facts surprising and fun to guess.`;
       const { category = "mixed", count = 10 } = req.body;
       const promptCount = Math.min(Math.max(1, Number(count)), 20);
 
-      const apiKey = process.env.OPENAI_API_KEY;
+      const apiKey = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY;
       if (!apiKey) {
-        return res.status(500).json({ message: "AI service not configured" });
+        return res.status(500).json({ message: "AI service not configured. Please set GROQ_API_KEY." });
       }
 
       const categoryInstructions: Record<string, string> = {
