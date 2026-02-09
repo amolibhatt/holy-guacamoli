@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
@@ -53,6 +53,8 @@ export function SequenceSqueezeAdmin() {
   const [editCorrectOrder, setEditCorrectOrder] = useState<string[]>([]);
 
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [createCorrectOrder, setCreateCorrectOrder] = useState<string[]>([]);
+  const aiChatEndRef = useRef<HTMLDivElement>(null);
 
   const { data: questions = [], isLoading } = useQuery<SequenceQuestion[]>({
     queryKey: ["/api/sequence-squeeze/questions"],
@@ -174,6 +176,15 @@ export function SequenceSqueezeAdmin() {
     },
   });
 
+  const getOrderedOptionsFromParsed = (q: ParsedQuestion) => {
+    const optionMap: Record<string, string> = { A: q.optionA, B: q.optionB, C: q.optionC, D: q.optionD };
+    return q.correctOrder.map(letter => optionMap[letter]);
+  };
+
+  useEffect(() => {
+    aiChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [aiMessages, aiChatMutation.isPending]);
+
   const saveGeneratedQuestion = async (q: ParsedQuestion, idx: number) => {
     setSavingQuestionIdx(idx);
     try {
@@ -248,6 +259,16 @@ export function SequenceSqueezeAdmin() {
     setOption3("");
     setOption4("");
     setHint("");
+    setCreateCorrectOrder([]);
+  };
+
+  const handleCreateLetterClick = (letter: string) => {
+    const lastIdx = createCorrectOrder.length - 1;
+    if (createCorrectOrder[lastIdx] === letter) {
+      setCreateCorrectOrder(createCorrectOrder.slice(0, lastIdx));
+    } else if (!createCorrectOrder.includes(letter) && createCorrectOrder.length < 4) {
+      setCreateCorrectOrder([...createCorrectOrder, letter]);
+    }
   };
 
   const handleSubmit = async () => {
@@ -260,6 +281,7 @@ export function SequenceSqueezeAdmin() {
       toast({ title: "Please fill in all options", variant: "destructive" });
       return;
     }
+    const order = createCorrectOrder.length === 4 ? createCorrectOrder : ["A", "B", "C", "D"];
     try {
       await createMutation.mutateAsync({
         question: q,
@@ -267,7 +289,7 @@ export function SequenceSqueezeAdmin() {
         optionB: o2,
         optionC: o3,
         optionD: o4,
-        correctOrder: ["A", "B", "C", "D"],
+        correctOrder: order,
         hint: hint.trim() || null,
         isActive: true,
       });
@@ -278,6 +300,7 @@ export function SequenceSqueezeAdmin() {
 
   const startEditing = (q: SequenceQuestion) => {
     setShowForm(false);
+    setAiGenerateOpen(false);
     setEditingId(q.id);
     setEditQuestion(q.question);
     setEditOptionA(q.optionA);
@@ -353,6 +376,16 @@ export function SequenceSqueezeAdmin() {
     setShowForm(next);
     if (next) {
       setEditingId(null);
+      setAiGenerateOpen(false);
+    }
+  };
+
+  const handleToggleAiPanel = () => {
+    const next = !aiGenerateOpen;
+    setAiGenerateOpen(next);
+    if (next) {
+      setShowForm(false);
+      setEditingId(null);
     }
   };
 
@@ -364,7 +397,7 @@ export function SequenceSqueezeAdmin() {
         </div>
         <div className="flex items-center gap-2">
           <Button
-            onClick={() => setAiGenerateOpen(!aiGenerateOpen)}
+            onClick={handleToggleAiPanel}
             variant={aiGenerateOpen ? "outline" : "secondary"}
             data-testid="button-ai-generate"
           >
@@ -434,6 +467,7 @@ export function SequenceSqueezeAdmin() {
                         Thinking...
                       </div>
                     )}
+                    <div ref={aiChatEndRef} />
                   </div>
                 )}
 
@@ -444,12 +478,12 @@ export function SequenceSqueezeAdmin() {
                       <div key={idx} className="p-2 bg-muted rounded border border-border text-sm flex items-start gap-2">
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{q.question}</p>
-                          <p className="text-xs text-muted-foreground">{q.optionA} → {q.optionB} → {q.optionC} → {q.optionD}</p>
+                          <p className="text-xs text-muted-foreground">{getOrderedOptionsFromParsed(q).join(' → ')}</p>
                         </div>
                         <Button
                           size="sm"
                           onClick={() => saveGeneratedQuestion(q, idx)}
-                          disabled={savingQuestionIdx === idx}
+                          disabled={savingQuestionIdx !== null}
                           className="shrink-0"
                           data-testid={`button-save-ai-question-${idx}`}
                         >
@@ -465,7 +499,7 @@ export function SequenceSqueezeAdmin() {
                     placeholder="Ask for questions..."
                     value={aiInput}
                     onChange={(e) => setAiInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && !aiChatMutation.isPending && handleAiSend()}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && !aiChatMutation.isPending && handleAiSend()}
                     className="flex-1"
                     data-testid="input-ai-chat"
                   />
@@ -507,30 +541,78 @@ export function SequenceSqueezeAdmin() {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-medium mb-3 block">Options (in correct order)</Label>
+                  <Label className="text-sm font-medium mb-3 block">Options</Label>
                   <p className="text-xs text-muted-foreground mb-4">
-                    Type options 1st to 4th. Players will see them shuffled.
+                    Enter the four options. Players will see them shuffled.
                   </p>
                   <div className="space-y-3">
                     {[
-                      { num: 1, value: option1, setter: setOption1, label: "1st" },
-                      { num: 2, value: option2, setter: setOption2, label: "2nd" },
-                      { num: 3, value: option3, setter: setOption3, label: "3rd" },
-                      { num: 4, value: option4, setter: setOption4, label: "4th" },
-                    ].map(({ num, value, setter, label }) => (
-                      <div key={num} className="flex items-center gap-3">
+                      { letter: "A", value: option1, setter: setOption1 },
+                      { letter: "B", value: option2, setter: setOption2 },
+                      { letter: "C", value: option3, setter: setOption3 },
+                      { letter: "D", value: option4, setter: setOption4 },
+                    ].map(({ letter, value, setter }) => (
+                      <div key={letter} className="flex items-center gap-3">
                         <span className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-sm font-semibold text-muted-foreground shrink-0">
-                          {label}
+                          {letter}
                         </span>
                         <Input
-                          placeholder={`Option ${num}`}
+                          placeholder={`Option ${letter}`}
                           value={value}
                           onChange={(e) => setter(e.target.value)}
-                          data-testid={`input-option-${num}`}
+                          data-testid={`input-option-${letter}`}
                         />
                       </div>
                     ))}
                   </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <Label className="text-sm font-medium">Correct Order (tap in order)</Label>
+                    {createCorrectOrder.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCreateCorrectOrder([])}
+                        className="text-xs text-muted-foreground"
+                        data-testid="create-order-reset"
+                      >
+                        <RotateCcw className="w-3 h-3 mr-1" />
+                        Reset
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex gap-2 mb-2">
+                    {["A", "B", "C", "D"].map((letter) => {
+                      const idx = createCorrectOrder.indexOf(letter);
+                      const isLast = idx === createCorrectOrder.length - 1;
+                      return (
+                        <Button
+                          key={letter}
+                          type="button"
+                          variant={idx >= 0 ? "default" : "outline"}
+                          className="w-10 h-10"
+                          onClick={() => handleCreateLetterClick(letter)}
+                          disabled={idx >= 0 && !isLast}
+                          data-testid={`create-order-${letter}`}
+                        >
+                          {idx >= 0 ? idx + 1 : letter}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  {createCorrectOrder.length > 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      Order: {createCorrectOrder.join(" → ")}
+                      {createCorrectOrder.length < 4 && " (tap more)"}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Default: A → B → C → D (tap letters above to set custom order)
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -595,11 +677,11 @@ export function SequenceSqueezeAdmin() {
                     <p className="text-xs text-muted-foreground mb-2">
                       Format: Question | 1st | 2nd | 3rd | 4th | Hint (optional)
                     </p>
-                    <textarea
+                    <Textarea
                       value={bulkImportText}
                       onChange={(e) => setBulkImportText(e.target.value)}
                       placeholder="Planets by distance | Mercury | Venus | Earth | Mars | closest to sun"
-                      className="w-full h-32 p-3 text-sm rounded-md border border-input bg-background resize-none font-mono"
+                      className="h-32 resize-none font-mono text-sm"
                       data-testid="textarea-bulk-import"
                     />
                     <div className="flex justify-between items-center gap-4 mt-3">
@@ -626,7 +708,7 @@ export function SequenceSqueezeAdmin() {
                         <div key={idx} className="px-3 py-2 text-sm" data-testid={`preview-row-${idx}`}>
                           <p className="font-medium truncate">{q.question}</p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {q.optionA} → {q.optionB} → {q.optionC} → {q.optionD}
+                            {getOrderedOptionsFromParsed(q).join(' → ')}
                           </p>
                         </div>
                       ))}
