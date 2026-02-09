@@ -1612,6 +1612,9 @@ export async function registerRoutes(
   app.delete("/api/super-admin/boards/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
       const boardId = Number(req.params.id);
+      if (isNaN(boardId) || boardId <= 0) {
+        return res.status(400).json({ message: "Invalid board ID" });
+      }
       await storage.deleteBoardFully(boardId);
       res.json({ success: true });
     } catch (err) {
@@ -1623,7 +1626,13 @@ export async function registerRoutes(
   app.patch("/api/super-admin/boards/:id/global", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
       const boardId = Number(req.params.id);
+      if (isNaN(boardId) || boardId <= 0) {
+        return res.status(400).json({ message: "Invalid board ID" });
+      }
       const { isGlobal } = req.body;
+      if (typeof isGlobal !== 'boolean') {
+        return res.status(400).json({ message: "isGlobal must be a boolean" });
+      }
       const updated = await storage.setGlobalBoard(boardId, isGlobal);
       if (!updated) {
         return res.status(404).json({ message: "Board not found" });
@@ -1648,6 +1657,9 @@ export async function registerRoutes(
       }
       
       const boardId = Number(req.params.id);
+      if (isNaN(boardId) || boardId <= 0) {
+        return res.status(400).json({ message: "Invalid board ID" });
+      }
       const { isStarterPack } = parsed.data;
       const updated = await storage.setStarterPackBoard(boardId, isStarterPack);
       if (!updated) {
@@ -1685,7 +1697,19 @@ export async function registerRoutes(
   app.patch("/api/super-admin/game-types/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
       const id = Number(req.params.id);
+      if (isNaN(id) || id <= 0) {
+        return res.status(400).json({ message: "Invalid game type ID" });
+      }
       const { hostEnabled, playerEnabled, description, sortOrder, status } = req.body;
+      if (status !== undefined && !['active', 'hidden', 'coming_soon'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status value" });
+      }
+      if (hostEnabled !== undefined && typeof hostEnabled !== 'boolean') {
+        return res.status(400).json({ message: "hostEnabled must be a boolean" });
+      }
+      if (playerEnabled !== undefined && typeof playerEnabled !== 'boolean') {
+        return res.status(400).json({ message: "playerEnabled must be a boolean" });
+      }
       const updated = await storage.updateGameType(id, { 
         hostEnabled, 
         playerEnabled, 
@@ -2000,7 +2024,13 @@ export async function registerRoutes(
   app.patch("/api/super-admin/boards/:id/moderation", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
       const boardId = parseInt(req.params.id);
+      if (isNaN(boardId) || boardId <= 0) {
+        return res.status(400).json({ message: "Invalid board ID" });
+      }
       const { moderationStatus, isFeatured, flagReason } = req.body;
+      if (moderationStatus !== undefined && !['pending', 'approved', 'rejected', 'flagged'].includes(moderationStatus)) {
+        return res.status(400).json({ message: "Invalid moderation status" });
+      }
       const updated = await storage.updateBoardModeration(boardId, {
         moderationStatus,
         isFeatured,
@@ -2072,6 +2102,9 @@ export async function registerRoutes(
   app.delete("/api/super-admin/announcements/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      if (isNaN(id) || id <= 0) {
+        return res.status(400).json({ message: "Invalid announcement ID" });
+      }
       await storage.deleteAnnouncement(id);
       res.json({ message: "Announcement deleted" });
     } catch (err) {
