@@ -56,6 +56,7 @@ export default function MemeNoHarmPlayer() {
   const [playerId, setPlayerId] = useState<string | null>(savedSession?.playerId || null);
   const [selectedAvatar, setSelectedAvatar] = useState<AvatarId>(savedSession?.avatar || "cat");
   const [joined, setJoined] = useState(false);
+  const joinedRef = useRef(false);
   const [status, setStatus] = useState<ConnectionStatus>("disconnected");
   const [phase, setPhase] = useState<GamePhase>("waiting");
 
@@ -136,6 +137,7 @@ export default function MemeNoHarmPlayer() {
       switch (data.type) {
         case "meme:joined":
           setJoined(true);
+          joinedRef.current = true;
           setPlayerId(data.playerId);
           saveSession(roomCode.toUpperCase(), playerName, data.playerId, selectedAvatar);
           if (data.score !== undefined) setMyScore(data.score);
@@ -227,14 +229,14 @@ export default function MemeNoHarmPlayer() {
     ws.onclose = () => {
       setStatus("disconnected");
       setTimeout(() => {
-        if (joined) connect();
+        if (joinedRef.current) connect();
       }, 3000);
     };
 
     ws.onerror = () => {
       setStatus("error");
     };
-  }, [roomCode, playerName, selectedAvatar, playerId, joined, fetchTrending, toast]);
+  }, [roomCode, playerName, selectedAvatar, playerId, fetchTrending, toast]);
 
   useEffect(() => {
     return () => {

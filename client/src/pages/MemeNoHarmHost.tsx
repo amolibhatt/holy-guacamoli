@@ -118,10 +118,9 @@ export default function MemeNoHarmHost() {
         case "meme:host:rejoined": {
           setRoomCode(data.code);
           setCurrentRound(data.round || 0);
+          if (data.totalRounds) setTotalRounds(data.totalRounds);
           setSubmissionCount(data.submissionCount || 0);
           setVoteCount(data.voteCount || 0);
-          setAllSubmitted(false);
-          setAllVoted(false);
 
           const restoredPlayers = (data.players || []).map((p: any) => ({
             id: p.id,
@@ -133,6 +132,12 @@ export default function MemeNoHarmHost() {
             sittingOut: p.sittingOut || false,
           }));
           setPlayers(restoredPlayers);
+
+          const activeOnRejoin = restoredPlayers.filter((p: Player) => !p.sittingOut);
+          const submittedCount = activeOnRejoin.filter((p: Player) => p.submitted).length;
+          const votedCount = activeOnRejoin.filter((p: Player) => p.voted).length;
+          setAllSubmitted(activeOnRejoin.length > 0 && submittedCount >= activeOnRejoin.length);
+          setAllVoted(activeOnRejoin.length > 0 && votedCount >= activeOnRejoin.length);
 
           if (data.votingSubmissions?.length > 0) {
             setVotingSubmissions(data.votingSubmissions.map((s: any) => ({
@@ -147,6 +152,12 @@ export default function MemeNoHarmHost() {
 
           if (data.prompt) {
             setCurrentPromptText(data.prompt);
+          }
+          usedPromptsRef.current.clear();
+          if (data.usedPrompts?.length > 0) {
+            data.usedPrompts.forEach((p: string) => usedPromptsRef.current.add(p));
+          } else if (data.prompt) {
+            usedPromptsRef.current.add(data.prompt);
           }
 
           if (data.results) {
@@ -289,8 +300,10 @@ export default function MemeNoHarmHost() {
 
   const startGame = () => {
     if (players.length < 2) return;
+    usedPromptsRef.current.clear();
     setCurrentRound(1);
     const prompt = shuffledPrompts[0];
+    usedPromptsRef.current.add(prompt.prompt);
     setCurrentPromptText(prompt.prompt);
     setSubmissionCount(0);
     setAllSubmitted(false);
@@ -324,6 +337,8 @@ export default function MemeNoHarmHost() {
     });
   };
 
+  const usedPromptsRef = useRef<Set<string>>(new Set());
+
   const nextRound = () => {
     const nextRoundNum = currentRound + 1;
     if (nextRoundNum > totalRounds || nextRoundNum > shuffledPrompts.length) {
@@ -331,8 +346,11 @@ export default function MemeNoHarmHost() {
       return;
     }
 
+    const availablePrompts = shuffledPrompts.filter(p => !usedPromptsRef.current.has(p.prompt));
+    const prompt = availablePrompts.length > 0 ? availablePrompts[0] : shuffledPrompts[nextRoundNum - 1];
+    usedPromptsRef.current.add(prompt.prompt);
+
     setCurrentRound(nextRoundNum);
-    const prompt = shuffledPrompts[nextRoundNum - 1];
     setCurrentPromptText(prompt.prompt);
     setSubmissionCount(0);
     setAllSubmitted(false);
@@ -352,6 +370,7 @@ export default function MemeNoHarmHost() {
   const resetGame = useCallback(() => {
     wsRef.current?.close();
     wsRef.current = null;
+    usedPromptsRef.current.clear();
     setRoomCode("");
     setPlayers([]);
     setCurrentRound(0);

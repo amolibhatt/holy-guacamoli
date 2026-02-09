@@ -4502,6 +4502,7 @@ Generate exactly ${promptCount} prompts.`
     memeTotalRounds?: number;
     memeSittingOut?: Set<string>;
     memePhase?: 'lobby' | 'selecting' | 'voting' | 'reveal';
+    memeUsedPrompts?: string[];
   }
 
   interface MemeSubmission {
@@ -5984,6 +5985,7 @@ Generate exactly ${promptCount} prompts.`
               round: room.memeRound || 0,
               totalRounds: room.memeTotalRounds || 5,
               prompt: room.memePrompt || null,
+              usedPrompts: room.memeUsedPrompts || [],
               players: playerList,
               submissionCount: room.memeSubmissions?.size || 0,
               voteCount: room.memeVotes?.size || 0,
@@ -6187,6 +6189,10 @@ Generate exactly ${promptCount} prompts.`
             room.memePrompt = data.prompt;
             room.memeRound = data.round;
             room.memePhase = 'selecting';
+            if (!room.memeUsedPrompts) room.memeUsedPrompts = [];
+            if (!room.memeUsedPrompts.includes(data.prompt)) {
+              room.memeUsedPrompts.push(data.prompt);
+            }
 
             room.players.forEach((player) => {
               if (player.ws && player.isConnected && !room.memeSittingOut?.has(player.id)) {
@@ -6294,6 +6300,7 @@ Generate exactly ${promptCount} prompts.`
             if (!room || !mapping.playerId) break;
 
             if (room.memeVotes?.has(mapping.playerId)) break;
+            if (data.votedForId === mapping.playerId) break;
 
             if (!room.memeVotes) room.memeVotes = new Map();
             room.memeVotes.set(mapping.playerId, data.votedForId);
@@ -6306,11 +6313,7 @@ Generate exactly ${promptCount} prompts.`
 
             const eligibleVoters = Array.from(room.players.values())
               .filter(p => p.isConnected && !room.memeSittingOut?.has(p.id) && room.memeSubmissions?.has(p.id));
-            const votersWhoCanVote = eligibleVoters.filter(p => {
-              const hasSubmission = room.memeSubmissions?.has(p.id);
-              return hasSubmission;
-            });
-            if (room.memeVotes.size >= votersWhoCanVote.length && votersWhoCanVote.length > 0) {
+            if (room.memeVotes.size >= eligibleVoters.length && eligibleVoters.length > 0) {
               sendToHost(room, { type: 'meme:allVoted' });
             }
             console.log(`[WebSocket] Player voted in Meme No Harm room ${room.code}`);
@@ -6414,6 +6417,20 @@ Generate exactly ${promptCount} prompts.`
               type: 'meme:player:satOut',
               playerId: data.playerId,
             });
+
+            if (room.memePhase === 'selecting') {
+              const activeAfterSitOut = Array.from(room.players.values())
+                .filter(p => p.isConnected && !room.memeSittingOut?.has(p.id));
+              if (room.memeSubmissions && room.memeSubmissions.size >= activeAfterSitOut.length && activeAfterSitOut.length > 0) {
+                sendToHost(room, { type: 'meme:allSubmitted' });
+              }
+            } else if (room.memePhase === 'voting') {
+              const eligibleAfterSitOut = Array.from(room.players.values())
+                .filter(p => p.isConnected && !room.memeSittingOut?.has(p.id) && room.memeSubmissions?.has(p.id));
+              if (room.memeVotes && room.memeVotes.size >= eligibleAfterSitOut.length && eligibleAfterSitOut.length > 0) {
+                sendToHost(room, { type: 'meme:allVoted' });
+              }
+            }
             break;
           }
 
