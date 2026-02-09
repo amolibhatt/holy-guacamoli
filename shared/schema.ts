@@ -321,9 +321,7 @@ export const memeSessions = pgTable("meme_sessions", {
   currentRound: integer("current_round").notNull().default(0),
   totalRounds: integer("total_rounds").notNull().default(5),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-}, (table) => [
-  index("idx_meme_sessions_code").on(table.roomCode),
-]);
+});
 
 export const memePlayers = pgTable("meme_players", {
   id: serial("id").primaryKey(),
@@ -345,6 +343,7 @@ export const memeRounds = pgTable("meme_rounds", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   index("idx_meme_rounds_session").on(table.sessionId),
+  unique().on(table.sessionId, table.roundNumber),
 ]);
 
 export const memeSubmissions = pgTable("meme_submissions", {
@@ -355,6 +354,7 @@ export const memeSubmissions = pgTable("meme_submissions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   index("idx_meme_submissions_round").on(table.roundId),
+  unique().on(table.roundId, table.playerId),
 ]);
 
 export const memeVotes = pgTable("meme_votes", {

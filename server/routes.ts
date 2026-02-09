@@ -3298,7 +3298,7 @@ Be creative! Make facts surprising and fun to guess.`;
         isActive: true,
       });
       
-      res.json(prompt);
+      res.status(201).json(prompt);
     } catch (err) {
       console.error("Error creating Meme prompt:", err);
       res.status(500).json({ message: "Failed to create prompt" });
@@ -3547,7 +3547,7 @@ Generate exactly ${promptCount} prompts.`
         isActive: true,
       });
       
-      res.json(image);
+      res.status(201).json(image);
     } catch (err) {
       console.error("Error creating Meme image:", err);
       res.status(500).json({ message: "Failed to create image" });
@@ -6745,7 +6745,8 @@ Generate exactly ${promptCount} prompts.`
 
             let revealResults = null;
             let revealLeaderboard = null;
-            let revealRoundWinnerId = null;
+            let revealRoundWinnerId: string | null = null;
+            let revealTiedPlayerIds: string[] = [];
 
             if (room.memePhase === 'reveal') {
               const votes = room.memeVotes || new Map();
@@ -6768,13 +6769,10 @@ Generate exactly ${promptCount} prompts.`
                 };
               });
 
-              let maxVotes = 0;
-              revealResults.forEach(r => {
-                if (r.votes > maxVotes) {
-                  maxVotes = r.votes;
-                  revealRoundWinnerId = r.playerId;
-                }
-              });
+              const maxVotes = Math.max(0, ...revealResults.map(r => r.votes));
+              const topPlayers = maxVotes > 0 ? revealResults.filter(r => r.votes === maxVotes) : [];
+              revealRoundWinnerId = topPlayers.length === 1 ? topPlayers[0].playerId : null;
+              revealTiedPlayerIds = topPlayers.length > 1 ? topPlayers.map(r => r.playerId) : [];
 
               revealLeaderboard = Array.from(room.players.values())
                 .map(p => ({
@@ -6801,6 +6799,7 @@ Generate exactly ${promptCount} prompts.`
               results: revealResults,
               leaderboard: revealLeaderboard,
               roundWinnerId: revealRoundWinnerId,
+              tiedPlayerIds: revealTiedPlayerIds,
             }));
 
             room.players.forEach((player) => {
@@ -7187,6 +7186,8 @@ Generate exactly ${promptCount} prompts.`
             if (!room || !mapping.playerId) break;
             if (room.memePhase !== 'voting') break;
 
+            if (room.memeSittingOut?.has(mapping.playerId)) break;
+            if (!room.memeSubmissions?.has(mapping.playerId)) break;
             if (room.memeVotes?.has(mapping.playerId)) break;
             if (data.votedForId === mapping.playerId) break;
             if (!room.memeSubmissions?.has(data.votedForId)) break;
@@ -7236,8 +7237,6 @@ Generate exactly ${promptCount} prompts.`
             });
 
             const pointsPerVote = 100;
-            let roundWinnerId: string | null = null;
-            let maxVotes = 0;
 
             const results = Array.from(submissions.values()).map(sub => {
               const numVotes = voteCount[sub.playerId] || 0;
@@ -7246,11 +7245,6 @@ Generate exactly ${promptCount} prompts.`
               const player = room.players.get(sub.playerId);
               if (player) {
                 player.score += points;
-              }
-
-              if (numVotes > maxVotes) {
-                maxVotes = numVotes;
-                roundWinnerId = sub.playerId;
               }
 
               return {
@@ -7263,6 +7257,11 @@ Generate exactly ${promptCount} prompts.`
                 points,
               };
             });
+
+            const maxVotes = Math.max(0, ...results.map(r => r.votes));
+            const topPlayers = maxVotes > 0 ? results.filter(r => r.votes === maxVotes) : [];
+            const roundWinnerId = topPlayers.length === 1 ? topPlayers[0].playerId : null;
+            const tiedPlayerIds = topPlayers.length > 1 ? topPlayers.map(r => r.playerId) : [];
 
             const leaderboard = Array.from(room.players.values())
               .map(p => ({
@@ -7280,6 +7279,7 @@ Generate exactly ${promptCount} prompts.`
                   results,
                   leaderboard,
                   roundWinnerId,
+                  tiedPlayerIds,
                   myScore: player.score,
                   round: room.memeRound,
                   totalRounds: room.memeTotalRounds,
@@ -7292,6 +7292,7 @@ Generate exactly ${promptCount} prompts.`
               results,
               leaderboard,
               roundWinnerId,
+              tiedPlayerIds,
               round: room.memeRound,
               totalRounds: room.memeTotalRounds,
             });
@@ -7370,11 +7371,10 @@ Generate exactly ${promptCount} prompts.`
                     points: numVotes * 100,
                   };
                 });
-                let revealWinnerId: string | null = null;
-                let maxVotes = 0;
-                revealResults.forEach(r => {
-                  if (r.votes > maxVotes) { maxVotes = r.votes; revealWinnerId = r.playerId; }
-                });
+                const maxVotes = Math.max(0, ...revealResults.map(r => r.votes));
+                const topPlayers = maxVotes > 0 ? revealResults.filter(r => r.votes === maxVotes) : [];
+                const revealWinnerId = topPlayers.length === 1 ? topPlayers[0].playerId : null;
+                const revealTiedIds = topPlayers.length > 1 ? topPlayers.map(r => r.playerId) : [];
                 sendToPlayer(player, {
                   type: 'meme:unsittingOut',
                   phase: 'reveal',
@@ -7383,6 +7383,7 @@ Generate exactly ${promptCount} prompts.`
                     .map(p => ({ playerId: p.id, playerName: p.name, playerAvatar: p.avatar, score: p.score }))
                     .sort((a, b) => b.score - a.score),
                   roundWinnerId: revealWinnerId,
+                  tiedPlayerIds: revealTiedIds,
                   myScore: player.score,
                   round: room.memeRound || 0,
                   totalRounds: room.memeTotalRounds || 0,

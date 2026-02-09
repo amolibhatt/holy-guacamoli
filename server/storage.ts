@@ -1859,6 +1859,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteMemePrompt(id: number, userId: string, role?: string): Promise<boolean> {
+    const roundsUsingPrompt = await db.select({ id: memeRounds.id }).from(memeRounds).where(eq(memeRounds.promptId, id));
+    for (const r of roundsUsingPrompt) {
+      await db.delete(memeVotes).where(eq(memeVotes.roundId, r.id));
+      await db.delete(memeSubmissions).where(eq(memeSubmissions.roundId, r.id));
+    }
+    if (roundsUsingPrompt.length > 0) {
+      await db.delete(memeRounds).where(eq(memeRounds.promptId, id));
+    }
     if (role === 'super_admin') {
       const result = await db.delete(memePrompts).where(eq(memePrompts.id, id)).returning();
       return result.length > 0;
@@ -1898,6 +1906,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteMemeImage(id: number, userId: string, role?: string): Promise<boolean> {
+    const subsUsingImage = await db.select({ id: memeSubmissions.id, roundId: memeSubmissions.roundId }).from(memeSubmissions).where(eq(memeSubmissions.imageId, id));
+    if (subsUsingImage.length > 0) {
+      const subIds = subsUsingImage.map(s => s.id);
+      await db.delete(memeVotes).where(inArray(memeVotes.submissionId, subIds));
+      await db.delete(memeSubmissions).where(eq(memeSubmissions.imageId, id));
+    }
     if (role === 'super_admin') {
       const result = await db.delete(memeImages).where(eq(memeImages.id, id)).returning();
       return result.length > 0;
