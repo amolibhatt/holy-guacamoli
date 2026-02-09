@@ -58,11 +58,7 @@ export default function MemeNoHarmHost() {
   const [results, setResults] = useState<MemeResult[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [roundWinnerId, setRoundWinnerId] = useState<string | null>(null);
-  const [submissionCount, setSubmissionCount] = useState(0);
-  const [voteCount, setVoteCount] = useState(0);
   const [votingSubmissions, setVotingSubmissions] = useState<MemeResult[]>([]);
-  const [allSubmitted, setAllSubmitted] = useState(false);
-  const [allVoted, setAllVoted] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -79,6 +75,13 @@ export default function MemeNoHarmHost() {
       setShuffledPrompts(shuffled);
     }
   }, [prompts, shuffledPrompts.length]);
+
+  useEffect(() => {
+    if (prompts.length > 0 && phase === "setup") {
+      const maxRounds = Math.min(10, prompts.length);
+      setTotalRounds(prev => Math.min(prev, maxRounds));
+    }
+  }, [prompts.length, phase]);
 
   const roomCodeRef = useRef(roomCode);
   roomCodeRef.current = roomCode;
@@ -119,8 +122,6 @@ export default function MemeNoHarmHost() {
           setRoomCode(data.code);
           setCurrentRound(data.round || 0);
           if (data.totalRounds) setTotalRounds(data.totalRounds);
-          setSubmissionCount(data.submissionCount || 0);
-          setVoteCount(data.voteCount || 0);
 
           const restoredPlayers = (data.players || []).map((p: any) => ({
             id: p.id,
@@ -133,13 +134,6 @@ export default function MemeNoHarmHost() {
             connected: p.isConnected !== false,
           }));
           setPlayers(restoredPlayers);
-
-          const activeOnRejoin = restoredPlayers.filter((p: Player) => p.connected && !p.sittingOut);
-          const submittedCount = activeOnRejoin.filter((p: Player) => p.submitted).length;
-          setAllSubmitted(activeOnRejoin.length > 0 && submittedCount >= activeOnRejoin.length);
-          const eligibleVoters = activeOnRejoin.filter((p: Player) => p.submitted);
-          const votedCount = eligibleVoters.filter((p: Player) => p.voted).length;
-          setAllVoted(eligibleVoters.length > 0 && votedCount >= eligibleVoters.length);
 
           if (data.votingSubmissions?.length > 0) {
             setVotingSubmissions(data.votingSubmissions.map((s: any) => ({
@@ -205,25 +199,21 @@ export default function MemeNoHarmHost() {
           break;
 
         case "meme:submission":
-          setSubmissionCount(prev => prev + 1);
           setPlayers(prev => prev.map(p =>
             p.id === data.playerId ? { ...p, submitted: true } : p
           ));
           break;
 
         case "meme:allSubmitted":
-          setAllSubmitted(true);
           break;
 
         case "meme:vote":
-          setVoteCount(prev => prev + 1);
           setPlayers(prev => prev.map(p =>
             p.id === data.voterId ? { ...p, voted: true } : p
           ));
           break;
 
         case "meme:allVoted":
-          setAllVoted(true);
           break;
 
         case "meme:voting:started":
@@ -314,8 +304,6 @@ export default function MemeNoHarmHost() {
     const prompt = shuffledPrompts[0];
     usedPromptsRef.current.add(prompt.prompt);
     setCurrentPromptText(prompt.prompt);
-    setSubmissionCount(0);
-    setAllSubmitted(false);
     setPlayers(prev => prev.map(p => ({ ...p, submitted: false, voted: false })));
     setPhase("selecting");
 
@@ -328,8 +316,6 @@ export default function MemeNoHarmHost() {
   };
 
   const startVoting = () => {
-    setVoteCount(0);
-    setAllVoted(false);
     setPlayers(prev => prev.map(p => ({ ...p, voted: false })));
     setPhase("voting");
 
@@ -361,8 +347,6 @@ export default function MemeNoHarmHost() {
 
     setCurrentRound(nextRoundNum);
     setCurrentPromptText(prompt.prompt);
-    setSubmissionCount(0);
-    setAllSubmitted(false);
     setResults([]);
     setVotingSubmissions([]);
     setPlayers(prev => prev.map(p => ({ ...p, submitted: false, voted: false })));
@@ -387,11 +371,7 @@ export default function MemeNoHarmHost() {
     setResults([]);
     setLeaderboard([]);
     setRoundWinnerId(null);
-    setSubmissionCount(0);
-    setVoteCount(0);
     setVotingSubmissions([]);
-    setAllSubmitted(false);
-    setAllVoted(false);
     const shuffled = [...prompts].sort(() => Math.random() - 0.5);
     setShuffledPrompts(shuffled);
     setPhase("setup");
@@ -406,6 +386,12 @@ export default function MemeNoHarmHost() {
   };
 
   const activePlayers = players.filter(p => !p.sittingOut && p.connected);
+  const totalSubmissions = players.filter(p => p.submitted).length;
+  const activeSubmittedCount = activePlayers.filter(p => p.submitted).length;
+  const allSubmitted = activePlayers.length > 0 && activeSubmittedCount >= activePlayers.length;
+  const eligibleVoters = activePlayers.filter(p => p.submitted);
+  const votedCount = eligibleVoters.filter(p => p.voted).length;
+  const allVoted = eligibleVoters.length > 0 && votedCount >= eligibleVoters.length;
 
   if (isAuthLoading) {
     return (
@@ -607,52 +593,59 @@ export default function MemeNoHarmHost() {
           <Card className="bg-white/5 border-white/10 mb-6">
             <CardContent className="pt-6">
               <div className={`text-center mb-4 ${allVoted ? 'text-green-400 font-bold' : 'text-white/60'}`}>
-                {allVoted ? 'All votes in!' : `Votes received: ${voteCount}`}
+                {allVoted ? 'All votes in!' : `Votes: ${votedCount}/${eligibleVoters.length}`}
               </div>
               <div className="space-y-2">
-                {players.map(player => (
-                  <div key={player.id} className={`flex items-center justify-between gap-2 px-4 py-2 rounded-lg ${
-                    player.sittingOut
-                      ? 'bg-white/5 text-white/30'
-                      : !player.connected
-                        ? 'bg-red-500/10 text-red-400/70'
-                        : player.voted
-                          ? 'bg-green-500/20 text-green-400'
-                          : 'bg-white/10 text-white/50'
-                  }`}>
-                    <span className="font-medium">
-                      {player.name}
-                      {player.sittingOut && " - Sitting Out"}
-                      {!player.connected && !player.sittingOut && " - Disconnected"}
-                      {player.voted && !player.sittingOut && player.connected && " - Voted"}
-                    </span>
-                    {player.sittingOut ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => unsitOutPlayer(player.id)}
-                        className="text-green-400/70"
-                        data-testid={`button-bring-back-voting-${player.id}`}
-                        aria-label={`Bring back ${player.name}`}
-                      >
-                        <Users className="w-4 h-4 mr-1" />
-                        Bring Back
-                      </Button>
-                    ) : !player.voted ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => sitOutPlayer(player.id)}
-                        className="text-orange-400/70"
-                        data-testid={`button-sit-out-voting-${player.id}`}
-                        aria-label={`Sit out ${player.name}`}
-                      >
-                        <Ban className="w-4 h-4 mr-1" />
-                        Sit Out
-                      </Button>
-                    ) : null}
-                  </div>
-                ))}
+                {players.map(player => {
+                  const isEligibleVoter = player.connected && !player.sittingOut && player.submitted;
+                  const didNotSubmit = player.connected && !player.sittingOut && !player.submitted;
+                  return (
+                    <div key={player.id} className={`flex items-center justify-between gap-2 px-4 py-2 rounded-lg ${
+                      player.sittingOut
+                        ? 'bg-white/5 text-white/30'
+                        : !player.connected
+                          ? 'bg-red-500/10 text-red-400/70'
+                          : didNotSubmit
+                            ? 'bg-white/5 text-white/30'
+                            : player.voted
+                              ? 'bg-green-500/20 text-green-400'
+                              : 'bg-white/10 text-white/50'
+                    }`}>
+                      <span className="font-medium">
+                        {player.name}
+                        {player.sittingOut && " - Sitting Out"}
+                        {!player.connected && !player.sittingOut && " - Disconnected"}
+                        {didNotSubmit && " - Didn't submit"}
+                        {isEligibleVoter && player.voted && " - Voted"}
+                      </span>
+                      {player.sittingOut ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => unsitOutPlayer(player.id)}
+                          className="text-green-400/70"
+                          data-testid={`button-bring-back-voting-${player.id}`}
+                          aria-label={`Bring back ${player.name}`}
+                        >
+                          <Users className="w-4 h-4 mr-1" />
+                          Bring Back
+                        </Button>
+                      ) : isEligibleVoter && !player.voted ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => sitOutPlayer(player.id)}
+                          className="text-orange-400/70"
+                          data-testid={`button-sit-out-voting-${player.id}`}
+                          aria-label={`Sit out ${player.name}`}
+                        >
+                          <Ban className="w-4 h-4 mr-1" />
+                          Sit Out
+                        </Button>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -683,7 +676,7 @@ export default function MemeNoHarmHost() {
           <Card className="bg-white/5 border-white/10 mb-6">
             <CardContent className="pt-6">
               <div className={`text-center mb-4 ${allSubmitted ? 'text-green-400 font-bold' : 'text-white/60'}`}>
-                {allSubmitted ? 'All submissions in!' : `Waiting for submissions (${submissionCount}/${activePlayers.length} ready)`}
+                {allSubmitted ? 'All submissions in!' : `Waiting for submissions (${activeSubmittedCount}/${activePlayers.length} ready)`}
               </div>
               {activePlayers.length < 2 && (
                 <div className="text-center text-orange-400 text-sm mb-4">
@@ -745,10 +738,10 @@ export default function MemeNoHarmHost() {
             <Button
               onClick={startVoting}
               size="lg"
-              disabled={submissionCount < 2}
+              disabled={totalSubmissions < 2}
               data-testid="button-start-voting"
             >
-              Start Voting ({submissionCount} submissions)
+              Start Voting ({totalSubmissions} submissions)
             </Button>
             <Button
               variant="outline"

@@ -6273,6 +6273,11 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            if ((room.memeSubmissions?.size || 0) < 2) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Need at least 2 submissions to start voting' }));
+              break;
+            }
+
             room.memeVotes = new Map();
             room.memePhase = 'voting';
 
