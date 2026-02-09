@@ -2278,9 +2278,13 @@ export async function registerRoutes(
   // Delete BlitzGrid question (super admin only)
   app.delete("/api/super-admin/questions/blitzgrid/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
-      const questionId = parseInt(req.params.id);
-      if (isNaN(questionId) || questionId <= 0) {
+      const questionId = parseId(req.params.id);
+      if (questionId === null) {
         return res.status(400).json({ message: "Invalid question ID" });
+      }
+      const question = await storage.getQuestion(questionId);
+      if (!question) {
+        return res.status(404).json({ message: "Question not found" });
       }
       await storage.deleteQuestion(questionId);
       res.json({ success: true });
@@ -3929,9 +3933,8 @@ Generate exactly ${promptCount} prompts.`
         const categoryNames: string[] = [];
         
         for (const bc of boardCategories) {
-          const category = await storage.getCategory(bc.categoryId);
-          if (category) {
-            categoryNames.push(category.name);
+          if (bc.category) {
+            categoryNames.push(bc.category.name);
           }
           const questions = await storage.getQuestionsForCategory(bc.categoryId);
           totalQuestions += questions.length;
@@ -3964,7 +3967,7 @@ Generate exactly ${promptCount} prompts.`
       const userId = req.session.userId!;
       
       const { name, description, theme } = req.body;
-      if (!name || typeof name !== "string") {
+      if (!name || typeof name !== "string" || !name.trim()) {
         return res.status(400).json({ message: "Grid name is required" });
       }
       
@@ -3991,7 +3994,7 @@ Generate exactly ${promptCount} prompts.`
         sortOrder: 0,
       });
       
-      res.json(board);
+      res.status(201).json(board);
     } catch (err) {
       console.error("Error creating blitzgrid grid:", err);
       res.status(500).json({ message: "Failed to create grid" });
@@ -4017,8 +4020,12 @@ Generate exactly ${promptCount} prompts.`
       }
       
       const updateData: { name?: string; description?: string } = {};
-      if (name && typeof name === "string") {
-        updateData.name = name.trim();
+      if (name !== undefined && typeof name === "string") {
+        const trimmedName = name.trim();
+        if (!trimmedName) {
+          return res.status(400).json({ message: "Grid name cannot be empty" });
+        }
+        updateData.name = trimmedName;
       }
       if (typeof description === "string") {
         updateData.description = description.trim();
@@ -4088,17 +4095,16 @@ Generate exactly ${promptCount} prompts.`
       // Get full category data with questions
       const categoriesWithQuestions = await Promise.all(
         boardCategories.map(async (bc) => {
-          const category = await storage.getCategory(bc.categoryId);
           const questions = await storage.getQuestionsByCategory(bc.categoryId);
           return {
-            ...category,
+            ...bc.category,
             questionCount: questions.length,
             questions,
           };
         })
       );
       
-      res.json(categoriesWithQuestions.filter(Boolean));
+      res.json(categoriesWithQuestions);
     } catch (err) {
       console.error("Error fetching blitzgrid categories:", err);
       res.status(500).json({ message: "Failed to fetch categories" });
@@ -4124,6 +4130,11 @@ Generate exactly ${promptCount} prompts.`
       const board = await storage.getBoard(gridId, userId, role);
       if (!board) {
         return res.status(404).json({ message: "Grid not found" });
+      }
+      
+      const category = await storage.getCategory(categoryId);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
       }
       
       // Check category limit
@@ -4194,7 +4205,7 @@ Generate exactly ${promptCount} prompts.`
         throw linkErr;
       }
       
-      res.json(category);
+      res.status(201).json(category);
     } catch (err) {
       console.error("Error creating category for blitzgrid:", err);
       res.status(500).json({ message: "Failed to create category" });
@@ -4246,6 +4257,11 @@ Generate exactly ${promptCount} prompts.`
         return res.status(400).json({ message: "Invalid category ID" });
       }
       
+      const category = await storage.getCategory(categoryId);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
       // Verify user owns a grid that contains this category
       const role = req.session.userRole;
       const boardCategoryLinks = await storage.getBoardCategoriesByCategoryId(categoryId);
@@ -4277,6 +4293,10 @@ Generate exactly ${promptCount} prompts.`
         return res.status(400).json({ message: "Correct answer is required" });
       }
       
+      const validatedOptions = Array.isArray(options)
+        ? options.filter((o: unknown) => typeof o === "string" && o.trim()).map((o: string) => o.trim())
+        : [];
+      
       // Check if question already exists for this point tier
       const existingQuestions = await storage.getQuestionsByCategory(categoryId);
       const existingQuestion = existingQuestions.find(q => q.points === points);
@@ -4286,7 +4306,7 @@ Generate exactly ${promptCount} prompts.`
         const updated = await storage.updateQuestion(existingQuestion.id, {
           question: question.trim(),
           correctAnswer: correctAnswer.trim(),
-          options: options || [],
+          options: validatedOptions,
           imageUrl: imageUrl?.trim() || null,
           audioUrl: audioUrl?.trim() || null,
           videoUrl: videoUrl?.trim() || null,
@@ -4302,7 +4322,7 @@ Generate exactly ${promptCount} prompts.`
         categoryId,
         question: question.trim(),
         correctAnswer: correctAnswer.trim(),
-        options: options || [],
+        options: validatedOptions,
         points,
         imageUrl: imageUrl?.trim() || null,
         audioUrl: audioUrl?.trim() || null,
@@ -4578,7 +4598,8 @@ Generate exactly ${promptCount} prompts.`
           
           results.imported++;
         } catch (gridErr) {
-          results.errors.push(`Grid "${gridName}": ${(gridErr as Error).message}`);
+          console.error(`Error importing grid "${gridName}":`, gridErr);
+          results.errors.push(`Grid "${gridName}": import failed`);
         }
       }
       
