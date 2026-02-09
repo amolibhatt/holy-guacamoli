@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,8 @@ export default function MemeNoHarmAdmin() {
   const [aiSelected, setAiSelected] = useState<Set<number>>(new Set());
   const [showAiGenerator, setShowAiGenerator] = useState(false);
   const [bulkImporting, setBulkImporting] = useState(false);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [aiImporting, setAiImporting] = useState(false);
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
 
@@ -62,22 +63,26 @@ export default function MemeNoHarmAdmin() {
 
   const deletePromptMutation = useMutation({
     mutationFn: async (id: number) => {
-      setDeletingId(id);
+      setDeletingIds(prev => new Set(prev).add(id));
       const res = await apiRequest("DELETE", `/api/memenoharm/prompts/${id}`);
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.message || "Failed to delete prompt");
       }
-      return res.json();
+      return { id };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/memenoharm/prompts"] });
       toast({ title: "Prompt deleted!" });
-      setDeletingId(null);
+      setDeletingIds(prev => { const next = new Set(prev); next.delete(data.id); return next; });
+      if (editingId === data.id) {
+        setEditingId(null);
+        setEditText("");
+      }
     },
-    onError: (error: Error) => {
+    onError: (error: Error, id: number) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
-      setDeletingId(null);
+      setDeletingIds(prev => { const next = new Set(prev); next.delete(id); return next; });
     },
   });
 
@@ -132,49 +137,68 @@ export default function MemeNoHarmAdmin() {
     updatePromptMutation.mutate({ id: editingId, prompt: trimmed });
   };
 
+  const aiRequestIdRef = useRef(0);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
   const handleAiGenerate = async () => {
+    if (aiGenerating) return;
+    const requestId = ++aiRequestIdRef.current;
     setAiGenerating(true);
     setAiResults([]);
     setAiSelected(new Set());
     try {
       const res = await apiRequest("POST", "/api/memenoharm/prompts/generate", { category: aiCategory, count: aiCount });
+      if (!mountedRef.current || requestId !== aiRequestIdRef.current) return;
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.message || "Failed to generate prompts");
       }
       const data = await res.json();
+      if (!mountedRef.current || requestId !== aiRequestIdRef.current) return;
       setAiResults(data.prompts || []);
       setAiSelected(new Set(data.prompts?.map((_: string, i: number) => i) || []));
     } catch (error: any) {
+      if (!mountedRef.current || requestId !== aiRequestIdRef.current) return;
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
-      setAiGenerating(false);
+      if (mountedRef.current && requestId === aiRequestIdRef.current) {
+        setAiGenerating(false);
+      }
     }
   };
 
   const handleAiAddSelected = async () => {
     const selected = aiResults.filter((_, i) => aiSelected.has(i));
-    if (selected.length === 0) return;
-    setBulkImporting(true);
+    if (selected.length === 0 || aiImporting) return;
+    setAiImporting(true);
     let added = 0;
     let skipped = 0;
     let failed = 0;
-    for (const prompt of selected) {
+    const failedIndices: number[] = [];
+    for (let idx = 0; idx < aiResults.length; idx++) {
+      if (!aiSelected.has(idx)) continue;
+      const prompt = aiResults[idx];
       try {
         const res = await apiRequest("POST", "/api/memenoharm/prompts", { prompt });
         if (res.ok) {
           added++;
         } else {
-          const err = await res.json().catch(() => ({ message: "" }));
+          await res.json().catch(() => ({}));
           if (res.status === 409) skipped++;
-          else failed++;
+          else { failed++; failedIndices.push(idx); }
         }
       } catch {
         failed++;
+        failedIndices.push(idx);
       }
     }
     queryClient.invalidateQueries({ queryKey: ["/api/memenoharm/prompts"] });
-    setBulkImporting(false);
+    setAiImporting(false);
     const parts: string[] = [];
     if (added > 0) parts.push(`${added} added`);
     if (skipped > 0) parts.push(`${skipped} duplicates skipped`);
@@ -183,8 +207,12 @@ export default function MemeNoHarmAdmin() {
       title: parts.join(", "),
       variant: failed > 0 ? "destructive" : undefined,
     });
-    setAiResults([]);
-    setAiSelected(new Set());
+    if (failed > 0 && added === 0 && skipped === 0) {
+      setAiSelected(new Set(failedIndices));
+    } else {
+      setAiResults([]);
+      setAiSelected(new Set());
+    }
   };
 
   const toggleAiSelect = (index: number) => {
@@ -430,10 +458,10 @@ export default function MemeNoHarmAdmin() {
                           <Button
                             size="sm"
                             onClick={handleAiAddSelected}
-                            disabled={aiSelected.size === 0 || bulkImporting}
+                            disabled={aiSelected.size === 0 || aiImporting}
                             data-testid="button-ai-add-selected"
                           >
-                            {bulkImporting ? (
+                            {aiImporting ? (
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                             ) : (
                               <Plus className="w-4 h-4 mr-2" />
@@ -591,8 +619,8 @@ export default function MemeNoHarmAdmin() {
                             maxLength={MAX_PROMPT_LENGTH}
                             autoFocus
                             onKeyDown={(e) => {
-                              if (e.key === "Enter") handleSaveEdit();
-                              if (e.key === "Escape") handleCancelEdit();
+                              if (e.key === "Enter" && !updatePromptMutation.isPending) handleSaveEdit();
+                              if (e.key === "Escape" && !updatePromptMutation.isPending) handleCancelEdit();
                             }}
                             data-testid={`input-edit-prompt-${prompt.id}`}
                           />
@@ -635,6 +663,7 @@ export default function MemeNoHarmAdmin() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleStartEdit(prompt)}
+                              disabled={deletingIds.has(prompt.id)}
                               data-testid={`button-edit-prompt-${prompt.id}`}
                             >
                               <Pencil className="w-4 h-4 text-muted-foreground" />
@@ -643,10 +672,10 @@ export default function MemeNoHarmAdmin() {
                               variant="ghost"
                               size="icon"
                               onClick={() => deletePromptMutation.mutate(prompt.id)}
-                              disabled={deletingId === prompt.id}
+                              disabled={deletingIds.has(prompt.id)}
                               data-testid={`button-delete-prompt-${prompt.id}`}
                             >
-                              {deletingId === prompt.id ? (
+                              {deletingIds.has(prompt.id) ? (
                                 <Loader2 className="w-4 h-4 animate-spin text-destructive" />
                               ) : (
                                 <Trash2 className="w-4 h-4 text-destructive" />
