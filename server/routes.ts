@@ -2731,7 +2731,7 @@ export async function registerRoutes(
             optionD: trimmedD,
             correctOrder: q.correctOrder,
             hint: trimmedHint || null,
-            isActive: true,
+            isActive: q.isActive !== false,
           });
           results.success++;
         } catch (err) {
@@ -2823,7 +2823,7 @@ Be creative and fun! Make questions engaging and varied.`;
 
       if (!response.ok) {
         const error = await response.text();
-        console.error('Groq API error:', error);
+        console.error(`${useGroq ? 'Groq' : 'OpenAI'} API error:`, error);
         return res.status(500).json({ message: "Failed to get AI response" });
       }
 
@@ -2847,11 +2847,16 @@ Be creative and fun! Make questions engaging and varied.`;
         (questions.length > 0 ? `Here are ${questions.length} question(s) for you!` : content);
 
       const validQuestions = questions
-        .filter((q: any) => q && typeof q.question === 'string' && q.question.trim().length > 0 &&
-          typeof q.optionA === 'string' && q.optionA.trim().length > 0 &&
-          typeof q.optionB === 'string' && q.optionB.trim().length > 0 &&
-          typeof q.optionC === 'string' && q.optionC.trim().length > 0 &&
-          typeof q.optionD === 'string' && q.optionD.trim().length > 0)
+        .filter((q: any) => {
+          if (!q || typeof q.question !== 'string' || q.question.trim().length === 0) return false;
+          if (typeof q.optionA !== 'string' || q.optionA.trim().length === 0) return false;
+          if (typeof q.optionB !== 'string' || q.optionB.trim().length === 0) return false;
+          if (typeof q.optionC !== 'string' || q.optionC.trim().length === 0) return false;
+          if (typeof q.optionD !== 'string' || q.optionD.trim().length === 0) return false;
+          const opts = new Set([q.optionA.trim().toLowerCase(), q.optionB.trim().toLowerCase(), q.optionC.trim().toLowerCase(), q.optionD.trim().toLowerCase()]);
+          if (opts.size < 4) return false;
+          return true;
+        })
         .map((q: any) => ({
           question: q.question.trim().slice(0, 500),
           optionA: q.optionA.trim().slice(0, 200),
@@ -6282,6 +6287,7 @@ Generate exactly ${promptCount} prompts.`
             }
 
             // Update player statistics
+            const submittedPlayerIds = new Set(submissions.map(s => s.playerId));
             for (const sub of submissions) {
               const player = room.players.get(sub.playerId);
               if (player) {
@@ -6298,6 +6304,13 @@ Generate exactly ${promptCount} prompts.`
                 }
               }
             }
+            // Reset streak for players who didn't submit (missed the question)
+            room.players.forEach((player) => {
+              if (!submittedPlayerIds.has(player.id)) {
+                player.wrongAnswers += 1;
+                player.currentStreak = 0;
+              }
+            });
 
             // Award points to winner (use configured points per round)
             const pointsToAward = room.pointsPerRound || 10;

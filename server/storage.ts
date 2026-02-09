@@ -168,6 +168,8 @@ export interface IStorage {
   createSequenceQuestion(data: InsertSequenceQuestion): Promise<SequenceQuestion>;
   updateSequenceQuestion(id: number, data: Partial<InsertSequenceQuestion>, userId: string, role?: string): Promise<SequenceQuestion | null>;
   deleteSequenceQuestion(id: number, userId: string, role?: string): Promise<boolean>;
+  getAllSequenceQuestionsWithCreators(): Promise<any[]>;
+  toggleSequenceQuestionStarterPack(questionId: number, isStarterPack: boolean): Promise<SequenceQuestion | undefined>;
   
   // PsyOp
   getPsyopQuestions(userId: string, role?: string): Promise<PsyopQuestion[]>;
