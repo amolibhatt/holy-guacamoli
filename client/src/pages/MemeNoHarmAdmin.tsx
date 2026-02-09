@@ -93,13 +93,16 @@ export default function MemeNoHarmAdmin() {
         const error = await res.json();
         throw new Error(error.message || "Failed to update prompt");
       }
-      return res.json();
+      const data = await res.json();
+      return { ...data, _mutatedId: id };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/memenoharm/prompts"] });
       toast({ title: "Prompt updated!" });
-      setEditingId(null);
-      setEditText("");
+      if (editingId === data._mutatedId) {
+        setEditingId(null);
+        setEditText("");
+      }
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -116,6 +119,7 @@ export default function MemeNoHarmAdmin() {
   };
 
   const handleStartEdit = (prompt: MemePrompt) => {
+    if (updatePromptMutation.isPending) return;
     setEditingId(prompt.id);
     setEditText(prompt.prompt);
   };
@@ -398,6 +402,7 @@ export default function MemeNoHarmAdmin() {
                   variant={showAiGenerator ? "default" : "outline"}
                   size="sm"
                   onClick={() => setShowAiGenerator(!showAiGenerator)}
+                  disabled={aiGenerating || aiImporting}
                   className="gap-2"
                   data-testid="button-toggle-ai-generator"
                 >
@@ -445,7 +450,7 @@ export default function MemeNoHarmAdmin() {
                     </div>
                     <Button
                       onClick={handleAiGenerate}
-                      disabled={aiGenerating}
+                      disabled={aiGenerating || aiImporting}
                       data-testid="button-ai-generate"
                     >
                       {aiGenerating ? (
@@ -527,6 +532,7 @@ export default function MemeNoHarmAdmin() {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowBulkImport(!showBulkImport)}
+                  disabled={bulkImporting}
                   className="gap-2"
                   data-testid="button-toggle-bulk-import"
                 >
@@ -543,6 +549,7 @@ export default function MemeNoHarmAdmin() {
                     value={bulkPrompts}
                     onChange={(e) => setBulkPrompts(e.target.value)}
                     rows={8}
+                    disabled={bulkImporting}
                     data-testid="textarea-bulk-prompts"
                   />
                   <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -683,7 +690,7 @@ export default function MemeNoHarmAdmin() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleStartEdit(prompt)}
-                              disabled={deletingIds.has(prompt.id)}
+                              disabled={deletingIds.has(prompt.id) || updatePromptMutation.isPending}
                               data-testid={`button-edit-prompt-${prompt.id}`}
                             >
                               <Pencil className="w-4 h-4 text-muted-foreground" />
