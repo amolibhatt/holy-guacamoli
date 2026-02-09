@@ -6034,6 +6034,7 @@ Generate exactly ${promptCount} prompts.`
             room.pointsPerRound = validPoints;
             room.sequencePhase = 'playing';
             room.sequencePaused = false;
+            room.sequencePauseStartTime = undefined;
             room.sequenceQuestionIndex = typeof data.questionIndex === 'number' && Number.isFinite(data.questionIndex) ? data.questionIndex : 0;
             room.sequenceTotalQuestions = typeof data.totalQuestions === 'number' && Number.isFinite(data.totalQuestions) ? data.totalQuestions : 0;
             
@@ -6042,8 +6043,8 @@ Generate exactly ${promptCount} prompts.`
                 sendToPlayer(player, {
                   type: 'sequence:question:start',
                   question: data.question,
-                  questionIndex: data.questionIndex,
-                  totalQuestions: data.totalQuestions,
+                  questionIndex: room.sequenceQuestionIndex,
+                  totalQuestions: room.sequenceTotalQuestions,
                 });
               }
             });
@@ -6051,8 +6052,8 @@ Generate exactly ${promptCount} prompts.`
             sendToHost(room, {
               type: 'sequence:question:started',
               question: data.question,
-              questionIndex: data.questionIndex,
-              totalQuestions: data.totalQuestions,
+              questionIndex: room.sequenceQuestionIndex,
+              totalQuestions: room.sequenceTotalQuestions,
             });
             break;
           }
@@ -6086,6 +6087,8 @@ Generate exactly ${promptCount} prompts.`
             room.currentQuestion = data.question;
             room.pointsPerRound = arValidPoints;
             room.sequencePhase = 'animatedReveal';
+            room.sequencePaused = false;
+            room.sequencePauseStartTime = undefined;
             room.sequenceQuestionIndex = typeof data.questionIndex === 'number' && Number.isFinite(data.questionIndex) ? data.questionIndex : 0;
             room.sequenceTotalQuestions = typeof data.totalQuestions === 'number' && Number.isFinite(data.totalQuestions) ? data.totalQuestions : 0;
             
@@ -6094,8 +6097,8 @@ Generate exactly ${promptCount} prompts.`
                 sendToPlayer(player, {
                   type: 'sequence:animatedReveal',
                   question: data.question,
-                  questionIndex: data.questionIndex,
-                  totalQuestions: data.totalQuestions,
+                  questionIndex: room.sequenceQuestionIndex,
+                  totalQuestions: room.sequenceTotalQuestions,
                 });
               }
             });
@@ -6103,8 +6106,8 @@ Generate exactly ${promptCount} prompts.`
             sendToHost(room, {
               type: 'sequence:animatedReveal:started',
               question: data.question,
-              questionIndex: data.questionIndex,
-              totalQuestions: data.totalQuestions,
+              questionIndex: room.sequenceQuestionIndex,
+              totalQuestions: room.sequenceTotalQuestions,
             });
             break;
           }
@@ -6129,6 +6132,8 @@ Generate exactly ${promptCount} prompts.`
             room.sequenceSubmissions = [];
             room.questionStartTime = Date.now();
             room.sequencePhase = 'playing';
+            room.sequencePaused = false;
+            room.sequencePauseStartTime = undefined;
 
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
@@ -6259,6 +6264,11 @@ Generate exactly ${promptCount} prompts.`
             if (!room) break;
 
             if (room.sequencePhase !== 'playing') {
+              break;
+            }
+
+            if (room.sequencePaused) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Cannot reveal while game is paused. Resume first.' }));
               break;
             }
 

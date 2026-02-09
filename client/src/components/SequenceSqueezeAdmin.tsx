@@ -309,7 +309,10 @@ export function SequenceSqueezeAdmin() {
       toast({ title: "Please fill in the question and all options", variant: "destructive" });
       return;
     }
-    const order = createCorrectOrder.length === 4 ? createCorrectOrder : ["A", "B", "C", "D"];
+    if (createCorrectOrder.length !== 4) {
+      toast({ title: "Please set the correct order by tapping all 4 letters", variant: "destructive" });
+      return;
+    }
     try {
       await createMutation.mutateAsync({
         question: q,
@@ -317,7 +320,7 @@ export function SequenceSqueezeAdmin() {
         optionB: o2,
         optionC: o3,
         optionD: o4,
-        correctOrder: order,
+        correctOrder: createCorrectOrder,
         hint: hint.trim() || null,
         isActive: true,
       });
