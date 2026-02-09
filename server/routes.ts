@@ -3271,7 +3271,7 @@ Be creative! Make facts surprising and fun to guess.`;
   });
 
   const createMemePromptSchema = z.object({
-    prompt: z.string().min(1, "Prompt is required").max(200, "Prompt must be 200 characters or less"),
+    prompt: z.string().trim().min(1, "Prompt is required").max(200, "Prompt must be 200 characters or less"),
   });
 
   app.post("/api/memenoharm/prompts", isAuthenticated, isAdmin, async (req, res) => {
@@ -3284,9 +3284,14 @@ Be creative! Make facts surprising and fun to guess.`;
         return res.status(400).json({ message: parsed.error.errors[0].message });
       }
 
+      const trimmedPrompt = parsed.data.prompt.trim();
+      if (!trimmedPrompt) {
+        return res.status(400).json({ message: "Prompt cannot be empty" });
+      }
+
       const allPromptTexts = await storage.getAllMemePromptTexts();
       const duplicate = allPromptTexts.find(
-        p => p.prompt.toLowerCase().trim() === parsed.data.prompt.toLowerCase().trim()
+        p => p.prompt.toLowerCase().trim() === trimmedPrompt.toLowerCase()
       );
       if (duplicate) {
         return res.status(409).json({ message: "This prompt already exists" });
@@ -3294,7 +3299,7 @@ Be creative! Make facts surprising and fun to guess.`;
       
       const prompt = await storage.createMemePrompt({
         userId,
-        prompt: parsed.data.prompt.trim(),
+        prompt: trimmedPrompt,
         isActive: true,
       });
       
@@ -3309,7 +3314,7 @@ Be creative! Make facts surprising and fun to guess.`;
   });
 
   const updateMemePromptSchema = z.object({
-    prompt: z.string().min(1, "Prompt is required").max(200, "Prompt must be 200 characters or less").optional(),
+    prompt: z.string().trim().min(1, "Prompt is required").max(200, "Prompt must be 200 characters or less").optional(),
     isActive: z.boolean().optional(),
     isStarterPack: z.boolean().optional(),
   });
@@ -3534,8 +3539,8 @@ Generate exactly ${promptCount} prompts.`
   });
 
   const createMemeImageSchema = z.object({
-    imageUrl: z.string().url("Must be a valid URL").min(1, "Image URL is required"),
-    caption: z.string().max(200, "Caption must be 200 characters or less").optional(),
+    imageUrl: z.string().trim().url("Must be a valid URL").min(1, "Image URL is required"),
+    caption: z.string().trim().max(200, "Caption must be 200 characters or less").optional(),
   });
 
   app.post("/api/memenoharm/images", isAuthenticated, isAdmin, async (req, res) => {
@@ -3549,6 +3554,10 @@ Generate exactly ${promptCount} prompts.`
       }
 
       const trimmedUrl = parsed.data.imageUrl.trim();
+      if (!trimmedUrl) {
+        return res.status(400).json({ message: "Image URL cannot be empty" });
+      }
+
       const allImageUrls = await storage.getAllMemeImageUrls();
       const duplicate = allImageUrls.find(
         img => img.imageUrl.trim().toLowerCase() === trimmedUrl.toLowerCase()
@@ -3575,8 +3584,8 @@ Generate exactly ${promptCount} prompts.`
   });
 
   const updateMemeImageSchema = z.object({
-    imageUrl: z.string().url("Must be a valid URL").min(1, "Image URL is required").optional(),
-    caption: z.string().max(200, "Caption must be 200 characters or less").optional().nullable(),
+    imageUrl: z.string().trim().url("Must be a valid URL").min(1, "Image URL is required").optional(),
+    caption: z.string().trim().max(200, "Caption must be 200 characters or less").optional().nullable(),
     isActive: z.boolean().optional(),
     isStarterPack: z.boolean().optional(),
   });

@@ -1897,16 +1897,17 @@ export class DatabaseStorage implements IStorage {
     const [existing] = await db.select({ id: memePrompts.id }).from(memePrompts).where(ownershipCondition);
     if (!existing) return false;
 
-    const roundsUsingPrompt = await db.select({ id: memeRounds.id }).from(memeRounds).where(eq(memeRounds.promptId, id));
-    for (const r of roundsUsingPrompt) {
-      await db.delete(memeVotes).where(eq(memeVotes.roundId, r.id));
-      await db.delete(memeSubmissions).where(eq(memeSubmissions.roundId, r.id));
-    }
-    if (roundsUsingPrompt.length > 0) {
-      await db.delete(memeRounds).where(eq(memeRounds.promptId, id));
-    }
-    const result = await db.delete(memePrompts).where(eq(memePrompts.id, id)).returning();
-    return result.length > 0;
+    return await db.transaction(async (tx) => {
+      const roundsUsingPrompt = await tx.select({ id: memeRounds.id }).from(memeRounds).where(eq(memeRounds.promptId, id));
+      if (roundsUsingPrompt.length > 0) {
+        const roundIds = roundsUsingPrompt.map(r => r.id);
+        await tx.delete(memeVotes).where(inArray(memeVotes.roundId, roundIds));
+        await tx.delete(memeSubmissions).where(inArray(memeSubmissions.roundId, roundIds));
+        await tx.delete(memeRounds).where(eq(memeRounds.promptId, id));
+      }
+      const result = await tx.delete(memePrompts).where(ownershipCondition).returning();
+      return result.length > 0;
+    });
   }
 
   async getMemeImages(userId: string, role?: string): Promise<MemeImage[]> {
@@ -1952,14 +1953,16 @@ export class DatabaseStorage implements IStorage {
     const [existing] = await db.select({ id: memeImages.id }).from(memeImages).where(ownershipCondition);
     if (!existing) return false;
 
-    const subsUsingImage = await db.select({ id: memeSubmissions.id, roundId: memeSubmissions.roundId }).from(memeSubmissions).where(eq(memeSubmissions.imageId, id));
-    if (subsUsingImage.length > 0) {
-      const subIds = subsUsingImage.map(s => s.id);
-      await db.delete(memeVotes).where(inArray(memeVotes.submissionId, subIds));
-      await db.delete(memeSubmissions).where(eq(memeSubmissions.imageId, id));
-    }
-    const result = await db.delete(memeImages).where(eq(memeImages.id, id)).returning();
-    return result.length > 0;
+    return await db.transaction(async (tx) => {
+      const subsUsingImage = await tx.select({ id: memeSubmissions.id }).from(memeSubmissions).where(eq(memeSubmissions.imageId, id));
+      if (subsUsingImage.length > 0) {
+        const subIds = subsUsingImage.map(s => s.id);
+        await tx.delete(memeVotes).where(inArray(memeVotes.submissionId, subIds));
+        await tx.delete(memeSubmissions).where(eq(memeSubmissions.imageId, id));
+      }
+      const result = await tx.delete(memeImages).where(ownershipCondition).returning();
+      return result.length > 0;
+    });
   }
 
   async seedGameTypes(): Promise<void> {
