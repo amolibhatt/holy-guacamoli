@@ -2320,6 +2320,76 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/sequence-squeeze/questions/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id) || id <= 0) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const { question, optionA, optionB, optionC, optionD, correctOrder, hint } = req.body;
+      
+      const updateData: Record<string, any> = {};
+      
+      if (question !== undefined) {
+        if (typeof question !== 'string' || question.trim().length === 0) {
+          return res.status(400).json({ message: "Question text cannot be empty" });
+        }
+        if (question.length > 500) {
+          return res.status(400).json({ message: "Question text must be 500 characters or less" });
+        }
+        updateData.question = question.trim();
+      }
+      
+      for (const [key, label] of [['optionA', 'Option A'], ['optionB', 'Option B'], ['optionC', 'Option C'], ['optionD', 'Option D']] as const) {
+        const val = req.body[key];
+        if (val !== undefined) {
+          if (typeof val !== 'string' || val.trim().length === 0) {
+            return res.status(400).json({ message: `${label} cannot be empty` });
+          }
+          if (val.length > 200) {
+            return res.status(400).json({ message: `${label} must be 200 characters or less` });
+          }
+          updateData[key] = val.trim();
+        }
+      }
+      
+      if (correctOrder !== undefined) {
+        if (!Array.isArray(correctOrder) || correctOrder.length !== 4) {
+          return res.status(400).json({ message: "correctOrder must be an array of 4 letters" });
+        }
+        const validLetters = new Set(['A', 'B', 'C', 'D']);
+        const orderSet = new Set(correctOrder);
+        if (orderSet.size !== 4 || !correctOrder.every((l: string) => validLetters.has(l))) {
+          return res.status(400).json({ message: "correctOrder must contain exactly A, B, C, D in some order" });
+        }
+        updateData.correctOrder = correctOrder;
+      }
+      
+      if (hint !== undefined) {
+        if (hint && hint.length > 200) {
+          return res.status(400).json({ message: "Hint must be 200 characters or less" });
+        }
+        updateData.hint = hint?.trim() || null;
+      }
+      
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No fields to update" });
+      }
+      
+      const updated = await storage.updateSequenceQuestion(id, updateData, userId, role);
+      if (!updated) {
+        return res.status(404).json({ message: "Question not found or unauthorized" });
+      }
+      
+      res.json(updated);
+    } catch (err) {
+      console.error("Error updating sequence question:", err);
+      res.status(500).json({ message: "Failed to update question" });
+    }
+  });
+
   app.delete("/api/sequence-squeeze/questions/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);

@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Plus, Trash2, X, ListOrdered, Lightbulb, Check, Upload, ChevronDown, Loader2, Sparkles } from "lucide-react";
+import { Plus, Trash2, X, ListOrdered, Lightbulb, Check, Upload, ChevronDown, Loader2, Sparkles, Edit, Save } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import type { SequenceQuestion } from "@shared/schema";
 
 type ParsedQuestion = {
@@ -41,6 +42,17 @@ export function SequenceSqueezeAdmin() {
   const [aiInput, setAiInput] = useState("");
   const [aiGeneratedQuestions, setAiGeneratedQuestions] = useState<ParsedQuestion[]>([]);
   const [savingQuestionIdx, setSavingQuestionIdx] = useState<number | null>(null);
+
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editQuestion, setEditQuestion] = useState("");
+  const [editOptionA, setEditOptionA] = useState("");
+  const [editOptionB, setEditOptionB] = useState("");
+  const [editOptionC, setEditOptionC] = useState("");
+  const [editOptionD, setEditOptionD] = useState("");
+  const [editHint, setEditHint] = useState("");
+  const [editCorrectOrder, setEditCorrectOrder] = useState<string[]>([]);
+
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const { data: questions = [], isLoading } = useQuery<SequenceQuestion[]>({
     queryKey: ["/api/sequence-squeeze/questions"],
@@ -74,8 +86,28 @@ export function SequenceSqueezeAdmin() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<ParsedQuestion & { isActive: boolean }> }) => {
+      const res = await apiRequest("PATCH", `/api/sequence-squeeze/questions/${id}`, data);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to update question");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sequence-squeeze/questions"] });
+      toast({ title: "Question updated!" });
+      setEditingId(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message || "Failed to update question", variant: "destructive" });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
+      setDeletingId(id);
       const res = await apiRequest("DELETE", `/api/sequence-squeeze/questions/${id}`);
       if (!res.ok) {
         const error = await res.json();
@@ -86,9 +118,11 @@ export function SequenceSqueezeAdmin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sequence-squeeze/questions"] });
       toast({ title: "Question deleted" });
+      setDeletingId(null);
     },
     onError: (error: Error) => {
       toast({ title: error.message || "Failed to delete question", variant: "destructive" });
+      setDeletingId(null);
     },
   });
 
@@ -161,7 +195,7 @@ export function SequenceSqueezeAdmin() {
   };
 
   const handleAiSend = () => {
-    if (!aiInput.trim()) return;
+    if (!aiInput.trim() || aiChatMutation.isPending) return;
     const newMessages = [...aiMessages, { role: 'user' as const, content: aiInput }];
     setAiMessages(newMessages);
     setAiInput("");
@@ -220,9 +254,66 @@ export function SequenceSqueezeAdmin() {
     });
   };
 
+  const startEditing = (q: SequenceQuestion) => {
+    setEditingId(q.id);
+    setEditQuestion(q.question);
+    setEditOptionA(q.optionA);
+    setEditOptionB(q.optionB);
+    setEditOptionC(q.optionC);
+    setEditOptionD(q.optionD);
+    setEditHint(q.hint || "");
+    setEditCorrectOrder(q.correctOrder as string[]);
+  };
+
+  const handleEditSave = () => {
+    if (!editingId) return;
+    if (!editQuestion || !editOptionA || !editOptionB || !editOptionC || !editOptionD) {
+      toast({ title: "Please fill in all fields", variant: "destructive" });
+      return;
+    }
+    if (editCorrectOrder.length !== 4) {
+      toast({ title: "Please set the correct order (tap all 4 letters)", variant: "destructive" });
+      return;
+    }
+    updateMutation.mutate({
+      id: editingId,
+      data: {
+        question: editQuestion,
+        optionA: editOptionA,
+        optionB: editOptionB,
+        optionC: editOptionC,
+        optionD: editOptionD,
+        correctOrder: editCorrectOrder,
+        hint: editHint || null,
+      },
+    });
+  };
+
+  const handleEditLetterClick = (letter: string) => {
+    if (editCorrectOrder.includes(letter)) {
+      setEditCorrectOrder(editCorrectOrder.filter(l => l !== letter));
+    } else if (editCorrectOrder.length < 4) {
+      setEditCorrectOrder([...editCorrectOrder, letter]);
+    }
+  };
+
+  const getOrderedOptions = (q: SequenceQuestion) => {
+    const order = q.correctOrder as string[];
+    const optionMap: Record<string, string> = {
+      A: q.optionA,
+      B: q.optionB,
+      C: q.optionC,
+      D: q.optionD,
+    };
+    return order.map((letter, idx) => ({
+      position: idx + 1,
+      letter,
+      text: optionMap[letter],
+    }));
+  };
+
   return (
     <div className="max-w-3xl mx-auto space-y-6" data-testid="section-sequence-squeeze-admin">
-      {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <p className="text-muted-foreground">{questions.length} question{questions.length !== 1 ? 's' : ''}</p>
@@ -247,7 +338,6 @@ export function SequenceSqueezeAdmin() {
         </div>
       </div>
 
-      {/* AI Generate Form */}
       <AnimatePresence>
         {aiGenerateOpen && (
           <motion.div
@@ -322,7 +412,7 @@ export function SequenceSqueezeAdmin() {
                     placeholder="Ask for questions..."
                     value={aiInput}
                     onChange={(e) => setAiInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAiSend()}
+                    onKeyDown={(e) => e.key === 'Enter' && !aiChatMutation.isPending && handleAiSend()}
                     className="flex-1"
                     data-testid="input-ai-chat"
                   />
@@ -341,7 +431,6 @@ export function SequenceSqueezeAdmin() {
         )}
       </AnimatePresence>
 
-      {/* Add Question Form */}
       <AnimatePresence>
         {showForm && (
           <motion.div
@@ -429,7 +518,6 @@ export function SequenceSqueezeAdmin() {
         )}
       </AnimatePresence>
 
-      {/* Bulk Import */}
       <Collapsible open={bulkImportOpen} onOpenChange={setBulkImportOpen}>
         <CollapsibleTrigger asChild>
           <Button 
@@ -495,10 +583,10 @@ export function SequenceSqueezeAdmin() {
                     <Button 
                       variant="outline"
                       size="sm"
-                      onClick={() => { setBulkPreviewMode(false); setBulkImportText(""); }}
+                      onClick={() => setBulkPreviewMode(false)}
                       data-testid="button-cancel-import"
                     >
-                      Cancel
+                      Back to Edit
                     </Button>
                     <Button
                       size="sm"
@@ -522,7 +610,6 @@ export function SequenceSqueezeAdmin() {
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Questions List */}
       {isLoading ? (
         <div className="text-center py-12">
           <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
@@ -545,35 +632,161 @@ export function SequenceSqueezeAdmin() {
           {questions.map((q, index) => (
             <Card key={q.id} className="hover:bg-muted/30 transition-colors" data-testid={`card-sequence-question-${q.id}`}>
               <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <span className="w-8 h-8 rounded bg-muted flex items-center justify-center text-sm font-medium text-muted-foreground shrink-0">
-                    {index + 1}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium mb-2">{q.question}</p>
-                    <div className="flex flex-wrap gap-2 text-sm">
-                      <span className="px-2 py-1 rounded bg-muted text-muted-foreground">1. {q.optionA}</span>
-                      <span className="px-2 py-1 rounded bg-muted text-muted-foreground">2. {q.optionB}</span>
-                      <span className="px-2 py-1 rounded bg-muted text-muted-foreground">3. {q.optionC}</span>
-                      <span className="px-2 py-1 rounded bg-muted text-muted-foreground">4. {q.optionD}</span>
+                {editingId === q.id ? (
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium">Question</Label>
+                      <Textarea
+                        value={editQuestion}
+                        onChange={(e) => setEditQuestion(e.target.value)}
+                        className="mt-1 resize-none"
+                        rows={2}
+                        data-testid={`edit-question-${q.id}`}
+                      />
                     </div>
-                    {q.hint && (
-                      <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                        <Lightbulb className="w-3 h-3" /> {q.hint}
-                      </p>
-                    )}
+                    <div className="grid grid-cols-2 gap-3">
+                      {([
+                        { letter: "A", value: editOptionA, setter: setEditOptionA },
+                        { letter: "B", value: editOptionB, setter: setEditOptionB },
+                        { letter: "C", value: editOptionC, setter: setEditOptionC },
+                        { letter: "D", value: editOptionD, setter: setEditOptionD },
+                      ] as const).map(({ letter, value, setter }) => (
+                        <div key={letter}>
+                          <Label className="text-xs">Option {letter}</Label>
+                          <Input
+                            value={value}
+                            onChange={(e) => setter(e.target.value)}
+                            className="mt-1"
+                            data-testid={`edit-option-${letter}-${q.id}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium mb-1.5 block">Correct Order (tap in order)</Label>
+                      <div className="flex gap-2 mb-2">
+                        {["A", "B", "C", "D"].map((letter) => {
+                          const idx = editCorrectOrder.indexOf(letter);
+                          return (
+                            <Button
+                              key={letter}
+                              type="button"
+                              variant={idx >= 0 ? "default" : "outline"}
+                              className="w-10 h-10"
+                              onClick={() => handleEditLetterClick(letter)}
+                              data-testid={`edit-order-${letter}-${q.id}`}
+                            >
+                              {idx >= 0 ? idx + 1 : letter}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                      {editCorrectOrder.length > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          Order: {editCorrectOrder.join(" → ")}
+                          {editCorrectOrder.length < 4 && " (tap more)"}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-xs flex items-center gap-1">
+                        <Lightbulb className="w-3 h-3" /> Hint (optional)
+                      </Label>
+                      <Input
+                        value={editHint}
+                        onChange={(e) => setEditHint(e.target.value)}
+                        className="mt-1"
+                        placeholder="A clue for players"
+                        data-testid={`edit-hint-${q.id}`}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleEditSave}
+                        disabled={updateMutation.isPending}
+                        data-testid={`button-save-edit-${q.id}`}
+                      >
+                        {updateMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Save className="w-3 h-3 mr-1" />}
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setEditingId(null)}
+                        data-testid={`button-cancel-edit-${q.id}`}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="text-destructive shrink-0"
-                    onClick={() => deleteMutation.mutate(q.id)}
-                    disabled={deleteMutation.isPending}
-                    data-testid={`button-delete-sequence-${q.id}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
+                ) : (
+                  <div className="flex items-start gap-3">
+                    <span className="w-8 h-8 rounded bg-muted flex items-center justify-center text-sm font-medium text-muted-foreground shrink-0">
+                      {index + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium mb-2">{q.question}</p>
+                      <div className="flex flex-wrap gap-2 text-sm">
+                        {getOrderedOptions(q).map(({ position, letter, text }) => (
+                          <span key={letter} className="px-2 py-1 rounded bg-muted text-muted-foreground">
+                            {position}. {text}
+                          </span>
+                        ))}
+                      </div>
+                      {q.hint && (
+                        <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                          <Lightbulb className="w-3 h-3" /> {q.hint}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => startEditing(q)}
+                        data-testid={`button-edit-sequence-${q.id}`}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="text-destructive"
+                            disabled={deleteMutation.isPending && deletingId === q.id}
+                            data-testid={`button-delete-sequence-${q.id}`}
+                          >
+                            {deleteMutation.isPending && deletingId === q.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Question</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this question? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel data-testid={`button-cancel-delete-${q.id}`}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteMutation.mutate(q.id)}
+                              className="bg-destructive text-destructive-foreground"
+                              data-testid={`button-confirm-delete-${q.id}`}
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}

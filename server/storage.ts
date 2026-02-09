@@ -165,6 +165,7 @@ export interface IStorage {
   // Sort Circuit
   getSequenceQuestions(userId: string, role?: string): Promise<SequenceQuestion[]>;
   createSequenceQuestion(data: InsertSequenceQuestion): Promise<SequenceQuestion>;
+  updateSequenceQuestion(id: number, data: Partial<InsertSequenceQuestion>, userId: string, role?: string): Promise<SequenceQuestion | null>;
   deleteSequenceQuestion(id: number, userId: string, role?: string): Promise<boolean>;
   
   // PsyOp
@@ -1706,6 +1707,18 @@ export class DatabaseStorage implements IStorage {
   async createSequenceQuestion(data: InsertSequenceQuestion): Promise<SequenceQuestion> {
     const [question] = await db.insert(sequenceQuestions).values([data] as any).returning();
     return question;
+  }
+
+  async updateSequenceQuestion(id: number, data: Partial<InsertSequenceQuestion>, userId: string, role?: string): Promise<SequenceQuestion | null> {
+    const condition = role === 'super_admin' 
+      ? eq(sequenceQuestions.id, id)
+      : and(eq(sequenceQuestions.id, id), eq(sequenceQuestions.userId, userId));
+    
+    const [updated] = await db.update(sequenceQuestions)
+      .set(data as any)
+      .where(condition)
+      .returning();
+    return updated || null;
   }
 
   async deleteSequenceQuestion(id: number, userId: string, role?: string): Promise<boolean> {
