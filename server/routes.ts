@@ -6214,9 +6214,11 @@ Generate exactly ${promptCount} prompts.`
             if (!mapping || mapping.isHost) break;
             const room = rooms.get(mapping.roomCode);
             if (!room || !mapping.playerId) break;
+            if (room.memePhase !== 'selecting') break;
 
             const player = room.players.get(mapping.playerId);
             if (!player) break;
+            if (room.memeSittingOut?.has(player.id)) break;
 
             if (room.memeSubmissions?.has(player.id)) break;
 
@@ -6239,7 +6241,8 @@ Generate exactly ${promptCount} prompts.`
 
             const activePlayers = Array.from(room.players.values())
               .filter(p => p.isConnected && !room.memeSittingOut?.has(p.id));
-            if (room.memeSubmissions.size >= activePlayers.length && activePlayers.length > 0) {
+            const activeSubmittedCount = activePlayers.filter(p => room.memeSubmissions?.has(p.id)).length;
+            if (activeSubmittedCount >= activePlayers.length && activePlayers.length > 0) {
               sendToHost(room, { type: 'meme:allSubmitted' });
             }
             console.log(`[WebSocket] Player ${player.name} submitted GIF in room ${room.code}`);
@@ -6298,6 +6301,7 @@ Generate exactly ${promptCount} prompts.`
             if (!mapping || mapping.isHost) break;
             const room = rooms.get(mapping.roomCode);
             if (!room || !mapping.playerId) break;
+            if (room.memePhase !== 'voting') break;
 
             if (room.memeVotes?.has(mapping.playerId)) break;
             if (data.votedForId === mapping.playerId) break;
@@ -6313,7 +6317,8 @@ Generate exactly ${promptCount} prompts.`
 
             const eligibleVoters = Array.from(room.players.values())
               .filter(p => p.isConnected && !room.memeSittingOut?.has(p.id) && room.memeSubmissions?.has(p.id));
-            if (room.memeVotes.size >= eligibleVoters.length && eligibleVoters.length > 0) {
+            const activeVotedCount = eligibleVoters.filter(p => room.memeVotes?.has(p.id)).length;
+            if (activeVotedCount >= eligibleVoters.length && eligibleVoters.length > 0) {
               sendToHost(room, { type: 'meme:allVoted' });
             }
             console.log(`[WebSocket] Player voted in Meme No Harm room ${room.code}`);
@@ -6421,13 +6426,15 @@ Generate exactly ${promptCount} prompts.`
             if (room.memePhase === 'selecting') {
               const activeAfterSitOut = Array.from(room.players.values())
                 .filter(p => p.isConnected && !room.memeSittingOut?.has(p.id));
-              if (room.memeSubmissions && room.memeSubmissions.size >= activeAfterSitOut.length && activeAfterSitOut.length > 0) {
+              const activeSubmittedCount = activeAfterSitOut.filter(p => room.memeSubmissions?.has(p.id)).length;
+              if (activeSubmittedCount >= activeAfterSitOut.length && activeAfterSitOut.length > 0) {
                 sendToHost(room, { type: 'meme:allSubmitted' });
               }
             } else if (room.memePhase === 'voting') {
               const eligibleAfterSitOut = Array.from(room.players.values())
                 .filter(p => p.isConnected && !room.memeSittingOut?.has(p.id) && room.memeSubmissions?.has(p.id));
-              if (room.memeVotes && room.memeVotes.size >= eligibleAfterSitOut.length && eligibleAfterSitOut.length > 0) {
+              const activeVotedCount = eligibleAfterSitOut.filter(p => room.memeVotes?.has(p.id)).length;
+              if (activeVotedCount >= eligibleAfterSitOut.length && eligibleAfterSitOut.length > 0) {
                 sendToHost(room, { type: 'meme:allVoted' });
               }
             }
@@ -6484,6 +6491,8 @@ Generate exactly ${promptCount} prompts.`
             if (!mapping || !mapping.isHost) break;
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
+
+            room.memePhase = undefined;
 
             const leaderboard = Array.from(room.players.values())
               .map(p => ({
@@ -6551,6 +6560,24 @@ Generate exactly ${promptCount} prompts.`
           room.buzzQueue = room.buzzQueue.filter(b => b.playerId !== mapping.playerId);
           sendToHost(room, { type: 'player:disconnected', playerId: mapping.playerId });
           
+          if (room.gameMode === 'meme') {
+            if (room.memePhase === 'selecting') {
+              const activePlayers = Array.from(room.players.values())
+                .filter(p => p.isConnected && !room.memeSittingOut?.has(p.id));
+              const activeSubmittedCount = activePlayers.filter(p => room.memeSubmissions?.has(p.id)).length;
+              if (activeSubmittedCount >= activePlayers.length && activePlayers.length > 0) {
+                sendToHost(room, { type: 'meme:allSubmitted' });
+              }
+            } else if (room.memePhase === 'voting') {
+              const eligibleVoters = Array.from(room.players.values())
+                .filter(p => p.isConnected && !room.memeSittingOut?.has(p.id) && room.memeSubmissions?.has(p.id));
+              const activeVotedCount = eligibleVoters.filter(p => room.memeVotes?.has(p.id)).length;
+              if (activeVotedCount >= eligibleVoters.length && eligibleVoters.length > 0) {
+                sendToHost(room, { type: 'meme:allVoted' });
+              }
+            }
+          }
+
           if (room.sessionId) {
             storage.updatePlayerConnection(room.sessionId, mapping.playerId, false).catch(err => {
               console.error('[WebSocket] Failed to update player connection:', err);

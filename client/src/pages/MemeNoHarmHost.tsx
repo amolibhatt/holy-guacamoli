@@ -23,6 +23,7 @@ interface Player {
   submitted: boolean;
   voted: boolean;
   sittingOut: boolean;
+  connected: boolean;
 }
 
 interface MemeResult {
@@ -130,10 +131,11 @@ export default function MemeNoHarmHost() {
             submitted: p.submitted || false,
             voted: p.voted || false,
             sittingOut: p.sittingOut || false,
+            connected: p.isConnected !== false,
           }));
           setPlayers(restoredPlayers);
 
-          const activeOnRejoin = restoredPlayers.filter((p: Player) => !p.sittingOut);
+          const activeOnRejoin = restoredPlayers.filter((p: Player) => p.connected && !p.sittingOut);
           const submittedCount = activeOnRejoin.filter((p: Player) => p.submitted).length;
           const votedCount = activeOnRejoin.filter((p: Player) => p.voted).length;
           setAllSubmitted(activeOnRejoin.length > 0 && submittedCount >= activeOnRejoin.length);
@@ -184,7 +186,7 @@ export default function MemeNoHarmHost() {
         case "meme:player:joined":
           setPlayers(prev => {
             if (data.isReconnect) {
-              return prev.map(p => p.id === data.playerId ? { ...p, name: data.playerName } : p);
+              return prev.map(p => p.id === data.playerId ? { ...p, name: data.playerName, connected: true } : p);
             }
             if (prev.find(p => p.id === data.playerId)) return prev;
             return [...prev, {
@@ -195,6 +197,7 @@ export default function MemeNoHarmHost() {
               submitted: false,
               voted: false,
               sittingOut: false,
+              connected: true,
             }];
           });
           break;
@@ -258,6 +261,9 @@ export default function MemeNoHarmHost() {
           break;
 
         case "player:disconnected":
+          setPlayers(prev => prev.map(p =>
+            p.id === data.playerId ? { ...p, connected: false } : p
+          ));
           break;
 
         case "error":
@@ -604,9 +610,17 @@ export default function MemeNoHarmHost() {
               <div className="space-y-2">
                 {activePlayers.map(player => (
                   <div key={player.id} className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-                    player.voted ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-white/50'
+                    !player.connected
+                      ? 'bg-red-500/10 text-red-400/70'
+                      : player.voted
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-white/10 text-white/50'
                   }`}>
-                    <span className="font-medium">{player.name} {player.voted && "- Voted"}</span>
+                    <span className="font-medium">
+                      {player.name}
+                      {!player.connected && " - Disconnected"}
+                      {player.voted && player.connected && " - Voted"}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -653,13 +667,18 @@ export default function MemeNoHarmHost() {
                     className={`flex items-center justify-between gap-2 px-4 py-2 rounded-lg ${
                       player.sittingOut
                         ? 'bg-white/5 text-white/30'
-                        : player.submitted
-                          ? 'bg-green-500/20 text-green-400'
-                          : 'bg-white/10 text-white/50'
+                        : !player.connected
+                          ? 'bg-red-500/10 text-red-400/70'
+                          : player.submitted
+                            ? 'bg-green-500/20 text-green-400'
+                            : 'bg-white/10 text-white/50'
                     }`}
                   >
                     <span className="font-medium">
-                      {player.name} {player.submitted && !player.sittingOut && "- Submitted"} {player.sittingOut && "- Sitting Out"}
+                      {player.name}
+                      {player.sittingOut && " - Sitting Out"}
+                      {!player.connected && !player.sittingOut && " - Disconnected"}
+                      {player.submitted && !player.sittingOut && player.connected && " - Submitted"}
                     </span>
                     {player.sittingOut ? (
                       <Button
@@ -747,9 +766,13 @@ export default function MemeNoHarmHost() {
                   {players.map((player) => (
                     <div
                       key={player.id}
-                      className="px-4 py-2 bg-green-500/10 text-green-600 rounded-lg font-medium"
+                      className={`px-4 py-2 rounded-lg font-medium ${
+                        player.connected
+                          ? 'bg-green-500/10 text-green-600'
+                          : 'bg-red-500/10 text-red-400'
+                      }`}
                     >
-                      {player.name}
+                      {player.name}{!player.connected && " (offline)"}
                     </div>
                   ))}
                 </div>
