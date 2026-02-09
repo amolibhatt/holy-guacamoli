@@ -160,6 +160,7 @@ export default function BlitzGridAdmin() {
   const [newGridName, setNewGridName] = useState("");
   const [newGridDescription, setNewGridDescription] = useState("");
   const [deletingGridId, setDeletingGridId] = useState<number | null>(null);
+  const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
   const [selectedPointTier, setSelectedPointTier] = useState<number>(10);
   const [showMediaPanel, setShowMediaPanel] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -364,13 +365,20 @@ export default function BlitzGridAdmin() {
     }
   }, [grids, selectedGridId]);
 
-  // Clear delete confirmation after 3 seconds
+  // Clear delete confirmations after 3 seconds
   useEffect(() => {
     if (deletingGridId !== null) {
       const timer = setTimeout(() => setDeletingGridId(null), 3000);
       return () => clearTimeout(timer);
     }
   }, [deletingGridId]);
+  
+  useEffect(() => {
+    if (deletingCategoryId !== null) {
+      const timer = setTimeout(() => setDeletingCategoryId(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [deletingCategoryId]);
 
   // Reset all editing state when switching grids to prevent stale state
   useEffect(() => {
@@ -378,10 +386,14 @@ export default function BlitzGridAdmin() {
     setEditingGridId(null);
     setEditingCategoryId(null);
     setShowNewCategoryForm(false);
+    setShowNewGridForm(false);
+    setNewGridName("");
+    setNewGridDescription("");
     setNewCategoryName("");
     setNewCategoryDescription("");
     setQuestionForms({});
     setDeletingGridId(null);
+    setDeletingCategoryId(null);
   }, [selectedGridId]);
 
   const handleExport = async () => {
@@ -506,8 +518,8 @@ export default function BlitzGridAdmin() {
         <AppHeader minimal backHref="/" title="BlitzGrid Admin" />
         
         <div className="border-b border-border bg-card/50">
-          <div className="px-4 w-full">
-            <nav className="flex gap-1">
+          <div className="px-4 w-full overflow-x-auto">
+            <nav className="flex gap-1 min-w-max">
               <Link href="/admin/games">
                 <Button 
                   variant="ghost" 
@@ -609,7 +621,6 @@ export default function BlitzGridAdmin() {
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-7 w-7"
                 onClick={() => setShowNewGridForm(true)}
                 data-testid="button-add-grid-sidebar"
               >
@@ -644,7 +655,7 @@ export default function BlitzGridAdmin() {
                 <div className="flex items-center gap-1">
                   <Button
                     size="sm"
-                    className="h-7 text-xs"
+                    className="text-xs"
                     onClick={() => createGridMutation.mutate({ 
                       name: newGridName.trim(),
                       description: newGridDescription.trim() || undefined
@@ -657,7 +668,7 @@ export default function BlitzGridAdmin() {
                   <Button 
                     size="sm"
                     variant="ghost" 
-                    className="h-7 text-xs"
+                    className="text-xs"
                     onClick={() => { 
                       setShowNewGridForm(false); 
                       setNewGridName(""); 
@@ -694,7 +705,7 @@ export default function BlitzGridAdmin() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive shrink-0"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive shrink-0"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (deletingGridId === g.id) {
@@ -756,11 +767,11 @@ export default function BlitzGridAdmin() {
                           autoFocus
                           onKeyDown={(e) => {
                             if (e.key === 'Escape') setEditingGridId(null);
-                            if (e.key === 'Enter') {
+                            if (e.key === 'Enter' && editGridName.trim()) {
                               updateGridMutation.mutate({ 
                                 id: selectedGridId, 
                                 name: editGridName.trim(), 
-                                description: editGridDescription.trim() || "BlitzGrid" 
+                                description: editGridDescription.trim() || undefined 
                               });
                             }
                           }}
@@ -782,7 +793,7 @@ export default function BlitzGridAdmin() {
                             updateGridMutation.mutate({ 
                               id: selectedGridId, 
                               name: editGridName.trim(), 
-                              description: editGridDescription.trim() || "BlitzGrid" 
+                              description: editGridDescription.trim() || undefined 
                             });
                           }
                         }}
@@ -806,7 +817,7 @@ export default function BlitzGridAdmin() {
                             updateGridMutation.mutate({ 
                               id: selectedGridId, 
                               name: editGridName.trim(), 
-                              description: editGridDescription.trim() || "BlitzGrid" 
+                              description: editGridDescription.trim() || undefined 
                             });
                           }}
                           disabled={!editGridName.trim() || updateGridMutation.isPending}
@@ -970,6 +981,13 @@ export default function BlitzGridAdmin() {
                                   if (e.key === 'Escape') {
                                     setEditingCategoryId(null);
                                   }
+                                  if (e.key === 'Enter' && editCategoryName.trim() && !updateCategoryMutation.isPending) {
+                                    updateCategoryMutation.mutate({
+                                      categoryId: category.id,
+                                      name: editCategoryName.trim(),
+                                      description: editCategoryDescription.trim()
+                                    });
+                                  }
                                 }}
                                 data-testid={`input-edit-category-name-${category.id}`}
                               />
@@ -981,6 +999,13 @@ export default function BlitzGridAdmin() {
                                 onKeyDown={(e) => {
                                   if (e.key === 'Escape') {
                                     setEditingCategoryId(null);
+                                  }
+                                  if (e.key === 'Enter' && editCategoryName.trim() && !updateCategoryMutation.isPending) {
+                                    updateCategoryMutation.mutate({
+                                      categoryId: category.id,
+                                      name: editCategoryName.trim(),
+                                      description: editCategoryDescription.trim()
+                                    });
                                   }
                                 }}
                                 data-testid={`input-edit-category-description-${category.id}`}
@@ -1009,12 +1034,23 @@ export default function BlitzGridAdmin() {
                               variant="ghost"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                removeCategoryMutation.mutate({ gridId: selectedGridId, categoryId: category.id });
+                                if (deletingCategoryId === category.id) {
+                                  removeCategoryMutation.mutate({ gridId: selectedGridId, categoryId: category.id });
+                                  setDeletingCategoryId(null);
+                                } else {
+                                  setDeletingCategoryId(category.id);
+                                }
                               }}
                               disabled={removeCategoryMutation.isPending}
                               data-testid={`button-remove-category-${category.id}`}
                             >
-                              <Trash2 className="w-4 h-4 text-destructive shrink-0" aria-hidden="true" />
+                              {removeCategoryMutation.isPending ? (
+                                <Loader2 className="w-4 h-4 shrink-0 animate-spin" aria-hidden="true" />
+                              ) : deletingCategoryId === category.id ? (
+                                <Check className="w-4 h-4 text-destructive shrink-0" aria-hidden="true" />
+                              ) : (
+                                <Trash2 className="w-4 h-4 text-destructive shrink-0" aria-hidden="true" />
+                              )}
                             </Button>
                           )}
                         </div>
@@ -1124,7 +1160,7 @@ export default function BlitzGridAdmin() {
                                         </div>
                                       </div>
                                       {isMediaOpen && (
-                                        <div className="mt-3 pt-3 border-t border-border/50 space-y-3 ml-13">
+                                        <div className="mt-3 pt-3 border-t border-border/50 space-y-3 ml-[3.25rem]">
                                           <div className="text-xs text-muted-foreground/60 bg-muted/30 rounded px-2 py-1.5 mb-2">
                                             <strong>Media limits:</strong> Images max 5MB (JPG, PNG, GIF) | Audio/Video max 10MB (MP3, MP4)
                                           </div>
@@ -1135,7 +1171,7 @@ export default function BlitzGridAdmin() {
                                                 <div className="flex items-center gap-1 bg-primary/10 rounded px-2 py-1">
                                                   <Image className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
                                                   <span className="text-xs truncate max-w-20">Image</span>
-                                                  <Button type="button" size="icon" variant="ghost" className="h-4 w-4 p-0 hover:bg-destructive/20" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], imageUrl: '' } }))} data-testid={`remove-question-image-${formKey}`}>
+                                                  <Button type="button" size="icon" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], imageUrl: '' } }))} data-testid={`remove-question-image-${formKey}`}>
                                                     <X className="w-3 h-3" />
                                                   </Button>
                                                 </div>
@@ -1149,7 +1185,7 @@ export default function BlitzGridAdmin() {
                                                 <div className="flex items-center gap-1 bg-primary/10 rounded px-2 py-1">
                                                   <Music className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
                                                   <span className="text-xs truncate max-w-20">Audio</span>
-                                                  <Button type="button" size="icon" variant="ghost" className="h-4 w-4 p-0 hover:bg-destructive/20" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], audioUrl: '' } }))} data-testid={`remove-question-audio-${formKey}`}>
+                                                  <Button type="button" size="icon" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], audioUrl: '' } }))} data-testid={`remove-question-audio-${formKey}`}>
                                                     <X className="w-3 h-3" />
                                                   </Button>
                                                 </div>
@@ -1163,7 +1199,7 @@ export default function BlitzGridAdmin() {
                                                 <div className="flex items-center gap-1 bg-primary/10 rounded px-2 py-1">
                                                   <Video className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
                                                   <span className="text-xs truncate max-w-20">Video</span>
-                                                  <Button type="button" size="icon" variant="ghost" className="h-4 w-4 p-0 hover:bg-destructive/20" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], videoUrl: '' } }))} data-testid={`remove-question-video-${formKey}`}>
+                                                  <Button type="button" size="icon" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], videoUrl: '' } }))} data-testid={`remove-question-video-${formKey}`}>
                                                     <X className="w-3 h-3" />
                                                   </Button>
                                                 </div>
@@ -1182,7 +1218,7 @@ export default function BlitzGridAdmin() {
                                                 <div className="flex items-center gap-1 bg-primary/10 rounded px-2 py-1">
                                                   <Image className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
                                                   <span className="text-xs truncate max-w-20">Image</span>
-                                                  <Button type="button" size="icon" variant="ghost" className="h-4 w-4 p-0 hover:bg-destructive/20" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], answerImageUrl: '' } }))} data-testid={`remove-answer-image-${formKey}`}>
+                                                  <Button type="button" size="icon" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], answerImageUrl: '' } }))} data-testid={`remove-answer-image-${formKey}`}>
                                                     <X className="w-3 h-3" />
                                                   </Button>
                                                 </div>
@@ -1196,7 +1232,7 @@ export default function BlitzGridAdmin() {
                                                 <div className="flex items-center gap-1 bg-primary/10 rounded px-2 py-1">
                                                   <Music className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
                                                   <span className="text-xs truncate max-w-20">Audio</span>
-                                                  <Button type="button" size="icon" variant="ghost" className="h-4 w-4 p-0 hover:bg-destructive/20" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], answerAudioUrl: '' } }))} data-testid={`remove-answer-audio-${formKey}`}>
+                                                  <Button type="button" size="icon" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], answerAudioUrl: '' } }))} data-testid={`remove-answer-audio-${formKey}`}>
                                                     <X className="w-3 h-3" />
                                                   </Button>
                                                 </div>
@@ -1210,7 +1246,7 @@ export default function BlitzGridAdmin() {
                                                 <div className="flex items-center gap-1 bg-primary/10 rounded px-2 py-1">
                                                   <Video className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
                                                   <span className="text-xs truncate max-w-20">Video</span>
-                                                  <Button type="button" size="icon" variant="ghost" className="h-4 w-4 p-0 hover:bg-destructive/20" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], answerVideoUrl: '' } }))} data-testid={`remove-answer-video-${formKey}`}>
+                                                  <Button type="button" size="icon" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], answerVideoUrl: '' } }))} data-testid={`remove-answer-video-${formKey}`}>
                                                     <X className="w-3 h-3" />
                                                   </Button>
                                                 </div>
@@ -1275,45 +1311,71 @@ export default function BlitzGridAdmin() {
                                 </Button>
                                 <Button
                                   onClick={async () => {
-                                    // Save category name/description if changed
-                                    if (editCategoryName.trim()) {
-                                      await updateCategoryMutation.mutateAsync({ 
-                                        categoryId: category.id, 
-                                        name: editCategoryName.trim(),
-                                        description: editCategoryDescription.trim() 
-                                      });
-                                    }
-                                    // Save all questions with data
-                                    for (const pts of POINT_TIERS) {
-                                      const formKey = `${category.id}-${pts}`;
-                                      const formData = questionForms[formKey];
-                                      const hasQuestionMedia = formData?.imageUrl || formData?.audioUrl || formData?.videoUrl;
-                                      const questionValid = formData?.question || hasQuestionMedia;
-                                      if (formData && questionValid && formData.correctAnswer) {
-                                        await saveQuestionMutation.mutateAsync({
-                                          categoryId: category.id,
-                                          points: pts,
-                                          question: formData.question,
-                                          correctAnswer: formData.correctAnswer,
-                                          options: formData.options || [],
-                                          imageUrl: formData.imageUrl || undefined,
-                                          audioUrl: formData.audioUrl || undefined,
-                                          videoUrl: formData.videoUrl || undefined,
-                                          answerImageUrl: formData.answerImageUrl || undefined,
-                                          answerAudioUrl: formData.answerAudioUrl || undefined,
-                                          answerVideoUrl: formData.answerVideoUrl || undefined,
+                                    try {
+                                      if (editCategoryName.trim()) {
+                                        await updateCategoryMutation.mutateAsync({ 
+                                          categoryId: category.id, 
+                                          name: editCategoryName.trim(),
+                                          description: editCategoryDescription.trim() 
                                         });
                                       }
-                                    }
-                                    setEditingCategoryId(null);
-                                    setQuestionForms(prev => {
-                                      const newForms = { ...prev };
-                                      POINT_TIERS.forEach(pts => {
-                                        delete newForms[`${category.id}-${pts}`];
+                                      let savedCount = 0;
+                                      let deletedCount = 0;
+                                      let errorCount = 0;
+                                      for (const pts of POINT_TIERS) {
+                                        const formKey = `${category.id}-${pts}`;
+                                        const formData = questionForms[formKey];
+                                        const existingQ = category.questions?.find(q => q.points === pts);
+                                        const hasQuestionMedia = formData?.imageUrl || formData?.audioUrl || formData?.videoUrl;
+                                        const hasContent = formData?.question?.trim() || hasQuestionMedia;
+                                        const hasAnswer = formData?.correctAnswer?.trim();
+                                        
+                                        if (formData && hasContent && hasAnswer) {
+                                          try {
+                                            await saveQuestionMutation.mutateAsync({
+                                              categoryId: category.id,
+                                              points: pts,
+                                              question: formData.question,
+                                              correctAnswer: formData.correctAnswer,
+                                              options: formData.options || [],
+                                              imageUrl: formData.imageUrl || undefined,
+                                              audioUrl: formData.audioUrl || undefined,
+                                              videoUrl: formData.videoUrl || undefined,
+                                              answerImageUrl: formData.answerImageUrl || undefined,
+                                              answerAudioUrl: formData.answerAudioUrl || undefined,
+                                              answerVideoUrl: formData.answerVideoUrl || undefined,
+                                            });
+                                            savedCount++;
+                                          } catch { errorCount++; }
+                                        } else if (existingQ && formData && !hasContent && !hasAnswer) {
+                                          try {
+                                            await deleteQuestionMutation.mutateAsync(existingQ.id);
+                                            deletedCount++;
+                                          } catch { errorCount++; }
+                                        } else if (existingQ && formData && (hasContent && !hasAnswer)) {
+                                          errorCount++;
+                                        }
+                                      }
+                                      setEditingCategoryId(null);
+                                      setQuestionForms(prev => {
+                                        const newForms = { ...prev };
+                                        POINT_TIERS.forEach(pts => {
+                                          delete newForms[`${category.id}-${pts}`];
+                                        });
+                                        return newForms;
                                       });
-                                      return newForms;
-                                    });
-                                    toast({ title: "Saved" });
+                                      const parts = [];
+                                      if (savedCount > 0) parts.push(`${savedCount} saved`);
+                                      if (deletedCount > 0) parts.push(`${deletedCount} removed`);
+                                      if (errorCount > 0) parts.push(`${errorCount} failed`);
+                                      if (errorCount > 0) {
+                                        toast({ title: `Questions: ${parts.join(', ')}`, description: "Some questions need both a question and an answer", variant: "destructive" });
+                                      } else {
+                                        toast({ title: parts.length > 0 ? `Questions: ${parts.join(', ')}` : "Category updated" });
+                                      }
+                                    } catch (err: any) {
+                                      toast({ title: err?.message || "Save failed - some changes may not have been saved", variant: "destructive" });
+                                    }
                                   }}
                                   disabled={saveQuestionMutation.isPending || updateCategoryMutation.isPending || !editCategoryName.trim()}
                                   data-testid={`button-save-category-${category.id}`}
@@ -1347,8 +1409,8 @@ export default function BlitzGridAdmin() {
       <AppHeader minimal backHref="/" title="BlitzGrid Admin" />
       
       <div className="border-b border-border bg-card/50">
-        <div className="max-w-4xl mx-auto px-4 w-full">
-          <nav className="flex gap-1">
+        <div className="max-w-4xl mx-auto px-4 w-full overflow-x-auto">
+          <nav className="flex gap-1 min-w-max">
             <Link href="/admin/games">
               <Button 
                 variant="ghost" 
