@@ -2,16 +2,13 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
-import { useToast } from "@/hooks/use-toast";
-import { Smile, Users, Play, MessageSquare, Trophy, Crown, Ban, Loader2, ChevronRight, Image as ImageIcon, Sparkles, Check, Plus } from "lucide-react";
+import { Smile, Users, Play, MessageSquare, Trophy, Crown, Ban, Loader2, ChevronRight, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MemePrompt } from "@shared/schema";
 import { QRCodeSVG } from "qrcode.react";
@@ -49,7 +46,6 @@ export default function MemeNoHarmHost() {
   const { isLoading: isAuthLoading, isAuthenticated, user } = useAuth();
   const [, setLocation] = useLocation();
 
-  const { toast } = useToast();
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const [phase, setPhase] = useState<GamePhase>("setup");
   const [roomCode, setRoomCode] = useState("");
@@ -66,13 +62,6 @@ export default function MemeNoHarmHost() {
   const [voteCount, setVoteCount] = useState(0);
   const [votingSubmissions, setVotingSubmissions] = useState<MemeResult[]>([]);
 
-  const [aiCategory, setAiCategory] = useState("mixed");
-  const [aiCount, setAiCount] = useState(10);
-  const [aiGenerating, setAiGenerating] = useState(false);
-  const [aiResults, setAiResults] = useState<string[]>([]);
-  const [aiSelected, setAiSelected] = useState<Set<number>>(new Set());
-  const [aiSaving, setAiSaving] = useState(false);
-
   const wsRef = useRef<WebSocket | null>(null);
 
   const { data: prompts = [], isLoading: promptsLoading } = useQuery<MemePrompt[]>({
@@ -88,53 +77,6 @@ export default function MemeNoHarmHost() {
       setShuffledPrompts(shuffled);
     }
   }, [prompts, shuffledPrompts.length]);
-
-  const handleAiGenerate = async () => {
-    setAiGenerating(true);
-    setAiResults([]);
-    setAiSelected(new Set());
-    try {
-      const res = await apiRequest("POST", "/api/memenoharm/prompts/generate", { category: aiCategory, count: aiCount });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Failed to generate prompts");
-      }
-      const data = await res.json();
-      setAiResults(data.prompts || []);
-      setAiSelected(new Set(data.prompts?.map((_: string, i: number) => i) || []));
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } finally {
-      setAiGenerating(false);
-    }
-  };
-
-  const handleAiAddSelected = async () => {
-    const selected = aiResults.filter((_, i) => aiSelected.has(i));
-    if (selected.length === 0) return;
-    setAiSaving(true);
-    let added = 0;
-    for (const prompt of selected) {
-      try {
-        const res = await apiRequest("POST", "/api/memenoharm/prompts", { prompt });
-        if (res.ok) added++;
-      } catch {}
-    }
-    queryClient.invalidateQueries({ queryKey: ["/api/memenoharm/prompts"] });
-    setAiSaving(false);
-    toast({ title: `${added} prompts added!` });
-    setAiResults([]);
-    setAiSelected(new Set());
-  };
-
-  const toggleAiSelect = (index: number) => {
-    setAiSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
-      return next;
-    });
-  };
 
   const connectWebSocket = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -715,8 +657,11 @@ export default function MemeNoHarmHost() {
               ) : !isReady ? (
                 <div className="text-center py-4">
                   <p className="text-muted-foreground mb-4">
-                    You need at least 3 prompts to play. Use the AI generator below or add them manually.
+                    You need at least 3 prompts to play. Players will search GIPHY for GIFs during the game.
                   </p>
+                  <Button onClick={() => setLocation("/admin/memenoharm")} data-testid="button-create-content">
+                    Create Prompts
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -749,118 +694,6 @@ export default function MemeNoHarmHost() {
                   </Button>
                 </div>
               )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-green-500" />
-                AI Prompt Generator
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex gap-3 flex-wrap items-end">
-                  <div className="flex-1 min-w-[180px]">
-                    <label className="text-sm font-medium text-muted-foreground mb-1.5 block">Category</label>
-                    <Select value={aiCategory} onValueChange={setAiCategory}>
-                      <SelectTrigger data-testid="select-host-ai-category">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="mixed">Mixed (All Categories)</SelectItem>
-                        <SelectItem value="work">Work & Corporate</SelectItem>
-                        <SelectItem value="dating">Dating & Relationships</SelectItem>
-                        <SelectItem value="history">History</SelectItem>
-                        <SelectItem value="pop_culture">Pop Culture</SelectItem>
-                        <SelectItem value="family">Family</SelectItem>
-                        <SelectItem value="school">School & Education</SelectItem>
-                        <SelectItem value="technology">Technology</SelectItem>
-                        <SelectItem value="existential">Existential & Philosophy</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="w-24">
-                    <label className="text-sm font-medium text-muted-foreground mb-1.5 block">Count</label>
-                    <Select value={String(aiCount)} onValueChange={(v) => setAiCount(Number(v))}>
-                      <SelectTrigger data-testid="select-host-ai-count">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">5</SelectItem>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="15">15</SelectItem>
-                        <SelectItem value="20">20</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button
-                    onClick={handleAiGenerate}
-                    disabled={aiGenerating}
-                    data-testid="button-host-ai-generate"
-                  >
-                    {aiGenerating ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-4 h-4 mr-2" />
-                    )}
-                    {aiGenerating ? "Generating..." : "Generate"}
-                  </Button>
-                </div>
-
-                {aiResults.length > 0 && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <span className="text-sm text-muted-foreground">
-                        {aiSelected.size} of {aiResults.length} selected
-                      </span>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setAiSelected(aiSelected.size === aiResults.length ? new Set() : new Set(aiResults.map((_, i) => i)))}
-                          data-testid="button-host-ai-toggle-all"
-                        >
-                          {aiSelected.size === aiResults.length ? "Deselect All" : "Select All"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={handleAiAddSelected}
-                          disabled={aiSelected.size === 0 || aiSaving}
-                          data-testid="button-host-ai-add-selected"
-                        >
-                          {aiSaving ? (
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          ) : (
-                            <Plus className="w-4 h-4 mr-2" />
-                          )}
-                          Add {aiSelected.size} Prompts
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
-                      {aiResults.map((prompt, i) => (
-                        <div
-                          key={i}
-                          className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors ${
-                            aiSelected.has(i) ? "bg-primary/10 border border-primary/30" : "bg-muted/50"
-                          }`}
-                          onClick={() => toggleAiSelect(i)}
-                          data-testid={`host-ai-prompt-${i}`}
-                        >
-                          <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${
-                            aiSelected.has(i) ? "bg-primary text-primary-foreground" : "border border-muted-foreground/30"
-                          }`}>
-                            {aiSelected.has(i) && <Check className="w-3 h-3" />}
-                          </div>
-                          <span className="text-sm flex-1">{prompt}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
             </CardContent>
           </Card>
 
