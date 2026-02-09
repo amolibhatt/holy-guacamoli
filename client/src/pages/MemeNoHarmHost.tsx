@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
-import { Smile, Users, Play, MessageSquare, Trophy, Crown, Ban, Loader2, ChevronRight, Image as ImageIcon } from "lucide-react";
+import { Smile, Users, Play, MessageSquare, Trophy, Crown, Ban, Loader2, ChevronRight, SkipForward, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MemePrompt } from "@shared/schema";
 import { QRCodeSVG } from "qrcode.react";
@@ -58,7 +58,6 @@ export default function MemeNoHarmHost() {
   const [results, setResults] = useState<MemeResult[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [roundWinnerId, setRoundWinnerId] = useState<string | null>(null);
-  const [revealIndex, setRevealIndex] = useState(0);
   const [submissionCount, setSubmissionCount] = useState(0);
   const [voteCount, setVoteCount] = useState(0);
   const [votingSubmissions, setVotingSubmissions] = useState<MemeResult[]>([]);
@@ -137,9 +136,10 @@ export default function MemeNoHarmHost() {
 
           const activeOnRejoin = restoredPlayers.filter((p: Player) => p.connected && !p.sittingOut);
           const submittedCount = activeOnRejoin.filter((p: Player) => p.submitted).length;
-          const votedCount = activeOnRejoin.filter((p: Player) => p.voted).length;
           setAllSubmitted(activeOnRejoin.length > 0 && submittedCount >= activeOnRejoin.length);
-          setAllVoted(activeOnRejoin.length > 0 && votedCount >= activeOnRejoin.length);
+          const eligibleVoters = activeOnRejoin.filter((p: Player) => p.submitted);
+          const votedCount = eligibleVoters.filter((p: Player) => p.voted).length;
+          setAllVoted(eligibleVoters.length > 0 && votedCount >= eligibleVoters.length);
 
           if (data.votingSubmissions?.length > 0) {
             setVotingSubmissions(data.votingSubmissions.map((s: any) => ({
@@ -176,8 +176,10 @@ export default function MemeNoHarmHost() {
           if (serverPhase === 'selecting') setPhase('selecting');
           else if (serverPhase === 'voting') setPhase('voting');
           else if (serverPhase === 'reveal') {
-            setRevealIndex(0);
             setPhase('reveal');
+          }
+          else if (serverPhase === 'gameComplete') {
+            setPhase('finished');
           }
           else setPhase('lobby');
           break;
@@ -239,7 +241,6 @@ export default function MemeNoHarmHost() {
           setResults(data.results);
           setLeaderboard(data.leaderboard);
           setRoundWinnerId(data.roundWinnerId);
-          setRevealIndex(0);
           setPhase("reveal");
           break;
 
@@ -304,8 +305,10 @@ export default function MemeNoHarmHost() {
     connectWebSocket();
   };
 
+  const connectedPlayers = players.filter(p => p.connected);
+
   const startGame = () => {
-    if (players.length < 2) return;
+    if (connectedPlayers.length < 2) return;
     usedPromptsRef.current.clear();
     setCurrentRound(1);
     const prompt = shuffledPrompts[0];
@@ -384,7 +387,6 @@ export default function MemeNoHarmHost() {
     setResults([]);
     setLeaderboard([]);
     setRoundWinnerId(null);
-    setRevealIndex(0);
     setSubmissionCount(0);
     setVoteCount(0);
     setVotingSubmissions([]);
@@ -403,7 +405,7 @@ export default function MemeNoHarmHost() {
     sendWs({ type: "meme:host:unsitOut", playerId });
   };
 
-  const activePlayers = players.filter(p => !p.sittingOut);
+  const activePlayers = players.filter(p => !p.sittingOut && p.connected);
 
   if (isAuthLoading) {
     return (
@@ -608,19 +610,47 @@ export default function MemeNoHarmHost() {
                 {allVoted ? 'All votes in!' : `Votes received: ${voteCount}`}
               </div>
               <div className="space-y-2">
-                {activePlayers.map(player => (
-                  <div key={player.id} className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-                    !player.connected
-                      ? 'bg-red-500/10 text-red-400/70'
-                      : player.voted
-                        ? 'bg-green-500/20 text-green-400'
-                        : 'bg-white/10 text-white/50'
+                {players.map(player => (
+                  <div key={player.id} className={`flex items-center justify-between gap-2 px-4 py-2 rounded-lg ${
+                    player.sittingOut
+                      ? 'bg-white/5 text-white/30'
+                      : !player.connected
+                        ? 'bg-red-500/10 text-red-400/70'
+                        : player.voted
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-white/10 text-white/50'
                   }`}>
                     <span className="font-medium">
                       {player.name}
-                      {!player.connected && " - Disconnected"}
-                      {player.voted && player.connected && " - Voted"}
+                      {player.sittingOut && " - Sitting Out"}
+                      {!player.connected && !player.sittingOut && " - Disconnected"}
+                      {player.voted && !player.sittingOut && player.connected && " - Voted"}
                     </span>
+                    {player.sittingOut ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => unsitOutPlayer(player.id)}
+                        className="text-green-400/70"
+                        data-testid={`button-bring-back-voting-${player.id}`}
+                        aria-label={`Bring back ${player.name}`}
+                      >
+                        <Users className="w-4 h-4 mr-1" />
+                        Bring Back
+                      </Button>
+                    ) : !player.voted ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => sitOutPlayer(player.id)}
+                        className="text-orange-400/70"
+                        data-testid={`button-sit-out-voting-${player.id}`}
+                        aria-label={`Sit out ${player.name}`}
+                      >
+                        <Ban className="w-4 h-4 mr-1" />
+                        Sit Out
+                      </Button>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -711,7 +741,7 @@ export default function MemeNoHarmHost() {
             </CardContent>
           </Card>
 
-          <div className="text-center">
+          <div className="flex gap-3 justify-center flex-wrap">
             <Button
               onClick={startVoting}
               size="lg"
@@ -719,6 +749,16 @@ export default function MemeNoHarmHost() {
               data-testid="button-start-voting"
             >
               Start Voting ({submissionCount} submissions)
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={nextRound}
+              className="gap-2 text-white/70 border-white/20"
+              data-testid="button-skip-round"
+            >
+              <SkipForward className="w-4 h-4" />
+              {currentRound >= totalRounds ? 'End Game' : 'Skip Round'}
             </Button>
           </div>
         </main>
@@ -783,7 +823,7 @@ export default function MemeNoHarmHost() {
           <div className="flex gap-4 justify-center">
             <Button
               onClick={startGame}
-              disabled={players.length < 2}
+              disabled={connectedPlayers.length < 2}
               size="lg"
               className="gap-2"
               data-testid="button-start-game"
@@ -839,7 +879,11 @@ export default function MemeNoHarmHost() {
                       min={3}
                       max={Math.min(10, prompts.length)}
                       value={totalRounds}
-                      onChange={(e) => setTotalRounds(parseInt(e.target.value) || 5)}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (isNaN(val)) return;
+                        setTotalRounds(Math.max(3, Math.min(val, Math.min(10, prompts.length))));
+                      }}
                       className="w-20"
                       data-testid="input-total-rounds"
                     />

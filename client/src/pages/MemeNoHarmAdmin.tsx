@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -165,6 +165,12 @@ export default function MemeNoHarmAdmin() {
     setShowBulkImport(false);
   };
 
+  useEffect(() => {
+    if (!isAuthLoading && !isAuthenticated) {
+      setLocation("/");
+    }
+  }, [isAuthLoading, isAuthenticated, setLocation]);
+
   if (isAuthLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
@@ -174,7 +180,6 @@ export default function MemeNoHarmAdmin() {
   }
 
   if (!isAuthenticated) {
-    setLocation("/");
     return null;
   }
 
