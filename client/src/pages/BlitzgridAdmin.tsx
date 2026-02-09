@@ -923,7 +923,7 @@ export default function BlitzGridAdmin() {
                       />
                     ) : (
                       <p className="text-muted-foreground text-sm">
-                        {grid?.description && grid.description !== "BlitzGrid" ? grid.description : "No description"}
+                        {grid?.description ? grid.description : "No description"}
                       </p>
                     )}
                     <p className="text-sm text-muted-foreground">
@@ -959,7 +959,7 @@ export default function BlitzGridAdmin() {
                           onClick={() => {
                             setEditingGridId(selectedGridId);
                             setEditGridName(grid?.name || '');
-                            setEditGridDescription(grid?.description === "BlitzGrid" ? "" : (grid?.description || ""));
+                            setEditGridDescription(grid?.description || "");
                           }}
                           data-testid="button-edit-grid"
                         >
@@ -1859,7 +1859,7 @@ export default function BlitzGridAdmin() {
                               e.stopPropagation();
                               setEditingGridId(grid.id);
                               setEditGridName(grid.name);
-                              setEditGridDescription(grid.description === "BlitzGrid" ? "" : (grid.description || ""));
+                              setEditGridDescription(grid.description || "");
                             }}
                             data-testid={`button-edit-grid-${grid.id}`}
                           >

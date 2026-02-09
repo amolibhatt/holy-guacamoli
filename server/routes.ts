@@ -4098,6 +4098,7 @@ Generate exactly ${promptCount} prompts.`
   app.post("/api/blitzgrid/grids", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const role = req.session.userRole;
       
       const { name, description, theme } = req.body;
       if (!name || typeof name !== "string" || !name.trim()) {
@@ -4117,14 +4118,14 @@ Generate exactly ${promptCount} prompts.`
         }
       }
       
-      // Auto-assign color for new grids
-      const existingBoards = await storage.getBoards(userId, 'super_admin');
-      const colorIndex = existingBoards.length % BOARD_COLORS.length;
+      // Auto-assign color based on user's own boards
+      const userBoards = await storage.getBoards(userId, role);
+      const colorIndex = userBoards.length % BOARD_COLORS.length;
       
       const board = await storage.createBoard({
         userId,
         name: name.trim(),
-        description: (typeof description === "string" && description.trim()) ? description.trim() : "BlitzGrid",
+        description: (typeof description === "string" && description.trim()) ? description.trim() : null,
         pointValues: [10, 20, 30, 40, 50],
         theme: gridTheme,
         colorCode: BOARD_COLORS[colorIndex],
@@ -4527,7 +4528,7 @@ Generate exactly ${promptCount} prompts.`
       const boards = allBoards.filter(b => b.theme === "blitzgrid" || b.theme?.startsWith("blitzgrid:"));
       
       const rows: any[] = [];
-      rows.push(["Grid Name", "Grid Description", "Category Name", "Category Description", "Points", "Question", "Answer", "Options", "Image URL", "Audio URL", "Video URL"]);
+      rows.push(["Grid Name", "Grid Description", "Category Name", "Category Description", "Points", "Question", "Answer", "Options", "Image URL", "Audio URL", "Video URL", "Answer Image URL", "Answer Audio URL", "Answer Video URL"]);
       
       for (const board of boards) {
         const boardCategories = await storage.getBoardCategories(board.id);
@@ -4548,6 +4549,9 @@ Generate exactly ${promptCount} prompts.`
               q.imageUrl || "",
               q.audioUrl || "",
               q.videoUrl || "",
+              q.answerImageUrl || "",
+              q.answerAudioUrl || "",
+              q.answerVideoUrl || "",
             ]);
           }
         }
@@ -4572,12 +4576,12 @@ Generate exactly ${promptCount} prompts.`
   app.get("/api/blitzgrid/template", async (req, res) => {
     try {
       const rows = [
-        ["Grid Name", "Grid Description", "Category Name", "Category Description", "Points", "Question", "Answer", "Options", "Image URL", "Audio URL", "Video URL"],
-        ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 10, "What year was Titanic released?", "1997", "", "", "", ""],
-        ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 20, "Who directed Jaws?", "Steven Spielberg", "", "", "", ""],
-        ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 30, "Which actor played Iron Man?", "Robert Downey Jr.", "Chris Evans|Robert Downey Jr.|Chris Hemsworth|Mark Ruffalo", "", "", ""],
-        ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 40, "What is the highest-grossing film of all time?", "Avatar", "", "", "", ""],
-        ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 50, "Who composed the Star Wars soundtrack?", "John Williams", "", "", "", ""],
+        ["Grid Name", "Grid Description", "Category Name", "Category Description", "Points", "Question", "Answer", "Options", "Image URL", "Audio URL", "Video URL", "Answer Image URL", "Answer Audio URL", "Answer Video URL"],
+        ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 10, "What year was Titanic released?", "1997", "", "", "", "", "", "", ""],
+        ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 20, "Who directed Jaws?", "Steven Spielberg", "", "", "", "", "", "", ""],
+        ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 30, "Which actor played Iron Man?", "Robert Downey Jr.", "Chris Evans|Robert Downey Jr.|Chris Hemsworth|Mark Ruffalo", "", "", "", "", "", ""],
+        ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 40, "What is the highest-grossing film of all time?", "Avatar", "", "", "", "", "", "", ""],
+        ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 50, "Who composed the Star Wars soundtrack?", "John Williams", "", "", "", "", "", "", ""],
       ];
       
       const instructions = [
@@ -4627,6 +4631,7 @@ Generate exactly ${promptCount} prompts.`
   app.post("/api/blitzgrid/import", isAuthenticated, isAdmin, blitzgridExcelUpload.single("file"), async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const role = req.session.userRole;
       
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
@@ -4648,7 +4653,7 @@ Generate exactly ${promptCount} prompts.`
         const row = data[i];
         if (!row || row.length < 7 || !row[0]) continue;
         
-        const [gridName, gridDesc, catName, catDesc, points, question, answer, options, imageUrl, audioUrl, videoUrl] = row;
+        const [gridName, gridDesc, catName, catDesc, points, question, answer, options, imageUrl, audioUrl, videoUrl, answerImageUrl, answerAudioUrl, answerVideoUrl] = row;
         
         if (!gridName || !catName || points == null || points === "" || !question || !answer) continue;
         
@@ -4676,6 +4681,9 @@ Generate exactly ${promptCount} prompts.`
           imageUrl: imageUrl ? String(imageUrl).trim() : null,
           audioUrl: audioUrl ? String(audioUrl).trim() : null,
           videoUrl: videoUrl ? String(videoUrl).trim() : null,
+          answerImageUrl: answerImageUrl ? String(answerImageUrl).trim() : null,
+          answerAudioUrl: answerAudioUrl ? String(answerAudioUrl).trim() : null,
+          answerVideoUrl: answerVideoUrl ? String(answerVideoUrl).trim() : null,
         });
       }
       
@@ -4704,12 +4712,12 @@ Generate exactly ${promptCount} prompts.`
           
           if (!allValid) continue;
           
-          const existingBoards = await storage.getBoards(userId, 'super_admin');
-          const colorIndex = existingBoards.length % BOARD_COLORS.length;
+          const userBoards = await storage.getBoards(userId, role);
+          const colorIndex = userBoards.length % BOARD_COLORS.length;
           
           const board = await storage.createBoard({
             name: gridName.trim(),
-            description: gridData.description?.trim() || "BlitzGrid",
+            description: gridData.description?.trim() || null,
             userId,
             theme: "blitzgrid",
             pointValues: [10, 20, 30, 40, 50],
@@ -4745,15 +4753,18 @@ Generate exactly ${promptCount} prompts.`
                   imageUrl: q.imageUrl,
                   audioUrl: q.audioUrl,
                   videoUrl: q.videoUrl,
+                  answerImageUrl: q.answerImageUrl,
+                  answerAudioUrl: q.answerAudioUrl,
+                  answerVideoUrl: q.answerVideoUrl,
                 });
               }
             }
           } catch (innerErr) {
             try {
-              await storage.deleteBoard(board.id, userId, 'super_admin');
               for (const catId of createdCategoryIds) {
                 await storage.deleteCategory(catId);
               }
+              await storage.deleteBoard(board.id, userId, 'super_admin');
             } catch (_) { /* best-effort cleanup */ }
             throw innerErr;
           }

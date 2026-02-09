@@ -383,10 +383,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBoardCategory(data: InsertBoardCategory): Promise<BoardCategory> {
-    const currentCount = await db.select({ count: count() })
+    const existing = await db.select({ position: boardCategories.position })
       .from(boardCategories)
       .where(eq(boardCategories.boardId, data.boardId));
-    const position = currentCount[0]?.count ?? 0;
+    const maxPosition = existing.length > 0 ? Math.max(...existing.map(e => e.position ?? 0)) : -1;
+    const position = data.position ?? (maxPosition + 1);
     const [newBc] = await db.insert(boardCategories).values({ ...data, position }).returning();
     return newBc;
   }
