@@ -77,6 +77,8 @@ export default function SequencePlayer() {
   const [myScore, setMyScore] = useState(0);
   const [winner, setWinner] = useState<LeaderboardEntry | null>(null);
   
+  const hasCodeFromUrl = !!params.code;
+  
   const wsRef = useRef<WebSocket | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const selectedSequenceRef = useRef<string[]>([]);
@@ -281,23 +283,39 @@ export default function SequencePlayer() {
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-teal-500 flex items-center justify-center shadow-xl">
               <ListOrdered className="w-10 h-10 text-white shrink-0" aria-hidden="true" />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2" data-testid="text-game-title">Sort Circuit</h1>
-            <p className="text-teal-200" data-testid="text-game-tagline">Arrange fast. Win first.</p>
+            {hasCodeFromUrl ? (
+              <>
+                <h1 className="text-3xl font-bold text-white mb-2" data-testid="text-game-title">You're Invited!</h1>
+                <p className="text-teal-200" data-testid="text-game-tagline">Just enter your name to join</p>
+              </>
+            ) : (
+              <>
+                <h1 className="text-3xl font-bold text-white mb-2" data-testid="text-game-title">Sort Circuit</h1>
+                <p className="text-teal-200" data-testid="text-game-tagline">Arrange fast. Win first.</p>
+              </>
+            )}
           </div>
 
           <form onSubmit={handleJoin} className="space-y-4" data-testid="form-join">
-            <div>
-              <label className="text-sm font-medium text-teal-200 mb-1.5 block">Room Code</label>
-              <Input
-                value={roomCode}
-                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                placeholder="Enter code"
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 text-center text-2xl font-mono tracking-widest"
-                maxLength={6}
-                required
-                data-testid="input-room-code"
-              />
-            </div>
+            {hasCodeFromUrl ? (
+              <div className="text-center py-3 px-4 bg-teal-500/20 rounded-lg border border-teal-500/30" data-testid="display-room-code">
+                <p className="text-xs text-teal-300 uppercase tracking-wide mb-1">Room Code</p>
+                <p className="text-3xl font-mono font-bold text-teal-400 tracking-widest">{roomCode}</p>
+              </div>
+            ) : (
+              <div>
+                <label className="text-sm font-medium text-teal-200 mb-1.5 block">Room Code</label>
+                <Input
+                  value={roomCode}
+                  onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                  placeholder="Enter code"
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 text-center text-2xl font-mono tracking-widest"
+                  maxLength={4}
+                  required
+                  data-testid="input-room-code"
+                />
+              </div>
+            )}
             
             <div>
               <label className="text-sm font-medium text-teal-200 mb-1.5 block">Your Name</label>
@@ -306,7 +324,7 @@ export default function SequencePlayer() {
                 onChange={(e) => setPlayerName(e.target.value)}
                 placeholder="Enter your name"
                 className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                maxLength={30}
+                maxLength={20}
                 required
                 data-testid="input-player-name"
               />
@@ -339,7 +357,7 @@ export default function SequencePlayer() {
               disabled={status === "connecting"}
               data-testid="button-join-game"
             >
-              {status === "connecting" ? "Joining..." : "Join Game"}
+              {status === "connecting" ? "Connecting..." : "Join Game"}
             </Button>
           </form>
 

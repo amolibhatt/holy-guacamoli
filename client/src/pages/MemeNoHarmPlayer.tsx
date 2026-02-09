@@ -52,6 +52,7 @@ export default function MemeNoHarmPlayer() {
   const { toast } = useToast();
   const savedSession = getSession();
 
+  const hasCodeFromUrl = !!params.code;
   const [roomCode, setRoomCode] = useState(params.code || savedSession?.roomCode || "");
   const [playerName, setPlayerName] = useState(savedSession?.playerName || "");
   const [playerId, setPlayerId] = useState<string | null>(savedSession?.playerId || null);
@@ -328,25 +329,36 @@ export default function MemeNoHarmPlayer() {
           >
             <div className="text-center mb-6">
               <Smile className="w-12 h-12 text-green-400 mx-auto mb-2" />
-              <h1 className="text-2xl font-bold text-white">Meme No Harm</h1>
-              <p className="text-green-200/60 text-sm">Search GIFs. Submit. Vote. Win.</p>
+              <h1 className="text-2xl font-bold text-white">
+                {hasCodeFromUrl ? "You're Invited!" : "Meme No Harm"}
+              </h1>
+              <p className="text-green-200/60 text-sm">
+                {hasCodeFromUrl ? "Just enter your name to join" : "Search GIFs. Submit. Vote. Win."}
+              </p>
             </div>
 
             <Card className="bg-white/10 border-white/20">
               <CardContent className="pt-6">
                 <form onSubmit={handleJoin} className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-green-200 mb-1.5 block">Room Code</label>
-                    <Input
-                      value={roomCode}
-                      onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                      placeholder="Enter room code"
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 text-center text-2xl tracking-widest font-mono"
-                      maxLength={4}
-                      required
-                      data-testid="input-room-code"
-                    />
-                  </div>
+                  {hasCodeFromUrl ? (
+                    <div className="text-center py-3 px-4 bg-green-500/10 rounded-lg border border-green-500/20">
+                      <p className="text-xs text-green-200/60 uppercase tracking-wide mb-1">Room Code</p>
+                      <p className="text-3xl font-mono font-bold text-green-400 tracking-widest" data-testid="display-room-code">{roomCode}</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="text-sm font-medium text-green-200 mb-1.5 block">Room Code</label>
+                      <Input
+                        value={roomCode}
+                        onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                        placeholder="Enter room code"
+                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50 text-center text-2xl tracking-widest font-mono"
+                        maxLength={4}
+                        required
+                        data-testid="input-room-code"
+                      />
+                    </div>
+                  )}
 
                   <div>
                     <label className="text-sm font-medium text-green-200 mb-1.5 block">Your Name</label>
@@ -355,7 +367,7 @@ export default function MemeNoHarmPlayer() {
                       onChange={(e) => setPlayerName(e.target.value)}
                       placeholder="Enter your name"
                       className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                      maxLength={30}
+                      maxLength={20}
                       required
                       data-testid="input-player-name"
                     />
@@ -400,6 +412,19 @@ export default function MemeNoHarmPlayer() {
                     )}
                   </Button>
                 </form>
+                <div className="flex justify-center mt-4">
+                  {status === "connected" ? (
+                    <div className="flex items-center gap-1.5 text-sm text-green-300">
+                      <Wifi className="w-3.5 h-3.5" />
+                      <span>Connected</span>
+                    </div>
+                  ) : status === "error" ? (
+                    <div className="flex items-center gap-1.5 text-sm text-red-400">
+                      <WifiOff className="w-3.5 h-3.5" />
+                      <span>Connection error</span>
+                    </div>
+                  ) : null}
+                </div>
               </CardContent>
             </Card>
           </motion.div>
@@ -414,6 +439,17 @@ export default function MemeNoHarmPlayer() {
       <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col p-4" data-testid="page-memenoharm-complete">
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
+        </div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            {status === "connected" ? (
+              <Wifi className="w-4 h-4 text-green-400" />
+            ) : (
+              <WifiOff className="w-4 h-4 text-red-400" />
+            )}
+            <span className="text-sm text-white/40">{playerName}</span>
+          </div>
+          <span className="text-sm text-green-400 font-bold">{myScore} pts</span>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center max-w-sm mx-auto w-full">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-center mb-6">
@@ -458,6 +494,17 @@ export default function MemeNoHarmPlayer() {
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
         </div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            {status === "connected" ? (
+              <Wifi className="w-4 h-4 text-green-400" />
+            ) : (
+              <WifiOff className="w-4 h-4 text-red-400" />
+            )}
+            <span className="text-sm text-white/40">{playerName}</span>
+          </div>
+          <span className="text-sm text-green-400 font-bold">{myScore} pts</span>
+        </div>
         <div className="flex-1 flex flex-col items-center justify-center max-w-sm mx-auto w-full">
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-4">
             {roundWinnerId === playerId ? (
@@ -489,6 +536,17 @@ export default function MemeNoHarmPlayer() {
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
         </div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            {status === "connected" ? (
+              <Wifi className="w-4 h-4 text-green-400" />
+            ) : (
+              <WifiOff className="w-4 h-4 text-red-400" />
+            )}
+            <span className="text-sm text-white/40">{playerName}</span>
+          </div>
+          <span className="text-sm text-green-400 font-bold">{myScore} pts</span>
+        </div>
         <div className="flex-1 flex items-center justify-center">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-center">
             <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -507,6 +565,17 @@ export default function MemeNoHarmPlayer() {
       <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-player-voting">
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
+        </div>
+        <div className="flex items-center justify-between px-4 mb-4">
+          <div className="flex items-center gap-2">
+            {status === "connected" ? (
+              <Wifi className="w-4 h-4 text-green-400" />
+            ) : (
+              <WifiOff className="w-4 h-4 text-red-400" />
+            )}
+            <span className="text-sm text-white/40">{playerName}</span>
+          </div>
+          <span className="text-sm text-green-400 font-bold">{myScore} pts</span>
         </div>
         <div className="p-4 text-center">
           <h2 className="text-lg font-bold text-white mb-1">Vote for the Best GIF!</h2>
@@ -550,6 +619,17 @@ export default function MemeNoHarmPlayer() {
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
         </div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            {status === "connected" ? (
+              <Wifi className="w-4 h-4 text-green-400" />
+            ) : (
+              <WifiOff className="w-4 h-4 text-red-400" />
+            )}
+            <span className="text-sm text-white/40">{playerName}</span>
+          </div>
+          <span className="text-sm text-green-400 font-bold">{myScore} pts</span>
+        </div>
         <div className="flex-1 flex flex-col items-center justify-center">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-center">
             <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -573,6 +653,17 @@ export default function MemeNoHarmPlayer() {
       <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-searching">
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
+        </div>
+        <div className="flex items-center justify-between px-4 py-1">
+          <div className="flex items-center gap-2">
+            {status === "connected" ? (
+              <Wifi className="w-4 h-4 text-green-400" />
+            ) : (
+              <WifiOff className="w-4 h-4 text-red-400" />
+            )}
+            <span className="text-sm text-white/40">{playerName}</span>
+          </div>
+          <span className="text-sm text-green-400 font-bold">{myScore} pts</span>
         </div>
         <div className="p-4 text-center sticky top-0 z-10 bg-green-900/90 backdrop-blur-sm">
           <p className="text-green-400 text-xs font-medium">Round {round} of {totalRounds}</p>

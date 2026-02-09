@@ -2475,11 +2475,11 @@ export default function Blitzgrid() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 gap-2 text-green-500 hover:text-green-400 hover:bg-green-950"
+                  className="flex-1 gap-2 text-green-500"
                   disabled={!roomCode}
                   onClick={() => {
                     if (!roomCode) return;
-                    const message = `Join my game! 🎮\n\nRoom Code: ${roomCode}\n${joinUrl}`;
+                    const message = `Join my game!\n\nRoom Code: ${roomCode}\n${joinUrl}`;
                     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
                   }}
                   data-testid="button-share-whatsapp"

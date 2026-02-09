@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Smile, Users, Play, MessageSquare, Trophy, Crown, Ban, Loader2, ChevronRight, SkipForward, Image as ImageIcon, Link2, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MemePrompt } from "@shared/schema";
+import { PLAYER_AVATARS } from "@shared/schema";
 import { QRCodeSVG } from "qrcode.react";
 
 type GamePhase = "setup" | "lobby" | "selecting" | "voting" | "reveal" | "results" | "finished";
@@ -844,18 +845,23 @@ export default function MemeNoHarmHost() {
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  {players.map((player) => (
-                    <div
-                      key={player.id}
-                      className={`px-4 py-2 rounded-lg font-medium ${
-                        player.connected
-                          ? 'bg-green-500/10 text-green-600'
-                          : 'bg-red-500/10 text-red-400'
-                      }`}
-                    >
-                      {player.name}{!player.connected && " (offline)"}
-                    </div>
-                  ))}
+                  {players.map((player) => {
+                    const avatarData = PLAYER_AVATARS.find(a => a.id === player.avatar);
+                    return (
+                      <div
+                        key={player.id}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium ${
+                          player.connected
+                            ? 'bg-green-500/10 text-green-600'
+                            : 'bg-red-500/10 text-red-400'
+                        }`}
+                        data-testid={`player-card-${player.id}`}
+                      >
+                        <span className="text-lg">{avatarData?.emoji || "?"}</span>
+                        <span>{player.name}{!player.connected && " (offline)"}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
