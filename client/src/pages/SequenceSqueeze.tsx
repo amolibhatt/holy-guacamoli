@@ -83,7 +83,7 @@ export default function SequenceSqueeze() {
   const [editingQuestion, setEditingQuestion] = useState<SequenceQuestion | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [ws, setWs] = useState<WebSocket | null>(null);
-  const [players, setPlayers] = useState<{ id: string; name: string; avatar?: string }[]>([]);
+  const [players, setPlayers] = useState<{ id: string; name: string; avatar?: string; isConnected: boolean }[]>([]);
   const [winner, setWinner] = useState<WinnerInfo | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [audioEnabled, setAudioEnabled] = useState(true);
@@ -96,6 +96,7 @@ export default function SequenceSqueeze() {
   const audioRef = useRef<{ [key: string]: HTMLAudioElement }>({});
   const hasAutoStartedRef = useRef(false);
   const elapsedTimerRef = useRef<number | null>(null);
+  const isPausedRef = useRef(false);
 
   const { data: questions = [], isLoading: isLoadingQuestions } = useQuery<SequenceQuestion[]>({
     queryKey: ["/api/sequence-squeeze/questions"],
@@ -157,6 +158,7 @@ export default function SequenceSqueeze() {
               id: p.playerId,
               name: p.playerName,
               avatar: p.playerAvatar,
+              isConnected: true,
             })));
             setLeaderboard(data.players.map((p: any) => ({
               playerId: p.playerId,
@@ -197,8 +199,12 @@ export default function SequenceSqueeze() {
           setPlayers(prev => [...prev.filter(p => p.id !== data.playerId), { 
             id: data.playerId, 
             name: data.playerName, 
-            avatar: data.playerAvatar 
+            avatar: data.playerAvatar,
+            isConnected: true,
           }]);
+          break;
+        case "player:disconnected":
+          setPlayers(prev => prev.map(p => p.id === data.playerId ? { ...p, isConnected: false } : p));
           break;
         case "sequence:question:started":
           setGameState("playing");
@@ -465,14 +471,13 @@ export default function SequenceSqueeze() {
     setSubmissions([]);
     submissionsRef.current = [];
     
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: "sequence:host:reset" }));
-    }
-    
     const nextIdx = currentQuestionIndex;
     if (nextIdx < gameQuestions.length) {
       startQuestion(gameQuestions[nextIdx], nextIdx);
     } else {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "sequence:host:reset" }));
+      }
       setCurrentQuestion(null);
       setGameState("waiting");
     }
@@ -509,8 +514,11 @@ export default function SequenceSqueeze() {
   useEffect(() => {
     if (gameState === "playing" || gameState === "animatedReveal") {
       setElapsedTime(0);
+      isPausedRef.current = false;
       elapsedTimerRef.current = window.setInterval(() => {
-        setElapsedTime(t => t + 100);
+        if (!isPausedRef.current) {
+          setElapsedTime(t => t + 100);
+        }
       }, 100);
     } else {
       if (elapsedTimerRef.current) {
@@ -645,7 +653,7 @@ export default function SequenceSqueeze() {
                       startQuestion(shuffled[0], 0, shuffled.length);
                     }
                   }}
-                  disabled={players.length === 0 || questions.length === 0}
+                  disabled={players.filter(p => p.isConnected).length === 0 || questions.length === 0}
                   data-testid="button-begin-game"
                 >
                   <Play className="w-4 h-4 mr-1 shrink-0" aria-hidden="true" />
@@ -720,13 +728,14 @@ export default function SequenceSqueeze() {
                   </h2>
                   <Badge 
                     className={`text-xs ${
-                      players.length > 0 
+                      players.filter(p => p.isConnected).length > 0 
                         ? "bg-teal-500/20 text-teal-300 border-teal-500/30" 
                         : "bg-white/10 text-white/50 border-white/20"
                     }`} 
                     data-testid="badge-player-count"
                   >
-                    {players.length}
+                    {players.filter(p => p.isConnected).length}
+                    {players.some(p => !p.isConnected) && <span className="text-white/30 ml-0.5">/{players.length}</span>}
                   </Badge>
                 </div>
 
@@ -753,7 +762,7 @@ export default function SequenceSqueeze() {
                               initial={{ scale: 0, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
                               exit={{ scale: 0, opacity: 0 }}
-                              className="flex flex-col items-center p-2 bg-white/5 rounded-lg border border-white/10"
+                              className={`flex flex-col items-center p-2 rounded-lg border ${p.isConnected ? 'bg-white/5 border-white/10' : 'bg-white/[0.02] border-white/5 opacity-40'}`}
                               data-testid={`player-card-${p.id}`}
                             >
                               <div className="text-2xl">
@@ -941,12 +950,13 @@ export default function SequenceSqueeze() {
                 </Badge>
                 <Badge className="gap-1 bg-teal-500/20 text-teal-300 border border-teal-400/30">
                   <Users className="w-4 h-4 shrink-0" aria-hidden="true" />
-                  {submissions.length}/{players.length} locked in
+                  {submissions.length}/{players.filter(p => p.isConnected).length} locked in
                 </Badge>
               </div>
               <div className="flex items-center gap-2">
                 <Button size="lg" variant="outline" onClick={() => {
                   setIsPaused(true);
+                  isPausedRef.current = true;
                   ws?.send(JSON.stringify({ type: "sequence:host:pause" }));
                 }} data-testid="button-pause">
                   <Pause className="w-5 h-5 mr-2 shrink-0" aria-hidden="true" />
@@ -973,6 +983,7 @@ export default function SequenceSqueeze() {
                     <h2 className="text-4xl font-bold mb-6">Game Paused</h2>
                     <Button size="lg" onClick={() => {
                       setIsPaused(false);
+                      isPausedRef.current = false;
                       ws?.send(JSON.stringify({ type: "sequence:host:resume" }));
                     }} data-testid="button-resume">
                       <Play className="w-5 h-5 mr-2 shrink-0" aria-hidden="true" />

@@ -4534,6 +4534,7 @@ Generate exactly ${promptCount} prompts.`
     sequenceQuestionIndex?: number;
     sequenceTotalQuestions?: number;
     sequencePaused?: boolean;
+    sequencePauseStartTime?: number;
     // Meme No Harm fields
     memeSubmissions?: Map<string, MemeSubmission>;
     memeVotes?: Map<string, string>; // voterId -> submissionPlayerId
@@ -5741,6 +5742,7 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
             room.sequencePaused = true;
+            room.sequencePauseStartTime = Date.now();
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
                 sendToPlayer(player, { type: 'sequence:paused' });
@@ -5755,6 +5757,11 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
             room.sequencePaused = false;
+            if (room.sequencePauseStartTime && room.questionStartTime) {
+              const pauseDuration = Date.now() - room.sequencePauseStartTime;
+              room.questionStartTime += pauseDuration;
+            }
+            room.sequencePauseStartTime = undefined;
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
                 sendToPlayer(player, { type: 'sequence:resumed' });
@@ -6862,6 +6869,17 @@ Generate exactly ${promptCount} prompts.`
           room.buzzQueue = room.buzzQueue.filter(b => b.playerId !== mapping.playerId);
           sendToHost(room, { type: 'player:disconnected', playerId: mapping.playerId });
           
+          if (room.gameMode === 'sequence') {
+            if (room.sequencePhase === 'playing') {
+              const connectedPlayers = Array.from(room.players.values()).filter(p => p.isConnected);
+              const connectedPlayerIds = new Set(connectedPlayers.map(p => p.id));
+              const submissionsFromConnected = (room.sequenceSubmissions || []).filter(s => connectedPlayerIds.has(s.playerId));
+              if (submissionsFromConnected.length >= connectedPlayers.length && connectedPlayers.length > 0) {
+                sendToHost(room, { type: 'sequence:allSubmitted' });
+              }
+            }
+          }
+
           if (room.gameMode === 'meme') {
             if (room.memePhase === 'selecting') {
               const activePlayers = Array.from(room.players.values())
