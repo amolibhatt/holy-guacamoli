@@ -3159,6 +3159,93 @@ Be creative! Make facts surprising and fun to guess.`;
     }
   });
 
+  // ==================== GIPHY SEARCH PROXY ====================
+  
+  app.get("/api/giphy/search", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const q = req.query.q as string;
+      const offset = parseInt(req.query.offset as string) || 0;
+      const limit = parseInt(req.query.limit as string) || 20;
+      
+      if (!q || q.trim().length === 0) {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+      
+      const apiKey = process.env.GIPHY_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ message: "GIPHY API key not configured" });
+      }
+      
+      const url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(q.trim())}&limit=${limit}&offset=${offset}&rating=pg-13&lang=en`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("GIPHY API error:", response.status, errorText);
+        return res.status(response.status).json({ message: "GIPHY search failed" });
+      }
+      
+      const data = await response.json();
+      
+      const results = data.data.map((gif: any) => ({
+        id: gif.id,
+        title: gif.title,
+        previewUrl: gif.images.fixed_height_small.url,
+        fullUrl: gif.images.original.url,
+        width: parseInt(gif.images.original.width),
+        height: parseInt(gif.images.original.height),
+      }));
+      
+      res.json({
+        results,
+        totalCount: data.pagination.total_count,
+        offset: data.pagination.offset,
+      });
+    } catch (err) {
+      console.error("Error searching GIPHY:", err);
+      res.status(500).json({ message: "Failed to search GIPHY" });
+    }
+  });
+
+  app.get("/api/giphy/trending", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const offset = parseInt(req.query.offset as string) || 0;
+      const limit = parseInt(req.query.limit as string) || 20;
+      
+      const apiKey = process.env.GIPHY_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ message: "GIPHY API key not configured" });
+      }
+      
+      const url = `https://api.giphy.com/v1/gifs/trending?api_key=${encodeURIComponent(apiKey)}&limit=${limit}&offset=${offset}&rating=pg-13`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        return res.status(response.status).json({ message: "GIPHY trending failed" });
+      }
+      
+      const data = await response.json();
+      
+      const results = data.data.map((gif: any) => ({
+        id: gif.id,
+        title: gif.title,
+        previewUrl: gif.images.fixed_height_small.url,
+        fullUrl: gif.images.original.url,
+        width: parseInt(gif.images.original.width),
+        height: parseInt(gif.images.original.height),
+      }));
+      
+      res.json({
+        results,
+        totalCount: data.pagination.total_count,
+        offset: data.pagination.offset,
+      });
+    } catch (err) {
+      console.error("Error fetching GIPHY trending:", err);
+      res.status(500).json({ message: "Failed to fetch trending GIFs" });
+    }
+  });
+
   // ==================== PLAYER PROFILE ROUTES ====================
   
   // Get player profile (for authenticated users)

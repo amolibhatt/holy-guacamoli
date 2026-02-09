@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { Link, useLocation } from "wouter";
-import { Plus, Trash2, Play, Smile, Image as ImageIcon, MessageSquare, Grid3X3, Brain, Clock, Loader2, Upload } from "lucide-react";
+import { Plus, Trash2, Play, Smile, Image as ImageIcon, MessageSquare, Grid3X3, Brain, Clock, Loader2, Upload, Search, Link2, TrendingUp, Check } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { MemePrompt, MemeImage } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,6 +29,62 @@ export default function MemeNoHarmAdmin() {
   const [imagePreviewError, setImagePreviewError] = useState(false);
   const [bulkPrompts, setBulkPrompts] = useState("");
   const [showBulkImport, setShowBulkImport] = useState(false);
+  const [imageAddMode, setImageAddMode] = useState<"giphy" | "url">("giphy");
+  const [giphySearch, setGiphySearch] = useState("");
+  const [giphySearchDebounced, setGiphySearchDebounced] = useState("");
+  const [addingGifId, setAddingGifId] = useState<string | null>(null);
+  const [addedGifIds, setAddedGifIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setGiphySearchDebounced(giphySearch);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [giphySearch]);
+
+  type GiphyResult = { id: string; title: string; previewUrl: string; fullUrl: string; width: number; height: number };
+  type GiphyResponse = { results: GiphyResult[]; totalCount: number; offset: number };
+
+  const { data: giphyResults, isLoading: giphyLoading, isError: giphyError } = useQuery<GiphyResponse>({
+    queryKey: ["/api/giphy/search", giphySearchDebounced],
+    queryFn: async () => {
+      const res = await fetch(`/api/giphy/search?q=${encodeURIComponent(giphySearchDebounced)}&limit=20`);
+      if (!res.ok) throw new Error("GIPHY search failed");
+      return res.json();
+    },
+    enabled: giphySearchDebounced.trim().length > 0,
+  });
+
+  const { data: giphyTrending, isLoading: trendingLoading } = useQuery<GiphyResponse>({
+    queryKey: ["/api/giphy/trending"],
+    queryFn: async () => {
+      const res = await fetch(`/api/giphy/trending?limit=20`);
+      if (!res.ok) throw new Error("GIPHY trending failed");
+      return res.json();
+    },
+    enabled: giphySearchDebounced.trim().length === 0,
+  });
+
+  const handleAddGif = useCallback(async (gif: GiphyResult) => {
+    setAddingGifId(gif.id);
+    try {
+      const res = await apiRequest("POST", "/api/memenoharm/images", {
+        imageUrl: gif.fullUrl,
+        caption: gif.title || undefined,
+      });
+      if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: ["/api/memenoharm/images"] });
+        setAddedGifIds(prev => new Set(prev).add(gif.id));
+        toast({ title: "GIF added!" });
+      } else {
+        const err = await res.json();
+        toast({ title: "Error", description: err.message, variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Error", description: "Failed to add GIF", variant: "destructive" });
+    }
+    setAddingGifId(null);
+  }, [toast]);
 
   const { data: prompts = [], isLoading: promptsLoading } = useQuery<MemePrompt[]>({
     queryKey: ["/api/memenoharm/prompts"],
@@ -408,59 +464,178 @@ export default function MemeNoHarmAdmin() {
           <TabsContent value="images" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Plus className="w-5 h-5" />
-                  Add Meme Image
+                <CardTitle className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="flex items-center gap-2">
+                    <Plus className="w-5 h-5" />
+                    Add Meme Image
+                  </span>
+                  <div className="flex gap-1">
+                    <Button
+                      variant={imageAddMode === "giphy" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setImageAddMode("giphy")}
+                      className="gap-1"
+                      data-testid="button-mode-giphy"
+                    >
+                      <Search className="w-3 h-3" />
+                      GIPHY
+                    </Button>
+                    <Button
+                      variant={imageAddMode === "url" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setImageAddMode("url")}
+                      className="gap-1"
+                      data-testid="button-mode-url"
+                    >
+                      <Link2 className="w-3 h-3" />
+                      Paste URL
+                    </Button>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleCreateImage} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="imageUrl">Image URL</Label>
-                    <Input
-                      id="imageUrl"
-                      placeholder="https://example.com/meme.jpg"
-                      value={newImageUrl}
-                      onChange={(e) => handleImageUrlChange(e.target.value)}
-                      data-testid="input-new-image-url"
-                    />
-                  </div>
-                  {isValidUrl(newImageUrl) && (
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground text-xs">Preview</Label>
-                      {imagePreviewError ? (
-                        <div className="w-full max-w-[200px] aspect-square rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-sm" data-testid="image-preview-error">
-                          Could not load image
-                        </div>
-                      ) : (
-                        <img
-                          src={newImageUrl.trim()}
-                          alt="Preview"
-                          className="w-full max-w-[200px] aspect-square object-cover rounded-lg bg-muted"
-                          onError={() => setImagePreviewError(true)}
-                          data-testid="image-preview"
-                        />
-                      )}
+                {imageAddMode === "giphy" ? (
+                  <div className="space-y-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search GIFs... (e.g., funny cat, surprised, excited)"
+                        value={giphySearch}
+                        onChange={(e) => setGiphySearch(e.target.value)}
+                        className="pl-10"
+                        data-testid="input-giphy-search"
+                      />
                     </div>
-                  )}
-                  <div className="space-y-2">
-                    <Label htmlFor="caption">Caption (optional)</Label>
-                    <Input
-                      id="caption"
-                      placeholder="Description of the meme"
-                      value={newImageCaption}
-                      onChange={(e) => setNewImageCaption(e.target.value)}
-                      data-testid="input-new-image-caption"
-                    />
+
+                    {giphySearch.trim().length === 0 && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <TrendingUp className="w-4 h-4" />
+                        Trending GIFs
+                      </div>
+                    )}
+
+                    {(giphyLoading || trendingLoading) && (
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                          <Skeleton key={i} className="aspect-square rounded-md" />
+                        ))}
+                      </div>
+                    )}
+
+                    {giphyError && (
+                      <p className="text-center text-muted-foreground py-4 text-sm" data-testid="giphy-error">
+                        Could not search GIPHY. Make sure the API key is configured.
+                      </p>
+                    )}
+
+                    {(() => {
+                      const displayResults = giphySearch.trim().length > 0
+                        ? giphyResults?.results
+                        : giphyTrending?.results;
+
+                      if (!displayResults || displayResults.length === 0) {
+                        if (!giphyLoading && !trendingLoading && giphySearchDebounced.trim().length > 0) {
+                          return (
+                            <p className="text-center text-muted-foreground py-4 text-sm">
+                              No GIFs found for "{giphySearchDebounced}"
+                            </p>
+                          );
+                        }
+                        return null;
+                      }
+
+                      return (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                          {displayResults.map((gif) => {
+                            const isAdding = addingGifId === gif.id;
+                            const isAdded = addedGifIds.has(gif.id);
+                            return (
+                              <div
+                                key={gif.id}
+                                className={`relative aspect-square rounded-md overflow-hidden bg-muted cursor-pointer group ${isAdded ? 'ring-2 ring-green-500' : ''}`}
+                                onClick={() => !isAdding && !isAdded && handleAddGif(gif)}
+                                data-testid={`giphy-result-${gif.id}`}
+                              >
+                                <img
+                                  src={gif.previewUrl}
+                                  alt={gif.title}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                                <div className={`absolute inset-0 flex items-center justify-center transition-opacity ${isAdded ? 'bg-green-500/30 opacity-100' : isAdding ? 'bg-black/50 opacity-100' : 'bg-black/40 opacity-0 group-hover:opacity-100'}`}>
+                                  {isAdding ? (
+                                    <Loader2 className="w-6 h-6 text-white animate-spin" />
+                                  ) : isAdded ? (
+                                    <Check className="w-6 h-6 text-white" />
+                                  ) : (
+                                    <Plus className="w-6 h-6 text-white" />
+                                  )}
+                                </div>
+                                {gif.title && (
+                                  <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-black/70 text-white text-[10px] truncate opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {gif.title}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+
+                    <div className="text-center text-[10px] text-muted-foreground pt-2">
+                      Powered by GIPHY
+                    </div>
                   </div>
-                  <Button 
-                    type="submit" 
-                    disabled={!newImageUrl.trim() || createImageMutation.isPending}
-                    data-testid="button-create-image"
-                  >
-                    Add Image
-                  </Button>
-                </form>
+                ) : (
+                  <form onSubmit={handleCreateImage} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="imageUrl">Image URL</Label>
+                      <Input
+                        id="imageUrl"
+                        placeholder="https://example.com/meme.jpg"
+                        value={newImageUrl}
+                        onChange={(e) => handleImageUrlChange(e.target.value)}
+                        data-testid="input-new-image-url"
+                      />
+                    </div>
+                    {isValidUrl(newImageUrl) && (
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground text-xs">Preview</Label>
+                        {imagePreviewError ? (
+                          <div className="w-full max-w-[200px] aspect-square rounded-md bg-muted flex items-center justify-center text-muted-foreground text-sm" data-testid="image-preview-error">
+                            Could not load image
+                          </div>
+                        ) : (
+                          <img
+                            src={newImageUrl.trim()}
+                            alt="Preview"
+                            className="w-full max-w-[200px] aspect-square object-cover rounded-md bg-muted"
+                            onError={() => setImagePreviewError(true)}
+                            data-testid="image-preview"
+                          />
+                        )}
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <Label htmlFor="caption">Caption (optional)</Label>
+                      <Input
+                        id="caption"
+                        placeholder="Description of the meme"
+                        value={newImageCaption}
+                        onChange={(e) => setNewImageCaption(e.target.value)}
+                        data-testid="input-new-image-caption"
+                      />
+                    </div>
+                    <Button 
+                      type="submit" 
+                      disabled={!newImageUrl.trim() || createImageMutation.isPending}
+                      data-testid="button-create-image"
+                    >
+                      Add Image
+                    </Button>
+                  </form>
+                )}
               </CardContent>
             </Card>
 
