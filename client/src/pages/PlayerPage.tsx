@@ -428,7 +428,8 @@ export default function PlayerPage() {
     connect(true);
   };
 
-  const handleJoin = () => {
+  const handleJoin = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (roomCode.trim() && playerName.trim()) {
       setStatus("connecting");
       connect();
@@ -489,7 +490,7 @@ export default function PlayerPage() {
               </p>
             </div>
 
-            <div className="space-y-4">
+            <form onSubmit={handleJoin} className="space-y-4" data-testid="form-join">
               {hasCodeFromUrl ? (
                 <div className="text-center py-3 px-4 bg-primary/10 rounded-lg border border-primary/20">
                   <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Room Code</p>
@@ -504,6 +505,7 @@ export default function PlayerPage() {
                     placeholder="ABCD"
                     className="text-center text-2xl font-mono tracking-widest uppercase"
                     maxLength={4}
+                    required
                     data-testid="input-room-code"
                   />
                 </div>
@@ -516,12 +518,8 @@ export default function PlayerPage() {
                   onChange={(e) => setPlayerName(e.target.value)}
                   placeholder="Enter your name"
                   maxLength={20}
+                  required
                   data-testid="input-player-name"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && roomCode.trim() && playerName.trim()) {
-                      handleJoin();
-                    }
-                  }}
                 />
               </div>
               <div>
@@ -546,7 +544,7 @@ export default function PlayerPage() {
                 </div>
               </div>
               <Button
-                onClick={handleJoin}
+                type="submit"
                 disabled={!roomCode.trim() || !playerName.trim() || status === "connecting"}
                 className="w-full gradient-header text-white font-bold"
                 size="lg"
@@ -554,7 +552,7 @@ export default function PlayerPage() {
               >
                 {status === "connecting" ? "Connecting..." : "Join Game"}
               </Button>
-            </div>
+            </form>
 
             <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
               {status === "connected" && <><Wifi className="w-4 h-4 text-primary" /> Connected</>}

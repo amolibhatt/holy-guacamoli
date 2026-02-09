@@ -8,11 +8,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ListOrdered, Wifi, WifiOff, Trophy, Check, X, RotateCcw, Undo2, Sparkles, RefreshCw, Crown, Star, Medal, Lock, Volume2, VolumeX, LogOut, ChevronDown, ChevronUp, Hash, Pause } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
+import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { PLAYER_AVATARS, type AvatarId } from "@shared/schema";
 import { Logo } from "@/components/Logo";
 import { soundManager } from "@/lib/sounds";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
-type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
+type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error" | "reconnecting";
 type GamePhase = "waiting" | "animatedReveal" | "playing" | "submitted" | "revealing" | "results" | "leaderboard" | "gameComplete";
 
 interface LeaderboardEntry {
@@ -72,10 +74,12 @@ export default function SequencePlayer() {
   
   const [roomCode, setRoomCode] = useState(params.code || savedSession?.roomCode || "");
   const [playerName, setPlayerName] = useState(savedSession?.playerName || "");
+  const { profile } = usePlayerProfile(playerName);
   const [playerId, setPlayerId] = useState<string | null>(savedSession?.playerId || null);
   const [selectedAvatar, setSelectedAvatar] = useState<AvatarId>(savedSession?.avatar || "cat");
   const [joined, setJoined] = useState(false);
   const [status, setStatus] = useState<ConnectionStatus>("disconnected");
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const [phase, setPhase] = useState<GamePhase>("waiting");
   
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
@@ -156,6 +160,7 @@ export default function SequencePlayer() {
         name: playerName,
         avatar: selectedAvatar,
         playerId: playerIdRef.current || undefined,
+        profileId: profile?.profile?.id,
       }));
 
       pingIntervalRef.current = setInterval(() => {
@@ -365,6 +370,34 @@ export default function SequencePlayer() {
           setGamePaused(false);
           break;
           
+        case "kicked":
+          clearSession();
+          setJoined(false);
+          joinedRef.current = false;
+          shouldReconnectRef.current = false;
+          setStatus("disconnected");
+          setPhase("waiting");
+          toast({
+            title: "Removed from game",
+            description: "The host removed you from the game.",
+            variant: "destructive",
+          });
+          break;
+
+        case "room:closed":
+          clearSession();
+          setJoined(false);
+          joinedRef.current = false;
+          shouldReconnectRef.current = false;
+          setStatus("disconnected");
+          setPhase("waiting");
+          toast({
+            title: "Game ended",
+            description: data.reason || "The game room has been closed.",
+            variant: "destructive",
+          });
+          break;
+
         case "error":
           if (data.message?.toLowerCase().includes("room not found")) {
             shouldReconnectRef.current = false;
@@ -389,19 +422,21 @@ export default function SequencePlayer() {
     };
 
     ws.onclose = () => {
-      setStatus("disconnected");
       if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
 
       if (!joinedRef.current || !shouldReconnectRef.current) {
+        setStatus("disconnected");
         return;
       }
 
       const attempts = reconnectAttemptsRef.current;
       if (attempts >= 5) {
+        setStatus("disconnected");
         toast({ title: "Connection lost", description: "Could not reconnect. Try joining again.", variant: "destructive" });
         return;
       }
 
+      setStatus("reconnecting");
       const delay = Math.min(2000 * Math.pow(1.5, attempts), 15000);
       reconnectAttemptsRef.current = attempts + 1;
 
@@ -531,6 +566,12 @@ export default function SequencePlayer() {
       if (wsRef.current) wsRef.current.close();
     };
   }, [clearAllTimers]);
+
+  useEffect(() => {
+    if (hasCodeFromUrl && nameInputRef.current) {
+      nameInputRef.current.focus();
+    }
+  }, [hasCodeFromUrl]);
 
   const myAvatar = PLAYER_AVATARS.find(a => a.id === selectedAvatar)?.emoji || "?";
 
@@ -701,6 +742,7 @@ export default function SequencePlayer() {
             <div>
               <label className="text-sm font-medium text-teal-200 mb-1.5 block">Your Name</label>
               <Input
+                ref={nameInputRef}
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
                 placeholder="Enter your name"
@@ -714,7 +756,7 @@ export default function SequencePlayer() {
             <div>
               <label className="text-sm font-medium text-teal-200 mb-1.5 block">Pick Your Avatar</label>
               <div className="grid grid-cols-6 gap-2">
-                {PLAYER_AVATARS.slice(0, 12).map((avatar) => (
+                {PLAYER_AVATARS.map((avatar) => (
                   <button
                     key={avatar.id}
                     type="button"
@@ -763,6 +805,7 @@ export default function SequencePlayer() {
       <div className="w-full flex justify-center pt-3 pb-1">
         <Logo size="compact" />
       </div>
+      <InstallPrompt />
       {renderGameHeader()}
 
       <main className="flex-1 flex flex-col items-center justify-center p-4">

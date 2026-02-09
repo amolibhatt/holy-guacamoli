@@ -1366,7 +1366,7 @@ export default function Blitzgrid() {
       };
       
       const joinUrl = roomCode 
-        ? `${window.location.origin}/play?code=${roomCode}` 
+        ? `${window.location.origin}/play/${roomCode}` 
         : `${window.location.origin}/play`;
       
       // Sort players for podium display

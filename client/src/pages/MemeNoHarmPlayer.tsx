@@ -7,9 +7,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Smile, Wifi, WifiOff, Trophy, Crown, Search, Loader2, Star, TrendingUp, Volume2, VolumeX, Users, ChevronUp, ChevronDown, RefreshCw } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
+import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { soundManager } from "@/lib/sounds";
 import { PLAYER_AVATARS, type AvatarId } from "@shared/schema";
 import { Logo } from "@/components/Logo";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 function FullScreenFlash({ show, color }: { show: boolean; color: string }) {
   const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -61,6 +63,10 @@ function saveSession(roomCode: string, playerName: string, playerId: string, ava
   } catch {}
 }
 
+function clearSession() {
+  try { localStorage.removeItem("meme-session"); } catch {}
+}
+
 export default function MemeNoHarmPlayer() {
   const params = useParams<{ code?: string }>();
   const { toast } = useToast();
@@ -69,8 +75,10 @@ export default function MemeNoHarmPlayer() {
   const hasCodeFromUrl = !!params.code;
   const [roomCode, setRoomCode] = useState(params.code || savedSession?.roomCode || "");
   const [playerName, setPlayerName] = useState(savedSession?.playerName || "");
+  const { profile } = usePlayerProfile(playerName);
   const [playerId, setPlayerId] = useState<string | null>(savedSession?.playerId || null);
   const [selectedAvatar, setSelectedAvatar] = useState<AvatarId>(savedSession?.avatar || "cat");
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const [joined, setJoined] = useState(false);
   const joinedRef = useRef(false);
   const [status, setStatus] = useState<ConnectionStatus>("disconnected");
@@ -158,6 +166,7 @@ export default function MemeNoHarmPlayer() {
         name: playerName,
         avatar: selectedAvatar,
         playerId: playerIdRef.current || undefined,
+        profileId: profile?.profile?.id,
       }));
 
       if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
@@ -325,10 +334,39 @@ export default function MemeNoHarmPlayer() {
           toast({ title: "Host reconnected", description: "Game continues!" });
           break;
 
+        case "kicked":
+          clearSession();
+          setJoined(false);
+          joinedRef.current = false;
+          shouldReconnectRef.current = false;
+          setStatus("disconnected");
+          setPhase("waiting");
+          toast({
+            title: "Removed from game",
+            description: "The host removed you from the game.",
+            variant: "destructive",
+          });
+          break;
+
+        case "room:closed":
+          clearSession();
+          setJoined(false);
+          joinedRef.current = false;
+          shouldReconnectRef.current = false;
+          setStatus("disconnected");
+          setPhase("waiting");
+          toast({
+            title: "Game ended",
+            description: data.reason || "The game room has been closed.",
+            variant: "destructive",
+          });
+          break;
+
         case "error":
           setStatus("error");
           toast({ title: "Error", description: data.message, variant: "destructive" });
           if (data.message === 'Room not found') {
+            clearSession();
             joinedRef.current = false;
             shouldReconnectRef.current = false;
             setJoined(false);
@@ -398,6 +436,12 @@ export default function MemeNoHarmPlayer() {
     return () => { unsubscribe(); };
   }, []);
 
+  useEffect(() => {
+    if (hasCodeFromUrl && nameInputRef.current) {
+      nameInputRef.current.focus();
+    }
+  }, [hasCodeFromUrl]);
+
   const submittedRef = useRef(false);
   const votedRef = useRef(false);
 
@@ -438,12 +482,32 @@ export default function MemeNoHarmPlayer() {
   const handleLeaveGame = () => {
     shouldReconnectRef.current = false;
     joinedRef.current = false;
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+    if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
     wsRef.current?.close();
+    clearSession();
     setJoined(false);
     setPlayerId(null);
+    playerIdRef.current = null;
     setStatus("disconnected");
     setPhase("waiting");
-    try { localStorage.removeItem("meme-session"); } catch {}
+    setMyScore(0);
+    prevScoreRef.current = 0;
+    setLeaderboard([]);
+    setWinner(null);
+    setPrompt("");
+    setRound(0);
+    setTotalRounds(0);
+    setSearchQuery("");
+    setSearchResults([]);
+    setTrendingGifs([]);
+    setSelectedGif(null);
+    setVotingSubmissions([]);
+    setRoundWinnerId(null);
+    setShowLeaderboard(false);
+    setReconnectAttempts(0);
+    setReconnectCountdown(null);
   };
 
   const handleManualReconnect = () => {
@@ -465,6 +529,7 @@ export default function MemeNoHarmPlayer() {
 
   const renderGameHeader = () => (
     <>
+      <InstallPrompt />
       <FullScreenFlash show={showWinFlash} color="bg-emerald-400/60" />
       <FullScreenFlash show={showSubmitFlash} color="bg-green-400/40" />
 
@@ -635,6 +700,7 @@ export default function MemeNoHarmPlayer() {
                   <div>
                     <label className="text-sm font-medium text-green-200 mb-1.5 block">Your Name</label>
                     <Input
+                      ref={nameInputRef}
                       value={playerName}
                       onChange={(e) => setPlayerName(e.target.value)}
                       placeholder="Enter your name"
@@ -648,7 +714,7 @@ export default function MemeNoHarmPlayer() {
                   <div>
                     <label className="text-sm font-medium text-green-200 mb-1.5 block">Pick Your Avatar</label>
                     <div className="grid grid-cols-6 gap-2">
-                      {PLAYER_AVATARS.slice(0, 12).map((avatar) => (
+                      {PLAYER_AVATARS.map((avatar) => (
                         <button
                           key={avatar.id}
                           type="button"
