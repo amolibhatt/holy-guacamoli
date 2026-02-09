@@ -24,6 +24,14 @@ type ParsedQuestion = {
   hint: string | null;
 };
 
+type KeyedParsedQuestion = ParsedQuestion & { _key: string };
+
+let questionKeyCounter = 0;
+const assignKey = (q: ParsedQuestion): KeyedParsedQuestion => ({
+  ...q,
+  _key: `gen-${++questionKeyCounter}`,
+});
+
 export function SequenceSqueezeAdmin() {
   const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
@@ -41,8 +49,7 @@ export function SequenceSqueezeAdmin() {
   const [aiGenerateOpen, setAiGenerateOpen] = useState(false);
   const [aiMessages, setAiMessages] = useState<{ role: 'user' | 'assistant' | 'error'; content: string }[]>([]);
   const [aiInput, setAiInput] = useState("");
-  const [aiGeneratedQuestions, setAiGeneratedQuestions] = useState<ParsedQuestion[]>([]);
-  const [savingQuestionIdx, setSavingQuestionIdx] = useState<number | null>(null);
+  const [aiGeneratedQuestions, setAiGeneratedQuestions] = useState<KeyedParsedQuestion[]>([]);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editQuestion, setEditQuestion] = useState("");
@@ -191,7 +198,7 @@ export function SequenceSqueezeAdmin() {
     onSuccess: (data: { message: string; questions: ParsedQuestion[] }) => {
       setAiMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
       if (data.questions.length > 0) {
-        setAiGeneratedQuestions(prev => [...prev, ...data.questions]);
+        setAiGeneratedQuestions(prev => [...prev, ...data.questions.map(assignKey)]);
       }
     },
     onError: (error: Error) => {
@@ -208,9 +215,11 @@ export function SequenceSqueezeAdmin() {
     aiChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [aiMessages, aiChatMutation.isPending]);
 
-  const saveGeneratedQuestion = async (q: ParsedQuestion, idx: number) => {
-    if (savingQuestionIdx !== null) return;
-    setSavingQuestionIdx(idx);
+  const [savingQuestionKey, setSavingQuestionKey] = useState<string | null>(null);
+
+  const saveGeneratedQuestion = async (q: KeyedParsedQuestion) => {
+    if (savingQuestionKey !== null) return;
+    setSavingQuestionKey(q._key);
     try {
       const res = await apiRequest("POST", "/api/sequence-squeeze/questions", {
         question: q.question,
@@ -228,11 +237,11 @@ export function SequenceSqueezeAdmin() {
       }
       queryClient.invalidateQueries({ queryKey: ["/api/sequence-squeeze/questions"] });
       toast({ title: "Question saved!" });
-      setAiGeneratedQuestions(prev => prev.filter((_, i) => i !== idx));
+      setAiGeneratedQuestions(prev => prev.filter(item => item._key !== q._key));
     } catch (error: any) {
       toast({ title: error.message || "Failed to save question", variant: "destructive" });
     } finally {
-      setSavingQuestionIdx(null);
+      setSavingQuestionKey(null);
     }
   };
 
@@ -471,7 +480,7 @@ export function SequenceSqueezeAdmin() {
                       variant="ghost" 
                       size="sm" 
                       onClick={() => { setAiMessages([]); setAiGeneratedQuestions([]); }}
-                      className="text-xs text-muted-foreground"
+                      data-testid="button-clear-ai-chat"
                     >
                       Clear chat
                     </Button>
@@ -511,8 +520,8 @@ export function SequenceSqueezeAdmin() {
                 {aiGeneratedQuestions.length > 0 && (
                   <div className="space-y-2 border-t border-purple-500/20 pt-3">
                     <p className="text-xs font-medium text-purple-400">Generated Questions (click to save):</p>
-                    {aiGeneratedQuestions.map((q, idx) => (
-                      <div key={idx} className="p-2 bg-muted rounded border border-border text-sm flex items-start gap-2">
+                    {aiGeneratedQuestions.map((q) => (
+                      <div key={q._key} className="p-2 bg-muted rounded border border-border text-sm flex items-start gap-2">
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{q.question}</p>
                           <p className="text-xs text-muted-foreground">{getOrderedOptionsFromParsed(q).join(' → ')}</p>
@@ -520,12 +529,12 @@ export function SequenceSqueezeAdmin() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => saveGeneratedQuestion(q, idx)}
-                          disabled={savingQuestionIdx !== null}
+                          onClick={() => saveGeneratedQuestion(q)}
+                          disabled={savingQuestionKey !== null}
                           className="shrink-0"
-                          data-testid={`button-save-ai-question-${idx}`}
+                          data-testid={`button-save-ai-question-${q._key}`}
                         >
-                          {savingQuestionIdx === idx ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                          {savingQuestionKey === q._key ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                         </Button>
                       </div>
                     ))}
@@ -614,7 +623,6 @@ export function SequenceSqueezeAdmin() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setCreateCorrectOrder([])}
-                        className="text-xs text-muted-foreground"
                         data-testid="create-order-reset"
                       >
                         <RotateCcw className="w-3 h-3 mr-1" />
@@ -695,7 +703,7 @@ export function SequenceSqueezeAdmin() {
         <CollapsibleTrigger asChild>
           <Button 
             variant="outline" 
-            className="w-full justify-between"
+            className="w-full justify-between gap-2"
             data-testid="button-toggle-bulk-import"
           >
             <span className="flex items-center gap-2">
@@ -764,7 +772,7 @@ export function SequenceSqueezeAdmin() {
                     <Button
                       size="sm"
                       onClick={() => {
-                        if (parsedBulkQuestions.length > 0) {
+                        if (parsedBulkQuestions.length > 0 && !bulkImportMutation.isPending) {
                           bulkImportMutation.mutate(parsedBulkQuestions);
                         }
                       }}
@@ -843,7 +851,6 @@ export function SequenceSqueezeAdmin() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setEditCorrectOrder([])}
-                            className="text-xs text-muted-foreground"
                             data-testid={`edit-order-reset-${q.id}`}
                           >
                             <RotateCcw className="w-3 h-3 mr-1" />
@@ -915,8 +922,8 @@ export function SequenceSqueezeAdmin() {
                       {index + 1}
                     </span>
                     <div className={`flex-1 min-w-0 ${!q.isActive ? 'opacity-50' : ''}`}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <p className="font-medium">{q.question}</p>
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <p className="font-medium truncate min-w-0 flex-1">{q.question}</p>
                         {!q.isActive && (
                           <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
                             <EyeOff className="w-3 h-3" /> Inactive
