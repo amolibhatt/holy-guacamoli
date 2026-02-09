@@ -4,13 +4,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Smile, Wifi, WifiOff, Trophy, Crown, Search, Loader2, Star, TrendingUp } from "lucide-react";
+import { Smile, Wifi, WifiOff, Trophy, Crown, Search, Loader2, Star, TrendingUp, Volume2, VolumeX, Users, ChevronUp, ChevronDown, RefreshCw } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
+import { soundManager } from "@/lib/sounds";
 import { PLAYER_AVATARS, type AvatarId } from "@shared/schema";
 import { Logo } from "@/components/Logo";
 
-type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
+function FullScreenFlash({ show, color }: { show: boolean; color: string }) {
+  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!show || prefersReducedMotion) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0.8 }}
+      animate={{ opacity: 0 }}
+      transition={{ duration: 0.4 }}
+      className={`fixed inset-0 z-50 pointer-events-none ${color}`}
+    />
+  );
+}
+
+type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error" | "reconnecting";
 type GamePhase = "waiting" | "searching" | "submitted" | "voting" | "voted" | "reveal" | "gameComplete";
 
 interface GiphyGif {
@@ -75,10 +89,22 @@ export default function MemeNoHarmPlayer() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [winner, setWinner] = useState<LeaderboardEntry | null>(null);
   const [roundWinnerId, setRoundWinnerId] = useState<string | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(soundManager.isEnabled());
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showWinFlash, setShowWinFlash] = useState(false);
+  const [showSubmitFlash, setShowSubmitFlash] = useState(false);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [reconnectCountdown, setReconnectCountdown] = useState<number | null>(null);
+  const prevScoreRef = useRef(0);
 
   const wsRef = useRef<WebSocket | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const playerIdRef = useRef<string | null>(playerId);
+  const shouldReconnectRef = useRef(true);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchTrending = useCallback(async () => {
     try {
@@ -114,16 +140,18 @@ export default function MemeNoHarmPlayer() {
     }, 400);
   };
 
-  const connect = useCallback(() => {
+  const connect = useCallback((isReconnect = false) => {
     if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return;
 
-    setStatus("connecting");
+    setStatus(isReconnect ? "reconnecting" : "connecting");
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
     wsRef.current = ws;
 
     ws.onopen = () => {
       setStatus("connected");
+      setReconnectAttempts(0);
+      reconnectAttemptsRef.current = 0;
       ws.send(JSON.stringify({
         type: "meme:player:join",
         code: roomCode.toUpperCase(),
@@ -131,11 +159,17 @@ export default function MemeNoHarmPlayer() {
         avatar: selectedAvatar,
         playerId: playerIdRef.current || undefined,
       }));
+
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+      pingIntervalRef.current = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "ping" }));
+        }
+      }, 10000);
     };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log('[MemePlayer] Received:', data.type, data);
 
       switch (data.type) {
         case "meme:joined":
@@ -144,7 +178,10 @@ export default function MemeNoHarmPlayer() {
           setPlayerId(data.playerId);
           playerIdRef.current = data.playerId;
           saveSession(roomCode.toUpperCase(), playerName, data.playerId, selectedAvatar);
-          if (data.score !== undefined) setMyScore(data.score);
+          if (data.score !== undefined) {
+            setMyScore(data.score);
+            prevScoreRef.current = data.score;
+          }
           setPhase("waiting");
           break;
 
@@ -159,6 +196,8 @@ export default function MemeNoHarmPlayer() {
           votedRef.current = false;
           setPhase("searching");
           fetchTrending();
+          soundManager.play('whoosh', 0.4);
+          try { navigator.vibrate?.(50); } catch {}
           break;
 
         case "meme:voting:start":
@@ -166,17 +205,33 @@ export default function MemeNoHarmPlayer() {
           setPrompt(data.prompt);
           votedRef.current = false;
           setPhase("voting");
+          soundManager.play('chime', 0.4);
+          try { navigator.vibrate?.(40); } catch {}
           break;
 
-        case "meme:reveal":
-          setMyScore(data.myScore);
+        case "meme:reveal": {
+          const prevScore = prevScoreRef.current;
+          const newScore = data.myScore;
+          setMyScore(newScore);
+          prevScoreRef.current = newScore;
           setLeaderboard(data.leaderboard);
           setRoundWinnerId(data.roundWinnerId);
           setPhase("reveal");
+          if (newScore > prevScore) {
+            const diff = newScore - prevScore;
+            toast({ title: `+${diff} points!`, description: "Great round!", duration: 2000 });
+          }
           if (data.roundWinnerId === playerIdRef.current) {
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#FFD700', '#FFA500', '#FF6B6B', '#9B59B6', '#3498DB'] });
+            soundManager.play('fanfare', 0.6);
+            try { navigator.vibrate?.([100, 50, 100, 50, 200]); } catch {}
+            setShowWinFlash(true);
+            setTimeout(() => setShowWinFlash(false), 500);
+          } else {
+            soundManager.play('reveal', 0.4);
           }
           break;
+        }
 
         case "meme:sittingOut":
           toast({ title: "You're sitting out this round", description: "The host has benched you for now." });
@@ -189,8 +244,10 @@ export default function MemeNoHarmPlayer() {
 
         case "meme:unsittingOut":
           toast({ title: "You're back in!", description: "The host has brought you back into the game." });
+          soundManager.play('pop', 0.4);
           if (data.phase === 'reveal' && data.results) {
             setMyScore(data.myScore);
+            prevScoreRef.current = data.myScore;
             setLeaderboard(data.leaderboard);
             setRoundWinnerId(data.roundWinnerId);
             setPhase("reveal");
@@ -199,6 +256,7 @@ export default function MemeNoHarmPlayer() {
             }
           } else if (data.phase === 'gameComplete' && data.leaderboard) {
             setMyScore(data.myScore);
+            prevScoreRef.current = data.myScore;
             setLeaderboard(data.leaderboard);
             setWinner(data.winner);
             setPhase("gameComplete");
@@ -224,15 +282,27 @@ export default function MemeNoHarmPlayer() {
           }
           break;
 
-        case "meme:gameComplete":
-          setMyScore(data.myScore);
+        case "meme:gameComplete": {
+          const prevScoreGC = prevScoreRef.current;
+          const newScoreGC = data.myScore;
+          setMyScore(newScoreGC);
+          prevScoreRef.current = newScoreGC;
           setLeaderboard(data.leaderboard);
           setWinner(data.winner);
           setPhase("gameComplete");
+          if (newScoreGC > prevScoreGC) {
+            const diff = newScoreGC - prevScoreGC;
+            toast({ title: `+${diff} points!`, description: "Final round scored!", duration: 2000 });
+          }
           if (data.winner?.playerId === playerIdRef.current) {
-            confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
+            confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ['#FFD700', '#FFA500', '#FF6B6B', '#9B59B6', '#3498DB'] });
+            soundManager.play('victory', 0.6);
+            try { navigator.vibrate?.([100, 50, 100, 50, 200]); } catch {}
+          } else {
+            soundManager.play('applause', 0.4);
           }
           break;
+        }
 
         case "meme:phaseSync":
           if (data.phase === 'submitted') {
@@ -244,6 +314,9 @@ export default function MemeNoHarmPlayer() {
           }
           break;
 
+        case "pong":
+          break;
+
         case "host:disconnected":
           toast({ title: "Host disconnected", description: "Waiting for reconnection...", variant: "destructive" });
           break;
@@ -253,9 +326,11 @@ export default function MemeNoHarmPlayer() {
           break;
 
         case "error":
+          setStatus("error");
           toast({ title: "Error", description: data.message, variant: "destructive" });
           if (data.message === 'Room not found') {
             joinedRef.current = false;
+            shouldReconnectRef.current = false;
             setJoined(false);
             setPhase("waiting");
             ws.close();
@@ -265,10 +340,40 @@ export default function MemeNoHarmPlayer() {
     };
 
     ws.onclose = () => {
-      setStatus("disconnected");
-      setTimeout(() => {
-        if (joinedRef.current) connect();
-      }, 3000);
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+
+      if (!joinedRef.current || !shouldReconnectRef.current) {
+        setStatus("disconnected");
+        return;
+      }
+
+      const attempts = reconnectAttemptsRef.current;
+      if (attempts >= 5) {
+        setStatus("disconnected");
+        return;
+      }
+
+      setStatus("reconnecting");
+      reconnectAttemptsRef.current = attempts + 1;
+      setReconnectAttempts(attempts + 1);
+
+      const delay = Math.min(2000 * Math.pow(1.5, attempts), 15000);
+      const seconds = Math.ceil(delay / 1000);
+      setReconnectCountdown(seconds);
+
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      let remaining = seconds;
+      countdownIntervalRef.current = setInterval(() => {
+        remaining--;
+        setReconnectCountdown(remaining);
+        if (remaining <= 0 && countdownIntervalRef.current) {
+          clearInterval(countdownIntervalRef.current);
+        }
+      }, 1000);
+
+      reconnectTimeoutRef.current = setTimeout(() => {
+        connect(true);
+      }, delay);
     };
 
     ws.onerror = () => {
@@ -280,7 +385,17 @@ export default function MemeNoHarmPlayer() {
     return () => {
       wsRef.current?.close();
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     };
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = soundManager.subscribe(() => {
+      setSoundEnabled(soundManager.isEnabled());
+    });
+    return () => { unsubscribe(); };
   }, []);
 
   const submittedRef = useRef(false);
@@ -295,6 +410,10 @@ export default function MemeNoHarmPlayer() {
       gifTitle: selectedGif.title,
     }));
     setPhase("submitted");
+    soundManager.play('pop', 0.4);
+    try { navigator.vibrate?.(30); } catch {}
+    setShowSubmitFlash(true);
+    setTimeout(() => setShowSubmitFlash(false), 400);
   };
 
   const submitVote = (votedForId: string) => {
@@ -305,15 +424,168 @@ export default function MemeNoHarmPlayer() {
       votedForId,
     }));
     setPhase("voted");
+    soundManager.play('click', 0.3);
+    try { navigator.vibrate?.(30); } catch {}
   };
 
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!roomCode.trim() || !playerName.trim()) return;
+    shouldReconnectRef.current = true;
     connect();
   };
 
+  const handleLeaveGame = () => {
+    shouldReconnectRef.current = false;
+    joinedRef.current = false;
+    wsRef.current?.close();
+    setJoined(false);
+    setPlayerId(null);
+    setStatus("disconnected");
+    setPhase("waiting");
+    try { localStorage.removeItem("meme-session"); } catch {}
+  };
+
+  const handleManualReconnect = () => {
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+    setReconnectCountdown(null);
+    reconnectAttemptsRef.current = 0;
+    setReconnectAttempts(0);
+    shouldReconnectRef.current = true;
+    setStatus("connecting");
+    connect(true);
+  };
+
+  const handleToggleSound = () => {
+    soundManager.toggle();
+  };
+
   const gifsToShow = searchQuery.trim() ? searchResults : trendingGifs;
+
+  const renderGameHeader = () => (
+    <>
+      <FullScreenFlash show={showWinFlash} color="bg-emerald-400/60" />
+      <FullScreenFlash show={showSubmitFlash} color="bg-green-400/40" />
+
+      <header className="px-4 py-3 flex items-center justify-between gap-2 bg-green-950/80 backdrop-blur-xl border-b border-green-500/20 shadow-lg" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
+        <div className="flex items-center gap-2">
+          {status === "connected" && <Wifi className="w-4 h-4 text-emerald-400 shrink-0" data-testid="status-connected" />}
+          {status === "connecting" && <RefreshCw className="w-4 h-4 animate-spin text-green-400 shrink-0" data-testid="status-connecting" />}
+          {status === "reconnecting" && <RefreshCw className="w-4 h-4 animate-spin text-amber-400 shrink-0" data-testid="status-reconnecting" />}
+          {(status === "disconnected" || status === "error") && <WifiOff className="w-4 h-4 text-rose-400 shrink-0" data-testid="status-disconnected" />}
+          <span className="font-mono font-bold text-lg text-white" data-testid="display-room-code">{roomCode}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <motion.div
+            key={myScore}
+            initial={{ scale: 1.2 }}
+            animate={{ scale: 1 }}
+            className="px-4 py-1.5 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-full"
+          >
+            <span className="text-2xl font-black text-green-400" data-testid="text-player-score">{myScore}</span>
+            <span className="text-xs text-green-200/50 ml-1">pts</span>
+          </motion.div>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={handleToggleSound}
+            className="text-white/60"
+            data-testid="button-toggle-sound"
+            aria-label={soundEnabled ? "Mute sounds" : "Unmute sounds"}
+          >
+            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={handleLeaveGame} className="text-xs text-white/40" data-testid="button-leave-game">
+            Leave
+          </Button>
+        </div>
+      </header>
+
+      <div className="px-4 py-2 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b border-green-500/10 flex items-center justify-between gap-2">
+        <span className="text-lg font-bold text-white truncate min-w-0 flex-1" title={playerName}>{playerName}</span>
+        {leaderboard.length > 0 && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setShowLeaderboard(!showLeaderboard)}
+            className="gap-1 text-xs text-green-200/60 flex-shrink-0"
+            data-testid="button-toggle-leaderboard"
+          >
+            <Users className="w-4 h-4" />
+            Scores
+            {showLeaderboard ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </Button>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {showLeaderboard && leaderboard.length > 0 && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 py-3 bg-green-950/50 border-b border-green-500/10 space-y-2">
+              <p className="text-xs text-green-200/40 font-medium uppercase tracking-wide">Leaderboard</p>
+              {[...leaderboard].sort((a, b) => b.score - a.score).map((entry, idx) => (
+                <div
+                  key={entry.playerId}
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg ${
+                    entry.playerId === playerId ? 'bg-green-500/20 border border-green-500/30' : 'bg-white/5'
+                  }`}
+                  data-testid={`leaderboard-player-${entry.playerId}`}
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span className={`w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold ${
+                      idx === 0 ? 'bg-yellow-500 text-black' : idx === 1 ? 'bg-slate-400 text-black' : idx === 2 ? 'bg-orange-500 text-white' : 'bg-white/10 text-white/50'
+                    }`}>
+                      {idx + 1}
+                    </span>
+                    <span className="text-lg flex-shrink-0">
+                      {PLAYER_AVATARS.find(a => a.id === entry.playerAvatar)?.emoji || PLAYER_AVATARS[0].emoji}
+                    </span>
+                    <span className={`font-medium truncate min-w-0 flex-1 ${entry.playerId === playerId ? 'text-green-300' : 'text-white/70'}`} title={entry.playerName}>
+                      {entry.playerName}
+                      {entry.playerId === playerId && <span className="text-xs ml-1">(you)</span>}
+                    </span>
+                  </div>
+                  <span className="font-bold text-white flex-shrink-0">{entry.score}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {status === "reconnecting" && (
+        <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-4 py-2 text-center text-sm text-white">
+          <RefreshCw className="w-4 h-4 inline-block mr-2 animate-spin" />
+          Reconnecting in {reconnectCountdown ?? '...'}s... (Attempt {reconnectAttempts}/5)
+        </div>
+      )}
+
+      {status === "disconnected" && joined && (
+        <div className="bg-rose-500/20 border-b border-rose-500/30 px-4 py-3 text-center">
+          <p className="text-sm text-white mb-2">
+            {reconnectAttempts >= 5
+              ? "Couldn't reconnect - tap below to try again"
+              : "Disconnected from game"}
+          </p>
+          <Button
+            size="sm"
+            onClick={handleManualReconnect}
+            className="gap-2"
+            data-testid="button-reconnect"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Reconnect
+          </Button>
+        </div>
+      )}
+    </>
+  );
 
   if (!joined) {
     return (
@@ -436,24 +708,19 @@ export default function MemeNoHarmPlayer() {
   if (phase === "gameComplete") {
     const myRank = leaderboard.findIndex(e => e.playerId === playerId) + 1;
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col p-4" data-testid="page-memenoharm-complete">
+      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-complete">
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
         </div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            {status === "connected" ? (
-              <Wifi className="w-4 h-4 text-green-400" />
-            ) : (
-              <WifiOff className="w-4 h-4 text-red-400" />
-            )}
-            <span className="text-sm text-white/40">{playerName}</span>
-          </div>
-          <span className="text-sm text-green-400 font-bold">{myScore} pts</span>
-        </div>
-        <div className="flex-1 flex flex-col items-center justify-center max-w-sm mx-auto w-full">
+        {renderGameHeader()}
+        <div className="flex-1 flex flex-col items-center justify-center max-w-sm mx-auto w-full p-4">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-center mb-6">
-            <Trophy className="w-16 h-16 text-yellow-400 mx-auto mb-3" />
+            <motion.div
+              animate={{ rotate: [0, -10, 10, 0] }}
+              transition={{ duration: 0.5, repeat: 3 }}
+            >
+              <Trophy className="w-20 h-20 text-yellow-400 mx-auto mb-3" />
+            </motion.div>
             <h2 className="text-3xl font-bold text-white mb-1">Game Over!</h2>
             <p className="text-green-200/60">You finished #{myRank} with {myScore} points</p>
           </motion.div>
@@ -462,8 +729,11 @@ export default function MemeNoHarmPlayer() {
             <CardContent className="pt-4">
               <div className="space-y-2">
                 {leaderboard.map((entry, i) => (
-                  <div
+                  <motion.div
                     key={entry.playerId}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
                     className={`flex items-center justify-between px-3 py-2 rounded-lg ${
                       entry.playerId === playerId ? 'bg-green-500/20 text-green-300' :
                       i === 0 ? 'bg-yellow-500/20 text-yellow-300' :
@@ -473,11 +743,18 @@ export default function MemeNoHarmPlayer() {
                   >
                     <span className="flex items-center gap-2">
                       {i === 0 && <Crown className="w-4 h-4 text-yellow-400" />}
-                      <span className="font-bold mr-1">#{i + 1}</span>
-                      {entry.playerName}
+                      <span className={`w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold ${
+                        i === 0 ? 'bg-yellow-500 text-black' : i === 1 ? 'bg-slate-400 text-black' : i === 2 ? 'bg-orange-500 text-white' : 'bg-white/10 text-white/50'
+                      }`}>
+                        {i + 1}
+                      </span>
+                      <span className="text-lg flex-shrink-0">
+                        {PLAYER_AVATARS.find(a => a.id === entry.playerAvatar)?.emoji || PLAYER_AVATARS[0].emoji}
+                      </span>
+                      <span className="truncate min-w-0 flex-1">{entry.playerName}</span>
                     </span>
                     <span className="font-bold">{entry.score}</span>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </CardContent>
@@ -490,26 +767,21 @@ export default function MemeNoHarmPlayer() {
   if (phase === "reveal") {
     const myRank = leaderboard.findIndex(e => e.playerId === playerId) + 1;
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col p-4" data-testid="page-memenoharm-player-reveal">
+      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-player-reveal">
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
         </div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            {status === "connected" ? (
-              <Wifi className="w-4 h-4 text-green-400" />
-            ) : (
-              <WifiOff className="w-4 h-4 text-red-400" />
-            )}
-            <span className="text-sm text-white/40">{playerName}</span>
-          </div>
-          <span className="text-sm text-green-400 font-bold">{myScore} pts</span>
-        </div>
-        <div className="flex-1 flex flex-col items-center justify-center max-w-sm mx-auto w-full">
+        {renderGameHeader()}
+        <div className="flex-1 flex flex-col items-center justify-center max-w-sm mx-auto w-full p-4">
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-4">
             {roundWinnerId === playerId ? (
               <>
-                <Star className="w-12 h-12 text-yellow-400 mx-auto mb-2" />
+                <motion.div
+                  animate={{ rotate: [0, -10, 10, 0] }}
+                  transition={{ duration: 0.5, repeat: 3 }}
+                >
+                  <Star className="w-16 h-16 text-yellow-400 mx-auto mb-2" />
+                </motion.div>
                 <h2 className="text-2xl font-bold text-yellow-300">You won this round!</h2>
               </>
             ) : (
@@ -519,12 +791,28 @@ export default function MemeNoHarmPlayer() {
 
           <Card className="bg-white/10 border-white/20 w-full mb-4">
             <CardContent className="pt-4 text-center">
-              <p className="text-green-400 text-2xl font-bold">{myScore} pts</p>
+              <motion.p
+                key={myScore}
+                initial={{ scale: 1.3 }}
+                animate={{ scale: 1 }}
+                className="text-green-400 text-3xl font-black"
+              >
+                {myScore} pts
+              </motion.p>
               <p className="text-white/40 text-sm">Rank #{myRank}</p>
             </CardContent>
           </Card>
 
-          <p className="text-white/40 text-sm text-center">Waiting for host to start next round...</p>
+          <motion.div
+            className="flex items-center gap-2 text-white/40"
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            <div className="w-2 h-2 rounded-full bg-green-400" />
+            <div className="w-2 h-2 rounded-full bg-green-400" />
+            <div className="w-2 h-2 rounded-full bg-green-400" />
+          </motion.div>
+          <p className="text-white/40 text-sm text-center mt-2">Waiting for host to start next round...</p>
         </div>
       </div>
     );
@@ -532,26 +820,20 @@ export default function MemeNoHarmPlayer() {
 
   if (phase === "voted") {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col p-4" data-testid="page-memenoharm-voted">
+      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-voted">
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
         </div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            {status === "connected" ? (
-              <Wifi className="w-4 h-4 text-green-400" />
-            ) : (
-              <WifiOff className="w-4 h-4 text-red-400" />
-            )}
-            <span className="text-sm text-white/40">{playerName}</span>
-          </div>
-          <span className="text-sm text-green-400 font-bold">{myScore} pts</span>
-        </div>
-        <div className="flex-1 flex items-center justify-center">
+        {renderGameHeader()}
+        <div className="flex-1 flex items-center justify-center p-4">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-center">
-            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Star className="w-8 h-8 text-green-400" />
-            </div>
+            <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4"
+            >
+              <Star className="w-10 h-10 text-green-400" />
+            </motion.div>
             <h2 className="text-xl font-bold text-white mb-2">Vote Cast!</h2>
             <p className="text-white/50">Waiting for everyone to vote...</p>
           </motion.div>
@@ -566,17 +848,7 @@ export default function MemeNoHarmPlayer() {
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
         </div>
-        <div className="flex items-center justify-between px-4 mb-4">
-          <div className="flex items-center gap-2">
-            {status === "connected" ? (
-              <Wifi className="w-4 h-4 text-green-400" />
-            ) : (
-              <WifiOff className="w-4 h-4 text-red-400" />
-            )}
-            <span className="text-sm text-white/40">{playerName}</span>
-          </div>
-          <span className="text-sm text-green-400 font-bold">{myScore} pts</span>
-        </div>
+        {renderGameHeader()}
         <div className="p-4 text-center">
           <h2 className="text-lg font-bold text-white mb-1">Vote for the Best GIF!</h2>
           <p className="text-green-200/60 text-sm">"{prompt}"</p>
@@ -615,32 +887,30 @@ export default function MemeNoHarmPlayer() {
 
   if (phase === "submitted") {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col p-4" data-testid="page-memenoharm-submitted">
+      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-submitted">
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
         </div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            {status === "connected" ? (
-              <Wifi className="w-4 h-4 text-green-400" />
-            ) : (
-              <WifiOff className="w-4 h-4 text-red-400" />
-            )}
-            <span className="text-sm text-white/40">{playerName}</span>
-          </div>
-          <span className="text-sm text-green-400 font-bold">{myScore} pts</span>
-        </div>
-        <div className="flex-1 flex flex-col items-center justify-center">
+        {renderGameHeader()}
+        <div className="flex-1 flex flex-col items-center justify-center p-4">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-center">
-            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Smile className="w-8 h-8 text-green-400" />
-            </div>
+            <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4"
+            >
+              <Smile className="w-10 h-10 text-green-400" />
+            </motion.div>
             <h2 className="text-xl font-bold text-white mb-2">GIF Submitted!</h2>
             <p className="text-white/50 mb-4">Waiting for other players...</p>
             {selectedGif && (
-              <div className="w-48 h-48 mx-auto rounded-lg overflow-hidden">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-48 h-48 mx-auto rounded-xl overflow-hidden border-2 border-green-500/30 shadow-lg"
+              >
                 <img src={selectedGif.previewUrl} alt={selectedGif.title} className="w-full h-full object-cover" />
-              </div>
+              </motion.div>
             )}
           </motion.div>
         </div>
@@ -654,17 +924,7 @@ export default function MemeNoHarmPlayer() {
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
         </div>
-        <div className="flex items-center justify-between px-4 py-1">
-          <div className="flex items-center gap-2">
-            {status === "connected" ? (
-              <Wifi className="w-4 h-4 text-green-400" />
-            ) : (
-              <WifiOff className="w-4 h-4 text-red-400" />
-            )}
-            <span className="text-sm text-white/40">{playerName}</span>
-          </div>
-          <span className="text-sm text-green-400 font-bold">{myScore} pts</span>
-        </div>
+        {renderGameHeader()}
         <div className="p-4 text-center sticky top-0 z-10 bg-green-900/90 backdrop-blur-sm">
           <p className="text-green-400 text-xs font-medium">Round {round} of {totalRounds}</p>
           <h2 className="text-lg font-bold text-white mb-2">"{prompt}"</h2>
@@ -758,31 +1018,35 @@ export default function MemeNoHarmPlayer() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col p-4" data-testid="page-memenoharm-waiting">
+    <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-waiting">
       <div className="w-full flex justify-center pt-3 pb-1">
         <Logo size="compact" />
       </div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          {status === "connected" ? (
-            <Wifi className="w-4 h-4 text-green-400" />
-          ) : (
-            <WifiOff className="w-4 h-4 text-red-400" />
-          )}
-          <span className="text-sm text-white/40">{playerName}</span>
-        </div>
-        <span className="text-sm text-green-400 font-bold">{myScore} pts</span>
-      </div>
+      {renderGameHeader()}
 
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="text-center"
         >
-          <Smile className="w-12 h-12 text-green-400/50 mx-auto mb-4" />
+          <motion.div
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <Smile className="w-16 h-16 text-green-400/50 mx-auto mb-4" />
+          </motion.div>
           <h2 className="text-xl font-bold text-white mb-2">You're In!</h2>
           <p className="text-white/50">Waiting for the host to start the round...</p>
+          <motion.div
+            className="flex justify-center gap-2 mt-4"
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            <div className="w-2 h-2 rounded-full bg-green-400" />
+            <div className="w-2 h-2 rounded-full bg-green-400" />
+            <div className="w-2 h-2 rounded-full bg-green-400" />
+          </motion.div>
         </motion.div>
       </div>
     </div>
