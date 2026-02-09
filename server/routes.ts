@@ -4533,6 +4533,7 @@ Generate exactly ${promptCount} prompts.`
     sequencePhase?: 'waiting' | 'animatedReveal' | 'playing' | 'revealing' | 'leaderboard' | 'gameComplete';
     sequenceQuestionIndex?: number;
     sequenceTotalQuestions?: number;
+    sequencePaused?: boolean;
     // Meme No Harm fields
     memeSubmissions?: Map<string, MemeSubmission>;
     memeVotes?: Map<string, string>; // voterId -> submissionPlayerId
@@ -5643,6 +5644,7 @@ Generate exactly ${promptCount} prompts.`
             room.questionStartTime = Date.now();
             room.pointsPerRound = data.pointsPerRound || 10;
             room.sequencePhase = 'playing';
+            room.sequencePaused = false;
             room.sequenceQuestionIndex = data.questionIndex;
             room.sequenceTotalQuestions = data.totalQuestions;
             
@@ -5731,12 +5733,45 @@ Generate exactly ${promptCount} prompts.`
             break;
           }
 
+          case 'sequence:host:pause': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+            room.sequencePaused = true;
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                sendToPlayer(player, { type: 'sequence:paused' });
+              }
+            });
+            break;
+          }
+
+          case 'sequence:host:resume': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+            room.sequencePaused = false;
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                sendToPlayer(player, { type: 'sequence:resumed' });
+              }
+            });
+            break;
+          }
+
           case 'sequence:player:submit': {
             const mapping = wsToRoom.get(ws);
             if (!mapping || mapping.isHost) break;
             
             const room = rooms.get(mapping.roomCode);
             if (!room || !mapping.playerId) break;
+
+            if (room.sequencePaused) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Game is paused' }));
+              break;
+            }
 
             const player = room.players.get(mapping.playerId);
             if (!player) break;
@@ -5781,6 +5816,10 @@ Generate exactly ${promptCount} prompts.`
             
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
+
+            if (room.sequencePhase === 'revealing' || room.sequencePhase === 'leaderboard' || room.sequencePhase === 'gameComplete') {
+              break;
+            }
 
             const correctOrder = data.correctOrder || room.currentCorrectOrder;
             const submissions = room.sequenceSubmissions || [];
@@ -5871,8 +5910,8 @@ Generate exactly ${promptCount} prompts.`
               submissions,
               winner,
               leaderboard,
-              currentQuestionIndex: data.currentQuestionIndex,
-              totalQuestions: data.totalQuestions,
+              currentQuestionIndex: room.sequenceQuestionIndex,
+              totalQuestions: room.sequenceTotalQuestions,
             });
             break;
           }
@@ -5925,6 +5964,7 @@ Generate exactly ${promptCount} prompts.`
             if (!room) break;
 
             room.sequencePhase = 'waiting';
+            room.sequencePaused = false;
             room.sequenceSubmissions = [];
             room.currentCorrectOrder = undefined;
             room.currentQuestion = undefined;
@@ -5958,6 +5998,7 @@ Generate exactly ${promptCount} prompts.`
             room.currentCorrectOrder = undefined;
             room.currentQuestion = undefined;
             room.sequencePhase = 'waiting';
+            room.sequencePaused = false;
             room.sequenceQuestionIndex = undefined;
             room.sequenceTotalQuestions = undefined;
 

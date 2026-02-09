@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
-import { ListOrdered, Wifi, WifiOff, Trophy, Check, X, RotateCcw, Undo2, Sparkles, RefreshCw, Crown, Star, Medal, Lock, Volume2, VolumeX, LogOut, ChevronDown, ChevronUp, Hash } from "lucide-react";
+import { ListOrdered, Wifi, WifiOff, Trophy, Check, X, RotateCcw, Undo2, Sparkles, RefreshCw, Crown, Star, Medal, Lock, Volume2, VolumeX, LogOut, ChevronDown, ChevronUp, Hash, Pause } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { PLAYER_AVATARS, type AvatarId } from "@shared/schema";
@@ -94,6 +94,7 @@ export default function SequencePlayer() {
   const [showCorrectFlash, setShowCorrectFlash] = useState(false);
   const [showWrongFlash, setShowWrongFlash] = useState(false);
   const [showSubmitFlash, setShowSubmitFlash] = useState(false);
+  const [gamePaused, setGamePaused] = useState(false);
   const [reconnectCountdown, setReconnectCountdown] = useState<number | null>(null);
   
   const hasCodeFromUrl = !!params.code;
@@ -207,6 +208,7 @@ export default function SequencePlayer() {
           setIsCorrect(null);
           setCorrectOrder(null);
           setRank(null);
+          setGamePaused(false);
           if (data.questionIndex) setCurrentQuestionIndex(data.questionIndex);
           if (data.totalQuestions) setTotalQuestions(data.totalQuestions);
           soundManager.play('swoosh', 0.4);
@@ -314,6 +316,16 @@ export default function SequencePlayer() {
           }
           break;
 
+        case "sequence:paused":
+          setGamePaused(true);
+          toast({ title: "Game paused", description: "Host has paused the game" });
+          break;
+
+        case "sequence:resumed":
+          setGamePaused(false);
+          toast({ title: "Game resumed!" });
+          break;
+
         case "host:disconnected":
           toast({ title: "Host disconnected", description: "Waiting for host to reconnect...", variant: "destructive" });
           break;
@@ -337,6 +349,7 @@ export default function SequencePlayer() {
           setCurrentQuestionIndex(1);
           setTotalQuestions(1);
           setQuestionStartTime(null);
+          setGamePaused(false);
           break;
           
         case "sequence:reset":
@@ -349,6 +362,7 @@ export default function SequencePlayer() {
           setRank(null);
           setWinner(null);
           setQuestionStartTime(null);
+          setGamePaused(false);
           break;
           
         case "error":
@@ -416,6 +430,7 @@ export default function SequencePlayer() {
   const handleLetterTap = (letter: string) => {
     if (phase !== "playing") return;
     if (status !== "connected") return;
+    if (gamePaused) return;
     if (selectedSequence.length >= 4) return;
     if (selectedSequence.includes(letter)) return;
     
@@ -496,6 +511,7 @@ export default function SequencePlayer() {
     setCurrentQuestionIndex(1);
     setTotalQuestions(1);
     setQuestionStartTime(null);
+    setGamePaused(false);
   };
 
   const handleManualReconnect = () => {
@@ -823,14 +839,27 @@ export default function SequencePlayer() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-md space-y-4"
+            className="w-full max-w-md space-y-4 relative"
           >
+            {gamePaused && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="absolute inset-0 z-30 bg-black/70 rounded-xl flex items-center justify-center backdrop-blur-sm"
+              >
+                <div className="text-center text-white">
+                  <Pause className="w-10 h-10 mx-auto mb-2 text-cyan-400 shrink-0" />
+                  <p className="text-lg font-bold">Game Paused</p>
+                  <p className="text-sm text-white/60">Waiting for host to resume...</p>
+                </div>
+              </motion.div>
+            )}
             <div className="flex items-center justify-between gap-2">
               <Badge variant="secondary" className="bg-white/10 text-white gap-1" data-testid="badge-question-progress">
                 Q{currentQuestionIndex}/{totalQuestions}
               </Badge>
               <Badge variant="secondary" className={`${phase === "submitted" ? "bg-cyan-500/30 text-cyan-300 border-cyan-400/50" : "bg-white/10 text-white"}`} data-testid="badge-status">
-                {phase === "submitted" ? "LOCKED IN" : "Tap 1-2-3-4"}
+                {phase === "submitted" ? "LOCKED IN" : gamePaused ? "PAUSED" : "Tap 1-2-3-4"}
               </Badge>
             </div>
 

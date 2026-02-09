@@ -272,6 +272,16 @@ export default function SequenceSqueeze() {
           break;
         case "sequence:scoresReset":
           setLeaderboard([]);
+          setSubmissions([]);
+          submissionsRef.current = [];
+          setCurrentQuestion(null);
+          setShuffledQuestion(null);
+          setShuffledCorrectOrder([]);
+          setWinner(null);
+          setGameQuestions([]);
+          setCurrentQuestionIndex(1);
+          setTotalQuestions(1);
+          setIsPaused(false);
           toast({ title: "Scores reset!" });
           break;
         case "sequence:pointsAdjusted":
@@ -285,6 +295,7 @@ export default function SequenceSqueeze() {
         case "player:left":
           toast({ title: `${data.playerName} left the game` });
           setPlayers(prev => prev.filter(p => p.id !== data.playerId));
+          setLeaderboard(prev => prev.filter(l => l.playerId !== data.playerId));
           break;
       }
       } catch { /* ignore parse errors */ }
@@ -293,6 +304,7 @@ export default function SequenceSqueeze() {
     socket.onclose = () => {
       setRoomCode(null);
       setGameState("setup");
+      setWs(null);
       hasAutoStartedRef.current = false;
     };
 
@@ -348,13 +360,17 @@ export default function SequenceSqueeze() {
     return shuffled;
   };
 
-  const startQuestion = useCallback((question: SequenceQuestion, idx?: number) => {
+  const startQuestion = useCallback((question: SequenceQuestion, idx?: number, overrideTotalQuestions?: number) => {
     const questionIdx = idx !== undefined ? idx + 1 : currentQuestionIndex;
+    const resolvedTotal = overrideTotalQuestions ?? totalQuestions;
     setCurrentQuestion(question);
     setSubmissions([]);
     submissionsRef.current = [];
     setWinner(null);
     setCurrentQuestionIndex(questionIdx);
+    if (overrideTotalQuestions !== undefined) {
+      setTotalQuestions(overrideTotalQuestions);
+    }
 
     const originalOptions = [
       { letter: "A", text: question.optionA },
@@ -396,7 +412,7 @@ export default function SequenceSqueeze() {
         },
         correctOrder: newShuffledCorrectOrder,
         questionIndex: questionIdx,
-        totalQuestions: totalQuestions,
+        totalQuestions: resolvedTotal,
         pointsPerRound,
       }));
     }
@@ -602,8 +618,7 @@ export default function SequenceSqueeze() {
                       const count = questionsToPlay ?? questions.length;
                       const shuffled = [...questions].sort(() => Math.random() - 0.5).slice(0, count);
                       setGameQuestions(shuffled);
-                      setTotalQuestions(shuffled.length);
-                      startQuestion(shuffled[0], 0);
+                      startQuestion(shuffled[0], 0, shuffled.length);
                     }
                   }}
                   disabled={players.length === 0 || questions.length === 0}
@@ -906,7 +921,10 @@ export default function SequenceSqueeze() {
                 </Badge>
               </div>
               <div className="flex items-center gap-2">
-                <Button size="lg" variant="outline" onClick={() => setIsPaused(true)} data-testid="button-pause">
+                <Button size="lg" variant="outline" onClick={() => {
+                  setIsPaused(true);
+                  ws?.send(JSON.stringify({ type: "sequence:host:pause" }));
+                }} data-testid="button-pause">
                   <Pause className="w-5 h-5 mr-2 shrink-0" aria-hidden="true" />
                   Pause
                 </Button>
@@ -929,7 +947,10 @@ export default function SequenceSqueeze() {
                   <div className="text-center text-white">
                     <Pause className="w-20 h-20 mx-auto mb-4 opacity-50 shrink-0" aria-hidden="true" />
                     <h2 className="text-4xl font-bold mb-6">Game Paused</h2>
-                    <Button size="lg" onClick={() => setIsPaused(false)} data-testid="button-resume">
+                    <Button size="lg" onClick={() => {
+                      setIsPaused(false);
+                      ws?.send(JSON.stringify({ type: "sequence:host:resume" }));
+                    }} data-testid="button-resume">
                       <Play className="w-5 h-5 mr-2 shrink-0" aria-hidden="true" />
                       Resume
                     </Button>
@@ -1412,7 +1433,6 @@ export default function SequenceSqueeze() {
                 onClick={() => {
                   ws?.send(JSON.stringify({ type: "sequence:host:resetScores" }));
                   setGameState("waiting");
-                  setLeaderboard([]);
                 }}
                 data-testid="button-new-game"
               >
