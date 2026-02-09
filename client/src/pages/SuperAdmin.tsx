@@ -120,8 +120,7 @@ interface QuestionCreator {
 interface SequenceQuestionWithCreator {
   id: number;
   userId: string | null;
-  title: string;
-  category: string | null;
+  question: string;
   isActive: boolean;
   isStarterPack: boolean;
   createdAt: string;
@@ -415,6 +414,21 @@ export default function SuperAdmin() {
         (b.ownerEmail ?? '').toLowerCase().includes(contentSearch.toLowerCase())
       )
     : allBoards;
+
+  const filteredSequenceQuestions = contentSearch.trim()
+    ? sequenceQuestions.filter(q => 
+        (q.question ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
+        (q.creator?.username ?? '').toLowerCase().includes(contentSearch.toLowerCase())
+      )
+    : sequenceQuestions;
+
+  const filteredPsyopQuestions = contentSearch.trim()
+    ? psyopQuestions.filter(q => 
+        (q.factText ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
+        (q.creator?.username ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
+        (q.category ?? '').toLowerCase().includes(contentSearch.toLowerCase())
+      )
+    : psyopQuestions;
 
   if (isAuthLoading) {
     return (
@@ -1135,19 +1149,19 @@ export default function SuperAdmin() {
                     </div>
                   ) : isErrorSequence ? (
                     <ErrorState message="Couldn't load questions" onRetry={() => refetchSequence()} testId="button-retry-sequence" />
-                  ) : sequenceQuestions.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8" data-testid="text-empty-sequence">No questions found</p>
+                  ) : filteredSequenceQuestions.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8" data-testid="text-empty-sequence">{contentSearch.trim() ? 'No matching questions' : 'No questions found'}</p>
                   ) : (
                     <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                      {sequenceQuestions.map(q => (
+                      {filteredSequenceQuestions.map(q => (
                         <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className="font-medium truncate">{q.title}</p>
+                              <p className="font-medium truncate">{q.question}</p>
                               {q.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              by {q.creator?.username || 'Unknown'} {q.category && `• ${q.category}`}
+                              by {q.creator?.username || 'Unknown'}
                             </p>
                           </div>
                           <Button
@@ -1173,11 +1187,11 @@ export default function SuperAdmin() {
                     </div>
                   ) : isErrorPsyop ? (
                     <ErrorState message="Couldn't load questions" onRetry={() => refetchPsyop()} testId="button-retry-psyop" />
-                  ) : psyopQuestions.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8" data-testid="text-empty-psyop">No questions found</p>
+                  ) : filteredPsyopQuestions.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8" data-testid="text-empty-psyop">{contentSearch.trim() ? 'No matching questions' : 'No questions found'}</p>
                   ) : (
                     <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                      {psyopQuestions.map(q => (
+                      {filteredPsyopQuestions.map(q => (
                         <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">

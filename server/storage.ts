@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, psyopQuestions, timeWarpQuestions, memePrompts, memeImages, memeSessions, memePlayers, memeRounds, memeSubmissions, memeVotes, adminAnnouncements, playerGameStats, badges, userBadges, playerGameHistory, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameSessionWithDetails, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion, type PsyopQuestion, type InsertPsyopQuestion, type TimeWarpQuestion, type InsertTimeWarpQuestion, type MemePrompt, type InsertMemePrompt, type MemeImage, type InsertMemeImage, type MemeSession, type InsertMemeSession, type MemePlayer, type InsertMemePlayer, type PlayerGameStats, type InsertPlayerGameStats, type Badge, type InsertBadge, type UserBadge, type InsertUserBadge, type PlayerGameHistory, type InsertPlayerGameHistory, type PlayerProfile, type MemeRound, type InsertMemeRound, type MemeSubmission, type InsertMemeSubmission, type MemeVote, type InsertMemeVote, type AdminAnnouncement, type InsertAdminAnnouncement, type ModerationStatus } from "@shared/schema";
-import { users } from "@shared/models/auth";
+import { boards, categories, boardCategories, questions, games, gameBoards, headsUpDecks, headsUpCards, gameDecks, gameSessions, sessionPlayers, sessionCompletedQuestions, gameTypes, doubleDipPairs, doubleDipQuestions, doubleDipDailySets, doubleDipAnswers, doubleDipReactions, doubleDipMilestones, doubleDipFavorites, doubleDipWeeklyStakes, sequenceQuestions, sequenceSessions, sequenceSubmissions, psyopQuestions, psyopSessions, psyopRounds, psyopSubmissions, psyopVotes, timeWarpQuestions, memePrompts, memeImages, memeSessions, memePlayers, memeRounds, memeSubmissions, memeVotes, adminAnnouncements, playerGameStats, badges, userBadges, playerGameHistory, passwordResetTokens, type Board, type InsertBoard, type Category, type InsertCategory, type BoardCategory, type InsertBoardCategory, type Question, type InsertQuestion, type BoardCategoryWithCategory, type BoardCategoryWithCount, type BoardCategoryWithQuestions, type Game, type InsertGame, type GameBoard, type InsertGameBoard, type HeadsUpDeck, type InsertHeadsUpDeck, type HeadsUpCard, type InsertHeadsUpCard, type GameDeck, type InsertGameDeck, type HeadsUpDeckWithCardCount, type GameSession, type InsertGameSession, type SessionPlayer, type InsertSessionPlayer, type SessionCompletedQuestion, type InsertSessionCompletedQuestion, type GameSessionWithPlayers, type GameSessionWithDetails, type GameMode, type SessionState, type GameType, type InsertGameType, type DoubleDipPair, type InsertDoubleDipPair, type DoubleDipQuestion, type InsertDoubleDipQuestion, type DoubleDipDailySet, type InsertDoubleDipDailySet, type DoubleDipAnswer, type InsertDoubleDipAnswer, type DoubleDipReaction, type InsertDoubleDipReaction, type DoubleDipMilestone, type InsertDoubleDipMilestone, type DoubleDipFavorite, type InsertDoubleDipFavorite, type DoubleDipWeeklyStake, type InsertDoubleDipWeeklyStake, type SequenceQuestion, type InsertSequenceQuestion, type PsyopQuestion, type InsertPsyopQuestion, type TimeWarpQuestion, type InsertTimeWarpQuestion, type MemePrompt, type InsertMemePrompt, type MemeImage, type InsertMemeImage, type MemeSession, type InsertMemeSession, type MemePlayer, type InsertMemePlayer, type PlayerGameStats, type InsertPlayerGameStats, type Badge, type InsertBadge, type UserBadge, type InsertUserBadge, type PlayerGameHistory, type InsertPlayerGameHistory, type PlayerProfile, type MemeRound, type InsertMemeRound, type MemeSubmission, type InsertMemeSubmission, type MemeVote, type InsertMemeVote, type AdminAnnouncement, type InsertAdminAnnouncement, type ModerationStatus } from "@shared/schema";
+import { users, playerProfiles, playerBadges, payments } from "@shared/models/auth";
 import { eq, and, asc, count, inArray, desc, sql, gte, like, or } from "drizzle-orm";
 
 export interface IStorage {
@@ -1304,6 +1304,81 @@ export class DatabaseStorage implements IStorage {
       await db.delete(gameDecks).where(eq(gameDecks.deckId, deck.id));
     }
     await db.delete(headsUpDecks).where(eq(headsUpDecks.userId, userId));
+    
+    // Clean up game-specific content owned by user
+    await db.delete(timeWarpQuestions).where(eq(timeWarpQuestions.userId, userId));
+    await db.delete(memeImages).where(eq(memeImages.userId, userId));
+    await db.delete(memePrompts).where(eq(memePrompts.userId, userId));
+    
+    // Clean up Sequence sessions hosted by user (cascade: submissions → sessions)
+    const userSeqSessions = await db.select({ id: sequenceSessions.id }).from(sequenceSessions).where(eq(sequenceSessions.hostId, userId));
+    for (const ss of userSeqSessions) {
+      await db.delete(sequenceSubmissions).where(eq(sequenceSubmissions.sessionId, ss.id));
+    }
+    await db.delete(sequenceSessions).where(eq(sequenceSessions.hostId, userId));
+    
+    // Clean up PsyOp sessions hosted by user (cascade: votes → submissions → rounds → sessions)
+    const userPsyopSessions = await db.select({ id: psyopSessions.id }).from(psyopSessions).where(eq(psyopSessions.hostId, userId));
+    for (const ps of userPsyopSessions) {
+      const rounds = await db.select({ id: psyopRounds.id }).from(psyopRounds).where(eq(psyopRounds.sessionId, ps.id));
+      for (const r of rounds) {
+        await db.delete(psyopVotes).where(eq(psyopVotes.roundId, r.id));
+        await db.delete(psyopSubmissions).where(eq(psyopSubmissions.roundId, r.id));
+      }
+      await db.delete(psyopRounds).where(eq(psyopRounds.sessionId, ps.id));
+    }
+    await db.delete(psyopSessions).where(eq(psyopSessions.hostId, userId));
+    
+    // Clean up meme sessions hosted by user (cascade: votes → submissions → rounds → players → sessions)
+    const userMemeSessions = await db.select({ id: memeSessions.id }).from(memeSessions).where(eq(memeSessions.hostId, userId));
+    for (const ms of userMemeSessions) {
+      const rounds = await db.select({ id: memeRounds.id }).from(memeRounds).where(eq(memeRounds.sessionId, ms.id));
+      for (const r of rounds) {
+        await db.delete(memeVotes).where(eq(memeVotes.roundId, r.id));
+        await db.delete(memeSubmissions).where(eq(memeSubmissions.roundId, r.id));
+      }
+      await db.delete(memeRounds).where(eq(memeRounds.sessionId, ms.id));
+      await db.delete(memePlayers).where(eq(memePlayers.sessionId, ms.id));
+    }
+    await db.delete(memeSessions).where(eq(memeSessions.hostId, userId));
+    
+    // Clean up Double Dip pairs where user is involved (cascade: stakes → favorites → milestones → reactions → answers → daily sets → pairs)
+    const userPairs = await db.select({ id: doubleDipPairs.id }).from(doubleDipPairs)
+      .where(or(eq(doubleDipPairs.userAId, userId), eq(doubleDipPairs.userBId, userId)));
+    for (const pair of userPairs) {
+      const dailySets = await db.select({ id: doubleDipDailySets.id }).from(doubleDipDailySets).where(eq(doubleDipDailySets.pairId, pair.id));
+      for (const ds of dailySets) {
+        const answers = await db.select({ id: doubleDipAnswers.id }).from(doubleDipAnswers).where(eq(doubleDipAnswers.dailySetId, ds.id));
+        for (const a of answers) {
+          await db.delete(doubleDipReactions).where(eq(doubleDipReactions.answerId, a.id));
+        }
+        await db.delete(doubleDipAnswers).where(eq(doubleDipAnswers.dailySetId, ds.id));
+      }
+      await db.delete(doubleDipDailySets).where(eq(doubleDipDailySets.pairId, pair.id));
+      await db.delete(doubleDipWeeklyStakes).where(eq(doubleDipWeeklyStakes.pairId, pair.id));
+      await db.delete(doubleDipMilestones).where(eq(doubleDipMilestones.pairId, pair.id));
+      await db.delete(doubleDipFavorites).where(eq(doubleDipFavorites.pairId, pair.id));
+    }
+    await db.delete(doubleDipPairs).where(or(eq(doubleDipPairs.userAId, userId), eq(doubleDipPairs.userBId, userId)));
+    
+    // For nullable userId tables, nullify ownership to preserve shared/starter content
+    await db.update(sequenceQuestions).set({ userId: null }).where(eq(sequenceQuestions.userId, userId));
+    await db.update(psyopQuestions).set({ userId: null }).where(eq(psyopQuestions.userId, userId));
+    
+    // Clean up player stats, badges, profiles, game history, and auth tokens
+    await db.delete(playerGameStats).where(eq(playerGameStats.userId, userId));
+    await db.delete(userBadges).where(eq(userBadges.userId, userId));
+    await db.delete(playerGameHistory).where(eq(playerGameHistory.userId, userId));
+    
+    // Clean up player profile and associated badges (badges reference profileId, not userId)
+    const userProfile = await db.select({ id: playerProfiles.id }).from(playerProfiles).where(eq(playerProfiles.userId, userId));
+    if (userProfile.length > 0) {
+      await db.delete(playerBadges).where(eq(playerBadges.profileId, userProfile[0].id));
+      await db.delete(playerProfiles).where(eq(playerProfiles.userId, userId));
+    }
+    
+    await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+    await db.delete(payments).where(eq(payments.userId, userId));
     
     await db.delete(games).where(eq(games.userId, userId));
     await db.delete(users).where(eq(users.id, userId));
@@ -2631,7 +2706,13 @@ export class DatabaseStorage implements IStorage {
           lastName: users.lastName,
           email: users.email,
         }).from(users).where(eq(users.id, q.userId));
-        creator = user || null;
+        if (user) {
+          creator = {
+            id: user.id,
+            username: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || 'Unknown',
+            email: user.email,
+          };
+        }
       }
       return { ...q, creator };
     }));
@@ -2661,7 +2742,13 @@ export class DatabaseStorage implements IStorage {
           lastName: users.lastName,
           email: users.email,
         }).from(users).where(eq(users.id, q.userId));
-        creator = user || null;
+        if (user) {
+          creator = {
+            id: user.id,
+            username: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || 'Unknown',
+            email: user.email,
+          };
+        }
       }
       return { ...q, creator };
     }));
