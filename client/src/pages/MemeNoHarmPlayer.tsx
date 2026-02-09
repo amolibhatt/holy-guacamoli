@@ -15,11 +15,8 @@ type GamePhase = "waiting" | "searching" | "submitted" | "voting" | "voted" | "r
 interface GiphyGif {
   id: string;
   title: string;
-  images: {
-    fixed_height: { url: string };
-    fixed_width_small: { url: string };
-    original: { url: string };
-  };
+  previewUrl: string;
+  fullUrl: string;
 }
 
 interface VotingSubmission {
@@ -84,7 +81,7 @@ export default function MemeNoHarmPlayer() {
       const res = await fetch("/api/giphy/trending?limit=12");
       if (res.ok) {
         const data = await res.json();
-        setTrendingGifs(data.data || []);
+        setTrendingGifs(data.results || []);
       }
     } catch {}
   }, []);
@@ -99,7 +96,7 @@ export default function MemeNoHarmPlayer() {
       const res = await fetch(`/api/giphy/search?q=${encodeURIComponent(query)}&limit=20`);
       if (res.ok) {
         const data = await res.json();
-        setSearchResults(data.data || []);
+        setSearchResults(data.results || []);
       }
     } catch {}
     setIsSearching(false);
@@ -219,7 +216,7 @@ export default function MemeNoHarmPlayer() {
     if (!selectedGif || !wsRef.current) return;
     wsRef.current.send(JSON.stringify({
       type: "meme:player:submit",
-      gifUrl: selectedGif.images.fixed_height.url,
+      gifUrl: selectedGif.fullUrl,
       gifTitle: selectedGif.title,
     }));
     setPhase("submitted");
@@ -459,7 +456,7 @@ export default function MemeNoHarmPlayer() {
             <p className="text-white/50 mb-4">Waiting for other players...</p>
             {selectedGif && (
               <div className="w-48 h-48 mx-auto rounded-lg overflow-hidden">
-                <img src={selectedGif.images.fixed_height.url} alt={selectedGif.title} className="w-full h-full object-cover" />
+                <img src={selectedGif.previewUrl} alt={selectedGif.title} className="w-full h-full object-cover" />
               </div>
             )}
           </motion.div>
@@ -523,7 +520,7 @@ export default function MemeNoHarmPlayer() {
               >
                 <div className="aspect-square">
                   <img
-                    src={gif.images.fixed_width_small.url}
+                    src={gif.previewUrl}
                     alt={gif.title}
                     className="w-full h-full object-cover"
                     loading="lazy"
@@ -544,7 +541,7 @@ export default function MemeNoHarmPlayer() {
             >
               <div className="flex items-center gap-3 max-w-sm mx-auto">
                 <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                  <img src={selectedGif.images.fixed_width_small.url} alt={selectedGif.title} className="w-full h-full object-cover" />
+                  <img src={selectedGif.previewUrl} alt={selectedGif.title} className="w-full h-full object-cover" />
                 </div>
                 <Button
                   onClick={submitGif}
