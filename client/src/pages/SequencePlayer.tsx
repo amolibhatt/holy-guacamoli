@@ -141,10 +141,10 @@ export default function SequencePlayer() {
     setReconnectCountdown(null);
   }, []);
 
-  const connect = useCallback(() => {
+  const connect = useCallback((isReconnect = false) => {
     if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return;
 
-    setStatus("connecting");
+    setStatus(isReconnect ? "reconnecting" : "connecting");
     clearAllTimers();
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
@@ -372,6 +372,7 @@ export default function SequencePlayer() {
           
         case "kicked":
           clearSession();
+          clearAllTimers();
           setJoined(false);
           joinedRef.current = false;
           shouldReconnectRef.current = false;
@@ -386,6 +387,7 @@ export default function SequencePlayer() {
 
         case "room:closed":
           clearSession();
+          clearAllTimers();
           setJoined(false);
           joinedRef.current = false;
           shouldReconnectRef.current = false;
@@ -399,24 +401,31 @@ export default function SequencePlayer() {
           break;
 
         case "error":
-          if (data.message?.toLowerCase().includes("room not found")) {
+          if (data.message === "Room not found") {
             shouldReconnectRef.current = false;
             clearSession();
+            clearAllTimers();
             setJoined(false);
+            joinedRef.current = false;
             setStatus("disconnected");
             setPhase("waiting");
             if (wsRef.current) {
               wsRef.current.close();
               wsRef.current = null;
             }
+            toast({
+              title: "Game not found",
+              description: "Check the room code and try again. The game may have ended.",
+              variant: "destructive",
+            });
           } else {
             setStatus("error");
+            toast({
+              title: "Connection issue",
+              description: data.message || "Please check your connection.",
+              variant: "destructive",
+            });
           }
-          toast({
-            title: "Connection issue",
-            description: data.message || "Please check your connection.",
-            variant: "destructive",
-          });
           break;
       }
     };
@@ -453,7 +462,7 @@ export default function SequencePlayer() {
       }, 1000);
 
       reconnectTimeoutRef.current = setTimeout(() => {
-        connect();
+        connect(true);
       }, delay);
     };
 
@@ -547,13 +556,14 @@ export default function SequencePlayer() {
     setTotalQuestions(1);
     setQuestionStartTime(null);
     setGamePaused(false);
+    reconnectAttemptsRef.current = 0;
   };
 
   const handleManualReconnect = () => {
     clearAllTimers();
     reconnectAttemptsRef.current = 0;
     shouldReconnectRef.current = true;
-    connect();
+    connect(true);
   };
 
   const toggleSound = () => {

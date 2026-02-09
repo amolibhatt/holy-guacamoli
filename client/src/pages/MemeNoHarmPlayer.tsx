@@ -373,15 +373,34 @@ export default function MemeNoHarmPlayer() {
           break;
 
         case "error":
-          setStatus("error");
-          toast({ title: "Error", description: data.message, variant: "destructive" });
-          if (data.message === 'Room not found') {
-            clearSession();
-            joinedRef.current = false;
+          if (data.message === "Room not found") {
             shouldReconnectRef.current = false;
+            clearSession();
+            if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
+            if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
+            if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
+            if (searchTimeoutRef.current) { clearTimeout(searchTimeoutRef.current); searchTimeoutRef.current = null; }
             setJoined(false);
+            joinedRef.current = false;
+            setStatus("disconnected");
             setPhase("waiting");
-            ws.close();
+            setReconnectCountdown(null);
+            if (wsRef.current) {
+              wsRef.current.close();
+              wsRef.current = null;
+            }
+            toast({
+              title: "Game not found",
+              description: "Check the room code and try again. The game may have ended.",
+              variant: "destructive",
+            });
+          } else {
+            setStatus("error");
+            toast({
+              title: "Connection issue",
+              description: data.message || "Please check your connection.",
+              variant: "destructive",
+            });
           }
           break;
       }
@@ -486,16 +505,21 @@ export default function MemeNoHarmPlayer() {
     e.preventDefault();
     if (!roomCode.trim() || !playerName.trim()) return;
     shouldReconnectRef.current = true;
+    reconnectAttemptsRef.current = 0;
     connect();
   };
 
   const handleLeaveGame = () => {
     shouldReconnectRef.current = false;
     joinedRef.current = false;
-    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-    if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-    if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
-    wsRef.current?.close();
+    if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
+    if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
+    if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
+    if (searchTimeoutRef.current) { clearTimeout(searchTimeoutRef.current); searchTimeoutRef.current = null; }
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
     clearSession();
     setJoined(false);
     setPlayerId(null);
@@ -517,17 +541,18 @@ export default function MemeNoHarmPlayer() {
     setRoundWinnerId(null);
     setShowLeaderboard(false);
     setReconnectAttempts(0);
+    reconnectAttemptsRef.current = 0;
     setReconnectCountdown(null);
   };
 
   const handleManualReconnect = () => {
-    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-    if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+    if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
+    if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
+    if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
     setReconnectCountdown(null);
     reconnectAttemptsRef.current = 0;
     setReconnectAttempts(0);
     shouldReconnectRef.current = true;
-    setStatus("connecting");
     connect(true);
   };
 

@@ -368,36 +368,47 @@ export default function PlayerPage() {
     };
 
     ws.onclose = () => {
-      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
-      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-      
-      if (joinedRef.current && shouldReconnectRef.current && reconnectAttemptsRef.current < 5) {
-        setStatus("reconnecting");
-        const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
-        const seconds = Math.ceil(delay / 1000);
-        setReconnectCountdown(seconds);
-        
-        countdownIntervalRef.current = setInterval(() => {
-          setReconnectCountdown(prev => {
-            if (prev !== null && prev > 1) return prev - 1;
-            return prev;
-          });
-        }, 1000);
-        
-        reconnectTimeoutRef.current = setTimeout(() => {
-          if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-          setReconnectCountdown(null);
-          reconnectAttemptsRef.current++;
-          setReconnectAttempts(reconnectAttemptsRef.current);
-          connect(true);
-        }, delay);
-      } else if (joinedRef.current) {
+      if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
+      if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
+      if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
+      setReconnectCountdown(null);
+
+      if (!joinedRef.current || !shouldReconnectRef.current) {
         setStatus("disconnected");
-      } else {
-        setStatus("disconnected");
-        setJoined(false);
-        joinedRef.current = false;
+        return;
       }
+
+      const attempts = reconnectAttemptsRef.current;
+      if (attempts >= 5) {
+        setStatus("disconnected");
+        toast({
+          title: "Connection lost",
+          description: "Could not reconnect. Try joining again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setStatus("reconnecting");
+      reconnectAttemptsRef.current = attempts + 1;
+      setReconnectAttempts(attempts + 1);
+
+      const delay = Math.min(2000 * Math.pow(1.5, attempts), 15000);
+      let remaining = Math.ceil(delay / 1000);
+      setReconnectCountdown(remaining);
+      countdownIntervalRef.current = setInterval(() => {
+        remaining -= 1;
+        if (remaining <= 0) {
+          if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
+          setReconnectCountdown(null);
+        } else {
+          setReconnectCountdown(remaining);
+        }
+      }, 1000);
+
+      reconnectTimeoutRef.current = setTimeout(() => {
+        connect(true);
+      }, delay);
     };
 
     ws.onerror = () => {
@@ -431,7 +442,10 @@ export default function PlayerPage() {
     if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
     if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
     if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
-    wsRef.current?.close();
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
     clearSession();
     setJoined(false);
     setPlayerId(null);
@@ -715,7 +729,7 @@ export default function PlayerPage() {
       {status === "reconnecting" && (
         <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-4 py-2 text-center text-sm text-foreground">
           <RefreshCw className="w-4 h-4 inline-block mr-2 animate-spin" />
-          Reconnecting in {reconnectCountdown ?? '...'}s... (Attempt {reconnectAttempts + 1}/5)
+          Reconnecting in {reconnectCountdown ?? '...'}s... (Attempt {reconnectAttempts}/5)
         </div>
       )}
 
