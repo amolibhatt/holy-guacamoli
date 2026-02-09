@@ -255,7 +255,7 @@ export async function registerRoutes(
       
       // Get all active blitzgrid boards for this user (theme can be "blitzgrid" or "blitzgrid:space", etc.)
       const allBoards = await storage.getBoards(userId, role);
-      let blitzgridBoards = allBoards.filter(b => b.theme && b.theme.startsWith('blitzgrid'));
+      let blitzgridBoards = allBoards.filter(b => b.theme === "blitzgrid" || b.theme?.startsWith("blitzgrid:"));
       
       // Filter to selected grids if specified
       if (selectedGridIds.length > 0) {
@@ -4124,8 +4124,8 @@ Generate exactly ${promptCount} prompts.`
       }
       
       const { categoryId } = req.body;
-      if (typeof categoryId !== "number") {
-        return res.status(400).json({ message: "Category ID is required" });
+      if (typeof categoryId !== "number" || isNaN(categoryId) || !Number.isInteger(categoryId) || categoryId <= 0) {
+        return res.status(400).json({ message: "A valid category ID is required" });
       }
       
       const board = await storage.getBoard(gridId, userId, role);
@@ -4155,7 +4155,7 @@ Generate exactly ${promptCount} prompts.`
         position: existing.length,
       });
       
-      res.json(boardCategory);
+      res.status(201).json(boardCategory);
     } catch (err) {
       console.error("Error adding category to blitzgrid:", err);
       res.status(500).json({ message: "Failed to add category" });
@@ -4512,7 +4512,10 @@ Generate exactly ${promptCount} prompts.`
         
         const [gridName, gridDesc, catName, catDesc, points, question, answer, options, imageUrl, audioUrl, videoUrl] = row;
         
-        if (!gridName || !catName || !points || !question || !answer) continue;
+        if (!gridName || !catName || points == null || points === "" || !question || !answer) continue;
+        
+        const numPoints = Number(points);
+        if (!Number.isFinite(numPoints) || !Number.isInteger(numPoints)) continue;
         
         const gridKey = String(gridName).trim();
         const catKey = String(catName).trim();
@@ -4528,7 +4531,7 @@ Generate exactly ${promptCount} prompts.`
         
         const category = grid.categories.get(catKey)!;
         category.questions.push({
-          points: Number(points),
+          points: numPoints,
           question: String(question).trim(),
           correctAnswer: String(answer).trim(),
           options: options ? String(options).split("|").map(o => o.trim()).filter(Boolean) : [],
@@ -4565,7 +4568,7 @@ Generate exactly ${promptCount} prompts.`
           
           const board = await storage.createBoard({
             name: gridName.trim(),
-            description: gridData.description?.trim() || null,
+            description: gridData.description?.trim() || "BlitzGrid",
             userId,
             theme: "blitzgrid",
             pointValues: [10, 20, 30, 40, 50],
@@ -4573,32 +4576,44 @@ Generate exactly ${promptCount} prompts.`
             isGlobal: false,
           });
           
-          let catPosition = 0;
-          for (const [catName, catData] of Array.from(gridData.categories.entries())) {
-            const category = await storage.createCategory({
-              name: catName.trim(),
-              description: catData.description?.trim() || "",
-              imageUrl: "",
-            });
-            
-            await storage.createBoardCategory({
-              boardId: board.id,
-              categoryId: category.id,
-              position: catPosition++,
-            });
-            
-            for (const q of catData.questions) {
-              await storage.createQuestion({
-                categoryId: category.id,
-                question: q.question,
-                correctAnswer: q.correctAnswer,
-                points: q.points,
-                options: q.options,
-                imageUrl: q.imageUrl,
-                audioUrl: q.audioUrl,
-                videoUrl: q.videoUrl,
+          const createdCategoryIds: number[] = [];
+          try {
+            let catPosition = 0;
+            for (const [catName, catData] of Array.from(gridData.categories.entries())) {
+              const category = await storage.createCategory({
+                name: catName.trim(),
+                description: catData.description?.trim() || "",
+                imageUrl: "",
               });
+              createdCategoryIds.push(category.id);
+              
+              await storage.createBoardCategory({
+                boardId: board.id,
+                categoryId: category.id,
+                position: catPosition++,
+              });
+              
+              for (const q of catData.questions) {
+                await storage.createQuestion({
+                  categoryId: category.id,
+                  question: q.question,
+                  correctAnswer: q.correctAnswer,
+                  points: q.points,
+                  options: q.options,
+                  imageUrl: q.imageUrl,
+                  audioUrl: q.audioUrl,
+                  videoUrl: q.videoUrl,
+                });
+              }
             }
+          } catch (innerErr) {
+            try {
+              await storage.deleteBoard(board.id, userId, 'super_admin');
+              for (const catId of createdCategoryIds) {
+                await storage.deleteCategory(catId);
+              }
+            } catch (_) { /* best-effort cleanup */ }
+            throw innerErr;
           }
           
           results.imported++;
