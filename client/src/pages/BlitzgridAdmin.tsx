@@ -412,6 +412,8 @@ export default function BlitzGridAdmin() {
     setQuestionForms({});
     setDeletingGridId(null);
     setDeletingCategoryId(null);
+    setShowMediaPanel(false);
+    setSelectedPointTier(10);
   }, [selectedGridId]);
 
   const handleExport = async () => {
@@ -631,7 +633,7 @@ export default function BlitzGridAdmin() {
             />
           </div>
         </div>
-        <div className="flex flex-1">
+        <div className="flex flex-1 overflow-hidden min-h-0">
           {/* Grid Sidebar */}
           <aside className="w-64 border-r border-border bg-card/50 p-4 shrink-0 hidden md:flex md:flex-col overflow-y-auto">
             <div className="flex items-center justify-between gap-2 mb-4">
@@ -669,6 +671,26 @@ export default function BlitzGridAdmin() {
                     }
                   }}
                   data-testid="input-new-grid-name-sidebar"
+                />
+                <Input
+                  placeholder="Description (optional)..."
+                  value={newGridDescription}
+                  onChange={(e) => setNewGridDescription(e.target.value)}
+                  className="text-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setShowNewGridForm(false);
+                      setNewGridName("");
+                      setNewGridDescription("");
+                    }
+                    if (e.key === 'Enter' && newGridName.trim() && !createGridMutation.isPending) {
+                      createGridMutation.mutate({ 
+                        name: newGridName.trim(),
+                        description: newGridDescription.trim() || undefined
+                      });
+                    }
+                  }}
+                  data-testid="input-new-grid-desc-sidebar"
                 />
                 <div className="flex items-center gap-1">
                   <Button
@@ -723,7 +745,7 @@ export default function BlitzGridAdmin() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive shrink-0"
+                      className={`${deletingGridId === g.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity text-destructive shrink-0`}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (deletingGridId === g.id) {
@@ -770,15 +792,86 @@ export default function BlitzGridAdmin() {
               <Button
                 size="icon"
                 variant="outline"
-                onClick={() => {
-                  setSelectedGridId(null);
-                  setShowNewGridForm(true);
-                }}
+                onClick={() => setShowNewGridForm(true)}
                 data-testid="button-add-grid-mobile"
               >
                 <Plus className="w-4 h-4 shrink-0" aria-hidden="true" />
               </Button>
             </div>
+            
+            {/* Mobile New Grid Form */}
+            {showNewGridForm && (
+              <Card className="mb-4 md:hidden">
+                <CardContent className="py-3">
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="Grid name..."
+                      value={newGridName}
+                      onChange={(e) => setNewGridName(e.target.value)}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          setShowNewGridForm(false);
+                          setNewGridName("");
+                          setNewGridDescription("");
+                        }
+                        if (e.key === 'Enter' && newGridName.trim() && !createGridMutation.isPending) {
+                          createGridMutation.mutate({ 
+                            name: newGridName.trim(),
+                            description: newGridDescription.trim() || undefined
+                          });
+                        }
+                      }}
+                      data-testid="input-new-grid-name-mobile"
+                    />
+                    <Input
+                      placeholder="Description (optional)..."
+                      value={newGridDescription}
+                      onChange={(e) => setNewGridDescription(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          setShowNewGridForm(false);
+                          setNewGridName("");
+                          setNewGridDescription("");
+                        }
+                        if (e.key === 'Enter' && newGridName.trim() && !createGridMutation.isPending) {
+                          createGridMutation.mutate({ 
+                            name: newGridName.trim(),
+                            description: newGridDescription.trim() || undefined
+                          });
+                        }
+                      }}
+                      data-testid="input-new-grid-desc-mobile"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => createGridMutation.mutate({ 
+                          name: newGridName.trim(),
+                          description: newGridDescription.trim() || undefined
+                        })}
+                        disabled={!newGridName.trim() || createGridMutation.isPending}
+                        data-testid="button-create-grid-mobile"
+                      >
+                        {createGridMutation.isPending ? <Loader2 className="w-4 h-4 shrink-0 animate-spin" aria-hidden="true" /> : "Create"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setShowNewGridForm(false);
+                          setNewGridName("");
+                          setNewGridDescription("");
+                        }}
+                        data-testid="button-cancel-grid-create-mobile"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             
             {/* Grid Details Section */}
             <Card className="mb-6">
@@ -939,6 +1032,20 @@ export default function BlitzGridAdmin() {
                       placeholder="Description (optional)..."
                       value={newCategoryDescription}
                       onChange={(e) => setNewCategoryDescription(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          setShowNewCategoryForm(false);
+                          setNewCategoryName("");
+                          setNewCategoryDescription("");
+                        }
+                        if (e.key === 'Enter' && newCategoryName.trim() && !createCategoryMutation.isPending) {
+                          createCategoryMutation.mutate({ 
+                            gridId: selectedGridId, 
+                            name: newCategoryName.trim(),
+                            description: newCategoryDescription.trim() || undefined
+                          });
+                        }
+                      }}
                       data-testid="input-category-description"
                     />
                   </div>
@@ -1059,7 +1166,7 @@ export default function BlitzGridAdmin() {
                                   setDeletingCategoryId(category.id);
                                 }
                               }}
-                              disabled={removeCategoryMutation.isPending}
+                              disabled={removeCategoryMutation.isPending && deletingCategoryId === category.id}
                               data-testid={`button-remove-category-${category.id}`}
                             >
                               {removeCategoryMutation.isPending ? (
@@ -1148,6 +1255,17 @@ export default function BlitzGridAdmin() {
                                               ...prev,
                                               [formKey]: { ...prev[formKey] || defaultForm, question: e.target.value }
                                             }))}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Escape') {
+                                                setEditingCategoryId(null);
+                                                setShowMediaPanel(false);
+                                                setQuestionForms(prev => {
+                                                  const newForms = { ...prev };
+                                                  POINT_TIERS.forEach(p => { delete newForms[`${category.id}-${p}`]; });
+                                                  return newForms;
+                                                });
+                                              }
+                                            }}
                                           />
                                           <Input
                                             placeholder="Answer..."
@@ -1158,6 +1276,17 @@ export default function BlitzGridAdmin() {
                                               ...prev,
                                               [formKey]: { ...prev[formKey] || defaultForm, correctAnswer: e.target.value }
                                             }))}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Escape') {
+                                                setEditingCategoryId(null);
+                                                setShowMediaPanel(false);
+                                                setQuestionForms(prev => {
+                                                  const newForms = { ...prev };
+                                                  POINT_TIERS.forEach(p => { delete newForms[`${category.id}-${p}`]; });
+                                                  return newForms;
+                                                });
+                                              }
+                                            }}
                                           />
                                         </div>
                                         <div className="flex items-center gap-1 shrink-0 mt-2">
@@ -1575,6 +1704,19 @@ export default function BlitzGridAdmin() {
                   placeholder="Description (optional)..."
                   value={newGridDescription}
                   onChange={(e) => setNewGridDescription(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setShowNewGridForm(false);
+                      setNewGridName("");
+                      setNewGridDescription("");
+                    }
+                    if (e.key === 'Enter' && newGridName.trim() && !createGridMutation.isPending) {
+                      createGridMutation.mutate({ 
+                        name: newGridName.trim(),
+                        description: newGridDescription.trim() || undefined
+                      });
+                    }
+                  }}
                   data-testid="input-new-grid-description"
                 />
                 <div className="flex items-center gap-2">
