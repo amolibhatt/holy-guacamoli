@@ -3020,16 +3020,25 @@ Be creative! Make facts surprising and fun to guess.`;
   });
 
   const createMemePromptSchema = z.object({
-    prompt: z.string().min(1, "Prompt is required"),
+    prompt: z.string().min(1, "Prompt is required").max(200, "Prompt must be 200 characters or less"),
   });
 
   app.post("/api/memenoharm/prompts", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const role = req.session.userRole;
       
       const parsed = createMemePromptSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ message: parsed.error.errors[0].message });
+      }
+
+      const existingPrompts = await storage.getMemePrompts(userId, role);
+      const duplicate = existingPrompts.find(
+        p => p.prompt.toLowerCase().trim() === parsed.data.prompt.toLowerCase().trim()
+      );
+      if (duplicate) {
+        return res.status(409).json({ message: "This prompt already exists" });
       }
       
       const prompt = await storage.createMemePrompt({
@@ -3045,13 +3054,36 @@ Be creative! Make facts surprising and fun to guess.`;
     }
   });
 
+  const updateMemePromptSchema = z.object({
+    prompt: z.string().min(1, "Prompt is required").max(200, "Prompt must be 200 characters or less"),
+    isActive: z.boolean().optional(),
+  });
+
   app.put("/api/memenoharm/prompts/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const id = parseInt(req.params.id);
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid prompt ID" });
+      }
       
-      const updated = await storage.updateMemePrompt(id, req.body, userId, role);
+      const parsed = updateMemePromptSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.errors[0].message });
+      }
+
+      if (parsed.data.prompt) {
+        const existingPrompts = await storage.getMemePrompts(userId, role);
+        const duplicate = existingPrompts.find(
+          p => p.id !== id && p.prompt.toLowerCase().trim() === parsed.data.prompt.toLowerCase().trim()
+        );
+        if (duplicate) {
+          return res.status(409).json({ message: "A prompt with this text already exists" });
+        }
+      }
+      
+      const updated = await storage.updateMemePrompt(id, parsed.data, userId, role);
       
       if (!updated) {
         return res.status(404).json({ message: "Prompt not found" });
@@ -3068,7 +3100,10 @@ Be creative! Make facts surprising and fun to guess.`;
     try {
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const id = parseInt(req.params.id);
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid prompt ID" });
+      }
       
       const deleted = await storage.deleteMemePrompt(id, userId, role);
       if (!deleted) {
@@ -3162,7 +3197,8 @@ Generate exactly ${promptCount} prompts.`
         const parsed = JSON.parse(content);
         prompts = Array.isArray(parsed) ? parsed : (parsed.prompts || parsed.data || Object.values(parsed).flat());
         prompts = prompts.filter((p: any) => typeof p === 'string' && p.trim().length > 0);
-      } catch {
+      } catch (parseErr) {
+        console.error("Failed to parse AI response content:", content);
         return res.status(500).json({ message: "Failed to parse AI response" });
       }
 

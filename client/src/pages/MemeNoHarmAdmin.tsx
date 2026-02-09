@@ -10,10 +10,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { Link, useLocation } from "wouter";
-import { Plus, Trash2, Play, Smile, MessageSquare, Grid3X3, Brain, Clock, Loader2, Upload, Sparkles, Check } from "lucide-react";
+import { Plus, Trash2, Play, Smile, Grid3X3, Brain, Clock, Loader2, Upload, Sparkles, Check, Pencil, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { MemePrompt } from "@shared/schema";
+
+const MAX_PROMPT_LENGTH = 200;
 
 export default function MemeNoHarmAdmin() {
   const { isLoading: isAuthLoading, isAuthenticated, user } = useAuth();
@@ -30,6 +32,10 @@ export default function MemeNoHarmAdmin() {
   const [aiResults, setAiResults] = useState<string[]>([]);
   const [aiSelected, setAiSelected] = useState<Set<number>>(new Set());
   const [showAiGenerator, setShowAiGenerator] = useState(false);
+  const [bulkImporting, setBulkImporting] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
 
   const { data: prompts = [], isLoading: promptsLoading } = useQuery<MemePrompt[]>({
     queryKey: ["/api/memenoharm/prompts"],
@@ -56,6 +62,7 @@ export default function MemeNoHarmAdmin() {
 
   const deletePromptMutation = useMutation({
     mutationFn: async (id: number) => {
+      setDeletingId(id);
       const res = await apiRequest("DELETE", `/api/memenoharm/prompts/${id}`);
       if (!res.ok) {
         const error = await res.json();
@@ -66,6 +73,28 @@ export default function MemeNoHarmAdmin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/memenoharm/prompts"] });
       toast({ title: "Prompt deleted!" });
+      setDeletingId(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      setDeletingId(null);
+    },
+  });
+
+  const updatePromptMutation = useMutation({
+    mutationFn: async ({ id, prompt }: { id: number; prompt: string }) => {
+      const res = await apiRequest("PUT", `/api/memenoharm/prompts/${id}`, { prompt });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to update prompt");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/memenoharm/prompts"] });
+      toast({ title: "Prompt updated!" });
+      setEditingId(null);
+      setEditText("");
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -74,8 +103,27 @@ export default function MemeNoHarmAdmin() {
 
   const handleCreatePrompt = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPrompt.trim()) {
-      createPromptMutation.mutate(newPrompt.trim());
+    const trimmed = newPrompt.trim();
+    if (trimmed && trimmed.length <= MAX_PROMPT_LENGTH) {
+      createPromptMutation.mutate(trimmed);
+    }
+  };
+
+  const handleStartEdit = (prompt: MemePrompt) => {
+    setEditingId(prompt.id);
+    setEditText(prompt.prompt);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditText("");
+  };
+
+  const handleSaveEdit = () => {
+    if (editingId === null) return;
+    const trimmed = editText.trim();
+    if (trimmed && trimmed.length <= MAX_PROMPT_LENGTH) {
+      updatePromptMutation.mutate({ id: editingId, prompt: trimmed });
     }
   };
 
@@ -104,23 +152,32 @@ export default function MemeNoHarmAdmin() {
     if (selected.length === 0) return;
     setBulkImporting(true);
     let added = 0;
+    let skipped = 0;
     let failed = 0;
     for (const prompt of selected) {
       try {
         const res = await apiRequest("POST", "/api/memenoharm/prompts", { prompt });
-        if (res.ok) added++;
-        else failed++;
+        if (res.ok) {
+          added++;
+        } else {
+          const err = await res.json().catch(() => ({ message: "" }));
+          if (res.status === 409) skipped++;
+          else failed++;
+        }
       } catch {
         failed++;
       }
     }
     queryClient.invalidateQueries({ queryKey: ["/api/memenoharm/prompts"] });
     setBulkImporting(false);
-    if (failed > 0) {
-      toast({ title: `Added ${added} prompts, ${failed} failed`, variant: "destructive" });
-    } else {
-      toast({ title: `${added} prompts added!` });
-    }
+    const parts: string[] = [];
+    if (added > 0) parts.push(`${added} added`);
+    if (skipped > 0) parts.push(`${skipped} duplicates skipped`);
+    if (failed > 0) parts.push(`${failed} failed`);
+    toast({
+      title: parts.join(", "),
+      variant: failed > 0 ? "destructive" : undefined,
+    });
     setAiResults([]);
     setAiSelected(new Set());
   };
@@ -134,13 +191,12 @@ export default function MemeNoHarmAdmin() {
     });
   };
 
-  const [bulkImporting, setBulkImporting] = useState(false);
-
   const handleBulkImportPrompts = async () => {
-    const lines = bulkPrompts.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+    const lines = bulkPrompts.split("\n").map(l => l.trim()).filter(l => l.length > 0 && l.length <= MAX_PROMPT_LENGTH);
     if (lines.length === 0) return;
     setBulkImporting(true);
     let added = 0;
+    let skipped = 0;
     let failed = 0;
     for (const line of lines) {
       try {
@@ -148,7 +204,8 @@ export default function MemeNoHarmAdmin() {
         if (res.ok) {
           added++;
         } else {
-          failed++;
+          if (res.status === 409) skipped++;
+          else failed++;
         }
       } catch {
         failed++;
@@ -156,11 +213,14 @@ export default function MemeNoHarmAdmin() {
     }
     queryClient.invalidateQueries({ queryKey: ["/api/memenoharm/prompts"] });
     setBulkImporting(false);
-    if (failed > 0) {
-      toast({ title: `Added ${added} prompts, ${failed} failed`, variant: "destructive" });
-    } else {
-      toast({ title: `${added} prompts added!` });
-    }
+    const parts: string[] = [];
+    if (added > 0) parts.push(`${added} added`);
+    if (skipped > 0) parts.push(`${skipped} duplicates skipped`);
+    if (failed > 0) parts.push(`${failed} failed`);
+    toast({
+      title: parts.join(", "),
+      variant: failed > 0 ? "destructive" : undefined,
+    });
     setBulkPrompts("");
     setShowBulkImport(false);
   };
@@ -449,21 +509,32 @@ export default function MemeNoHarmAdmin() {
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleCreatePrompt} className="flex gap-2 flex-wrap">
-                  <Input
-                    placeholder="e.g., When your code works on the first try..."
-                    value={newPrompt}
-                    onChange={(e) => setNewPrompt(e.target.value)}
-                    className="flex-1"
-                    data-testid="input-new-prompt"
-                  />
-                  <Button 
-                    type="submit" 
-                    disabled={!newPrompt.trim() || createPromptMutation.isPending}
-                    data-testid="button-create-prompt"
-                  >
-                    Add
-                  </Button>
+                <form onSubmit={handleCreatePrompt} className="space-y-2">
+                  <div className="flex gap-2 flex-wrap">
+                    <Input
+                      placeholder="e.g., When your code works on the first try..."
+                      value={newPrompt}
+                      onChange={(e) => setNewPrompt(e.target.value)}
+                      maxLength={MAX_PROMPT_LENGTH}
+                      className="flex-1"
+                      data-testid="input-new-prompt"
+                    />
+                    <Button 
+                      type="submit" 
+                      disabled={!newPrompt.trim() || newPrompt.trim().length > MAX_PROMPT_LENGTH || createPromptMutation.isPending}
+                      data-testid="button-create-prompt"
+                    >
+                      {createPromptMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : null}
+                      Add
+                    </Button>
+                  </div>
+                  {newPrompt.length > 0 && (
+                    <p className={`text-xs ${newPrompt.length > MAX_PROMPT_LENGTH ? 'text-destructive' : 'text-muted-foreground'}`}>
+                      {newPrompt.length}/{MAX_PROMPT_LENGTH} characters
+                    </p>
+                  )}
                 </form>
               )}
             </CardContent>
@@ -471,7 +542,14 @@ export default function MemeNoHarmAdmin() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Your Prompts</CardTitle>
+              <CardTitle className="flex items-center justify-between gap-2 flex-wrap">
+                <span>Your Prompts</span>
+                {!promptsLoading && (
+                  <span className="text-sm font-normal text-muted-foreground" data-testid="text-prompt-count">
+                    {prompts.length} prompt{prompts.length !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {promptsLoading ? (
@@ -489,19 +567,81 @@ export default function MemeNoHarmAdmin() {
                   {prompts.map((prompt) => (
                     <div 
                       key={prompt.id} 
-                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                      className="flex items-center justify-between gap-2 p-3 bg-muted/50 rounded-lg"
                       data-testid={`prompt-item-${prompt.id}`}
                     >
-                      <span className="flex-1">{prompt.prompt}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deletePromptMutation.mutate(prompt.id)}
-                        disabled={deletePromptMutation.isPending}
-                        data-testid={`button-delete-prompt-${prompt.id}`}
-                      >
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
+                      {editingId === prompt.id ? (
+                        <div className="flex-1 space-y-1">
+                          <Input
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                            maxLength={MAX_PROMPT_LENGTH}
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleSaveEdit();
+                              if (e.key === "Escape") handleCancelEdit();
+                            }}
+                            data-testid={`input-edit-prompt-${prompt.id}`}
+                          />
+                          <p className={`text-xs ${editText.length > MAX_PROMPT_LENGTH ? 'text-destructive' : 'text-muted-foreground'}`}>
+                            {editText.length}/{MAX_PROMPT_LENGTH}
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="flex-1">{prompt.prompt}</span>
+                      )}
+                      <div className="flex gap-1 shrink-0">
+                        {editingId === prompt.id ? (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={handleSaveEdit}
+                              disabled={!editText.trim() || editText.trim().length > MAX_PROMPT_LENGTH || updatePromptMutation.isPending}
+                              data-testid={`button-save-prompt-${prompt.id}`}
+                            >
+                              {updatePromptMutation.isPending ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Check className="w-4 h-4 text-green-500" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={handleCancelEdit}
+                              disabled={updatePromptMutation.isPending}
+                              data-testid={`button-cancel-edit-${prompt.id}`}
+                            >
+                              <X className="w-4 h-4 text-muted-foreground" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleStartEdit(prompt)}
+                              data-testid={`button-edit-prompt-${prompt.id}`}
+                            >
+                              <Pencil className="w-4 h-4 text-muted-foreground" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => deletePromptMutation.mutate(prompt.id)}
+                              disabled={deletingId === prompt.id}
+                              data-testid={`button-delete-prompt-${prompt.id}`}
+                            >
+                              {deletingId === prompt.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin text-destructive" />
+                              ) : (
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              )}
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
