@@ -4908,6 +4908,7 @@ Generate exactly ${promptCount} prompts.`
   // ==================== WEBSOCKET SERVER ====================
   interface RoomPlayer {
     id: string;
+    reconnectToken: string;
     name: string;
     avatar: string;
     score: number;
@@ -5167,11 +5168,14 @@ Generate exactly ${promptCount} prompts.`
             const existingPlayer = room.players.get(playerId);
             
             if (existingPlayer) {
+              if (!data.reconnectToken || data.reconnectToken !== existingPlayer.reconnectToken) {
+                ws.send(JSON.stringify({ type: 'error', message: 'Invalid reconnect token' }));
+                break;
+              }
               existingPlayer.ws = ws;
               existingPlayer.isConnected = true;
               existingPlayer.name = data.name || existingPlayer.name;
               existingPlayer.avatar = data.avatar || existingPlayer.avatar;
-              // Update profileId on reconnect (e.g., after guest-to-auth conversion)
               if (data.profileId) {
                 existingPlayer.profileId = data.profileId;
               }
@@ -5180,6 +5184,7 @@ Generate exactly ${promptCount} prompts.`
               ws.send(JSON.stringify({
                 type: 'joined',
                 playerId,
+                reconnectToken: existingPlayer.reconnectToken,
                 buzzerLocked: room.buzzerLocked,
                 buzzerBlocked: room.passedPlayers.has(playerId),
                 score: existingPlayer.score,
@@ -5208,8 +5213,10 @@ Generate exactly ${promptCount} prompts.`
               }
               console.log(`[WebSocket] Player ${existingPlayer.name} reconnected to room ${room.code}`);
             } else {
+              const reconnectToken = crypto.randomUUID();
               const player: RoomPlayer = {
                 id: playerId,
+                reconnectToken,
                 name: data.name || 'Player',
                 avatar: data.avatar || 'cat',
                 score: 0,
@@ -5220,7 +5227,7 @@ Generate exactly ${promptCount} prompts.`
                 totalTimeMs: 0,
                 currentStreak: 0,
                 bestStreak: 0,
-                profileId: data.profileId, // Store player profile ID for stat tracking
+                profileId: data.profileId,
               };
               room.players.set(playerId, player);
               wsToRoom.set(ws, { roomCode: room.code, isHost: false, playerId });
@@ -5241,6 +5248,7 @@ Generate exactly ${promptCount} prompts.`
               ws.send(JSON.stringify({
                 type: 'joined',
                 playerId,
+                reconnectToken,
                 buzzerLocked: room.buzzerLocked,
                 score: 0,
               }));
@@ -5901,6 +5909,10 @@ Generate exactly ${promptCount} prompts.`
             const existingPlayer = room.players.get(playerId);
             
             if (existingPlayer) {
+              if (!data.reconnectToken || data.reconnectToken !== existingPlayer.reconnectToken) {
+                ws.send(JSON.stringify({ type: 'error', message: 'Invalid reconnect token' }));
+                break;
+              }
               existingPlayer.ws = ws;
               existingPlayer.isConnected = true;
               existingPlayer.name = playerName;
@@ -5910,6 +5922,7 @@ Generate exactly ${promptCount} prompts.`
               ws.send(JSON.stringify({
                 type: 'sequence:joined',
                 playerId,
+                reconnectToken: existingPlayer.reconnectToken,
                 score: existingPlayer.score,
               }));
 
@@ -5987,8 +6000,10 @@ Generate exactly ${promptCount} prompts.`
               });
               console.log(`[WebSocket] Player ${existingPlayer.name} rejoined Sort Circuit room ${room.code}`);
             } else {
+              const reconnectToken = crypto.randomUUID();
               const player: RoomPlayer = {
                 id: playerId,
+                reconnectToken,
                 name: playerName,
                 avatar: playerAvatar,
                 score: 0,
@@ -6006,6 +6021,7 @@ Generate exactly ${promptCount} prompts.`
               ws.send(JSON.stringify({
                 type: 'sequence:joined',
                 playerId,
+                reconnectToken,
                 score: 0,
               }));
 
@@ -6772,6 +6788,10 @@ Generate exactly ${promptCount} prompts.`
             const existingPlayer = room.players.get(playerId);
 
             if (existingPlayer) {
+              if (!data.reconnectToken || data.reconnectToken !== existingPlayer.reconnectToken) {
+                ws.send(JSON.stringify({ type: 'error', message: 'Invalid reconnect token' }));
+                break;
+              }
               existingPlayer.ws = ws;
               existingPlayer.isConnected = true;
               existingPlayer.name = data.name || existingPlayer.name;
@@ -6781,6 +6801,7 @@ Generate exactly ${promptCount} prompts.`
               ws.send(JSON.stringify({
                 type: 'meme:joined',
                 playerId,
+                reconnectToken: existingPlayer.reconnectToken,
                 score: existingPlayer.score,
               }));
 
@@ -6885,8 +6906,10 @@ Generate exactly ${promptCount} prompts.`
               });
               console.log(`[WebSocket] Player ${existingPlayer.name} rejoined Meme No Harm room ${room.code}`);
             } else {
+              const reconnectToken = crypto.randomUUID();
               const player: RoomPlayer = {
                 id: playerId,
+                reconnectToken,
                 name: data.name || 'Player',
                 avatar: data.avatar || 'cat',
                 score: 0,
@@ -6904,6 +6927,7 @@ Generate exactly ${promptCount} prompts.`
               ws.send(JSON.stringify({
                 type: 'meme:joined',
                 playerId,
+                reconnectToken,
                 score: 0,
               }));
 

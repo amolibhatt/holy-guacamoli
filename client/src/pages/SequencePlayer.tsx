@@ -57,9 +57,9 @@ function getSession() {
   } catch { return null; }
 }
 
-function saveSession(roomCode: string, playerName: string, playerId: string, avatar: string) {
+function saveSession(roomCode: string, playerName: string, playerId: string, avatar: string, reconnectToken?: string) {
   try {
-    localStorage.setItem("sequence-session", JSON.stringify({ roomCode, playerName, playerId, avatar }));
+    localStorage.setItem("sequence-session", JSON.stringify({ roomCode, playerName, playerId, avatar, reconnectToken }));
   } catch {}
 }
 
@@ -106,6 +106,7 @@ export default function SequencePlayer() {
   const wsRef = useRef<WebSocket | null>(null);
   const selectedSequenceRef = useRef<string[]>([]);
   const playerIdRef = useRef<string | null>(playerId);
+  const reconnectTokenRef = useRef<string | null>(savedSession?.reconnectToken || null);
   const joinedRef = useRef(false);
   const shouldReconnectRef = useRef(true);
   const reconnectAttemptsRef = useRef(0);
@@ -160,6 +161,7 @@ export default function SequencePlayer() {
         name: playerName,
         avatar: selectedAvatar,
         playerId: playerIdRef.current || undefined,
+        reconnectToken: reconnectTokenRef.current || undefined,
         profileId: profile?.profile?.id,
       }));
 
@@ -182,7 +184,8 @@ export default function SequencePlayer() {
           setJoined(true);
           setPlayerId(data.playerId);
           playerIdRef.current = data.playerId;
-          saveSession(roomCode.toUpperCase(), playerName, data.playerId, selectedAvatar);
+          if (data.reconnectToken) reconnectTokenRef.current = data.reconnectToken;
+          saveSession(roomCode.toUpperCase(), playerName, data.playerId, selectedAvatar, data.reconnectToken || reconnectTokenRef.current || undefined);
           if (data.score !== undefined) {
             prevScoreRef.current = data.score;
             setMyScore(data.score);
@@ -416,6 +419,26 @@ export default function SequencePlayer() {
             toast({
               title: "Game not found",
               description: "Check the room code and try again. The game may have ended.",
+              variant: "destructive",
+            });
+          } else if (data.message === "Invalid reconnect token") {
+            shouldReconnectRef.current = false;
+            clearSession();
+            clearAllTimers();
+            reconnectTokenRef.current = null;
+            playerIdRef.current = null;
+            setPlayerId(null);
+            setJoined(false);
+            joinedRef.current = false;
+            setStatus("disconnected");
+            setPhase("waiting");
+            if (wsRef.current) {
+              wsRef.current.close();
+              wsRef.current = null;
+            }
+            toast({
+              title: "Session expired",
+              description: "Please rejoin the game.",
               variant: "destructive",
             });
           } else {

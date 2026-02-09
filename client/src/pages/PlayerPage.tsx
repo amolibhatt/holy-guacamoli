@@ -35,9 +35,9 @@ function getSession() {
   } catch { return null; }
 }
 
-function saveSession(roomCode: string, playerName: string, playerId: string, avatar: string) {
+function saveSession(roomCode: string, playerName: string, playerId: string, avatar: string, reconnectToken?: string) {
   try {
-    localStorage.setItem("buzzer-session", JSON.stringify({ roomCode, playerName, playerId, avatar }));
+    localStorage.setItem("buzzer-session", JSON.stringify({ roomCode, playerName, playerId, avatar, reconnectToken }));
   } catch {}
 }
 
@@ -98,6 +98,7 @@ export default function PlayerPage() {
   const shouldReconnectRef = useRef(true);
   const reconnectAttemptsRef = useRef(0);
   const playerIdRef = useRef<string | null>(playerId);
+  const reconnectTokenRef = useRef<string | null>(savedSession?.reconnectToken || null);
 
   const connect = useCallback((isReconnect = false) => {
     if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return;
@@ -117,7 +118,8 @@ export default function PlayerPage() {
         name: playerName,
         avatar: selectedAvatar,
         playerId: playerIdRef.current || playerId || undefined,
-        profileId: profile?.profile?.id, // Include profile ID for stat tracking
+        reconnectToken: reconnectTokenRef.current || undefined,
+        profileId: profile?.profile?.id,
       }));
       
       if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
@@ -138,10 +140,11 @@ export default function PlayerPage() {
           joinedRef.current = true;
           setPlayerId(data.playerId);
           playerIdRef.current = data.playerId;
+          if (data.reconnectToken) reconnectTokenRef.current = data.reconnectToken;
           setBuzzerLocked(data.buzzerLocked);
           setBuzzerBlocked(data.buzzerBlocked || false);
           if (data.score !== undefined) setScore(data.score);
-          saveSession(roomCode.toUpperCase(), playerName, data.playerId, selectedAvatar);
+          saveSession(roomCode.toUpperCase(), playerName, data.playerId, selectedAvatar, data.reconnectToken || reconnectTokenRef.current || undefined);
           break;
         case "score:updated":
           if (data.score !== undefined) {
@@ -180,6 +183,24 @@ export default function PlayerPage() {
             toast({
               title: "Game not found",
               description: "Check the room code and try again. The game may have ended.",
+              variant: "destructive",
+            });
+          } else if (data.message === "Invalid reconnect token") {
+            shouldReconnectRef.current = false;
+            clearSession();
+            reconnectTokenRef.current = null;
+            playerIdRef.current = null;
+            setPlayerId(null);
+            setJoined(false);
+            joinedRef.current = false;
+            setStatus("disconnected");
+            if (wsRef.current) {
+              wsRef.current.close();
+              wsRef.current = null;
+            }
+            toast({
+              title: "Session expired",
+              description: "Please rejoin the game.",
               variant: "destructive",
             });
           } else {
