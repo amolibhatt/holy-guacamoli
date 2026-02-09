@@ -11,7 +11,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { Link, useLocation } from "wouter";
-import { Plus, Trash2, Play, Smile, Image as ImageIcon, MessageSquare, Grid3X3, Brain, Clock, Loader2 } from "lucide-react";
+import { Plus, Trash2, Play, Smile, Image as ImageIcon, MessageSquare, Grid3X3, Brain, Clock, Loader2, Upload } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import type { MemePrompt, MemeImage } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -25,6 +26,9 @@ export default function MemeNoHarmAdmin() {
   const [newPrompt, setNewPrompt] = useState("");
   const [newImageUrl, setNewImageUrl] = useState("");
   const [newImageCaption, setNewImageCaption] = useState("");
+  const [imagePreviewError, setImagePreviewError] = useState(false);
+  const [bulkPrompts, setBulkPrompts] = useState("");
+  const [showBulkImport, setShowBulkImport] = useState(false);
 
   const { data: prompts = [], isLoading: promptsLoading } = useQuery<MemePrompt[]>({
     queryKey: ["/api/memenoharm/prompts"],
@@ -123,7 +127,53 @@ export default function MemeNoHarmAdmin() {
         imageUrl: newImageUrl.trim(), 
         caption: newImageCaption.trim() || undefined 
       });
+      setImagePreviewError(false);
     }
+  };
+
+  const handleImageUrlChange = (url: string) => {
+    setNewImageUrl(url);
+    setImagePreviewError(false);
+  };
+
+  const isValidUrl = (url: string) => {
+    try {
+      new URL(url.trim());
+      return url.trim().length > 0;
+    } catch {
+      return false;
+    }
+  };
+
+  const [bulkImporting, setBulkImporting] = useState(false);
+
+  const handleBulkImportPrompts = async () => {
+    const lines = bulkPrompts.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length === 0) return;
+    setBulkImporting(true);
+    let added = 0;
+    let failed = 0;
+    for (const line of lines) {
+      try {
+        const res = await apiRequest("POST", "/api/memenoharm/prompts", { prompt: line });
+        if (res.ok) {
+          added++;
+        } else {
+          failed++;
+        }
+      } catch {
+        failed++;
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ["/api/memenoharm/prompts"] });
+    setBulkImporting(false);
+    if (failed > 0) {
+      toast({ title: `Added ${added} prompts, ${failed} failed`, variant: "destructive" });
+    } else {
+      toast({ title: `${added} prompts added!` });
+    }
+    setBulkPrompts("");
+    setShowBulkImport(false);
   };
 
   // Auth loading state
@@ -250,28 +300,67 @@ export default function MemeNoHarmAdmin() {
           <TabsContent value="prompts" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Plus className="w-5 h-5" />
-                  Add Prompt
+                <CardTitle className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="flex items-center gap-2">
+                    <Plus className="w-5 h-5" />
+                    Add Prompt
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowBulkImport(!showBulkImport)}
+                    className="gap-2"
+                    data-testid="button-toggle-bulk-import"
+                  >
+                    <Upload className="w-4 h-4" />
+                    {showBulkImport ? "Single Add" : "Bulk Import"}
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleCreatePrompt} className="flex gap-2">
-                  <Input
-                    placeholder="e.g., When your code works on the first try..."
-                    value={newPrompt}
-                    onChange={(e) => setNewPrompt(e.target.value)}
-                    className="flex-1"
-                    data-testid="input-new-prompt"
-                  />
-                  <Button 
-                    type="submit" 
-                    disabled={!newPrompt.trim() || createPromptMutation.isPending}
-                    data-testid="button-create-prompt"
-                  >
-                    Add
-                  </Button>
-                </form>
+                {showBulkImport ? (
+                  <div className="space-y-4">
+                    <Textarea
+                      placeholder={"Paste one prompt per line, e.g.:\nWhen your code works on the first try...\nThat feeling when the WiFi goes out...\nMonday mornings be like..."}
+                      value={bulkPrompts}
+                      onChange={(e) => setBulkPrompts(e.target.value)}
+                      rows={8}
+                      data-testid="textarea-bulk-prompts"
+                    />
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="text-sm text-muted-foreground">
+                        {bulkPrompts.split("\n").filter(l => l.trim().length > 0).length} prompts ready
+                      </span>
+                      <Button
+                        onClick={handleBulkImportPrompts}
+                        disabled={bulkPrompts.split("\n").filter(l => l.trim().length > 0).length === 0 || bulkImporting}
+                        data-testid="button-bulk-import-prompts"
+                      >
+                        {bulkImporting ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : null}
+                        Import All
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleCreatePrompt} className="flex gap-2 flex-wrap">
+                    <Input
+                      placeholder="e.g., When your code works on the first try..."
+                      value={newPrompt}
+                      onChange={(e) => setNewPrompt(e.target.value)}
+                      className="flex-1"
+                      data-testid="input-new-prompt"
+                    />
+                    <Button 
+                      type="submit" 
+                      disabled={!newPrompt.trim() || createPromptMutation.isPending}
+                      data-testid="button-create-prompt"
+                    >
+                      Add
+                    </Button>
+                  </form>
+                )}
               </CardContent>
             </Card>
 
@@ -332,10 +421,28 @@ export default function MemeNoHarmAdmin() {
                       id="imageUrl"
                       placeholder="https://example.com/meme.jpg"
                       value={newImageUrl}
-                      onChange={(e) => setNewImageUrl(e.target.value)}
+                      onChange={(e) => handleImageUrlChange(e.target.value)}
                       data-testid="input-new-image-url"
                     />
                   </div>
+                  {isValidUrl(newImageUrl) && (
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground text-xs">Preview</Label>
+                      {imagePreviewError ? (
+                        <div className="w-full max-w-[200px] aspect-square rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-sm" data-testid="image-preview-error">
+                          Could not load image
+                        </div>
+                      ) : (
+                        <img
+                          src={newImageUrl.trim()}
+                          alt="Preview"
+                          className="w-full max-w-[200px] aspect-square object-cover rounded-lg bg-muted"
+                          onError={() => setImagePreviewError(true)}
+                          data-testid="image-preview"
+                        />
+                      )}
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label htmlFor="caption">Caption (optional)</Label>
                     <Input
