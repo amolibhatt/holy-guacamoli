@@ -524,9 +524,14 @@ export async function registerRoutes(
       if (!board) {
         return res.status(404).json({ message: "Board not found" });
       }
+      const categoryId = bc.categoryId;
       const deleted = await storage.deleteBoardCategory(bcId);
       if (!deleted) {
         return res.status(404).json({ message: "Board category link not found" });
+      }
+      const otherLinks = await storage.getBoardCategoriesByCategoryId(categoryId);
+      if (otherLinks.length === 0) {
+        await storage.deleteCategory(categoryId);
       }
       res.json({ success: true });
     } catch (err) {
@@ -626,8 +631,7 @@ export async function registerRoutes(
       res.json(categories);
     } catch (err) {
       console.error("Error fetching categories:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to fetch categories";
-      res.status(500).json({ message: errorMessage });
+      res.status(500).json({ message: "Failed to fetch categories" });
     }
   });
 
@@ -646,38 +650,40 @@ export async function registerRoutes(
       res.json(result);
     } catch (err) {
       console.error("Error fetching categories with counts:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to fetch categories";
-      res.status(500).json({ message: errorMessage });
+      res.status(500).json({ message: "Failed to fetch categories" });
     }
   });
 
   app.get(api.categories.get.path, isAuthenticated, isAdmin, async (req, res) => {
-    const categoryId = parseId(req.params.id);
-    if (categoryId === null) {
-      return res.status(400).json({ message: 'Invalid category ID' });
+    try {
+      const categoryId = parseId(req.params.id);
+      if (categoryId === null) {
+        return res.status(400).json({ message: 'Invalid category ID' });
+      }
+      
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      
+      const hasAccess = await verifyCategoryOwnership(categoryId, userId, role);
+      if (!hasAccess) {
+        return res.status(404).json({ message: 'Category not found' });
+      }
+      
+      const category = await storage.getCategory(categoryId);
+      if (!category) {
+        return res.status(404).json({ message: 'Category not found' });
+      }
+      res.json(category);
+    } catch (err) {
+      console.error("Error fetching category:", err);
+      res.status(500).json({ message: "Failed to fetch category" });
     }
-    
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    
-    // Verify ownership
-    const hasAccess = await verifyCategoryOwnership(categoryId, userId, role);
-    if (!hasAccess) {
-      return res.status(404).json({ message: 'Category not found' });
-    }
-    
-    const category = await storage.getCategory(categoryId);
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
-    }
-    res.json(category);
   });
 
   // Standalone category creation - restricted to super_admin only (regular users use create-and-link)
   app.post(api.categories.create.path, isAuthenticated, isAdmin, async (req, res) => {
     try {
       const role = req.session.userRole;
-      // Only super_admin can create standalone (orphan) categories
       if (role !== 'super_admin') {
         return res.status(403).json({ message: "Use the board's create-and-link endpoint to create categories" });
       }
@@ -692,7 +698,8 @@ export async function registerRoutes(
           field: err.errors[0].path.join('.'),
         });
       }
-      throw err;
+      console.error("Error creating category:", err);
+      res.status(500).json({ message: "Failed to create category" });
     }
   });
 
@@ -712,7 +719,6 @@ export async function registerRoutes(
       
       const { name, description, rule, imageUrl, isActive, sourceGroup } = req.body;
       
-      // If trying to set isActive = true, validate the category first
       if (isActive === true) {
         const validation = await validateCategoryForLive(categoryId);
         if (!validation.valid) {
@@ -723,14 +729,15 @@ export async function registerRoutes(
         }
       }
       
-      const category = await storage.updateCategory(categoryId, {
-        name,
-        description,
-        rule,
-        imageUrl,
-        isActive,
-        sourceGroup,
-      });
+      const updateData: Record<string, any> = {};
+      if (name !== undefined) updateData.name = name;
+      if (description !== undefined) updateData.description = description;
+      if (rule !== undefined) updateData.rule = rule;
+      if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+      if (isActive !== undefined) updateData.isActive = isActive;
+      if (sourceGroup !== undefined) updateData.sourceGroup = sourceGroup;
+      
+      const category = await storage.updateCategory(categoryId, updateData);
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
       }
@@ -904,7 +911,8 @@ export async function registerRoutes(
           field: err.errors[0].path.join('.'),
         });
       }
-      throw err;
+      console.error("Error updating question:", err);
+      res.status(500).json({ message: "Failed to update question" });
     }
   });
 
@@ -1032,10 +1040,14 @@ export async function registerRoutes(
 
   app.post(api.questions.verifyAnswer.path, isAuthenticated, async (req, res) => {
     try {
+      const questionId = parseId(req.params.id);
+      if (questionId === null) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
       const userId = req.session.userId!;
       const role = req.session.userRole;
       const { answer } = api.questions.verifyAnswer.input.parse(req.body);
-      const question = await storage.getQuestion(Number(req.params.id));
+      const question = await storage.getQuestion(questionId);
       
       if (!question) {
         return res.status(404).json({ message: 'Question not found' });
@@ -1073,13 +1085,17 @@ export async function registerRoutes(
   // Get full board data for gameplay - protected
   app.get("/api/boards/:id/full", isAuthenticated, isAdmin, async (req, res) => {
     try {
+      const boardId = parseId(req.params.id);
+      if (boardId === null) {
+        return res.status(400).json({ message: "Invalid board ID" });
+      }
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const board = await storage.getBoard(Number(req.params.id), userId, role);
+      const board = await storage.getBoard(boardId, userId, role);
       if (!board) {
         return res.status(404).json({ message: "Board not found" });
       }
-      const categoriesWithQuestions = await storage.getBoardWithCategoriesAndQuestions(Number(req.params.id), userId, role);
+      const categoriesWithQuestions = await storage.getBoardWithCategoriesAndQuestions(boardId, userId, role);
       res.json({ board, categories: categoriesWithQuestions });
     } catch (err) {
       console.error("Error getting full board:", err);
@@ -1089,20 +1105,34 @@ export async function registerRoutes(
 
   // === GAMES ===
   app.get("/api/games", isAuthenticated, isAdmin, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const allGames = await storage.getGames(userId, role);
-    res.json(allGames);
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const allGames = await storage.getGames(userId, role);
+      res.json(allGames);
+    } catch (err) {
+      console.error("Error fetching games:", err);
+      res.status(500).json({ message: "Failed to fetch games" });
+    }
   });
 
   app.get("/api/games/:id", isAuthenticated, isAdmin, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const game = await storage.getGame(Number(req.params.id), userId, role);
-    if (!game) {
-      return res.status(404).json({ message: "Game not found" });
+    try {
+      const gameId = parseId(req.params.id);
+      if (gameId === null) {
+        return res.status(400).json({ message: "Invalid game ID" });
+      }
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const game = await storage.getGame(gameId, userId, role);
+      if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+      res.json(game);
+    } catch (err) {
+      console.error("Error fetching game:", err);
+      res.status(500).json({ message: "Failed to fetch game" });
     }
-    res.json(game);
   });
 
   app.post("/api/games", isAuthenticated, isAdmin, async (req, res) => {
@@ -1127,10 +1157,14 @@ export async function registerRoutes(
 
   app.put("/api/games/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
+      const gameId = parseId(req.params.id);
+      if (gameId === null) {
+        return res.status(400).json({ message: "Invalid game ID" });
+      }
       const userId = req.session.userId!;
       const role = req.session.userRole;
       const { name, mode, settings } = req.body;
-      const game = await storage.updateGame(Number(req.params.id), { name, mode, settings }, userId, role);
+      const game = await storage.updateGame(gameId, { name, mode, settings }, userId, role);
       if (!game) {
         return res.status(404).json({ message: "Game not found" });
       }
@@ -1142,32 +1176,53 @@ export async function registerRoutes(
   });
 
   app.delete("/api/games/:id", isAuthenticated, isAdmin, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const deleted = await storage.deleteGame(Number(req.params.id), userId, role);
-    if (!deleted) {
-      return res.status(404).json({ message: "Game not found" });
+    try {
+      const gameId = parseId(req.params.id);
+      if (gameId === null) {
+        return res.status(400).json({ message: "Invalid game ID" });
+      }
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const deleted = await storage.deleteGame(gameId, userId, role);
+      if (!deleted) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting game:", err);
+      res.status(500).json({ message: "Failed to delete game" });
     }
-    res.json({ success: true });
   });
 
   // === GAME BOARDS (junction) ===
   app.get("/api/games/:gameId/boards", isAuthenticated, isAdmin, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const game = await storage.getGame(Number(req.params.gameId), userId, role);
-    if (!game) {
-      return res.status(404).json({ message: "Game not found" });
+    try {
+      const gameId = parseId(req.params.gameId);
+      if (gameId === null) {
+        return res.status(400).json({ message: "Invalid game ID" });
+      }
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const game = await storage.getGame(gameId, userId, role);
+      if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+      const gbs = await storage.getGameBoards(gameId);
+      res.json(gbs);
+    } catch (err) {
+      console.error("Error fetching game boards:", err);
+      res.status(500).json({ message: "Failed to fetch game boards" });
     }
-    const gbs = await storage.getGameBoards(Number(req.params.gameId));
-    res.json(gbs);
   });
 
   app.post("/api/games/:gameId/boards", isAuthenticated, isAdmin, async (req, res) => {
     try {
+      const gameId = parseId(req.params.gameId);
+      if (gameId === null) {
+        return res.status(400).json({ message: "Invalid game ID" });
+      }
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const gameId = Number(req.params.gameId);
       const game = await storage.getGame(gameId, userId, role);
       if (!game) {
         return res.status(404).json({ message: "Game not found" });
@@ -1189,18 +1244,27 @@ export async function registerRoutes(
   });
 
   app.delete("/api/games/:gameId/boards/:boardId", isAuthenticated, isAdmin, async (req, res) => {
-    const userId = req.session.userId!;
-    const role = req.session.userRole;
-    const gameId = Number(req.params.gameId);
-    const game = await storage.getGame(gameId, userId, role);
-    if (!game) {
-      return res.status(404).json({ message: "Game not found" });
+    try {
+      const gameId = parseId(req.params.gameId);
+      const boardId = parseId(req.params.boardId);
+      if (gameId === null || boardId === null) {
+        return res.status(400).json({ message: "Invalid IDs" });
+      }
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const game = await storage.getGame(gameId, userId, role);
+      if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+      const deleted = await storage.removeBoardFromGame(gameId, boardId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Board not linked to this game" });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error removing board from game:", err);
+      res.status(500).json({ message: "Failed to remove board from game" });
     }
-    const deleted = await storage.removeBoardFromGame(gameId, Number(req.params.boardId));
-    if (!deleted) {
-      return res.status(404).json({ message: "Board not linked to this game" });
-    }
-    res.json({ success: true });
   });
 
   // === HEADS UP DECKS ===
@@ -3839,9 +3903,9 @@ Generate exactly ${promptCount} prompts.`
   app.get("/api/blitzgrid/grids", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const role = req.session.userRole;
       
-      // Get user's own boards + all starter packs (filter by blitzgrid theme)
-      const userBoards = await storage.getBoards(userId);
+      const userBoards = await storage.getBoards(userId, role);
       const starterPacks = await storage.getStarterPackBoards();
       
       // Combine and deduplicate (user might own a starter pack)
@@ -3928,10 +3992,9 @@ Generate exactly ${promptCount} prompts.`
       });
       
       res.json(board);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error creating blitzgrid grid:", err);
-      console.error("Error details:", err?.message, err?.code, err?.detail);
-      res.status(500).json({ message: `Failed to create grid: ${err?.message || 'Unknown error'}` });
+      res.status(500).json({ message: "Failed to create grid" });
     }
   });
   
@@ -3939,6 +4002,7 @@ Generate exactly ${promptCount} prompts.`
   app.patch("/api/blitzgrid/grids/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const role = req.session.userRole;
       
       const id = parseId(req.params.id);
       if (id === null) {
@@ -3947,13 +4011,11 @@ Generate exactly ${promptCount} prompts.`
       
       const { name, description } = req.body;
       
-      // Verify ownership
-      const board = await storage.getBoard(id, userId);
+      const board = await storage.getBoard(id, userId, role);
       if (!board) {
         return res.status(404).json({ message: "Grid not found" });
       }
       
-      // Build update object
       const updateData: { name?: string; description?: string } = {};
       if (name && typeof name === "string") {
         updateData.name = name.trim();
@@ -3966,7 +4028,7 @@ Generate exactly ${promptCount} prompts.`
         return res.status(400).json({ message: "No valid fields to update" });
       }
       
-      const updated = await storage.updateBoard(id, updateData, userId);
+      const updated = await storage.updateBoard(id, updateData, userId, role);
       res.json(updated);
     } catch (err) {
       console.error("Error updating blitzgrid grid:", err);
@@ -3978,19 +4040,26 @@ Generate exactly ${promptCount} prompts.`
   app.delete("/api/blitzgrid/grids/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const role = req.session.userRole;
       
       const id = parseId(req.params.id);
       if (id === null) {
         return res.status(400).json({ message: "Invalid grid ID" });
       }
       
-      // Verify ownership
-      const board = await storage.getBoard(id, userId);
+      const board = await storage.getBoard(id, userId, role);
       if (!board) {
         return res.status(404).json({ message: "Grid not found" });
       }
       
-      await storage.deleteBoard(id, userId);
+      const boardCats = await storage.getBoardCategories(id);
+      await storage.deleteBoard(id, userId, role);
+      for (const bc of boardCats) {
+        const otherLinks = await storage.getBoardCategoriesByCategoryId(bc.categoryId);
+        if (otherLinks.length === 0) {
+          await storage.deleteCategory(bc.categoryId);
+        }
+      }
       res.json({ success: true });
     } catch (err) {
       console.error("Error deleting blitzgrid grid:", err);
@@ -4002,14 +4071,14 @@ Generate exactly ${promptCount} prompts.`
   app.get("/api/blitzgrid/grids/:id/categories", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const role = req.session.userRole;
       
       const id = parseId(req.params.id);
       if (id === null) {
         return res.status(400).json({ message: "Invalid grid ID" });
       }
       
-      // Verify ownership
-      const board = await storage.getBoard(id, userId);
+      const board = await storage.getBoard(id, userId, role);
       if (!board) {
         return res.status(404).json({ message: "Grid not found" });
       }
@@ -4040,6 +4109,7 @@ Generate exactly ${promptCount} prompts.`
   app.post("/api/blitzgrid/grids/:id/categories", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const role = req.session.userRole;
       
       const gridId = parseId(req.params.id);
       if (gridId === null) {
@@ -4051,8 +4121,7 @@ Generate exactly ${promptCount} prompts.`
         return res.status(400).json({ message: "Category ID is required" });
       }
       
-      // Verify ownership
-      const board = await storage.getBoard(gridId, userId);
+      const board = await storage.getBoard(gridId, userId, role);
       if (!board) {
         return res.status(404).json({ message: "Grid not found" });
       }
@@ -4085,6 +4154,7 @@ Generate exactly ${promptCount} prompts.`
   app.post("/api/blitzgrid/grids/:id/categories/create", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const role = req.session.userRole;
       
       const gridId = parseId(req.params.id);
       if (gridId === null) {
@@ -4096,8 +4166,7 @@ Generate exactly ${promptCount} prompts.`
         return res.status(400).json({ message: "Category name is required" });
       }
       
-      // Verify ownership
-      const board = await storage.getBoard(gridId, userId);
+      const board = await storage.getBoard(gridId, userId, role);
       if (!board) {
         return res.status(404).json({ message: "Grid not found" });
       }
@@ -4136,6 +4205,7 @@ Generate exactly ${promptCount} prompts.`
   app.delete("/api/blitzgrid/grids/:gridId/categories/:categoryId", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const role = req.session.userRole;
       
       const gridId = parseId(req.params.gridId);
       const categoryId = parseId(req.params.categoryId);
@@ -4143,8 +4213,7 @@ Generate exactly ${promptCount} prompts.`
         return res.status(400).json({ message: "Invalid IDs" });
       }
       
-      // Verify ownership
-      const board = await storage.getBoard(gridId, userId);
+      const board = await storage.getBoard(gridId, userId, role);
       if (!board) {
         return res.status(404).json({ message: "Grid not found" });
       }
@@ -4295,7 +4364,8 @@ Generate exactly ${promptCount} prompts.`
   app.get("/api/blitzgrid/export", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const allBoards = await storage.getBoards(userId);
+      const role = req.session.userRole;
+      const allBoards = await storage.getBoards(userId, role);
       const boards = allBoards.filter(b => b.theme === "blitzgrid" || b.theme?.startsWith("blitzgrid:"));
       
       const rows: any[] = [];
