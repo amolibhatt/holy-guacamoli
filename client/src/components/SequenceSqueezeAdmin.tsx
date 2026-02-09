@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Plus, Trash2, X, ListOrdered, Lightbulb, Check, Upload, ChevronDown, Loader2, Sparkles, Edit, Save, RotateCcw } from "lucide-react";
+import { Plus, Trash2, X, ListOrdered, Lightbulb, Check, Upload, ChevronDown, Loader2, Sparkles, Edit, Save, RotateCcw, EyeOff } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import type { SequenceQuestion } from "@shared/schema";
@@ -106,9 +107,25 @@ export function SequenceSqueezeAdmin() {
     },
   });
 
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
+      const res = await apiRequest("PATCH", `/api/sequence-squeeze/questions/${id}`, { isActive });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to update question");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sequence-squeeze/questions"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message || "Failed to toggle question", variant: "destructive" });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      setDeletingId(id);
       const res = await apiRequest("DELETE", `/api/sequence-squeeze/questions/${id}`);
       if (!res.ok) {
         const error = await res.json();
@@ -116,10 +133,16 @@ export function SequenceSqueezeAdmin() {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onMutate: (id: number) => {
+      setDeletingId(id);
+    },
+    onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: ["/api/sequence-squeeze/questions"] });
       toast({ title: "Question deleted" });
       setDeletingId(null);
+      if (editingId === id) {
+        setEditingId(null);
+      }
     },
     onError: (error: Error) => {
       toast({ title: error.message || "Failed to delete question", variant: "destructive" });
@@ -168,7 +191,7 @@ export function SequenceSqueezeAdmin() {
     onSuccess: (data: { message: string; questions: ParsedQuestion[] }) => {
       setAiMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
       if (data.questions.length > 0) {
-        setAiGeneratedQuestions(data.questions);
+        setAiGeneratedQuestions(prev => [...prev, ...data.questions]);
       }
     },
     onError: (error: Error) => {
@@ -312,7 +335,7 @@ export function SequenceSqueezeAdmin() {
   };
 
   const handleEditSave = () => {
-    if (!editingId) return;
+    if (!editingId || updateMutation.isPending) return;
     const q = editQuestion.trim();
     const a = editOptionA.trim();
     const b = editOptionB.trim();
@@ -377,6 +400,7 @@ export function SequenceSqueezeAdmin() {
     if (next) {
       setEditingId(null);
       setAiGenerateOpen(false);
+      setBulkImportOpen(false);
     }
   };
 
@@ -386,6 +410,7 @@ export function SequenceSqueezeAdmin() {
     if (next) {
       setShowForm(false);
       setEditingId(null);
+      setBulkImportOpen(false);
     }
   };
 
@@ -506,7 +531,6 @@ export function SequenceSqueezeAdmin() {
                   <Button
                     onClick={handleAiSend}
                     disabled={!aiInput.trim() || aiChatMutation.isPending}
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0"
                     data-testid="button-send-ai"
                   >
                     <Sparkles className="w-4 h-4" />
@@ -756,7 +780,7 @@ export function SequenceSqueezeAdmin() {
             <p className="text-sm text-muted-foreground mb-4">
               Add your first ordering question
             </p>
-            <Button onClick={() => { setShowForm(true); setEditingId(null); }} data-testid="button-create-first-sequence">
+            <Button onClick={() => { setShowForm(true); setEditingId(null); setAiGenerateOpen(false); setBulkImportOpen(false); setCreateCorrectOrder([]); }} data-testid="button-create-first-sequence">
               <Plus className="w-4 h-4 mr-2" /> Add Question
             </Button>
           </CardContent>
@@ -764,7 +788,7 @@ export function SequenceSqueezeAdmin() {
       ) : (
         <div className="space-y-2">
           {questions.map((q, index) => (
-            <Card key={q.id} className="hover:bg-muted/30 transition-colors" data-testid={`card-sequence-question-${q.id}`}>
+            <Card key={q.id} className="hover-elevate" data-testid={`card-sequence-question-${q.id}`}>
               <CardContent className="p-4">
                 {editingId === q.id ? (
                   <div className="space-y-4">
@@ -876,8 +900,15 @@ export function SequenceSqueezeAdmin() {
                     <span className="w-8 h-8 rounded bg-muted flex items-center justify-center text-sm font-medium text-muted-foreground shrink-0">
                       {index + 1}
                     </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium mb-2">{q.question}</p>
+                    <div className={`flex-1 min-w-0 ${!q.isActive ? 'opacity-50' : ''}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <p className="font-medium">{q.question}</p>
+                        {!q.isActive && (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
+                            <EyeOff className="w-3 h-3" /> Inactive
+                          </span>
+                        )}
+                      </div>
                       <div className="flex flex-wrap gap-2 text-sm">
                         {getOrderedOptions(q).map(({ position, letter, text }) => (
                           <span key={letter} className="px-2 py-1 rounded bg-muted text-muted-foreground">
@@ -892,6 +923,13 @@ export function SequenceSqueezeAdmin() {
                       )}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
+                      <Switch
+                        checked={q.isActive}
+                        onCheckedChange={(checked) => {
+                          toggleActiveMutation.mutate({ id: q.id, isActive: checked });
+                        }}
+                        data-testid={`switch-active-${q.id}`}
+                      />
                       <Button
                         size="icon"
                         variant="ghost"
