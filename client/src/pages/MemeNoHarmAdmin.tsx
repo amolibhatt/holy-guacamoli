@@ -40,6 +40,7 @@ export default function MemeNoHarmAdmin() {
 
   const { data: prompts = [], isLoading: promptsLoading } = useQuery<MemePrompt[]>({
     queryKey: ["/api/memenoharm/prompts"],
+    enabled: isAuthenticated && isAdmin,
   });
 
   const createPromptMutation = useMutation({
@@ -214,7 +215,7 @@ export default function MemeNoHarmAdmin() {
         title: parts.join(", "),
         variant: failed > 0 ? "destructive" : undefined,
       });
-      if (failed > 0 && added === 0 && skipped === 0) {
+      if (failed > 0) {
         setAiSelected(new Set(failedIndices));
       } else {
         setAiResults([]);
@@ -268,8 +269,8 @@ export default function MemeNoHarmAdmin() {
         title: parts.join(", "),
         variant: failed > 0 ? "destructive" : undefined,
       });
-      if (failed > 0 && added === 0 && skipped === 0) {
-        // keep textarea content for retry
+      if (failed > 0) {
+        // keep textarea content for retry — duplicates handled by server
       } else {
         setBulkPrompts("");
         setShowBulkImport(false);
@@ -305,7 +306,7 @@ export default function MemeNoHarmAdmin() {
           <p className="text-muted-foreground mb-4">
             You don't have permission to access this page. Admin access is required.
           </p>
-          <a href="/" className="text-primary hover:underline">Back to Home</a>
+          <Link href="/" className="text-primary hover:underline">Back to Home</Link>
         </div>
       </div>
     );
@@ -417,7 +418,7 @@ export default function MemeNoHarmAdmin() {
                   <div className="flex gap-3 flex-wrap items-end">
                     <div className="flex-1 min-w-[200px]">
                       <label className="text-sm font-medium text-muted-foreground mb-1.5 block">Category</label>
-                      <Select value={aiCategory} onValueChange={setAiCategory}>
+                      <Select value={aiCategory} onValueChange={setAiCategory} disabled={aiGenerating}>
                         <SelectTrigger data-testid="select-ai-category">
                           <SelectValue />
                         </SelectTrigger>
@@ -436,7 +437,7 @@ export default function MemeNoHarmAdmin() {
                     </div>
                     <div className="w-24">
                       <label className="text-sm font-medium text-muted-foreground mb-1.5 block">Count</label>
-                      <Select value={String(aiCount)} onValueChange={(v) => setAiCount(Number(v))}>
+                      <Select value={String(aiCount)} onValueChange={(v) => setAiCount(Number(v))} disabled={aiGenerating}>
                         <SelectTrigger data-testid="select-ai-count">
                           <SelectValue />
                         </SelectTrigger>
@@ -497,10 +498,10 @@ export default function MemeNoHarmAdmin() {
                         {aiResults.map((prompt, i) => (
                           <div
                             key={i}
-                            className={`flex items-center gap-3 p-2.5 rounded-lg transition-colors ${
+                            className={`flex items-center gap-3 p-2.5 rounded-lg transition-colors border ${
                               aiImporting ? "opacity-60" : "cursor-pointer"
                             } ${
-                              aiSelected.has(i) ? "bg-primary/10 border border-primary/30" : "bg-muted/50"
+                              aiSelected.has(i) ? "bg-primary/10 border-primary/30" : "bg-muted/50 border-transparent"
                             }`}
                             onClick={() => !aiImporting && toggleAiSelect(i)}
                             data-testid={`ai-prompt-${i}`}
