@@ -164,6 +164,7 @@ export default function BlitzGridAdmin() {
   const [selectedPointTier, setSelectedPointTier] = useState<number>(10);
   const [showMediaPanel, setShowMediaPanel] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isBatchSaving = useRef(false);
 
   const { data: grids = [], isLoading: loadingGrids } = useQuery<GridWithStats[]>({
     queryKey: ['/api/blitzgrid/grids'],
@@ -196,8 +197,10 @@ export default function BlitzGridAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
-      setEditingGridId(null);
-      toast({ title: "Grid updated" });
+      if (!isBatchSaving.current) {
+        setEditingGridId(null);
+        toast({ title: "Grid updated" });
+      }
     },
     onError: () => {
       toast({ title: "Couldn't update grid", variant: "destructive" });
@@ -208,9 +211,12 @@ export default function BlitzGridAdmin() {
     mutationFn: async ({ gridId, categoryId }: { gridId: number; categoryId: number }) => {
       return apiRequest('DELETE', `/api/blitzgrid/grids/${gridId}/categories/${categoryId}`);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
+      if (selectedCategoryId === variables.categoryId) {
+        setSelectedCategoryId(null);
+      }
       toast({ title: "Category removed" });
     },
     onError: () => {
@@ -259,11 +265,15 @@ export default function BlitzGridAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'] });
-      setEditingCategoryId(null);
-      toast({ title: "Category updated" });
+      if (!isBatchSaving.current) {
+        setEditingCategoryId(null);
+        toast({ title: "Category updated" });
+      }
     },
     onError: (error: any) => {
-      toast({ title: error?.message || "Couldn't update category", variant: "destructive" });
+      if (!isBatchSaving.current) {
+        toast({ title: error?.message || "Couldn't update category", variant: "destructive" });
+      }
     },
   });
 
@@ -286,17 +296,21 @@ export default function BlitzGridAdmin() {
       });
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
-      setQuestionForms(prev => {
-        const newForms = { ...prev };
-        delete newForms[`${variables.categoryId}-${variables.points}`];
-        return newForms;
-      });
-      toast({ title: "Question saved" });
+      if (!isBatchSaving.current) {
+        queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
+        setQuestionForms(prev => {
+          const newForms = { ...prev };
+          delete newForms[`${variables.categoryId}-${variables.points}`];
+          return newForms;
+        });
+        toast({ title: "Question saved" });
+      }
     },
     onError: (error: any) => {
-      toast({ title: error?.message || "Couldn't save question", variant: "destructive" });
+      if (!isBatchSaving.current) {
+        toast({ title: error?.message || "Couldn't save question", variant: "destructive" });
+      }
     },
   });
 
@@ -305,12 +319,16 @@ export default function BlitzGridAdmin() {
       return apiRequest('DELETE', `/api/blitzgrid/questions/${questionId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
-      toast({ title: "Question deleted" });
+      if (!isBatchSaving.current) {
+        queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
+        toast({ title: "Question deleted" });
+      }
     },
     onError: () => {
-      toast({ title: "Couldn't delete question", variant: "destructive" });
+      if (!isBatchSaving.current) {
+        toast({ title: "Couldn't delete question", variant: "destructive" });
+      }
     },
   });
 
@@ -636,7 +654,7 @@ export default function BlitzGridAdmin() {
                   value={newGridName}
                   onChange={(e) => setNewGridName(e.target.value)}
                   autoFocus
-                  className="h-8 text-sm"
+                  className="text-sm"
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') {
                       setShowNewGridForm(false);
@@ -976,7 +994,7 @@ export default function BlitzGridAdmin() {
                                 value={editCategoryName}
                                 onChange={(e) => setEditCategoryName(e.target.value)}
                                 autoFocus
-                                className="h-8 text-sm font-medium"
+                                className="text-sm font-medium"
                                 onKeyDown={(e) => {
                                   if (e.key === 'Escape') {
                                     setEditingCategoryId(null);
@@ -995,7 +1013,7 @@ export default function BlitzGridAdmin() {
                                 placeholder="Description (optional)"
                                 value={editCategoryDescription}
                                 onChange={(e) => setEditCategoryDescription(e.target.value)}
-                                className="h-7 text-xs"
+                                className="text-xs"
                                 onKeyDown={(e) => {
                                   if (e.key === 'Escape') {
                                     setEditingCategoryId(null);
@@ -1082,19 +1100,17 @@ export default function BlitzGridAdmin() {
                                     const newForms: Record<string, any> = {};
                                     POINT_TIERS.forEach(pts => {
                                       const q = category.questions?.find(q => q.points === pts);
-                                      if (q) {
-                                        newForms[`${category.id}-${pts}`] = {
-                                          question: q.question,
-                                          correctAnswer: q.correctAnswer,
-                                          options: q.options || [],
-                                          imageUrl: q.imageUrl || '',
-                                          audioUrl: q.audioUrl || '',
-                                          videoUrl: q.videoUrl || '',
-                                          answerImageUrl: q.answerImageUrl || '',
-                                          answerAudioUrl: q.answerAudioUrl || '',
-                                          answerVideoUrl: q.answerVideoUrl || '',
-                                        };
-                                      }
+                                      newForms[`${category.id}-${pts}`] = q ? {
+                                        question: q.question,
+                                        correctAnswer: q.correctAnswer,
+                                        options: q.options || [],
+                                        imageUrl: q.imageUrl || '',
+                                        audioUrl: q.audioUrl || '',
+                                        videoUrl: q.videoUrl || '',
+                                        answerImageUrl: q.answerImageUrl || '',
+                                        answerAudioUrl: q.answerAudioUrl || '',
+                                        answerVideoUrl: q.answerVideoUrl || '',
+                                      } : { question: '', correctAnswer: '', options: [] };
                                     });
                                     setQuestionForms(prev => ({ ...prev, ...newForms }));
                                   }}
@@ -1146,7 +1162,7 @@ export default function BlitzGridAdmin() {
                                         </div>
                                         <div className="flex items-center gap-1 shrink-0 mt-2">
                                           {hasMedia && <Badge variant="secondary" className="text-xs">Media</Badge>}
-                                          {formData?.question && formData?.correctAnswer && (
+                                          {formData?.question?.trim() && formData?.correctAnswer?.trim() && (
                                             <CheckCircle2 className="w-5 h-5 text-green-500" aria-hidden="true" />
                                           )}
                                           <Button
@@ -1311,6 +1327,7 @@ export default function BlitzGridAdmin() {
                                 </Button>
                                 <Button
                                   onClick={async () => {
+                                    isBatchSaving.current = true;
                                     try {
                                       if (editCategoryName.trim()) {
                                         await updateCategoryMutation.mutateAsync({ 
@@ -1356,6 +1373,9 @@ export default function BlitzGridAdmin() {
                                           errorCount++;
                                         }
                                       }
+                                      isBatchSaving.current = false;
+                                      queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'] });
+                                      queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
                                       setEditingCategoryId(null);
                                       setQuestionForms(prev => {
                                         const newForms = { ...prev };
@@ -1374,6 +1394,7 @@ export default function BlitzGridAdmin() {
                                         toast({ title: parts.length > 0 ? `Questions: ${parts.join(', ')}` : "Category updated" });
                                       }
                                     } catch (err: any) {
+                                      isBatchSaving.current = false;
                                       toast({ title: err?.message || "Save failed - some changes may not have been saved", variant: "destructive" });
                                     }
                                   }}
@@ -1611,12 +1632,18 @@ export default function BlitzGridAdmin() {
                           <Input
                             value={editGridName}
                             onChange={(e) => setEditGridName(e.target.value)}
-                            className="h-8"
                             placeholder="Grid name"
                             autoFocus
                             onKeyDown={(e) => {
                               if (e.key === 'Escape') {
                                 setEditingGridId(null);
+                              }
+                              if (e.key === 'Enter' && editGridName.trim() && !updateGridMutation.isPending) {
+                                updateGridMutation.mutate({ 
+                                  id: grid.id, 
+                                  name: editGridName.trim(),
+                                  description: editGridDescription.trim() || undefined
+                                });
                               }
                             }}
                             data-testid={`input-edit-grid-${grid.id}`}
@@ -1625,12 +1652,18 @@ export default function BlitzGridAdmin() {
                         <Input
                           value={editGridDescription}
                           onChange={(e) => setEditGridDescription(e.target.value)}
-                          className="h-8"
                           placeholder="Short tagline (optional, ~50 chars)"
                           maxLength={60}
                           onKeyDown={(e) => {
                             if (e.key === 'Escape') {
                               setEditingGridId(null);
+                            }
+                            if (e.key === 'Enter' && editGridName.trim() && !updateGridMutation.isPending) {
+                              updateGridMutation.mutate({ 
+                                id: grid.id, 
+                                name: editGridName.trim(),
+                                description: editGridDescription.trim() || undefined
+                              });
                             }
                           }}
                           data-testid={`input-edit-grid-desc-${grid.id}`}
