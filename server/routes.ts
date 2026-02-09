@@ -5763,6 +5763,11 @@ Generate exactly ${promptCount} prompts.`
               sessionId: null,
               gameMode: 'sequence',
               sequenceSubmissions: [],
+              sequencePhase: 'waiting',
+              sequencePaused: false,
+              sequencePauseStartTime: undefined,
+              sequenceQuestionIndex: undefined,
+              sequenceTotalQuestions: undefined,
             };
             rooms.set(code, room);
             wsToRoom.set(ws, { roomCode: code, isHost: true });
@@ -6314,9 +6319,9 @@ Generate exactly ${promptCount} prompts.`
                 }
               }
             }
-            // Reset streak for players who didn't submit (missed the question)
+            // Reset streak for connected players who didn't submit (missed the question)
             room.players.forEach((player) => {
-              if (!submittedPlayerIds.has(player.id)) {
+              if (!submittedPlayerIds.has(player.id) && player.isConnected) {
                 player.wrongAnswers += 1;
                 player.currentStreak = 0;
               }
@@ -6542,6 +6547,8 @@ Generate exactly ${promptCount} prompts.`
             if (room.sequencePhase === 'gameComplete') break;
 
             room.sequencePhase = 'gameComplete';
+            room.sequencePaused = false;
+            room.sequencePauseStartTime = undefined;
 
             const leaderboard = Array.from(room.players.values())
               .map(p => ({
@@ -7343,7 +7350,7 @@ Generate exactly ${promptCount} prompts.`
           sendToHost(room, { type: 'player:disconnected', playerId: mapping.playerId });
           
           if (room.gameMode === 'sequence') {
-            if (room.sequencePhase === 'playing') {
+            if (room.sequencePhase === 'playing' && !room.sequencePaused) {
               const connectedPlayers = Array.from(room.players.values()).filter(p => p.isConnected);
               const connectedPlayerIds = new Set(connectedPlayers.map(p => p.id));
               const submissionsFromConnected = (room.sequenceSubmissions || []).filter(s => connectedPlayerIds.has(s.playerId));

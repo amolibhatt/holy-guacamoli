@@ -659,7 +659,7 @@ export function SequenceSqueezeAdmin() {
                     </p>
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      Default: A → B → C → D (tap letters above to set custom order)
+                      Tap letters above to set the correct order (required)
                     </p>
                   )}
                 </div>
