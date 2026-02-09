@@ -2672,10 +2672,6 @@ export async function registerRoutes(
             results.errors.push(`Row ${i + 1}: Hint must be text and 200 characters or less`);
             continue;
           }
-          if (!q.correctOrder.every((item: any) => typeof item === 'string')) {
-            results.errors.push(`Row ${i + 1}: correctOrder items must be text`);
-            continue;
-          }
           
           await storage.createSequenceQuestion({
             userId,
@@ -2923,17 +2919,25 @@ Be creative and fun! Make questions engaging and varied.`;
       const cleanMessage = content.replace(/```json[\s\S]*?```/g, '').trim() || 
         (questions.length > 0 ? `Here are ${questions.length} question(s) for you!` : content);
 
+      const validQuestions = questions
+        .filter((q: any) => q && typeof q.question === 'string' && q.question.trim().length > 0 &&
+          typeof q.optionA === 'string' && q.optionA.trim().length > 0 &&
+          typeof q.optionB === 'string' && q.optionB.trim().length > 0 &&
+          typeof q.optionC === 'string' && q.optionC.trim().length > 0 &&
+          typeof q.optionD === 'string' && q.optionD.trim().length > 0)
+        .map((q: any) => ({
+          question: q.question.trim().slice(0, 500),
+          optionA: q.optionA.trim().slice(0, 200),
+          optionB: q.optionB.trim().slice(0, 200),
+          optionC: q.optionC.trim().slice(0, 200),
+          optionD: q.optionD.trim().slice(0, 200),
+          correctOrder: ['A', 'B', 'C', 'D'],
+          hint: (typeof q.hint === 'string' && q.hint.trim().length > 0) ? q.hint.trim().slice(0, 200) : null
+        }));
+
       res.json({ 
         message: cleanMessage, 
-        questions: questions.map(q => ({
-          question: q.question || '',
-          optionA: q.optionA || '',
-          optionB: q.optionB || '',
-          optionC: q.optionC || '',
-          optionD: q.optionD || '',
-          correctOrder: ['A', 'B', 'C', 'D'],
-          hint: q.hint || null
-        }))
+        questions: validQuestions,
       });
     } catch (err) {
       console.error("Error in AI chat:", err);
@@ -5847,12 +5851,25 @@ Generate exactly ${promptCount} prompts.`
           }
 
           case 'sequence:player:join': {
-            const code = data.code?.toUpperCase();
+            if (!data.code || typeof data.code !== 'string') {
+              ws.send(JSON.stringify({ type: 'error', message: 'Room code is required' }));
+              break;
+            }
+            const code = data.code.toUpperCase();
             const room = rooms.get(code);
             if (!room) {
               ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
               break;
             }
+
+            if (room.players.size >= 50 && !data.playerId) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Room is full' }));
+              break;
+            }
+
+            const playerName = (typeof data.name === 'string' && data.name.trim().length > 0) ? data.name.trim().slice(0, 30) : 'Player';
+            const allowedAvatars = ['cat', 'dog', 'fox', 'bear', 'rabbit', 'panda', 'koala', 'owl', 'penguin', 'unicorn', 'dragon', 'lion', 'tiger', 'monkey', 'frog', 'ghost', 'alien', 'robot', 'skull', 'fire'];
+            const playerAvatar = (typeof data.avatar === 'string' && allowedAvatars.includes(data.avatar)) ? data.avatar : 'cat';
 
             const playerId = data.playerId || crypto.randomUUID();
             const existingPlayer = room.players.get(playerId);
@@ -5860,8 +5877,8 @@ Generate exactly ${promptCount} prompts.`
             if (existingPlayer) {
               existingPlayer.ws = ws;
               existingPlayer.isConnected = true;
-              existingPlayer.name = data.name || existingPlayer.name;
-              existingPlayer.avatar = data.avatar || existingPlayer.avatar;
+              existingPlayer.name = playerName;
+              existingPlayer.avatar = playerAvatar;
               wsToRoom.set(ws, { roomCode: room.code, isHost: false, playerId });
 
               ws.send(JSON.stringify({
@@ -5946,8 +5963,8 @@ Generate exactly ${promptCount} prompts.`
             } else {
               const player: RoomPlayer = {
                 id: playerId,
-                name: data.name || 'Player',
-                avatar: data.avatar || 'cat',
+                name: playerName,
+                avatar: playerAvatar,
                 score: 0,
                 ws,
                 isConnected: true,
@@ -6036,15 +6053,32 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            if (!data.correctOrder || !Array.isArray(data.correctOrder) || data.correctOrder.length !== 4) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Invalid correctOrder' }));
+              break;
+            }
+            const sqValidLetters = new Set(['A', 'B', 'C', 'D']);
+            if (new Set(data.correctOrder).size !== 4 || !data.correctOrder.every((l: any) => typeof l === 'string' && sqValidLetters.has(l))) {
+              ws.send(JSON.stringify({ type: 'error', message: 'correctOrder must contain A, B, C, D exactly once' }));
+              break;
+            }
+            if (!data.question || typeof data.question !== 'object') {
+              ws.send(JSON.stringify({ type: 'error', message: 'Question data is required' }));
+              break;
+            }
+
+            const rawPoints = Number(data.pointsPerRound);
+            const validPoints = Number.isFinite(rawPoints) && Number.isInteger(rawPoints) && rawPoints > 0 && rawPoints <= 100 ? rawPoints : 10;
+
             room.sequenceSubmissions = [];
             room.currentCorrectOrder = data.correctOrder;
             room.currentQuestion = data.question;
             room.questionStartTime = Date.now();
-            room.pointsPerRound = data.pointsPerRound || 10;
+            room.pointsPerRound = validPoints;
             room.sequencePhase = 'playing';
             room.sequencePaused = false;
-            room.sequenceQuestionIndex = data.questionIndex;
-            room.sequenceTotalQuestions = data.totalQuestions;
+            room.sequenceQuestionIndex = typeof data.questionIndex === 'number' && Number.isFinite(data.questionIndex) ? data.questionIndex : 0;
+            room.sequenceTotalQuestions = typeof data.totalQuestions === 'number' && Number.isFinite(data.totalQuestions) ? data.totalQuestions : 0;
             
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
@@ -6073,13 +6107,30 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            if (!data.correctOrder || !Array.isArray(data.correctOrder) || data.correctOrder.length !== 4) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Invalid correctOrder' }));
+              break;
+            }
+            const arValidLetters = new Set(['A', 'B', 'C', 'D']);
+            if (new Set(data.correctOrder).size !== 4 || !data.correctOrder.every((l: any) => typeof l === 'string' && arValidLetters.has(l))) {
+              ws.send(JSON.stringify({ type: 'error', message: 'correctOrder must contain A, B, C, D exactly once' }));
+              break;
+            }
+            if (!data.question || typeof data.question !== 'object') {
+              ws.send(JSON.stringify({ type: 'error', message: 'Question data is required' }));
+              break;
+            }
+
+            const arRawPoints = Number(data.pointsPerRound);
+            const arValidPoints = Number.isFinite(arRawPoints) && Number.isInteger(arRawPoints) && arRawPoints > 0 && arRawPoints <= 100 ? arRawPoints : 10;
+
             room.sequenceSubmissions = [];
             room.currentCorrectOrder = data.correctOrder;
             room.currentQuestion = data.question;
-            room.pointsPerRound = data.pointsPerRound || 10;
+            room.pointsPerRound = arValidPoints;
             room.sequencePhase = 'animatedReveal';
-            room.sequenceQuestionIndex = data.questionIndex;
-            room.sequenceTotalQuestions = data.totalQuestions;
+            room.sequenceQuestionIndex = typeof data.questionIndex === 'number' && Number.isFinite(data.questionIndex) ? data.questionIndex : 0;
+            room.sequenceTotalQuestions = typeof data.totalQuestions === 'number' && Number.isFinite(data.totalQuestions) ? data.totalQuestions : 0;
             
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
@@ -6241,11 +6292,15 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
-            if (room.sequencePhase === 'revealing' || room.sequencePhase === 'leaderboard' || room.sequencePhase === 'gameComplete') {
+            if (room.sequencePhase !== 'playing') {
               break;
             }
 
-            const correctOrder = data.correctOrder || room.currentCorrectOrder;
+            const correctOrder = room.currentCorrectOrder;
+            if (!correctOrder || !Array.isArray(correctOrder) || correctOrder.length !== 4) {
+              ws.send(JSON.stringify({ type: 'error', message: 'No active question to reveal' }));
+              break;
+            }
             const submissions = room.sequenceSubmissions || [];
             
             // Determine correctness and find winner
@@ -6349,6 +6404,8 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            if (room.sequencePhase === 'gameComplete') break;
+
             room.sequencePhase = 'leaderboard';
 
             const leaderboard = Array.from(room.players.values())
@@ -6444,7 +6501,9 @@ Generate exactly ${promptCount} prompts.`
             if (!room) break;
 
             const { playerId, delta } = data;
-            if (!playerId || typeof delta !== 'number') break;
+            if (!playerId || typeof playerId !== 'string') break;
+            if (typeof delta !== 'number' || !Number.isFinite(delta) || !Number.isInteger(delta)) break;
+            if (delta < -1000 || delta > 1000) break;
 
             const player = room.players.get(playerId);
             if (!player) break;
@@ -6489,6 +6548,8 @@ Generate exactly ${promptCount} prompts.`
             
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
+
+            if (room.sequencePhase === 'gameComplete') break;
 
             room.sequencePhase = 'gameComplete';
 
