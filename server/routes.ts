@@ -2357,10 +2357,31 @@ export async function registerRoutes(
         return res.status(400).json({ message: "isStarterPack must be a boolean" });
       }
       const updated = await storage.toggleSequenceQuestionStarterPack(questionId, isStarterPack);
+      if (!updated) {
+        return res.status(404).json({ message: "Question not found" });
+      }
       res.json(updated);
     } catch (err) {
       console.error("Error toggling sequence starter pack:", err);
       res.status(500).json({ message: "Failed to toggle starter pack" });
+    }
+  });
+
+  app.delete("/api/super-admin/questions/sequence/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const questionId = parseId(req.params.id);
+      if (questionId === null) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+      const userId = req.session.userId!;
+      const deleted = await storage.deleteSequenceQuestion(questionId, userId, 'super_admin');
+      if (!deleted) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting sequence question:", err);
+      res.status(500).json({ message: "Failed to delete question" });
     }
   });
 
@@ -2375,6 +2396,9 @@ export async function registerRoutes(
         return res.status(400).json({ message: "isStarterPack must be a boolean" });
       }
       const updated = await storage.togglePsyopQuestionStarterPack(questionId, isStarterPack);
+      if (!updated) {
+        return res.status(404).json({ message: "Question not found" });
+      }
       res.json(updated);
     } catch (err) {
       console.error("Error toggling psyop starter pack:", err);
@@ -2509,9 +2533,16 @@ export async function registerRoutes(
       }
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const { question, optionA, optionB, optionC, optionD, correctOrder, hint } = req.body;
+      const { question, optionA, optionB, optionC, optionD, correctOrder, hint, isActive } = req.body;
       
       const updateData: Record<string, any> = {};
+      
+      if (isActive !== undefined) {
+        if (typeof isActive !== 'boolean') {
+          return res.status(400).json({ message: "isActive must be a boolean" });
+        }
+        updateData.isActive = isActive;
+      }
       
       if (question !== undefined) {
         if (typeof question !== 'string' || question.trim().length === 0) {
@@ -2616,8 +2647,8 @@ export async function registerRoutes(
             results.errors.push(`Row ${i + 1}: Question text is required`);
             continue;
           }
-          if (!q.optionA || !q.optionB || !q.optionC || !q.optionD) {
-            results.errors.push(`Row ${i + 1}: All four options are required`);
+          if (!q.optionA || typeof q.optionA !== 'string' || !q.optionB || typeof q.optionB !== 'string' || !q.optionC || typeof q.optionC !== 'string' || !q.optionD || typeof q.optionD !== 'string') {
+            results.errors.push(`Row ${i + 1}: All four options are required and must be text`);
             continue;
           }
           if (!Array.isArray(q.correctOrder) || q.correctOrder.length !== 4) {

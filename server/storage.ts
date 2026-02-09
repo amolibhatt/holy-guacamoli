@@ -1713,9 +1713,9 @@ export class DatabaseStorage implements IStorage {
   // Sequence Squeeze implementation
   async getSequenceQuestions(userId: string, role?: string): Promise<SequenceQuestion[]> {
     if (role === 'super_admin') {
-      return await db.select().from(sequenceQuestions).where(eq(sequenceQuestions.isActive, true)).orderBy(desc(sequenceQuestions.createdAt));
+      return await db.select().from(sequenceQuestions).orderBy(desc(sequenceQuestions.createdAt));
     }
-    return await db.select().from(sequenceQuestions).where(and(eq(sequenceQuestions.userId, userId), eq(sequenceQuestions.isActive, true))).orderBy(desc(sequenceQuestions.createdAt));
+    return await db.select().from(sequenceQuestions).where(eq(sequenceQuestions.userId, userId)).orderBy(desc(sequenceQuestions.createdAt));
   }
 
   async createSequenceQuestion(data: InsertSequenceQuestion): Promise<SequenceQuestion> {
