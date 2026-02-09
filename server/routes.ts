@@ -3082,6 +3082,97 @@ Be creative! Make facts surprising and fun to guess.`;
     }
   });
 
+  app.post("/api/memenoharm/prompts/generate", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { category = "mixed", count = 10 } = req.body;
+      const promptCount = Math.min(Math.max(1, Number(count)), 20);
+
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ message: "AI service not configured" });
+      }
+
+      const categoryInstructions: Record<string, string> = {
+        work: "Focus on workplace humor: terrible bosses, pointless meetings, corporate jargon, office politics, passive-aggressive emails, working from home disasters, LinkedIn cringe, hustle culture, deadlines, Monday mornings.",
+        dating: "Focus on dating and relationships: awkward first dates, red flags, ghosting, dating app disasters, situationships, the 'ick', toxic exes, DM sliding, commitment issues, unrequited love.",
+        history: "Focus on historical events and figures: ancient civilizations, wars that started over stupid reasons, ridiculous historical facts, famous last words, empires falling, historical figures in modern situations.",
+        pop_culture: "Focus on pop culture: celebrity drama, reality TV, social media trends, viral moments, cancelled celebrities, fan behavior, award show disasters, music feuds, movie plot holes.",
+        family: "Focus on family dynamics: overbearing parents, sibling rivalries, family group chats, holiday gatherings, passive-aggressive relatives, 'we need to talk' moments, embarrassing family stories.",
+        school: "Focus on school and education: nightmare professors, group projects where you do all the work, exam panic, student loans, all-nighters, cafeteria food, graduation reality checks.",
+        technology: "Focus on technology fails: autocorrect disasters, accidentally sending messages to the wrong person, WiFi going out at the worst time, phone dying at 1%, software updates breaking everything.",
+        existential: "Focus on existential and philosophical humor: the meaning of life, adulting failures, quarter-life crisis, pretending to have your life together, existential dread disguised as humor.",
+        mixed: "Mix across all categories: work, dating, history, pop culture, family, school, technology, and existential humor. Make each prompt from a different category for variety."
+      };
+
+      const instructions = categoryInstructions[category] || categoryInstructions.mixed;
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a prompt generator for a party game called "Meme No Harm" where players search for GIFs that best match a given prompt. The prompts should be hilarious, edgy, and unapologetically offensive — the kind that make people laugh out loud at a party.
+
+Rules for generating prompts:
+- Each prompt should be a scenario, feeling, or situation that players can find the perfect GIF reaction for
+- Be BOLD and UNFILTERED — dark humor, savage observations, uncomfortable truths are encouraged
+- Prompts should be relatable but with a sharp, provocative edge
+- Keep prompts concise (under 15 words ideally) so they're easy to read quickly during gameplay
+- Avoid anything that targets specific real people by name
+- Make prompts that inspire creative and funny GIF responses
+
+${instructions}
+
+Return ONLY a JSON array of strings, each being one prompt. Example format:
+["When your ex texts 'I miss you' at 2am...", "That one coworker who replies all to every email..."]
+
+Generate exactly ${promptCount} prompts.`
+            },
+            {
+              role: 'user',
+              content: `Generate ${promptCount} hilarious, edgy prompts for the "${category}" category.`
+            }
+          ],
+          temperature: 1.0,
+          max_tokens: 2000
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Groq API error:', error);
+        return res.status(500).json({ message: "Failed to generate prompts" });
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+      
+      if (!content) {
+        return res.status(500).json({ message: "No response from AI" });
+      }
+
+      let prompts: string[];
+      try {
+        const parsed = JSON.parse(content);
+        prompts = Array.isArray(parsed) ? parsed : (parsed.prompts || parsed.data || Object.values(parsed).flat());
+        prompts = prompts.filter((p: any) => typeof p === 'string' && p.trim().length > 0);
+      } catch {
+        return res.status(500).json({ message: "Failed to parse AI response" });
+      }
+
+      res.json({ prompts });
+    } catch (err) {
+      console.error("Error generating Meme prompts:", err);
+      res.status(500).json({ message: "Failed to generate prompts" });
+    }
+  });
+
   app.get("/api/memenoharm/images", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;

@@ -10,8 +10,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { Link, useLocation } from "wouter";
-import { Plus, Trash2, Play, Smile, MessageSquare, Grid3X3, Brain, Clock, Loader2, Upload } from "lucide-react";
+import { Plus, Trash2, Play, Smile, MessageSquare, Grid3X3, Brain, Clock, Loader2, Upload, Sparkles, Check } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { MemePrompt } from "@shared/schema";
 
 export default function MemeNoHarmAdmin() {
@@ -23,6 +24,12 @@ export default function MemeNoHarmAdmin() {
   const [newPrompt, setNewPrompt] = useState("");
   const [bulkPrompts, setBulkPrompts] = useState("");
   const [showBulkImport, setShowBulkImport] = useState(false);
+  const [aiCategory, setAiCategory] = useState("mixed");
+  const [aiCount, setAiCount] = useState(10);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiResults, setAiResults] = useState<string[]>([]);
+  const [aiSelected, setAiSelected] = useState<Set<number>>(new Set());
+  const [showAiGenerator, setShowAiGenerator] = useState(false);
 
   const { data: prompts = [], isLoading: promptsLoading } = useQuery<MemePrompt[]>({
     queryKey: ["/api/memenoharm/prompts"],
@@ -70,6 +77,61 @@ export default function MemeNoHarmAdmin() {
     if (newPrompt.trim()) {
       createPromptMutation.mutate(newPrompt.trim());
     }
+  };
+
+  const handleAiGenerate = async () => {
+    setAiGenerating(true);
+    setAiResults([]);
+    setAiSelected(new Set());
+    try {
+      const res = await apiRequest("POST", "/api/memenoharm/prompts/generate", { category: aiCategory, count: aiCount });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to generate prompts");
+      }
+      const data = await res.json();
+      setAiResults(data.prompts || []);
+      setAiSelected(new Set(data.prompts?.map((_: string, i: number) => i) || []));
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  const handleAiAddSelected = async () => {
+    const selected = aiResults.filter((_, i) => aiSelected.has(i));
+    if (selected.length === 0) return;
+    setBulkImporting(true);
+    let added = 0;
+    let failed = 0;
+    for (const prompt of selected) {
+      try {
+        const res = await apiRequest("POST", "/api/memenoharm/prompts", { prompt });
+        if (res.ok) added++;
+        else failed++;
+      } catch {
+        failed++;
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ["/api/memenoharm/prompts"] });
+    setBulkImporting(false);
+    if (failed > 0) {
+      toast({ title: `Added ${added} prompts, ${failed} failed`, variant: "destructive" });
+    } else {
+      toast({ title: `${added} prompts added!` });
+    }
+    setAiResults([]);
+    setAiSelected(new Set());
+  };
+
+  const toggleAiSelect = (index: number) => {
+    setAiSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
   };
 
   const [bulkImporting, setBulkImporting] = useState(false);
@@ -210,6 +272,132 @@ export default function MemeNoHarmAdmin() {
         </div>
 
         <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5" />
+                  AI Prompt Generator
+                </span>
+                <Button
+                  variant={showAiGenerator ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowAiGenerator(!showAiGenerator)}
+                  className="gap-2"
+                  data-testid="button-toggle-ai-generator"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {showAiGenerator ? "Hide" : "Generate Prompts"}
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            {showAiGenerator && (
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex gap-3 flex-wrap items-end">
+                    <div className="flex-1 min-w-[200px]">
+                      <label className="text-sm font-medium text-muted-foreground mb-1.5 block">Category</label>
+                      <Select value={aiCategory} onValueChange={setAiCategory}>
+                        <SelectTrigger data-testid="select-ai-category">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="mixed">Mixed (All Categories)</SelectItem>
+                          <SelectItem value="work">Work & Corporate</SelectItem>
+                          <SelectItem value="dating">Dating & Relationships</SelectItem>
+                          <SelectItem value="history">History</SelectItem>
+                          <SelectItem value="pop_culture">Pop Culture</SelectItem>
+                          <SelectItem value="family">Family</SelectItem>
+                          <SelectItem value="school">School & Education</SelectItem>
+                          <SelectItem value="technology">Technology</SelectItem>
+                          <SelectItem value="existential">Existential & Philosophy</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="w-24">
+                      <label className="text-sm font-medium text-muted-foreground mb-1.5 block">Count</label>
+                      <Select value={String(aiCount)} onValueChange={(v) => setAiCount(Number(v))}>
+                        <SelectTrigger data-testid="select-ai-count">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="5">5</SelectItem>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="15">15</SelectItem>
+                          <SelectItem value="20">20</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button
+                      onClick={handleAiGenerate}
+                      disabled={aiGenerating}
+                      data-testid="button-ai-generate"
+                    >
+                      {aiGenerating ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4 mr-2" />
+                      )}
+                      {aiGenerating ? "Generating..." : "Generate"}
+                    </Button>
+                  </div>
+
+                  {aiResults.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="text-sm text-muted-foreground">
+                          {aiSelected.size} of {aiResults.length} selected
+                        </span>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setAiSelected(aiSelected.size === aiResults.length ? new Set() : new Set(aiResults.map((_, i) => i)))}
+                            data-testid="button-ai-toggle-all"
+                          >
+                            {aiSelected.size === aiResults.length ? "Deselect All" : "Select All"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={handleAiAddSelected}
+                            disabled={aiSelected.size === 0 || bulkImporting}
+                            data-testid="button-ai-add-selected"
+                          >
+                            {bulkImporting ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <Plus className="w-4 h-4 mr-2" />
+                            )}
+                            Add {aiSelected.size} Prompts
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
+                        {aiResults.map((prompt, i) => (
+                          <div
+                            key={i}
+                            className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors ${
+                              aiSelected.has(i) ? "bg-primary/10 border border-primary/30" : "bg-muted/50"
+                            }`}
+                            onClick={() => toggleAiSelect(i)}
+                            data-testid={`ai-prompt-${i}`}
+                          >
+                            <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${
+                              aiSelected.has(i) ? "bg-primary text-primary-foreground" : "border border-muted-foreground/30"
+                            }`}>
+                              {aiSelected.has(i) && <Check className="w-3 h-3" />}
+                            </div>
+                            <span className="text-sm flex-1">{prompt}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between gap-2 flex-wrap">
