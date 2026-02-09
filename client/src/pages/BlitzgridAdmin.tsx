@@ -1,10 +1,9 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Link, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -163,6 +162,7 @@ export default function BlitzGridAdmin() {
   const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
   const [selectedPointTier, setSelectedPointTier] = useState<number>(10);
   const [showMediaPanel, setShowMediaPanel] = useState(false);
+  const [isSavingAll, setIsSavingAll] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isBatchSaving = useRef(false);
 
@@ -633,7 +633,7 @@ export default function BlitzGridAdmin() {
         </div>
         <div className="flex flex-1">
           {/* Grid Sidebar */}
-          <aside className="w-64 border-r border-border bg-card/50 p-4 shrink-0 hidden md:block">
+          <aside className="w-64 border-r border-border bg-card/50 p-4 shrink-0 hidden md:flex md:flex-col overflow-y-auto">
             <div className="flex items-center justify-between gap-2 mb-4">
               <h2 className="font-semibold text-sm text-muted-foreground">Grids</h2>
               <Button
@@ -752,9 +752,9 @@ export default function BlitzGridAdmin() {
           {/* Main Content */}
           <div className="flex-1 p-4 md:p-6 overflow-auto">
             {/* Mobile Grid Selector */}
-            <div className="md:hidden mb-4">
+            <div className="md:hidden mb-4 flex items-center gap-2">
               <Select value={String(selectedGridId)} onValueChange={(v) => setSelectedGridId(Number(v))}>
-                <SelectTrigger data-testid="select-grid-mobile">
+                <SelectTrigger data-testid="select-grid-mobile" className="flex-1">
                   <SelectValue placeholder="Select a grid" />
                 </SelectTrigger>
                 <SelectContent>
@@ -767,6 +767,17 @@ export default function BlitzGridAdmin() {
                   ))}
                 </SelectContent>
               </Select>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => {
+                  setSelectedGridId(null);
+                  setShowNewGridForm(true);
+                }}
+                data-testid="button-add-grid-mobile"
+              >
+                <Plus className="w-4 h-4 shrink-0" aria-hidden="true" />
+              </Button>
             </div>
             
             {/* Grid Details Section */}
@@ -878,7 +889,7 @@ export default function BlitzGridAdmin() {
           </Card>
           
           {/* New Category Form */}
-          {gridCategories.length < 5 && (
+          {gridCategories.length < 5 && editingCategoryId === null && (
             <Card className="mb-4">
               <CardContent className="py-3">
                 {showNewCategoryForm ? (
@@ -973,6 +984,7 @@ export default function BlitzGridAdmin() {
                         // Reset editing state when switching categories
                         if (!isExpanded && editingCategoryId !== null) {
                           setEditingCategoryId(null);
+                          setShowMediaPanel(false);
                           setQuestionForms(prev => {
                             const newForms = { ...prev };
                             POINT_TIERS.forEach(pts => {
@@ -998,13 +1010,7 @@ export default function BlitzGridAdmin() {
                                 onKeyDown={(e) => {
                                   if (e.key === 'Escape') {
                                     setEditingCategoryId(null);
-                                  }
-                                  if (e.key === 'Enter' && editCategoryName.trim() && !updateCategoryMutation.isPending) {
-                                    updateCategoryMutation.mutate({
-                                      categoryId: category.id,
-                                      name: editCategoryName.trim(),
-                                      description: editCategoryDescription.trim()
-                                    });
+                                    setShowMediaPanel(false);
                                   }
                                 }}
                                 data-testid={`input-edit-category-name-${category.id}`}
@@ -1017,13 +1023,7 @@ export default function BlitzGridAdmin() {
                                 onKeyDown={(e) => {
                                   if (e.key === 'Escape') {
                                     setEditingCategoryId(null);
-                                  }
-                                  if (e.key === 'Enter' && editCategoryName.trim() && !updateCategoryMutation.isPending) {
-                                    updateCategoryMutation.mutate({
-                                      categoryId: category.id,
-                                      name: editCategoryName.trim(),
-                                      description: editCategoryDescription.trim()
-                                    });
+                                    setShowMediaPanel(false);
                                   }
                                 }}
                                 data-testid={`input-edit-category-description-${category.id}`}
@@ -1311,8 +1311,10 @@ export default function BlitzGridAdmin() {
                               <div className="flex justify-end gap-2 pt-4 mt-4 border-t">
                                 <Button
                                   variant="outline"
+                                  disabled={isSavingAll}
                                   onClick={() => {
                                     setEditingCategoryId(null);
+                                    setShowMediaPanel(false);
                                     setQuestionForms(prev => {
                                       const newForms = { ...prev };
                                       POINT_TIERS.forEach(pts => {
@@ -1327,13 +1329,14 @@ export default function BlitzGridAdmin() {
                                 </Button>
                                 <Button
                                   onClick={async () => {
+                                    setIsSavingAll(true);
                                     isBatchSaving.current = true;
                                     try {
                                       if (editCategoryName.trim()) {
                                         await updateCategoryMutation.mutateAsync({ 
                                           categoryId: category.id, 
                                           name: editCategoryName.trim(),
-                                          description: editCategoryDescription.trim() 
+                                          description: editCategoryDescription.trim() || undefined
                                         });
                                       }
                                       let savedCount = 0;
@@ -1374,9 +1377,11 @@ export default function BlitzGridAdmin() {
                                         }
                                       }
                                       isBatchSaving.current = false;
+                                      setIsSavingAll(false);
                                       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'] });
                                       queryClient.invalidateQueries({ queryKey: ['/api/blitzgrid/grids'] });
                                       setEditingCategoryId(null);
+                                      setShowMediaPanel(false);
                                       setQuestionForms(prev => {
                                         const newForms = { ...prev };
                                         POINT_TIERS.forEach(pts => {
@@ -1395,13 +1400,14 @@ export default function BlitzGridAdmin() {
                                       }
                                     } catch (err: any) {
                                       isBatchSaving.current = false;
+                                      setIsSavingAll(false);
                                       toast({ title: err?.message || "Save failed - some changes may not have been saved", variant: "destructive" });
                                     }
                                   }}
-                                  disabled={saveQuestionMutation.isPending || updateCategoryMutation.isPending || !editCategoryName.trim()}
+                                  disabled={isSavingAll || !editCategoryName.trim()}
                                   data-testid={`button-save-category-${category.id}`}
                                 >
-                                  {(saveQuestionMutation.isPending || updateCategoryMutation.isPending) ? <Loader2 className="w-4 h-4 mr-2 shrink-0 animate-spin" aria-hidden="true" /> : null}
+                                  {isSavingAll ? <Loader2 className="w-4 h-4 mr-2 shrink-0 animate-spin" aria-hidden="true" /> : null}
                                   Save All
                                 </Button>
                               </div>
