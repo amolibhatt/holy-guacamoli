@@ -5990,6 +5990,33 @@ Generate exactly ${promptCount} prompts.`
                 score: 0,
               }));
 
+              if (room.memePrompt && room.memeRound) {
+                if (room.memePhase === 'selecting') {
+                  sendToPlayer(player, {
+                    type: 'meme:round:start',
+                    prompt: room.memePrompt,
+                    round: room.memeRound,
+                    totalRounds: room.memeTotalRounds,
+                    deadline: Date.now() + 45000,
+                  });
+                } else if (room.memePhase === 'voting') {
+                  const submissions = Array.from(room.memeSubmissions?.values() || []);
+                  const filteredSubmissions = submissions
+                    .filter(s => s.playerId !== playerId)
+                    .map(s => ({
+                      id: s.playerId,
+                      gifUrl: s.gifUrl,
+                      gifTitle: s.gifTitle,
+                    }));
+                  sendToPlayer(player, {
+                    type: 'meme:voting:start',
+                    submissions: filteredSubmissions,
+                    prompt: room.memePrompt,
+                    deadline: Date.now() + 30000,
+                  });
+                }
+              }
+
               sendToHost(room, {
                 type: 'meme:player:joined',
                 playerId,
@@ -5997,7 +6024,7 @@ Generate exactly ${promptCount} prompts.`
                 playerAvatar: player.avatar,
                 isReconnect: false,
               });
-              console.log(`[WebSocket] Player ${player.name} joined Meme No Harm room ${room.code}`);
+              console.log(`[WebSocket] Player ${player.name} joined Meme No Harm room ${room.code} (phase: ${room.memePhase || 'lobby'})`);
             }
             break;
           }
