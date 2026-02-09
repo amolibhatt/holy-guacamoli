@@ -3311,6 +3311,7 @@ Be creative! Make facts surprising and fun to guess.`;
   const updateMemePromptSchema = z.object({
     prompt: z.string().min(1, "Prompt is required").max(200, "Prompt must be 200 characters or less").optional(),
     isActive: z.boolean().optional(),
+    isStarterPack: z.boolean().optional(),
   });
 
   app.put("/api/memenoharm/prompts/:id", isAuthenticated, isAdmin, async (req, res) => {
@@ -3344,6 +3345,9 @@ Be creative! Make facts surprising and fun to guess.`;
       }
       if (parsed.data.isActive !== undefined) {
         updateData.isActive = parsed.data.isActive;
+      }
+      if (parsed.data.isStarterPack !== undefined) {
+        updateData.isStarterPack = parsed.data.isStarterPack;
       }
 
       if (Object.keys(updateData).length === 0) {
@@ -3574,6 +3578,7 @@ Generate exactly ${promptCount} prompts.`
     imageUrl: z.string().url("Must be a valid URL").min(1, "Image URL is required").optional(),
     caption: z.string().max(200, "Caption must be 200 characters or less").optional().nullable(),
     isActive: z.boolean().optional(),
+    isStarterPack: z.boolean().optional(),
   });
 
   app.put("/api/memenoharm/images/:id", isAuthenticated, isAdmin, async (req, res) => {
@@ -3604,6 +3609,7 @@ Generate exactly ${promptCount} prompts.`
       }
       if (parsed.data.caption !== undefined) updateData.caption = parsed.data.caption?.trim() || null;
       if (parsed.data.isActive !== undefined) updateData.isActive = parsed.data.isActive;
+      if (parsed.data.isStarterPack !== undefined) updateData.isStarterPack = parsed.data.isStarterPack;
 
       if (Object.keys(updateData).length === 0) {
         return res.status(400).json({ message: "No valid fields to update" });
@@ -3650,9 +3656,10 @@ Generate exactly ${promptCount} prompts.`
   
   app.get("/api/giphy/search", async (req, res) => {
     try {
-      const q = req.query.q as string;
-      const offset = Math.max(0, parseInt(req.query.offset as string) || 0);
-      const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+      const rawQ = req.query.q;
+      const q = typeof rawQ === 'string' ? rawQ : Array.isArray(rawQ) ? String(rawQ[0]) : '';
+      const offset = Math.max(0, parseInt(String(req.query.offset || '0')) || 0);
+      const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || '20')) || 20));
       
       if (!q || q.trim().length === 0) {
         return res.status(400).json({ message: "Search query is required" });
@@ -6869,7 +6876,12 @@ Generate exactly ${promptCount} prompts.`
                 if (isSittingOut) {
                   sendToPlayer(existingPlayer, { type: 'meme:sittingOut' });
                 } else if (room.memePhase === 'voting') {
-                  if (room.memeVotes?.has(playerId)) {
+                  if (!room.memeSubmissions?.has(playerId)) {
+                    sendToPlayer(existingPlayer, {
+                      type: 'meme:phaseSync',
+                      phase: 'waitingForVotes',
+                    });
+                  } else if (room.memeVotes?.has(playerId)) {
                     sendToPlayer(existingPlayer, {
                       type: 'meme:phaseSync',
                       phase: 'voted',
@@ -6924,14 +6936,10 @@ Generate exactly ${promptCount} prompts.`
                       points: numVotes * 100,
                     };
                   });
-                  let revealMaxVotes = 0;
-                  let revealWinnerId: string | null = null;
-                  revealResults.forEach(r => {
-                    if (r.votes > revealMaxVotes) {
-                      revealMaxVotes = r.votes;
-                      revealWinnerId = r.playerId;
-                    }
-                  });
+                  const revealMaxVotes = Math.max(0, ...revealResults.map(r => r.votes));
+                  const revealTopPlayers = revealMaxVotes > 0 ? revealResults.filter(r => r.votes === revealMaxVotes) : [];
+                  const revealWinnerId = revealTopPlayers.length === 1 ? revealTopPlayers[0].playerId : null;
+                  const revealTiedIds = revealTopPlayers.length > 1 ? revealTopPlayers.map(r => r.playerId) : [];
                   sendToPlayer(existingPlayer, {
                     type: 'meme:reveal',
                     results: revealResults,
@@ -6939,6 +6947,7 @@ Generate exactly ${promptCount} prompts.`
                       .map(p => ({ playerId: p.id, playerName: p.name, playerAvatar: p.avatar, score: p.score }))
                       .sort((a, b) => b.score - a.score),
                     roundWinnerId: revealWinnerId,
+                    tiedPlayerIds: revealTiedIds,
                     myScore: existingPlayer.score,
                     round: room.memeRound,
                     totalRounds: room.memeTotalRounds,
@@ -7002,19 +7011,9 @@ Generate exactly ${promptCount} prompts.`
                     deadline: Date.now() + 45000,
                   });
                 } else if (room.memePhase === 'voting') {
-                  const submissions = Array.from(room.memeSubmissions?.values() || []);
-                  const filteredSubmissions = submissions
-                    .filter(s => s.playerId !== playerId)
-                    .map(s => ({
-                      id: s.playerId,
-                      gifUrl: s.gifUrl,
-                      gifTitle: s.gifTitle,
-                    }));
                   sendToPlayer(player, {
-                    type: 'meme:voting:start',
-                    submissions: filteredSubmissions,
-                    prompt: room.memePrompt,
-                    deadline: Date.now() + 30000,
+                    type: 'meme:phaseSync',
+                    phase: 'waitingForVotes',
                   });
                 }
               }
@@ -7163,7 +7162,7 @@ Generate exactly ${promptCount} prompts.`
             const votingDeadline = Date.now() + 30000;
 
             room.players.forEach((player) => {
-              if (player.ws && player.isConnected && !room.memeSittingOut?.has(player.id)) {
+              if (player.ws && player.isConnected && !room.memeSittingOut?.has(player.id) && room.memeSubmissions?.has(player.id)) {
                 const filteredSubmissions = shuffled
                   .filter(s => s.playerId !== player.id)
                   .map(s => ({
@@ -7179,6 +7178,12 @@ Generate exactly ${promptCount} prompts.`
                   deadline: votingDeadline,
                 });
                 console.log(`[WebSocket] Sent voting to player ${player.name} (${player.id}) with ${filteredSubmissions.length} submissions`);
+              } else if (player.ws && player.isConnected && !room.memeSittingOut?.has(player.id) && !room.memeSubmissions?.has(player.id)) {
+                sendToPlayer(player, {
+                  type: 'meme:phaseSync',
+                  phase: 'waitingForVotes',
+                });
+                console.log(`[WebSocket] Player ${player.name} (${player.id}) didn't submit, sent waiting state`);
               } else {
                 console.log(`[WebSocket] Skipped voting for player ${player.name} (${player.id}): ws=${!!player.ws}, connected=${player.isConnected}, sittingOut=${room.memeSittingOut?.has(player.id)}`);
               }
