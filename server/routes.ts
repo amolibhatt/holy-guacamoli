@@ -3306,7 +3306,7 @@ Be creative! Make facts surprising and fun to guess.`;
   });
 
   const updateMemePromptSchema = z.object({
-    prompt: z.string().min(1, "Prompt is required").max(200, "Prompt must be 200 characters or less"),
+    prompt: z.string().min(1, "Prompt is required").max(200, "Prompt must be 200 characters or less").optional(),
     isActive: z.boolean().optional(),
   });
 
@@ -3341,6 +3341,10 @@ Be creative! Make facts surprising and fun to guess.`;
       }
       if (parsed.data.isActive !== undefined) {
         updateData.isActive = parsed.data.isActive;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
       }
       
       const updated = await storage.updateMemePrompt(id, updateData, userId, role);
@@ -3377,10 +3381,14 @@ Be creative! Make facts surprising and fun to guess.`;
     }
   });
 
+  const VALID_AI_CATEGORIES = ['work', 'dating', 'history', 'pop_culture', 'family', 'school', 'technology', 'existential', 'mixed'] as const;
+
   app.post("/api/memenoharm/prompts/generate", isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const { category = "mixed", count = 10 } = req.body;
+      const { category: rawCategory = "mixed", count = 10 } = req.body;
       const promptCount = Math.min(Math.max(1, Number(count)), 20);
+
+      const category = VALID_AI_CATEGORIES.includes(rawCategory) ? rawCategory : 'mixed';
 
       const groqKey = process.env.GROQ_API_KEY;
       const openaiKey = process.env.OPENAI_API_KEY;
@@ -3400,7 +3408,7 @@ Be creative! Make facts surprising and fun to guess.`;
         mixed: "Mix across all categories: work, dating, history, pop culture, family, school, technology, and existential humor. Make each prompt from a different category for variety."
       };
 
-      const instructions = categoryInstructions[category] || categoryInstructions.mixed;
+      const instructions = categoryInstructions[category];
 
       const useGroq = !!groqKey;
       const apiUrl = useGroq
@@ -3464,7 +3472,10 @@ Generate exactly ${promptCount} prompts.`
       try {
         const parsed = JSON.parse(content);
         prompts = Array.isArray(parsed) ? parsed : (parsed.prompts || parsed.data || Object.values(parsed).flat());
-        prompts = prompts.filter((p: any) => typeof p === 'string' && p.trim().length > 0);
+        prompts = prompts
+          .filter((p: any) => typeof p === 'string' && p.trim().length > 0)
+          .map((p: string) => p.trim())
+          .filter((p: string) => p.length <= 200);
       } catch (parseErr) {
         console.error("Failed to parse AI response content:", content);
         return res.status(500).json({ message: "Failed to parse AI response" });
@@ -3490,23 +3501,33 @@ Generate exactly ${promptCount} prompts.`
   });
 
   const createMemeImageSchema = z.object({
-    imageUrl: z.string().min(1, "Image URL is required"),
-    caption: z.string().optional(),
+    imageUrl: z.string().url("Must be a valid URL").min(1, "Image URL is required"),
+    caption: z.string().max(200, "Caption must be 200 characters or less").optional(),
   });
 
   app.post("/api/memenoharm/images", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const role = req.session.userRole;
       
       const parsed = createMemeImageSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ message: parsed.error.errors[0].message });
       }
+
+      const trimmedUrl = parsed.data.imageUrl.trim();
+      const existingImages = await storage.getMemeImages(userId, role);
+      const duplicate = existingImages.find(
+        img => img.imageUrl.trim().toLowerCase() === trimmedUrl.toLowerCase()
+      );
+      if (duplicate) {
+        return res.status(409).json({ message: "An image with this URL already exists" });
+      }
       
       const image = await storage.createMemeImage({
         userId,
-        imageUrl: parsed.data.imageUrl,
-        caption: parsed.data.caption || null,
+        imageUrl: trimmedUrl,
+        caption: parsed.data.caption?.trim() || null,
         isActive: true,
       });
       
@@ -3518,7 +3539,7 @@ Generate exactly ${promptCount} prompts.`
   });
 
   const updateMemeImageSchema = z.object({
-    imageUrl: z.string().min(1, "Image URL is required").optional(),
+    imageUrl: z.string().url("Must be a valid URL").min(1, "Image URL is required").optional(),
     caption: z.string().max(200, "Caption must be 200 characters or less").optional().nullable(),
     isActive: z.boolean().optional(),
   });
@@ -3538,8 +3559,8 @@ Generate exactly ${promptCount} prompts.`
       }
 
       const updateData: Record<string, any> = {};
-      if (parsed.data.imageUrl !== undefined) updateData.imageUrl = parsed.data.imageUrl;
-      if (parsed.data.caption !== undefined) updateData.caption = parsed.data.caption;
+      if (parsed.data.imageUrl !== undefined) updateData.imageUrl = parsed.data.imageUrl.trim();
+      if (parsed.data.caption !== undefined) updateData.caption = parsed.data.caption?.trim() || null;
       if (parsed.data.isActive !== undefined) updateData.isActive = parsed.data.isActive;
 
       if (Object.keys(updateData).length === 0) {
@@ -3591,31 +3612,35 @@ Generate exactly ${promptCount} prompts.`
       if (!q || q.trim().length === 0) {
         return res.status(400).json({ message: "Search query is required" });
       }
+
+      const trimmedQuery = q.trim().slice(0, 200);
       
       const apiKey = process.env.GIPHY_API_KEY;
       if (!apiKey) {
         return res.status(500).json({ message: "GIPHY API key not configured" });
       }
       
-      const url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(q.trim())}&limit=${limit}&offset=${offset}&rating=pg-13&lang=en`;
+      const url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(trimmedQuery)}&limit=${limit}&offset=${offset}&rating=pg-13&lang=en`;
       const response = await fetch(url);
       
       if (!response.ok) {
         const errorText = await response.text();
         console.error("GIPHY API error:", response.status, errorText);
-        return res.status(response.status).json({ message: "GIPHY search failed" });
+        return res.status(502).json({ message: "GIPHY search failed" });
       }
       
       const data = await response.json();
       
-      const results = data.data.map((gif: any) => ({
-        id: gif.id,
-        title: gif.title,
-        previewUrl: gif.images.fixed_height_small.url,
-        fullUrl: gif.images.original.url,
-        width: parseInt(gif.images.original.width),
-        height: parseInt(gif.images.original.height),
-      }));
+      const results = data.data
+        .filter((gif: any) => gif?.images?.fixed_height_small?.url && gif?.images?.original?.url)
+        .map((gif: any) => ({
+          id: gif.id,
+          title: gif.title || '',
+          previewUrl: gif.images.fixed_height_small.url,
+          fullUrl: gif.images.original.url,
+          width: parseInt(gif.images.original.width) || 0,
+          height: parseInt(gif.images.original.height) || 0,
+        }));
       
       res.json({
         results,
@@ -3642,19 +3667,21 @@ Generate exactly ${promptCount} prompts.`
       const response = await fetch(url);
       
       if (!response.ok) {
-        return res.status(response.status).json({ message: "GIPHY trending failed" });
+        return res.status(502).json({ message: "GIPHY trending failed" });
       }
       
       const data = await response.json();
       
-      const results = data.data.map((gif: any) => ({
-        id: gif.id,
-        title: gif.title,
-        previewUrl: gif.images.fixed_height_small.url,
-        fullUrl: gif.images.original.url,
-        width: parseInt(gif.images.original.width),
-        height: parseInt(gif.images.original.height),
-      }));
+      const results = data.data
+        .filter((gif: any) => gif?.images?.fixed_height_small?.url && gif?.images?.original?.url)
+        .map((gif: any) => ({
+          id: gif.id,
+          title: gif.title || '',
+          previewUrl: gif.images.fixed_height_small.url,
+          fullUrl: gif.images.original.url,
+          width: parseInt(gif.images.original.width) || 0,
+          height: parseInt(gif.images.original.height) || 0,
+        }));
       
       res.json({
         results,
