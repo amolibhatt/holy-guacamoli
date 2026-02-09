@@ -108,6 +108,7 @@ export default function MemeNoHarmAdmin() {
 
   const handleCreatePrompt = (e: React.FormEvent) => {
     e.preventDefault();
+    if (createPromptMutation.isPending) return;
     const trimmed = newPrompt.trim();
     if (trimmed && trimmed.length <= MAX_PROMPT_LENGTH) {
       createPromptMutation.mutate(trimmed);
@@ -180,38 +181,43 @@ export default function MemeNoHarmAdmin() {
     let skipped = 0;
     let failed = 0;
     const failedIndices: number[] = [];
-    for (let idx = 0; idx < aiResults.length; idx++) {
-      if (!aiSelected.has(idx)) continue;
-      const prompt = aiResults[idx];
-      try {
-        const res = await apiRequest("POST", "/api/memenoharm/prompts", { prompt });
-        if (res.ok) {
-          added++;
-        } else {
-          await res.json().catch(() => ({}));
-          if (res.status === 409) skipped++;
-          else { failed++; failedIndices.push(idx); }
+    try {
+      for (let idx = 0; idx < aiResults.length; idx++) {
+        if (!aiSelected.has(idx)) continue;
+        if (!mountedRef.current) return;
+        const prompt = aiResults[idx];
+        try {
+          const res = await apiRequest("POST", "/api/memenoharm/prompts", { prompt });
+          if (res.ok) {
+            added++;
+          } else {
+            await res.json().catch(() => ({}));
+            if (res.status === 409) skipped++;
+            else { failed++; failedIndices.push(idx); }
+          }
+        } catch {
+          failed++;
+          failedIndices.push(idx);
         }
-      } catch {
-        failed++;
-        failedIndices.push(idx);
       }
-    }
-    queryClient.invalidateQueries({ queryKey: ["/api/memenoharm/prompts"] });
-    setAiImporting(false);
-    const parts: string[] = [];
-    if (added > 0) parts.push(`${added} added`);
-    if (skipped > 0) parts.push(`${skipped} duplicates skipped`);
-    if (failed > 0) parts.push(`${failed} failed`);
-    toast({
-      title: parts.join(", "),
-      variant: failed > 0 ? "destructive" : undefined,
-    });
-    if (failed > 0 && added === 0 && skipped === 0) {
-      setAiSelected(new Set(failedIndices));
-    } else {
-      setAiResults([]);
-      setAiSelected(new Set());
+      if (!mountedRef.current) return;
+      queryClient.invalidateQueries({ queryKey: ["/api/memenoharm/prompts"] });
+      const parts: string[] = [];
+      if (added > 0) parts.push(`${added} added`);
+      if (skipped > 0) parts.push(`${skipped} duplicates skipped`);
+      if (failed > 0) parts.push(`${failed} failed`);
+      toast({
+        title: parts.join(", "),
+        variant: failed > 0 ? "destructive" : undefined,
+      });
+      if (failed > 0 && added === 0 && skipped === 0) {
+        setAiSelected(new Set(failedIndices));
+      } else {
+        setAiResults([]);
+        setAiSelected(new Set());
+      }
+    } finally {
+      if (mountedRef.current) setAiImporting(false);
     }
   };
 
@@ -225,37 +231,48 @@ export default function MemeNoHarmAdmin() {
   };
 
   const handleBulkImportPrompts = async () => {
+    if (bulkImporting) return;
     const lines = bulkPrompts.split("\n").map(l => l.trim()).filter(l => l.length > 0 && l.length <= MAX_PROMPT_LENGTH);
     if (lines.length === 0) return;
     setBulkImporting(true);
     let added = 0;
     let skipped = 0;
     let failed = 0;
-    for (const line of lines) {
-      try {
-        const res = await apiRequest("POST", "/api/memenoharm/prompts", { prompt: line });
-        if (res.ok) {
-          added++;
-        } else {
-          if (res.status === 409) skipped++;
-          else failed++;
+    try {
+      for (const line of lines) {
+        if (!mountedRef.current) return;
+        try {
+          const res = await apiRequest("POST", "/api/memenoharm/prompts", { prompt: line });
+          if (res.ok) {
+            added++;
+          } else {
+            await res.json().catch(() => ({}));
+            if (res.status === 409) skipped++;
+            else failed++;
+          }
+        } catch {
+          failed++;
         }
-      } catch {
-        failed++;
       }
+      if (!mountedRef.current) return;
+      queryClient.invalidateQueries({ queryKey: ["/api/memenoharm/prompts"] });
+      const parts: string[] = [];
+      if (added > 0) parts.push(`${added} added`);
+      if (skipped > 0) parts.push(`${skipped} duplicates skipped`);
+      if (failed > 0) parts.push(`${failed} failed`);
+      toast({
+        title: parts.join(", "),
+        variant: failed > 0 ? "destructive" : undefined,
+      });
+      if (failed > 0 && added === 0 && skipped === 0) {
+        // keep textarea content for retry
+      } else {
+        setBulkPrompts("");
+        setShowBulkImport(false);
+      }
+    } finally {
+      if (mountedRef.current) setBulkImporting(false);
     }
-    queryClient.invalidateQueries({ queryKey: ["/api/memenoharm/prompts"] });
-    setBulkImporting(false);
-    const parts: string[] = [];
-    if (added > 0) parts.push(`${added} added`);
-    if (skipped > 0) parts.push(`${skipped} duplicates skipped`);
-    if (failed > 0) parts.push(`${failed} failed`);
-    toast({
-      title: parts.join(", "),
-      variant: failed > 0 ? "destructive" : undefined,
-    });
-    setBulkPrompts("");
-    setShowBulkImport(false);
   };
 
   useEffect(() => {
@@ -451,6 +468,7 @@ export default function MemeNoHarmAdmin() {
                             variant="outline"
                             size="sm"
                             onClick={() => setAiSelected(aiSelected.size === aiResults.length ? new Set() : new Set(aiResults.map((_, i) => i)))}
+                            disabled={aiImporting}
                             data-testid="button-ai-toggle-all"
                           >
                             {aiSelected.size === aiResults.length ? "Deselect All" : "Select All"}
@@ -474,10 +492,12 @@ export default function MemeNoHarmAdmin() {
                         {aiResults.map((prompt, i) => (
                           <div
                             key={i}
-                            className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors ${
+                            className={`flex items-center gap-3 p-2.5 rounded-lg transition-colors ${
+                              aiImporting ? "opacity-60" : "cursor-pointer"
+                            } ${
                               aiSelected.has(i) ? "bg-primary/10 border border-primary/30" : "bg-muted/50"
                             }`}
-                            onClick={() => toggleAiSelect(i)}
+                            onClick={() => !aiImporting && toggleAiSelect(i)}
                             data-testid={`ai-prompt-${i}`}
                           >
                             <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${
