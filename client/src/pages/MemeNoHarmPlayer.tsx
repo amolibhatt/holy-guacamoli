@@ -76,6 +76,7 @@ export default function MemeNoHarmPlayer() {
 
   const wsRef = useRef<WebSocket | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const playerIdRef = useRef<string | null>(playerId);
 
   const fetchTrending = useCallback(async () => {
     try {
@@ -112,7 +113,7 @@ export default function MemeNoHarmPlayer() {
   };
 
   const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return;
 
     setStatus("connecting");
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -126,7 +127,7 @@ export default function MemeNoHarmPlayer() {
         code: roomCode.toUpperCase(),
         name: playerName,
         avatar: selectedAvatar,
-        playerId: playerId || undefined,
+        playerId: playerIdRef.current || undefined,
       }));
     };
 
@@ -139,6 +140,7 @@ export default function MemeNoHarmPlayer() {
           setJoined(true);
           joinedRef.current = true;
           setPlayerId(data.playerId);
+          playerIdRef.current = data.playerId;
           saveSession(roomCode.toUpperCase(), playerName, data.playerId, selectedAvatar);
           if (data.score !== undefined) setMyScore(data.score);
           setPhase("waiting");
@@ -200,6 +202,7 @@ export default function MemeNoHarmPlayer() {
           } else if (data.phase === 'voting' && data.submissions) {
             setVotingSubmissions(data.submissions);
             setPrompt(data.prompt || '');
+            votedRef.current = false;
             setPhase("voting");
           } else if (data.prompt && data.round > 0) {
             setPrompt(data.prompt);
@@ -208,6 +211,8 @@ export default function MemeNoHarmPlayer() {
             setSelectedGif(null);
             setSearchQuery("");
             setSearchResults([]);
+            submittedRef.current = false;
+            votedRef.current = false;
             setPhase("searching");
             fetchTrending();
           }
@@ -225,8 +230,10 @@ export default function MemeNoHarmPlayer() {
 
         case "meme:phaseSync":
           if (data.phase === 'submitted') {
+            submittedRef.current = true;
             setPhase("submitted");
           } else if (data.phase === 'voted') {
+            votedRef.current = true;
             setPhase("voted");
           }
           break;
@@ -260,7 +267,7 @@ export default function MemeNoHarmPlayer() {
     ws.onerror = () => {
       setStatus("error");
     };
-  }, [roomCode, playerName, selectedAvatar, playerId, fetchTrending, toast]);
+  }, [roomCode, playerName, selectedAvatar, fetchTrending, toast]);
 
   useEffect(() => {
     return () => {
@@ -486,21 +493,31 @@ export default function MemeNoHarmPlayer() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 pb-4">
-          <div className="space-y-3 max-w-sm mx-auto">
-            {votingSubmissions.map((sub) => (
-              <motion.button
-                key={sub.id}
-                onClick={() => submitVote(sub.id)}
-                whileTap={{ scale: 0.97 }}
-                className="w-full rounded-xl overflow-hidden bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-green-400"
-                data-testid={`button-vote-${sub.id}`}
-              >
-                <div className="aspect-video">
-                  <img src={sub.gifUrl} alt={sub.gifTitle} className="w-full h-full object-cover" loading="lazy" />
-                </div>
-              </motion.button>
-            ))}
-          </div>
+          {votingSubmissions.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center py-12">
+              <div className="text-center">
+                <Star className="w-10 h-10 text-green-400/40 mx-auto mb-3" />
+                <p className="text-white/50 text-sm">No other GIFs to vote on this round.</p>
+                <p className="text-white/30 text-xs mt-1">Waiting for results...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3 max-w-sm mx-auto">
+              {votingSubmissions.map((sub) => (
+                <motion.button
+                  key={sub.id}
+                  onClick={() => submitVote(sub.id)}
+                  whileTap={{ scale: 0.97 }}
+                  className="w-full rounded-xl overflow-hidden bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-green-400"
+                  data-testid={`button-vote-${sub.id}`}
+                >
+                  <div className="aspect-video">
+                    <img src={sub.gifUrl} alt={sub.gifTitle} className="w-full h-full object-cover" loading="lazy" />
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
