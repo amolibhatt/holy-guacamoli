@@ -217,12 +217,10 @@ export default function SequencePlayer() {
           setCorrectOrder(data.correctOrder);
           setPhase("revealing");
           setQuestionStartTime(null);
-          const currentSeq = selectedSequenceRef.current;
-          const isAnswerCorrect = JSON.stringify(currentSeq) === JSON.stringify(data.correctOrder);
+          const isAnswerCorrect = data.rank != null;
           setIsCorrect(isAnswerCorrect);
           if (data.rank) setRank(data.rank);
           if (data.leaderboard) setLeaderboard(data.leaderboard);
-          if (data.yourScore !== undefined) setMyScore(data.yourScore);
           if (data.myScore !== undefined) setMyScore(data.myScore);
           if (data.winner) setWinner(data.winner);
           if (isAnswerCorrect && data.rank === 1) {
@@ -278,6 +276,8 @@ export default function SequencePlayer() {
           break;
 
         case "sequence:phaseSync":
+          if (data.questionIndex) setCurrentQuestionIndex(data.questionIndex);
+          if (data.totalQuestions) setTotalQuestions(data.totalQuestions);
           if (data.phase === 'playing' && data.question) {
             setCurrentQuestion(data.question);
             setSelectedSequence([]);
@@ -297,7 +297,7 @@ export default function SequencePlayer() {
             setRank(null);
           } else if (data.phase === 'revealing') {
             if (data.correctOrder) setCorrectOrder(data.correctOrder);
-            if (data.isCorrect !== undefined) setIsCorrect(data.isCorrect);
+            setIsCorrect(data.rank != null);
             if (data.rank !== undefined) setRank(data.rank);
             if (data.leaderboard) setLeaderboard(data.leaderboard);
             if (data.myScore !== undefined) setMyScore(data.myScore);
@@ -334,6 +334,9 @@ export default function SequencePlayer() {
           setIsCorrect(null);
           setRank(null);
           setWinner(null);
+          setCurrentQuestionIndex(1);
+          setTotalQuestions(1);
+          setQuestionStartTime(null);
           break;
           
         case "sequence:reset":
@@ -345,6 +348,7 @@ export default function SequencePlayer() {
           setIsCorrect(null);
           setRank(null);
           setWinner(null);
+          setQuestionStartTime(null);
           break;
           
         case "error":
@@ -488,6 +492,10 @@ export default function SequencePlayer() {
     setIsCorrect(null);
     setRank(null);
     setWinner(null);
+    setShowLeaderboard(false);
+    setCurrentQuestionIndex(1);
+    setTotalQuestions(1);
+    setQuestionStartTime(null);
   };
 
   const handleManualReconnect = () => {
