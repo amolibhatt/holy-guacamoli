@@ -23,6 +23,7 @@ interface Player {
   submitted: boolean;
   voted: boolean;
   votedForPlayerId?: string;
+  sittingOut: boolean;
 }
 
 interface Submission {
@@ -94,6 +95,7 @@ export default function MemeNoHarmHost() {
       hand: playerImages,
       submitted: false,
       voted: false,
+      sittingOut: false,
     }]);
   };
 
@@ -104,9 +106,17 @@ export default function MemeNoHarmHost() {
     setPhase("selecting");
   };
 
+  const sitOutPlayer = (playerId: string) => {
+    setPlayers(prev => prev.map(p => 
+      p.id === playerId ? { ...p, sittingOut: true, submitted: true, voted: true } : p
+    ));
+  };
+
   const simulateSubmissions = () => {
-    // Each player picks a random meme from their hand
-    const subs: Submission[] = players.map(player => {
+    // Each active (non-sitting-out) player picks a random meme from their hand
+    const activePlayers = players.filter(p => !p.sittingOut);
+    if (activePlayers.length < 2) return;
+    const subs: Submission[] = activePlayers.map(player => {
       const randomIndex = Math.floor(Math.random() * player.hand.length);
       const submittedImageId = player.hand[randomIndex];
       const image = images.find(i => i.id === submittedImageId);
@@ -156,9 +166,10 @@ export default function MemeNoHarmHost() {
   };
 
   const simulateVotes = () => {
-    // Simulate each player voting for a random submission (not their own)
+    // Simulate each active (non-sitting-out) player voting for a random submission (not their own)
     const playerVotes: Record<string, string> = {};
-    players.forEach(player => {
+    const activePlayers = players.filter(p => !p.sittingOut);
+    activePlayers.forEach(player => {
       const otherSubs = submissions.filter(s => s.playerId !== player.id);
       if (otherSubs.length > 0) {
         const votedFor = otherSubs[Math.floor(Math.random() * otherSubs.length)];
@@ -210,7 +221,7 @@ export default function MemeNoHarmHost() {
     setCurrentRound(prev => prev + 1);
     setCurrentPrompt(shuffledPrompts[currentRound] || null);
     setSubmissions([]);
-    setPlayers(prev => prev.map(p => ({ ...p, submitted: false, voted: false })));
+    setPlayers(prev => prev.map(p => ({ ...p, submitted: false, voted: false, sittingOut: false })));
     setPhase("selecting");
   };
 
@@ -382,6 +393,7 @@ export default function MemeNoHarmHost() {
   }
 
   if (phase === "voting") {
+    const activeVoters = players.filter(p => !p.sittingOut);
     return (
       <div className="min-h-screen bg-[#0d0d12] text-white" data-testid="page-memenoharm-voting">
         <div className="max-w-4xl mx-auto px-4 py-8">
@@ -403,9 +415,44 @@ export default function MemeNoHarmHost() {
             ))}
           </div>
 
-          <div className="text-center text-white/40 mb-6">
-            Players are voting on their phones...
-          </div>
+          <Card className="bg-white/5 border-white/10 mb-6">
+            <CardContent className="pt-6">
+              <div className="text-center text-white/60 mb-4">
+                Players are voting on their phones...
+              </div>
+              <div className="space-y-2">
+                {players.map((player) => (
+                  <div
+                    key={player.id}
+                    className={`flex items-center justify-between gap-2 px-4 py-2 rounded-lg ${
+                      player.sittingOut
+                        ? 'bg-white/5 text-white/30'
+                        : player.voted 
+                          ? 'bg-green-500/20 text-green-400' 
+                          : 'bg-white/10 text-white/50'
+                    }`}
+                  >
+                    <span className="font-medium">
+                      {player.name} {player.voted && !player.sittingOut && "- Voted"} {player.sittingOut && "- Sitting Out"}
+                    </span>
+                    {!player.voted && !player.sittingOut && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => sitOutPlayer(player.id)}
+                        className="text-orange-400/70"
+                        data-testid={`button-sit-out-voting-${player.id}`}
+                        aria-label={`Sit out ${player.name}`}
+                      >
+                        <Ban className="w-4 h-4 mr-1" />
+                        Sit Out
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="text-center">
             <Button onClick={simulateVotes} size="lg" data-testid="button-simulate-votes">
@@ -461,7 +508,8 @@ export default function MemeNoHarmHost() {
   }
 
   if (phase === "selecting") {
-    const allSubmitted = players.every(p => p.submitted);
+    const activePlayers = players.filter(p => !p.sittingOut);
+    const needsMorePlayers = activePlayers.length < 2;
     return (
       <div className="min-h-screen bg-[#0d0d12] text-white" data-testid="page-memenoharm-selecting">
         <div className="max-w-2xl mx-auto px-4 py-8">
@@ -475,19 +523,41 @@ export default function MemeNoHarmHost() {
           <Card className="bg-white/5 border-white/10 mb-6">
             <CardContent className="pt-6">
               <div className="text-center text-white/60 mb-4">
-                Players are selecting their memes...
+                Waiting for submissions ({activePlayers.filter(p => p.submitted).length}/{activePlayers.length} ready)
               </div>
-              <div className="flex flex-wrap gap-2 justify-center">
+              {activePlayers.length < 2 && (
+                <div className="text-center text-orange-400 text-sm mb-4">
+                  Need at least 2 active players to continue the round.
+                </div>
+              )}
+              <div className="space-y-2">
                 {players.map((player) => (
                   <div
                     key={player.id}
-                    className={`px-3 py-1 rounded-full text-sm ${
-                      player.submitted 
-                        ? 'bg-green-500/20 text-green-400' 
-                        : 'bg-white/10 text-white/50'
+                    className={`flex items-center justify-between gap-2 px-4 py-2 rounded-lg ${
+                      player.sittingOut
+                        ? 'bg-white/5 text-white/30'
+                        : player.submitted 
+                          ? 'bg-green-500/20 text-green-400' 
+                          : 'bg-white/10 text-white/50'
                     }`}
                   >
-                    {player.name} {player.submitted && "✓"}
+                    <span className="font-medium">
+                      {player.name} {player.submitted && !player.sittingOut && "- Submitted"} {player.sittingOut && "- Sitting Out"}
+                    </span>
+                    {!player.submitted && !player.sittingOut && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => sitOutPlayer(player.id)}
+                        className="text-orange-400/70"
+                        data-testid={`button-sit-out-selecting-${player.id}`}
+                        aria-label={`Sit out ${player.name}`}
+                      >
+                        <Ban className="w-4 h-4 mr-1" />
+                        Sit Out
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -495,7 +565,7 @@ export default function MemeNoHarmHost() {
           </Card>
 
           <div className="text-center space-x-4">
-            <Button onClick={simulateSubmissions} size="lg" data-testid="button-simulate-submissions">
+            <Button onClick={simulateSubmissions} size="lg" disabled={needsMorePlayers} data-testid="button-simulate-submissions">
               Simulate Submissions (Demo)
             </Button>
           </div>
