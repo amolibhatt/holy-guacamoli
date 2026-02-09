@@ -6219,6 +6219,31 @@ Generate exactly ${promptCount} prompts.`
             break;
           }
 
+          case 'meme:host:unsitOut': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.memeSittingOut?.delete(data.playerId);
+
+            const player = room.players.get(data.playerId);
+            if (player?.ws && player.isConnected) {
+              sendToPlayer(player, {
+                type: 'meme:unsittingOut',
+                prompt: room.memePrompt || null,
+                round: room.memeRound || 0,
+                totalRounds: room.memeTotalRounds || 0,
+              });
+            }
+
+            sendToHost(room, {
+              type: 'meme:player:unsatOut',
+              playerId: data.playerId,
+            });
+            break;
+          }
+
           case 'meme:host:endGame': {
             const mapping = wsToRoom.get(ws);
             if (!mapping || !mapping.isHost) break;

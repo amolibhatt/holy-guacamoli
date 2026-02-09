@@ -173,6 +173,20 @@ export default function MemeNoHarmPlayer() {
           setPhase("waiting");
           break;
 
+        case "meme:unsittingOut":
+          toast({ title: "You're back in!", description: "The host has brought you back into the game." });
+          if (data.prompt && data.round > 0) {
+            setPrompt(data.prompt);
+            setRound(data.round);
+            setTotalRounds(data.totalRounds);
+            setSelectedGif(null);
+            setSearchQuery("");
+            setSearchResults([]);
+            setPhase("searching");
+            fetchTrending();
+          }
+          break;
+
         case "meme:gameComplete":
           setMyScore(data.myScore);
           setLeaderboard(data.leaderboard);

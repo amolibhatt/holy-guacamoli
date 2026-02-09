@@ -164,6 +164,12 @@ export default function MemeNoHarmHost() {
           ));
           break;
 
+        case "meme:player:unsatOut":
+          setPlayers(prev => prev.map(p =>
+            p.id === data.playerId ? { ...p, sittingOut: false } : p
+          ));
+          break;
+
         case "meme:gameComplete":
           setLeaderboard(data.leaderboard);
           setPhase("finished");
@@ -263,6 +269,10 @@ export default function MemeNoHarmHost() {
 
   const sitOutPlayer = (playerId: string) => {
     sendWs({ type: "meme:host:sitOut", playerId });
+  };
+
+  const unsitOutPlayer = (playerId: string) => {
+    sendWs({ type: "meme:host:unsitOut", playerId });
   };
 
   const activePlayers = players.filter(p => !p.sittingOut);
@@ -529,7 +539,19 @@ export default function MemeNoHarmHost() {
                     <span className="font-medium">
                       {player.name} {player.submitted && !player.sittingOut && "- Submitted"} {player.sittingOut && "- Sitting Out"}
                     </span>
-                    {!player.submitted && !player.sittingOut && (
+                    {player.sittingOut ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => unsitOutPlayer(player.id)}
+                        className="text-green-400/70"
+                        data-testid={`button-bring-back-${player.id}`}
+                        aria-label={`Bring back ${player.name}`}
+                      >
+                        <Users className="w-4 h-4 mr-1" />
+                        Bring Back
+                      </Button>
+                    ) : !player.submitted ? (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -541,7 +563,7 @@ export default function MemeNoHarmHost() {
                         <Ban className="w-4 h-4 mr-1" />
                         Sit Out
                       </Button>
-                    )}
+                    ) : null}
                   </div>
                 ))}
               </div>
