@@ -1327,8 +1327,6 @@ export class DatabaseStorage implements IStorage {
     
     // Clean up game-specific content owned by user
     await db.delete(timeWarpQuestions).where(eq(timeWarpQuestions.userId, userId));
-    await db.delete(memeImages).where(eq(memeImages.userId, userId));
-    await db.delete(memePrompts).where(eq(memePrompts.userId, userId));
     
     // Clean up Sequence sessions hosted by user (cascade: submissions → sessions)
     const userSeqSessions = await db.select({ id: sequenceSessions.id }).from(sequenceSessions).where(eq(sequenceSessions.hostId, userId));
@@ -1361,6 +1359,32 @@ export class DatabaseStorage implements IStorage {
       await db.delete(memePlayers).where(eq(memePlayers.sessionId, ms.id));
     }
     await db.delete(memeSessions).where(eq(memeSessions.hostId, userId));
+    
+    // Clean up cross-user references to this user's prompts/images in OTHER users' sessions
+    const userPromptIds = await db.select({ id: memePrompts.id }).from(memePrompts).where(eq(memePrompts.userId, userId));
+    for (const p of userPromptIds) {
+      const roundsUsingPrompt = await db.select({ id: memeRounds.id }).from(memeRounds).where(eq(memeRounds.promptId, p.id));
+      for (const r of roundsUsingPrompt) {
+        await db.delete(memeVotes).where(eq(memeVotes.roundId, r.id));
+        await db.delete(memeSubmissions).where(eq(memeSubmissions.roundId, r.id));
+      }
+      if (roundsUsingPrompt.length > 0) {
+        await db.delete(memeRounds).where(eq(memeRounds.promptId, p.id));
+      }
+    }
+    const userImageIds = await db.select({ id: memeImages.id }).from(memeImages).where(eq(memeImages.userId, userId));
+    for (const img of userImageIds) {
+      const subsUsingImage = await db.select({ id: memeSubmissions.id }).from(memeSubmissions).where(eq(memeSubmissions.imageId, img.id));
+      if (subsUsingImage.length > 0) {
+        const subIds = subsUsingImage.map(s => s.id);
+        await db.delete(memeVotes).where(inArray(memeVotes.submissionId, subIds));
+        await db.delete(memeSubmissions).where(eq(memeSubmissions.imageId, img.id));
+      }
+    }
+    
+    // Now safe to delete prompts/images after all FK references are cleaned up
+    await db.delete(memeImages).where(eq(memeImages.userId, userId));
+    await db.delete(memePrompts).where(eq(memePrompts.userId, userId));
     
     // Clean up Double Dip pairs where user is involved (cascade: stakes → favorites → milestones → reactions → answers → daily sets → pairs)
     const userPairs = await db.select({ id: doubleDipPairs.id }).from(doubleDipPairs)

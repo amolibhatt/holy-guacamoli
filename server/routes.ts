@@ -3299,7 +3299,10 @@ Be creative! Make facts surprising and fun to guess.`;
       });
       
       res.status(201).json(prompt);
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.code === '23505' || err?.constraint?.includes('meme_prompts')) {
+        return res.status(409).json({ message: "This prompt already exists" });
+      }
       console.error("Error creating Meme prompt:", err);
       res.status(500).json({ message: "Failed to create prompt" });
     }
@@ -3354,7 +3357,10 @@ Be creative! Make facts surprising and fun to guess.`;
       }
       
       res.json(updated);
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.code === '23505' || err?.constraint?.includes('meme_prompts')) {
+        return res.status(409).json({ message: "A prompt with this text already exists" });
+      }
       console.error("Error updating Meme prompt:", err);
       res.status(500).json({ message: "Failed to update prompt" });
     }
@@ -3493,7 +3499,13 @@ Generate exactly ${promptCount} prompts.`
 
       const allPromptTexts = await storage.getAllMemePromptTexts();
       const existingSet = new Set(allPromptTexts.map(p => p.prompt.toLowerCase().trim()));
-      const dedupedPrompts = prompts.filter(p => !existingSet.has(p.toLowerCase()));
+      const seenInBatch = new Set<string>();
+      const dedupedPrompts = prompts.filter(p => {
+        const normalized = p.toLowerCase().trim();
+        if (existingSet.has(normalized) || seenInBatch.has(normalized)) return false;
+        seenInBatch.add(normalized);
+        return true;
+      });
 
       res.json({ prompts: dedupedPrompts, totalGenerated: prompts.length, duplicatesRemoved: prompts.length - dedupedPrompts.length });
     } catch (err) {
@@ -3549,7 +3561,10 @@ Generate exactly ${promptCount} prompts.`
       });
       
       res.status(201).json(image);
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.code === '23505' || err?.constraint?.includes('meme_images')) {
+        return res.status(409).json({ message: "An image with this URL already exists" });
+      }
       console.error("Error creating Meme image:", err);
       res.status(500).json({ message: "Failed to create image" });
     }
@@ -3601,7 +3616,10 @@ Generate exactly ${promptCount} prompts.`
       }
       
       res.json(updated);
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.code === '23505' || err?.constraint?.includes('meme_images')) {
+        return res.status(409).json({ message: "An image with this URL already exists" });
+      }
       console.error("Error updating Meme image:", err);
       res.status(500).json({ message: "Failed to update image" });
     }

@@ -339,7 +339,7 @@ export const memeRounds = pgTable("meme_rounds", {
   sessionId: integer("session_id").notNull().references(() => memeSessions.id),
   roundNumber: integer("round_number").notNull(),
   promptId: integer("prompt_id").notNull().references(() => memePrompts.id),
-  status: text("status").notNull().$type<"selecting" | "voting" | "results">().default("selecting"),
+  status: text("status").notNull().$type<"selecting" | "voting" | "reveal">().default("selecting"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   index("idx_meme_rounds_session").on(table.sessionId),
@@ -360,7 +360,7 @@ export const memeSubmissions = pgTable("meme_submissions", {
 export const memeVotes = pgTable("meme_votes", {
   id: serial("id").primaryKey(),
   roundId: integer("round_id").notNull().references(() => memeRounds.id),
-  voterId: integer("voter_id").notNull(),
+  voterId: integer("voter_id").notNull().references(() => memePlayers.id),
   submissionId: integer("submission_id").notNull().references(() => memeSubmissions.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
