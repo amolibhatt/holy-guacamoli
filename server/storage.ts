@@ -322,6 +322,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCategory(id: number): Promise<boolean> {
+    // Clean up sessionCompletedQuestions referencing this category's questions
+    const categoryQuestions = await db.select({ id: questions.id }).from(questions).where(eq(questions.categoryId, id));
+    if (categoryQuestions.length > 0) {
+      const questionIds = categoryQuestions.map(q => q.id);
+      await db.delete(sessionCompletedQuestions).where(inArray(sessionCompletedQuestions.questionId, questionIds));
+    }
     // Delete questions that belong to this category
     await db.delete(questions).where(eq(questions.categoryId, id));
     // Remove board-category links
@@ -426,6 +432,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteQuestion(id: number): Promise<boolean> {
+    await db.delete(sessionCompletedQuestions).where(eq(sessionCompletedQuestions.questionId, id));
     const result = await db.delete(questions).where(eq(questions.id, id)).returning();
     return result.length > 0;
   }

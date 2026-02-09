@@ -739,7 +739,7 @@ export async function registerRoutes(
         }
         updateData.name = name.trim();
       }
-      if (description !== undefined) updateData.description = typeof description === "string" ? (description.trim() || null) : description;
+      if (description !== undefined) updateData.description = typeof description === "string" ? description.trim() : "";
       if (rule !== undefined) updateData.rule = rule;
       if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
       if (isActive !== undefined) updateData.isActive = isActive;
@@ -4117,8 +4117,8 @@ Generate exactly ${promptCount} prompts.`
         }
       }
       
-      // Auto-assign color based on user's own boards
-      const userBoards = await storage.getBoards(userId, role);
+      // Auto-assign color based on user's own boards (always scope to userId, not role)
+      const userBoards = await storage.getBoards(userId);
       const colorIndex = userBoards.length % BOARD_COLORS.length;
       
       const board = await storage.createBoard({
@@ -4570,7 +4570,7 @@ Generate exactly ${promptCount} prompts.`
   });
   
   // Download template for import (Excel format)
-  app.get("/api/blitzgrid/template", async (req, res) => {
+  app.get("/api/blitzgrid/template", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const rows = [
         ["Grid Name", "Grid Description", "Category Name", "Category Description", "Points", "Question", "Answer", "Options", "Image URL", "Audio URL", "Video URL", "Answer Image URL", "Answer Audio URL", "Answer Video URL"],
@@ -4646,6 +4646,7 @@ Generate exactly ${promptCount} prompts.`
       
       // Parse rows into grid structure (skip header row)
       const gridsMap = new Map<string, { description: string; categories: Map<string, { description: string; questions: any[] }> }>();
+      const validationErrors: string[] = [];
       
       for (let i = 1; i < data.length; i++) {
         const row = data[i];
@@ -4656,7 +4657,14 @@ Generate exactly ${promptCount} prompts.`
         if (!gridName || !catName || points == null || points === "" || !question || !answer) continue;
         
         const numPoints = Number(points);
-        if (!Number.isFinite(numPoints) || !Number.isInteger(numPoints)) continue;
+        if (!Number.isFinite(numPoints) || !Number.isInteger(numPoints)) {
+          validationErrors.push(`Row ${i + 1}: Invalid points value "${points}" (must be a number)`);
+          continue;
+        }
+        if (!REQUIRED_POINTS.includes(numPoints)) {
+          validationErrors.push(`Row ${i + 1}: Invalid points value ${numPoints} (must be 10, 20, 30, 40, or 50)`);
+          continue;
+        }
         
         const gridKey = String(gridName).trim();
         const catKey = String(catName).trim();
@@ -4685,6 +4693,10 @@ Generate exactly ${promptCount} prompts.`
         });
       }
       
+      if (validationErrors.length > 0) {
+        return res.status(400).json({ message: `Invalid point values found:\n${validationErrors.join("\n")}`, errors: validationErrors });
+      }
+      
       const results = { imported: 0, errors: [] as string[] };
       
       for (const [gridName, gridData] of Array.from(gridsMap.entries())) {
@@ -4710,7 +4722,7 @@ Generate exactly ${promptCount} prompts.`
           
           if (!allValid) continue;
           
-          const userBoards = await storage.getBoards(userId, role);
+          const userBoards = await storage.getBoards(userId);
           const colorIndex = userBoards.length % BOARD_COLORS.length;
           
           const board = await storage.createBoard({
