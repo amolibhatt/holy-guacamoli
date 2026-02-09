@@ -1,11 +1,9 @@
 # Holy GuacAmoli!
 
 ## Overview
-
-Holy GuacAmoli! is a multi-game party platform featuring BlitzGrid (5x5 trivia grid game) and Sort Circuit (multiplayer ordering game). Built for Amoli's birthday. It's built as a full-stack TypeScript application with a React frontend and Express backend.
+Holy GuacAmoli! is a multi-game party platform built for Amoli's birthday, featuring BlitzGrid (a 5x5 trivia grid game) and Sort Circuit (a multiplayer ordering game). The project aims to provide engaging, real-time interactive game experiences with a focus on a unique pastel aesthetic and host-controlled gameplay. It is a full-stack TypeScript application with a React frontend and an Express.js backend. The platform also includes a guest-first player profile system with personality traits and badges, and a new "Meme No Harm" game integrating live GIPHY search.
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
 
 ### Design Preferences
@@ -19,10 +17,10 @@ Preferred communication style: Simple, everyday language.
 ### Frontend Architecture
 - **Framework**: React 18 with TypeScript
 - **Routing**: Wouter for lightweight client-side routing
-- **State Management**: TanStack React Query for server state, React Context for local state (ScoreContext for game state)
+- **State Management**: TanStack React Query for server state, React Context for local state
 - **Styling**: Tailwind CSS with shadcn/ui component library (New York style)
 - **Animations**: Framer Motion for smooth transitions and interactions
-- **Build Tool**: Vite with path aliases (@/ for client/src, @shared for shared)
+- **Build Tool**: Vite with path aliases
 
 ### Backend Architecture
 - **Framework**: Express.js with TypeScript
@@ -32,127 +30,44 @@ Preferred communication style: Simple, everyday language.
 - **Storage Layer**: DatabaseStorage class implementing IStorage interface for data access
 
 ### Data Model
-- **Boards**: id, name, description, pointValues (fixed at [10,20,30,40,50])
-- **Categories**: id, name, description, imageUrl
-- **BoardCategories**: id, boardId, categoryId (junction table linking categories to boards, max 5 per board)
-- **Questions**: id, categoryId, question, options (JSONB array), correctAnswer, points (questions belong directly to categories, exactly 5 per category with unique points {10,20,30,40,50})
-- Relations defined with Drizzle ORM relations
+- **Core Entities**: Boards, Categories, Questions (with options, correctAnswer, points).
+- **Relationships**: Boards link up to 5 categories; each category contains exactly 5 questions with unique point values {10, 20, 30, 40, 50}.
+- **Game-specific Models**: Player profiles, game stats, badges.
 
 ### Key Design Decisions
-1. **Shared Types**: Schema and route definitions in `/shared` folder are used by both frontend and backend, ensuring type safety across the stack
-2. **Host Mode**: The app is designed for a host to control the game - questions reveal answers to the host, who then awards/deducts points to contestants
-3. **Contestant System**: Managed via React Context (ScoreContext) with add/remove contestants, award/deduct points, and track completed questions
-4. **Simplified Category Model**: 1 Category = 1 set of 5 Questions. Categories have exactly 5 questions with unique point values {10,20,30,40,50}. Questions belong directly to categories via categoryId.
-5. **Simple Flat Board List**: Boards are displayed in a simple flat list without grouping. Each board can link up to 5 categories.
-6. **Multiplayer Game System**: WebSocket-based real-time multiplayer for Sort Circuit where players join via room codes.
-7. **Animations**: 3D flip card animations for question cells, particle effects for milestones and category completion
-8. **Portable Email/Password Auth**: Host authentication uses bcrypt for password hashing and express-session with PostgreSQL store. No external OAuth dependencies - works on any platform.
-9. **BlitzGrid Structure**: Grid = Board (up to 5 categories), Category = 5 Questions (unique point tiers 10/20/30/40/50). A Category is "Active" when it has all 5 point tiers filled. A Grid is "Active" when it has 5 Active Categories. Uses theme="blitzgrid" to distinguish from other boards.
-
-### Recent Changes (January 2026)
-- **Simplified Architecture**: Questions now belong directly to categories via categoryId (not boardCategoryId). Each category has exactly 5 questions with unique points {10,20,30,40,50}.
-- **Flat Board List**: Removed Shuffle Play, Starter Packs, and My Boards grouping. All boards display in a simple flat list.
-- **Strict Category Validation**: Categories require exactly 5 questions with unique points {10,20,30,40,50}. Point collisions are rejected with clear error messages.
-- **Removed Source Groups**: Source Group feature (A-E) was removed to simplify the admin interface.
-- **Enhanced Mobile Buzzer**: Larger buzzer button (320px), double pulsing rings, improved touch responsiveness with touch-manipulation CSS.
-- **React Error Boundary**: App-level error boundary catches render crashes and displays recovery UI with reload/try-again options
-- **Global Error Handlers**: Server-side uncaughtException/unhandledRejection handlers with graceful shutdown
-- **WebSocket Error Handling**: Added error handlers to prevent connection crashes from taking down the server
-- **Unified Party Scoreboard**: Scores persist to the database (gameSessions/sessionPlayers tables) so scores survive disconnects and reconnections. Players can rejoin and see their accumulated scores instantly.
-- **Sort Circuit Bulk Import**: Pipe-delimited format for bulk question upload with validation
-- **Onboarding Tooltips**: Step-by-step tooltips guide first-time users with analytics tracking (started/completed/skipped)
-- **AI Response Caching**: 1-hour TTL cache with MD5 keys reduces API calls, 100-entry max
-- **Code Splitting**: React.lazy for faster initial load
-- **Improved Error Messages**: User-friendly copy like "Couldn't save - check your connection"
-- **Login Rate Limiting**: 5 failed attempts triggers 15-minute lockout
-- **Score Undo Feature**: Hosts can undo last 20 score changes with previousScore tracking for accurate reversals
-- **Bulk Import Validation**: Enhanced with length limits, board-specific point values, max 50 items per import
-- **Analytics Improvements**: Server-side validation, 10% log sampling, event batching
-- **AI Fallback**: Rate-limit detection, empty answer handling with 30% scoring
-- **Buzzkill, Double Dip, and Sync or Sink Removed**: Removed these game modes to focus on core games (BlitzGrid, Sort Circuit, PsyOp)
-- **Drag-and-Drop Category Reordering**: Categories can be reordered within a board by dragging category tabs
-- **Auto-Save Drafts**: Work-in-progress questions are saved to localStorage per category, cleared on successful save or when all fields are empty
-- **Improved Admin Navigation**: Hierarchical sidebar shows categories nested under boards (expandable tree), breadcrumb navigation shows current location (Board > Category), clearer completion indicators at each level
-- **Enhanced Admin UX**: Collapsible sidebar with tooltip hover, visual progress bars (color-coded: amber/blue/green), quick-add inline question form, progress dashboard with next actions, improved empty states with action buttons
-- **Super Admin Starter Packs**: Super admin can promote any complete grid to "starter pack" status via toggle in SuperAdmin > All Grids tab. Starter packs are automatically copied to new users on signup, giving them ready-to-play content. Uses isStarterPack boolean on boards table.
-- **Fun Interactive Themes**: 9 playful themes (Sports, Birthday, Beach, Office, Dogs, Cats, Space, Music, Nature) each with animated floating elements - trophies, balloons, waves, paw prints, stars, music notes, trees, etc. Theme elements animate continuously during gameplay.
-- **Excel Import/Export**: BlitzGrid grids can be exported to and imported from Excel (.xlsx) files. Template includes sample data and instructions sheet. Row-based format with columns: Grid Name, Grid Description, Category Name, Category Description, Points, Question, Answer, Options (pipe-delimited), Image URL, Audio URL, Video URL.
-- **Simplified Super Admin Dashboard**: Single-view design focused on actionable tasks:
-  - Platform Status header with Live Pulse stats (Active Now, Games Today, Players Today)
-  - Needs Review section for flagged content moderation (only shows when needed)
-  - Collapsible Games section with status toggles and starter pack controls
-  - Collapsible Users section with role management and expandable details
-  - Admin Tools for announcements and data export
-  - Removed drill-down overlays, enterprise analytics, and vanity metrics to focus on what admins DO
-- **Three-Tier Role System**: User (players who can only play games), Admin (can create questions and host games), Super Admin (platform owner with full access). New signups default to User role.
-- **Admin Announcements**: Broadcast system for super admins to send platform-wide announcements with title, message, type (info/warning/success), and optional expiration.
-- **Content Moderation**: Boards can be flagged (moderationStatus), featured (isFeatured), with tracking of moderatedBy and moderatedAt timestamps.
-- **User Activity Tracking**: lastLoginAt field on users table, activity API showing games hosted and recent sessions.
-- **Super Admin Sessions Tab**: Dedicated tab showing all game sessions across the platform with host info, player lists, scores, and winners. Relative timestamps ("2h ago") for intuitive display.
-- **Expandable User Details**: Users tab features expandable rows with last login, grids created, games hosted count, and detailed session history with player names, scores, and winners. Note: Players join games anonymously via QR codes without accounts, so only hosted games (not played games) can be tracked per registered user.
-- **Enhanced Games Tab**: Super admin can see all games with enable/disable status controls. Expanded game views show all questions with creator info for Sort Circuit and PsyOp, and all grids with owner info for BlitzGrid. Starter pack toggles available for all game types.
-- **Per-Game Starter Packs**: isStarterPack field added to sequence_questions and psyop_questions tables. Super admins can mark individual questions as starter pack content that gets copied to new users.
-
-### Known Security Notes
-- **Express v4 Vulnerabilities**: npm audit shows 3 HIGH severity vulnerabilities in express/qs/body-parser. Express v5 upgrade was attempted but reverted due to breaking changes in path-to-regexp (route syntax like `:param(*)` no longer works). Will revisit when upstream compatibility improves.
-
-### Player Profile System (February 2026)
-- **Guest-First Gameplay**: Server issues guestIds via session; players start playing without accounts
-- **Profile Conversion**: Guests can convert to authenticated users, merging game history
-- **Personality Traits**: 17 traits across 5 games calculated from gameplay behavior (brain_trust, speed_demon, master_manipulator, comedy_genius, etc.)
-- **Badge System**: 16 badge types (first_blood, trivia_titan, speed_demon, meme_lord, etc.) awarded based on game stats
-- **Schema**: playerProfiles, playerGameStats, playerBadges tables in shared/models/auth.ts
-- **Service**: server/services/playerProfile.ts handles profile CRUD, stats, badges, personality calculation
-- **Routes**: server/routes/playerProfile.ts (/api/player/guest, /api/player/me, /api/player/stats, /api/player/merge)
-- **Hook**: client/src/hooks/use-player-profile.ts manages guest/user profiles and stats updates
-- **UI**: client/src/pages/PlayerProfile.tsx displays personality traits, badges, game stats
-
-### RBAC Security Audit (February 2026)
-- Fixed 39 routes: 12 frontend pages and 27 backend routes now properly protected
-- Increased isAdmin middleware usage from 57 to 86 routes
-- Fixed privilege escalation bug: Regular admins blocked from setting isGlobal, isStarterPack, visibility on boards
-- Role hierarchy: user → admin → super_admin
-- Storage layer filtering prevents IDOR attacks
-
-### Planned Features (Schema Ready, UI Pending)
-- **Mirror Mechanic**: Prediction phase for multiple choice questions (questionType, options, prediction fields)
-- **Time Capsule**: Future-locked questions that unlock after specified days (isFutureLocked, unlockAfterDays fields)
-
-### Known Implementation Gaps
-- **Game Stats Persistence**: WebSocket tracks in-memory stats (correctAnswers, wrongAnswers, timing) during gameplay, but these aren't persisted to playerProfiles when games end. Games need to call updateStats mutation on game completion.
-
-### WebSocket Architecture
-- **Server**: WebSocket for real-time multiplayer game communication
-- **Sort Circuit**: Players join rooms and participate in ordering challenges in real-time
-- **Player Page**: `/play` route for mobile devices to join and buzz in
-- **Room Codes**: 4-character alphanumeric codes for easy joining
-
-### Build Process
-- Development: Vite dev server with HMR
-- Production: esbuild bundles server to dist/index.cjs, Vite builds client to dist/public
-- Database migrations via `drizzle-kit push`
+1.  **Shared Types**: Schema and route definitions in a `/shared` folder ensure type safety across frontend and backend.
+2.  **Host Mode**: Games are controlled by a host who manages questions, answers, and scoring.
+3.  **Real-time Multiplayer**: WebSocket-based real-time communication for games like Sort Circuit and Meme No Harm.
+4.  **Portable Email/Password Auth**: Host authentication uses bcrypt for password hashing and express-session with PostgreSQL store, without external OAuth.
+5.  **Simplified Content Structure**: Categories are simplified to contain exactly 5 questions with specific point values. Boards are displayed in a flat list.
+6.  **Player Profile System**: Guest-first gameplay with optional profile conversion, personality traits, and a badge system based on gameplay behavior.
+7.  **Role-Based Access Control (RBAC)**: Three-tier role system (User, Admin, Super Admin) with comprehensive security measures for route protection and privilege management.
+8.  **Theming**: 9 interactive themes with animated elements for dynamic gameplay visuals.
+9.  **Admin and Super Admin Features**: Enhanced admin UX with hierarchical navigation, visual progress indicators, auto-save drafts, and a simplified Super Admin Dashboard for platform management, content moderation, user activity tracking, and announcements.
+10. **Game Mechanics**: BlitzGrid uses a Board-Category-Question structure. Sort Circuit involves real-time ordering. Meme No Harm integrates live GIPHY search, player submissions, and voting.
 
 ## External Dependencies
 
 ### Database
-- **PostgreSQL**: Primary database, connected via DATABASE_URL environment variable
-- **Drizzle ORM**: Schema management and queries
-- **connect-pg-simple**: Session storage for host authentication
+-   **PostgreSQL**: Primary data store.
+-   **Drizzle ORM**: For database schema management and querying.
+-   **connect-pg-simple**: For storing Express sessions in PostgreSQL.
 
 ### Authentication
-- **Email/Password Auth**: Portable authentication in server/auth.ts
-- **bcryptjs**: Password hashing (10 rounds)
-- **express-session**: Session management with PostgreSQL store
-- **Host-only**: Only hosts need accounts; players join via QR code without authentication
+-   **bcryptjs**: Password hashing.
+-   **express-session**: Session management.
 
 ### Frontend Libraries
-- **@tanstack/react-query**: Data fetching and caching
-- **framer-motion**: Animations
-- **canvas-confetti**: Celebration effects when correct answers given
-- **lucide-react**: Icons
-- **Radix UI primitives**: Accessible UI components (via shadcn/ui)
+-   **@tanstack/react-query**: Data fetching and caching.
+-   **framer-motion**: UI animations.
+-   **canvas-confetti**: Celebration effects.
+-   **lucide-react**: Icons.
+-   **Radix UI primitives**: Accessible UI components (via shadcn/ui).
 
 ### Development Tools
-- **Vite**: Frontend build and dev server
-- **esbuild**: Server bundling for production
-- **drizzle-kit**: Database schema management
+-   **Vite**: Frontend build tool and development server.
+-   **esbuild**: Server bundling for production.
+-   **drizzle-kit**: Database schema management.
+
+### Third-Party Integrations
+-   **GIPHY API**: Integrated via a proxy for real-time GIF search in the "Meme No Harm" game.

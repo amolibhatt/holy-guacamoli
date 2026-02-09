@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -8,37 +8,44 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
-import { Smile, Users, Play, MessageSquare, Image as ImageIcon, Trophy, Crown, ChevronRight, ChevronLeft, Ban, Loader2 } from "lucide-react";
+import { Smile, Users, Play, MessageSquare, Trophy, Crown, Ban, Loader2, ChevronRight, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { MemePrompt, MemeImage } from "@shared/schema";
+import type { MemePrompt } from "@shared/schema";
 import { QRCodeSVG } from "qrcode.react";
 
-type GamePhase = "setup" | "lobby" | "selecting" | "reveal" | "voting" | "results" | "finished";
+type GamePhase = "setup" | "lobby" | "selecting" | "voting" | "reveal" | "results" | "finished";
 
 interface Player {
   id: string;
   name: string;
+  avatar: string;
   score: number;
-  hand: number[];
   submitted: boolean;
   voted: boolean;
-  votedForPlayerId?: string;
   sittingOut: boolean;
 }
 
-interface Submission {
+interface MemeResult {
   playerId: string;
   playerName: string;
-  imageId: number;
-  imageUrl: string;
+  playerAvatar: string;
+  gifUrl: string;
+  gifTitle: string;
   votes: number;
+  points: number;
+}
+
+interface LeaderboardEntry {
+  playerId: string;
+  playerName: string;
+  playerAvatar: string;
+  score: number;
 }
 
 export default function MemeNoHarmHost() {
   const { isLoading: isAuthLoading, isAuthenticated, user } = useAuth();
   const [, setLocation] = useLocation();
-  
-  // Access check
+
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const [phase, setPhase] = useState<GamePhase>("setup");
   const [roomCode, setRoomCode] = useState("");
@@ -46,17 +53,23 @@ export default function MemeNoHarmHost() {
   const [currentRound, setCurrentRound] = useState(0);
   const [totalRounds, setTotalRounds] = useState(5);
   const [currentPrompt, setCurrentPrompt] = useState<MemePrompt | null>(null);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [shuffledPrompts, setShuffledPrompts] = useState<MemePrompt[]>([]);
+  const [results, setResults] = useState<MemeResult[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [roundWinnerId, setRoundWinnerId] = useState<string | null>(null);
   const [revealIndex, setRevealIndex] = useState(0);
+  const [submissionCount, setSubmissionCount] = useState(0);
+  const [voteCount, setVoteCount] = useState(0);
+  const [votingSubmissions, setVotingSubmissions] = useState<MemeResult[]>([]);
+
+  const wsRef = useRef<WebSocket | null>(null);
 
   const { data: prompts = [], isLoading: promptsLoading } = useQuery<MemePrompt[]>({
     queryKey: ["/api/memenoharm/prompts"],
   });
 
-  const { data: images = [], isLoading: imagesLoading } = useQuery<MemeImage[]>({
-    queryKey: ["/api/memenoharm/images"],
-  });
+  const isLoading = promptsLoading || isAuthLoading;
+  const isReady = prompts.length >= 3;
 
   useEffect(() => {
     if (prompts.length > 0 && shuffledPrompts.length === 0) {
@@ -65,247 +78,265 @@ export default function MemeNoHarmHost() {
     }
   }, [prompts, shuffledPrompts.length]);
 
-  const generateRoomCode = () => {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    let code = "";
-    for (let i = 0; i < 4; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
+  const connectWebSocket = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        type: "meme:host:create",
+        hostId: user?.id,
+        totalRounds,
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      switch (data.type) {
+        case "meme:room:created":
+          setRoomCode(data.code);
+          setPhase("lobby");
+          break;
+
+        case "meme:player:joined":
+          setPlayers(prev => {
+            if (data.isReconnect) {
+              return prev.map(p => p.id === data.playerId ? { ...p, name: data.playerName } : p);
+            }
+            if (prev.find(p => p.id === data.playerId)) return prev;
+            return [...prev, {
+              id: data.playerId,
+              name: data.playerName,
+              avatar: data.playerAvatar || 'cat',
+              score: 0,
+              submitted: false,
+              voted: false,
+              sittingOut: false,
+            }];
+          });
+          break;
+
+        case "meme:submission":
+          setSubmissionCount(prev => prev + 1);
+          setPlayers(prev => prev.map(p =>
+            p.id === data.playerId ? { ...p, submitted: true } : p
+          ));
+          break;
+
+        case "meme:allSubmitted":
+          break;
+
+        case "meme:vote":
+          setVoteCount(prev => prev + 1);
+          setPlayers(prev => prev.map(p =>
+            p.id === data.voterId ? { ...p, voted: true } : p
+          ));
+          break;
+
+        case "meme:allVoted":
+          break;
+
+        case "meme:voting:started":
+          setVotingSubmissions(data.submissions.map((s: any) => ({
+            playerId: s.id,
+            playerName: s.playerName,
+            gifUrl: s.gifUrl,
+            gifTitle: s.gifTitle,
+            votes: 0,
+            points: 0,
+          })));
+          break;
+
+        case "meme:reveal:complete":
+          setResults(data.results);
+          setLeaderboard(data.leaderboard);
+          setRoundWinnerId(data.roundWinnerId);
+          setRevealIndex(0);
+          setPhase("reveal");
+          break;
+
+        case "meme:player:satOut":
+          setPlayers(prev => prev.map(p =>
+            p.id === data.playerId ? { ...p, sittingOut: true } : p
+          ));
+          break;
+
+        case "meme:gameComplete":
+          setLeaderboard(data.leaderboard);
+          setPhase("finished");
+          break;
+
+        case "player:disconnected":
+          setPlayers(prev => prev.map(p =>
+            p.id === data.playerId ? { ...p, submitted: false } : p
+          ));
+          break;
+      }
+    };
+
+    ws.onclose = () => {
+      setTimeout(() => {
+        if (phase !== "finished" && phase !== "setup") {
+          connectWebSocket();
+        }
+      }, 3000);
+    };
+  }, [user?.id, totalRounds, phase]);
+
+  useEffect(() => {
+    return () => {
+      wsRef.current?.close();
+    };
+  }, []);
+
+  const sendWs = (msg: object) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(msg));
     }
-    return code;
   };
 
   const startLobby = () => {
-    const code = generateRoomCode();
-    setRoomCode(code);
-    setPhase("lobby");
-  };
-
-  const addTestPlayer = () => {
-    const names = ["Alice", "Bob", "Charlie", "Diana", "Eve", "Frank", "Grace", "Henry"];
-    const availableNames = names.filter(n => !players.find(p => p.name === n));
-    if (availableNames.length === 0) return;
-    
-    const name = availableNames[Math.floor(Math.random() * availableNames.length)];
-    const playerImages = [...images].sort(() => Math.random() - 0.5).slice(0, 5).map(i => i.id);
-    
-    setPlayers(prev => [...prev, {
-      id: `player-${Date.now()}`,
-      name,
-      score: 0,
-      hand: playerImages,
-      submitted: false,
-      voted: false,
-      sittingOut: false,
-    }]);
+    connectWebSocket();
   };
 
   const startGame = () => {
     if (players.length < 2) return;
     setCurrentRound(1);
-    setCurrentPrompt(shuffledPrompts[0] || null);
+    const prompt = shuffledPrompts[0];
+    setCurrentPrompt(prompt);
+    setSubmissionCount(0);
+    setPlayers(prev => prev.map(p => ({ ...p, submitted: false, voted: false })));
     setPhase("selecting");
-  };
 
-  const sitOutPlayer = (playerId: string) => {
-    setPlayers(prev => prev.map(p => 
-      p.id === playerId ? { ...p, sittingOut: true, submitted: true, voted: true } : p
-    ));
-  };
-
-  const simulateSubmissions = () => {
-    // Each active (non-sitting-out) player picks a random meme from their hand
-    const activePlayers = players.filter(p => !p.sittingOut);
-    if (activePlayers.length < 2) return;
-    const subs: Submission[] = activePlayers.map(player => {
-      const randomIndex = Math.floor(Math.random() * player.hand.length);
-      const submittedImageId = player.hand[randomIndex];
-      const image = images.find(i => i.id === submittedImageId);
-      return {
-        playerId: player.id,
-        playerName: player.name,
-        imageId: submittedImageId,
-        imageUrl: image?.imageUrl || "",
-        votes: 0,
-      };
+    sendWs({
+      type: "meme:host:startRound",
+      prompt: prompt.prompt,
+      round: 1,
+      deadline: Date.now() + 60000,
     });
-    
-    // The Refresh: Replace submitted card with a new random meme
-    // Get all image IDs currently in any player's hand to avoid duplicates
-    const usedImageIds = new Set(players.flatMap(p => p.hand));
-    const availableImages = images.filter(img => !usedImageIds.has(img.id));
-    
-    setPlayers(prev => prev.map(player => {
-      const submittedSub = subs.find(s => s.playerId === player.id);
-      if (!submittedSub) return player;
-      
-      // Remove the submitted card from hand
-      const newHand = player.hand.filter(id => id !== submittedSub.imageId);
-      
-      // Add a new random card from available images
-      if (availableImages.length > 0) {
-        const newCard = availableImages[Math.floor(Math.random() * availableImages.length)];
-        newHand.push(newCard.id);
-      }
-      
-      return { ...player, hand: newHand, submitted: true };
-    }));
-    
-    // Shuffle submissions for anonymous gallery display
-    const shuffledSubs = [...subs].sort(() => Math.random() - 0.5);
-    setSubmissions(shuffledSubs);
-    setRevealIndex(0);
-    setPhase("reveal");
   };
 
-  const nextReveal = () => {
-    if (revealIndex < submissions.length - 1) {
-      setRevealIndex(prev => prev + 1);
-    } else {
-      setPhase("voting");
-    }
+  const startVoting = () => {
+    setVoteCount(0);
+    setPlayers(prev => prev.map(p => ({ ...p, voted: false })));
+    setPhase("voting");
+
+    sendWs({
+      type: "meme:host:startVoting",
+      deadline: Date.now() + 30000,
+    });
   };
 
-  const simulateVotes = () => {
-    // Simulate each active (non-sitting-out) player voting for a random submission (not their own)
-    const playerVotes: Record<string, string> = {};
-    const activePlayers = players.filter(p => !p.sittingOut);
-    activePlayers.forEach(player => {
-      const otherSubs = submissions.filter(s => s.playerId !== player.id);
-      if (otherSubs.length > 0) {
-        const votedFor = otherSubs[Math.floor(Math.random() * otherSubs.length)];
-        playerVotes[player.id] = votedFor.playerId;
-      }
+  const revealResults = () => {
+    sendWs({
+      type: "meme:host:reveal",
+      pointsPerVote: 100,
     });
-    
-    // Count votes per submission
-    const voteCounts: Record<string, number> = {};
-    Object.values(playerVotes).forEach(votedForId => {
-      voteCounts[votedForId] = (voteCounts[votedForId] || 0) + 1;
-    });
-    
-    const updatedSubs = submissions.map(sub => ({
-      ...sub,
-      votes: voteCounts[sub.playerId] || 0,
-    }));
-    
-    // Find the winner (most votes)
-    const maxVotes = Math.max(...updatedSubs.map(s => s.votes));
-    const winnerId = updatedSubs.find(s => s.votes === maxVotes)?.playerId;
-    
-    // Calculate scores:
-    // +10 points for each vote your meme receives
-    // +5 bonus if you voted for the winning meme
-    setPlayers(prev => prev.map(p => {
-      const votesReceived = voteCounts[p.id] || 0;
-      const submitterPoints = votesReceived * 10;
-      const votedForWinner = playerVotes[p.id] === winnerId;
-      const voterBonus = votedForWinner ? 5 : 0;
-      
-      return {
-        ...p,
-        score: p.score + submitterPoints + voterBonus,
-        votedForPlayerId: playerVotes[p.id],
-      };
-    }));
-    
-    setSubmissions(updatedSubs);
-    setPhase("results");
   };
 
   const nextRound = () => {
-    if (currentRound >= totalRounds) {
-      setPhase("finished");
+    const nextRoundNum = currentRound + 1;
+    if (nextRoundNum > totalRounds || nextRoundNum > shuffledPrompts.length) {
+      sendWs({ type: "meme:host:endGame" });
       return;
     }
-    
-    setCurrentRound(prev => prev + 1);
-    setCurrentPrompt(shuffledPrompts[currentRound] || null);
-    setSubmissions([]);
-    setPlayers(prev => prev.map(p => ({ ...p, submitted: false, voted: false, sittingOut: false })));
+
+    setCurrentRound(nextRoundNum);
+    const prompt = shuffledPrompts[nextRoundNum - 1];
+    setCurrentPrompt(prompt);
+    setSubmissionCount(0);
+    setResults([]);
+    setVotingSubmissions([]);
+    setPlayers(prev => prev.map(p => ({ ...p, submitted: false, voted: false })));
     setPhase("selecting");
+
+    sendWs({
+      type: "meme:host:startRound",
+      prompt: prompt.prompt,
+      round: nextRoundNum,
+      deadline: Date.now() + 60000,
+    });
   };
 
-  const playAgain = () => {
-    setPhase("setup");
-    setRoomCode("");
-    setPlayers([]);
-    setCurrentRound(0);
-    setCurrentPrompt(null);
-    setSubmissions([]);
-    setShuffledPrompts([...prompts].sort(() => Math.random() - 0.5));
+  const sitOutPlayer = (playerId: string) => {
+    sendWs({ type: "meme:host:sitOut", playerId });
   };
 
-  const isLoading = promptsLoading || imagesLoading;
-  const isReady = prompts.length >= 5 && images.length >= 10;
-  const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+  const activePlayers = players.filter(p => !p.sittingOut);
 
-  // Auth loading state
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-green-500" />
       </div>
     );
   }
 
-  // Redirect if not authenticated
-  if (!isAuthenticated) {
-    setLocation("/");
-    return null;
-  }
-
-  // Access denied for non-admin users
-  if (!isAdmin) {
+  if (!isAuthenticated || !isAdmin) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-md text-center">
-          <h2 className="text-xl font-bold text-destructive mb-2">Access Denied</h2>
-          <p className="text-muted-foreground mb-4">
-            You don't have permission to host games. Admin access is required.
-          </p>
-          <a href="/" className="text-primary hover:underline">Back to Home</a>
-        </div>
+      <div className="min-h-screen bg-background flex flex-col" data-testid="page-memenoharm-unauthorized">
+        <AppHeader minimal backHref="/" title="Meme No Harm" />
+        <main className="flex-1 flex items-center justify-center">
+          <Card className="max-w-md mx-auto">
+            <CardContent className="pt-6 text-center">
+              <p className="text-muted-foreground">You need admin access to host games.</p>
+              <Button onClick={() => setLocation("/")} className="mt-4" data-testid="button-go-home">
+                Go Home
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+        <AppFooter />
       </div>
     );
   }
 
   if (phase === "finished") {
-    const winner = sortedPlayers[0];
     return (
-      <div className="min-h-screen bg-background flex flex-col" data-testid="page-memenoharm-finished">
+      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-finished">
         <AppHeader minimal backHref="/" title="Meme No Harm - Game Over" />
-        
-        <main className="max-w-2xl mx-auto px-4 py-12 flex-1 w-full">
+        <main className="max-w-2xl mx-auto px-4 py-8 flex-1 w-full">
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
             className="text-center mb-8"
           >
-            <Crown className="w-20 h-20 mx-auto text-yellow-500 mb-4" />
-            <h1 className="text-3xl font-bold mb-2">Winner!</h1>
-            <p className="text-4xl font-bold text-green-500">{winner?.name}</p>
-            <p className="text-2xl text-muted-foreground">{winner?.score} points</p>
+            <Trophy className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
+            <h2 className="text-3xl font-bold text-white mb-2">Game Over!</h2>
+            {leaderboard[0] && (
+              <div className="text-xl text-yellow-300">
+                <Crown className="w-6 h-6 inline mr-2" />
+                {leaderboard[0].playerName} wins with {leaderboard[0].score} points!
+              </div>
+            )}
           </motion.div>
 
-          <Card className="mb-6">
+          <Card className="bg-white/10 border-white/20 mb-6">
             <CardHeader>
-              <CardTitle>Final Scores</CardTitle>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Trophy className="w-5 h-5" />
+                Final Standings
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {sortedPlayers.map((player, index) => (
-                  <div 
-                    key={player.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+              <div className="space-y-3">
+                {leaderboard.map((entry, i) => (
+                  <div
+                    key={entry.playerId}
+                    className={`flex items-center justify-between px-4 py-3 rounded-lg ${
+                      i === 0 ? 'bg-yellow-500/20 text-yellow-300' :
+                      i === 1 ? 'bg-gray-400/20 text-gray-300' :
+                      i === 2 ? 'bg-orange-500/20 text-orange-300' :
+                      'bg-white/5 text-white/70'
+                    }`}
+                    data-testid={`leaderboard-entry-${entry.playerId}`}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg font-bold text-muted-foreground">
-                        #{index + 1}
-                      </span>
-                      <span className="font-medium">{player.name}</span>
-                      {index === 0 && <Crown className="w-4 h-4 text-yellow-500" />}
-                    </div>
-                    <span className="font-bold">{player.score}</span>
+                    <span className="font-bold text-lg mr-3">#{i + 1}</span>
+                    <span className="flex-1 font-medium">{entry.playerName}</span>
+                    <span className="font-bold">{entry.score} pts</span>
                   </div>
                 ))}
               </div>
@@ -313,141 +344,73 @@ export default function MemeNoHarmHost() {
           </Card>
 
           <div className="flex gap-4 justify-center">
-            <Button onClick={playAgain} size="lg" data-testid="button-play-again">
+            <Button variant="outline" onClick={() => setLocation("/memenoharm/host")} className="text-white border-white/30" data-testid="button-play-again">
               Play Again
             </Button>
-            <Button variant="outline" onClick={() => setLocation("/")} size="lg">
+            <Button onClick={() => setLocation("/")} data-testid="button-go-home-finished">
               Back to Home
             </Button>
           </div>
         </main>
-
         <AppFooter />
       </div>
     );
   }
 
-  if (phase === "results") {
-    const winner = [...submissions].sort((a, b) => b.votes - a.votes)[0];
+  if (phase === "reveal") {
+    const sortedResults = [...results].sort((a, b) => b.votes - a.votes);
     return (
-      <div className="min-h-screen bg-[#0d0d12] text-white" data-testid="page-memenoharm-results">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="text-center mb-8">
-            <p className="text-sm text-white/40 mb-1">Step 6 - Round {currentRound} of {totalRounds}</p>
-            <h2 className="text-2xl font-bold text-green-400 mb-2">The Aftermath</h2>
-            <p className="text-white/60">{currentPrompt?.prompt}</p>
+      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-reveal">
+        <AppHeader minimal backHref="/" title={`Meme No Harm - Round ${currentRound} Results`} />
+        <main className="max-w-3xl mx-auto px-4 py-8 flex-1 w-full">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-white mb-2">Round {currentRound} Results</h2>
+            <p className="text-white/60 text-lg">"{currentPrompt?.prompt}"</p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-            {submissions.map((sub) => {
-              const isCanceled = sub.votes === 0;
-              const isWinner = sub.playerId === winner.playerId;
-              return (
+          <div className="space-y-4 mb-8">
+            <AnimatePresence>
+              {sortedResults.map((result, i) => (
                 <motion.div
-                  key={sub.playerId}
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className={`relative rounded-lg overflow-hidden ${isWinner ? 'ring-4 ring-yellow-400' : ''}`}
+                  key={result.playerId}
+                  initial={{ opacity: 0, x: -50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.3 }}
                 >
-                  <img 
-                    src={sub.imageUrl} 
-                    alt="Meme" 
-                    className={`w-full aspect-square object-cover ${isCanceled ? 'grayscale opacity-60' : ''}`} 
-                  />
-                  {isCanceled && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="bg-red-600/90 text-white px-4 py-2 rounded-lg flex items-center gap-2 transform -rotate-12 shadow-lg">
-                        <Ban className="w-6 h-6" />
-                        <span className="font-bold text-lg">CANCELED</span>
+                  <Card className={`bg-white/10 border-white/20 overflow-visible ${result.playerId === roundWinnerId ? 'ring-2 ring-yellow-400' : ''}`}>
+                    <CardContent className="pt-4 pb-4">
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0 w-32 h-32 rounded-lg overflow-hidden bg-black/20">
+                          <img src={result.gifUrl} alt={result.gifTitle} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            {result.playerId === roundWinnerId && <Crown className="w-5 h-5 text-yellow-400" />}
+                            <span className="text-white font-bold">{result.playerName}</span>
+                          </div>
+                          <p className="text-white/40 text-sm mb-2">{result.gifTitle}</p>
+                          <div className="text-green-400 font-bold text-lg">
+                            {result.votes} vote{result.votes !== 1 ? 's' : ''} = +{result.points} pts
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{sub.playerName}</span>
-                      <span className={`font-bold ${isCanceled ? 'text-red-400' : 'text-yellow-400'}`}>
-                        {sub.votes} votes {isCanceled && '(+0 pts)'}
-                      </span>
-                    </div>
-                    {isWinner && (
-                      <div className="flex items-center gap-1 text-yellow-400 text-sm mt-1">
-                        <Trophy className="w-4 h-4" />
-                        Winner! (+{sub.votes * 10} pts)
-                      </div>
-                    )}
-                  </div>
+                    </CardContent>
+                  </Card>
                 </motion.div>
-              );
-            })}
+              ))}
+            </AnimatePresence>
           </div>
 
-          <div className="text-center">
-            <Button onClick={nextRound} size="lg" className="gap-2" data-testid="button-next-round">
-              {currentRound >= totalRounds ? "See Final Results" : `Next Round (${currentRound + 1}/${totalRounds})`}
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (phase === "voting") {
-    const activeVoters = players.filter(p => !p.sittingOut);
-    return (
-      <div className="min-h-screen bg-[#0d0d12] text-white" data-testid="page-memenoharm-voting">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="text-center mb-8">
-            <p className="text-sm text-white/40 mb-1">Step 5</p>
-            <h2 className="text-2xl font-bold text-green-400 mb-2">The Vibe Check</h2>
-            <p className="text-white/60 text-lg">{currentPrompt?.prompt}</p>
-            <p className="text-white/40 text-sm mt-2">Vote for the funniest meme! (You can't vote for your own)</p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-            {submissions.map((sub, index) => (
-              <div key={sub.playerId} className="relative rounded-lg overflow-hidden bg-white/5">
-                <img src={sub.imageUrl} alt="Meme" className="w-full aspect-square object-cover" />
-                <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-green-500 text-white font-bold flex items-center justify-center text-lg">
-                  {index + 1}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <Card className="bg-white/5 border-white/10 mb-6">
-            <CardContent className="pt-6">
-              <div className="text-center text-white/60 mb-4">
-                Players are voting on their phones...
-              </div>
+          <Card className="bg-white/10 border-white/20 mb-6">
+            <CardHeader>
+              <CardTitle className="text-white text-sm">Leaderboard</CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-2">
-                {players.map((player) => (
-                  <div
-                    key={player.id}
-                    className={`flex items-center justify-between gap-2 px-4 py-2 rounded-lg ${
-                      player.sittingOut
-                        ? 'bg-white/5 text-white/30'
-                        : player.voted 
-                          ? 'bg-green-500/20 text-green-400' 
-                          : 'bg-white/10 text-white/50'
-                    }`}
-                  >
-                    <span className="font-medium">
-                      {player.name} {player.voted && !player.sittingOut && "- Voted"} {player.sittingOut && "- Sitting Out"}
-                    </span>
-                    {!player.voted && !player.sittingOut && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => sitOutPlayer(player.id)}
-                        className="text-orange-400/70"
-                        data-testid={`button-sit-out-voting-${player.id}`}
-                        aria-label={`Sit out ${player.name}`}
-                      >
-                        <Ban className="w-4 h-4 mr-1" />
-                        Sit Out
-                      </Button>
-                    )}
+                {leaderboard.map((entry, i) => (
+                  <div key={entry.playerId} className="flex items-center justify-between text-white/80 px-2 py-1">
+                    <span>#{i + 1} {entry.playerName}</span>
+                    <span className="font-bold">{entry.score}</span>
                   </div>
                 ))}
               </div>
@@ -455,75 +418,96 @@ export default function MemeNoHarmHost() {
           </Card>
 
           <div className="text-center">
-            <Button onClick={simulateVotes} size="lg" data-testid="button-simulate-votes">
-              Simulate Votes (Demo)
+            <Button onClick={nextRound} size="lg" className="gap-2" data-testid="button-next-round">
+              {currentRound >= totalRounds ? (
+                <>
+                  <Trophy className="w-4 h-4" />
+                  End Game
+                </>
+              ) : (
+                <>
+                  <ChevronRight className="w-4 h-4" />
+                  Next Round
+                </>
+              )}
             </Button>
           </div>
-        </div>
+        </main>
+        <AppFooter />
       </div>
     );
   }
 
-  if (phase === "reveal") {
-    const currentSubmission = submissions[revealIndex];
+  if (phase === "voting") {
     return (
-      <div className="min-h-screen bg-[#0d0d12] text-white" data-testid="page-memenoharm-reveal">
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          <div className="text-center mb-8">
-            <p className="text-sm text-white/40 mb-1">Step 4 - Round {currentRound} of {totalRounds}</p>
-            <h2 className="text-2xl font-bold text-green-400 mb-2">The Gallery</h2>
-            <p className="text-white/60 text-lg">{currentPrompt?.prompt}</p>
+      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-voting">
+        <AppHeader minimal backHref="/" title={`Meme No Harm - Round ${currentRound}`} />
+        <main className="max-w-3xl mx-auto px-4 py-8 flex-1 w-full">
+          <div className="text-center mb-6">
+            <h2 className="text-xl font-bold text-white mb-1">Voting Time!</h2>
+            <p className="text-white/60 text-lg mb-2">"{currentPrompt?.prompt}"</p>
+            <p className="text-white/40 text-sm">Players are voting for their favorite GIF</p>
           </div>
 
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={revealIndex}
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.5, opacity: 0 }}
-              className="text-center"
-            >
-              <div className="rounded-xl overflow-hidden mb-4 inline-block">
-                <img 
-                  src={currentSubmission?.imageUrl} 
-                  alt="Meme submission" 
-                  className="max-h-[400px] object-contain"
-                />
-              </div>
-              <p className="text-white/60">
-                Submission {revealIndex + 1} of {submissions.length}
-              </p>
-            </motion.div>
-          </AnimatePresence>
+          {votingSubmissions.length > 0 && (
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              {votingSubmissions.map((sub) => (
+                <Card key={sub.playerId} className="bg-white/10 border-white/20 overflow-visible">
+                  <CardContent className="p-3">
+                    <div className="aspect-square rounded-lg overflow-hidden bg-black/20 mb-2">
+                      <img src={sub.gifUrl} alt={sub.gifTitle} className="w-full h-full object-cover" />
+                    </div>
+                    <p className="text-white/40 text-xs truncate">{sub.playerName}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
 
-          <div className="text-center mt-8">
-            <Button onClick={nextReveal} size="lg" className="gap-2" data-testid="button-next-reveal">
-              {revealIndex < submissions.length - 1 ? "Next Submission" : "Start Voting"}
-              <ChevronRight className="w-4 h-4" />
+          <Card className="bg-white/5 border-white/10 mb-6">
+            <CardContent className="pt-6">
+              <div className="text-center text-white/60 mb-4">
+                Votes received: {voteCount}
+              </div>
+              <div className="space-y-2">
+                {activePlayers.map(player => (
+                  <div key={player.id} className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+                    player.voted ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-white/50'
+                  }`}>
+                    <span className="font-medium">{player.name} {player.voted && "- Voted"}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="text-center">
+            <Button onClick={revealResults} size="lg" data-testid="button-reveal-results">
+              Reveal Results
             </Button>
           </div>
-        </div>
+        </main>
+        <AppFooter />
       </div>
     );
   }
 
   if (phase === "selecting") {
-    const activePlayers = players.filter(p => !p.sittingOut);
-    const needsMorePlayers = activePlayers.length < 2;
     return (
-      <div className="min-h-screen bg-[#0d0d12] text-white" data-testid="page-memenoharm-selecting">
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          <div className="text-center mb-8">
-            <p className="text-sm text-white/40 mb-1">Steps 2 & 3 - Round {currentRound} of {totalRounds}</p>
-            <h2 className="text-2xl font-bold text-green-400 mb-2">The Briefing</h2>
-            <p className="text-white/60 text-3xl font-bold mt-4 mb-2">{currentPrompt?.prompt}</p>
-            <p className="text-white/40 text-sm">Players: Pick your best meme from your hand!</p>
+      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-selecting">
+        <AppHeader minimal backHref="/" title={`Meme No Harm - Round ${currentRound}/${totalRounds}`} />
+        <main className="max-w-2xl mx-auto px-4 py-8 flex-1 w-full">
+          <div className="text-center mb-6">
+            <p className="text-green-400 text-sm font-medium mb-1">Round {currentRound} of {totalRounds}</p>
+            <h2 className="text-2xl font-bold text-white mb-2">Find the Perfect GIF!</h2>
+            <p className="text-white/60 text-xl font-bold mt-4 mb-2">"{currentPrompt?.prompt}"</p>
+            <p className="text-white/40 text-sm">Players are searching GIPHY on their phones</p>
           </div>
 
           <Card className="bg-white/5 border-white/10 mb-6">
             <CardContent className="pt-6">
               <div className="text-center text-white/60 mb-4">
-                Waiting for submissions ({activePlayers.filter(p => p.submitted).length}/{activePlayers.length} ready)
+                Waiting for submissions ({submissionCount}/{activePlayers.length} ready)
               </div>
               {activePlayers.length < 2 && (
                 <div className="text-center text-orange-400 text-sm mb-4">
@@ -537,8 +521,8 @@ export default function MemeNoHarmHost() {
                     className={`flex items-center justify-between gap-2 px-4 py-2 rounded-lg ${
                       player.sittingOut
                         ? 'bg-white/5 text-white/30'
-                        : player.submitted 
-                          ? 'bg-green-500/20 text-green-400' 
+                        : player.submitted
+                          ? 'bg-green-500/20 text-green-400'
                           : 'bg-white/10 text-white/50'
                     }`}
                   >
@@ -564,12 +548,18 @@ export default function MemeNoHarmHost() {
             </CardContent>
           </Card>
 
-          <div className="text-center space-x-4">
-            <Button onClick={simulateSubmissions} size="lg" disabled={needsMorePlayers} data-testid="button-simulate-submissions">
-              Simulate Submissions (Demo)
+          <div className="text-center">
+            <Button
+              onClick={startVoting}
+              size="lg"
+              disabled={submissionCount < 2}
+              data-testid="button-start-voting"
+            >
+              Start Voting ({submissionCount} submissions)
             </Button>
           </div>
-        </div>
+        </main>
+        <AppFooter />
       </div>
     );
   }
@@ -579,7 +569,7 @@ export default function MemeNoHarmHost() {
     return (
       <div className="min-h-screen bg-background flex flex-col" data-testid="page-memenoharm-lobby">
         <AppHeader minimal backHref="/" title="Meme No Harm - Lobby" />
-        
+
         <main className="max-w-2xl mx-auto px-4 py-8 flex-1 w-full">
           <div className="text-center mb-8">
             <p className="text-sm text-muted-foreground mb-1">Step 1</p>
@@ -587,7 +577,7 @@ export default function MemeNoHarmHost() {
             <div className="text-4xl font-mono font-bold tracking-widest text-green-500 mb-2">
               {roomCode}
             </div>
-            <p className="text-muted-foreground">Join with this code - each player gets 5 random memes!</p>
+            <p className="text-muted-foreground">Join with this code - search for the perfect GIF each round!</p>
           </div>
 
           <div className="flex justify-center mb-8">
@@ -624,11 +614,8 @@ export default function MemeNoHarmHost() {
           </Card>
 
           <div className="flex gap-4 justify-center">
-            <Button variant="outline" onClick={addTestPlayer} data-testid="button-add-test-player">
-              Add Test Player
-            </Button>
-            <Button 
-              onClick={startGame} 
+            <Button
+              onClick={startGame}
               disabled={players.length < 2}
               size="lg"
               className="gap-2"
@@ -648,7 +635,7 @@ export default function MemeNoHarmHost() {
   return (
     <div className="min-h-screen bg-background flex flex-col" data-testid="page-memenoharm-setup">
       <AppHeader minimal backHref="/" title="Meme No Harm" />
-      
+
       <main className="max-w-2xl mx-auto px-4 py-8 flex-1 w-full">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
           <Card>
@@ -659,17 +646,10 @@ export default function MemeNoHarmHost() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-muted rounded-lg text-center">
-                  <MessageSquare className="w-8 h-8 mx-auto mb-2 text-green-500" />
-                  <div className="text-2xl font-bold">{prompts.length}</div>
-                  <div className="text-sm text-muted-foreground">Prompts</div>
-                </div>
-                <div className="p-4 bg-muted rounded-lg text-center">
-                  <ImageIcon className="w-8 h-8 mx-auto mb-2 text-green-500" />
-                  <div className="text-2xl font-bold">{images.length}</div>
-                  <div className="text-sm text-muted-foreground">Meme Images</div>
-                </div>
+              <div className="p-4 bg-muted rounded-lg text-center">
+                <MessageSquare className="w-8 h-8 mx-auto mb-2 text-green-500" />
+                <div className="text-2xl font-bold">{prompts.length}</div>
+                <div className="text-sm text-muted-foreground">Prompts Available</div>
               </div>
 
               {isLoading ? (
@@ -677,10 +657,10 @@ export default function MemeNoHarmHost() {
               ) : !isReady ? (
                 <div className="text-center py-4">
                   <p className="text-muted-foreground mb-4">
-                    You need at least 5 prompts and 10 meme images to play.
+                    You need at least 3 prompts to play. Players will search GIPHY for GIFs during the game.
                   </p>
                   <Button onClick={() => setLocation("/admin/memenoharm")} data-testid="button-create-content">
-                    Create Content
+                    Create Prompts
                   </Button>
                 </div>
               ) : (
@@ -698,9 +678,14 @@ export default function MemeNoHarmHost() {
                     />
                   </div>
 
-                  <Button 
-                    onClick={startLobby} 
-                    size="lg" 
+                  <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+                    <ImageIcon className="w-4 h-4 inline mr-2 text-green-500" />
+                    Players will search GIPHY for GIFs on their phones each round
+                  </div>
+
+                  <Button
+                    onClick={startLobby}
+                    size="lg"
                     className="w-full gap-2"
                     data-testid="button-create-room"
                   >
@@ -718,7 +703,7 @@ export default function MemeNoHarmHost() {
             onClick={() => setLocation("/admin/memenoharm")}
             data-testid="button-manage-content"
           >
-            Manage Prompts & Images
+            Manage Prompts
           </Button>
         </motion.div>
       </main>

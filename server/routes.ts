@@ -3161,7 +3161,7 @@ Be creative! Make facts surprising and fun to guess.`;
 
   // ==================== GIPHY SEARCH PROXY ====================
   
-  app.get("/api/giphy/search", isAuthenticated, isAdmin, async (req, res) => {
+  app.get("/api/giphy/search", async (req, res) => {
     try {
       const q = req.query.q as string;
       const offset = parseInt(req.query.offset as string) || 0;
@@ -3207,7 +3207,7 @@ Be creative! Make facts surprising and fun to guess.`;
     }
   });
 
-  app.get("/api/giphy/trending", isAuthenticated, isAdmin, async (req, res) => {
+  app.get("/api/giphy/trending", async (req, res) => {
     try {
       const offset = parseInt(req.query.offset as string) || 0;
       const limit = parseInt(req.query.limit as string) || 20;
@@ -4396,13 +4396,28 @@ Be creative! Make facts surprising and fun to guess.`;
     boardId: number | null;
     completedQuestions: Set<number>;
     sessionId: number | null;
-    gameMode?: 'buzzer' | 'psyop' | 'sequence';
+    gameMode?: 'buzzer' | 'psyop' | 'sequence' | 'meme';
     sequenceSubmissions?: SequenceSubmission[];
     currentCorrectOrder?: string[];
     currentQuestion?: object;
     questionStartTime?: number;
     pointsPerRound?: number;
     gameEnded?: boolean; // Idempotency flag to prevent duplicate stat persistence
+    // Meme No Harm fields
+    memeSubmissions?: Map<string, MemeSubmission>;
+    memeVotes?: Map<string, string>; // voterId -> submissionPlayerId
+    memePrompt?: string;
+    memeRound?: number;
+    memeTotalRounds?: number;
+    memeSittingOut?: Set<string>;
+  }
+
+  interface MemeSubmission {
+    playerId: string;
+    playerName: string;
+    playerAvatar: string;
+    gifUrl: string;
+    gifTitle: string;
   }
 
   const rooms = new Map<string, Room>();
@@ -5763,6 +5778,390 @@ Be creative! Make facts surprising and fun to guess.`;
               leaderboard,
               globalWinner,
             });
+            break;
+          }
+
+          // ==================== MEME NO HARM GAME ====================
+          case 'meme:host:create': {
+            const code = generateRoomCode();
+            const room: Room = {
+              code,
+              hostId: data.hostId?.toString() || 'anonymous',
+              hostWs: ws,
+              players: new Map(),
+              buzzerLocked: true,
+              buzzQueue: [],
+              passedPlayers: new Set(),
+              boardId: null,
+              completedQuestions: new Set(),
+              sessionId: null,
+              gameMode: 'meme',
+              memeSubmissions: new Map(),
+              memeVotes: new Map(),
+              memeRound: 0,
+              memeTotalRounds: data.totalRounds || 5,
+              memeSittingOut: new Set(),
+            };
+            rooms.set(code, room);
+            wsToRoom.set(ws, { roomCode: code, isHost: true });
+
+            ws.send(JSON.stringify({
+              type: 'meme:room:created',
+              code,
+            }));
+            console.log(`[WebSocket] Meme No Harm room ${code} created`);
+            break;
+          }
+
+          case 'meme:player:join': {
+            const code = data.code?.toUpperCase();
+            const room = rooms.get(code);
+            if (!room || room.gameMode !== 'meme') {
+              ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
+              break;
+            }
+
+            const playerId = data.playerId || crypto.randomUUID();
+            const existingPlayer = room.players.get(playerId);
+
+            if (existingPlayer) {
+              existingPlayer.ws = ws;
+              existingPlayer.isConnected = true;
+              existingPlayer.name = data.name || existingPlayer.name;
+              existingPlayer.avatar = data.avatar || existingPlayer.avatar;
+              wsToRoom.set(ws, { roomCode: room.code, isHost: false, playerId });
+
+              ws.send(JSON.stringify({
+                type: 'meme:joined',
+                playerId,
+                score: existingPlayer.score,
+              }));
+
+              if (room.memePrompt && room.memeRound) {
+                const hasSubmitted = room.memeSubmissions?.has(playerId);
+                if (!hasSubmitted) {
+                  sendToPlayer(existingPlayer, {
+                    type: 'meme:round:start',
+                    prompt: room.memePrompt,
+                    round: room.memeRound,
+                    totalRounds: room.memeTotalRounds,
+                    deadline: Date.now() + 45000,
+                  });
+                }
+              }
+
+              sendToHost(room, {
+                type: 'meme:player:joined',
+                playerId,
+                playerName: existingPlayer.name,
+                playerAvatar: existingPlayer.avatar,
+                isReconnect: true,
+              });
+              console.log(`[WebSocket] Player ${existingPlayer.name} rejoined Meme No Harm room ${room.code}`);
+            } else {
+              const player: RoomPlayer = {
+                id: playerId,
+                name: data.name || 'Player',
+                avatar: data.avatar || 'cat',
+                score: 0,
+                ws,
+                isConnected: true,
+                correctAnswers: 0,
+                wrongAnswers: 0,
+                totalTimeMs: 0,
+                currentStreak: 0,
+                bestStreak: 0,
+              };
+              room.players.set(playerId, player);
+              wsToRoom.set(ws, { roomCode: room.code, isHost: false, playerId });
+
+              ws.send(JSON.stringify({
+                type: 'meme:joined',
+                playerId,
+                score: 0,
+              }));
+
+              sendToHost(room, {
+                type: 'meme:player:joined',
+                playerId,
+                playerName: player.name,
+                playerAvatar: player.avatar,
+                isReconnect: false,
+              });
+              console.log(`[WebSocket] Player ${player.name} joined Meme No Harm room ${room.code}`);
+            }
+            break;
+          }
+
+          case 'meme:host:startRound': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.memeSubmissions = new Map();
+            room.memeVotes = new Map();
+            room.memePrompt = data.prompt;
+            room.memeRound = data.round;
+
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected && !room.memeSittingOut?.has(player.id)) {
+                sendToPlayer(player, {
+                  type: 'meme:round:start',
+                  prompt: data.prompt,
+                  round: data.round,
+                  totalRounds: room.memeTotalRounds,
+                  deadline: data.deadline,
+                });
+              }
+            });
+            console.log(`[WebSocket] Meme No Harm round ${data.round} started in room ${room.code}: "${data.prompt}"`);
+            break;
+          }
+
+          case 'meme:player:submit': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || mapping.isHost) break;
+            const room = rooms.get(mapping.roomCode);
+            if (!room || !mapping.playerId) break;
+
+            const player = room.players.get(mapping.playerId);
+            if (!player) break;
+
+            if (room.memeSubmissions?.has(player.id)) break;
+
+            const submission: MemeSubmission = {
+              playerId: player.id,
+              playerName: player.name,
+              playerAvatar: player.avatar,
+              gifUrl: data.gifUrl,
+              gifTitle: data.gifTitle || '',
+            };
+
+            if (!room.memeSubmissions) room.memeSubmissions = new Map();
+            room.memeSubmissions.set(player.id, submission);
+
+            sendToHost(room, {
+              type: 'meme:submission',
+              playerId: player.id,
+              playerName: player.name,
+            });
+
+            const activePlayers = Array.from(room.players.values())
+              .filter(p => p.isConnected && !room.memeSittingOut?.has(p.id));
+            if (room.memeSubmissions.size >= activePlayers.length && activePlayers.length > 0) {
+              sendToHost(room, { type: 'meme:allSubmitted' });
+            }
+            console.log(`[WebSocket] Player ${player.name} submitted GIF in room ${room.code}`);
+            break;
+          }
+
+          case 'meme:host:startVoting': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.memeVotes = new Map();
+
+            const submissions = Array.from(room.memeSubmissions?.values() || []);
+            const shuffled = submissions.sort(() => Math.random() - 0.5);
+
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected && !room.memeSittingOut?.has(player.id)) {
+                const filteredSubmissions = shuffled
+                  .filter(s => s.playerId !== player.id)
+                  .map(s => ({
+                    id: s.playerId,
+                    gifUrl: s.gifUrl,
+                    gifTitle: s.gifTitle,
+                  }));
+
+                sendToPlayer(player, {
+                  type: 'meme:voting:start',
+                  submissions: filteredSubmissions,
+                  prompt: room.memePrompt,
+                  deadline: data.deadline,
+                });
+              }
+            });
+
+            sendToHost(room, {
+              type: 'meme:voting:started',
+              submissions: shuffled.map(s => ({
+                id: s.playerId,
+                playerName: s.playerName,
+                gifUrl: s.gifUrl,
+                gifTitle: s.gifTitle,
+              })),
+            });
+            console.log(`[WebSocket] Voting started in Meme No Harm room ${room.code}`);
+            break;
+          }
+
+          case 'meme:player:vote': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || mapping.isHost) break;
+            const room = rooms.get(mapping.roomCode);
+            if (!room || !mapping.playerId) break;
+
+            if (room.memeVotes?.has(mapping.playerId)) break;
+
+            if (!room.memeVotes) room.memeVotes = new Map();
+            room.memeVotes.set(mapping.playerId, data.votedForId);
+
+            sendToHost(room, {
+              type: 'meme:vote',
+              voterId: mapping.playerId,
+              votedForId: data.votedForId,
+            });
+
+            const eligibleVoters = Array.from(room.players.values())
+              .filter(p => p.isConnected && !room.memeSittingOut?.has(p.id) && room.memeSubmissions?.has(p.id));
+            const votersWhoCanVote = eligibleVoters.filter(p => {
+              const hasSubmission = room.memeSubmissions?.has(p.id);
+              return hasSubmission;
+            });
+            if (room.memeVotes.size >= votersWhoCanVote.length && votersWhoCanVote.length > 0) {
+              sendToHost(room, { type: 'meme:allVoted' });
+            }
+            console.log(`[WebSocket] Player voted in Meme No Harm room ${room.code}`);
+            break;
+          }
+
+          case 'meme:host:reveal': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            const votes = room.memeVotes || new Map();
+            const submissions = room.memeSubmissions || new Map();
+
+            const voteCount: Record<string, number> = {};
+            votes.forEach((votedForId) => {
+              voteCount[votedForId] = (voteCount[votedForId] || 0) + 1;
+            });
+
+            const pointsPerVote = data.pointsPerVote || 100;
+            let roundWinnerId: string | null = null;
+            let maxVotes = 0;
+
+            const results = Array.from(submissions.values()).map(sub => {
+              const numVotes = voteCount[sub.playerId] || 0;
+              const points = numVotes * pointsPerVote;
+
+              const player = room.players.get(sub.playerId);
+              if (player) {
+                player.score += points;
+              }
+
+              if (numVotes > maxVotes) {
+                maxVotes = numVotes;
+                roundWinnerId = sub.playerId;
+              }
+
+              return {
+                playerId: sub.playerId,
+                playerName: sub.playerName,
+                playerAvatar: sub.playerAvatar,
+                gifUrl: sub.gifUrl,
+                gifTitle: sub.gifTitle,
+                votes: numVotes,
+                points,
+              };
+            });
+
+            const leaderboard = Array.from(room.players.values())
+              .map(p => ({
+                playerId: p.id,
+                playerName: p.name,
+                playerAvatar: p.avatar,
+                score: p.score,
+              }))
+              .sort((a, b) => b.score - a.score);
+
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                sendToPlayer(player, {
+                  type: 'meme:reveal',
+                  results,
+                  leaderboard,
+                  roundWinnerId,
+                  myScore: player.score,
+                  round: room.memeRound,
+                  totalRounds: room.memeTotalRounds,
+                });
+              }
+            });
+
+            sendToHost(room, {
+              type: 'meme:reveal:complete',
+              results,
+              leaderboard,
+              roundWinnerId,
+              round: room.memeRound,
+              totalRounds: room.memeTotalRounds,
+            });
+            console.log(`[WebSocket] Round ${room.memeRound} revealed in Meme No Harm room ${room.code}`);
+            break;
+          }
+
+          case 'meme:host:sitOut': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            if (!room.memeSittingOut) room.memeSittingOut = new Set();
+            room.memeSittingOut.add(data.playerId);
+
+            const player = room.players.get(data.playerId);
+            if (player?.ws && player.isConnected) {
+              sendToPlayer(player, { type: 'meme:sittingOut' });
+            }
+
+            sendToHost(room, {
+              type: 'meme:player:satOut',
+              playerId: data.playerId,
+            });
+            break;
+          }
+
+          case 'meme:host:endGame': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            const leaderboard = Array.from(room.players.values())
+              .map(p => ({
+                playerId: p.id,
+                playerName: p.name,
+                playerAvatar: p.avatar,
+                score: p.score,
+              }))
+              .sort((a, b) => b.score - a.score);
+
+            const winner = leaderboard.length > 0 ? leaderboard[0] : null;
+
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                sendToPlayer(player, {
+                  type: 'meme:gameComplete',
+                  leaderboard,
+                  winner,
+                  myScore: player.score,
+                });
+              }
+            });
+
+            sendToHost(room, {
+              type: 'meme:gameComplete',
+              leaderboard,
+              winner,
+            });
+            console.log(`[WebSocket] Meme No Harm game ended in room ${room.code}`);
             break;
           }
 
