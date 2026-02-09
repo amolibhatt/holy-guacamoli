@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
-import { Smile, Users, Play, MessageSquare, Trophy, Crown, Ban, Loader2, ChevronRight, SkipForward, Image as ImageIcon } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Smile, Users, Play, MessageSquare, Trophy, Crown, Ban, Loader2, ChevronRight, SkipForward, Image as ImageIcon, Link2, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MemePrompt } from "@shared/schema";
 import { QRCodeSVG } from "qrcode.react";
@@ -46,6 +47,7 @@ interface LeaderboardEntry {
 export default function MemeNoHarmHost() {
   const { isLoading: isAuthLoading, isAuthenticated, user } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const [phase, setPhase] = useState<GamePhase>("setup");
@@ -776,10 +778,56 @@ export default function MemeNoHarmHost() {
             <p className="text-muted-foreground">Join with this code - search for the perfect GIF each round!</p>
           </div>
 
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-4">
             <div className="p-4 bg-white rounded-xl">
               <QRCodeSVG value={joinUrl} size={180} />
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 max-w-xs mx-auto mb-8">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-2"
+              onClick={async () => {
+                try {
+                  if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(joinUrl);
+                  } else {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = joinUrl;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-9999px';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                  }
+                  toast({ title: "Link copied!", description: "Share this link with players" });
+                } catch {
+                  toast({ title: "Couldn't copy", description: "Please copy the link manually", variant: "destructive" });
+                }
+              }}
+              data-testid="button-copy-join-link"
+            >
+              <Link2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+              Copy Link
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-2 text-green-500"
+              disabled={!roomCode}
+              onClick={() => {
+                if (!roomCode) return;
+                const message = `Join my game!\n\nRoom Code: ${roomCode}\n${joinUrl}`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+              }}
+              data-testid="button-share-whatsapp"
+            >
+              <MessageCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+              WhatsApp
+            </Button>
           </div>
 
           <Card className="mb-6">

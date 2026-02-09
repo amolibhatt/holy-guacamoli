@@ -18,7 +18,8 @@ import {
   ListOrdered, Play, Pause, Users, QrCode, Timer, 
   Trophy, Trash2, Edit, Check, X, Loader2, Clock, Zap,
   ChevronDown, ChevronUp, Sparkles, Crown, RefreshCw, SkipForward,
-  Volume2, VolumeX, Medal, Star, User, Flame, Plus, Minus, Settings, HelpCircle
+  Volume2, VolumeX, Medal, Star, User, Flame, Plus, Minus, Settings, HelpCircle,
+  Link2, MessageCircle
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { AppHeader } from "@/components/AppHeader";
@@ -1449,6 +1450,51 @@ export default function SequenceSqueeze() {
             <div className="text-center">
               <p className="text-sm text-muted-foreground">Room Code</p>
               <p className="text-4xl font-mono font-bold">{roomCode}</p>
+            </div>
+            <div className="flex items-center gap-2 w-full">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 gap-2"
+                onClick={async () => {
+                  try {
+                    if (navigator.clipboard?.writeText) {
+                      await navigator.clipboard.writeText(joinUrl);
+                    } else {
+                      const textArea = document.createElement('textarea');
+                      textArea.value = joinUrl;
+                      textArea.style.position = 'fixed';
+                      textArea.style.left = '-9999px';
+                      document.body.appendChild(textArea);
+                      textArea.select();
+                      document.execCommand('copy');
+                      document.body.removeChild(textArea);
+                    }
+                    toast({ title: "Link copied!", description: "Share this link with players" });
+                  } catch {
+                    toast({ title: "Couldn't copy", description: "Please copy the link manually", variant: "destructive" });
+                  }
+                }}
+                data-testid="button-copy-join-link"
+              >
+                <Link2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+                Copy Link
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 gap-2 text-green-500"
+                disabled={!roomCode}
+                onClick={() => {
+                  if (!roomCode) return;
+                  const message = `Join my game!\n\nRoom Code: ${roomCode}\n${joinUrl}`;
+                  window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                }}
+                data-testid="button-share-whatsapp"
+              >
+                <MessageCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+                WhatsApp
+              </Button>
             </div>
           </div>
         </DialogContent>
