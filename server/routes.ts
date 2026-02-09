@@ -5905,6 +5905,103 @@ Generate exactly ${promptCount} prompts.`
             break;
           }
 
+          case 'meme:host:rejoin': {
+            const rejoinCode = data.code?.toUpperCase();
+            const room = rooms.get(rejoinCode);
+            if (!room || room.gameMode !== 'meme') {
+              ws.send(JSON.stringify({ type: 'error', message: 'Room not found for rejoin' }));
+              break;
+            }
+
+            room.hostWs = ws;
+            wsToRoom.set(ws, { roomCode: room.code, isHost: true });
+
+            const playerList = Array.from(room.players.values()).map(p => ({
+              id: p.id,
+              name: p.name,
+              avatar: p.avatar,
+              score: p.score,
+              isConnected: p.isConnected,
+              sittingOut: room.memeSittingOut?.has(p.id) || false,
+              submitted: room.memeSubmissions?.has(p.id) || false,
+            }));
+
+            const submissions = Array.from(room.memeSubmissions?.values() || []).map(s => ({
+              id: s.playerId,
+              playerName: s.playerName,
+              gifUrl: s.gifUrl,
+              gifTitle: s.gifTitle,
+            }));
+
+            let revealResults = null;
+            let revealLeaderboard = null;
+            let revealRoundWinnerId = null;
+
+            if (room.memePhase === 'reveal') {
+              const votes = room.memeVotes || new Map();
+              const voteCount: Record<string, number> = {};
+              votes.forEach((votedForId: string) => {
+                voteCount[votedForId] = (voteCount[votedForId] || 0) + 1;
+              });
+
+              revealResults = Array.from(room.memeSubmissions?.values() || []).map(sub => {
+                const numVotes = voteCount[sub.playerId] || 0;
+                const points = numVotes * 100;
+                return {
+                  playerId: sub.playerId,
+                  playerName: sub.playerName,
+                  playerAvatar: sub.playerAvatar,
+                  gifUrl: sub.gifUrl,
+                  gifTitle: sub.gifTitle,
+                  votes: numVotes,
+                  points,
+                };
+              });
+
+              let maxVotes = 0;
+              revealResults.forEach(r => {
+                if (r.votes > maxVotes) {
+                  maxVotes = r.votes;
+                  revealRoundWinnerId = r.playerId;
+                }
+              });
+
+              revealLeaderboard = Array.from(room.players.values())
+                .map(p => ({
+                  playerId: p.id,
+                  playerName: p.name,
+                  playerAvatar: p.avatar,
+                  score: p.score,
+                }))
+                .sort((a, b) => b.score - a.score);
+            }
+
+            ws.send(JSON.stringify({
+              type: 'meme:host:rejoined',
+              code: room.code,
+              phase: room.memePhase || 'lobby',
+              round: room.memeRound || 0,
+              totalRounds: room.memeTotalRounds || 5,
+              prompt: room.memePrompt || null,
+              players: playerList,
+              submissionCount: room.memeSubmissions?.size || 0,
+              voteCount: room.memeVotes?.size || 0,
+              votingSubmissions: submissions,
+              results: revealResults,
+              leaderboard: revealLeaderboard,
+              roundWinnerId: revealRoundWinnerId,
+            }));
+
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                sendToPlayer(player, { type: 'host:reconnected' });
+              }
+            });
+
+            console.log(`[WebSocket] Host rejoined Meme No Harm room ${room.code} (phase: ${room.memePhase || 'lobby'})`);
+            break;
+          }
+
           case 'meme:player:join': {
             const code = data.code?.toUpperCase();
             const room = rooms.get(code);
@@ -6280,12 +6377,32 @@ Generate exactly ${promptCount} prompts.`
 
             const player = room.players.get(data.playerId);
             if (player?.ws && player.isConnected) {
-              sendToPlayer(player, {
-                type: 'meme:unsittingOut',
-                prompt: room.memePrompt || null,
-                round: room.memeRound || 0,
-                totalRounds: room.memeTotalRounds || 0,
-              });
+              if (room.memePhase === 'voting') {
+                const submissions = Array.from(room.memeSubmissions?.values() || []);
+                const filteredSubmissions = submissions
+                  .filter(s => s.playerId !== player.id)
+                  .map(s => ({
+                    id: s.playerId,
+                    gifUrl: s.gifUrl,
+                    gifTitle: s.gifTitle,
+                  }));
+                sendToPlayer(player, {
+                  type: 'meme:unsittingOut',
+                  prompt: room.memePrompt || null,
+                  round: room.memeRound || 0,
+                  totalRounds: room.memeTotalRounds || 0,
+                  phase: 'voting',
+                  submissions: filteredSubmissions,
+                });
+              } else {
+                sendToPlayer(player, {
+                  type: 'meme:unsittingOut',
+                  prompt: room.memePrompt || null,
+                  round: room.memeRound || 0,
+                  totalRounds: room.memeTotalRounds || 0,
+                  phase: room.memePhase || 'selecting',
+                });
+              }
             }
 
             sendToHost(room, {

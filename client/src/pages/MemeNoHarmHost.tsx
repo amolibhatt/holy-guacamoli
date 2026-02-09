@@ -78,6 +78,11 @@ export default function MemeNoHarmHost() {
     }
   }, [prompts, shuffledPrompts.length]);
 
+  const roomCodeRef = useRef(roomCode);
+  roomCodeRef.current = roomCode;
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+
   const connectWebSocket = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
@@ -86,11 +91,18 @@ export default function MemeNoHarmHost() {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      ws.send(JSON.stringify({
-        type: "meme:host:create",
-        hostId: user?.id,
-        totalRounds,
-      }));
+      if (roomCodeRef.current) {
+        ws.send(JSON.stringify({
+          type: "meme:host:rejoin",
+          code: roomCodeRef.current,
+        }));
+      } else {
+        ws.send(JSON.stringify({
+          type: "meme:host:create",
+          hostId: user?.id,
+          totalRounds,
+        }));
+      }
     };
 
     ws.onmessage = (event) => {
@@ -100,6 +112,60 @@ export default function MemeNoHarmHost() {
           setRoomCode(data.code);
           setPhase("lobby");
           break;
+
+        case "meme:host:rejoined": {
+          setRoomCode(data.code);
+          setCurrentRound(data.round || 0);
+          setSubmissionCount(data.submissionCount || 0);
+          setVoteCount(data.voteCount || 0);
+
+          const restoredPlayers = (data.players || []).map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            avatar: p.avatar || 'cat',
+            score: p.score || 0,
+            submitted: p.submitted || false,
+            voted: false,
+            sittingOut: p.sittingOut || false,
+          }));
+          setPlayers(restoredPlayers);
+
+          if (data.votingSubmissions?.length > 0) {
+            setVotingSubmissions(data.votingSubmissions.map((s: any) => ({
+              playerId: s.id,
+              playerName: s.playerName,
+              gifUrl: s.gifUrl,
+              gifTitle: s.gifTitle,
+              votes: 0,
+              points: 0,
+            })));
+          }
+
+          if (data.prompt) {
+            const matchingPrompt = prompts.find(p => p.prompt === data.prompt);
+            if (matchingPrompt) setCurrentPrompt(matchingPrompt);
+          }
+
+          if (data.results) {
+            setResults(data.results);
+          }
+          if (data.leaderboard) {
+            setLeaderboard(data.leaderboard);
+          }
+          if (data.roundWinnerId) {
+            setRoundWinnerId(data.roundWinnerId);
+          }
+
+          const serverPhase = data.phase as string;
+          if (serverPhase === 'selecting') setPhase('selecting');
+          else if (serverPhase === 'voting') setPhase('voting');
+          else if (serverPhase === 'reveal') {
+            setRevealIndex(0);
+            setPhase('reveal');
+          }
+          else setPhase('lobby');
+          break;
+        }
 
         case "meme:player:joined":
           setPlayers(prev => {
@@ -180,17 +246,28 @@ export default function MemeNoHarmHost() {
             p.id === data.playerId ? { ...p, submitted: false } : p
           ));
           break;
+
+        case "error":
+          if (roomCodeRef.current && data.message?.includes('rejoin')) {
+            setRoomCode("");
+            ws.send(JSON.stringify({
+              type: "meme:host:create",
+              hostId: user?.id,
+              totalRounds,
+            }));
+          }
+          break;
       }
     };
 
     ws.onclose = () => {
       setTimeout(() => {
-        if (phase !== "finished" && phase !== "setup") {
+        if (phaseRef.current !== "finished" && phaseRef.current !== "setup") {
           connectWebSocket();
         }
       }, 3000);
     };
-  }, [user?.id, totalRounds, phase]);
+  }, [user?.id, totalRounds, prompts]);
 
   useEffect(() => {
     return () => {

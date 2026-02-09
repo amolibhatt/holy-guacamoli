@@ -176,7 +176,11 @@ export default function MemeNoHarmPlayer() {
 
         case "meme:unsittingOut":
           toast({ title: "You're back in!", description: "The host has brought you back into the game." });
-          if (data.prompt && data.round > 0) {
+          if (data.phase === 'voting' && data.submissions) {
+            setVotingSubmissions(data.submissions);
+            setPrompt(data.prompt || '');
+            setPhase("voting");
+          } else if (data.prompt && data.round > 0) {
             setPrompt(data.prompt);
             setRound(data.round);
             setTotalRounds(data.totalRounds);
