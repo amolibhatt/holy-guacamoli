@@ -5723,6 +5723,8 @@ Generate exactly ${promptCount} prompts.`
                 sendToPlayer(player, {
                   type: 'sequence:question:start',
                   question: room.currentQuestion,
+                  questionIndex: room.sequenceQuestionIndex,
+                  totalQuestions: room.sequenceTotalQuestions,
                 });
               }
             });
@@ -5800,9 +5802,11 @@ Generate exactly ${promptCount} prompts.`
               submission,
             });
 
-            // Check if all players have submitted for auto-reveal
+            // Check if all connected players have submitted for auto-reveal
             const connectedPlayers = Array.from(room.players.values()).filter(p => p.isConnected);
-            if (room.sequenceSubmissions.length >= connectedPlayers.length && connectedPlayers.length > 0) {
+            const connectedPlayerIds = new Set(connectedPlayers.map(p => p.id));
+            const submissionsFromConnected = room.sequenceSubmissions.filter(s => connectedPlayerIds.has(s.playerId));
+            if (submissionsFromConnected.length >= connectedPlayers.length && connectedPlayers.length > 0) {
               sendToHost(room, {
                 type: 'sequence:allSubmitted',
               });
@@ -5912,6 +5916,7 @@ Generate exactly ${promptCount} prompts.`
               leaderboard,
               currentQuestionIndex: room.sequenceQuestionIndex,
               totalQuestions: room.sequenceTotalQuestions,
+              pointsAwarded: pointsToAward,
             });
             break;
           }

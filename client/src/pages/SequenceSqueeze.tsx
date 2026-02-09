@@ -88,6 +88,7 @@ export default function SequenceSqueeze() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [pointsPerRound, setPointsPerRound] = useState(10);
+  const [lastAwardedPoints, setLastAwardedPoints] = useState(10);
   const [questionsToPlay, setQuestionsToPlay] = useState<number | null>(null);
   const [gameQuestions, setGameQuestions] = useState<SequenceQuestion[]>([]);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -177,6 +178,18 @@ export default function SequenceSqueeze() {
         case "sequence:room:created":
           setRoomCode(data.code);
           setGameState("waiting");
+          setPlayers([]);
+          setLeaderboard([]);
+          setSubmissions([]);
+          submissionsRef.current = [];
+          setCurrentQuestion(null);
+          setShuffledQuestion(null);
+          setShuffledCorrectOrder([]);
+          setWinner(null);
+          setGameQuestions([]);
+          setCurrentQuestionIndex(1);
+          setTotalQuestions(1);
+          setIsPaused(false);
           break;
         case "sequence:player:joined":
           playAudio("join");
@@ -211,7 +224,14 @@ export default function SequenceSqueeze() {
             setAnimationStage("optionPulse");
             playAudio("whoosh");
           }, 2000);
-          animationTimeoutsRef.current = [t1, t2];
+          const t3 = setTimeout(() => {
+            if (socket.readyState === WebSocket.OPEN) {
+              socket.send(JSON.stringify({ type: "sequence:host:startAnswering" }));
+            }
+            setGameState("playing");
+            setAnimationStage(null);
+          }, 4500);
+          animationTimeoutsRef.current = [t1, t2, t3];
           break;
         case "sequence:answering:started":
           setGameState("playing");
@@ -219,6 +239,7 @@ export default function SequenceSqueeze() {
           break;
         case "sequence:submission":
           setSubmissions(prev => {
+            if (prev.some(s => s.playerId === data.submission.playerId)) return prev;
             const newSubmissions = [...prev, data.submission];
             submissionsRef.current = newSubmissions;
             return newSubmissions;
@@ -252,6 +273,9 @@ export default function SequenceSqueeze() {
           }
           if (data.totalQuestions) {
             setTotalQuestions(data.totalQuestions);
+          }
+          if (data.pointsAwarded) {
+            setLastAwardedPoints(data.pointsAwarded);
           }
           break;
         case "sequence:leaderboard":
@@ -1048,7 +1072,7 @@ export default function SequenceSqueeze() {
                 <h2 className="text-3xl font-black text-amber-600 dark:text-amber-400">FASTEST FINGER!</h2>
                 <p className="text-2xl font-bold mt-2">{winner.playerName}</p>
                 <p className="text-muted-foreground">{(winner.timeMs / 1000).toFixed(2)} seconds</p>
-                <Badge className="mt-2 bg-amber-500">+{pointsPerRound} points</Badge>
+                <Badge className="mt-2 bg-amber-500">+{lastAwardedPoints} points</Badge>
               </motion.div>
             )}
 
