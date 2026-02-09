@@ -151,6 +151,8 @@ export default function MemeNoHarmPlayer() {
           setSelectedGif(null);
           setSearchQuery("");
           setSearchResults([]);
+          submittedRef.current = false;
+          votedRef.current = false;
           setPhase("searching");
           fetchTrending();
           break;
@@ -158,6 +160,7 @@ export default function MemeNoHarmPlayer() {
         case "meme:voting:start":
           setVotingSubmissions(data.submissions);
           setPrompt(data.prompt);
+          votedRef.current = false;
           setPhase("voting");
           break;
 
@@ -178,7 +181,23 @@ export default function MemeNoHarmPlayer() {
 
         case "meme:unsittingOut":
           toast({ title: "You're back in!", description: "The host has brought you back into the game." });
-          if (data.phase === 'voting' && data.submissions) {
+          if (data.phase === 'reveal' && data.results) {
+            setMyScore(data.myScore);
+            setLeaderboard(data.leaderboard);
+            setRoundWinnerId(data.roundWinnerId);
+            setPhase("reveal");
+            if (data.roundWinnerId === playerId) {
+              confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            }
+          } else if (data.phase === 'gameComplete' && data.leaderboard) {
+            setMyScore(data.myScore);
+            setLeaderboard(data.leaderboard);
+            setWinner(data.winner);
+            setPhase("gameComplete");
+            if (data.winner?.playerId === playerId) {
+              confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
+            }
+          } else if (data.phase === 'voting' && data.submissions) {
             setVotingSubmissions(data.submissions);
             setPrompt(data.prompt || '');
             setPhase("voting");
@@ -222,6 +241,11 @@ export default function MemeNoHarmPlayer() {
 
         case "error":
           toast({ title: "Error", description: data.message, variant: "destructive" });
+          if (data.message === 'Room not found') {
+            joinedRef.current = false;
+            setJoined(false);
+            setPhase("waiting");
+          }
           break;
       }
     };
@@ -245,8 +269,12 @@ export default function MemeNoHarmPlayer() {
     };
   }, []);
 
+  const submittedRef = useRef(false);
+  const votedRef = useRef(false);
+
   const submitGif = () => {
-    if (!selectedGif || !wsRef.current) return;
+    if (!selectedGif || !wsRef.current || submittedRef.current) return;
+    submittedRef.current = true;
     wsRef.current.send(JSON.stringify({
       type: "meme:player:submit",
       gifUrl: selectedGif.fullUrl,
@@ -256,7 +284,8 @@ export default function MemeNoHarmPlayer() {
   };
 
   const submitVote = (votedForId: string) => {
-    if (!wsRef.current) return;
+    if (!wsRef.current || votedRef.current) return;
+    votedRef.current = true;
     wsRef.current.send(JSON.stringify({
       type: "meme:player:vote",
       votedForId,

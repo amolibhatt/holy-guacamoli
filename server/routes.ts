@@ -6030,7 +6030,10 @@ Generate exactly ${promptCount} prompts.`
               }));
 
               if (room.memePrompt && room.memeRound) {
-                if (room.memePhase === 'voting') {
+                const isSittingOut = room.memeSittingOut?.has(playerId) || false;
+                if (isSittingOut) {
+                  sendToPlayer(existingPlayer, { type: 'meme:sittingOut' });
+                } else if (room.memePhase === 'voting') {
                   if (room.memeVotes?.has(playerId)) {
                     sendToPlayer(existingPlayer, {
                       type: 'meme:phaseSync',
@@ -6104,6 +6107,16 @@ Generate exactly ${promptCount} prompts.`
                     myScore: existingPlayer.score,
                     round: room.memeRound,
                     totalRounds: room.memeTotalRounds,
+                  });
+                } else if (room.memePhase === 'gameComplete') {
+                  const leaderboard = Array.from(room.players.values())
+                    .map(p => ({ playerId: p.id, playerName: p.name, playerAvatar: p.avatar, score: p.score }))
+                    .sort((a, b) => b.score - a.score);
+                  sendToPlayer(existingPlayer, {
+                    type: 'meme:gameComplete',
+                    leaderboard,
+                    winner: leaderboard.length > 0 ? leaderboard[0] : null,
+                    myScore: existingPlayer.score,
                   });
                 }
               }
@@ -6221,6 +6234,11 @@ Generate exactly ${promptCount} prompts.`
             if (room.memeSittingOut?.has(player.id)) break;
 
             if (room.memeSubmissions?.has(player.id)) break;
+
+            if (!data.gifUrl || typeof data.gifUrl !== 'string' || !data.gifUrl.trim()) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Invalid GIF URL' }));
+              break;
+            }
 
             const submission: MemeSubmission = {
               playerId: player.id,
@@ -6451,7 +6469,53 @@ Generate exactly ${promptCount} prompts.`
 
             const player = room.players.get(data.playerId);
             if (player?.ws && player.isConnected) {
-              if (room.memePhase === 'voting') {
+              if (room.memePhase === 'reveal') {
+                const revealVotes = room.memeVotes || new Map();
+                const revealVoteCount: Record<string, number> = {};
+                revealVotes.forEach((votedForId: string) => {
+                  revealVoteCount[votedForId] = (revealVoteCount[votedForId] || 0) + 1;
+                });
+                const revealResults = Array.from(room.memeSubmissions?.values() || []).map(sub => {
+                  const numVotes = revealVoteCount[sub.playerId] || 0;
+                  return {
+                    playerId: sub.playerId,
+                    playerName: sub.playerName,
+                    playerAvatar: sub.playerAvatar,
+                    gifUrl: sub.gifUrl,
+                    gifTitle: sub.gifTitle,
+                    votes: numVotes,
+                    points: numVotes * 100,
+                  };
+                });
+                let revealWinnerId: string | null = null;
+                let maxVotes = 0;
+                revealResults.forEach(r => {
+                  if (r.votes > maxVotes) { maxVotes = r.votes; revealWinnerId = r.playerId; }
+                });
+                sendToPlayer(player, {
+                  type: 'meme:unsittingOut',
+                  phase: 'reveal',
+                  results: revealResults,
+                  leaderboard: Array.from(room.players.values())
+                    .map(p => ({ playerId: p.id, playerName: p.name, playerAvatar: p.avatar, score: p.score }))
+                    .sort((a, b) => b.score - a.score),
+                  roundWinnerId: revealWinnerId,
+                  myScore: player.score,
+                  round: room.memeRound || 0,
+                  totalRounds: room.memeTotalRounds || 0,
+                });
+              } else if (room.memePhase === 'gameComplete') {
+                const leaderboard = Array.from(room.players.values())
+                  .map(p => ({ playerId: p.id, playerName: p.name, playerAvatar: p.avatar, score: p.score }))
+                  .sort((a, b) => b.score - a.score);
+                sendToPlayer(player, {
+                  type: 'meme:unsittingOut',
+                  phase: 'gameComplete',
+                  leaderboard,
+                  winner: leaderboard.length > 0 ? leaderboard[0] : null,
+                  myScore: player.score,
+                });
+              } else if (room.memePhase === 'voting') {
                 const submissions = Array.from(room.memeSubmissions?.values() || []);
                 const filteredSubmissions = submissions
                   .filter(s => s.playerId !== player.id)
@@ -6492,7 +6556,7 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
-            room.memePhase = undefined;
+            room.memePhase = 'gameComplete';
 
             const leaderboard = Array.from(room.players.values())
               .map(p => ({
