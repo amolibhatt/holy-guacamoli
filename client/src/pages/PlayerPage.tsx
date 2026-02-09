@@ -100,8 +100,9 @@ export default function PlayerPage() {
   const playerIdRef = useRef<string | null>(playerId);
 
   const connect = useCallback((isReconnect = false) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return;
 
+    setStatus(isReconnect ? "reconnecting" : "connecting");
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
     wsRef.current = ws;
@@ -166,15 +167,23 @@ export default function PlayerPage() {
           }
           break;
         case "error":
-          setStatus("error");
           if (data.message === "Room not found") {
+            shouldReconnectRef.current = false;
             clearSession();
+            setJoined(false);
+            joinedRef.current = false;
+            setStatus("disconnected");
+            if (wsRef.current) {
+              wsRef.current.close();
+              wsRef.current = null;
+            }
             toast({
               title: "Game not found",
               description: "Check the room code and try again. The game may have ended.",
               variant: "destructive",
             });
           } else {
+            setStatus("error");
             toast({
               title: "Connection issue",
               description: data.message || "Please check your connection and try again.",
@@ -184,10 +193,14 @@ export default function PlayerPage() {
           break;
         case "kicked":
           clearSession();
+          if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
+          if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
+          if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
           setJoined(false);
           joinedRef.current = false;
           shouldReconnectRef.current = false;
           setStatus("disconnected");
+          setReconnectCountdown(null);
           toast({
             title: "Removed from game",
             description: "The host removed you from the game.",
@@ -196,11 +209,15 @@ export default function PlayerPage() {
           break;
         case "room:closed":
           clearSession();
+          if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
+          if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
+          if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
           setJoined(false);
           joinedRef.current = false;
           shouldReconnectRef.current = false;
           setStatus("disconnected");
           setHostPickingGrid(false);
+          setReconnectCountdown(null);
           toast({
             title: "Game ended",
             description: data.reason || "The game room has been closed.",
@@ -294,10 +311,10 @@ export default function PlayerPage() {
         case "pong":
           break;
         case "host:disconnected":
-          // Host temporarily disconnected, show waiting state
           toast({
-            title: "Host connection lost",
+            title: "Host disconnected",
             description: "Waiting for host to reconnect...",
+            variant: "destructive",
           });
           break;
         case "host:reconnected":
@@ -409,29 +426,56 @@ export default function PlayerPage() {
   };
 
   const handleLeaveGame = () => {
-    clearSession();
     shouldReconnectRef.current = false;
     joinedRef.current = false;
+    if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
+    if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
+    if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
     wsRef.current?.close();
+    clearSession();
     setJoined(false);
     setPlayerId(null);
+    playerIdRef.current = null;
     setStatus("disconnected");
+    setScore(0);
+    setLeaderboard([]);
+    setShowLeaderboard(false);
+    setBuzzerLocked(true);
+    setHasBuzzed(false);
+    setBuzzPosition(null);
+    setFeedback(null);
+    setBuzzerBlocked(false);
+    setHostPickingGrid(false);
+    setCurrentGridName(null);
+    setReconnectAttempts(0);
+    reconnectAttemptsRef.current = 0;
+    setReconnectCountdown(null);
+    setGameMode("buzzer");
+    setPsyopPhase("idle");
+    setPsyopQuestion(null);
+    setPsyopOptions([]);
+    setPsyopSubmitted(false);
+    setPsyopVoted(false);
+    setPsyopLieText("");
+    setPsyopCorrectAnswer(null);
   };
 
   const handleManualReconnect = () => {
-    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
+    if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
+    if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
     setReconnectCountdown(null);
     reconnectAttemptsRef.current = 0;
     setReconnectAttempts(0);
     shouldReconnectRef.current = true;
-    setStatus("connecting");
     connect(true);
   };
 
   const handleJoin = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (roomCode.trim() && playerName.trim()) {
-      setStatus("connecting");
+      shouldReconnectRef.current = true;
+      reconnectAttemptsRef.current = 0;
       connect();
     }
   };

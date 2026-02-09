@@ -327,7 +327,7 @@ export default function MemeNoHarmPlayer() {
           break;
 
         case "host:disconnected":
-          toast({ title: "Host disconnected", description: "Waiting for reconnection...", variant: "destructive" });
+          toast({ title: "Host disconnected", description: "Waiting for host to reconnect...", variant: "destructive" });
           break;
 
         case "host:reconnected":
@@ -336,11 +336,16 @@ export default function MemeNoHarmPlayer() {
 
         case "kicked":
           clearSession();
+          if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
+          if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
+          if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
+          if (searchTimeoutRef.current) { clearTimeout(searchTimeoutRef.current); searchTimeoutRef.current = null; }
           setJoined(false);
           joinedRef.current = false;
           shouldReconnectRef.current = false;
           setStatus("disconnected");
           setPhase("waiting");
+          setReconnectCountdown(null);
           toast({
             title: "Removed from game",
             description: "The host removed you from the game.",
@@ -350,11 +355,16 @@ export default function MemeNoHarmPlayer() {
 
         case "room:closed":
           clearSession();
+          if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
+          if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
+          if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
+          if (searchTimeoutRef.current) { clearTimeout(searchTimeoutRef.current); searchTimeoutRef.current = null; }
           setJoined(false);
           joinedRef.current = false;
           shouldReconnectRef.current = false;
           setStatus("disconnected");
           setPhase("waiting");
+          setReconnectCountdown(null);
           toast({
             title: "Game ended",
             description: data.reason || "The game room has been closed.",

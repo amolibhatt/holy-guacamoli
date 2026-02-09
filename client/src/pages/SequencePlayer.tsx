@@ -41,8 +41,8 @@ function FullScreenFlash({ show, color }: { show: boolean; color: string }) {
     <motion.div
       initial={{ opacity: 0.8 }}
       animate={{ opacity: 0 }}
-      transition={{ duration: 0.6 }}
-      className={`fixed inset-0 z-[200] pointer-events-none ${color}`}
+      transition={{ duration: 0.4 }}
+      className={`fixed inset-0 z-50 pointer-events-none ${color}`}
     />
   );
 }
@@ -677,7 +677,7 @@ export default function SequencePlayer() {
       </AnimatePresence>
       {reconnectCountdown !== null && (
         <div className="px-4 py-2 bg-amber-900/60 border-b border-amber-500/30 flex items-center justify-between">
-          <span className="text-sm text-amber-200">Reconnecting in {reconnectCountdown}s...</span>
+          <span className="text-sm text-amber-200">Reconnecting in {reconnectCountdown}s... (Attempt {reconnectAttemptsRef.current}/5)</span>
           <Button size="sm" variant="outline" className="text-amber-200 border-amber-500/30" onClick={handleManualReconnect} data-testid="button-reconnect">
             <RefreshCw className="w-3 h-3 mr-1 shrink-0" />Reconnect Now
           </Button>
