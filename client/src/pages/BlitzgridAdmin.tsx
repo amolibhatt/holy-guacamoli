@@ -889,7 +889,7 @@ export default function BlitzGridAdmin() {
                           autoFocus
                           onKeyDown={(e) => {
                             if (e.key === 'Escape') setEditingGridId(null);
-                            if (e.key === 'Enter' && editGridName.trim()) {
+                            if (e.key === 'Enter' && editGridName.trim() && !updateGridMutation.isPending) {
                               updateGridMutation.mutate({ 
                                 id: selectedGridId, 
                                 name: editGridName.trim(), 
@@ -911,7 +911,7 @@ export default function BlitzGridAdmin() {
                         maxLength={60}
                         onKeyDown={(e) => {
                           if (e.key === 'Escape') setEditingGridId(null);
-                          if (e.key === 'Enter' && editGridName.trim()) {
+                          if (e.key === 'Enter' && editGridName.trim() && !updateGridMutation.isPending) {
                             updateGridMutation.mutate({ 
                               id: selectedGridId, 
                               name: editGridName.trim(), 
@@ -957,12 +957,12 @@ export default function BlitzGridAdmin() {
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                          setEditingGridId(selectedGridId);
-                          setEditGridName(grid?.name || '');
-                          setEditGridDescription(grid?.description === "BlitzGrid" ? "" : (grid?.description || ""));
-                        }}
-                        data-testid="button-edit-grid"
-                      >
+                            setEditingGridId(selectedGridId);
+                            setEditGridName(grid?.name || '');
+                            setEditGridDescription(grid?.description === "BlitzGrid" ? "" : (grid?.description || ""));
+                          }}
+                          data-testid="button-edit-grid"
+                        >
                         <Pencil className="w-4 h-4 mr-1 shrink-0" aria-hidden="true" /> Edit
                       </Button>
                       {grid?.isActive ? (
@@ -1169,7 +1169,7 @@ export default function BlitzGridAdmin() {
                               disabled={removeCategoryMutation.isPending && deletingCategoryId === category.id}
                               data-testid={`button-remove-category-${category.id}`}
                             >
-                              {removeCategoryMutation.isPending ? (
+                              {removeCategoryMutation.isPending && deletingCategoryId === category.id ? (
                                 <Loader2 className="w-4 h-4 shrink-0 animate-spin" aria-hidden="true" />
                               ) : deletingCategoryId === category.id ? (
                                 <Check className="w-4 h-4 text-destructive shrink-0" aria-hidden="true" />
@@ -1484,8 +1484,8 @@ export default function BlitzGridAdmin() {
                                             await saveQuestionMutation.mutateAsync({
                                               categoryId: category.id,
                                               points: pts,
-                                              question: formData.question,
-                                              correctAnswer: formData.correctAnswer,
+                                              question: formData.question.trim(),
+                                              correctAnswer: formData.correctAnswer.trim(),
                                               options: formData.options || [],
                                               imageUrl: formData.imageUrl || undefined,
                                               audioUrl: formData.audioUrl || undefined,
@@ -1501,7 +1501,7 @@ export default function BlitzGridAdmin() {
                                             await deleteQuestionMutation.mutateAsync(existingQ.id);
                                             deletedCount++;
                                           } catch { errorCount++; }
-                                        } else if (existingQ && formData && (hasContent && !hasAnswer)) {
+                                        } else if (formData && ((hasContent && !hasAnswer) || (!hasContent && hasAnswer))) {
                                           errorCount++;
                                         }
                                       }
