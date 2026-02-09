@@ -3294,7 +3294,7 @@ Be creative! Make facts surprising and fun to guess.`;
       
       const prompt = await storage.createMemePrompt({
         userId,
-        prompt: parsed.data.prompt,
+        prompt: parsed.data.prompt.trim(),
         isActive: true,
       });
       
@@ -3324,17 +3324,26 @@ Be creative! Make facts surprising and fun to guess.`;
         return res.status(400).json({ message: parsed.error.errors[0].message });
       }
 
-      if (parsed.data.prompt) {
+      const updateData: Record<string, any> = {};
+      if (parsed.data.prompt !== undefined) {
+        const trimmedPrompt = parsed.data.prompt.trim();
+        if (!trimmedPrompt) {
+          return res.status(400).json({ message: "Prompt cannot be empty" });
+        }
         const existingPrompts = await storage.getMemePrompts(userId, role);
         const duplicate = existingPrompts.find(
-          p => p.id !== id && p.prompt.toLowerCase().trim() === parsed.data.prompt.toLowerCase().trim()
+          p => p.id !== id && p.prompt.toLowerCase().trim() === trimmedPrompt.toLowerCase()
         );
         if (duplicate) {
           return res.status(409).json({ message: "A prompt with this text already exists" });
         }
+        updateData.prompt = trimmedPrompt;
+      }
+      if (parsed.data.isActive !== undefined) {
+        updateData.isActive = parsed.data.isActive;
       }
       
-      const updated = await storage.updateMemePrompt(id, parsed.data, userId, role);
+      const updated = await storage.updateMemePrompt(id, updateData, userId, role);
       
       if (!updated) {
         return res.status(404).json({ message: "Prompt not found" });
@@ -3373,8 +3382,9 @@ Be creative! Make facts surprising and fun to guess.`;
       const { category = "mixed", count = 10 } = req.body;
       const promptCount = Math.min(Math.max(1, Number(count)), 20);
 
-      const apiKey = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY;
-      if (!apiKey) {
+      const groqKey = process.env.GROQ_API_KEY;
+      const openaiKey = process.env.OPENAI_API_KEY;
+      if (!groqKey && !openaiKey) {
         return res.status(500).json({ message: "AI service not configured. Please set GROQ_API_KEY." });
       }
 
@@ -3392,14 +3402,21 @@ Be creative! Make facts surprising and fun to guess.`;
 
       const instructions = categoryInstructions[category] || categoryInstructions.mixed;
 
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const useGroq = !!groqKey;
+      const apiUrl = useGroq
+        ? 'https://api.groq.com/openai/v1/chat/completions'
+        : 'https://api.openai.com/v1/chat/completions';
+      const apiKey = groqKey || openaiKey;
+      const model = useGroq ? 'llama-3.3-70b-versatile' : 'gpt-4o-mini';
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model,
           messages: [
             {
               role: 'system',
@@ -3432,7 +3449,7 @@ Generate exactly ${promptCount} prompts.`
 
       if (!response.ok) {
         const error = await response.text();
-        console.error('Groq API error:', error);
+        console.error(`${useGroq ? 'Groq' : 'OpenAI'} API error:`, error);
         return res.status(500).json({ message: "Failed to generate prompts" });
       }
 
@@ -3500,6 +3517,12 @@ Generate exactly ${promptCount} prompts.`
     }
   });
 
+  const updateMemeImageSchema = z.object({
+    imageUrl: z.string().min(1, "Image URL is required").optional(),
+    caption: z.string().max(200, "Caption must be 200 characters or less").optional().nullable(),
+    isActive: z.boolean().optional(),
+  });
+
   app.put("/api/memenoharm/images/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = req.session.userId!;
@@ -3508,8 +3531,22 @@ Generate exactly ${promptCount} prompts.`
       if (id === null) {
         return res.status(400).json({ message: "Invalid image ID" });
       }
+
+      const parsed = updateMemeImageSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.errors[0].message });
+      }
+
+      const updateData: Record<string, any> = {};
+      if (parsed.data.imageUrl !== undefined) updateData.imageUrl = parsed.data.imageUrl;
+      if (parsed.data.caption !== undefined) updateData.caption = parsed.data.caption;
+      if (parsed.data.isActive !== undefined) updateData.isActive = parsed.data.isActive;
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
       
-      const updated = await storage.updateMemeImage(id, req.body, userId, role);
+      const updated = await storage.updateMemeImage(id, updateData, userId, role);
       
       if (!updated) {
         return res.status(404).json({ message: "Image not found" });
@@ -3548,8 +3585,8 @@ Generate exactly ${promptCount} prompts.`
   app.get("/api/giphy/search", async (req, res) => {
     try {
       const q = req.query.q as string;
-      const offset = parseInt(req.query.offset as string) || 0;
-      const limit = parseInt(req.query.limit as string) || 20;
+      const offset = Math.max(0, parseInt(req.query.offset as string) || 0);
+      const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
       
       if (!q || q.trim().length === 0) {
         return res.status(400).json({ message: "Search query is required" });
@@ -3593,8 +3630,8 @@ Generate exactly ${promptCount} prompts.`
 
   app.get("/api/giphy/trending", async (req, res) => {
     try {
-      const offset = parseInt(req.query.offset as string) || 0;
-      const limit = parseInt(req.query.limit as string) || 20;
+      const offset = Math.max(0, parseInt(req.query.offset as string) || 0);
+      const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
       
       const apiKey = process.env.GIPHY_API_KEY;
       if (!apiKey) {
@@ -6588,6 +6625,7 @@ Generate exactly ${promptCount} prompts.`
           // ==================== MEME NO HARM GAME ====================
           case 'meme:host:create': {
             const code = generateRoomCode();
+            const totalRounds = Math.min(20, Math.max(1, parseInt(data.totalRounds) || 5));
             const room: Room = {
               code,
               hostId: data.hostId?.toString() || 'anonymous',
@@ -6603,8 +6641,10 @@ Generate exactly ${promptCount} prompts.`
               memeSubmissions: new Map(),
               memeVotes: new Map(),
               memeRound: 0,
-              memeTotalRounds: data.totalRounds || 5,
+              memeTotalRounds: totalRounds,
               memeSittingOut: new Set(),
+              memePhase: 'lobby',
+              memeUsedPrompts: [],
             };
             rooms.set(code, room);
             wsToRoom.set(ws, { roomCode: code, isHost: true });
@@ -6916,28 +6956,33 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            if (!data.prompt || typeof data.prompt !== 'string' || !data.prompt.trim()) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Prompt is required' }));
+              break;
+            }
+
             room.memeSubmissions = new Map();
             room.memeVotes = new Map();
-            room.memePrompt = data.prompt;
-            room.memeRound = data.round;
+            room.memePrompt = data.prompt.trim();
+            room.memeRound = (room.memeRound || 0) + 1;
             room.memePhase = 'selecting';
             if (!room.memeUsedPrompts) room.memeUsedPrompts = [];
-            if (!room.memeUsedPrompts.includes(data.prompt)) {
-              room.memeUsedPrompts.push(data.prompt);
+            if (!room.memeUsedPrompts.includes(room.memePrompt)) {
+              room.memeUsedPrompts.push(room.memePrompt);
             }
 
             room.players.forEach((player) => {
               if (player.ws && player.isConnected && !room.memeSittingOut?.has(player.id)) {
                 sendToPlayer(player, {
                   type: 'meme:round:start',
-                  prompt: data.prompt,
-                  round: data.round,
+                  prompt: room.memePrompt,
+                  round: room.memeRound,
                   totalRounds: room.memeTotalRounds,
                   deadline: data.deadline,
                 });
               }
             });
-            console.log(`[WebSocket] Meme No Harm round ${data.round} started in room ${room.code}: "${data.prompt}"`);
+            console.log(`[WebSocket] Meme No Harm round ${room.memeRound} started in room ${room.code}: "${room.memePrompt}"`);
             break;
           }
 
@@ -7153,6 +7198,9 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            if (!data.playerId || typeof data.playerId !== 'string') break;
+            if (!room.players.has(data.playerId)) break;
+
             if (!room.memeSittingOut) room.memeSittingOut = new Set();
             room.memeSittingOut.add(data.playerId);
 
@@ -7189,6 +7237,9 @@ Generate exactly ${promptCount} prompts.`
             if (!mapping || !mapping.isHost) break;
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
+
+            if (!data.playerId || typeof data.playerId !== 'string') break;
+            if (!room.players.has(data.playerId)) break;
 
             room.memeSittingOut?.delete(data.playerId);
 
