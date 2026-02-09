@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
-import { ListOrdered, Wifi, WifiOff, Trophy, Check, X, RotateCcw, Sparkles, RefreshCw, Crown, Star, Medal, Lock, Volume2, VolumeX, LogOut, ChevronDown, ChevronUp, Hash } from "lucide-react";
+import { ListOrdered, Wifi, WifiOff, Trophy, Check, X, RotateCcw, Undo2, Sparkles, RefreshCw, Crown, Star, Medal, Lock, Volume2, VolumeX, LogOut, ChevronDown, ChevronUp, Hash } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { PLAYER_AVATARS, type AvatarId } from "@shared/schema";
@@ -172,6 +172,7 @@ export default function SequencePlayer() {
           break;
 
         case "sequence:joined":
+          joinedRef.current = true;
           setJoined(true);
           setPlayerId(data.playerId);
           playerIdRef.current = data.playerId;
@@ -239,6 +240,7 @@ export default function SequencePlayer() {
             setShowWrongFlash(true);
             setTimeout(() => setShowWrongFlash(false), 700);
             soundManager.play('buzz', 0.3);
+            try { navigator.vibrate?.([50, 30, 50]); } catch {}
           }
           break;
         }
@@ -274,12 +276,64 @@ export default function SequencePlayer() {
         case "sequence:pointsAdjusted":
           if (data.newScore !== undefined) setMyScore(data.newScore);
           break;
+
+        case "sequence:phaseSync":
+          if (data.phase === 'playing' && data.question) {
+            setCurrentQuestion(data.question);
+            setSelectedSequence([]);
+            selectedSequenceRef.current = [];
+            setQuestionStartTime(Date.now());
+            setPhase("playing");
+            setIsCorrect(null);
+            setCorrectOrder(null);
+            setRank(null);
+          } else if (data.phase === 'animatedReveal' && data.question) {
+            setCurrentQuestion(data.question);
+            setSelectedSequence([]);
+            selectedSequenceRef.current = [];
+            setPhase("animatedReveal");
+            setIsCorrect(null);
+            setCorrectOrder(null);
+            setRank(null);
+          } else if (data.phase === 'revealing') {
+            if (data.correctOrder) setCorrectOrder(data.correctOrder);
+            if (data.isCorrect !== undefined) setIsCorrect(data.isCorrect);
+            if (data.rank !== undefined) setRank(data.rank);
+            if (data.leaderboard) setLeaderboard(data.leaderboard);
+            if (data.myScore !== undefined) setMyScore(data.myScore);
+            setPhase("revealing");
+          } else if (data.phase === 'leaderboard' && data.leaderboard) {
+            setLeaderboard(data.leaderboard);
+            if (data.myScore !== undefined) setMyScore(data.myScore);
+            setPhase("leaderboard");
+          } else if (data.phase === 'gameComplete' && data.leaderboard) {
+            setLeaderboard(data.leaderboard);
+            if (data.winner) setWinner(data.winner);
+            if (data.myScore !== undefined) setMyScore(data.myScore);
+            setPhase("gameComplete");
+          }
+          break;
+
+        case "host:disconnected":
+          toast({ title: "Host disconnected", description: "Waiting for host to reconnect...", variant: "destructive" });
+          break;
+
+        case "host:reconnected":
+          toast({ title: "Host reconnected", description: "Game continues!" });
+          break;
           
         case "sequence:scoresReset":
           prevScoreRef.current = 0;
           setMyScore(0);
           setLeaderboard([]);
           setPhase("waiting");
+          setCurrentQuestion(null);
+          setSelectedSequence([]);
+          selectedSequenceRef.current = [];
+          setCorrectOrder(null);
+          setIsCorrect(null);
+          setRank(null);
+          setWinner(null);
           break;
           
         case "sequence:reset":
@@ -357,6 +411,7 @@ export default function SequencePlayer() {
 
   const handleLetterTap = (letter: string) => {
     if (phase !== "playing") return;
+    if (status !== "connected") return;
     if (selectedSequence.length >= 4) return;
     if (selectedSequence.includes(letter)) return;
     
@@ -367,19 +422,32 @@ export default function SequencePlayer() {
     soundManager.play('click', 0.3);
     try { navigator.vibrate?.(30); } catch {}
     
-    if (newSequence.length === 4 && wsRef.current?.readyState === WebSocket.OPEN) {
-      const timeMs = questionStartTime ? Date.now() - questionStartTime : 0;
-      wsRef.current.send(JSON.stringify({
-        type: "sequence:player:submit",
-        sequence: newSequence,
-        timeMs,
-      }));
-      setPhase("submitted");
-      setShowSubmitFlash(true);
-      setTimeout(() => setShowSubmitFlash(false), 500);
-      soundManager.play('pop', 0.4);
-      try { navigator.vibrate?.(50); } catch {}
+    if (newSequence.length === 4) {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        const timeMs = questionStartTime ? Date.now() - questionStartTime : 0;
+        wsRef.current.send(JSON.stringify({
+          type: "sequence:player:submit",
+          sequence: newSequence,
+          timeMs,
+        }));
+        setPhase("submitted");
+        setShowSubmitFlash(true);
+        setTimeout(() => setShowSubmitFlash(false), 500);
+        soundManager.play('pop', 0.4);
+        try { navigator.vibrate?.(50); } catch {}
+      } else {
+        toast({ title: "Connection lost", description: "Your answer couldn't be sent. Try reconnecting.", variant: "destructive" });
+      }
     }
+  };
+
+  const undoLastTap = () => {
+    if (selectedSequence.length === 0) return;
+    const newSequence = selectedSequence.slice(0, -1);
+    setSelectedSequence(newSequence);
+    selectedSequenceRef.current = newSequence;
+    soundManager.play('whoosh', 0.2);
+    try { navigator.vibrate?.(20); } catch {}
   };
 
   const resetSelection = () => {
@@ -398,6 +466,7 @@ export default function SequencePlayer() {
 
   const handleLeaveGame = () => {
     shouldReconnectRef.current = false;
+    joinedRef.current = false;
     clearAllTimers();
     if (wsRef.current) {
       wsRef.current.close();
@@ -405,6 +474,8 @@ export default function SequencePlayer() {
     }
     clearSession();
     setJoined(false);
+    setPlayerId(null);
+    playerIdRef.current = null;
     setStatus("disconnected");
     setPhase("waiting");
     setMyScore(0);
@@ -413,6 +484,10 @@ export default function SequencePlayer() {
     setCurrentQuestion(null);
     setSelectedSequence([]);
     selectedSequenceRef.current = [];
+    setCorrectOrder(null);
+    setIsCorrect(null);
+    setRank(null);
+    setWinner(null);
   };
 
   const handleManualReconnect = () => {
@@ -464,6 +539,7 @@ export default function SequencePlayer() {
             onClick={toggleSound}
             className="text-teal-300"
             data-testid="button-toggle-sound"
+            aria-label={soundEnabled ? "Mute sounds" : "Unmute sounds"}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4 shrink-0" /> : <VolumeX className="w-4 h-4 shrink-0" />}
           </Button>
@@ -473,6 +549,7 @@ export default function SequencePlayer() {
             onClick={handleLeaveGame}
             className="text-red-400"
             data-testid="button-leave-game"
+            aria-label="Leave game"
           >
             <LogOut className="w-4 h-4 shrink-0" />
           </Button>
@@ -791,15 +868,26 @@ export default function SequencePlayer() {
             </div>
 
             {selectedSequence.length > 0 && selectedSequence.length < 4 && phase === "playing" && (
-              <Button 
-                variant="outline" 
-                className="w-full border-white/20 text-white"
-                onClick={resetSelection}
-                data-testid="button-reset-selection"
-              >
-                <RotateCcw className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
-                Reset Selection
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1 border-white/20 text-white"
+                  onClick={undoLastTap}
+                  data-testid="button-undo-last"
+                >
+                  <Undo2 className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
+                  Undo Last
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="flex-1 border-white/20 text-white"
+                  onClick={resetSelection}
+                  data-testid="button-reset-selection"
+                >
+                  <RotateCcw className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
+                  Reset All
+                </Button>
+              </div>
             )}
 
             {selectedSequence.length > 0 && (

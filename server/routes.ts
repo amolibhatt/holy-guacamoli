@@ -4530,6 +4530,7 @@ Generate exactly ${promptCount} prompts.`
     questionStartTime?: number;
     pointsPerRound?: number;
     gameEnded?: boolean; // Idempotency flag to prevent duplicate stat persistence
+    sequencePhase?: 'waiting' | 'animatedReveal' | 'playing' | 'revealing' | 'leaderboard' | 'gameComplete';
     // Meme No Harm fields
     memeSubmissions?: Map<string, MemeSubmission>;
     memeVotes?: Map<string, string>; // voterId -> submissionPlayerId
@@ -5468,6 +5469,63 @@ Generate exactly ${promptCount} prompts.`
                 score: existingPlayer.score,
               }));
 
+              // Send phase sync if game is actively in progress
+              const phase = room.sequencePhase || 'waiting';
+              if (phase !== 'waiting') {
+                const leaderboard = Array.from(room.players.values())
+                  .map(p => ({
+                    playerId: p.id,
+                    playerName: p.name,
+                    playerAvatar: p.avatar,
+                    score: p.score,
+                  }))
+                  .sort((a, b) => b.score - a.score);
+
+                if (phase === 'playing' && room.currentQuestion) {
+                  ws.send(JSON.stringify({
+                    type: 'sequence:phaseSync',
+                    phase: 'playing',
+                    question: room.currentQuestion,
+                  }));
+                } else if (phase === 'animatedReveal' && room.currentQuestion) {
+                  ws.send(JSON.stringify({
+                    type: 'sequence:phaseSync',
+                    phase: 'animatedReveal',
+                    question: room.currentQuestion,
+                  }));
+                } else if (phase === 'revealing') {
+                  const playerSub = (room.sequenceSubmissions || []).find(s => s.playerId === playerId);
+                  const isCorrect = playerSub?.isCorrect || false;
+                  const playerRank = playerSub?.isCorrect
+                    ? (room.sequenceSubmissions || []).filter(s => s.isCorrect && s.timeMs < playerSub!.timeMs).length + 1
+                    : null;
+                  ws.send(JSON.stringify({
+                    type: 'sequence:phaseSync',
+                    phase: 'revealing',
+                    correctOrder: room.currentCorrectOrder,
+                    isCorrect,
+                    rank: playerRank,
+                    leaderboard,
+                    myScore: existingPlayer.score,
+                  }));
+                } else if (phase === 'leaderboard') {
+                  ws.send(JSON.stringify({
+                    type: 'sequence:phaseSync',
+                    phase: 'leaderboard',
+                    leaderboard,
+                    myScore: existingPlayer.score,
+                  }));
+                } else if (phase === 'gameComplete') {
+                  ws.send(JSON.stringify({
+                    type: 'sequence:phaseSync',
+                    phase: 'gameComplete',
+                    leaderboard,
+                    winner: leaderboard[0] || null,
+                    myScore: existingPlayer.score,
+                  }));
+                }
+              }
+
               sendToHost(room, {
                 type: 'sequence:player:joined',
                 playerId,
@@ -5521,6 +5579,7 @@ Generate exactly ${promptCount} prompts.`
             room.currentQuestion = data.question;
             room.questionStartTime = Date.now();
             room.pointsPerRound = data.pointsPerRound || 10;
+            room.sequencePhase = 'playing';
             
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
@@ -5553,6 +5612,7 @@ Generate exactly ${promptCount} prompts.`
             room.currentCorrectOrder = data.correctOrder;
             room.currentQuestion = data.question;
             room.pointsPerRound = data.pointsPerRound || 10;
+            room.sequencePhase = 'animatedReveal';
             
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
@@ -5587,6 +5647,7 @@ Generate exactly ${promptCount} prompts.`
             }
 
             room.questionStartTime = Date.now();
+            room.sequencePhase = 'playing';
 
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
@@ -5716,6 +5777,8 @@ Generate exactly ${promptCount} prompts.`
               }))
               .sort((a, b) => b.score - a.score);
 
+            room.sequencePhase = 'revealing';
+
             // Send reveal to all players
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
@@ -5753,6 +5816,8 @@ Generate exactly ${promptCount} prompts.`
             
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
+
+            room.sequencePhase = 'leaderboard';
 
             const leaderboard = Array.from(room.players.values())
               .map(p => ({
@@ -5792,6 +5857,8 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            room.sequencePhase = 'waiting';
+
             room.players.forEach((player) => {
               player.score = 0;
               if (player.ws && player.isConnected) {
@@ -5812,6 +5879,8 @@ Generate exactly ${promptCount} prompts.`
 
             room.sequenceSubmissions = [];
             room.currentCorrectOrder = undefined;
+            room.currentQuestion = undefined;
+            room.sequencePhase = 'waiting';
 
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
@@ -5874,6 +5943,8 @@ Generate exactly ${promptCount} prompts.`
             
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
+
+            room.sequencePhase = 'gameComplete';
 
             const leaderboard = Array.from(room.players.values())
               .map(p => ({
