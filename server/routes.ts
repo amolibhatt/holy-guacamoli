@@ -23,7 +23,7 @@ const REQUIRED_POINTS = [10, 20, 30, 40, 50] as const;
 // Returns the parsed number or null if invalid
 function parseId(value: string): number | null {
   const id = Number(value);
-  if (isNaN(id) || !Number.isInteger(id) || id < 0) {
+  if (isNaN(id) || !Number.isInteger(id) || id <= 0) {
     return null;
   }
   return id;
@@ -3923,7 +3923,7 @@ Generate exactly ${promptCount} prompts.`
         }
       }
       
-      const boards = Array.from(allBoardsMap.values()).filter(b => b.theme === "blitzgrid" || b.theme.startsWith("blitzgrid:"));
+      const boards = Array.from(allBoardsMap.values()).filter(b => b.theme === "blitzgrid" || b.theme?.startsWith("blitzgrid:"));
       
       // Enhance with category counts, names, and active status
       const gridsWithStats = await Promise.all(boards.map(async (board) => {
@@ -3975,11 +3975,12 @@ Generate exactly ${promptCount} prompts.`
       let gridTheme = "blitzgrid";
       if (theme && typeof theme === "string" && theme.trim()) {
         const themeName = theme.trim().toLowerCase();
-        // If just a theme name is provided (e.g. "birthday"), prefix with "blitzgrid:"
-        if (!themeName.startsWith("blitzgrid")) {
-          gridTheme = `blitzgrid:${themeName}`;
-        } else {
+        if (themeName === "blitzgrid") {
+          gridTheme = "blitzgrid";
+        } else if (themeName.startsWith("blitzgrid:")) {
           gridTheme = themeName;
+        } else {
+          gridTheme = `blitzgrid:${themeName}`;
         }
       }
       
@@ -4285,11 +4286,11 @@ Generate exactly ${promptCount} prompts.`
         return res.status(400).json({ message: "Points must be 10, 20, 30, 40, or 50" });
       }
       
-      if (!question || typeof question !== "string") {
+      if (!question || typeof question !== "string" || !question.trim()) {
         return res.status(400).json({ message: "Question is required" });
       }
       
-      if (!correctAnswer || typeof correctAnswer !== "string") {
+      if (!correctAnswer || typeof correctAnswer !== "string" || !correctAnswer.trim()) {
         return res.status(400).json({ message: "Correct answer is required" });
       }
       
@@ -4317,7 +4318,6 @@ Generate exactly ${promptCount} prompts.`
         return res.json(updated);
       }
       
-      // Create new question
       const newQuestion = await storage.createQuestion({
         categoryId,
         question: question.trim(),
@@ -4332,7 +4332,7 @@ Generate exactly ${promptCount} prompts.`
         answerVideoUrl: answerVideoUrl?.trim() || null,
       });
       
-      res.json(newQuestion);
+      res.status(201).json(newQuestion);
     } catch (err) {
       console.error("Error saving blitzgrid question:", err);
       res.status(500).json({ message: "Failed to save question" });
@@ -4394,16 +4394,15 @@ Generate exactly ${promptCount} prompts.`
       for (const board of boards) {
         const boardCategories = await storage.getBoardCategories(board.id);
         for (const bc of boardCategories) {
-          const category = await storage.getCategory(bc.categoryId);
-          if (!category) continue;
+          if (!bc.category) continue;
           
-          const questions = await storage.getQuestionsByCategory(category.id);
+          const questions = await storage.getQuestionsByCategory(bc.categoryId);
           for (const q of questions) {
             rows.push([
               board.name,
               board.description || "",
-              category.name,
-              category.description || "",
+              bc.category.name,
+              bc.category.description || "",
               q.points,
               q.question,
               q.correctAnswer,
@@ -4433,37 +4432,42 @@ Generate exactly ${promptCount} prompts.`
   
   // Download template for import (Excel format)
   app.get("/api/blitzgrid/template", async (req, res) => {
-    const rows = [
-      ["Grid Name", "Grid Description", "Category Name", "Category Description", "Points", "Question", "Answer", "Options", "Image URL", "Audio URL", "Video URL"],
-      ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 10, "What year was Titanic released?", "1997", "", "", "", ""],
-      ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 20, "Who directed Jaws?", "Steven Spielberg", "", "", "", ""],
-      ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 30, "Which actor played Iron Man?", "Robert Downey Jr.", "Chris Evans|Robert Downey Jr.|Chris Hemsworth|Mark Ruffalo", "", "", ""],
-      ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 40, "What is the highest-grossing film of all time?", "Avatar", "", "", "", ""],
-      ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 50, "Who composed the Star Wars soundtrack?", "John Williams", "", "", "", ""],
-    ];
-    
-    const instructions = [
-      ["INSTRUCTIONS"],
-      [""],
-      ["Each row represents one question. Group questions by Grid Name and Category Name."],
-      ["Each category must have exactly 5 questions with unique point values: 10, 20, 30, 40, 50."],
-      ["Each grid can have 1-5 categories."],
-      [""],
-      ["Options: For multiple choice, separate options with | (pipe). Leave empty for open-ended questions."],
-      ["Media URLs: Image/Audio/Video URLs are optional. Leave empty if not needed."],
-    ];
-    
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    const wsInstructions = XLSX.utils.aoa_to_sheet(instructions);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Template");
-    XLSX.utils.book_append_sheet(wb, wsInstructions, "Instructions");
-    
-    const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-    
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res.setHeader("Content-Disposition", 'attachment; filename="blitzgrid-template.xlsx"');
-    res.send(buffer);
+    try {
+      const rows = [
+        ["Grid Name", "Grid Description", "Category Name", "Category Description", "Points", "Question", "Answer", "Options", "Image URL", "Audio URL", "Video URL"],
+        ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 10, "What year was Titanic released?", "1997", "", "", "", ""],
+        ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 20, "Who directed Jaws?", "Steven Spielberg", "", "", "", ""],
+        ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 30, "Which actor played Iron Man?", "Robert Downey Jr.", "Chris Evans|Robert Downey Jr.|Chris Hemsworth|Mark Ruffalo", "", "", ""],
+        ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 40, "What is the highest-grossing film of all time?", "Avatar", "", "", "", ""],
+        ["My Trivia Grid", "Fun trivia for parties", "Movies", "Film knowledge", 50, "Who composed the Star Wars soundtrack?", "John Williams", "", "", "", ""],
+      ];
+      
+      const instructions = [
+        ["INSTRUCTIONS"],
+        [""],
+        ["Each row represents one question. Group questions by Grid Name and Category Name."],
+        ["Each category must have exactly 5 questions with unique point values: 10, 20, 30, 40, 50."],
+        ["Each grid can have 1-5 categories."],
+        [""],
+        ["Options: For multiple choice, separate options with | (pipe). Leave empty for open-ended questions."],
+        ["Media URLs: Image/Audio/Video URLs are optional. Leave empty if not needed."],
+      ];
+      
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wsInstructions = XLSX.utils.aoa_to_sheet(instructions);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Template");
+      XLSX.utils.book_append_sheet(wb, wsInstructions, "Instructions");
+      
+      const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+      
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", 'attachment; filename="blitzgrid-template.xlsx"');
+      res.send(buffer);
+    } catch (err) {
+      console.error("Error generating template:", err);
+      res.status(500).json({ message: "Failed to generate template" });
+    }
   });
   
   // Import grids from Excel file
@@ -4559,13 +4563,14 @@ Generate exactly ${promptCount} prompts.`
           
           if (!allValid) continue;
           
-          // Create the grid (board)
           const board = await storage.createBoard({
             name: gridName.trim(),
             description: gridData.description?.trim() || null,
             userId,
             theme: "blitzgrid",
             pointValues: [10, 20, 30, 40, 50],
+            visibility: "private",
+            isGlobal: false,
           });
           
           let catPosition = 0;
