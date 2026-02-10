@@ -825,7 +825,7 @@ export default function PlayerPage() {
                         onChange={(e) => setPsyopLieText(e.target.value)}
                         placeholder="Enter a believable lie..."
                         className="text-lg"
-                        maxLength={100}
+                        maxLength={200}
                         data-testid="input-psyop-lie"
                       />
                       <Button

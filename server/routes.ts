@@ -3004,11 +3004,15 @@ Be creative and fun! Make questions engaging and varied.`;
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
         try {
-          if (!q.factText || !q.factText.includes('[REDACTED]')) {
+          if (!q.factText || typeof q.factText !== 'string' || !q.factText.trim()) {
+            results.errors.push(`Row ${i + 1}: Missing fact text`);
+            continue;
+          }
+          if (!q.factText.includes('[REDACTED]')) {
             results.errors.push(`Row ${i + 1}: Missing [REDACTED] placeholder`);
             continue;
           }
-          if (!q.correctAnswer) {
+          if (!q.correctAnswer || typeof q.correctAnswer !== 'string' || !q.correctAnswer.trim()) {
             results.errors.push(`Row ${i + 1}: Missing correct answer`);
             continue;
           }
@@ -5796,6 +5800,8 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            if (!data.question || typeof data.question.factText !== 'string' || !data.question.factText.trim()) break;
+
             room.psyopPhase = 'submitting';
             room.psyopCurrentQuestion = data.question;
             room.psyopSubmissions = [];
@@ -5862,8 +5868,16 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            if (!Array.isArray(data.options) || data.options.length === 0) break;
+            const validOptions = data.options.every((o: any) => typeof o?.id === 'string' && typeof o?.text === 'string' && o.id.trim() && o.text.trim());
+            if (!validOptions) break;
+
+            const sanitizedFullOptions = Array.isArray(data.fullOptions)
+              ? data.fullOptions.filter((o: any) => typeof o?.id === 'string' && typeof o?.text === 'string')
+              : data.options;
+
             room.psyopPhase = 'voting';
-            room.psyopVoteOptions = data.fullOptions || data.options;
+            room.psyopVoteOptions = sanitizedFullOptions;
             room.psyopVotes = [];
 
             room.players.forEach((player) => {
@@ -5913,7 +5927,7 @@ Generate exactly ${promptCount} prompts.`
               type: 'psyop:vote',
               voterId: player.id,
               voterName: player.name,
-              votedForId: data.votedForId,
+              votedForId: votedId,
             });
             break;
           }
