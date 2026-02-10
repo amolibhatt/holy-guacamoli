@@ -378,6 +378,15 @@ export default function PlayerPage() {
             });
           }
           break;
+        case "psyop:skipped":
+          setPsyopPhase("idle");
+          setPsyopSubmitted(false);
+          setPsyopVoted(false);
+          setPsyopLieText("");
+          setPsyopQuestion(null);
+          setPsyopOptions([]);
+          setPsyopCorrectAnswer(null);
+          break;
         case "psyop:ended":
           setGameMode("buzzer");
           setPsyopPhase("idle");

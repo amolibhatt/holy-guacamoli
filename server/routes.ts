@@ -5007,6 +5007,14 @@ Generate exactly ${promptCount} prompts.`
     memeSittingOut?: Set<string>;
     memePhase?: 'lobby' | 'selecting' | 'voting' | 'reveal' | 'gameComplete';
     memeUsedPrompts?: string[];
+    psyopPhase?: 'waiting' | 'submitting' | 'voting' | 'revealing' | 'finished';
+    psyopCurrentQuestion?: { id: number; factText: string; correctAnswer?: string };
+    psyopSubmissions?: Array<{ playerId: string; playerName: string; playerAvatar?: string; lieText: string }>;
+    psyopVoteOptions?: Array<{ id: string; text: string; isTruth: boolean; submitterId?: string; submitterName?: string }>;
+    psyopVotes?: Array<{ voterId: string; voterName: string; votedForId: string }>;
+    psyopQuestionIndex?: number;
+    psyopTotalQuestions?: number;
+    psyopLeaderboard?: Array<{ playerId: string; playerName: string; playerAvatar: string; score: number }>;
   }
 
   interface MemeSubmission {
@@ -5765,6 +5773,9 @@ Generate exactly ${promptCount} prompts.`
               completedQuestions: new Set(),
               sessionId,
               gameMode: 'psyop',
+              psyopPhase: 'waiting',
+              psyopSubmissions: [],
+              psyopVotes: [],
             };
             rooms.set(code, room);
             wsToRoom.set(ws, { roomCode: code, isHost: true });
@@ -5784,6 +5795,14 @@ Generate exactly ${promptCount} prompts.`
             
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
+
+            room.psyopPhase = 'submitting';
+            room.psyopCurrentQuestion = data.question;
+            room.psyopSubmissions = [];
+            room.psyopVotes = [];
+            room.psyopVoteOptions = [];
+            if (data.questionIndex !== undefined) room.psyopQuestionIndex = data.questionIndex;
+            if (data.totalQuestions !== undefined) room.psyopTotalQuestions = data.totalQuestions;
 
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
@@ -5807,6 +5826,15 @@ Generate exactly ${promptCount} prompts.`
             const player = room.players.get(mapping.playerId!);
             if (!player) break;
 
+            if (room.psyopSubmissions && !room.psyopSubmissions.some(s => s.playerId === player.id)) {
+              room.psyopSubmissions.push({
+                playerId: player.id,
+                playerName: player.name,
+                playerAvatar: player.avatar,
+                lieText: data.lieText,
+              });
+            }
+
             sendToHost(room, {
               type: 'psyop:submission',
               playerId: player.id,
@@ -5823,6 +5851,10 @@ Generate exactly ${promptCount} prompts.`
             
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
+
+            room.psyopPhase = 'voting';
+            room.psyopVoteOptions = data.fullOptions || data.options;
+            room.psyopVotes = [];
 
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
@@ -5847,6 +5879,14 @@ Generate exactly ${promptCount} prompts.`
             const player = room.players.get(mapping.playerId!);
             if (!player) break;
 
+            if (room.psyopVotes && !room.psyopVotes.some(v => v.voterId === player.id)) {
+              room.psyopVotes.push({
+                voterId: player.id,
+                voterName: player.name,
+                votedForId: data.votedForId,
+              });
+            }
+
             sendToHost(room, {
               type: 'psyop:vote',
               voterId: player.id,
@@ -5863,6 +5903,8 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            room.psyopPhase = 'revealing';
+
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
                 const playerScore = data.scores?.[player.id] || 0;
@@ -5873,6 +5915,76 @@ Generate exactly ${promptCount} prompts.`
                 });
               }
             });
+            break;
+          }
+
+          case 'psyop:sync:leaderboard': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.psyopLeaderboard = data.leaderboard || [];
+            break;
+          }
+
+          case 'psyop:skip': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                sendToPlayer(player, {
+                  type: 'psyop:skipped',
+                });
+              }
+            });
+            break;
+          }
+
+          case 'psyop:host:rejoin': {
+            const code = data.code?.toUpperCase();
+            const room = rooms.get(code);
+            
+            if (!room || room.gameMode !== 'psyop') {
+              ws.send(JSON.stringify({ type: 'room:notFound' }));
+              break;
+            }
+
+            room.hostWs = ws;
+            wsToRoom.set(ws, { roomCode: room.code, isHost: true });
+
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                sendToPlayer(player, { type: 'host:reconnected' });
+              }
+            });
+
+            const playersArray = Array.from(room.players.values()).map(p => ({
+              id: p.id,
+              name: p.name,
+              avatar: p.avatar,
+              isConnected: p.isConnected,
+            }));
+
+            ws.send(JSON.stringify({
+              type: 'psyop:host:rejoined',
+              code: room.code,
+              players: playersArray,
+              phase: room.psyopPhase || 'waiting',
+              currentQuestion: room.psyopCurrentQuestion || null,
+              submissions: room.psyopSubmissions || [],
+              voteOptions: room.psyopVoteOptions || [],
+              votes: room.psyopVotes || [],
+              questionIndex: room.psyopQuestionIndex ?? 0,
+              totalQuestions: room.psyopTotalQuestions ?? 0,
+              leaderboard: room.psyopLeaderboard || [],
+            }));
+            console.log(`[WebSocket] PsyOp host rejoined room ${room.code}`);
             break;
           }
 

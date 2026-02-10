@@ -12,7 +12,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { 
   Eye, Play, Users, QrCode, Trophy, Loader2, Check,
-  Crown, RefreshCw, ArrowLeft, Shuffle, Folder, HelpCircle
+  Crown, RefreshCw, ArrowLeft, Shuffle, Folder, HelpCircle,
+  SkipForward, WifiOff
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { AppHeader } from "@/components/AppHeader";
@@ -50,12 +51,20 @@ interface LeaderboardEntry {
   score: number;
 }
 
+function fisherYatesShuffle<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 export default function PsyOpHost() {
   const { isAuthenticated, isLoading: isAuthLoading, user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
-  // Access check
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   const [gameState, setGameState] = useState<GameState>("setup");
@@ -64,7 +73,6 @@ export default function PsyOpHost() {
   const [currentQuestion, setCurrentQuestion] = useState<PsyopQuestion | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedQuestions, setSelectedQuestions] = useState<PsyopQuestion[]>([]);
-  // No timers - game advances when everyone has submitted/voted
   const [submissions, setSubmissions] = useState<PlayerSubmission[]>([]);
   const [voteOptions, setVoteOptions] = useState<VoteOption[]>([]);
   const [votes, setVotes] = useState<PlayerVote[]>([]);
@@ -72,18 +80,43 @@ export default function PsyOpHost() {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [players, setPlayers] = useState<{ id: string; name: string; avatar?: string }[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [hostDisconnected, setHostDisconnected] = useState(false);
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gameStateRef = useRef<GameState>("setup");
+  const roomCodeRef = useRef<string | null>(null);
+  const selectedQuestionsRef = useRef<PsyopQuestion[]>([]);
+
+  useEffect(() => { gameStateRef.current = gameState; }, [gameState]);
+  useEffect(() => { roomCodeRef.current = roomCode; }, [roomCode]);
+  useEffect(() => { selectedQuestionsRef.current = selectedQuestions; }, [selectedQuestions]);
 
   const { data: questions = [], isLoading: isLoadingQuestions } = useQuery<PsyopQuestion[]>({
     queryKey: ["/api/psyop/questions"],
     enabled: isAuthenticated,
   });
 
-  const connectWebSocket = useCallback(() => {
+  const connectWebSocket = useCallback((isReconnect = false) => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const socket = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
     socket.onopen = () => {
-      socket.send(JSON.stringify({ type: "psyop:host:create" }));
+      setHostDisconnected(false);
+      reconnectAttemptsRef.current = 0;
+
+      if (isReconnect && roomCodeRef.current) {
+        socket.send(JSON.stringify({
+          type: "psyop:host:rejoin",
+          code: roomCodeRef.current,
+        }));
+      } else {
+        socket.send(JSON.stringify({
+          type: "psyop:host:create",
+          hostId: user?.id?.toString() || 'anonymous',
+        }));
+      }
     };
 
     socket.onmessage = (event) => {
@@ -95,6 +128,58 @@ export default function PsyOpHost() {
             setRoomCode(data.code);
             setGameState("waiting");
             localStorage.setItem("psyop-room-code", data.code);
+            break;
+          case "psyop:host:rejoined": {
+            if (data.players) {
+              setPlayers(data.players
+                .filter((p: any) => p.isConnected)
+                .map((p: any) => ({
+                  id: p.id,
+                  name: p.name,
+                  avatar: p.avatar,
+                })));
+            }
+            if (data.submissions) {
+              setSubmissions(data.submissions);
+            }
+            if (data.voteOptions) {
+              setVoteOptions(data.voteOptions.map((o: any) => ({
+                id: o.id,
+                text: o.text,
+                isTruth: o.isTruth ?? false,
+                submitterId: o.submitterId,
+                submitterName: o.submitterName,
+              })));
+            }
+            if (data.votes) {
+              setVotes(data.votes);
+            }
+            if (data.currentQuestion) {
+              setCurrentQuestion(data.currentQuestion as PsyopQuestion);
+            }
+            if (data.questionIndex !== undefined) {
+              setCurrentQuestionIndex(data.questionIndex);
+            }
+            if (data.leaderboard && data.leaderboard.length > 0) {
+              setLeaderboard(data.leaderboard);
+            }
+            const phase = data.phase as GameState;
+            if (phase && phase !== "setup") {
+              setGameState(phase);
+            }
+            toast({ title: "Reconnected to game!" });
+            break;
+          }
+          case "room:notFound":
+            setHostDisconnected(false);
+            reconnectAttemptsRef.current = 5;
+            toast({
+              title: "Room expired",
+              description: "The game room was lost. Please start a new game.",
+              variant: "destructive",
+            });
+            setGameState("setup");
+            setRoomCode(null);
             break;
           case "player:joined":
             if (data.player) {
@@ -136,16 +221,43 @@ export default function PsyOpHost() {
     };
 
     socket.onclose = () => {
-      // WebSocket closed
+      const currentState = gameStateRef.current;
+      if (currentState !== "setup" && currentState !== "finished") {
+        setHostDisconnected(true);
+        const attempts = reconnectAttemptsRef.current;
+        if (attempts < 5) {
+          reconnectAttemptsRef.current = attempts + 1;
+          const delay = Math.min(2000 * Math.pow(1.5, attempts), 15000);
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connectWebSocket(true);
+          }, delay);
+        } else {
+          toast({
+            title: "Connection lost",
+            description: "Could not reconnect to the game server.",
+            variant: "destructive",
+          });
+        }
+      }
     };
 
     socket.onerror = (err) => {
       console.error("WebSocket error:", err);
     };
 
+    wsRef.current = socket;
     setWs(socket);
     return socket;
-  }, [toast]);
+  }, [toast, user?.id]);
+
+  useEffect(() => {
+    return () => {
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      wsRef.current?.close();
+    };
+  }, []);
+
+  const activePlayerCount = players.length;
 
   const startGame = useCallback(() => {
     if (selectedQuestions.length === 0) {
@@ -157,12 +269,19 @@ export default function PsyOpHost() {
       return;
     }
     
+    setLeaderboard(players.map(p => ({
+      playerId: p.id,
+      playerName: p.name,
+      playerAvatar: p.avatar || "",
+      score: 0,
+    })));
+    
     setCurrentQuestionIndex(0);
     setCurrentQuestion(selectedQuestions[0]);
-    startSubmissionPhase(selectedQuestions[0]);
+    startSubmissionPhase(selectedQuestions[0], 0);
   }, [selectedQuestions, players, toast]);
 
-  const startSubmissionPhase = useCallback((question: PsyopQuestion) => {
+  const startSubmissionPhase = useCallback((question: PsyopQuestion, qIndex?: number) => {
     setCurrentQuestion(question);
     setSubmissions([]);
     setVotes([]);
@@ -174,9 +293,12 @@ export default function PsyOpHost() {
       question: {
         id: question.id,
         factText: question.factText,
+        correctAnswer: question.correctAnswer,
       },
+      questionIndex: qIndex ?? currentQuestionIndex,
+      totalQuestions: selectedQuestionsRef.current.length,
     }));
-  }, [ws]);
+  }, [ws, currentQuestionIndex]);
 
   const moveToVoting = useCallback(() => {
     if (!currentQuestion) return;
@@ -192,13 +314,20 @@ export default function PsyOpHost() {
       })),
     ];
     
-    const shuffled = options.sort(() => Math.random() - 0.5);
+    const shuffled = fisherYatesShuffle(options);
     setVoteOptions(shuffled);
     setGameState("voting");
     
     ws?.send(JSON.stringify({
       type: "psyop:start:voting",
       options: shuffled.map(o => ({ id: o.id, text: o.text })),
+      fullOptions: shuffled.map(o => ({
+        id: o.id,
+        text: o.text,
+        isTruth: o.isTruth,
+        submitterId: o.submitterId,
+        submitterName: o.submitterName,
+      })),
     }));
   }, [currentQuestion, submissions, ws]);
 
@@ -217,21 +346,11 @@ export default function PsyOpHost() {
     });
     
     setLeaderboard(prev => {
-      const updated = [...prev];
+      const updated = prev.map(e => ({ ...e }));
       Object.entries(scores).forEach(([playerId, points]) => {
         const existing = updated.find(e => e.playerId === playerId);
         if (existing) {
           existing.score += points;
-        } else {
-          const player = players.find(p => p.id === playerId);
-          if (player) {
-            updated.push({
-              playerId,
-              playerName: player.name,
-              playerAvatar: player.avatar || "",
-              score: points,
-            });
-          }
         }
       });
       return updated.sort((a, b) => b.score - a.score);
@@ -246,21 +365,29 @@ export default function PsyOpHost() {
       correctAnswer: currentQuestion?.correctAnswer,
       scores,
     }));
-  }, [votes, voteOptions, players, currentQuestion, ws]);
+  }, [votes, voteOptions, currentQuestion, ws]);
 
-  // Auto-advance when all players have submitted their lies
   useEffect(() => {
-    if (gameState === "submitting" && players.length > 0 && submissions.length === players.length) {
+    if (ws && leaderboard.length > 0 && gameState !== "setup" && gameState !== "waiting") {
+      ws.send(JSON.stringify({
+        type: "psyop:sync:leaderboard",
+        leaderboard,
+      }));
+    }
+  }, [leaderboard, ws, gameState]);
+
+  useEffect(() => {
+    if (gameState === "submitting" && activePlayerCount > 0 && submissions.length >= activePlayerCount) {
       moveToVoting();
     }
-  }, [gameState, players.length, submissions.length, moveToVoting]);
+  }, [gameState, activePlayerCount, submissions.length, moveToVoting]);
 
-  // Auto-advance when all players have voted
+  const expectedVoters = activePlayerCount;
   useEffect(() => {
-    if (gameState === "voting" && players.length > 0 && votes.length === players.length) {
+    if (gameState === "voting" && expectedVoters > 0 && votes.length >= expectedVoters) {
       moveToRevealing();
     }
-  }, [gameState, players.length, votes.length, moveToRevealing]);
+  }, [gameState, expectedVoters, votes.length, moveToRevealing]);
 
   const nextQuestion = useCallback(() => {
     const nextIndex = currentQuestionIndex + 1;
@@ -269,25 +396,27 @@ export default function PsyOpHost() {
       confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
     } else {
       setCurrentQuestionIndex(nextIndex);
-      startSubmissionPhase(selectedQuestions[nextIndex]);
+      startSubmissionPhase(selectedQuestions[nextIndex], nextIndex);
     }
   }, [currentQuestionIndex, selectedQuestions, startSubmissionPhase]);
 
-  // Get unique categories from questions
+  const skipQuestion = useCallback(() => {
+    ws?.send(JSON.stringify({ type: "psyop:skip" }));
+    nextQuestion();
+  }, [nextQuestion, ws]);
+
   const categories = Array.from(new Set(questions.map(q => q.category).filter(Boolean))) as string[];
   
-  // Select questions by category and start room
   const selectCategoryAndStart = (category: string) => {
     const categoryQuestions = questions.filter(q => q.category === category);
-    const shuffled = [...categoryQuestions].sort(() => Math.random() - 0.5);
+    const shuffled = fisherYatesShuffle(categoryQuestions);
     const selected = shuffled.slice(0, Math.min(5, shuffled.length));
     setSelectedQuestions(selected);
     connectWebSocket();
   };
   
-  // Shuffle all questions and start room
   const shuffleAndStart = () => {
-    const shuffled = [...questions].sort(() => Math.random() - 0.5);
+    const shuffled = fisherYatesShuffle(questions);
     const selected = shuffled.slice(0, Math.min(5, shuffled.length));
     setSelectedQuestions(selected);
     connectWebSocket();
@@ -320,7 +449,6 @@ export default function PsyOpHost() {
     return null;
   }
 
-  // Access denied for non-admin users
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -342,6 +470,13 @@ export default function PsyOpHost() {
       <div className="fixed inset-0 bg-gradient-to-br from-violet-300/5 via-transparent to-purple-300/5 pointer-events-none" />
       
 <AppHeader minimal backHref="/" title="PsyOp" />
+
+      {hostDisconnected && (
+        <div className="fixed top-16 left-0 right-0 z-50 bg-destructive/90 text-destructive-foreground text-center py-2 px-4 text-sm flex items-center justify-center gap-2">
+          <WifiOff className="w-4 h-4" />
+          Reconnecting to server...
+        </div>
+      )}
 
       <main className="max-w-6xl mx-auto px-4 py-6 w-full">
         {gameState === "setup" && (
@@ -369,7 +504,6 @@ export default function PsyOpHost() {
                   </div>
                 ) : (
                   <>
-                    {/* Shuffle All Option */}
                     <button
                       onClick={shuffleAndStart}
                       className="w-full p-4 border-2 border-dashed border-purple-300 rounded-xl hover-elevate active-elevate-2 transition-all text-left group"
@@ -386,7 +520,6 @@ export default function PsyOpHost() {
                       </div>
                     </button>
 
-                    {/* Category Options */}
                     {categories.length > 0 && (
                       <div className="space-y-3">
                         <div className="text-sm font-medium text-muted-foreground">Or pick a category:</div>
@@ -496,9 +629,21 @@ export default function PsyOpHost() {
                   <Badge variant="outline">
                     Question {currentQuestionIndex + 1} of {selectedQuestions.length}
                   </Badge>
-                  <Badge variant="secondary">
-                    {gameState === "submitting" ? "Write your lie" : "Find the truth"}
-                  </Badge>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary">
+                      {gameState === "submitting" ? "Write your lie" : "Find the truth"}
+                    </Badge>
+                    <Button
+                      onClick={skipQuestion}
+                      variant="outline"
+                      size="sm"
+                      className="gap-1"
+                      data-testid="button-skip-question"
+                    >
+                      <SkipForward className="w-3 h-3" />
+                      Skip
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="text-center py-6">
@@ -510,9 +655,9 @@ export default function PsyOpHost() {
                 {gameState === "submitting" && (
                   <div className="border-t pt-4">
                     <div className="text-sm text-muted-foreground mb-3">
-                      Waiting for all players to submit... ({submissions.length}/{players.length})
+                      Waiting for all players to submit... ({submissions.length}/{activePlayerCount})
                     </div>
-                    <Progress value={(submissions.length / players.length) * 100} className="h-2 mb-4" />
+                    <Progress value={activePlayerCount > 0 ? (submissions.length / activePlayerCount) * 100 : 0} className="h-2 mb-4" />
                     <div className="flex flex-wrap gap-2">
                       {players.map(p => {
                         const hasSubmitted = submissions.some(s => s.playerId === p.id);
@@ -529,7 +674,7 @@ export default function PsyOpHost() {
                         );
                       })}
                     </div>
-                    {submissions.length > 0 && submissions.length < players.length && (
+                    {submissions.length > 0 && submissions.length < activePlayerCount && (
                       <Button 
                         onClick={moveToVoting} 
                         variant="outline" 
@@ -555,10 +700,10 @@ export default function PsyOpHost() {
                       </div>
                     ))}
                     <div className="text-sm text-muted-foreground mt-4">
-                      Waiting for all votes... ({votes.length}/{players.length})
+                      Waiting for all votes... ({votes.length}/{expectedVoters})
                     </div>
-                    <Progress value={(votes.length / players.length) * 100} className="h-2" />
-                    {votes.length > 0 && votes.length < players.length && (
+                    <Progress value={expectedVoters > 0 ? (votes.length / expectedVoters) * 100 : 0} className="h-2" />
+                    {votes.length > 0 && votes.length < expectedVoters && (
                       <Button 
                         onClick={moveToRevealing} 
                         variant="outline" 
@@ -598,7 +743,7 @@ export default function PsyOpHost() {
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <span className={option.isTruth ? 'font-bold text-green-600 dark:text-green-400' : ''}>
                             {option.text}
-                            {option.isTruth && ' ✓ TRUTH'}
+                            {option.isTruth && ' \u2713 TRUTH'}
                           </span>
                           <div className="flex flex-wrap gap-1">
                             {votesForThis.map(v => (
@@ -667,7 +812,6 @@ export default function PsyOpHost() {
         )}
       </main>
       
-      {/* Floating Help Button */}
       <Button
         variant="outline"
         size="icon"
