@@ -110,6 +110,7 @@ export default function PsyOpHost() {
         socket.send(JSON.stringify({
           type: "psyop:host:rejoin",
           code: roomCodeRef.current,
+          hostId: user?.id?.toString() || 'anonymous',
         }));
       } else {
         socket.send(JSON.stringify({

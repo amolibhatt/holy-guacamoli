@@ -5804,11 +5804,16 @@ Generate exactly ${promptCount} prompts.`
             if (data.questionIndex !== undefined) room.psyopQuestionIndex = data.questionIndex;
             if (data.totalQuestions !== undefined) room.psyopTotalQuestions = data.totalQuestions;
 
+            const playerQuestion = {
+              id: data.question.id,
+              factText: data.question.factText,
+            };
+
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
                 sendToPlayer(player, {
                   type: 'psyop:submission:start',
-                  question: data.question,
+                  question: playerQuestion,
                   deadline: data.deadline,
                 });
               }
@@ -5823,15 +5828,20 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            if (room.psyopPhase !== 'submitting') break;
+
             const player = room.players.get(mapping.playerId!);
             if (!player) break;
+
+            const lieText = typeof data.lieText === 'string' ? data.lieText.trim().slice(0, 200) : '';
+            if (!lieText) break;
 
             if (room.psyopSubmissions && !room.psyopSubmissions.some(s => s.playerId === player.id)) {
               room.psyopSubmissions.push({
                 playerId: player.id,
                 playerName: player.name,
                 playerAvatar: player.avatar,
-                lieText: data.lieText,
+                lieText,
               });
             }
 
@@ -5840,7 +5850,7 @@ Generate exactly ${promptCount} prompts.`
               playerId: player.id,
               playerName: player.name,
               playerAvatar: player.avatar,
-              lieText: data.lieText,
+              lieText,
             });
             break;
           }
@@ -5876,14 +5886,26 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(mapping.roomCode);
             if (!room) break;
 
+            if (room.psyopPhase !== 'voting') break;
+
             const player = room.players.get(mapping.playerId!);
             if (!player) break;
+
+            const votedId = typeof data.votedForId === 'string' ? data.votedForId.trim() : '';
+            if (!votedId) break;
+
+            const validOption = room.psyopVoteOptions?.some(o => o.id === votedId);
+            if (!validOption) break;
+
+            const votedOption = room.psyopVoteOptions?.find(o => o.id === votedId);
+            if (votedOption?.submitterId === player.id) break;
+            if (votedId === player.id) break;
 
             if (room.psyopVotes && !room.psyopVotes.some(v => v.voterId === player.id)) {
               room.psyopVotes.push({
                 voterId: player.id,
                 voterName: player.name,
-                votedForId: data.votedForId,
+                votedForId: votedId,
               });
             }
 
@@ -5951,6 +5973,12 @@ Generate exactly ${promptCount} prompts.`
             const room = rooms.get(code);
             
             if (!room || room.gameMode !== 'psyop') {
+              ws.send(JSON.stringify({ type: 'room:notFound' }));
+              break;
+            }
+
+            const rejoinHostId = data.hostId?.toString() || 'anonymous';
+            if (room.hostId !== 'anonymous' && rejoinHostId !== room.hostId) {
               ws.send(JSON.stringify({ type: 'room:notFound' }));
               break;
             }
