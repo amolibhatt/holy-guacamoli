@@ -11,10 +11,11 @@ import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { 
-  Eye, Play, Users, QrCode, Trophy, Loader2, Check,
+  Eye, Play, Users, Trophy, Loader2, Check,
   Crown, RefreshCw, ArrowLeft, Shuffle, Folder, HelpCircle,
-  SkipForward, WifiOff, Copy, CheckCheck, Radio, User
+  SkipForward, WifiOff, CheckCheck, User, Link2, MessageCircle
 } from "lucide-react";
+import { PLAYER_AVATARS } from "@shared/schema";
 import { QRCodeSVG } from "qrcode.react";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
@@ -76,7 +77,6 @@ export default function PsyOpHost() {
   const [submissions, setSubmissions] = useState<PlayerSubmission[]>([]);
   const [voteOptions, setVoteOptions] = useState<VoteOption[]>([]);
   const [votes, setVotes] = useState<PlayerVote[]>([]);
-  const [showQR, setShowQR] = useState(false);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [players, setPlayers] = useState<{ id: string; name: string; avatar?: string }[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -566,93 +566,55 @@ export default function PsyOpHost() {
         )}
 
         {gameState === "waiting" && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            <Card>
-              <CardContent className="pt-6 text-center space-y-2">
-                <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Room Code</div>
-                <div className="text-5xl font-bold tracking-[0.3em] text-purple-600 dark:text-purple-400 font-mono">
-                  {roomCode}
-                </div>
-              </CardContent>
-            </Card>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground mb-1">Step 1</p>
+              <h2 className="text-2xl font-bold text-purple-500 dark:text-purple-400">Enlisting</h2>
+            </div>
 
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  <Button variant="outline" onClick={() => setShowQR(!showQR)} className="gap-2" data-testid="button-toggle-qr">
-                    <QrCode className="w-4 h-4" />
-                    {showQR ? 'Hide' : 'Show'} QR Code
-                  </Button>
-                  <Button variant="outline" onClick={copyJoinLink} className="gap-2" data-testid="button-copy-link">
-                    {copied ? <CheckCheck className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex flex-col items-center p-6 bg-card rounded-xl border md:w-80 shrink-0 space-y-4">
+                <div className="p-3 bg-white rounded-md" data-testid="container-qr-code">
+                  <QRCodeSVG value={joinUrl} size={140} />
+                </div>
+
+                <div className="text-center">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Room Code</p>
+                  <p className="font-mono font-bold text-3xl tracking-widest text-purple-600 dark:text-purple-400" data-testid="text-room-code">
+                    {roomCode}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 w-full">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 gap-2"
+                    onClick={copyJoinLink}
+                    data-testid="button-copy-link"
+                  >
+                    {copied ? <CheckCheck className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
                     {copied ? 'Copied' : 'Copy Link'}
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 gap-2 text-purple-500"
+                    disabled={!roomCode}
+                    onClick={() => {
+                      if (!roomCode) return;
+                      const message = `Join my PsyOp game!\n\nRoom Code: ${roomCode}\n${joinUrl}`;
+                      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                    }}
+                    data-testid="button-share-whatsapp"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    WhatsApp
+                  </Button>
                 </div>
 
-                <AnimatePresence>
-                  {showQR && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="flex justify-center py-4"
-                    >
-                      <div className="p-4 bg-white rounded-md">
-                        <QRCodeSVG value={joinUrl} size={180} />
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <div className="text-center text-xs text-muted-foreground font-mono truncate px-4">
-                  {joinUrl}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span>{players.length} player{players.length !== 1 ? 's' : ''} joined</span>
-                </div>
-
-                {players.length === 0 ? (
-                  <div className="flex flex-col items-center gap-3 py-6">
-                    <motion.div
-                      animate={{ scale: [1, 1.15, 1] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      <Radio className="w-8 h-8 text-purple-400 dark:text-purple-500" />
-                    </motion.div>
-                    <p className="text-sm text-muted-foreground">Waiting for players to join...</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {players.map((p, i) => (
-                      <motion.div
-                        key={p.id}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: i * 0.05 }}
-                      >
-                        <Badge variant="secondary" className="gap-1.5 py-1 px-3">
-                          <User className="w-3 h-3" />
-                          {p.name}
-                        </Badge>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-
-                {players.length < 2 && players.length > 0 && (
-                  <p className="text-xs text-center text-muted-foreground">
-                    Need at least {2 - players.length} more player{2 - players.length !== 1 ? 's' : ''} to start
-                  </p>
-                )}
-
-                <Button 
-                  onClick={startGame} 
+                <Button
+                  onClick={startGame}
                   disabled={players.length < 2}
                   size="lg"
                   className="w-full gap-2"
@@ -661,8 +623,71 @@ export default function PsyOpHost() {
                   <Play className="w-5 h-5" />
                   Start Game ({selectedQuestions.length} questions)
                 </Button>
-              </CardContent>
-            </Card>
+
+                {players.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Waiting for players...</p>
+                )}
+                {players.length > 0 && players.length < 2 && (
+                  <p className="text-xs text-muted-foreground">
+                    Need {2 - players.length} more player{2 - players.length !== 1 ? 's' : ''} to start
+                  </p>
+                )}
+              </div>
+
+              <Card className="flex-1 min-h-[280px]">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center justify-between gap-2 text-sm">
+                    <span className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-purple-400" />
+                      Players
+                    </span>
+                    <Badge
+                      variant="secondary"
+                      className={players.length > 0 ? "bg-purple-500/20 text-purple-400" : ""}
+                      data-testid="badge-player-count"
+                    >
+                      {players.length}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {players.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8" data-testid="card-players-empty">
+                      <Users className="w-8 h-8 text-muted-foreground/30 mb-2" />
+                      <p className="text-sm text-muted-foreground">Waiting for players to join...</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2" data-testid="card-players">
+                      <AnimatePresence>
+                        {players.map((p) => {
+                          const avatarData = PLAYER_AVATARS.find(a => a.id === p.avatar);
+                          return (
+                            <motion.div
+                              key={p.id}
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              exit={{ scale: 0, opacity: 0 }}
+                              className="flex flex-col items-center p-3 rounded-lg border bg-card"
+                              data-testid={`player-card-${p.id}`}
+                            >
+                              <div className="w-8 h-8 rounded-full bg-purple-500/15 flex items-center justify-center mb-1">
+                                {avatarData
+                                  ? <span className="text-lg" aria-label={avatarData.label}>{avatarData.emoji}</span>
+                                  : <User className="w-4 h-4 text-purple-400" />
+                                }
+                              </div>
+                              <span className="font-medium text-xs text-center truncate w-full" data-testid={`text-player-name-${p.id}`} title={p.name}>
+                                {p.name}
+                              </span>
+                            </motion.div>
+                          );
+                        })}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </motion.div>
         )}
 
