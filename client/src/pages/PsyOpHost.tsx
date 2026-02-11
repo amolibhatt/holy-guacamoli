@@ -588,20 +588,15 @@ export default function PsyOpHost() {
   const joinUrl = roomCode ? `${window.location.origin}/play/${roomCode}` : "";
 
   return (
-    <div className="min-h-screen arcade-bg flex flex-col relative" data-testid="page-psyop-host">
+    <div className="min-h-screen bg-[#0a0a0f] flex flex-col relative" data-testid="page-psyop-host">
       <div className="fixed inset-0 pointer-events-none">
-        <div 
-          className="absolute w-full h-full opacity-[0.03]"
-          style={{
-            background: `repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 255, 255, 0.5) 2px, rgba(255, 255, 255, 0.5) 4px)`,
-          }}
-        />
         <div 
           className="absolute w-full h-full"
           style={{
             background: `
-              radial-gradient(ellipse 80% 60% at 50% 0%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
-              radial-gradient(ellipse 60% 40% at 100% 100%, rgba(109, 40, 217, 0.05) 0%, transparent 50%)
+              radial-gradient(circle at 20% 20%, rgba(139, 92, 246, 0.06) 0%, transparent 40%),
+              radial-gradient(circle at 80% 80%, rgba(79, 70, 229, 0.04) 0%, transparent 40%),
+              radial-gradient(circle at 50% 50%, rgba(109, 40, 217, 0.03) 0%, transparent 60%)
             `,
           }}
         />
@@ -616,183 +611,119 @@ export default function PsyOpHost() {
         </div>
       )}
 
-      <main className="flex-1 max-w-6xl mx-auto px-4 py-6 relative z-10 w-full">
+      <main className="flex-1 max-w-2xl mx-auto px-4 py-8 relative z-10 w-full">
         {gameState === "setup" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
+            <div className="text-center space-y-4">
+              <motion.div
+                className="relative w-24 h-24 mx-auto"
+                animate={{ rotate: [0, 3, -3, 0] }}
+                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-600/20 to-indigo-600/20 blur-xl" />
+                <div className="relative w-full h-full rounded-2xl border border-violet-500/30 bg-violet-950/40 backdrop-blur-sm flex items-center justify-center">
+                  <Eye className="w-11 h-11 text-violet-400" />
+                </div>
+              </motion.div>
+              <div>
+                <h1 className="text-4xl font-black text-white tracking-tight mb-2" data-testid="text-psyop-title">
+                  PsyOp
+                </h1>
+                <p className="text-white/40 text-sm">
+                  Craft believable lies. Spot the truth. Outsmart everyone.
+                </p>
+              </div>
+            </div>
+
             {isLoadingQuestions ? (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="space-y-3">
                 {[1, 2, 3].map(i => (
-                  <div key={i} className="h-20 rounded-xl arcade-surface border border-white/10 animate-pulse" />
+                  <div key={i} className="h-16 rounded-xl bg-white/[0.03] border border-white/[0.06] animate-pulse" />
                 ))}
               </div>
             ) : questions.length === 0 ? (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-center py-16"
+                className="text-center py-12 rounded-xl border border-white/[0.06] bg-white/[0.02]"
               >
-                <div 
-                  className="w-20 h-20 rounded-xl flex items-center justify-center mx-auto mb-5"
-                  style={{ border: '2px solid var(--arcade-border)' }}
-                >
-                  <Eye className="w-10 h-10 text-white/30 shrink-0" />
-                </div>
-                <h3 
-                  className="text-2xl font-black mb-3 text-white uppercase tracking-wide"
-                  style={{ 
-                    fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                    textShadow: '0 0 10px rgba(139, 92, 246, 0.3)',
-                  }}
-                >
-                  No Questions Yet
-                </h3>
-                <p className="text-white/50 max-w-sm mx-auto mb-6">
-                  Create some questions to start deceiving your friends
-                </p>
+                <Eye className="w-10 h-10 text-white/15 mx-auto mb-4" />
+                <p className="text-white/50 mb-1">No questions yet</p>
+                <p className="text-xs text-white/30 mb-5">Create some in the admin panel to get started</p>
                 <Button
                   onClick={() => setLocation("/admin/psyop")}
-                  className="bg-gradient-to-r from-violet-500 to-purple-500 text-white font-bold uppercase tracking-wide"
+                  className="gap-2 bg-violet-600 hover:bg-violet-700 text-white"
                   data-testid="button-create-questions"
                 >
-                  <Sparkles className="w-4 h-4 mr-2 shrink-0" />
+                  <Sparkles className="w-4 h-4" />
                   Create Questions
                 </Button>
               </motion.div>
             ) : (
               <div className="space-y-6">
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
+                <motion.button
+                  onClick={shuffleAndStart}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="w-full p-5 rounded-xl text-left relative overflow-hidden group transition-all duration-300 hover-elevate active-elevate-2"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(79, 70, 229, 0.04) 100%)',
+                    border: '1px solid rgba(139, 92, 246, 0.25)',
+                  }}
+                  data-testid="button-shuffle-all"
                 >
-                  <motion.button
-                    onClick={shuffleAndStart}
-                    className="w-full flex items-center justify-between gap-4 p-5 rounded-xl text-left relative overflow-hidden group hover-elevate"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(109, 40, 217, 0.06) 100%)',
-                      border: '1px solid rgba(139, 92, 246, 0.4)',
-                    }}
-                    data-testid="button-shuffle-all"
-                  >
-                    <motion.div 
-                      className="absolute inset-0 rounded-xl"
-                      animate={{
-                        boxShadow: [
-                          'inset 0 0 20px rgba(139, 92, 246, 0.1), 0 0 20px rgba(139, 92, 246, 0.15)',
-                          'inset 0 0 30px rgba(139, 92, 246, 0.2), 0 0 40px rgba(139, 92, 246, 0.25)',
-                          'inset 0 0 20px rgba(139, 92, 246, 0.1), 0 0 20px rgba(139, 92, 246, 0.15)',
-                        ],
-                      }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                    <motion.div 
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-400/20 to-transparent"
-                      animate={{ x: ['-100%', '200%'] }}
-                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 1 }}
-                    />
-                    
-                    <div className="relative flex items-center gap-4">
-                      <motion.div 
-                        className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' }}
-                        animate={{
-                          boxShadow: [
-                            '0 0 15px rgba(139, 92, 246, 0.5)',
-                            '0 0 30px rgba(139, 92, 246, 0.8)',
-                            '0 0 15px rgba(139, 92, 246, 0.5)',
-                          ],
-                          scale: [1, 1.05, 1],
-                        }}
-                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                      >
-                        <Shuffle className="w-6 h-6 text-white shrink-0" />
-                      </motion.div>
-                      <div>
-                        <h3 
-                          className="font-black uppercase tracking-wide text-lg text-purple-300 transition-colors"
-                          style={{ 
-                            fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                            textShadow: '0 0 15px rgba(139, 92, 246, 0.5)',
-                          }}
-                        >
-                          Shuffle Play
-                        </h3>
-                        <p className="text-white/40 text-sm">5 random questions from all categories</p>
-                      </div>
+                  <motion.div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    style={{ background: 'radial-gradient(circle at 30% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 60%)' }}
+                  />
+                  <div className="relative flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-lg shadow-violet-500/20">
+                      <Shuffle className="w-6 h-6 text-white" />
                     </div>
-                    
-                    <div className="relative text-right">
-                      <span className="text-white/40 text-sm">
-                        {questions.length} question{questions.length !== 1 ? 's' : ''}
-                      </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-lg text-white">Shuffle Play</div>
+                      <div className="text-sm text-white/40">5 random questions from all categories</div>
                     </div>
-                  </motion.button>
-                </motion.div>
+                    <div className="text-right shrink-0">
+                      <div className="text-sm text-white/30">{questions.length} total</div>
+                    </div>
+                  </div>
+                </motion.button>
 
                 {categories.length > 0 && (
-                  <motion.section
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.1 }}
-                  >
-                    <div className="flex items-center gap-4 mb-5">
-                      <h2 className="text-sm font-bold text-white/70 uppercase tracking-widest whitespace-nowrap">Categories</h2>
-                      <div className="flex-1 h-[1px] bg-gradient-to-r from-purple-500/50 via-purple-500/20 to-transparent" />
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 px-1">
+                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                      <span className="text-[11px] font-medium text-white/30 uppercase tracking-widest">or pick a category</span>
+                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                     </div>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="space-y-2">
                       {categories.map((category, idx) => {
                         const count = questions.filter(q => q.category === category).length;
                         return (
                           <motion.button
                             key={category}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4, delay: 0.15 + idx * 0.05 }}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.15 + idx * 0.05 }}
                             onClick={() => selectCategoryAndStart(category)}
-                            className="group text-left p-5 rounded-xl arcade-surface transition-all duration-200"
-                            style={{
-                              border: '1px solid var(--arcade-border)',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.6)';
-                              e.currentTarget.style.boxShadow = '0 0 25px rgba(139, 92, 246, 0.2), 0 0 40px rgba(109, 40, 217, 0.1), inset 0 0 0 1px rgba(139, 92, 246, 0.3)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = 'var(--arcade-border)';
-                              e.currentTarget.style.boxShadow = '0 0 8px rgba(139, 92, 246, 0.1)';
-                            }}
+                            className="w-full flex items-center gap-4 p-4 rounded-xl text-left transition-all duration-200 hover-elevate active-elevate-2 border border-white/[0.06] bg-white/[0.02]"
                             data-testid={`button-category-${category}`}
                           >
-                            <div className="flex items-center gap-3">
-                              <div 
-                                className="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 shrink-0"
-                                style={{
-                                  border: '2px solid rgba(139, 92, 246, 0.4)',
-                                  boxShadow: '0 0 8px rgba(139, 92, 246, 0.15)',
-                                }}
-                              >
-                                <Folder className="w-6 h-6 shrink-0" style={{ color: '#a78bfa' }} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h3 
-                                  className="font-black truncate uppercase tracking-wide transition-colors duration-200 text-base"
-                                  style={{ 
-                                    fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                                    color: 'var(--arcade-text)',
-                                  }}
-                                  title={category}
-                                >
-                                  {category}
-                                </h3>
-                                <p className="text-xs text-white/40 mt-1">
-                                  {count} question{count !== 1 ? 's' : ''}
-                                </p>
-                              </div>
+                            <div className="w-10 h-10 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
+                              <Folder className="w-5 h-5 text-violet-400" />
                             </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold text-white truncate">{category}</div>
+                              <div className="text-xs text-white/30">{count} question{count !== 1 ? 's' : ''}</div>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-white/20 shrink-0" />
                           </motion.button>
                         );
                       })}
                     </div>
-                  </motion.section>
+                  </div>
                 )}
               </div>
             )}
@@ -802,27 +733,19 @@ export default function PsyOpHost() {
         {gameState === "waiting" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
             <div className="text-center">
-              <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Step 1</p>
-              <h2 
-                className="text-2xl font-black uppercase tracking-wide text-purple-300"
-                style={{ 
-                  fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                  textShadow: '0 0 15px rgba(139, 92, 246, 0.4)',
-                }}
-              >
-                Enlisting
-              </h2>
+              <p className="text-xs text-white/30 uppercase tracking-wider mb-1">Waiting Room</p>
+              <h2 className="text-2xl font-bold text-violet-400">Recruiting Agents</h2>
             </div>
 
             <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex flex-col items-center p-4 arcade-surface rounded-xl md:w-80 shrink-0 space-y-4" style={{ border: '1px solid var(--arcade-border)' }}>
+              <div className="flex flex-col items-center p-5 rounded-xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm md:w-80 shrink-0 space-y-4">
                 <div className="bg-white p-3 rounded-lg" data-testid="container-qr-code">
-                  <QRCodeSVG value={joinUrl} size={120} />
+                  <QRCodeSVG value={joinUrl} size={130} />
                 </div>
 
                 <div className="text-center">
-                  <p className="text-white/40 text-[10px] uppercase tracking-wide">Room Code</p>
-                  <p className="font-mono font-black text-2xl tracking-widest text-white" data-testid="text-room-code">
+                  <p className="text-white/30 text-[10px] uppercase tracking-wider mb-1">Room Code</p>
+                  <p className="font-mono font-black text-3xl tracking-widest text-white" data-testid="text-room-code">
                     {roomCode}
                   </p>
                 </div>
@@ -841,7 +764,7 @@ export default function PsyOpHost() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1 gap-2 text-purple-400"
+                    className="flex-1 gap-2 text-violet-400"
                     disabled={!roomCode}
                     onClick={() => {
                       if (!roomCode) return;
@@ -858,7 +781,8 @@ export default function PsyOpHost() {
                 <Button
                   onClick={startGame}
                   disabled={players.length < 2}
-                  className="w-full gap-2 bg-gradient-to-r from-violet-500 to-purple-500 text-white font-bold"
+                  size="lg"
+                  className="w-full gap-2 bg-violet-600 hover:bg-violet-700 text-white"
                   data-testid="button-start-game"
                 >
                   <Play className="w-5 h-5" />
@@ -866,24 +790,24 @@ export default function PsyOpHost() {
                 </Button>
 
                 {players.length === 0 && (
-                  <p className="text-[10px] text-white/40">Waiting for players...</p>
+                  <p className="text-xs text-white/30">Waiting for players...</p>
                 )}
                 {players.length > 0 && players.length < 2 && (
-                  <p className="text-[10px] text-white/40">
+                  <p className="text-xs text-white/30">
                     Need {2 - players.length} more player{2 - players.length !== 1 ? 's' : ''} to start
                   </p>
                 )}
               </div>
 
-              <div className="flex-1 min-h-[280px] arcade-surface rounded-xl p-5" style={{ border: '1px solid var(--arcade-border)' }}>
+              <div className="flex-1 min-h-[280px] rounded-xl p-5 border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm">
                 <div className="flex items-center justify-between gap-2 mb-4">
-                  <span className="flex items-center gap-2 text-sm font-bold text-white/70 uppercase tracking-wider">
-                    <Users className="w-4 h-4 text-purple-400" />
+                  <span className="flex items-center gap-2 text-sm text-white/50">
+                    <Users className="w-4 h-4 text-violet-400" />
                     Players
                   </span>
                   <Badge
                     variant="secondary"
-                    className={players.length > 0 ? "bg-purple-500/20 text-purple-400" : ""}
+                    className={players.length > 0 ? "bg-violet-500/20 text-violet-300" : ""}
                     data-testid="badge-player-count"
                   >
                     {players.length}
@@ -891,8 +815,8 @@ export default function PsyOpHost() {
                 </div>
                 {players.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-8" data-testid="card-players-empty">
-                    <Users className="w-8 h-8 text-white/20 mb-2" />
-                    <p className="text-sm text-white/40">Waiting for players to join...</p>
+                    <Users className="w-8 h-8 text-white/10 mb-2" />
+                    <p className="text-sm text-white/30">Waiting for players to join...</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2" data-testid="card-players">
@@ -905,17 +829,16 @@ export default function PsyOpHost() {
                             initial={{ scale: 0, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0, opacity: 0 }}
-                            className="flex flex-col items-center p-3 rounded-lg"
-                            style={{ border: '1px solid var(--arcade-border)' }}
+                            className="flex flex-col items-center p-3 rounded-lg border border-white/[0.08] bg-white/[0.03]"
                             data-testid={`player-card-${p.id}`}
                           >
-                            <div className="w-8 h-8 rounded-full bg-purple-500/15 flex items-center justify-center mb-1">
+                            <div className="w-8 h-8 rounded-full bg-violet-500/15 flex items-center justify-center mb-1">
                               {avatarData
                                 ? <span className="text-lg" aria-label={avatarData.label}>{avatarData.emoji}</span>
-                                : <User className="w-4 h-4 text-purple-400" />
+                                : <User className="w-4 h-4 text-violet-400" />
                               }
                             </div>
-                            <span className="font-medium text-xs text-center truncate w-full text-white" data-testid={`text-player-name-${p.id}`} title={p.name}>
+                            <span className="font-medium text-xs text-center truncate w-full text-white/80" data-testid={`text-player-name-${p.id}`} title={p.name}>
                               {p.name}
                             </span>
                           </motion.div>
