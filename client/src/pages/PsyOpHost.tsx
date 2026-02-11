@@ -14,7 +14,7 @@ import {
   Eye, Play, Users, Trophy, Loader2, Check,
   Crown, RefreshCw, ArrowLeft, Shuffle, Folder, HelpCircle,
   SkipForward, WifiOff, CheckCheck, User, Link2, MessageCircle,
-  Sparkles, Target, Award, Zap
+  Sparkles, Target, Award, Zap, ChevronRight
 } from "lucide-react";
 import { PLAYER_AVATARS } from "@shared/schema";
 import { QRCodeSVG } from "qrcode.react";
@@ -602,76 +602,111 @@ export default function PsyOpHost() {
 
       <main className="max-w-6xl mx-auto px-4 py-6 w-full">
         {gameState === "setup" && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Eye className="w-5 h-5 text-purple-500 dark:text-purple-400" />
-                  Start a PsyOp Game
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {isLoadingQuestions ? (
-                  <div className="space-y-3">
-                    <Skeleton className="h-16 w-full" />
-                    <Skeleton className="h-16 w-full" />
-                  </div>
-                ) : questions.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Eye className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No questions available</p>
-                    <Button onClick={() => setLocation("/admin/psyop")} className="mt-4" data-testid="button-create-questions">
-                      Create Questions
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <button
-                      onClick={shuffleAndStart}
-                      className="w-full p-4 border-2 border-dashed border-purple-300 rounded-xl hover-elevate active-elevate-2 transition-all text-left group"
-                      data-testid="button-shuffle-all"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
-                          <Shuffle className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-lg">Shuffle Play</div>
-                          <div className="text-sm text-muted-foreground">5 random questions from all categories</div>
-                        </div>
-                      </div>
-                    </button>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto space-y-8 py-4">
+            <div className="text-center space-y-3">
+              <motion.div
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/20"
+              >
+                <Eye className="w-10 h-10 text-white" />
+              </motion.div>
+              <h1
+                className="text-3xl font-black tracking-tight"
+                style={{ background: 'linear-gradient(135deg, #8b5cf6, #a855f7, #6d28d9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+                data-testid="text-psyop-title"
+              >
+                PsyOp
+              </h1>
+              <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+                Craft believable lies, spot the truth, and outsmart your friends
+              </p>
+            </div>
 
-                    {categories.length > 0 && (
-                      <div className="space-y-3">
-                        <div className="text-sm font-medium text-muted-foreground">Or pick a category:</div>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          {categories.map((category) => {
-                            const count = questions.filter(q => q.category === category).length;
-                            return (
-                              <button
-                                key={category}
-                                onClick={() => selectCategoryAndStart(category)}
-                                className="p-4 border rounded-xl hover-elevate active-elevate-2 transition-all text-left"
-                                data-testid={`button-category-${category}`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <Folder className="w-5 h-5 text-purple-500 dark:text-purple-400" />
-                                  <div>
-                                    <div className="font-medium">{category}</div>
-                                    <div className="text-xs text-muted-foreground">{count} question{count !== 1 ? 's' : ''}</div>
-                                  </div>
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </>
+            {isLoadingQuestions ? (
+              <div className="space-y-3">
+                <Skeleton className="h-20 w-full rounded-xl" />
+                <Skeleton className="h-16 w-full rounded-xl" />
+                <Skeleton className="h-16 w-full rounded-xl" />
+              </div>
+            ) : questions.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center mb-4">
+                    <Eye className="w-8 h-8 text-muted-foreground/50" />
+                  </div>
+                  <p className="text-muted-foreground mb-1">No questions yet</p>
+                  <p className="text-xs text-muted-foreground/70 mb-4">Create some questions in the admin panel to get started</p>
+                  <Button onClick={() => setLocation("/admin/psyop")} className="gap-2" data-testid="button-create-questions">
+                    <Sparkles className="w-4 h-4" />
+                    Create Questions
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                <motion.button
+                  onClick={shuffleAndStart}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="w-full p-5 rounded-xl bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-indigo-500/10 border border-purple-500/20 hover-elevate active-elevate-2 transition-all text-left group"
+                  data-testid="button-shuffle-all"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-md shadow-purple-500/20 shrink-0">
+                      <Shuffle className="w-7 h-7 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-lg">Shuffle Play</div>
+                      <div className="text-sm text-muted-foreground">5 random questions from all categories</div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground/50 shrink-0" />
+                  </div>
+                </motion.button>
+
+                {categories.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 px-1">
+                      <div className="h-px flex-1 bg-border" />
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">or pick a category</span>
+                      <div className="h-px flex-1 bg-border" />
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {categories.map((category, idx) => {
+                        const count = questions.filter(q => q.category === category).length;
+                        return (
+                          <motion.button
+                            key={category}
+                            onClick={() => selectCategoryAndStart(category)}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 + idx * 0.05 }}
+                            className="p-4 rounded-xl border bg-card hover-elevate active-elevate-2 transition-all text-left"
+                            data-testid={`button-category-${category}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+                                <Folder className="w-5 h-5 text-purple-500 dark:text-purple-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-semibold truncate">{category}</div>
+                                <div className="text-xs text-muted-foreground">{count} question{count !== 1 ? 's' : ''}</div>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
+                            </div>
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
-              </CardContent>
-            </Card>
+
+                <div className="text-center pt-2">
+                  <p className="text-[11px] text-muted-foreground/60">{questions.length} question{questions.length !== 1 ? 's' : ''} available across {categories.length} categor{categories.length !== 1 ? 'ies' : 'y'}</p>
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
 
