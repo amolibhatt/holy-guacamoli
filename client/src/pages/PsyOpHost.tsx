@@ -600,8 +600,10 @@ export default function PsyOpHost() {
           className="absolute w-full h-full"
           style={{
             background: `
-              radial-gradient(ellipse 80% 60% at 50% 0%, rgba(167, 139, 250, 0.15) 0%, transparent 50%),
-              radial-gradient(ellipse 60% 40% at 100% 100%, rgba(139, 92, 246, 0.1) 0%, transparent 50%)
+              radial-gradient(ellipse 90% 60% at 50% 0%, rgba(167, 139, 250, 0.25) 0%, transparent 50%),
+              radial-gradient(ellipse 70% 50% at 0% 50%, rgba(192, 132, 252, 0.12) 0%, transparent 50%),
+              radial-gradient(ellipse 60% 50% at 100% 80%, rgba(139, 92, 246, 0.18) 0%, transparent 50%),
+              radial-gradient(ellipse 50% 40% at 50% 100%, rgba(217, 70, 239, 0.1) 0%, transparent 40%)
             `,
           }}
         />
@@ -633,9 +635,9 @@ export default function PsyOpHost() {
               >
                 <div 
                   className="w-20 h-20 rounded-xl flex items-center justify-center mx-auto mb-5"
-                  style={{ border: '2px solid var(--arcade-border)' }}
+                  style={{ background: 'rgba(139, 92, 246, 0.15)', border: '2px solid rgba(192, 132, 252, 0.4)', boxShadow: '0 0 20px rgba(139, 92, 246, 0.15)' }}
                 >
-                  <Eye className="w-10 h-10 text-white/30 shrink-0" />
+                  <Eye className="w-10 h-10 shrink-0" style={{ color: '#c4b5fd' }} />
                 </div>
                 <h3 
                   className="text-2xl font-black mb-3 text-white uppercase tracking-wide"
@@ -668,8 +670,8 @@ export default function PsyOpHost() {
                     onClick={shuffleAndStart}
                     className="w-full flex items-center justify-between gap-4 p-5 rounded-xl text-left relative overflow-hidden group hover-elevate"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.12) 0%, rgba(139, 92, 246, 0.06) 100%)',
-                      border: '1px solid rgba(167, 139, 250, 0.4)',
+                      background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(192, 132, 252, 0.15) 50%, rgba(217, 70, 239, 0.12) 100%)',
+                      border: '1px solid rgba(192, 132, 252, 0.5)',
                     }}
                     data-testid="button-shuffle-all"
                   >
@@ -677,15 +679,15 @@ export default function PsyOpHost() {
                       className="absolute inset-0 rounded-xl"
                       animate={{
                         boxShadow: [
-                          'inset 0 0 20px rgba(167, 139, 250, 0.1), 0 0 20px rgba(167, 139, 250, 0.15)',
-                          'inset 0 0 30px rgba(167, 139, 250, 0.2), 0 0 40px rgba(167, 139, 250, 0.25)',
-                          'inset 0 0 20px rgba(167, 139, 250, 0.1), 0 0 20px rgba(167, 139, 250, 0.15)',
+                          'inset 0 0 20px rgba(192, 132, 252, 0.15), 0 0 25px rgba(167, 139, 250, 0.2)',
+                          'inset 0 0 35px rgba(192, 132, 252, 0.25), 0 0 50px rgba(167, 139, 250, 0.3)',
+                          'inset 0 0 20px rgba(192, 132, 252, 0.15), 0 0 25px rgba(167, 139, 250, 0.2)',
                         ],
                       }}
                       transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                     />
                     <motion.div 
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-violet-400/20 to-transparent"
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-400/25 to-transparent"
                       animate={{ x: ['-100%', '200%'] }}
                       transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 1 }}
                     />
@@ -748,18 +750,21 @@ export default function PsyOpHost() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.4, delay: 0.15 + idx * 0.05 }}
                             onClick={() => selectCategoryAndStart(category)}
-                            className="w-full group text-left p-5 rounded-xl arcade-surface transition-all duration-200"
+                            className="w-full group text-left p-5 rounded-xl transition-all duration-200"
                             style={{
-                              border: '1px solid var(--arcade-border)',
-                              boxShadow: '0 0 8px rgba(167, 139, 250, 0.1)',
+                              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(109, 40, 217, 0.06) 100%)',
+                              border: '1px solid rgba(167, 139, 250, 0.3)',
+                              boxShadow: '0 0 12px rgba(139, 92, 246, 0.12)',
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor = 'rgba(167, 139, 250, 0.6)';
-                              e.currentTarget.style.boxShadow = '0 0 25px rgba(167, 139, 250, 0.2), 0 0 40px rgba(139, 92, 246, 0.1), inset 0 0 0 1px rgba(167, 139, 250, 0.3)';
+                              e.currentTarget.style.borderColor = 'rgba(192, 132, 252, 0.7)';
+                              e.currentTarget.style.boxShadow = '0 0 30px rgba(167, 139, 250, 0.25), 0 0 50px rgba(139, 92, 246, 0.15), inset 0 0 0 1px rgba(192, 132, 252, 0.3)';
+                              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(109, 40, 217, 0.1) 100%)';
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = 'var(--arcade-border)';
-                              e.currentTarget.style.boxShadow = '0 0 8px rgba(167, 139, 250, 0.1)';
+                              e.currentTarget.style.borderColor = 'rgba(167, 139, 250, 0.3)';
+                              e.currentTarget.style.boxShadow = '0 0 12px rgba(139, 92, 246, 0.12)';
+                              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(109, 40, 217, 0.06) 100%)';
                             }}
                             data-testid={`button-category-${category}`}
                           >
@@ -767,11 +772,12 @@ export default function PsyOpHost() {
                               <div 
                                 className="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 shrink-0"
                                 style={{
-                                  border: '2px solid rgba(167, 139, 250, 0.4)',
-                                  boxShadow: '0 0 8px rgba(167, 139, 250, 0.15)',
+                                  background: 'rgba(139, 92, 246, 0.15)',
+                                  border: '2px solid rgba(192, 132, 252, 0.5)',
+                                  boxShadow: '0 0 12px rgba(167, 139, 250, 0.2)',
                                 }}
                               >
-                                <Folder className="w-6 h-6 shrink-0" style={{ color: '#c4b5fd' }} />
+                                <Folder className="w-6 h-6 shrink-0" style={{ color: '#d8b4fe' }} />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <h3 
@@ -816,7 +822,7 @@ export default function PsyOpHost() {
             </div>
 
             <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex flex-col items-center p-4 arcade-surface rounded-xl md:w-80 shrink-0 space-y-4" style={{ border: '1px solid var(--arcade-border)' }}>
+              <div className="flex flex-col items-center p-4 rounded-xl md:w-80 shrink-0 space-y-4" style={{ background: 'linear-gradient(180deg, rgba(139, 92, 246, 0.1) 0%, rgba(109, 40, 217, 0.05) 100%)', border: '1px solid rgba(167, 139, 250, 0.25)' }}>
                 <div className="bg-white p-3 rounded-lg" data-testid="container-qr-code">
                   <QRCodeSVG value={joinUrl} size={120} />
                 </div>
@@ -876,7 +882,7 @@ export default function PsyOpHost() {
                 )}
               </div>
 
-              <div className="flex-1 min-h-[280px] arcade-surface rounded-xl p-5" style={{ border: '1px solid var(--arcade-border)' }}>
+              <div className="flex-1 min-h-[280px] rounded-xl p-5" style={{ background: 'linear-gradient(180deg, rgba(139, 92, 246, 0.08) 0%, rgba(109, 40, 217, 0.04) 100%)', border: '1px solid rgba(167, 139, 250, 0.25)' }}>
                 <div className="flex items-center justify-between gap-2 mb-4">
                   <span className="flex items-center gap-2 text-sm font-bold text-white/70 uppercase tracking-wider">
                     <Users className="w-4 h-4 text-violet-400" />
@@ -907,10 +913,10 @@ export default function PsyOpHost() {
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0, opacity: 0 }}
                             className="flex flex-col items-center p-3 rounded-lg"
-                            style={{ border: '1px solid var(--arcade-border)' }}
+                            style={{ background: 'rgba(139, 92, 246, 0.08)', border: '1px solid rgba(167, 139, 250, 0.2)' }}
                             data-testid={`player-card-${p.id}`}
                           >
-                            <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center mb-1">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center mb-1" style={{ background: 'rgba(167, 139, 250, 0.25)' }}>
                               {avatarData
                                 ? <span className="text-lg" aria-label={avatarData.label}>{avatarData.emoji}</span>
                                 : <User className="w-4 h-4 text-violet-300" />
