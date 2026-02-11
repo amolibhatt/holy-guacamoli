@@ -600,8 +600,8 @@ export default function PsyOpHost() {
           className="absolute w-full h-full"
           style={{
             background: `
-              radial-gradient(ellipse 80% 60% at 50% 0%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
-              radial-gradient(ellipse 60% 40% at 100% 100%, rgba(109, 40, 217, 0.05) 0%, transparent 50%)
+              radial-gradient(ellipse 80% 60% at 50% 0%, rgba(167, 139, 250, 0.15) 0%, transparent 50%),
+              radial-gradient(ellipse 60% 40% at 100% 100%, rgba(139, 92, 246, 0.1) 0%, transparent 50%)
             `,
           }}
         />
@@ -641,7 +641,7 @@ export default function PsyOpHost() {
                   className="text-2xl font-black mb-3 text-white uppercase tracking-wide"
                   style={{ 
                     fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                    textShadow: '0 0 10px rgba(139, 92, 246, 0.3)',
+                    textShadow: '0 0 15px rgba(167, 139, 250, 0.5)',
                   }}
                 >
                   No Questions Yet
@@ -651,7 +651,7 @@ export default function PsyOpHost() {
                 </p>
                 <Button
                   onClick={() => setLocation("/admin/psyop")}
-                  className="bg-gradient-to-r from-violet-500 to-purple-500 text-white font-bold uppercase tracking-wide"
+                  className="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-bold uppercase tracking-wide shadow-lg shadow-violet-500/25"
                   data-testid="button-create-questions"
                 >
                   <Sparkles className="w-4 h-4 mr-2 shrink-0" />
@@ -668,32 +668,44 @@ export default function PsyOpHost() {
                     onClick={shuffleAndStart}
                     className="w-full flex items-center justify-between gap-4 p-5 rounded-xl text-left relative overflow-hidden group hover-elevate"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(109, 40, 217, 0.08) 100%)',
-                      border: '1px solid rgba(139, 92, 246, 0.35)',
+                      background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.2) 0%, rgba(139, 92, 246, 0.12) 100%)',
+                      border: '1px solid rgba(167, 139, 250, 0.5)',
+                      boxShadow: '0 0 20px rgba(139, 92, 246, 0.15)',
                     }}
                     data-testid="button-shuffle-all"
                   >
                     <motion.div 
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-violet-400/10 to-transparent"
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-violet-300/20 to-transparent"
                       animate={{ x: ['-100%', '200%'] }}
-                      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", repeatDelay: 2 }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 1.5 }}
                     />
                     
                     <div className="relative flex items-center gap-4">
-                      <div 
+                      <motion.div 
                         className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)' }}
+                        style={{ background: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)' }}
+                        animate={{
+                          boxShadow: [
+                            '0 0 12px rgba(167, 139, 250, 0.4)',
+                            '0 0 24px rgba(167, 139, 250, 0.7)',
+                            '0 0 12px rgba(167, 139, 250, 0.4)',
+                          ],
+                        }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                       >
                         <Shuffle className="w-6 h-6 text-white shrink-0" />
-                      </div>
+                      </motion.div>
                       <div>
                         <h3 
-                          className="font-black uppercase tracking-wide text-lg text-purple-300"
-                          style={{ fontFamily: "'Archivo Black', 'Impact', sans-serif" }}
+                          className="font-black uppercase tracking-wide text-lg text-violet-300"
+                          style={{ 
+                            fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                            textShadow: '0 0 12px rgba(167, 139, 250, 0.6)',
+                          }}
                         >
                           Shuffle Play
                         </h3>
-                        <p className="text-white/40 text-sm">5 random questions from all categories</p>
+                        <p className="text-white/50 text-sm">5 random questions from all categories</p>
                       </div>
                     </div>
                     
@@ -712,8 +724,8 @@ export default function PsyOpHost() {
                     transition={{ duration: 0.4, delay: 0.1 }}
                   >
                     <div className="flex items-center gap-4 mb-4">
-                      <h2 className="text-sm font-bold text-white/50 uppercase tracking-widest whitespace-nowrap">Categories</h2>
-                      <div className="flex-1 h-[1px] bg-gradient-to-r from-purple-500/40 via-purple-500/15 to-transparent" />
+                      <h2 className="text-sm font-bold text-violet-400/80 uppercase tracking-widest whitespace-nowrap">Categories</h2>
+                      <div className="flex-1 h-[1px] bg-gradient-to-r from-violet-400/50 via-purple-500/20 to-transparent" />
                     </div>
                     <div className="space-y-2">
                       {categories.map((category, idx) => {
@@ -731,9 +743,9 @@ export default function PsyOpHost() {
                           >
                             <div 
                               className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                              style={{ border: '1px solid rgba(139, 92, 246, 0.3)' }}
+                              style={{ border: '1px solid rgba(167, 139, 250, 0.4)', background: 'rgba(139, 92, 246, 0.1)' }}
                             >
-                              <Folder className="w-5 h-5 shrink-0" style={{ color: '#a78bfa' }} />
+                              <Folder className="w-5 h-5 shrink-0" style={{ color: '#c4b5fd' }} />
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 
@@ -763,10 +775,10 @@ export default function PsyOpHost() {
             <div className="text-center">
               <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Step 1</p>
               <h2 
-                className="text-2xl font-black uppercase tracking-wide text-purple-300"
+                className="text-2xl font-black uppercase tracking-wide text-violet-300"
                 style={{ 
                   fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                  textShadow: '0 0 15px rgba(139, 92, 246, 0.4)',
+                  textShadow: '0 0 20px rgba(167, 139, 250, 0.6)',
                 }}
               >
                 Enlisting
@@ -817,7 +829,7 @@ export default function PsyOpHost() {
                 <Button
                   onClick={startGame}
                   disabled={players.length < 2}
-                  className="w-full gap-2 bg-gradient-to-r from-violet-500 to-purple-500 text-white font-bold"
+                  className="w-full gap-2 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-bold shadow-lg shadow-violet-500/25"
                   data-testid="button-start-game"
                 >
                   <Play className="w-5 h-5" />
@@ -837,12 +849,12 @@ export default function PsyOpHost() {
               <div className="flex-1 min-h-[280px] arcade-surface rounded-xl p-5" style={{ border: '1px solid var(--arcade-border)' }}>
                 <div className="flex items-center justify-between gap-2 mb-4">
                   <span className="flex items-center gap-2 text-sm font-bold text-white/70 uppercase tracking-wider">
-                    <Users className="w-4 h-4 text-purple-400" />
+                    <Users className="w-4 h-4 text-violet-400" />
                     Players
                   </span>
                   <Badge
                     variant="secondary"
-                    className={players.length > 0 ? "bg-purple-500/20 text-purple-400" : ""}
+                    className={players.length > 0 ? "bg-violet-500/25 text-violet-300" : ""}
                     data-testid="badge-player-count"
                   >
                     {players.length}
@@ -868,10 +880,10 @@ export default function PsyOpHost() {
                             style={{ border: '1px solid var(--arcade-border)' }}
                             data-testid={`player-card-${p.id}`}
                           >
-                            <div className="w-8 h-8 rounded-full bg-purple-500/15 flex items-center justify-center mb-1">
+                            <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center mb-1">
                               {avatarData
                                 ? <span className="text-lg" aria-label={avatarData.label}>{avatarData.emoji}</span>
-                                : <User className="w-4 h-4 text-purple-400" />
+                                : <User className="w-4 h-4 text-violet-300" />
                               }
                             </div>
                             <span className="font-medium text-xs text-center truncate w-full text-white" data-testid={`text-player-name-${p.id}`} title={p.name}>
