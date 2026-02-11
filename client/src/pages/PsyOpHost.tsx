@@ -14,7 +14,7 @@ import {
   Eye, Play, Users, Trophy, Loader2, Check,
   Crown, RefreshCw, ArrowLeft, Shuffle, Folder, HelpCircle,
   SkipForward, WifiOff, CheckCheck, User, Link2, MessageCircle,
-  Sparkles, Target, Award, Zap, ChevronRight
+  Sparkles, Target, Award, Zap
 } from "lucide-react";
 import { PLAYER_AVATARS } from "@shared/schema";
 import { QRCodeSVG } from "qrcode.react";
@@ -668,16 +668,26 @@ export default function PsyOpHost() {
                     onClick={shuffleAndStart}
                     className="w-full flex items-center justify-between gap-4 p-5 rounded-xl text-left relative overflow-hidden group hover-elevate"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.2) 0%, rgba(139, 92, 246, 0.12) 100%)',
-                      border: '1px solid rgba(167, 139, 250, 0.5)',
-                      boxShadow: '0 0 20px rgba(139, 92, 246, 0.15)',
+                      background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.12) 0%, rgba(139, 92, 246, 0.06) 100%)',
+                      border: '1px solid rgba(167, 139, 250, 0.4)',
                     }}
                     data-testid="button-shuffle-all"
                   >
                     <motion.div 
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-violet-300/20 to-transparent"
+                      className="absolute inset-0 rounded-xl"
+                      animate={{
+                        boxShadow: [
+                          'inset 0 0 20px rgba(167, 139, 250, 0.1), 0 0 20px rgba(167, 139, 250, 0.15)',
+                          'inset 0 0 30px rgba(167, 139, 250, 0.2), 0 0 40px rgba(167, 139, 250, 0.25)',
+                          'inset 0 0 20px rgba(167, 139, 250, 0.1), 0 0 20px rgba(167, 139, 250, 0.15)',
+                        ],
+                      }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <motion.div 
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-violet-400/20 to-transparent"
                       animate={{ x: ['-100%', '200%'] }}
-                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 1.5 }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 1 }}
                     />
                     
                     <div className="relative flex items-center gap-4">
@@ -686,26 +696,27 @@ export default function PsyOpHost() {
                         style={{ background: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)' }}
                         animate={{
                           boxShadow: [
-                            '0 0 12px rgba(167, 139, 250, 0.4)',
-                            '0 0 24px rgba(167, 139, 250, 0.7)',
-                            '0 0 12px rgba(167, 139, 250, 0.4)',
+                            '0 0 15px rgba(167, 139, 250, 0.5)',
+                            '0 0 30px rgba(167, 139, 250, 0.8)',
+                            '0 0 15px rgba(167, 139, 250, 0.5)',
                           ],
+                          scale: [1, 1.05, 1],
                         }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                       >
                         <Shuffle className="w-6 h-6 text-white shrink-0" />
                       </motion.div>
                       <div>
                         <h3 
-                          className="font-black uppercase tracking-wide text-lg text-violet-300"
+                          className="font-black uppercase tracking-wide text-lg text-violet-300 transition-colors"
                           style={{ 
                             fontFamily: "'Archivo Black', 'Impact', sans-serif",
-                            textShadow: '0 0 12px rgba(167, 139, 250, 0.6)',
+                            textShadow: '0 0 15px rgba(167, 139, 250, 0.5)',
                           }}
                         >
                           Shuffle Play
                         </h3>
-                        <p className="text-white/50 text-sm">5 random questions from all categories</p>
+                        <p className="text-white/40 text-sm">5 random questions from all categories</p>
                       </div>
                     </div>
                     
@@ -723,42 +734,61 @@ export default function PsyOpHost() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.1 }}
                   >
-                    <div className="flex items-center gap-4 mb-4">
-                      <h2 className="text-sm font-bold text-violet-400/80 uppercase tracking-widest whitespace-nowrap">Categories</h2>
-                      <div className="flex-1 h-[1px] bg-gradient-to-r from-violet-400/50 via-purple-500/20 to-transparent" />
+                    <div className="flex items-center gap-4 mb-5">
+                      <h2 className="text-sm font-bold text-white/70 uppercase tracking-widest whitespace-nowrap">Categories</h2>
+                      <div className="flex-1 h-[1px] bg-gradient-to-r from-violet-500/50 via-violet-500/20 to-transparent" />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {categories.map((category, idx) => {
                         const count = questions.filter(q => q.category === category).length;
                         return (
                           <motion.button
                             key={category}
-                            initial={{ opacity: 0, y: 15 }}
+                            initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3, delay: 0.15 + idx * 0.05 }}
+                            transition={{ duration: 0.4, delay: 0.15 + idx * 0.05 }}
                             onClick={() => selectCategoryAndStart(category)}
-                            className="w-full flex items-center gap-4 p-4 rounded-xl text-left arcade-surface hover-elevate active-elevate-2 transition-all duration-200"
-                            style={{ border: '1px solid var(--arcade-border)' }}
+                            className="w-full group text-left p-5 rounded-xl arcade-surface transition-all duration-200"
+                            style={{
+                              border: '1px solid var(--arcade-border)',
+                              boxShadow: '0 0 8px rgba(167, 139, 250, 0.1)',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor = 'rgba(167, 139, 250, 0.6)';
+                              e.currentTarget.style.boxShadow = '0 0 25px rgba(167, 139, 250, 0.2), 0 0 40px rgba(139, 92, 246, 0.1), inset 0 0 0 1px rgba(167, 139, 250, 0.3)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = 'var(--arcade-border)';
+                              e.currentTarget.style.boxShadow = '0 0 8px rgba(167, 139, 250, 0.1)';
+                            }}
                             data-testid={`button-category-${category}`}
                           >
-                            <div 
-                              className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                              style={{ border: '1px solid rgba(167, 139, 250, 0.4)', background: 'rgba(139, 92, 246, 0.1)' }}
-                            >
-                              <Folder className="w-5 h-5 shrink-0" style={{ color: '#c4b5fd' }} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 
-                                className="font-bold truncate text-white text-sm"
-                                title={category}
+                            <div className="flex items-center gap-3">
+                              <div 
+                                className="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 shrink-0"
+                                style={{
+                                  border: '2px solid rgba(167, 139, 250, 0.4)',
+                                  boxShadow: '0 0 8px rgba(167, 139, 250, 0.15)',
+                                }}
                               >
-                                {category}
-                              </h3>
-                              <p className="text-xs text-white/35 mt-0.5">
-                                {count} question{count !== 1 ? 's' : ''}
-                              </p>
+                                <Folder className="w-6 h-6 shrink-0" style={{ color: '#c4b5fd' }} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 
+                                  className="font-black truncate uppercase tracking-wide transition-colors duration-200 text-base"
+                                  style={{ 
+                                    fontFamily: "'Archivo Black', 'Impact', sans-serif",
+                                    color: 'var(--arcade-text)',
+                                  }}
+                                  title={category}
+                                >
+                                  {category}
+                                </h3>
+                                <p className="text-xs text-white/40 mt-1">
+                                  {count} question{count !== 1 ? 's' : ''}
+                                </p>
+                              </div>
                             </div>
-                            <ChevronRight className="w-4 h-4 text-white/20 shrink-0" />
                           </motion.button>
                         );
                       })}
