@@ -5944,10 +5944,16 @@ Generate exactly ${promptCount} prompts.`
             room.players.forEach((player) => {
               if (player.ws && player.isConnected) {
                 const playerScore = data.scores?.[player.id] || 0;
+                const playerLiesBelieved = data.roundLiesBelieved?.[player.id] || 0;
+                const playerTruthsSpotted = data.roundTruthsSpotted?.[player.id] || 0;
+                const foundTruth = playerTruthsSpotted > 0;
                 sendToPlayer(player, {
                   type: 'psyop:revealed',
                   correctAnswer: data.correctAnswer,
                   yourScore: playerScore,
+                  yourLiesBelieved: playerLiesBelieved,
+                  yourTruthsSpotted: playerTruthsSpotted,
+                  foundTruth,
                 });
               }
             });

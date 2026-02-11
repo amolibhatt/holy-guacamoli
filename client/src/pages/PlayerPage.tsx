@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles, Users, ChevronUp, ChevronDown, Volume2, VolumeX, Lock, Grid3X3, Hand, Flame, Laugh, CircleDot, ThumbsUp, Eye } from "lucide-react";
+import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles, Users, ChevronUp, ChevronDown, Volume2, VolumeX, Lock, Grid3X3, Hand, Flame, Laugh, CircleDot, ThumbsUp, Eye, Check } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
@@ -90,6 +90,7 @@ export default function PlayerPage() {
   const [psyopVoted, setPsyopVoted] = useState(false);
   const [psyopLieText, setPsyopLieText] = useState("");
   const [psyopCorrectAnswer, setPsyopCorrectAnswer] = useState<string | null>(null);
+  const [psyopRevealData, setPsyopRevealData] = useState<{ yourScore: number; foundTruth: boolean; yourLiesBelieved: number } | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -360,6 +361,8 @@ export default function PlayerPage() {
           setPsyopPhase("submitting");
           setPsyopQuestion(data.question);
           setPsyopSubmitted(false);
+          setPsyopRevealData(null);
+          setPsyopCorrectAnswer(null);
           break;
         case "psyop:voting:start":
           setGameMode("psyop");
@@ -367,17 +370,31 @@ export default function PlayerPage() {
           setPsyopOptions(data.options || []);
           setPsyopVoted(false);
           break;
-        case "psyop:revealed":
+        case "psyop:revealed": {
           setPsyopPhase("revealed");
           setPsyopCorrectAnswer(data.correctAnswer);
+          setPsyopRevealData({
+            yourScore: data.yourScore || 0,
+            foundTruth: data.foundTruth || false,
+            yourLiesBelieved: data.yourLiesBelieved || 0,
+          });
           if (data.yourScore && data.yourScore > 0) {
             setScore(prev => prev + data.yourScore);
+            const descriptions: string[] = [];
+            if (data.yourTruthsSpotted > 0) descriptions.push("You found the truth!");
+            if (data.yourLiesBelieved > 0) descriptions.push(`Your lie fooled ${data.yourLiesBelieved} player${data.yourLiesBelieved !== 1 ? 's' : ''}!`);
             toast({
               title: `+${data.yourScore} points!`,
-              description: data.yourScore >= 10 ? "You found the truth!" : "Your lie fooled someone!",
+              description: descriptions.join(" ") || "Nice work!",
+            });
+          } else {
+            toast({
+              title: "No points this round",
+              description: "Better luck next time!",
             });
           }
           break;
+        }
         case "psyop:skipped":
           setPsyopPhase("idle");
           setPsyopSubmitted(false);
@@ -386,6 +403,7 @@ export default function PlayerPage() {
           setPsyopQuestion(null);
           setPsyopOptions([]);
           setPsyopCorrectAnswer(null);
+          setPsyopRevealData(null);
           break;
         case "psyop:ended":
           setGameMode("buzzer");
@@ -910,19 +928,83 @@ export default function PlayerPage() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              className="text-center"
+              className="text-center space-y-4"
+              data-testid="psyop-reveal-screen"
             >
               <motion.div
-                animate={{ rotate: [0, -5, 5, 0] }}
-                transition={{ duration: 0.5, repeat: 2 }}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", bounce: 0.5 }}
               >
-                <Trophy className="w-24 h-24 mx-auto text-yellow-500 mb-4" />
+                {psyopRevealData?.foundTruth ? (
+                  <div className="w-20 h-20 rounded-full bg-green-500/15 flex items-center justify-center mx-auto mb-3">
+                    <Check className="w-10 h-10 text-green-500" />
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-red-500/15 flex items-center justify-center mx-auto mb-3">
+                    <XCircle className="w-10 h-10 text-red-400" />
+                  </div>
+                )}
               </motion.div>
-              <h2 className="text-2xl font-bold mb-2">The truth was:</h2>
-              <p className="text-3xl font-bold text-green-600 dark:text-green-400 mb-4">
-                {psyopCorrectAnswer}
-              </p>
-              <p className="text-muted-foreground">Waiting for next question...</p>
+
+              <div>
+                <p className="text-sm font-medium mb-1" data-testid="text-vote-result">
+                  {psyopRevealData?.foundTruth ? (
+                    <span className="text-green-500">You found the truth!</span>
+                  ) : (
+                    <span className="text-red-400">You got tricked!</span>
+                  )}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">The truth was</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400" data-testid="text-correct-answer">
+                  {psyopCorrectAnswer}
+                </p>
+              </div>
+
+              {psyopRevealData && psyopRevealData.yourLiesBelieved > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="p-2 bg-purple-500/10 border border-purple-500/20 rounded-md inline-block"
+                  data-testid="text-lie-success"
+                >
+                  <span className="text-sm text-purple-400">
+                    <Eye className="w-3.5 h-3.5 inline mr-1" />
+                    Your lie fooled {psyopRevealData.yourLiesBelieved} player{psyopRevealData.yourLiesBelieved !== 1 ? 's' : ''}!
+                  </span>
+                </motion.div>
+              )}
+
+              <div className="flex items-center justify-center gap-3 pt-2">
+                {psyopRevealData && psyopRevealData.yourScore > 0 && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.3, type: "spring" }}
+                    className="text-center px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-md"
+                    data-testid="text-round-points"
+                  >
+                    <div className="text-lg font-bold text-green-500">+{psyopRevealData.yourScore}</div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">This Round</div>
+                  </motion.div>
+                )}
+                <div className="text-center px-4 py-2 bg-muted/40 rounded-md" data-testid="text-total-score">
+                  <div className="text-lg font-bold">{score}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Total</div>
+                </div>
+              </div>
+
+              <motion.p
+                animate={{ opacity: [0.4, 1, 0.4] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="text-sm text-muted-foreground pt-2"
+              >
+                Waiting for next question...
+              </motion.p>
             </motion.div>
           ) : hostPickingGrid ? (
             <motion.div

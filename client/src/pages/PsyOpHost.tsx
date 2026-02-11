@@ -13,7 +13,8 @@ import confetti from "canvas-confetti";
 import { 
   Eye, Play, Users, Trophy, Loader2, Check,
   Crown, RefreshCw, ArrowLeft, Shuffle, Folder, HelpCircle,
-  SkipForward, WifiOff, CheckCheck, User, Link2, MessageCircle
+  SkipForward, WifiOff, CheckCheck, User, Link2, MessageCircle,
+  Sparkles, Target, Award, Zap
 } from "lucide-react";
 import { PLAYER_AVATARS } from "@shared/schema";
 import { QRCodeSVG } from "qrcode.react";
@@ -22,7 +23,8 @@ import { AppFooter } from "@/components/AppFooter";
 import { GameRulesSheet } from "@/components/GameRules";
 import type { PsyopQuestion } from "@shared/schema";
 
-type GameState = "setup" | "waiting" | "submitting" | "voting" | "revealing" | "leaderboard" | "finished";
+type GameState = "setup" | "waiting" | "animatedReveal" | "submitting" | "voting" | "revealing" | "roundLeaderboard" | "finished";
+type AnimationStage = "teaser" | "questionDrop";
 
 interface PlayerSubmission {
   playerId: string;
@@ -50,6 +52,9 @@ interface LeaderboardEntry {
   playerName: string;
   playerAvatar: string;
   score: number;
+  liesBelieved: number;
+  truthsSpotted: number;
+  roundDelta?: number;
 }
 
 function fisherYatesShuffle<T>(array: T[]): T[] {
@@ -82,6 +87,8 @@ export default function PsyOpHost() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [hostDisconnected, setHostDisconnected] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [animationStage, setAnimationStage] = useState<AnimationStage>("teaser");
+  const animationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptsRef = useRef(0);
@@ -255,6 +262,7 @@ export default function PsyOpHost() {
   useEffect(() => {
     return () => {
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      if (animationTimerRef.current) clearTimeout(animationTimerRef.current);
       wsRef.current?.close();
     };
   }, []);
@@ -286,12 +294,36 @@ export default function PsyOpHost() {
       playerName: p.name,
       playerAvatar: p.avatar || "",
       score: 0,
+      liesBelieved: 0,
+      truthsSpotted: 0,
     })));
     
     setCurrentQuestionIndex(0);
     setCurrentQuestion(selectedQuestions[0]);
-    startSubmissionPhase(selectedQuestions[0], 0);
+    startAnimatedReveal(selectedQuestions[0], 0);
   }, [selectedQuestions, players, toast]);
+
+  const startAnimatedReveal = useCallback((question: PsyopQuestion, qIndex: number) => {
+    setCurrentQuestion(question);
+    setCurrentQuestionIndex(qIndex);
+    setAnimationStage("teaser");
+    setGameState("animatedReveal");
+    
+    if (animationTimerRef.current) clearTimeout(animationTimerRef.current);
+    animationTimerRef.current = setTimeout(() => {
+      setAnimationStage("questionDrop");
+      animationTimerRef.current = setTimeout(() => {
+        startSubmissionPhase(question, qIndex);
+      }, 2500);
+    }, 2000);
+  }, []);
+
+  const skipAnimation = useCallback(() => {
+    if (animationTimerRef.current) clearTimeout(animationTimerRef.current);
+    if (currentQuestion) {
+      startSubmissionPhase(currentQuestion, currentQuestionIndex);
+    }
+  }, [currentQuestion, currentQuestionIndex]);
 
   const startSubmissionPhase = useCallback((question: PsyopQuestion, qIndex?: number) => {
     setCurrentQuestion(question);
@@ -347,23 +379,36 @@ export default function PsyOpHost() {
     setGameState("revealing");
     
     const scores: Record<string, number> = {};
+    const roundLiesBelieved: Record<string, number> = {};
+    const roundTruthsSpotted: Record<string, number> = {};
     
     votes.forEach(vote => {
       const votedOption = voteOptions.find(o => o.id === vote.votedForId);
       if (votedOption?.isTruth) {
         scores[vote.voterId] = (scores[vote.voterId] || 0) + 10;
+        roundTruthsSpotted[vote.voterId] = (roundTruthsSpotted[vote.voterId] || 0) + 1;
       } else if (votedOption?.submitterId) {
         scores[votedOption.submitterId] = (scores[votedOption.submitterId] || 0) + 5;
+        roundLiesBelieved[votedOption.submitterId] = (roundLiesBelieved[votedOption.submitterId] || 0) + 1;
       }
     });
     
     setLeaderboard(prev => {
-      const updated = prev.map(e => ({ ...e }));
+      const updated = prev.map(e => ({ ...e, roundDelta: 0 }));
       Object.entries(scores).forEach(([playerId, points]) => {
         const existing = updated.find(e => e.playerId === playerId);
         if (existing) {
           existing.score += points;
+          existing.roundDelta = points;
         }
+      });
+      Object.entries(roundLiesBelieved).forEach(([playerId, count]) => {
+        const existing = updated.find(e => e.playerId === playerId);
+        if (existing) existing.liesBelieved += count;
+      });
+      Object.entries(roundTruthsSpotted).forEach(([playerId, count]) => {
+        const existing = updated.find(e => e.playerId === playerId);
+        if (existing) existing.truthsSpotted += count;
       });
       return updated.sort((a, b) => b.score - a.score);
     });
@@ -376,6 +421,8 @@ export default function PsyOpHost() {
       type: "psyop:reveal",
       correctAnswer: currentQuestion?.correctAnswer,
       scores,
+      roundLiesBelieved,
+      roundTruthsSpotted,
     }));
   }, [votes, voteOptions, currentQuestion, ws]);
 
@@ -401,16 +448,19 @@ export default function PsyOpHost() {
     }
   }, [gameState, expectedVoters, votes.length, moveToRevealing]);
 
+  const showRoundLeaderboard = useCallback(() => {
+    setGameState("roundLeaderboard");
+  }, []);
+
   const nextQuestion = useCallback(() => {
     const nextIndex = currentQuestionIndex + 1;
     if (nextIndex >= selectedQuestions.length) {
       setGameState("finished");
       confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
     } else {
-      setCurrentQuestionIndex(nextIndex);
-      startSubmissionPhase(selectedQuestions[nextIndex], nextIndex);
+      startAnimatedReveal(selectedQuestions[nextIndex], nextIndex);
     }
-  }, [currentQuestionIndex, selectedQuestions, startSubmissionPhase]);
+  }, [currentQuestionIndex, selectedQuestions, startAnimatedReveal]);
 
   const skipQuestion = useCallback(() => {
     ws?.send(JSON.stringify({ type: "psyop:skip" }));
@@ -691,25 +741,97 @@ export default function PsyOpHost() {
           </motion.div>
         )}
 
+        {gameState === "animatedReveal" && currentQuestion && (
+          <AnimatePresence mode="wait">
+            {animationStage === "teaser" && (
+              <motion.div
+                key="teaser"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.2 }}
+                className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0f]"
+              >
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-purple-500/10 blur-3xl" />
+                  <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-violet-500/10 blur-3xl" />
+                </div>
+                <div className="text-center text-white relative z-10">
+                  <motion.div
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 0.5, repeat: Infinity }}
+                    className="mb-6"
+                  >
+                    <Eye className="w-16 h-16 mx-auto text-purple-400" />
+                  </motion.div>
+                  <h1
+                    className="text-5xl md:text-7xl font-black mb-4"
+                    style={{ background: 'linear-gradient(135deg, #8b5cf6, #a855f7, #7c3aed)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+                    data-testid="text-question-teaser"
+                  >
+                    Question {currentQuestionIndex + 1}
+                  </h1>
+                  <p className="text-2xl md:text-3xl text-white/60">Get Ready...</p>
+                </div>
+                <Button variant="ghost" className="absolute bottom-8 right-8 text-slate-400" onClick={skipAnimation} data-testid="button-skip-animation">
+                  <SkipForward className="w-4 h-4 mr-2" />
+                  Skip
+                </Button>
+              </motion.div>
+            )}
+
+            {animationStage === "questionDrop" && (
+              <motion.div
+                key="questionDrop"
+                initial={{ y: -100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0a0a0f] px-8"
+              >
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 bg-violet-500/5 blur-3xl" />
+                </div>
+                <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} className="text-center max-w-3xl relative z-10">
+                  <div className="text-3xl md:text-5xl font-bold text-white leading-relaxed" data-testid="text-question-drop">
+                    {renderFactWithBlank(currentQuestion.factText)}
+                  </div>
+                  <p className="text-white/40 mt-6 text-sm">Write a lie that fools everyone...</p>
+                </motion.div>
+                <Button variant="ghost" className="absolute bottom-8 right-8 text-slate-400" onClick={skipAnimation} data-testid="button-skip-animation">
+                  <SkipForward className="w-4 h-4 mr-2" />
+                  Skip
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
+
         {(gameState === "submitting" || gameState === "voting") && currentQuestion && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+            <div className="mb-2">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${((currentQuestionIndex + 1) / selectedQuestions.length) * 100}%` }}
+                    transition={{ duration: 0.5 }}
+                  />
+                </div>
+                <span className="text-sm text-muted-foreground font-mono" data-testid="text-progress">{currentQuestionIndex + 1}/{selectedQuestions.length}</span>
+              </div>
+            </div>
+
             <Card>
               <CardContent className="pt-6 space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <Badge variant="outline">
+                  <Badge variant="outline" data-testid="badge-question-number">
                     Question {currentQuestionIndex + 1} of {selectedQuestions.length}
                   </Badge>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary">
                       {gameState === "submitting" ? "Write your lie" : "Find the truth"}
                     </Badge>
-                    <Button
-                      onClick={skipQuestion}
-                      variant="outline"
-                      size="sm"
-                      className="gap-1"
-                      data-testid="button-skip-question"
-                    >
+                    <Button onClick={skipQuestion} variant="outline" size="sm" className="gap-1" data-testid="button-skip-question">
                       <SkipForward className="w-3 h-3" />
                       Skip
                     </Button>
@@ -732,11 +854,7 @@ export default function PsyOpHost() {
                       {players.map(p => {
                         const hasSubmitted = submissions.some(s => s.playerId === p.id);
                         return (
-                          <Badge 
-                            key={p.id} 
-                            variant={hasSubmitted ? "default" : "outline"}
-                            className="gap-1"
-                          >
+                          <Badge key={p.id} variant={hasSubmitted ? "default" : "outline"} className="gap-1">
                             {hasSubmitted && <Check className="w-3 h-3" />}
                             {p.name}
                             {hasSubmitted && " ...Dipped!"}
@@ -745,12 +863,7 @@ export default function PsyOpHost() {
                       })}
                     </div>
                     {submissions.length > 0 && submissions.length < activePlayerCount && (
-                      <Button 
-                        onClick={moveToVoting} 
-                        variant="outline" 
-                        className="mt-4 gap-2"
-                        data-testid="button-force-voting"
-                      >
+                      <Button onClick={moveToVoting} variant="outline" className="mt-4 gap-2" data-testid="button-force-voting">
                         Continue with {submissions.length} submission{submissions.length !== 1 ? 's' : ''}
                       </Button>
                     )}
@@ -761,10 +874,7 @@ export default function PsyOpHost() {
                   <div className="border-t pt-4 space-y-3">
                     <div className="text-sm font-medium mb-2">Which one is the truth?</div>
                     {voteOptions.map((option, i) => (
-                      <div 
-                        key={option.id}
-                        className="p-3 border rounded-lg bg-card/50"
-                      >
+                      <div key={option.id} className="p-3 border rounded-lg bg-card/50">
                         <span className="font-bold mr-2 text-purple-600 dark:text-purple-400">{String.fromCharCode(65 + i)}.</span>
                         {option.text}
                       </div>
@@ -774,12 +884,7 @@ export default function PsyOpHost() {
                     </div>
                     <Progress value={expectedVoters > 0 ? (votes.length / expectedVoters) * 100 : 0} className="h-2" />
                     {votes.length > 0 && votes.length < expectedVoters && (
-                      <Button 
-                        onClick={moveToRevealing} 
-                        variant="outline" 
-                        className="mt-4 gap-2"
-                        data-testid="button-force-reveal"
-                      >
+                      <Button onClick={moveToRevealing} variant="outline" className="mt-4 gap-2" data-testid="button-force-reveal">
                         Reveal with {votes.length} vote{votes.length !== 1 ? 's' : ''}
                       </Button>
                     )}
@@ -790,96 +895,257 @@ export default function PsyOpHost() {
           </motion.div>
         )}
 
-        {gameState === "revealing" && currentQuestion && (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
-            <Card>
-              <CardContent className="pt-6 space-y-6">
-                <div className="text-center">
-                  <div className="text-sm text-muted-foreground mb-2">The truth was:</div>
-                  <div className="text-2xl font-medium leading-relaxed">
-                    {renderFactWithBlank(currentQuestion.factText, currentQuestion.correctAnswer, true)}
-                  </div>
-                </div>
+        {gameState === "revealing" && currentQuestion && (() => {
+          const maxVotes = Math.max(1, ...voteOptions.map(o => votes.filter(v => v.votedForId === o.id).length));
+          const topLiar = voteOptions
+            .filter(o => !o.isTruth && o.submitterName)
+            .map(o => ({ ...o, fooled: votes.filter(v => v.votedForId === o.id).length }))
+            .sort((a, b) => b.fooled - a.fooled)[0];
 
-                <div className="border-t pt-4 space-y-3">
-                  <div className="text-sm font-medium mb-2">Results:</div>
-                  {voteOptions.map((option) => {
-                    const votesForThis = votes.filter(v => v.votedForId === option.id);
-                    return (
-                      <div 
-                        key={option.id}
-                        className={`p-3 border rounded-lg ${option.isTruth ? 'border-green-500 bg-green-500/10' : 'bg-card/50'}`}
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className={option.isTruth ? 'font-bold text-green-600 dark:text-green-400' : ''}>
-                            {option.text}
-                            {option.isTruth && ' \u2713 TRUTH'}
-                          </span>
-                          <div className="flex flex-wrap gap-1">
-                            {votesForThis.map(v => (
-                              <Badge key={v.voterId} variant="secondary" className="text-xs">
-                                {v.voterName}
+          return (
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
+              <Card>
+                <CardContent className="pt-6 space-y-6">
+                  <div className="text-center">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">The truth was</div>
+                    <div className="text-2xl font-medium leading-relaxed">
+                      {renderFactWithBlank(currentQuestion.factText, currentQuestion.correctAnswer, true)}
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-4 space-y-3">
+                    {voteOptions.map((option) => {
+                      const votesForThis = votes.filter(v => v.votedForId === option.id);
+                      const barWidth = maxVotes > 0 ? (votesForThis.length / maxVotes) * 100 : 0;
+                      return (
+                        <motion.div
+                          key={option.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className={`p-4 border rounded-lg relative overflow-hidden ${option.isTruth ? 'border-green-500 bg-green-500/10' : 'bg-card/50'}`}
+                          data-testid={`reveal-option-${option.id}`}
+                        >
+                          <motion.div
+                            className={`absolute inset-y-0 left-0 ${option.isTruth ? 'bg-green-500/15' : 'bg-purple-500/10'}`}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${barWidth}%` }}
+                            transition={{ duration: 0.8, delay: 0.3 }}
+                          />
+                          <div className="relative z-10">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                {option.isTruth && <Check className="w-4 h-4 text-green-500" />}
+                                <span className={option.isTruth ? 'font-bold text-green-600 dark:text-green-400' : ''}>
+                                  {option.text}
+                                </span>
+                              </div>
+                              <Badge variant={option.isTruth ? "default" : "secondary"} className="text-xs">
+                                {votesForThis.length} vote{votesForThis.length !== 1 ? 's' : ''}
                               </Badge>
-                            ))}
+                            </div>
+                            {votesForThis.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {votesForThis.map(v => (
+                                  <Badge key={v.voterId} variant="outline" className="text-xs">{v.voterName}</Badge>
+                                ))}
+                              </div>
+                            )}
+                            {!option.isTruth && option.submitterName && (
+                              <div className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                                <Eye className="w-3 h-3" />
+                                Lie by {option.submitterName}
+                                {votesForThis.length > 0 && <span className="text-purple-500 font-medium ml-1">+{votesForThis.length * 5} pts</span>}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                        {!option.isTruth && option.submitterName && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Lie by: {option.submitterName} (+{votesForThis.length * 5} points)
-                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+
+                  {topLiar && topLiar.fooled > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 1 }}
+                      className="flex items-center justify-center gap-2 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg"
+                      data-testid="callout-master-liar"
+                    >
+                      <Award className="w-5 h-5 text-purple-400" />
+                      <span className="text-sm font-medium">
+                        <span className="text-purple-400">{topLiar.submitterName}</span> fooled {topLiar.fooled} player{topLiar.fooled !== 1 ? 's' : ''}!
+                      </span>
+                    </motion.div>
+                  )}
+
+                  <Button onClick={showRoundLeaderboard} size="lg" className="w-full gap-2" data-testid="button-show-standings">
+                    <Trophy className="w-5 h-5" />
+                    See Standings
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })()}
+
+        {gameState === "roundLeaderboard" && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+            <div className="text-center">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">After Question {currentQuestionIndex + 1}</p>
+              <h2 className="text-2xl font-bold">Standings</h2>
+            </div>
+
+            <Card>
+              <CardContent className="pt-6 space-y-3">
+                {leaderboard.map((entry, i) => {
+                  const avatarData = PLAYER_AVATARS.find(a => a.id === entry.playerAvatar);
+                  return (
+                    <motion.div
+                      key={entry.playerId}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className={`p-4 border rounded-lg flex items-center gap-4 ${i === 0 ? 'border-purple-500/50 bg-purple-500/10' : 'bg-card/50'}`}
+                      data-testid={`round-lb-${entry.playerId}`}
+                    >
+                      <div className="text-lg font-bold w-6 text-center text-muted-foreground">
+                        {i === 0 ? <Crown className="w-5 h-5 text-yellow-500 mx-auto" /> : `${i + 1}`}
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-purple-500/15 flex items-center justify-center shrink-0">
+                        {avatarData
+                          ? <span className="text-base" aria-label={avatarData.label}>{avatarData.emoji}</span>
+                          : <User className="w-4 h-4 text-purple-400" />
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{entry.playerName}</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-lg font-bold">{entry.score}</div>
+                        {(entry.roundDelta ?? 0) > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-xs text-green-500 font-medium"
+                          >
+                            +{entry.roundDelta}
+                          </motion.div>
                         )}
                       </div>
-                    );
-                  })}
-                </div>
+                    </motion.div>
+                  );
+                })}
+              </CardContent>
+            </Card>
 
-                <Button onClick={nextQuestion} size="lg" className="w-full gap-2" data-testid="button-next-question">
-                  {currentQuestionIndex + 1 >= selectedQuestions.length ? 'See Final Results' : 'Next Question'}
+            <Button onClick={nextQuestion} size="lg" className="w-full gap-2" data-testid="button-next-question">
+              {currentQuestionIndex + 1 >= selectedQuestions.length ? (
+                <><Trophy className="w-5 h-5" /> See Final Results</>
+              ) : (
+                <><Play className="w-5 h-5" /> Next Question</>
+              )}
+            </Button>
+          </motion.div>
+        )}
+
+        {gameState === "finished" && (() => {
+          const masterLiar = [...leaderboard].sort((a, b) => b.liesBelieved - a.liesBelieved)[0];
+          const truthSeeker = [...leaderboard].sort((a, b) => b.truthsSpotted - a.truthsSpotted)[0];
+
+          return (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+              <div className="text-center">
+                <motion.div animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }}>
+                  <Trophy className="w-20 h-20 mx-auto text-yellow-500 mb-4" />
+                </motion.div>
+                <h1 className="text-4xl font-black mb-1">GAME OVER!</h1>
+                {leaderboard[0] && (
+                  <>
+                    <h2 className="text-xl font-bold text-yellow-500">WINNER</h2>
+                    <p className="text-2xl font-black">{leaderboard[0].playerName}</p>
+                    <p className="text-muted-foreground">{leaderboard[0].score} points</p>
+                  </>
+                )}
+              </div>
+
+              {(masterLiar?.liesBelieved > 0 || truthSeeker?.truthsSpotted > 0) && (
+                <div className="grid grid-cols-2 gap-3">
+                  {masterLiar && masterLiar.liesBelieved > 0 && (
+                    <Card data-testid="award-master-liar">
+                      <CardContent className="pt-4 text-center">
+                        <Eye className="w-8 h-8 mx-auto text-purple-400 mb-2" />
+                        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Master Liar</div>
+                        <div className="font-bold">{masterLiar.playerName}</div>
+                        <div className="text-xs text-muted-foreground">{masterLiar.liesBelieved} lie{masterLiar.liesBelieved !== 1 ? 's' : ''} believed</div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {truthSeeker && truthSeeker.truthsSpotted > 0 && (
+                    <Card data-testid="award-truth-seeker">
+                      <CardContent className="pt-4 text-center">
+                        <Target className="w-8 h-8 mx-auto text-green-400 mb-2" />
+                        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Truth Seeker</div>
+                        <div className="font-bold">{truthSeeker.playerName}</div>
+                        <div className="text-xs text-muted-foreground">{truthSeeker.truthsSpotted} truth{truthSeeker.truthsSpotted !== 1 ? 's' : ''} found</div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="font-semibold mb-4">Final Standings</h3>
+                  <div className="space-y-3">
+                    {leaderboard.map((entry, i) => {
+                      const avatarData = PLAYER_AVATARS.find(a => a.id === entry.playerAvatar);
+                      return (
+                        <div
+                          key={entry.playerId}
+                          className={`p-3 rounded-lg ${i === 0 ? 'bg-yellow-500/10 border border-yellow-500/50' : 'bg-muted/30'}`}
+                          data-testid={`final-standings-${entry.playerId}`}
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-3">
+                              <span className="font-bold text-lg w-6">{i === 0 ? <Crown className="w-5 h-5 text-yellow-500" /> : `${i + 1}.`}</span>
+                              <div className="w-7 h-7 rounded-full bg-purple-500/15 flex items-center justify-center shrink-0">
+                                {avatarData
+                                  ? <span className="text-sm" aria-label={avatarData.label}>{avatarData.emoji}</span>
+                                  : <User className="w-3.5 h-3.5 text-purple-400" />
+                                }
+                              </div>
+                              <span className="font-semibold">{entry.playerName}</span>
+                            </div>
+                            <span className="font-bold text-lg">{entry.score} pts</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2 text-xs ml-9">
+                            {entry.truthsSpotted > 0 && (
+                              <span className="px-2 py-0.5 bg-green-500/20 rounded">{entry.truthsSpotted} truth{entry.truthsSpotted !== 1 ? 's' : ''} found</span>
+                            )}
+                            {entry.liesBelieved > 0 && (
+                              <span className="px-2 py-0.5 bg-purple-500/20 rounded">{entry.liesBelieved} lie{entry.liesBelieved !== 1 ? 's' : ''} believed</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex flex-wrap gap-2 justify-center">
+                <Button onClick={() => setLocation("/")} variant="outline" className="gap-2" data-testid="button-back-home">
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to Home
                 </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-
-        {gameState === "finished" && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-            <Card>
-              <CardContent className="pt-6 text-center space-y-6">
-                <Trophy className="w-16 h-16 mx-auto text-yellow-500" />
-                <h2 className="text-2xl font-bold">Game Over!</h2>
-                
-                <div className="space-y-3">
-                  {leaderboard.map((entry, i) => (
-                    <div 
-                      key={entry.playerId}
-                      className={`p-4 border rounded-lg flex items-center gap-4 ${i === 0 ? 'border-yellow-500 bg-yellow-500/10' : ''}`}
-                    >
-                      <div className="text-2xl font-bold w-8">
-                        {i === 0 && <Crown className="w-6 h-6 text-yellow-500" />}
-                        {i > 0 && `#${i + 1}`}
-                      </div>
-                      <div className="flex-1 text-left">
-                        <div className="font-medium">{entry.playerName}</div>
-                      </div>
-                      <div className="text-xl font-bold">{entry.score} pts</div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <Button onClick={() => setLocation("/")} variant="outline" className="gap-2" data-testid="button-back-home">
-                    <ArrowLeft className="w-4 h-4" />
-                    Back to Home
-                  </Button>
-                  <Button onClick={() => window.location.reload()} className="gap-2" data-testid="button-play-again">
-                    <RefreshCw className="w-4 h-4" />
-                    Play Again
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+                <Button onClick={() => window.location.reload()} className="gap-2" data-testid="button-play-again">
+                  <RefreshCw className="w-4 h-4" />
+                  Play Again
+                </Button>
+              </div>
+            </motion.div>
+          );
+        })()}
       </main>
       
       <Button
