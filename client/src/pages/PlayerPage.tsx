@@ -405,6 +405,21 @@ export default function PlayerPage() {
           setPsyopCorrectAnswer(null);
           setPsyopRevealData(null);
           break;
+        case "psyop:rematch":
+          setPsyopPhase("idle");
+          setPsyopSubmitted(false);
+          setPsyopVoted(false);
+          setPsyopLieText("");
+          setPsyopQuestion(null);
+          setPsyopOptions([]);
+          setPsyopCorrectAnswer(null);
+          setPsyopRevealData(null);
+          setScore(0);
+          toast({
+            title: "Rematch!",
+            description: "New round starting...",
+          });
+          break;
         case "psyop:ended":
           setGameMode("buzzer");
           setPsyopPhase("idle");

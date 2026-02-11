@@ -5988,6 +5988,26 @@ Generate exactly ${promptCount} prompts.`
             break;
           }
 
+          case 'psyop:rematch': {
+            const mapping = wsToRoom.get(ws);
+            if (!mapping || !mapping.isHost) break;
+            
+            const room = rooms.get(mapping.roomCode);
+            if (!room) break;
+
+            room.psyopPhase = 'submitting';
+            room.psyopLeaderboard = [];
+
+            room.players.forEach((player) => {
+              if (player.ws && player.isConnected) {
+                sendToPlayer(player, {
+                  type: 'psyop:rematch',
+                });
+              }
+            });
+            break;
+          }
+
           case 'psyop:host:rejoin': {
             const code = data.code?.toUpperCase();
             const room = rooms.get(code);

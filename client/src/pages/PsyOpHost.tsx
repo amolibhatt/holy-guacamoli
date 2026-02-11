@@ -54,7 +54,16 @@ interface LeaderboardEntry {
   score: number;
   liesBelieved: number;
   truthsSpotted: number;
+  timesFooled: number;
   roundDelta?: number;
+}
+
+interface LieRecord {
+  lieText: string;
+  liarName: string;
+  liarAvatar: string;
+  fooledCount: number;
+  questionText: string;
 }
 
 function fisherYatesShuffle<T>(array: T[]): T[] {
@@ -89,6 +98,7 @@ export default function PsyOpHost() {
   const [copied, setCopied] = useState(false);
   const [animationStage, setAnimationStage] = useState<AnimationStage>("teaser");
   const animationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [allLies, setAllLies] = useState<LieRecord[]>([]);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptsRef = useRef(0);
@@ -296,7 +306,9 @@ export default function PsyOpHost() {
       score: 0,
       liesBelieved: 0,
       truthsSpotted: 0,
+      timesFooled: 0,
     })));
+    setAllLies([]);
     
     setCurrentQuestionIndex(0);
     setCurrentQuestion(selectedQuestions[0]);
@@ -381,6 +393,7 @@ export default function PsyOpHost() {
     const scores: Record<string, number> = {};
     const roundLiesBelieved: Record<string, number> = {};
     const roundTruthsSpotted: Record<string, number> = {};
+    const roundTimesFooled: Record<string, number> = {};
     
     votes.forEach(vote => {
       const votedOption = voteOptions.find(o => o.id === vote.votedForId);
@@ -390,8 +403,25 @@ export default function PsyOpHost() {
       } else if (votedOption?.submitterId) {
         scores[votedOption.submitterId] = (scores[votedOption.submitterId] || 0) + 5;
         roundLiesBelieved[votedOption.submitterId] = (roundLiesBelieved[votedOption.submitterId] || 0) + 1;
+        roundTimesFooled[vote.voterId] = (roundTimesFooled[vote.voterId] || 0) + 1;
       }
     });
+
+    const newLieRecords: LieRecord[] = voteOptions
+      .filter(o => !o.isTruth && o.submitterId && o.submitterName)
+      .map(o => {
+        const fooledCount = votes.filter(v => v.votedForId === o.id).length;
+        const liarEntry = leaderboard.find(e => e.playerId === o.submitterId);
+        return {
+          lieText: o.text,
+          liarName: o.submitterName!,
+          liarAvatar: liarEntry?.playerAvatar || "",
+          fooledCount,
+          questionText: currentQuestion?.factText || "",
+        };
+      })
+      .filter(r => r.fooledCount > 0);
+    setAllLies(prev => [...prev, ...newLieRecords]);
     
     setLeaderboard(prev => {
       const updated = prev.map(e => ({ ...e, roundDelta: 0 }));
@@ -410,6 +440,10 @@ export default function PsyOpHost() {
         const existing = updated.find(e => e.playerId === playerId);
         if (existing) existing.truthsSpotted += count;
       });
+      Object.entries(roundTimesFooled).forEach(([playerId, count]) => {
+        const existing = updated.find(e => e.playerId === playerId);
+        if (existing) existing.timesFooled += count;
+      });
       return updated.sort((a, b) => b.score - a.score);
     });
     
@@ -424,7 +458,7 @@ export default function PsyOpHost() {
       roundLiesBelieved,
       roundTruthsSpotted,
     }));
-  }, [votes, voteOptions, currentQuestion, ws]);
+  }, [votes, voteOptions, currentQuestion, ws, leaderboard]);
 
   useEffect(() => {
     if (ws && leaderboard.length > 0 && gameState !== "setup" && gameState !== "waiting") {
@@ -466,6 +500,32 @@ export default function PsyOpHost() {
     ws?.send(JSON.stringify({ type: "psyop:skip" }));
     nextQuestion();
   }, [nextQuestion, ws]);
+
+  const startRematch = useCallback(() => {
+    if (selectedQuestions.length === 0) {
+      window.location.reload();
+      return;
+    }
+    const reshuffled = fisherYatesShuffle(selectedQuestions);
+    setSelectedQuestions(reshuffled);
+    setLeaderboard(prev => prev.map(e => ({
+      ...e,
+      score: 0,
+      liesBelieved: 0,
+      truthsSpotted: 0,
+      timesFooled: 0,
+      roundDelta: 0,
+    })));
+    setAllLies([]);
+    setSubmissions([]);
+    setVotes([]);
+    setVoteOptions([]);
+    setCurrentQuestionIndex(0);
+    setCurrentQuestion(reshuffled[0]);
+    startAnimatedReveal(reshuffled[0], 0);
+
+    ws?.send(JSON.stringify({ type: "psyop:rematch" }));
+  }, [selectedQuestions, ws, startAnimatedReveal]);
 
   const categories = Array.from(new Set(questions.map(q => q.category).filter(Boolean))) as string[];
   
@@ -988,12 +1048,38 @@ export default function PsyOpHost() {
           );
         })()}
 
-        {gameState === "roundLeaderboard" && (
+        {gameState === "roundLeaderboard" && (() => {
+          const roundMvp = leaderboard.reduce((best, entry) => 
+            (entry.roundDelta ?? 0) > (best?.roundDelta ?? 0) ? entry : best, leaderboard[0]);
+          const mvpAvatar = PLAYER_AVATARS.find(a => a.id === roundMvp?.playerAvatar);
+
+          return (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
             <div className="text-center">
               <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">After Question {currentQuestionIndex + 1}</p>
               <h2 className="text-2xl font-bold">Standings</h2>
             </div>
+
+            {roundMvp && (roundMvp.roundDelta ?? 0) > 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-lg"
+                data-testid="callout-round-mvp"
+              >
+                <div className="w-10 h-10 rounded-full bg-yellow-500/15 flex items-center justify-center shrink-0">
+                  {mvpAvatar
+                    ? <span className="text-xl" aria-label={mvpAvatar.label}>{mvpAvatar.emoji}</span>
+                    : <Zap className="w-5 h-5 text-yellow-500" />
+                  }
+                </div>
+                <div className="text-left">
+                  <div className="text-xs uppercase tracking-wider text-yellow-500 font-medium">Round MVP</div>
+                  <div className="font-bold">{roundMvp.playerName} <span className="text-green-500">+{roundMvp.roundDelta}</span></div>
+                </div>
+              </motion.div>
+            )}
 
             <Card>
               <CardContent className="pt-6 space-y-3">
@@ -1046,11 +1132,26 @@ export default function PsyOpHost() {
               )}
             </Button>
           </motion.div>
-        )}
+          );
+        })()}
 
         {gameState === "finished" && (() => {
           const masterLiar = [...leaderboard].sort((a, b) => b.liesBelieved - a.liesBelieved)[0];
           const truthSeeker = [...leaderboard].sort((a, b) => b.truthsSpotted - a.truthsSpotted)[0];
+          const mostGullible = [...leaderboard].sort((a, b) => b.timesFooled - a.timesFooled)[0];
+          const lieOfTheGame = allLies.length > 0 ? [...allLies].sort((a, b) => b.fooledCount - a.fooledCount)[0] : null;
+
+          const awards = [
+            masterLiar && masterLiar.liesBelieved > 0 ? { key: "master-liar", icon: Eye, color: "purple", title: "Master Liar", name: masterLiar.playerName, detail: `${masterLiar.liesBelieved} lie${masterLiar.liesBelieved !== 1 ? 's' : ''} believed` } : null,
+            truthSeeker && truthSeeker.truthsSpotted > 0 ? { key: "truth-seeker", icon: Target, color: "green", title: "Truth Seeker", name: truthSeeker.playerName, detail: `${truthSeeker.truthsSpotted} truth${truthSeeker.truthsSpotted !== 1 ? 's' : ''} found` } : null,
+            mostGullible && mostGullible.timesFooled > 0 ? { key: "most-gullible", icon: Sparkles, color: "orange", title: "Most Gullible", name: mostGullible.playerName, detail: `Fooled ${mostGullible.timesFooled} time${mostGullible.timesFooled !== 1 ? 's' : ''}` } : null,
+          ].filter(Boolean) as { key: string; icon: typeof Eye; color: string; title: string; name: string; detail: string }[];
+
+          const colorMap: Record<string, string> = {
+            purple: "text-purple-400",
+            green: "text-green-400",
+            orange: "text-orange-400",
+          };
 
           return (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
@@ -1068,29 +1169,52 @@ export default function PsyOpHost() {
                 )}
               </div>
 
-              {(masterLiar?.liesBelieved > 0 || truthSeeker?.truthsSpotted > 0) && (
-                <div className="grid grid-cols-2 gap-3">
-                  {masterLiar && masterLiar.liesBelieved > 0 && (
-                    <Card data-testid="award-master-liar">
-                      <CardContent className="pt-4 text-center">
-                        <Eye className="w-8 h-8 mx-auto text-purple-400 mb-2" />
-                        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Master Liar</div>
-                        <div className="font-bold">{masterLiar.playerName}</div>
-                        <div className="text-xs text-muted-foreground">{masterLiar.liesBelieved} lie{masterLiar.liesBelieved !== 1 ? 's' : ''} believed</div>
-                      </CardContent>
-                    </Card>
-                  )}
-                  {truthSeeker && truthSeeker.truthsSpotted > 0 && (
-                    <Card data-testid="award-truth-seeker">
-                      <CardContent className="pt-4 text-center">
-                        <Target className="w-8 h-8 mx-auto text-green-400 mb-2" />
-                        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Truth Seeker</div>
-                        <div className="font-bold">{truthSeeker.playerName}</div>
-                        <div className="text-xs text-muted-foreground">{truthSeeker.truthsSpotted} truth{truthSeeker.truthsSpotted !== 1 ? 's' : ''} found</div>
-                      </CardContent>
-                    </Card>
-                  )}
+              {awards.length > 0 && (
+                <div className={`grid gap-3 ${awards.length === 1 ? 'grid-cols-1' : awards.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                  {awards.map((award, idx) => (
+                    <motion.div
+                      key={award.key}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 + idx * 0.15 }}
+                    >
+                      <Card data-testid={`award-${award.key}`}>
+                        <CardContent className="pt-4 text-center">
+                          <award.icon className={`w-7 h-7 mx-auto ${colorMap[award.color] || 'text-muted-foreground'} mb-2`} />
+                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{award.title}</div>
+                          <div className="font-bold text-sm">{award.name}</div>
+                          <div className="text-xs text-muted-foreground">{award.detail}</div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
                 </div>
+              )}
+
+              {lieOfTheGame && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 }}
+                >
+                  <Card data-testid="award-lie-of-the-game">
+                    <CardContent className="pt-5">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-purple-500/15 flex items-center justify-center shrink-0 mt-0.5">
+                          <Award className="w-5 h-5 text-purple-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Lie of the Game</div>
+                          <p className="text-lg font-bold leading-snug mb-1">"{lieOfTheGame.lieText}"</p>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span>by <span className="font-medium text-foreground">{lieOfTheGame.liarName}</span></span>
+                            <span className="text-purple-400 font-medium">Fooled {lieOfTheGame.fooledCount} player{lieOfTheGame.fooledCount !== 1 ? 's' : ''}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               )}
 
               <Card>
@@ -1125,6 +1249,9 @@ export default function PsyOpHost() {
                             {entry.liesBelieved > 0 && (
                               <span className="px-2 py-0.5 bg-purple-500/20 rounded">{entry.liesBelieved} lie{entry.liesBelieved !== 1 ? 's' : ''} believed</span>
                             )}
+                            {entry.timesFooled > 0 && (
+                              <span className="px-2 py-0.5 bg-orange-500/20 rounded">Fooled {entry.timesFooled} time{entry.timesFooled !== 1 ? 's' : ''}</span>
+                            )}
                           </div>
                         </div>
                       );
@@ -1138,9 +1265,9 @@ export default function PsyOpHost() {
                   <ArrowLeft className="w-4 h-4" />
                   Back to Home
                 </Button>
-                <Button onClick={() => window.location.reload()} className="gap-2" data-testid="button-play-again">
+                <Button onClick={startRematch} className="gap-2" data-testid="button-rematch">
                   <RefreshCw className="w-4 h-4" />
-                  Play Again
+                  Rematch
                 </Button>
               </div>
             </motion.div>
