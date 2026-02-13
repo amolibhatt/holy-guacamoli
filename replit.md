@@ -44,7 +44,7 @@ Preferred communication style: Simple, everyday language.
 7.  **Role-Based Access Control (RBAC)**: Three-tier role system (User, Admin, Super Admin) with comprehensive security measures for route protection and privilege management.
 8.  **Theming**: 9 interactive themes with animated elements for dynamic gameplay visuals.
 9.  **Admin and Super Admin Features**: Enhanced admin UX with hierarchical navigation, visual progress indicators, auto-save drafts, and a simplified Super Admin Dashboard for platform management, content moderation, user activity tracking, and announcements.
-10. **Game Mechanics**: BlitzGrid uses a Board-Category-Question structure. Sort Circuit involves real-time ordering. Meme No Harm integrates live GIPHY search, player submissions, and voting. PsyOp features countdown timers (45s submission, 30s voting), sound effects, anonymous lie previews on host screen, and streak tracking for consecutive successful lies/truths.
+10. **Game Mechanics**: BlitzGrid uses a Board-Category-Question structure. Sort Circuit involves real-time ordering. Meme No Harm integrates live GIPHY search, player submissions, and voting. PsyOp features streak tracking for consecutive successful lies/truths.
 
 ## External Dependencies
 

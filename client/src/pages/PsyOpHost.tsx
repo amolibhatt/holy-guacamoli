@@ -14,7 +14,7 @@ import {
   Eye, Play, Users, Trophy, Loader2, Check,
   Crown, RefreshCw, ArrowLeft, Shuffle, Folder, HelpCircle,
   SkipForward, WifiOff, CheckCheck, User, Link2, MessageCircle,
-  Sparkles, Target, Award, Zap, Timer, AlertTriangle, Flame
+  Sparkles, Target, Award, Zap, AlertTriangle, Flame
 } from "lucide-react";
 import { PLAYER_AVATARS } from "@shared/schema";
 import { QRCodeSVG } from "qrcode.react";
@@ -22,7 +22,6 @@ import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { GameRulesSheet } from "@/components/GameRules";
 import { neonColorConfig, BOARD_COLORS } from "@/lib/boardColors";
-import { playDrumroll, playFanfare, playSwoosh, playRevealFlip, playCelebration, soundManager } from "@/lib/sounds";
 import type { PsyopQuestion } from "@shared/schema";
 
 type GameState = "setup" | "waiting" | "animatedReveal" | "submitting" | "voting" | "revealing" | "roundLeaderboard" | "finished";
@@ -157,9 +156,6 @@ export default function PsyOpHost() {
   const [animationStage, setAnimationStage] = useState<AnimationStage>("teaser");
   const animationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [allLies, setAllLies] = useState<LieRecord[]>([]);
-  const [countdown, setCountdown] = useState<number>(0);
-  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [anonymousLies, setAnonymousLies] = useState<string[]>([]);
   const [streaks, setStreaks] = useState<Record<string, { lies: number; truths: number }>>({});
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -168,14 +164,10 @@ export default function PsyOpHost() {
   const gameStateRef = useRef<GameState>("setup");
   const roomCodeRef = useRef<string | null>(null);
   const selectedQuestionsRef = useRef<PsyopQuestion[]>([]);
-  const moveToVotingRef = useRef<() => void>(() => {});
-  const moveToRevealingRef = useRef<() => void>(() => {});
 
   useEffect(() => { gameStateRef.current = gameState; }, [gameState]);
   useEffect(() => { roomCodeRef.current = roomCode; }, [roomCode]);
   useEffect(() => { selectedQuestionsRef.current = selectedQuestions; }, [selectedQuestions]);
-  useEffect(() => { moveToVotingRef.current = moveToVoting; });
-  useEffect(() => { moveToRevealingRef.current = moveToRevealing; });
 
   const { data: questions = [], isLoading: isLoadingQuestions } = useQuery<PsyopQuestion[]>({
     queryKey: ["/api/psyop/questions"],
@@ -288,8 +280,6 @@ export default function PsyOpHost() {
                 lieText: data.lieText,
               }];
             });
-            setAnonymousLies(prev => [...prev, data.lieText]);
-            soundManager.play('pop', 0.3);
             break;
           case "psyop:vote":
             setVotes(prev => {
@@ -300,7 +290,6 @@ export default function PsyOpHost() {
                 votedForId: data.votedForId,
               }];
             });
-            soundManager.play('click', 0.2);
             break;
         }
       } catch (err) {
@@ -338,37 +327,10 @@ export default function PsyOpHost() {
     return socket;
   }, [toast, user?.id]);
 
-  const startCountdown = useCallback((seconds: number, onComplete: () => void) => {
-    if (countdownRef.current) clearInterval(countdownRef.current);
-    setCountdown(seconds);
-    const completeFn = onComplete;
-    countdownRef.current = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          if (countdownRef.current) clearInterval(countdownRef.current);
-          countdownRef.current = null;
-          completeFn();
-          return 0;
-        }
-        if (prev <= 6) {
-          soundManager.play('tick', 0.3);
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  }, []);
-
-  const stopCountdown = useCallback(() => {
-    if (countdownRef.current) clearInterval(countdownRef.current);
-    countdownRef.current = null;
-    setCountdown(0);
-  }, []);
-
   useEffect(() => {
     return () => {
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       if (animationTimerRef.current) clearTimeout(animationTimerRef.current);
-      if (countdownRef.current) clearInterval(countdownRef.current);
       wsRef.current?.close();
     };
   }, []);
@@ -416,18 +378,15 @@ export default function PsyOpHost() {
     setCurrentQuestionIndex(qIndex);
     setAnimationStage("teaser");
     setGameState("animatedReveal");
-    stopCountdown();
-    playDrumroll();
     
     if (animationTimerRef.current) clearTimeout(animationTimerRef.current);
     animationTimerRef.current = setTimeout(() => {
       setAnimationStage("questionDrop");
-      playSwoosh();
       animationTimerRef.current = setTimeout(() => {
         startSubmissionPhase(question, qIndex);
       }, 2500);
     }, 2000);
-  }, [stopCountdown]);
+  }, []);
 
   const skipAnimation = useCallback(() => {
     if (animationTimerRef.current) clearTimeout(animationTimerRef.current);
@@ -436,15 +395,11 @@ export default function PsyOpHost() {
     }
   }, [currentQuestion, currentQuestionIndex]);
 
-  const SUBMISSION_TIME = 45;
-  const VOTING_TIME = 30;
-
   const startSubmissionPhase = useCallback((question: PsyopQuestion, qIndex?: number) => {
     setCurrentQuestion(question);
     setSubmissions([]);
     setVotes([]);
     setVoteOptions([]);
-    setAnonymousLies([]);
     setGameState("submitting");
     
     ws?.send(JSON.stringify({
@@ -456,18 +411,11 @@ export default function PsyOpHost() {
       },
       questionIndex: qIndex ?? currentQuestionIndex,
       totalQuestions: selectedQuestionsRef.current.length,
-      timeLimit: SUBMISSION_TIME,
     }));
-
-    startCountdown(SUBMISSION_TIME, () => {
-      moveToVotingRef.current();
-    });
-  }, [ws, currentQuestionIndex, startCountdown]);
+  }, [ws, currentQuestionIndex]);
 
   const moveToVoting = useCallback(() => {
     if (!currentQuestion || gameStateRef.current === "voting") return;
-    stopCountdown();
-    playSwoosh();
     
     const options: VoteOption[] = [
       { id: "truth", text: currentQuestion.correctAnswer, isTruth: true },
@@ -494,19 +442,12 @@ export default function PsyOpHost() {
         submitterId: o.submitterId,
         submitterName: o.submitterName,
       })),
-      timeLimit: VOTING_TIME,
     }));
-
-    startCountdown(VOTING_TIME, () => {
-      moveToRevealingRef.current();
-    });
-  }, [currentQuestion, submissions, ws, stopCountdown, startCountdown]);
+  }, [currentQuestion, submissions, ws]);
 
   const moveToRevealing = useCallback(() => {
     if (gameStateRef.current === "revealing") return;
-    stopCountdown();
     setGameState("revealing");
-    playRevealFlip();
     
     const scores: Record<string, number> = {};
     const roundLiesBelieved: Record<string, number> = {};
@@ -567,7 +508,6 @@ export default function PsyOpHost() {
     
     if (Object.values(scores).some(s => s >= 10)) {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-      playCelebration();
     }
 
     setStreaks(prev => {
@@ -595,7 +535,7 @@ export default function PsyOpHost() {
       roundLiesBelieved,
       roundTruthsSpotted,
     }));
-  }, [votes, voteOptions, currentQuestion, ws, leaderboard, stopCountdown, players]);
+  }, [votes, voteOptions, currentQuestion, ws, leaderboard, players]);
 
   useEffect(() => {
     if (ws && leaderboard.length > 0 && gameState !== "setup" && gameState !== "waiting") {
@@ -628,7 +568,6 @@ export default function PsyOpHost() {
     if (nextIndex >= selectedQuestions.length) {
       setGameState("finished");
       confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
-      playFanfare();
     } else {
       startAnimatedReveal(selectedQuestions[nextIndex], nextIndex);
     }
@@ -658,7 +597,6 @@ export default function PsyOpHost() {
     setSubmissions([]);
     setVotes([]);
     setVoteOptions([]);
-    setAnonymousLies([]);
     setStreaks({});
     setCurrentQuestionIndex(0);
     setCurrentQuestion(reshuffled[0]);
@@ -1119,30 +1057,6 @@ export default function PsyOpHost() {
               </div>
             </div>
 
-            {countdown > 0 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex items-center justify-center"
-              >
-                <div className={`flex items-center gap-3 px-6 py-3 rounded-xl border ${countdown <= 10 ? 'border-red-500/50 bg-red-500/10' : countdown <= 20 ? 'border-orange-500/30 bg-orange-500/5' : 'border-purple-500/30 bg-purple-500/5'}`}>
-                  <Timer className={`w-5 h-5 ${countdown <= 10 ? 'text-red-500' : countdown <= 20 ? 'text-orange-400' : 'text-purple-400'}`} />
-                  <motion.span
-                    key={countdown}
-                    initial={{ scale: 1.3, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className={`text-2xl font-black font-mono ${countdown <= 10 ? 'text-red-500' : countdown <= 20 ? 'text-orange-400' : 'text-purple-400'}`}
-                    data-testid="text-countdown"
-                  >
-                    {countdown}
-                  </motion.span>
-                  <span className={`text-sm ${countdown <= 10 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                    {countdown <= 5 ? "Hurry!" : countdown <= 10 ? "Almost up!" : "seconds"}
-                  </span>
-                </div>
-              </motion.div>
-            )}
-
             <Card>
               <CardContent className="pt-6 space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1184,29 +1098,6 @@ export default function PsyOpHost() {
                         );
                       })}
                     </div>
-
-                    {anonymousLies.length > 0 && (
-                      <div className="mt-4 space-y-2">
-                        <div className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                          <Eye className="w-3 h-3" />
-                          Lies rolling in...
-                        </div>
-                        <AnimatePresence>
-                          {anonymousLies.map((lie, idx) => (
-                            <motion.div
-                              key={idx}
-                              initial={{ opacity: 0, x: -30, height: 0 }}
-                              animate={{ opacity: 1, x: 0, height: 'auto' }}
-                              transition={{ duration: 0.4 }}
-                              className="p-3 rounded-lg bg-purple-500/5 border border-purple-500/10 text-sm italic text-muted-foreground"
-                              data-testid={`anon-lie-${idx}`}
-                            >
-                              "{lie}"
-                            </motion.div>
-                          ))}
-                        </AnimatePresence>
-                      </div>
-                    )}
 
                     {submissions.length > 0 && submissions.length < activePlayerCount && (
                       <Button onClick={moveToVoting} variant="outline" className="mt-4 gap-2" data-testid="button-force-voting">
