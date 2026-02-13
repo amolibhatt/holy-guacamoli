@@ -1728,6 +1728,16 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/pastforward/analytics", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const analytics = await storage.getPastForwardAnalytics(req.session.userId!);
+      res.json(analytics);
+    } catch (err) {
+      console.error("Error getting past forward analytics:", err);
+      res.status(500).json({ message: "Failed to get analytics" });
+    }
+  });
+
   app.post('/api/upload', isAuthenticated, isAdmin, upload.single('file'), (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });

@@ -111,6 +111,7 @@ export interface IStorage {
   getSortCircuitAnalytics(hostId: string): Promise<GameAnalyticsSummary>;
   getPsyOpAnalytics(hostId: string): Promise<GameAnalyticsSummary>;
   getMemeNoHarmAnalytics(hostId: string): Promise<GameAnalyticsSummary>;
+  getPastForwardAnalytics(userId: string): Promise<GameAnalyticsSummary & { questionsByEra: { era: string; count: number }[] }>;
   
   // Session Players
   addPlayerToSession(data: InsertSessionPlayer): Promise<SessionPlayer>;
@@ -1170,6 +1171,40 @@ export class DatabaseStorage implements IStorage {
       totalPlayers,
       avgPlayersPerSession: sessions.length > 0 ? Math.round((totalPlayers / sessions.length) * 10) / 10 : 0,
       lastPlayedAt: sorted[0]?.createdAt?.toISOString() || null,
+    };
+  }
+
+  async getPastForwardAnalytics(userId: string): Promise<GameAnalyticsSummary & { questionsByEra: { era: string; count: number }[] }> {
+    const userQuestions = await db.select().from(timeWarpQuestions)
+      .where(eq(timeWarpQuestions.userId, userId));
+
+    const eraMap = new Map<string, number>();
+    for (const q of userQuestions) {
+      eraMap.set(q.era, (eraMap.get(q.era) || 0) + 1);
+    }
+    const questionsByEra = Array.from(eraMap.entries()).map(([era, count]) => ({ era, count }));
+
+    const history = await db.select().from(playerGameHistory)
+      .where(eq(playerGameHistory.gameSlug, "timewarp"));
+
+    const distinctSessions = new Set(history.map(h => h.sessionCode));
+    const totalSessions = distinctSessions.size;
+    const distinctPlayers = new Set(history.map(h => h.userId));
+    const totalPlayers = distinctPlayers.size;
+
+    let lastPlayedAt: string | null = null;
+    if (history.length > 0) {
+      const sorted = [...history].sort((a, b) => new Date(b.playedAt).getTime() - new Date(a.playedAt).getTime());
+      lastPlayedAt = sorted[0]?.playedAt?.toISOString() || null;
+    }
+
+    return {
+      totalSessions,
+      completedSessions: totalSessions,
+      totalPlayers,
+      avgPlayersPerSession: totalSessions > 0 ? Math.round((totalPlayers / totalSessions) * 10) / 10 : 0,
+      lastPlayedAt,
+      questionsByEra,
     };
   }
 

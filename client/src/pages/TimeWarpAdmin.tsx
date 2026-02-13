@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AppHeader } from "@/components/AppHeader";
+import { GameAnalyticsPanel } from "@/components/GameAnalyticsPanel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -459,6 +460,13 @@ export default function TimeWarpAdmin() {
             ))}
           </div>
         )}
+
+        <GameAnalyticsPanel
+          endpoint="/api/pastforward/analytics"
+          gameName="Past Forward"
+          accentColor="text-amber-500"
+          isAuthenticated={isAuthenticated}
+        />
       </main>
     </div>
   );
