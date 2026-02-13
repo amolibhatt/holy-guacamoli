@@ -5821,6 +5821,7 @@ Generate exactly ${promptCount} prompts.`
                   type: 'psyop:submission:start',
                   question: playerQuestion,
                   deadline: data.deadline,
+                  timeLimit: data.timeLimit,
                 });
               }
             });
@@ -5887,6 +5888,7 @@ Generate exactly ${promptCount} prompts.`
                   type: 'psyop:voting:start',
                   options: filteredOptions,
                   deadline: data.deadline,
+                  timeLimit: data.timeLimit,
                 });
               }
             });

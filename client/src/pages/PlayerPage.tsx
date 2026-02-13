@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles, Users, ChevronUp, ChevronDown, Volume2, VolumeX, Lock, Grid3X3, Hand, Flame, Laugh, CircleDot, ThumbsUp, Eye, Check } from "lucide-react";
+import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles, Users, ChevronUp, ChevronDown, Volume2, VolumeX, Lock, Grid3X3, Hand, Flame, Laugh, CircleDot, ThumbsUp, Eye, Check, Timer } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
@@ -91,6 +91,8 @@ export default function PlayerPage() {
   const [psyopLieText, setPsyopLieText] = useState("");
   const [psyopCorrectAnswer, setPsyopCorrectAnswer] = useState<string | null>(null);
   const [psyopRevealData, setPsyopRevealData] = useState<{ yourScore: number; foundTruth: boolean; yourLiesBelieved: number } | null>(null);
+  const [psyopCountdown, setPsyopCountdown] = useState<number>(0);
+  const psyopCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -363,14 +365,17 @@ export default function PlayerPage() {
           setPsyopSubmitted(false);
           setPsyopRevealData(null);
           setPsyopCorrectAnswer(null);
+          if (data.timeLimit) startPsyopCountdown(data.timeLimit);
           break;
         case "psyop:voting:start":
           setGameMode("psyop");
           setPsyopPhase("voting");
           setPsyopOptions(data.options || []);
           setPsyopVoted(false);
+          if (data.timeLimit) startPsyopCountdown(data.timeLimit);
           break;
         case "psyop:revealed": {
+          stopPsyopCountdown();
           setPsyopPhase("revealed");
           setPsyopCorrectAnswer(data.correctAnswer);
           setPsyopRevealData({
@@ -396,6 +401,7 @@ export default function PlayerPage() {
           break;
         }
         case "psyop:skipped":
+          stopPsyopCountdown();
           setPsyopPhase("idle");
           setPsyopSubmitted(false);
           setPsyopVoted(false);
@@ -406,6 +412,7 @@ export default function PlayerPage() {
           setPsyopRevealData(null);
           break;
         case "psyop:rematch":
+          stopPsyopCountdown();
           setPsyopPhase("idle");
           setPsyopSubmitted(false);
           setPsyopVoted(false);
@@ -479,11 +486,34 @@ export default function PlayerPage() {
     };
   }, [roomCode, playerName, playerId, selectedAvatar]);
 
+  const startPsyopCountdown = useCallback((seconds: number) => {
+    if (psyopCountdownRef.current) clearInterval(psyopCountdownRef.current);
+    setPsyopCountdown(seconds);
+    psyopCountdownRef.current = setInterval(() => {
+      setPsyopCountdown(prev => {
+        if (prev <= 1) {
+          if (psyopCountdownRef.current) clearInterval(psyopCountdownRef.current);
+          psyopCountdownRef.current = null;
+          return 0;
+        }
+        if (prev <= 6) soundManager.play('tick', 0.2);
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  const stopPsyopCountdown = useCallback(() => {
+    if (psyopCountdownRef.current) clearInterval(psyopCountdownRef.current);
+    psyopCountdownRef.current = null;
+    setPsyopCountdown(0);
+  }, []);
+
   useEffect(() => {
     return () => {
       if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      if (psyopCountdownRef.current) clearInterval(psyopCountdownRef.current);
       wsRef.current?.close();
     };
   }, []);
@@ -825,6 +855,26 @@ export default function PlayerPage() {
               exit={{ opacity: 0, y: -20 }}
               className="w-full max-w-md space-y-6"
             >
+              {psyopCountdown > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex justify-center mb-4"
+                >
+                  <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${psyopCountdown <= 10 ? 'border-red-500/50 bg-red-500/10' : 'border-purple-500/30 bg-purple-500/5'}`}>
+                    <Timer className={`w-4 h-4 ${psyopCountdown <= 10 ? 'text-red-500' : 'text-purple-400'}`} />
+                    <motion.span
+                      key={psyopCountdown}
+                      initial={{ scale: 1.2, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className={`text-xl font-black font-mono ${psyopCountdown <= 10 ? 'text-red-500' : 'text-purple-400'}`}
+                      data-testid="text-player-countdown"
+                    >
+                      {psyopCountdown}
+                    </motion.span>
+                  </div>
+                </motion.div>
+              )}
               <Card className="border-purple-500/30">
                 <div className="p-6 space-y-4">
                   <div className="text-center">
@@ -892,6 +942,26 @@ export default function PlayerPage() {
               exit={{ opacity: 0, y: -20 }}
               className="w-full max-w-md space-y-4"
             >
+              {psyopCountdown > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex justify-center mb-2"
+                >
+                  <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${psyopCountdown <= 10 ? 'border-red-500/50 bg-red-500/10' : 'border-purple-500/30 bg-purple-500/5'}`}>
+                    <Timer className={`w-4 h-4 ${psyopCountdown <= 10 ? 'text-red-500' : 'text-purple-400'}`} />
+                    <motion.span
+                      key={psyopCountdown}
+                      initial={{ scale: 1.2, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className={`text-xl font-black font-mono ${psyopCountdown <= 10 ? 'text-red-500' : 'text-purple-400'}`}
+                      data-testid="text-player-vote-countdown"
+                    >
+                      {psyopCountdown}
+                    </motion.span>
+                  </div>
+                </motion.div>
+              )}
               <div className="text-center mb-4">
                 <h2 className="text-lg font-bold">Which is the truth?</h2>
                 <p className="text-muted-foreground text-sm">Tap the answer you think is real</p>
