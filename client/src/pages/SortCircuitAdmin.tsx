@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { AppHeader } from "@/components/AppHeader";
 import { SequenceSqueezeAdmin } from "@/components/SequenceSqueezeAdmin";
+import { GameAnalyticsPanel } from "@/components/GameAnalyticsPanel";
 import { Button } from "@/components/ui/button";
 import { Loader2, Grid3X3, ListOrdered, Eye, Clock, Smile } from "lucide-react";
 
@@ -106,6 +107,12 @@ export default function SortCircuitAdmin() {
           <p className="text-muted-foreground text-sm">Create and manage ordering questions</p>
         </div>
         <SequenceSqueezeAdmin />
+        <GameAnalyticsPanel
+          endpoint="/api/sortcircuit/analytics"
+          gameName="Sort Circuit"
+          accentColor="text-teal-500"
+          isAuthenticated={isAuthenticated}
+        />
       </main>
     </div>
   );

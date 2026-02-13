@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
+import { GameAnalyticsPanel } from "@/components/GameAnalyticsPanel";
 import { Link, useLocation } from "wouter";
 import { Plus, Trash2, Play, Smile, Grid3X3, Brain, Clock, Loader2, Upload, Sparkles, Check, Pencil, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
@@ -719,6 +720,12 @@ export default function MemeNoHarmAdmin() {
             </CardContent>
           </Card>
         </div>
+        <GameAnalyticsPanel
+          endpoint="/api/memenoharm/analytics"
+          gameName="Meme No Harm"
+          accentColor="text-pink-500"
+          isAuthenticated={isAuthenticated}
+        />
       </main>
 
       <AppFooter />

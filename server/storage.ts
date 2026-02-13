@@ -24,6 +24,15 @@ export interface BlitzgridAnalytics {
   boards: BoardAnalyticsItem[];
 }
 
+export interface GameAnalyticsSummary {
+  totalSessions: number;
+  completedSessions: number;
+  totalPlayers: number;
+  avgPlayersPerSession: number;
+  lastPlayedAt: string | null;
+  topQuestions?: Array<{ questionId: number; questionText: string; timesPlayed: number }>;
+}
+
 export interface IStorage {
   getBoards(userId: string, role?: string): Promise<Board[]>;
   getStarterPackBoards(): Promise<Board[]>;
@@ -99,6 +108,9 @@ export interface IStorage {
   getHostSessionsWithDetails(hostId: string): Promise<GameSessionWithDetails[]>;
   getHostAnalytics(hostId: string): Promise<{ totalSessions: number; totalPlayers: number; activeSessions: number }>;
   getBlitzgridAnalytics(userId: string, role?: string): Promise<BlitzgridAnalytics>;
+  getSortCircuitAnalytics(hostId: string): Promise<GameAnalyticsSummary>;
+  getPsyOpAnalytics(hostId: string): Promise<GameAnalyticsSummary>;
+  getMemeNoHarmAnalytics(hostId: string): Promise<GameAnalyticsSummary>;
   
   // Session Players
   addPlayerToSession(data: InsertSessionPlayer): Promise<SessionPlayer>;
@@ -1017,6 +1029,147 @@ export class DatabaseStorage implements IStorage {
         totalPlayers: summaryPlayers,
       },
       boards: boardAnalytics,
+    };
+  }
+
+  async getSortCircuitAnalytics(hostId: string): Promise<GameAnalyticsSummary> {
+    const sessions = await db.select().from(sequenceSessions)
+      .where(eq(sequenceSessions.hostId, hostId));
+
+    if (sessions.length === 0) {
+      return { totalSessions: 0, completedSessions: 0, totalPlayers: 0, avgPlayersPerSession: 0, lastPlayedAt: null };
+    }
+
+    const completed = sessions.filter(s => s.status === 'finished').length;
+    const sessionIds = sessions.map(s => s.id);
+
+    let totalPlayers = 0;
+    if (sessionIds.length > 0) {
+      const subs = await db.select({ count: sql<number>`count(DISTINCT ${sequenceSubmissions.playerId})` })
+        .from(sequenceSubmissions)
+        .where(inArray(sequenceSubmissions.sessionId, sessionIds));
+      totalPlayers = Number(subs[0]?.count || 0);
+    }
+
+    const questionCounts = new Map<number, number>();
+    for (const s of sessions) {
+      if (s.questionId) {
+        questionCounts.set(s.questionId, (questionCounts.get(s.questionId) || 0) + 1);
+      }
+    }
+
+    let topQuestions: GameAnalyticsSummary['topQuestions'] = [];
+    if (questionCounts.size > 0) {
+      const topIds = Array.from(questionCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      const qIds = topIds.map(([id]) => id);
+      const qs = await db.select({ id: sequenceQuestions.id, question: sequenceQuestions.question })
+        .from(sequenceQuestions)
+        .where(inArray(sequenceQuestions.id, qIds));
+      const qMap = new Map(qs.map(q => [q.id, q.question]));
+      topQuestions = topIds.map(([id, count]) => ({
+        questionId: id,
+        questionText: qMap.get(id) || `Question ${id}`,
+        timesPlayed: count,
+      }));
+    }
+
+    const sorted = [...sessions].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return {
+      totalSessions: sessions.length,
+      completedSessions: completed,
+      totalPlayers,
+      avgPlayersPerSession: sessions.length > 0 ? Math.round((totalPlayers / sessions.length) * 10) / 10 : 0,
+      lastPlayedAt: sorted[0]?.createdAt?.toISOString() || null,
+      topQuestions,
+    };
+  }
+
+  async getPsyOpAnalytics(hostId: string): Promise<GameAnalyticsSummary> {
+    const sessions = await db.select().from(psyopSessions)
+      .where(eq(psyopSessions.hostId, hostId));
+
+    if (sessions.length === 0) {
+      return { totalSessions: 0, completedSessions: 0, totalPlayers: 0, avgPlayersPerSession: 0, lastPlayedAt: null };
+    }
+
+    const completed = sessions.filter(s => s.status === 'finished').length;
+    const sessionIds = sessions.map(s => s.id);
+
+    const rounds = sessionIds.length > 0
+      ? await db.select({ id: psyopRounds.id, questionId: psyopRounds.questionId })
+          .from(psyopRounds)
+          .where(inArray(psyopRounds.sessionId, sessionIds))
+      : [];
+
+    let totalPlayers = 0;
+    const roundIds = rounds.map(r => r.id);
+    if (roundIds.length > 0) {
+      const subs = await db.select({ count: sql<number>`count(DISTINCT ${psyopSubmissions.playerId})` })
+        .from(psyopSubmissions)
+        .where(inArray(psyopSubmissions.roundId, roundIds));
+      totalPlayers = Number(subs[0]?.count || 0);
+    }
+
+    const questionCounts = new Map<number, number>();
+    for (const r of rounds) {
+      questionCounts.set(r.questionId, (questionCounts.get(r.questionId) || 0) + 1);
+    }
+
+    let topQuestions: GameAnalyticsSummary['topQuestions'] = [];
+    if (questionCounts.size > 0) {
+      const topIds = Array.from(questionCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      const qIds = topIds.map(([id]) => id);
+      const qs = await db.select({ id: psyopQuestions.id, factText: psyopQuestions.factText })
+        .from(psyopQuestions)
+        .where(inArray(psyopQuestions.id, qIds));
+      const qMap = new Map(qs.map(q => [q.id, q.factText]));
+      topQuestions = topIds.map(([id, count]) => ({
+        questionId: id,
+        questionText: qMap.get(id) || `Question ${id}`,
+        timesPlayed: count,
+      }));
+    }
+
+    const sorted = [...sessions].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return {
+      totalSessions: sessions.length,
+      completedSessions: completed,
+      totalPlayers,
+      avgPlayersPerSession: sessions.length > 0 ? Math.round((totalPlayers / sessions.length) * 10) / 10 : 0,
+      lastPlayedAt: sorted[0]?.createdAt?.toISOString() || null,
+      topQuestions,
+    };
+  }
+
+  async getMemeNoHarmAnalytics(hostId: string): Promise<GameAnalyticsSummary> {
+    const sessions = await db.select().from(memeSessions)
+      .where(eq(memeSessions.hostId, hostId));
+
+    if (sessions.length === 0) {
+      return { totalSessions: 0, completedSessions: 0, totalPlayers: 0, avgPlayersPerSession: 0, lastPlayedAt: null };
+    }
+
+    const completed = sessions.filter(s => s.status === 'finished' || s.status === 'gameComplete').length;
+    const sessionIds = sessions.map(s => s.id);
+
+    let totalPlayers = 0;
+    if (sessionIds.length > 0) {
+      const players = await db.select({ count: sql<number>`count(*)` })
+        .from(memePlayers)
+        .where(inArray(memePlayers.sessionId, sessionIds));
+      totalPlayers = Number(players[0]?.count || 0);
+    }
+
+    const sorted = [...sessions].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return {
+      totalSessions: sessions.length,
+      completedSessions: completed,
+      totalPlayers,
+      avgPlayersPerSession: sessions.length > 0 ? Math.round((totalPlayers / sessions.length) * 10) / 10 : 0,
+      lastPlayedAt: sorted[0]?.createdAt?.toISOString() || null,
     };
   }
 

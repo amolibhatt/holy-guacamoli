@@ -1698,6 +1698,36 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/sortcircuit/analytics", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const analytics = await storage.getSortCircuitAnalytics(req.session.userId!);
+      res.json(analytics);
+    } catch (err) {
+      console.error("Error getting sort circuit analytics:", err);
+      res.status(500).json({ message: "Failed to get analytics" });
+    }
+  });
+
+  app.get("/api/psyop/analytics", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const analytics = await storage.getPsyOpAnalytics(req.session.userId!);
+      res.json(analytics);
+    } catch (err) {
+      console.error("Error getting psyop analytics:", err);
+      res.status(500).json({ message: "Failed to get analytics" });
+    }
+  });
+
+  app.get("/api/memenoharm/analytics", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const analytics = await storage.getMemeNoHarmAnalytics(req.session.userId!);
+      res.json(analytics);
+    } catch (err) {
+      console.error("Error getting meme no harm analytics:", err);
+      res.status(500).json({ message: "Failed to get analytics" });
+    }
+  });
+
   app.post('/api/upload', isAuthenticated, isAdmin, upload.single('file'), (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
