@@ -3,6 +3,27 @@ import { boards, categories, boardCategories, questions, games, gameBoards, head
 import { users, playerProfiles, playerBadges, payments } from "@shared/models/auth";
 import { eq, and, asc, count, inArray, desc, sql, gte, like, or } from "drizzle-orm";
 
+export interface BoardAnalyticsItem {
+  boardId: number;
+  boardName: string;
+  totalPlays: number;
+  completions: number;
+  totalPlayers: number;
+  avgPlayersPerSession: number;
+  lastPlayedAt: string | null;
+  popularCategories: Array<{ categoryId: number; categoryName: string; timesPlayed: number }>;
+}
+
+export interface BlitzgridAnalytics {
+  summary: {
+    totalGrids: number;
+    totalPlays: number;
+    totalCompletions: number;
+    totalPlayers: number;
+  };
+  boards: BoardAnalyticsItem[];
+}
+
 export interface IStorage {
   getBoards(userId: string, role?: string): Promise<Board[]>;
   getStarterPackBoards(): Promise<Board[]>;
@@ -77,6 +98,7 @@ export interface IStorage {
   getHostSessions(hostId: string): Promise<GameSessionWithPlayers[]>;
   getHostSessionsWithDetails(hostId: string): Promise<GameSessionWithDetails[]>;
   getHostAnalytics(hostId: string): Promise<{ totalSessions: number; totalPlayers: number; activeSessions: number }>;
+  getBlitzgridAnalytics(userId: string, role?: string): Promise<BlitzgridAnalytics>;
   
   // Session Players
   addPlayerToSession(data: InsertSessionPlayer): Promise<SessionPlayer>;
@@ -871,6 +893,130 @@ export class DatabaseStorage implements IStorage {
       totalSessions: allSessions.length,
       totalPlayers,
       activeSessions
+    };
+  }
+
+  async getBlitzgridAnalytics(userId: string, role?: string): Promise<BlitzgridAnalytics> {
+    const allBoards = await this.getBoards(userId, role);
+    const blitzgridBoards = allBoards.filter(b => b.theme === "blitzgrid" || b.theme?.startsWith("blitzgrid:"));
+
+    if (blitzgridBoards.length === 0) {
+      return {
+        summary: { totalGrids: 0, totalPlays: 0, totalCompletions: 0, totalPlayers: 0 },
+        boards: [],
+      };
+    }
+
+    const boardIds = blitzgridBoards.map(b => b.id);
+
+    const sessions = await db.select().from(gameSessions)
+      .where(inArray(gameSessions.currentBoardId, boardIds));
+
+    const sessionIds = sessions.map(s => s.id);
+    let playerRows: { sessionId: number }[] = [];
+    if (sessionIds.length > 0) {
+      playerRows = await db.select({ sessionId: sessionPlayers.sessionId })
+        .from(sessionPlayers)
+        .where(inArray(sessionPlayers.sessionId, sessionIds));
+    }
+
+    const playerCountBySession = new Map<number, number>();
+    for (const row of playerRows) {
+      playerCountBySession.set(row.sessionId, (playerCountBySession.get(row.sessionId) || 0) + 1);
+    }
+
+    const allCategoryIds = new Set<number>();
+    for (const s of sessions) {
+      const played = s.playedCategoryIds as number[] | null;
+      if (played && Array.isArray(played)) {
+        played.forEach(id => allCategoryIds.add(id));
+      }
+    }
+
+    const categoryNames = new Map<number, string>();
+    if (allCategoryIds.size > 0) {
+      const cats = await db.select({ id: categories.id, name: categories.name })
+        .from(categories)
+        .where(inArray(categories.id, Array.from(allCategoryIds)));
+      cats.forEach(c => categoryNames.set(c.id, c.name));
+    }
+
+    for (const boardId of boardIds) {
+      const bcs = await db.select({ categoryId: boardCategories.categoryId })
+        .from(boardCategories)
+        .where(eq(boardCategories.boardId, boardId));
+      for (const bc of bcs) {
+        if (!categoryNames.has(bc.categoryId)) {
+          const cat = await db.select({ id: categories.id, name: categories.name })
+            .from(categories)
+            .where(eq(categories.id, bc.categoryId));
+          if (cat[0]) categoryNames.set(cat[0].id, cat[0].name);
+        }
+      }
+    }
+
+    let summaryPlays = 0;
+    let summaryCompletions = 0;
+    let summaryPlayers = 0;
+
+    const boardAnalytics: BoardAnalyticsItem[] = blitzgridBoards.map(board => {
+      const boardSessions = sessions.filter(s => s.currentBoardId === board.id);
+      const plays = boardSessions.length;
+      const completions = boardSessions.filter(s => s.state === 'ended').length;
+
+      let totalPlayerCount = 0;
+      boardSessions.forEach(s => {
+        totalPlayerCount += playerCountBySession.get(s.id) || 0;
+      });
+
+      const catCounts = new Map<number, number>();
+      boardSessions.forEach(s => {
+        const played = s.playedCategoryIds as number[] | null;
+        if (played && Array.isArray(played)) {
+          played.forEach(id => catCounts.set(id, (catCounts.get(id) || 0) + 1));
+        }
+      });
+
+      const popularCategories = Array.from(catCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([catId, count]) => ({
+          categoryId: catId,
+          categoryName: categoryNames.get(catId) || `Category ${catId}`,
+          timesPlayed: count,
+        }));
+
+      const sortedSessions = [...boardSessions].sort((a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      const lastPlayedAt = sortedSessions.length > 0 ? sortedSessions[0].createdAt.toISOString() : null;
+
+      summaryPlays += plays;
+      summaryCompletions += completions;
+      summaryPlayers += totalPlayerCount;
+
+      return {
+        boardId: board.id,
+        boardName: board.name,
+        totalPlays: plays,
+        completions,
+        totalPlayers: totalPlayerCount,
+        avgPlayersPerSession: plays > 0 ? Math.round((totalPlayerCount / plays) * 10) / 10 : 0,
+        lastPlayedAt,
+        popularCategories,
+      };
+    });
+
+    boardAnalytics.sort((a, b) => b.totalPlays - a.totalPlays);
+
+    return {
+      summary: {
+        totalGrids: blitzgridBoards.length,
+        totalPlays: summaryPlays,
+        totalCompletions: summaryCompletions,
+        totalPlayers: summaryPlayers,
+      },
+      boards: boardAnalytics,
     };
   }
 

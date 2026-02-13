@@ -1686,6 +1686,18 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/blitzgrid/analytics", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const role = req.session.userRole;
+      const analytics = await storage.getBlitzgridAnalytics(userId, role);
+      res.json(analytics);
+    } catch (err) {
+      console.error("Error getting blitzgrid analytics:", err);
+      res.status(500).json({ message: "Failed to get analytics" });
+    }
+  });
+
   app.post('/api/upload', isAuthenticated, isAdmin, upload.single('file'), (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });

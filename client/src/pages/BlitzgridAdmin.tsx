@@ -17,6 +17,7 @@ import {
   ChevronRight, Loader2,
   AlertCircle, CheckCircle2, Image, Music, Video,
   Download, Upload, FileSpreadsheet, Smile,
+  BarChart3, Users, Play, Trophy, TrendingUp, ChevronDown,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Board, Category, Question } from "@shared/schema";
@@ -159,6 +160,7 @@ export default function BlitzGridAdmin() {
   const [newGridName, setNewGridName] = useState("");
   const [newGridDescription, setNewGridDescription] = useState("");
   const [deletingGridId, setDeletingGridId] = useState<number | null>(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
   const [selectedPointTier, setSelectedPointTier] = useState<number>(10);
   const [showMediaPanel, setShowMediaPanel] = useState(false);
@@ -185,6 +187,32 @@ export default function BlitzGridAdmin() {
     }
     setHasInitializedFromUrl(true);
   }, [searchString, grids, loadingGrids, hasInitializedFromUrl]);
+
+  interface BoardAnalyticsItem {
+    boardId: number;
+    boardName: string;
+    totalPlays: number;
+    completions: number;
+    totalPlayers: number;
+    avgPlayersPerSession: number;
+    lastPlayedAt: string | null;
+    popularCategories: Array<{ categoryId: number; categoryName: string; timesPlayed: number }>;
+  }
+
+  interface BlitzgridAnalyticsData {
+    summary: {
+      totalGrids: number;
+      totalPlays: number;
+      totalCompletions: number;
+      totalPlayers: number;
+    };
+    boards: BoardAnalyticsItem[];
+  }
+
+  const { data: analyticsData, isLoading: loadingAnalytics } = useQuery<BlitzgridAnalyticsData>({
+    queryKey: ['/api/blitzgrid/analytics'],
+    enabled: isAuthenticated && showAnalytics,
+  });
 
   const { data: gridCategories = [], isLoading: loadingCategories } = useQuery<CategoryWithQuestions[]>({
     queryKey: ['/api/blitzgrid/grids', selectedGridId, 'categories'],
@@ -1912,6 +1940,151 @@ export default function BlitzGridAdmin() {
             ))}
           </div>
         )}
+
+        <div className="mt-8">
+          <Button
+            variant="outline"
+            className="w-full justify-between"
+            onClick={() => setShowAnalytics(!showAnalytics)}
+            data-testid="button-toggle-analytics"
+          >
+            <span className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 shrink-0" aria-hidden="true" />
+              Grid Analytics
+            </span>
+            <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${showAnalytics ? 'rotate-180' : ''}`} aria-hidden="true" />
+          </Button>
+
+          <AnimatePresence>
+            {showAnalytics && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="pt-4 space-y-4">
+                  {loadingAnalytics ? (
+                    <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+                      {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20" />)}
+                    </div>
+                  ) : analyticsData ? (
+                    <>
+                      <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+                        <Card data-testid="stat-total-grids">
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Grid3X3 className="w-4 h-4 text-fuchsia-500 shrink-0" aria-hidden="true" />
+                              <span className="text-xs text-muted-foreground">Grids</span>
+                            </div>
+                            <p className="text-2xl font-bold">{analyticsData.summary.totalGrids}</p>
+                          </CardContent>
+                        </Card>
+                        <Card data-testid="stat-total-plays">
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Play className="w-4 h-4 text-blue-500 shrink-0" aria-hidden="true" />
+                              <span className="text-xs text-muted-foreground">Total Plays</span>
+                            </div>
+                            <p className="text-2xl font-bold">{analyticsData.summary.totalPlays}</p>
+                          </CardContent>
+                        </Card>
+                        <Card data-testid="stat-total-completions">
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Trophy className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />
+                              <span className="text-xs text-muted-foreground">Completions</span>
+                            </div>
+                            <p className="text-2xl font-bold">{analyticsData.summary.totalCompletions}</p>
+                          </CardContent>
+                        </Card>
+                        <Card data-testid="stat-total-players">
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Users className="w-4 h-4 text-green-500 shrink-0" aria-hidden="true" />
+                              <span className="text-xs text-muted-foreground">Total Players</span>
+                            </div>
+                            <p className="text-2xl font-bold">{analyticsData.summary.totalPlayers}</p>
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      {analyticsData.boards.length > 0 ? (
+                        <div className="space-y-3">
+                          <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 shrink-0" aria-hidden="true" />
+                            Per-Grid Breakdown
+                          </h3>
+                          {analyticsData.boards.map(board => (
+                            <Card key={board.boardId} data-testid={`analytics-board-${board.boardId}`}>
+                              <CardContent className="p-4">
+                                <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
+                                  <div className="min-w-0">
+                                    <h4 className="font-semibold truncate">{board.boardName}</h4>
+                                    {board.lastPlayedAt && (
+                                      <p className="text-xs text-muted-foreground">
+                                        Last played {new Date(board.lastPlayedAt).toLocaleDateString()}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-3 flex-wrap shrink-0">
+                                    <div className="text-center">
+                                      <p className="text-lg font-bold">{board.totalPlays}</p>
+                                      <p className="text-xs text-muted-foreground">plays</p>
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-lg font-bold">{board.completions}</p>
+                                      <p className="text-xs text-muted-foreground">completed</p>
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-lg font-bold">{board.totalPlayers}</p>
+                                      <p className="text-xs text-muted-foreground">players</p>
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-lg font-bold">{board.avgPlayersPerSession}</p>
+                                      <p className="text-xs text-muted-foreground">avg/game</p>
+                                    </div>
+                                  </div>
+                                </div>
+                                {board.popularCategories.length > 0 && (
+                                  <div>
+                                    <p className="text-xs text-muted-foreground mb-2">Popular Categories</p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {board.popularCategories.map((cat, i) => (
+                                        <Badge
+                                          key={cat.categoryId}
+                                          variant={i === 0 ? "default" : "secondary"}
+                                          className="text-xs"
+                                          data-testid={`badge-popular-category-${cat.categoryId}`}
+                                        >
+                                          {cat.categoryName} ({cat.timesPlayed})
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                {board.totalPlays === 0 && (
+                                  <p className="text-sm text-muted-foreground italic">No plays yet</p>
+                                )}
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <Card>
+                          <CardContent className="py-8 text-center">
+                            <BarChart3 className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2 shrink-0" aria-hidden="true" />
+                            <p className="text-sm text-muted-foreground">No game data yet. Start playing to see analytics!</p>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </>
+                  ) : null}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </main>
 
       <AppFooter />
