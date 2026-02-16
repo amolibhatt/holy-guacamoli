@@ -1758,6 +1758,12 @@ export class DatabaseStorage implements IStorage {
     await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
     await db.delete(payments).where(eq(payments.userId, userId));
     
+    const userGames = await db.select({ id: games.id }).from(games).where(eq(games.userId, userId));
+    if (userGames.length > 0) {
+      const gameIds = userGames.map(g => g.id);
+      await db.delete(gameBoards).where(inArray(gameBoards.gameId, gameIds));
+      await db.delete(gameDecks).where(inArray(gameDecks.gameId, gameIds));
+    }
     await db.delete(games).where(eq(games.userId, userId));
     await db.delete(users).where(eq(users.id, userId));
   }
@@ -2113,19 +2119,28 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteSequenceQuestion(id: number, userId: string, role?: string): Promise<boolean> {
-    if (role === 'super_admin') {
-      const result = await db.delete(sequenceQuestions).where(eq(sequenceQuestions.id, id)).returning();
-      return result.length > 0;
+    const ownershipCondition = role === 'super_admin'
+      ? eq(sequenceQuestions.id, id)
+      : and(eq(sequenceQuestions.id, id), eq(sequenceQuestions.userId, userId));
+    const [existing] = await db.select({ id: sequenceQuestions.id }).from(sequenceQuestions).where(ownershipCondition);
+    if (!existing) return false;
+
+    const sessionsWithQuestion = await db.select({ id: sequenceSessions.id }).from(sequenceSessions).where(eq(sequenceSessions.questionId, id));
+    if (sessionsWithQuestion.length > 0) {
+      const sessionIds = sessionsWithQuestion.map(s => s.id);
+      await db.delete(sequenceSubmissions).where(inArray(sequenceSubmissions.sessionId, sessionIds));
     }
-    const result = await db.delete(sequenceQuestions).where(and(eq(sequenceQuestions.id, id), eq(sequenceQuestions.userId, userId))).returning();
+    await db.update(sequenceSessions).set({ questionId: null }).where(eq(sequenceSessions.questionId, id));
+
+    const result = await db.delete(sequenceQuestions).where(ownershipCondition).returning();
     return result.length > 0;
   }
 
   async getPsyopQuestions(userId: string, role?: string): Promise<PsyopQuestion[]> {
     if (role === 'super_admin') {
-      return await db.select().from(psyopQuestions).where(eq(psyopQuestions.isActive, true)).orderBy(desc(psyopQuestions.createdAt));
+      return await db.select().from(psyopQuestions).orderBy(desc(psyopQuestions.createdAt));
     }
-    return await db.select().from(psyopQuestions).where(and(eq(psyopQuestions.userId, userId), eq(psyopQuestions.isActive, true))).orderBy(desc(psyopQuestions.createdAt));
+    return await db.select().from(psyopQuestions).where(eq(psyopQuestions.userId, userId)).orderBy(desc(psyopQuestions.createdAt));
   }
 
   async createPsyopQuestion(data: InsertPsyopQuestion): Promise<PsyopQuestion> {
@@ -2138,20 +2153,44 @@ export class DatabaseStorage implements IStorage {
       ? eq(psyopQuestions.id, id)
       : and(eq(psyopQuestions.id, id), eq(psyopQuestions.userId, userId));
     
+    const allowedFields = new Set(['factText', 'correctAnswer', 'category', 'isActive']);
+    if (role === 'super_admin') {
+      allowedFields.add('isStarterPack');
+    }
+    const safeData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (allowedFields.has(key) && value !== undefined) {
+        safeData[key] = value;
+      }
+    }
+    if (Object.keys(safeData).length === 0) return null;
+
     const [updated] = await db.update(psyopQuestions)
-      .set(data as any)
+      .set(safeData)
       .where(condition)
       .returning();
     return updated || null;
   }
 
   async deletePsyopQuestion(id: number, userId: string, role?: string): Promise<boolean> {
-    if (role === 'super_admin') {
-      const result = await db.delete(psyopQuestions).where(eq(psyopQuestions.id, id));
-      return !!result;
-    }
-    const result = await db.delete(psyopQuestions).where(and(eq(psyopQuestions.id, id), eq(psyopQuestions.userId, userId)));
-    return !!result;
+    const ownershipCondition = role === 'super_admin'
+      ? eq(psyopQuestions.id, id)
+      : and(eq(psyopQuestions.id, id), eq(psyopQuestions.userId, userId));
+    const [existing] = await db.select({ id: psyopQuestions.id }).from(psyopQuestions).where(ownershipCondition);
+    if (!existing) return false;
+
+    return await db.transaction(async (tx) => {
+      const rounds = await tx.select({ id: psyopRounds.id }).from(psyopRounds).where(eq(psyopRounds.questionId, id));
+      if (rounds.length > 0) {
+        const roundIds = rounds.map(r => r.id);
+        await tx.delete(psyopVotes).where(inArray(psyopVotes.roundId, roundIds));
+        await tx.delete(psyopSubmissions).where(inArray(psyopSubmissions.roundId, roundIds));
+        await tx.delete(psyopRounds).where(eq(psyopRounds.questionId, id));
+      }
+
+      const result = await tx.delete(psyopQuestions).where(ownershipCondition).returning();
+      return result.length > 0;
+    });
   }
 
   // TimeWarp methods
@@ -2172,8 +2211,20 @@ export class DatabaseStorage implements IStorage {
       ? eq(timeWarpQuestions.id, id)
       : and(eq(timeWarpQuestions.id, id), eq(timeWarpQuestions.userId, userId));
     
+    const allowedFields = new Set(['imageUrl', 'era', 'answer', 'hint', 'category', 'isActive']);
+    if (role === 'super_admin') {
+      allowedFields.add('isStarterPack');
+    }
+    const safeData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (allowedFields.has(key) && value !== undefined) {
+        safeData[key] = value;
+      }
+    }
+    if (Object.keys(safeData).length === 0) return null;
+
     const [updated] = await db.update(timeWarpQuestions)
-      .set(data as any)
+      .set(safeData)
       .where(condition)
       .returning();
     return updated || null;
