@@ -1707,8 +1707,8 @@ export default function Blitzgrid() {
                                     className="bg-white/5 rounded-xl p-3 border border-white/10"
                                     data-testid={`game-stats-player-${player.id}`}
                                   >
-                                    <div className="flex items-center gap-2 mb-3">
-                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg ${
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg shrink-0 ${
                                         idx === 0 ? 'border-2 border-yellow-400/60' : 
                                         idx === 1 ? 'border-2 border-slate-400/60' : 
                                         idx === 2 ? 'border-2 border-orange-400/60' : 
@@ -1718,10 +1718,18 @@ export default function Blitzgrid() {
                                       </div>
                                       <div className="flex-1 min-w-0">
                                         <p className="font-semibold text-white text-sm truncate" title={player.name}>{player.name}</p>
-                                        <p className="text-xs text-white/40">{player.score} points</p>
+                                        <div className="flex items-center gap-2 text-xs text-white/40">
+                                          <span>{player.score} pts</span>
+                                          {stats && (
+                                            <>
+                                              <span>·</span>
+                                              <span>{accuracy}% accuracy</span>
+                                            </>
+                                          )}
+                                        </div>
                                       </div>
                                       {idx < 3 && (
-                                        <Badge variant="secondary" className={`text-xs ${
+                                        <Badge variant="secondary" className={`text-xs shrink-0 ${
                                           idx === 0 ? 'bg-yellow-500/20 text-yellow-300 border-yellow-400/50' : 
                                           idx === 1 ? 'bg-slate-500/20 text-slate-300 border-slate-400/50' : 
                                           'bg-orange-500/20 text-orange-300 border-orange-400/50'
@@ -1730,77 +1738,6 @@ export default function Blitzgrid() {
                                         </Badge>
                                       )}
                                     </div>
-                                    
-                                    {stats ? (
-                                      <div className="space-y-2">
-                                        {/* Accuracy bar */}
-                                        <div className="space-y-1">
-                                          <div className="flex justify-between gap-2 text-xs">
-                                            <span className="text-white/40">Accuracy</span>
-                                            <span className="font-medium text-white">{accuracy}%</span>
-                                          </div>
-                                          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                                            <motion.div 
-                                              initial={{ width: 0 }}
-                                              animate={{ width: `${accuracy}%` }}
-                                              transition={{ duration: 0.8, delay: idx * 0.1 }}
-                                              className={`h-full rounded-full ${
-                                                accuracy >= 80 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' :
-                                                accuracy >= 50 ? 'bg-gradient-to-r from-amber-400 to-amber-500' :
-                                                'bg-gradient-to-r from-rose-400 to-rose-500'
-                                              }`}
-                                            />
-                                          </div>
-                                        </div>
-                                        
-                                        {/* Stats row */}
-                                        <div className="flex justify-between gap-2 text-xs">
-                                          <div className="flex items-center gap-1">
-                                            <Check className="w-3 h-3 text-emerald-400 shrink-0" aria-hidden="true" />
-                                            <span className="text-white/40">{stats.correctAnswers} correct</span>
-                                          </div>
-                                          <div className="flex items-center gap-1">
-                                            <X className="w-3 h-3 text-rose-400 shrink-0" aria-hidden="true" />
-                                            <span className="text-white/40">{stats.wrongAnswers} wrong</span>
-                                          </div>
-                                        </div>
-                                        
-                                        {/* Best streak */}
-                                        {stats.bestStreak >= 2 && (
-                                          <div className="flex items-center gap-1 text-xs">
-                                            <Flame className="w-3 h-3 text-orange-400 shrink-0" aria-hidden="true" />
-                                            <span className="text-white/40">Best streak: {stats.bestStreak} in a row</span>
-                                          </div>
-                                        )}
-                                        
-                                        {/* Biggest gain */}
-                                        {stats.biggestGain > 0 && (
-                                          <div className="flex items-center gap-1 text-xs">
-                                            <Zap className="w-3 h-3 text-yellow-400 shrink-0" aria-hidden="true" />
-                                            <span className="text-white/40">Best answer: +{stats.biggestGain} pts</span>
-                                          </div>
-                                        )}
-                                        
-                                        {/* Category breakdown */}
-                                        {Object.keys(stats.pointsByCategory).length > 0 && (
-                                          <div className="pt-2 mt-2 border-t border-white/10">
-                                            <p className="text-xs text-white/40 mb-1">Points by category:</p>
-                                            <div className="flex flex-wrap gap-1">
-                                              {Object.entries(stats.pointsByCategory).map(([catId, pts]) => {
-                                                const cat = playCategories.find(c => c.id === Number(catId));
-                                                return cat ? (
-                                                  <Badge key={catId} variant="secondary" className="text-xs bg-white/10 text-white/70 border border-white/20">
-                                                    {cat.name.substring(0, 12)}{cat.name.length > 12 ? '...' : ''}: +{pts}
-                                                  </Badge>
-                                                ) : null;
-                                              })}
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <p className="text-xs text-white/40">No stats recorded</p>
-                                    )}
                                   </motion.div>
                                 );
                               })}

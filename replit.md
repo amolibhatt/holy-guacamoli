@@ -11,6 +11,7 @@ Preferred communication style: Simple, everyday language.
 - **Decorative Elements**: Semi-circle shapes in card corners, layered gradients, soft shadows
 - **Dark Theme Only**: App uses a permanent dark arcade theme for neon glow effects
 - **Footer Branding**: "made with ♥ by Amoli" using Heart icon (not emoji) with pastel gradient on name
+- **Emojis**: User likes emojis - keep emoji avatars and emoji usage in the app
 
 ## System Architecture
 
