@@ -1826,22 +1826,12 @@ export default function Blitzgrid() {
                 variant="ghost" 
                 size="icon"
                 onClick={() => { 
-                  // Clean up all game state when exiting play mode
                   setActiveQuestion(null);
                   setShowAnswer(false);
-                  setTimerActive(false);
-                  setTimeLeft(10);
-                  setBuzzQueue([]);
-                  setBuzzerLocked(true);
-                  setIsJudging(false);
-                  setLastScoreChange(null);
                   setRevealedCells(new Set());
                   setRevealedCategoryCount(0);
                   setCategoryRevealMode(true);
-                  setPlayMode(false); 
-                  setShuffleMode(false); 
-                  setShuffledCategories(null); 
-                  setSelectedGridId(null); 
+                  endSession();
                 }}
                 className="text-muted-foreground"
                 data-testid="button-exit-play"
