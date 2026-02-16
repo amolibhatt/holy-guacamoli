@@ -1742,23 +1742,6 @@ export default function Blitzgrid() {
                                 );
                               })}
                             </div>
-                            
-                            {/* MVP Moments */}
-                            {gameStats.mvpMoments.length > 0 && (
-                              <div className="mt-4 pt-4 border-t border-white/10">
-                                <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
-                                  <Sparkles className="w-4 h-4 text-yellow-400 shrink-0" aria-hidden="true" />
-                                  <span data-testid="highlight-moments-title">Highlight Moments</span>
-                                </h4>
-                                <div className="flex flex-wrap gap-2">
-                                  {gameStats.mvpMoments.map((moment, i) => (
-                                    <Badge key={i} variant="secondary" className="bg-yellow-500/20 text-yellow-300 border border-yellow-400/50">
-                                      {moment.description}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
                           </motion.div>
                         )}
                       </AnimatePresence>
