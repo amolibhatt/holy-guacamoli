@@ -278,7 +278,7 @@ export class DatabaseStorage implements IStorage {
     const updateData: Record<string, any> = {};
     for (const [key, value] of Object.entries(data)) {
       if (value !== undefined) {
-        // Only super_admin can set isGlobal, isStarterPack, or visibility
+        if (key === 'userId') continue;
         if ((key === 'isGlobal' || key === 'isStarterPack' || key === 'visibility') && role !== 'super_admin') {
           continue;
         }
@@ -299,20 +299,17 @@ export class DatabaseStorage implements IStorage {
   async deleteBoard(id: number, userId: string, role?: string): Promise<boolean> {
     const board = await this.getBoard(id, userId, role);
     if (!board) return false;
-    // Clear board references from active game sessions
-    await db.update(gameSessions)
-      .set({ currentBoardId: null })
-      .where(eq(gameSessions.currentBoardId, id));
-    // Remove game-board links
-    await db.delete(gameBoards).where(eq(gameBoards.boardId, id));
-    // Remove board-category links (questions belong to categories, not boards)
-    await db.delete(boardCategories).where(eq(boardCategories.boardId, id));
-    if (role === 'super_admin') {
-      const result = await db.delete(boards).where(eq(boards.id, id)).returning();
+    return await db.transaction(async (tx) => {
+      await tx.update(gameSessions).set({ currentBoardId: null }).where(eq(gameSessions.currentBoardId, id));
+      await tx.delete(gameBoards).where(eq(gameBoards.boardId, id));
+      await tx.delete(boardCategories).where(eq(boardCategories.boardId, id));
+      if (role === 'super_admin') {
+        const result = await tx.delete(boards).where(eq(boards.id, id)).returning();
+        return result.length > 0;
+      }
+      const result = await tx.delete(boards).where(and(eq(boards.id, id), eq(boards.userId, userId))).returning();
       return result.length > 0;
-    }
-    const result = await db.delete(boards).where(and(eq(boards.id, id), eq(boards.userId, userId))).returning();
-    return result.length > 0;
+    });
   }
 
   async getCategories(): Promise<Category[]> {
@@ -540,9 +537,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateGame(id: number, data: Partial<InsertGame>, userId: string, role?: string): Promise<Game | undefined> {
+    const allowedFields = new Set(['name', 'description', 'theme', 'sortOrder']);
+    if (role === 'super_admin') {
+      allowedFields.add('isGlobal');
+    }
     const updateData: Record<string, any> = {};
     for (const [key, value] of Object.entries(data)) {
-      if (value !== undefined) {
+      if (allowedFields.has(key) && value !== undefined) {
         updateData[key] = value;
       }
     }
@@ -560,14 +561,16 @@ export class DatabaseStorage implements IStorage {
   async deleteGame(id: number, userId: string, role?: string): Promise<boolean> {
     const game = await this.getGame(id, userId, role);
     if (!game) return false;
-    await db.delete(gameBoards).where(eq(gameBoards.gameId, id));
-    await db.delete(gameDecks).where(eq(gameDecks.gameId, id));
-    if (role === 'super_admin') {
-      const result = await db.delete(games).where(eq(games.id, id)).returning();
+    return await db.transaction(async (tx) => {
+      await tx.delete(gameBoards).where(eq(gameBoards.gameId, id));
+      await tx.delete(gameDecks).where(eq(gameDecks.gameId, id));
+      if (role === 'super_admin') {
+        const result = await tx.delete(games).where(eq(games.id, id)).returning();
+        return result.length > 0;
+      }
+      const result = await tx.delete(games).where(and(eq(games.id, id), eq(games.userId, userId))).returning();
       return result.length > 0;
-    }
-    const result = await db.delete(games).where(and(eq(games.id, id), eq(games.userId, userId))).returning();
-    return result.length > 0;
+    });
   }
 
   // === GAME BOARDS ===
@@ -661,9 +664,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateHeadsUpDeck(id: number, data: Partial<InsertHeadsUpDeck>, userId: string, role?: string): Promise<HeadsUpDeck | undefined> {
+    const allowedFields = new Set(['name', 'description', 'category', 'difficulty']);
+    if (role === 'super_admin') {
+      allowedFields.add('isStarterPack');
+    }
     const updateData: Record<string, any> = {};
     for (const [key, value] of Object.entries(data)) {
-      if (value !== undefined) {
+      if (allowedFields.has(key) && value !== undefined) {
         updateData[key] = value;
       }
     }
@@ -681,14 +688,16 @@ export class DatabaseStorage implements IStorage {
   async deleteHeadsUpDeck(id: number, userId: string, role?: string): Promise<boolean> {
     const deck = await this.getHeadsUpDeck(id, userId, role);
     if (!deck) return false;
-    await db.delete(headsUpCards).where(eq(headsUpCards.deckId, id));
-    await db.delete(gameDecks).where(eq(gameDecks.deckId, id));
-    if (role === 'super_admin') {
-      const result = await db.delete(headsUpDecks).where(eq(headsUpDecks.id, id)).returning();
+    return await db.transaction(async (tx) => {
+      await tx.delete(headsUpCards).where(eq(headsUpCards.deckId, id));
+      await tx.delete(gameDecks).where(eq(gameDecks.deckId, id));
+      if (role === 'super_admin') {
+        const result = await tx.delete(headsUpDecks).where(eq(headsUpDecks.id, id)).returning();
+        return result.length > 0;
+      }
+      const result = await tx.delete(headsUpDecks).where(and(eq(headsUpDecks.id, id), eq(headsUpDecks.userId, userId))).returning();
       return result.length > 0;
-    }
-    const result = await db.delete(headsUpDecks).where(and(eq(headsUpDecks.id, id), eq(headsUpDecks.userId, userId))).returning();
-    return result.length > 0;
+    });
   }
 
   // === HEADS UP CARDS ===
@@ -1637,135 +1646,127 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUserAndContent(userId: string) {
-    // Delete all sessions hosted by this user (and their related data)
-    const userSessions = await db.select({ id: gameSessions.id }).from(gameSessions).where(eq(gameSessions.hostId, userId));
-    for (const session of userSessions) {
-      await db.delete(sessionCompletedQuestions).where(eq(sessionCompletedQuestions.sessionId, session.id));
-      await db.delete(sessionPlayers).where(eq(sessionPlayers.sessionId, session.id));
-    }
-    await db.delete(gameSessions).where(eq(gameSessions.hostId, userId));
-    
-    // Delete all boards owned by this user
-    const userBoards = await db.select({ id: boards.id }).from(boards).where(eq(boards.userId, userId));
-    for (const board of userBoards) {
-      await this.deleteBoardFully(board.id);
-    }
-    
-    // Delete heads up decks and their cards
-    const userDecks = await db.select({ id: headsUpDecks.id }).from(headsUpDecks).where(eq(headsUpDecks.userId, userId));
-    for (const deck of userDecks) {
-      await db.delete(headsUpCards).where(eq(headsUpCards.deckId, deck.id));
-      await db.delete(gameDecks).where(eq(gameDecks.deckId, deck.id));
-    }
-    await db.delete(headsUpDecks).where(eq(headsUpDecks.userId, userId));
-    
-    // Clean up game-specific content owned by user
-    await db.delete(timeWarpQuestions).where(eq(timeWarpQuestions.userId, userId));
-    
-    // Clean up Sequence sessions hosted by user (cascade: submissions → sessions)
-    const userSeqSessions = await db.select({ id: sequenceSessions.id }).from(sequenceSessions).where(eq(sequenceSessions.hostId, userId));
-    for (const ss of userSeqSessions) {
-      await db.delete(sequenceSubmissions).where(eq(sequenceSubmissions.sessionId, ss.id));
-    }
-    await db.delete(sequenceSessions).where(eq(sequenceSessions.hostId, userId));
-    
-    // Clean up PsyOp sessions hosted by user (cascade: votes → submissions → rounds → sessions)
-    const userPsyopSessions = await db.select({ id: psyopSessions.id }).from(psyopSessions).where(eq(psyopSessions.hostId, userId));
-    for (const ps of userPsyopSessions) {
-      const rounds = await db.select({ id: psyopRounds.id }).from(psyopRounds).where(eq(psyopRounds.sessionId, ps.id));
-      for (const r of rounds) {
-        await db.delete(psyopVotes).where(eq(psyopVotes.roundId, r.id));
-        await db.delete(psyopSubmissions).where(eq(psyopSubmissions.roundId, r.id));
+    await db.transaction(async (tx) => {
+      const userSessions = await tx.select({ id: gameSessions.id }).from(gameSessions).where(eq(gameSessions.hostId, userId));
+      for (const session of userSessions) {
+        await tx.delete(sessionCompletedQuestions).where(eq(sessionCompletedQuestions.sessionId, session.id));
+        await tx.delete(sessionPlayers).where(eq(sessionPlayers.sessionId, session.id));
       }
-      await db.delete(psyopRounds).where(eq(psyopRounds.sessionId, ps.id));
-    }
-    await db.delete(psyopSessions).where(eq(psyopSessions.hostId, userId));
-    
-    // Clean up meme sessions hosted by user (cascade: votes → submissions → rounds → players → sessions)
-    const userMemeSessions = await db.select({ id: memeSessions.id }).from(memeSessions).where(eq(memeSessions.hostId, userId));
-    for (const ms of userMemeSessions) {
-      const rounds = await db.select({ id: memeRounds.id }).from(memeRounds).where(eq(memeRounds.sessionId, ms.id));
-      for (const r of rounds) {
-        await db.delete(memeVotes).where(eq(memeVotes.roundId, r.id));
-        await db.delete(memeSubmissions).where(eq(memeSubmissions.roundId, r.id));
+      await tx.delete(gameSessions).where(eq(gameSessions.hostId, userId));
+      
+      const userBoards = await tx.select({ id: boards.id }).from(boards).where(eq(boards.userId, userId));
+      for (const board of userBoards) {
+        await tx.update(gameSessions).set({ currentBoardId: null }).where(eq(gameSessions.currentBoardId, board.id));
+        await tx.delete(boardCategories).where(eq(boardCategories.boardId, board.id));
+        await tx.delete(gameBoards).where(eq(gameBoards.boardId, board.id));
+        await tx.delete(boards).where(eq(boards.id, board.id));
       }
-      await db.delete(memeRounds).where(eq(memeRounds.sessionId, ms.id));
-      await db.delete(memePlayers).where(eq(memePlayers.sessionId, ms.id));
-    }
-    await db.delete(memeSessions).where(eq(memeSessions.hostId, userId));
-    
-    // Clean up cross-user references to this user's prompts/images in OTHER users' sessions
-    const userPromptIds = await db.select({ id: memePrompts.id }).from(memePrompts).where(eq(memePrompts.userId, userId));
-    for (const p of userPromptIds) {
-      const roundsUsingPrompt = await db.select({ id: memeRounds.id }).from(memeRounds).where(eq(memeRounds.promptId, p.id));
-      for (const r of roundsUsingPrompt) {
-        await db.delete(memeVotes).where(eq(memeVotes.roundId, r.id));
-        await db.delete(memeSubmissions).where(eq(memeSubmissions.roundId, r.id));
+      
+      const userDecks = await tx.select({ id: headsUpDecks.id }).from(headsUpDecks).where(eq(headsUpDecks.userId, userId));
+      for (const deck of userDecks) {
+        await tx.delete(headsUpCards).where(eq(headsUpCards.deckId, deck.id));
+        await tx.delete(gameDecks).where(eq(gameDecks.deckId, deck.id));
       }
-      if (roundsUsingPrompt.length > 0) {
-        await db.delete(memeRounds).where(eq(memeRounds.promptId, p.id));
+      await tx.delete(headsUpDecks).where(eq(headsUpDecks.userId, userId));
+      
+      await tx.delete(timeWarpQuestions).where(eq(timeWarpQuestions.userId, userId));
+      
+      const userSeqSessions = await tx.select({ id: sequenceSessions.id }).from(sequenceSessions).where(eq(sequenceSessions.hostId, userId));
+      for (const ss of userSeqSessions) {
+        await tx.delete(sequenceSubmissions).where(eq(sequenceSubmissions.sessionId, ss.id));
       }
-    }
-    const userImageIds = await db.select({ id: memeImages.id }).from(memeImages).where(eq(memeImages.userId, userId));
-    for (const img of userImageIds) {
-      const subsUsingImage = await db.select({ id: memeSubmissions.id }).from(memeSubmissions).where(eq(memeSubmissions.imageId, img.id));
-      if (subsUsingImage.length > 0) {
-        const subIds = subsUsingImage.map(s => s.id);
-        await db.delete(memeVotes).where(inArray(memeVotes.submissionId, subIds));
-        await db.delete(memeSubmissions).where(eq(memeSubmissions.imageId, img.id));
-      }
-    }
-    
-    // Now safe to delete prompts/images after all FK references are cleaned up
-    await db.delete(memeImages).where(eq(memeImages.userId, userId));
-    await db.delete(memePrompts).where(eq(memePrompts.userId, userId));
-    
-    // Clean up Double Dip pairs where user is involved (cascade: stakes → favorites → milestones → reactions → answers → daily sets → pairs)
-    const userPairs = await db.select({ id: doubleDipPairs.id }).from(doubleDipPairs)
-      .where(or(eq(doubleDipPairs.userAId, userId), eq(doubleDipPairs.userBId, userId)));
-    for (const pair of userPairs) {
-      const dailySets = await db.select({ id: doubleDipDailySets.id }).from(doubleDipDailySets).where(eq(doubleDipDailySets.pairId, pair.id));
-      for (const ds of dailySets) {
-        const answers = await db.select({ id: doubleDipAnswers.id }).from(doubleDipAnswers).where(eq(doubleDipAnswers.dailySetId, ds.id));
-        for (const a of answers) {
-          await db.delete(doubleDipReactions).where(eq(doubleDipReactions.answerId, a.id));
+      await tx.delete(sequenceSessions).where(eq(sequenceSessions.hostId, userId));
+      
+      const userPsyopSessions = await tx.select({ id: psyopSessions.id }).from(psyopSessions).where(eq(psyopSessions.hostId, userId));
+      for (const ps of userPsyopSessions) {
+        const rounds = await tx.select({ id: psyopRounds.id }).from(psyopRounds).where(eq(psyopRounds.sessionId, ps.id));
+        for (const r of rounds) {
+          await tx.delete(psyopVotes).where(eq(psyopVotes.roundId, r.id));
+          await tx.delete(psyopSubmissions).where(eq(psyopSubmissions.roundId, r.id));
         }
-        await db.delete(doubleDipAnswers).where(eq(doubleDipAnswers.dailySetId, ds.id));
+        await tx.delete(psyopRounds).where(eq(psyopRounds.sessionId, ps.id));
       }
-      await db.delete(doubleDipDailySets).where(eq(doubleDipDailySets.pairId, pair.id));
-      await db.delete(doubleDipWeeklyStakes).where(eq(doubleDipWeeklyStakes.pairId, pair.id));
-      await db.delete(doubleDipMilestones).where(eq(doubleDipMilestones.pairId, pair.id));
-      await db.delete(doubleDipFavorites).where(eq(doubleDipFavorites.pairId, pair.id));
-    }
-    await db.delete(doubleDipPairs).where(or(eq(doubleDipPairs.userAId, userId), eq(doubleDipPairs.userBId, userId)));
-    
-    // For nullable userId tables, nullify ownership to preserve shared/starter content
-    await db.update(sequenceQuestions).set({ userId: null }).where(eq(sequenceQuestions.userId, userId));
-    await db.update(psyopQuestions).set({ userId: null }).where(eq(psyopQuestions.userId, userId));
-    
-    // Clean up player stats, badges, profiles, game history, and auth tokens
-    await db.delete(playerGameStats).where(eq(playerGameStats.userId, userId));
-    await db.delete(userBadges).where(eq(userBadges.userId, userId));
-    await db.delete(playerGameHistory).where(eq(playerGameHistory.userId, userId));
-    
-    // Clean up player profile and associated badges (badges reference profileId, not userId)
-    const userProfile = await db.select({ id: playerProfiles.id }).from(playerProfiles).where(eq(playerProfiles.userId, userId));
-    if (userProfile.length > 0) {
-      await db.delete(playerBadges).where(eq(playerBadges.profileId, userProfile[0].id));
-      await db.delete(playerProfiles).where(eq(playerProfiles.userId, userId));
-    }
-    
-    await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
-    await db.delete(payments).where(eq(payments.userId, userId));
-    
-    const userGames = await db.select({ id: games.id }).from(games).where(eq(games.userId, userId));
-    if (userGames.length > 0) {
-      const gameIds = userGames.map(g => g.id);
-      await db.delete(gameBoards).where(inArray(gameBoards.gameId, gameIds));
-      await db.delete(gameDecks).where(inArray(gameDecks.gameId, gameIds));
-    }
-    await db.delete(games).where(eq(games.userId, userId));
-    await db.delete(users).where(eq(users.id, userId));
+      await tx.delete(psyopSessions).where(eq(psyopSessions.hostId, userId));
+      
+      const userMemeSessions = await tx.select({ id: memeSessions.id }).from(memeSessions).where(eq(memeSessions.hostId, userId));
+      for (const ms of userMemeSessions) {
+        const rounds = await tx.select({ id: memeRounds.id }).from(memeRounds).where(eq(memeRounds.sessionId, ms.id));
+        for (const r of rounds) {
+          await tx.delete(memeVotes).where(eq(memeVotes.roundId, r.id));
+          await tx.delete(memeSubmissions).where(eq(memeSubmissions.roundId, r.id));
+        }
+        await tx.delete(memeRounds).where(eq(memeRounds.sessionId, ms.id));
+        await tx.delete(memePlayers).where(eq(memePlayers.sessionId, ms.id));
+      }
+      await tx.delete(memeSessions).where(eq(memeSessions.hostId, userId));
+      
+      const userPromptIds = await tx.select({ id: memePrompts.id }).from(memePrompts).where(eq(memePrompts.userId, userId));
+      for (const p of userPromptIds) {
+        const roundsUsingPrompt = await tx.select({ id: memeRounds.id }).from(memeRounds).where(eq(memeRounds.promptId, p.id));
+        for (const r of roundsUsingPrompt) {
+          await tx.delete(memeVotes).where(eq(memeVotes.roundId, r.id));
+          await tx.delete(memeSubmissions).where(eq(memeSubmissions.roundId, r.id));
+        }
+        if (roundsUsingPrompt.length > 0) {
+          await tx.delete(memeRounds).where(eq(memeRounds.promptId, p.id));
+        }
+      }
+      const userImageIds = await tx.select({ id: memeImages.id }).from(memeImages).where(eq(memeImages.userId, userId));
+      for (const img of userImageIds) {
+        const subsUsingImage = await tx.select({ id: memeSubmissions.id }).from(memeSubmissions).where(eq(memeSubmissions.imageId, img.id));
+        if (subsUsingImage.length > 0) {
+          const subIds = subsUsingImage.map(s => s.id);
+          await tx.delete(memeVotes).where(inArray(memeVotes.submissionId, subIds));
+          await tx.delete(memeSubmissions).where(eq(memeSubmissions.imageId, img.id));
+        }
+      }
+      
+      await tx.delete(memeImages).where(eq(memeImages.userId, userId));
+      await tx.delete(memePrompts).where(eq(memePrompts.userId, userId));
+      
+      const userPairs = await tx.select({ id: doubleDipPairs.id }).from(doubleDipPairs)
+        .where(or(eq(doubleDipPairs.userAId, userId), eq(doubleDipPairs.userBId, userId)));
+      for (const pair of userPairs) {
+        const dailySets = await tx.select({ id: doubleDipDailySets.id }).from(doubleDipDailySets).where(eq(doubleDipDailySets.pairId, pair.id));
+        for (const ds of dailySets) {
+          const answers = await tx.select({ id: doubleDipAnswers.id }).from(doubleDipAnswers).where(eq(doubleDipAnswers.dailySetId, ds.id));
+          for (const a of answers) {
+            await tx.delete(doubleDipReactions).where(eq(doubleDipReactions.answerId, a.id));
+          }
+          await tx.delete(doubleDipAnswers).where(eq(doubleDipAnswers.dailySetId, ds.id));
+        }
+        await tx.delete(doubleDipDailySets).where(eq(doubleDipDailySets.pairId, pair.id));
+        await tx.delete(doubleDipWeeklyStakes).where(eq(doubleDipWeeklyStakes.pairId, pair.id));
+        await tx.delete(doubleDipMilestones).where(eq(doubleDipMilestones.pairId, pair.id));
+        await tx.delete(doubleDipFavorites).where(eq(doubleDipFavorites.pairId, pair.id));
+      }
+      await tx.delete(doubleDipPairs).where(or(eq(doubleDipPairs.userAId, userId), eq(doubleDipPairs.userBId, userId)));
+      
+      await tx.update(sequenceQuestions).set({ userId: null }).where(eq(sequenceQuestions.userId, userId));
+      await tx.update(psyopQuestions).set({ userId: null }).where(eq(psyopQuestions.userId, userId));
+      
+      await tx.delete(playerGameStats).where(eq(playerGameStats.userId, userId));
+      await tx.delete(userBadges).where(eq(userBadges.userId, userId));
+      await tx.delete(playerGameHistory).where(eq(playerGameHistory.userId, userId));
+      
+      const userProfile = await tx.select({ id: playerProfiles.id }).from(playerProfiles).where(eq(playerProfiles.userId, userId));
+      if (userProfile.length > 0) {
+        await tx.delete(playerBadges).where(eq(playerBadges.profileId, userProfile[0].id));
+        await tx.delete(playerProfiles).where(eq(playerProfiles.userId, userId));
+      }
+      
+      await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+      await tx.delete(payments).where(eq(payments.userId, userId));
+      
+      const userGames = await tx.select({ id: games.id }).from(games).where(eq(games.userId, userId));
+      if (userGames.length > 0) {
+        const gameIds = userGames.map(g => g.id);
+        await tx.delete(gameBoards).where(inArray(gameBoards.gameId, gameIds));
+        await tx.delete(gameDecks).where(inArray(gameDecks.gameId, gameIds));
+      }
+      await tx.delete(games).where(eq(games.userId, userId));
+      await tx.delete(users).where(eq(users.id, userId));
+    });
   }
 
   async getAllBoardsWithOwners() {
@@ -2043,40 +2044,32 @@ export class DatabaseStorage implements IStorage {
     userAPoints: number,
     userBPoints: number
   ): Promise<boolean> {
-    // Atomic: only score if weeklyStakeScored is false, then set it true
-    // Uses SQL UPDATE...WHERE to prevent double-scoring on concurrent requests
-    const dailyResult = await db.execute(
-      sql`UPDATE double_dip_daily_sets 
-          SET weekly_stake_scored = true 
-          WHERE id = ${dailySetId} AND weekly_stake_scored = false
-          RETURNING id`
-    );
-    
-    // If no rows updated, scoring was already done
-    if (!dailyResult.rows?.length) {
-      return false;
-    }
-    
-    // Now update the weekly stake scores - verify stake exists and was updated
-    const stakeResult = await db.execute(
-      sql`UPDATE double_dip_weekly_stakes 
-          SET user_a_score = user_a_score + ${userAPoints},
-              user_b_score = user_b_score + ${userBPoints}
-          WHERE id = ${weeklyStakeId}
-          RETURNING id`
-    );
-    
-    // If stake wasn't updated, rollback the daily set flag and throw error
-    if (!stakeResult.rows?.length) {
-      await db.execute(
+    return await db.transaction(async (tx) => {
+      const dailyResult = await tx.execute(
         sql`UPDATE double_dip_daily_sets 
-            SET weekly_stake_scored = false 
-            WHERE id = ${dailySetId}`
+            SET weekly_stake_scored = true 
+            WHERE id = ${dailySetId} AND weekly_stake_scored = false
+            RETURNING id`
       );
-      throw new Error(`Weekly stake ${weeklyStakeId} not found or could not be updated`);
-    }
-    
-    return true;
+      
+      if (!dailyResult.rows?.length) {
+        return false;
+      }
+      
+      const stakeResult = await tx.execute(
+        sql`UPDATE double_dip_weekly_stakes 
+            SET user_a_score = user_a_score + ${userAPoints},
+                user_b_score = user_b_score + ${userBPoints}
+            WHERE id = ${weeklyStakeId}
+            RETURNING id`
+      );
+      
+      if (!stakeResult.rows?.length) {
+        throw new Error(`Weekly stake ${weeklyStakeId} not found or could not be updated`);
+      }
+      
+      return true;
+    });
   }
 
   // Sequence Squeeze implementation
@@ -2125,15 +2118,17 @@ export class DatabaseStorage implements IStorage {
     const [existing] = await db.select({ id: sequenceQuestions.id }).from(sequenceQuestions).where(ownershipCondition);
     if (!existing) return false;
 
-    const sessionsWithQuestion = await db.select({ id: sequenceSessions.id }).from(sequenceSessions).where(eq(sequenceSessions.questionId, id));
-    if (sessionsWithQuestion.length > 0) {
-      const sessionIds = sessionsWithQuestion.map(s => s.id);
-      await db.delete(sequenceSubmissions).where(inArray(sequenceSubmissions.sessionId, sessionIds));
-    }
-    await db.update(sequenceSessions).set({ questionId: null }).where(eq(sequenceSessions.questionId, id));
+    return await db.transaction(async (tx) => {
+      const sessionsWithQuestion = await tx.select({ id: sequenceSessions.id }).from(sequenceSessions).where(eq(sequenceSessions.questionId, id));
+      if (sessionsWithQuestion.length > 0) {
+        const sessionIds = sessionsWithQuestion.map(s => s.id);
+        await tx.delete(sequenceSubmissions).where(inArray(sequenceSubmissions.sessionId, sessionIds));
+      }
+      await tx.update(sequenceSessions).set({ questionId: null }).where(eq(sequenceSessions.questionId, id));
 
-    const result = await db.delete(sequenceQuestions).where(ownershipCondition).returning();
-    return result.length > 0;
+      const result = await tx.delete(sequenceQuestions).where(ownershipCondition).returning();
+      return result.length > 0;
+    });
   }
 
   async getPsyopQuestions(userId: string, role?: string): Promise<PsyopQuestion[]> {
@@ -2264,7 +2259,7 @@ export class DatabaseStorage implements IStorage {
     const safeData: Record<string, any> = {};
     if (data.prompt !== undefined) safeData.prompt = data.prompt;
     if (data.isActive !== undefined) safeData.isActive = data.isActive;
-    if (data.isStarterPack !== undefined) safeData.isStarterPack = data.isStarterPack;
+    if (data.isStarterPack !== undefined && role === 'super_admin') safeData.isStarterPack = data.isStarterPack;
 
     if (Object.keys(safeData).length === 0) return null;
 
@@ -2320,7 +2315,7 @@ export class DatabaseStorage implements IStorage {
     if (data.imageUrl !== undefined) safeData.imageUrl = data.imageUrl;
     if (data.caption !== undefined) safeData.caption = data.caption;
     if (data.isActive !== undefined) safeData.isActive = data.isActive;
-    if (data.isStarterPack !== undefined) safeData.isStarterPack = data.isStarterPack;
+    if (data.isStarterPack !== undefined && role === 'super_admin') safeData.isStarterPack = data.isStarterPack;
 
     if (Object.keys(safeData).length === 0) return null;
 
