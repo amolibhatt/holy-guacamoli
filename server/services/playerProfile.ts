@@ -212,11 +212,15 @@ export class PlayerProfileService {
       if (updates.incorrectAnswers) {
         updateData.incorrectAnswers = (existing.incorrectAnswers || 0) + updates.incorrectAnswers;
       }
-      if (updates.responseTimeMs && existing.avgResponseTimeMs) {
+      if (updates.responseTimeMs != null && updates.responseTimeMs > 0) {
         const totalAnswers = (existing.correctAnswers || 0) + (existing.incorrectAnswers || 0);
-        updateData.avgResponseTimeMs = Math.round(
-          (existing.avgResponseTimeMs * totalAnswers + updates.responseTimeMs) / (totalAnswers + 1)
-        );
+        if (existing.avgResponseTimeMs && totalAnswers > 0) {
+          updateData.avgResponseTimeMs = Math.round(
+            (existing.avgResponseTimeMs * totalAnswers + updates.responseTimeMs) / (totalAnswers + 1)
+          );
+        } else {
+          updateData.avgResponseTimeMs = updates.responseTimeMs;
+        }
         if (!existing.fastestBuzzMs || updates.responseTimeMs < existing.fastestBuzzMs) {
           updateData.fastestBuzzMs = updates.responseTimeMs;
         }
@@ -280,6 +284,9 @@ export class PlayerProfileService {
     
     // Check for new badges
     await this.checkAndAwardBadges(profileId, gameSlug);
+    
+    // Recalculate personality after stats change
+    await this.calculatePersonality(profileId);
   }
   
   // Calculate personality traits based on stats
@@ -434,7 +441,15 @@ export class PlayerProfileService {
       // Delete guest profile
       await db.delete(playerProfiles).where(eq(playerProfiles.id, guestProfile.id));
       
-      return existingUserProfile;
+      // Recalculate personality with merged stats
+      await this.calculatePersonality(existingUserProfile.id);
+      
+      // Re-fetch to return fresh data after merge
+      const [freshProfile] = await db.select()
+        .from(playerProfiles)
+        .where(eq(playerProfiles.id, existingUserProfile.id))
+        .limit(1);
+      return freshProfile || existingUserProfile;
     } else {
       // Convert guest profile to user profile
       const [updatedProfile] = await db.update(playerProfiles)
@@ -445,6 +460,9 @@ export class PlayerProfileService {
         })
         .where(eq(playerProfiles.id, guestProfile.id))
         .returning();
+      
+      // Recalculate personality for the converted profile
+      await this.calculatePersonality(updatedProfile.id);
       
       return updatedProfile;
     }
@@ -462,7 +480,7 @@ export class PlayerProfileService {
     
     const stats = await this.getGameStats(profileId);
     const badges = await this.getBadges(profileId);
-    const personality = await this.calculatePersonality(profileId);
+    const personality = profile.personalityScores || {};
     
     return { profile, stats, badges, personality };
   }

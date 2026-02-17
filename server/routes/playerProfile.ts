@@ -183,10 +183,30 @@ router.post("/api/player/merge", async (req: Request, res: Response) => {
   }
 });
 
-// Calculate personality for a profile
+// Calculate personality for a profile (requires ownership verification)
 router.post("/api/player/personality/:profileId", async (req: Request, res: Response) => {
   try {
     const { profileId } = req.params;
+    const userId = req.session?.userId;
+    const sessionGuestId = (req.session as any)?.guestId;
+    
+    const profile = await playerProfileService.getProfileById(profileId);
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+    
+    if (userId) {
+      if (profile.userId !== userId) {
+        return res.status(403).json({ error: "You can only recalculate your own personality" });
+      }
+    } else if (sessionGuestId) {
+      if (profile.guestId !== sessionGuestId) {
+        return res.status(403).json({ error: "Profile ownership verification failed" });
+      }
+    } else {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
     const personality = await playerProfileService.calculatePersonality(profileId);
     res.json(personality);
   } catch (error) {
