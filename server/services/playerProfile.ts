@@ -128,10 +128,11 @@ export class PlayerProfileService {
     if (existing.length > 0) {
       // Update display name if changed
       if (existing[0].displayName !== displayName) {
-        await db.update(playerProfiles)
+        const [updated] = await db.update(playerProfiles)
           .set({ displayName, updatedAt: new Date() })
-          .where(eq(playerProfiles.id, existing[0].id));
-        return { ...existing[0], displayName };
+          .where(eq(playerProfiles.id, existing[0].id))
+          .returning();
+        return updated;
       }
       return existing[0];
     }
@@ -401,7 +402,7 @@ export class PlayerProfileService {
     return db.select().from(playerGameStats).where(eq(playerGameStats.userId, profileId));
   }
   
-  // Merge guest data to user account
+  // Merge guest data to user account (wrapped in transaction for atomicity)
   async mergeGuestToUser(guestId: string, userId: string): Promise<PlayerProfile | null> {
     // Find guest profile
     const [guestProfile] = await db.select()
@@ -418,36 +419,100 @@ export class PlayerProfileService {
       .limit(1);
     
     if (existingUserProfile) {
-      // Merge stats into existing profile
-      await db.update(playerProfiles)
-        .set({
-          totalGamesPlayed: existingUserProfile.totalGamesPlayed + guestProfile.totalGamesPlayed,
-          totalPointsEarned: existingUserProfile.totalPointsEarned + guestProfile.totalPointsEarned,
-          totalWins: existingUserProfile.totalWins + guestProfile.totalWins,
-          updatedAt: new Date(),
-        })
-        .where(eq(playerProfiles.id, existingUserProfile.id));
+      // Use transaction to ensure atomicity of merge operations
+      const mergedProfileId = await db.transaction(async (tx) => {
+        // Merge stats into existing profile
+        await tx.update(playerProfiles)
+          .set({
+            totalGamesPlayed: existingUserProfile.totalGamesPlayed + guestProfile.totalGamesPlayed,
+            totalPointsEarned: existingUserProfile.totalPointsEarned + guestProfile.totalPointsEarned,
+            totalWins: existingUserProfile.totalWins + guestProfile.totalWins,
+            updatedAt: new Date(),
+          })
+          .where(eq(playerProfiles.id, existingUserProfile.id));
+        
+        // Merge game stats - combine entries for same gameSlug instead of duplicating
+        const guestStats = await tx.select().from(playerGameStats)
+          .where(eq(playerGameStats.userId, guestProfile.id));
+        const userStats = await tx.select().from(playerGameStats)
+          .where(eq(playerGameStats.userId, existingUserProfile.id));
+        
+        const userStatsMap = new Map(userStats.map(s => [s.gameSlug, s]));
+        
+        for (const gStat of guestStats) {
+          const uStat = userStatsMap.get(gStat.gameSlug);
+          if (uStat) {
+            // Same game exists in both profiles - combine stats
+            const uTotal = (uStat.correctAnswers || 0) + (uStat.incorrectAnswers || 0);
+            const gTotal = (gStat.correctAnswers || 0) + (gStat.incorrectAnswers || 0);
+            const combinedTotal = uTotal + gTotal;
+            
+            await tx.update(playerGameStats)
+              .set({
+                gamesPlayed: uStat.gamesPlayed + gStat.gamesPlayed,
+                gamesWon: uStat.gamesWon + gStat.gamesWon,
+                totalPoints: uStat.totalPoints + gStat.totalPoints,
+                highestScore: Math.max(uStat.highestScore || 0, gStat.highestScore || 0),
+                correctAnswers: (uStat.correctAnswers || 0) + (gStat.correctAnswers || 0),
+                incorrectAnswers: (uStat.incorrectAnswers || 0) + (gStat.incorrectAnswers || 0),
+                perfectRounds: (uStat.perfectRounds || 0) + (gStat.perfectRounds || 0),
+                successfulDeceptions: (uStat.successfulDeceptions || 0) + (gStat.successfulDeceptions || 0),
+                caughtLiars: (uStat.caughtLiars || 0) + (gStat.caughtLiars || 0),
+                timesDeceived: (uStat.timesDeceived || 0) + (gStat.timesDeceived || 0),
+                totalVotesReceived: (uStat.totalVotesReceived || 0) + (gStat.totalVotesReceived || 0),
+                correctWinnerPicks: (uStat.correctWinnerPicks || 0) + (gStat.correctWinnerPicks || 0),
+                avgResponseTimeMs: combinedTotal > 0
+                  ? Math.round(
+                      ((uStat.avgResponseTimeMs || 0) * uTotal + (gStat.avgResponseTimeMs || 0) * gTotal) / combinedTotal
+                    )
+                  : null,
+                fastestBuzzMs: Math.min(uStat.fastestBuzzMs || Infinity, gStat.fastestBuzzMs || Infinity) === Infinity
+                  ? null
+                  : Math.min(uStat.fastestBuzzMs || Infinity, gStat.fastestBuzzMs || Infinity),
+                updatedAt: new Date(),
+              })
+              .where(eq(playerGameStats.id, uStat.id));
+            // Delete the duplicate guest stat entry
+            await tx.delete(playerGameStats).where(eq(playerGameStats.id, gStat.id));
+          } else {
+            // Game only exists in guest - re-point to user profile
+            await tx.update(playerGameStats)
+              .set({ userId: existingUserProfile.id })
+              .where(eq(playerGameStats.id, gStat.id));
+          }
+        }
+        
+        // Transfer badges - skip duplicates
+        const existingBadges = await tx.select().from(playerBadges)
+          .where(eq(playerBadges.profileId, existingUserProfile.id));
+        const existingBadgeTypes = new Set(existingBadges.map(b => b.badgeType));
+        
+        const guestBadges = await tx.select().from(playerBadges)
+          .where(eq(playerBadges.profileId, guestProfile.id));
+        
+        for (const badge of guestBadges) {
+          if (existingBadgeTypes.has(badge.badgeType)) {
+            await tx.delete(playerBadges).where(eq(playerBadges.id, badge.id));
+          } else {
+            await tx.update(playerBadges)
+              .set({ profileId: existingUserProfile.id })
+              .where(eq(playerBadges.id, badge.id));
+          }
+        }
+        
+        // Delete guest profile
+        await tx.delete(playerProfiles).where(eq(playerProfiles.id, guestProfile.id));
+        
+        return existingUserProfile.id;
+      });
       
-      // Update game stats to point to user profile
-      await db.update(playerGameStats)
-        .set({ userId: existingUserProfile.id })
-        .where(eq(playerGameStats.userId, guestProfile.id));
-      
-      // Transfer badges
-      await db.update(playerBadges)
-        .set({ profileId: existingUserProfile.id })
-        .where(eq(playerBadges.profileId, guestProfile.id));
-      
-      // Delete guest profile
-      await db.delete(playerProfiles).where(eq(playerProfiles.id, guestProfile.id));
-      
-      // Recalculate personality with merged stats
-      await this.calculatePersonality(existingUserProfile.id);
+      // Recalculate personality with merged stats (outside transaction - non-critical)
+      await this.calculatePersonality(mergedProfileId);
       
       // Re-fetch to return fresh data after merge
       const [freshProfile] = await db.select()
         .from(playerProfiles)
-        .where(eq(playerProfiles.id, existingUserProfile.id))
+        .where(eq(playerProfiles.id, mergedProfileId))
         .limit(1);
       return freshProfile || existingUserProfile;
     } else {

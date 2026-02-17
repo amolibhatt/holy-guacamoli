@@ -8,8 +8,13 @@ router.post("/api/player/guest", async (req: Request, res: Response) => {
   try {
     const { displayName } = req.body;
     
-    if (!displayName) {
+    if (!displayName || typeof displayName !== "string") {
       return res.status(400).json({ error: "displayName is required" });
+    }
+    
+    const trimmedName = displayName.trim().slice(0, 30);
+    if (trimmedName.length === 0) {
+      return res.status(400).json({ error: "displayName cannot be empty" });
     }
     
     // Check if session already has a guestId (returning guest)
@@ -20,7 +25,7 @@ router.post("/api/player/guest", async (req: Request, res: Response) => {
       req.session.guestId = guestId;
     }
     
-    const profile = await playerProfileService.getOrCreateGuestProfile(guestId, displayName);
+    const profile = await playerProfileService.getOrCreateGuestProfile(guestId, trimmedName);
     
     // Return both the profile and the server-issued guestId for client storage
     res.json({ ...profile, serverGuestId: guestId });
@@ -74,9 +79,9 @@ router.get("/api/player/me", async (req: Request, res: Response) => {
 // Security: Verifies ownership via session (user ID or stored guest ID from session)
 router.post("/api/player/stats", async (req: Request, res: Response) => {
   try {
-    const { profileId, gameSlug, updates } = req.body;
+    const { profileId, gameSlug, updates, serverGuestId: clientGuestId } = req.body;
     const userId = req.session?.userId;
-    const sessionGuestId = req.session.guestId;
+    let sessionGuestId = req.session.guestId;
     
     if (!profileId || !gameSlug) {
       return res.status(400).json({ error: "profileId and gameSlug are required" });
@@ -99,6 +104,11 @@ router.post("/api/player/stats", async (req: Request, res: Response) => {
       if (profile.guestId !== sessionGuestId) {
         return res.status(403).json({ error: "Profile ownership verification failed" });
       }
+    } else if (clientGuestId && profile.guestId && clientGuestId === profile.guestId) {
+      // Session expired but client has the original server-issued guestId that matches
+      // Re-establish session binding only if client proves ownership via matching guestId
+      req.session.guestId = profile.guestId;
+      sessionGuestId = profile.guestId;
     } else {
       return res.status(401).json({ error: "Session required - please create or restore your guest profile first" });
     }
@@ -202,6 +212,9 @@ router.post("/api/player/personality/:profileId", async (req: Request, res: Resp
       if (profile.guestId !== sessionGuestId) {
         return res.status(403).json({ error: "Profile ownership verification failed" });
       }
+    } else if (req.body.serverGuestId && profile.guestId && req.body.serverGuestId === profile.guestId) {
+      // Session expired - re-establish binding only if client proves ownership
+      req.session.guestId = profile.guestId;
     } else {
       return res.status(401).json({ error: "Authentication required" });
     }

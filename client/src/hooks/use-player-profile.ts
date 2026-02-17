@@ -213,14 +213,16 @@ export function usePlayerProfile(displayName?: string) {
   });
 
   // Auto-merge when user logs in and has guest data (idempotent)
+  const mergeIsPending = mergeMutation.isPending;
+  const mergeIsSuccess = mergeMutation.isSuccess;
   useEffect(() => {
     // Skip if already merged or merge in progress
     if (hasMergedFlag()) return;
     
-    if (isAuthenticated && serverGuestId && !mergeMutation.isPending && !mergeMutation.isSuccess) {
+    if (isAuthenticated && serverGuestId && !mergeIsPending && !mergeIsSuccess) {
       mergeMutation.mutate();
     }
-  }, [isAuthenticated, serverGuestId]);
+  }, [isAuthenticated, serverGuestId, mergeIsPending, mergeIsSuccess]);
 
   // Update stats mutation - server uses session for ownership verification
   const updateStatsMutation = useMutation({
@@ -240,8 +242,10 @@ export function usePlayerProfile(displayName?: string) {
         pickedWinner?: boolean;
       };
     }) => {
-      // guestId is now stored in session (set when guest profile created), not sent in request
-      const response = await apiRequest("POST", "/api/player/stats", data);
+      // Include stored serverGuestId for session recovery if session expired
+      const storedGuestId = getStoredServerGuestId();
+      const payload = storedGuestId ? { ...data, serverGuestId: storedGuestId } : data;
+      const response = await apiRequest("POST", "/api/player/stats", payload);
       return response.json();
     },
     onSuccess: (data) => {
