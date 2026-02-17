@@ -6,13 +6,46 @@ import crypto from "crypto";
 import { db, pool } from "./db";
 import { users, loginSchema, insertUserSchema } from "@shared/models/auth";
 import { passwordResetTokens, boards, boardCategories, categories, questions } from "@shared/schema";
-import { eq, and, isNull, gt, inArray } from "drizzle-orm";
+import { eq, and, isNull, gt, lt, inArray } from "drizzle-orm";
 import type { SafeUser } from "@shared/models/auth";
 import { z } from "zod";
 
 const loginAttempts = new Map<string, { count: number; lastAttempt: number }>();
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION = 15 * 60 * 1000;
+
+const resetAttempts = new Map<string, { count: number; firstAttempt: number }>();
+const MAX_RESET_ATTEMPTS = 3;
+const RESET_WINDOW = 15 * 60 * 1000;
+
+function checkResetRateLimit(ip: string): { blocked: boolean; remainingTime?: number } {
+  const now = Date.now();
+  const attempt = resetAttempts.get(ip);
+
+  if (!attempt) return { blocked: false };
+
+  if (now - attempt.firstAttempt > RESET_WINDOW) {
+    resetAttempts.delete(ip);
+    return { blocked: false };
+  }
+
+  if (attempt.count >= MAX_RESET_ATTEMPTS) {
+    return { blocked: true, remainingTime: Math.ceil((RESET_WINDOW - (now - attempt.firstAttempt)) / 1000) };
+  }
+
+  return { blocked: false };
+}
+
+function recordResetAttempt(ip: string) {
+  const now = Date.now();
+  const attempt = resetAttempts.get(ip);
+
+  if (!attempt || now - attempt.firstAttempt > RESET_WINDOW) {
+    resetAttempts.set(ip, { count: 1, firstAttempt: now });
+  } else {
+    resetAttempts.set(ip, { count: attempt.count + 1, firstAttempt: attempt.firstAttempt });
+  }
+}
 
 function checkRateLimit(ip: string): { blocked: boolean; remainingTime?: number } {
   const now = Date.now();
@@ -326,6 +359,16 @@ export function registerAuthRoutes(app: Express): void {
 
   app.post("/api/auth/forgot-password", async (req: Request, res: Response) => {
     try {
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      const rateCheck = checkResetRateLimit(ip);
+      if (rateCheck.blocked) {
+        return res.status(429).json({
+          message: `Too many reset requests. Try again in ${Math.ceil(rateCheck.remainingTime! / 60)} minutes.`
+        });
+      }
+
+      recordResetAttempt(ip);
+
       const parsed = forgotPasswordSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ 
@@ -339,6 +382,15 @@ export function registerAuthRoutes(app: Express): void {
       const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
       
       if (user) {
+        await db.update(passwordResetTokens)
+          .set({ usedAt: new Date() })
+          .where(
+            and(
+              eq(passwordResetTokens.userId, user.id),
+              isNull(passwordResetTokens.usedAt)
+            )
+          );
+
         const token = crypto.randomBytes(32).toString("hex");
         const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
         const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
@@ -354,6 +406,12 @@ export function registerAuthRoutes(app: Express): void {
         console.log(`\n[Password Reset] Token generated for ${email}`);
         console.log(`[Password Reset] Reset URL: ${resetUrl}\n`);
       }
+
+      try {
+        await db.delete(passwordResetTokens).where(
+          lt(passwordResetTokens.expiresAt, new Date())
+        );
+      } catch (_cleanupErr) {}
 
       res.status(202).json({ 
         message: "If an account with that email exists, a password reset link has been sent." 
@@ -407,7 +465,12 @@ export function registerAuthRoutes(app: Express): void {
 
       await db.update(passwordResetTokens)
         .set({ usedAt: new Date() })
-        .where(eq(passwordResetTokens.id, resetToken.id));
+        .where(
+          and(
+            eq(passwordResetTokens.userId, resetToken.userId),
+            isNull(passwordResetTokens.usedAt)
+          )
+        );
 
       // Invalidate all existing sessions for this user (security: revoke stolen sessions)
       try {
