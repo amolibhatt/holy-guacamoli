@@ -2563,11 +2563,32 @@ export async function registerRoutes(
 
   app.get("/api/super-admin/questions/timewarp", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
-      const questions = await storage.getTimeWarpQuestions(req.session.userId!, 'super_admin');
+      const questions = await storage.getAllTimeWarpQuestionsWithCreators();
       res.json(questions);
     } catch (err) {
       console.error("Error getting timewarp questions:", err);
       res.status(500).json({ message: "Failed to get timewarp questions" });
+    }
+  });
+
+  app.patch("/api/super-admin/questions/timewarp/:id/starter-pack", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const questionId = parseId(req.params.id);
+      if (questionId === null) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+      const { isStarterPack } = req.body;
+      if (typeof isStarterPack !== 'boolean') {
+        return res.status(400).json({ message: "isStarterPack must be a boolean" });
+      }
+      const updated = await storage.toggleTimeWarpQuestionStarterPack(questionId, isStarterPack);
+      if (!updated) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      console.error("Error toggling timewarp starter pack:", err);
+      res.status(500).json({ message: "Failed to toggle starter pack" });
     }
   });
 
@@ -2593,11 +2614,32 @@ export async function registerRoutes(
 
   app.get("/api/super-admin/meme/prompts", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
-      const prompts = await storage.getMemePrompts(req.session.userId!, 'super_admin');
+      const prompts = await storage.getAllMemePromptsWithCreators();
       res.json(prompts);
     } catch (err) {
       console.error("Error getting meme prompts:", err);
       res.status(500).json({ message: "Failed to get meme prompts" });
+    }
+  });
+
+  app.patch("/api/super-admin/meme/prompts/:id/starter-pack", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid prompt ID" });
+      }
+      const { isStarterPack } = req.body;
+      if (typeof isStarterPack !== 'boolean') {
+        return res.status(400).json({ message: "isStarterPack must be a boolean" });
+      }
+      const updated = await storage.toggleMemePromptStarterPack(id, isStarterPack);
+      if (!updated) {
+        return res.status(404).json({ message: "Prompt not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      console.error("Error toggling meme prompt starter pack:", err);
+      res.status(500).json({ message: "Failed to toggle starter pack" });
     }
   });
 
@@ -2621,11 +2663,32 @@ export async function registerRoutes(
 
   app.get("/api/super-admin/meme/images", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
-      const images = await storage.getMemeImages(req.session.userId!, 'super_admin');
+      const images = await storage.getAllMemeImagesWithCreators();
       res.json(images);
     } catch (err) {
       console.error("Error getting meme images:", err);
       res.status(500).json({ message: "Failed to get meme images" });
+    }
+  });
+
+  app.patch("/api/super-admin/meme/images/:id/starter-pack", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid image ID" });
+      }
+      const { isStarterPack } = req.body;
+      if (typeof isStarterPack !== 'boolean') {
+        return res.status(400).json({ message: "isStarterPack must be a boolean" });
+      }
+      const updated = await storage.toggleMemeImageStarterPack(id, isStarterPack);
+      if (!updated) {
+        return res.status(404).json({ message: "Image not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      console.error("Error toggling meme image starter pack:", err);
+      res.status(500).json({ message: "Failed to toggle starter pack" });
     }
   });
 

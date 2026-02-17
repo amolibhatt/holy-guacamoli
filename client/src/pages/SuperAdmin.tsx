@@ -103,7 +103,7 @@ interface ComprehensiveDashboard {
   realtime: { activeGames: number; activePlayers: number };
   today: { games: number; players: number; newUsers: number; gamesChange: number; playersChange: number; usersChange: number };
   week: { games: number; players: number; newUsers: number };
-  totals: { users: number; sessions: number; boards: number; blitzgridQuestions: number; sortCircuitQuestions: number; psyopQuestions: number; starterPacks: number; flaggedContent: number };
+  totals: { users: number; sessions: number; boards: number; blitzgridQuestions: number; sortCircuitQuestions: number; psyopQuestions: number; timeWarpQuestions: number; memePrompts: number; memeImages: number; starterPacks: number; flaggedContent: number };
   usersByRole: Record<string, number>;
   recentActivity: { id: number; code: string; state: string; createdAt: string }[];
   topHostsWeek: { name: string; games: number }[];
@@ -142,11 +142,15 @@ interface PsyopQuestionWithCreator {
 interface TimeWarpQuestionItem {
   id: number;
   userId: string | null;
-  question: string;
-  correctOrder: string[];
+  imageUrl: string;
+  era: string;
+  answer: string;
+  hint: string | null;
   category: string | null;
   isActive: boolean;
+  isStarterPack: boolean;
   createdAt: string;
+  creator: QuestionCreator | null;
 }
 
 interface MemePromptItem {
@@ -154,7 +158,9 @@ interface MemePromptItem {
   userId: string | null;
   prompt: string;
   isActive: boolean;
+  isStarterPack: boolean;
   createdAt: string;
+  creator: QuestionCreator | null;
 }
 
 interface MemeImageItem {
@@ -163,7 +169,9 @@ interface MemeImageItem {
   imageUrl: string;
   caption: string | null;
   isActive: boolean;
+  isStarterPack: boolean;
   createdAt: string;
+  creator: QuestionCreator | null;
 }
 
 export default function SuperAdmin() {
@@ -381,6 +389,39 @@ export default function SuperAdmin() {
     onError: () => toast({ title: "Couldn't delete image", variant: "destructive" }),
   });
 
+  const toggleTimewarpStarterPackMutation = useMutation({
+    mutationFn: async ({ questionId, isStarterPack }: { questionId: number; isStarterPack: boolean }) => {
+      await apiRequest('PATCH', `/api/super-admin/questions/timewarp/${questionId}/starter-pack`, { isStarterPack });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/timewarp'] });
+      toast({ title: "Starter pack updated" });
+    },
+    onError: () => toast({ title: "Couldn't update starter pack", variant: "destructive" }),
+  });
+
+  const toggleMemePromptStarterPackMutation = useMutation({
+    mutationFn: async ({ id, isStarterPack }: { id: number; isStarterPack: boolean }) => {
+      await apiRequest('PATCH', `/api/super-admin/meme/prompts/${id}/starter-pack`, { isStarterPack });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/meme/prompts'] });
+      toast({ title: "Starter pack updated" });
+    },
+    onError: () => toast({ title: "Couldn't update starter pack", variant: "destructive" }),
+  });
+
+  const toggleMemeImageStarterPackMutation = useMutation({
+    mutationFn: async ({ id, isStarterPack }: { id: number; isStarterPack: boolean }) => {
+      await apiRequest('PATCH', `/api/super-admin/meme/images/${id}/starter-pack`, { isStarterPack });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/meme/images'] });
+      toast({ title: "Starter pack updated" });
+    },
+    onError: () => toast({ title: "Couldn't update starter pack", variant: "destructive" }),
+  });
+
   const createAnnouncementMutation = useMutation({
     mutationFn: async (data: { title: string; message: string; type?: string }) => {
       if (!data.title.trim() || !data.message.trim()) {
@@ -535,21 +576,25 @@ export default function SuperAdmin() {
 
   const filteredTimewarpQuestions = contentSearch.trim()
     ? timewarpQuestions.filter(q => 
-        (q.question ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
-        (q.category ?? '').toLowerCase().includes(contentSearch.toLowerCase())
+        (q.answer ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
+        (q.era ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
+        (q.category ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
+        (q.creator?.username ?? '').toLowerCase().includes(contentSearch.toLowerCase())
       )
     : timewarpQuestions;
 
   const filteredMemePrompts = contentSearch.trim()
     ? memePrompts.filter(p => 
-        (p.prompt ?? '').toLowerCase().includes(contentSearch.toLowerCase())
+        (p.prompt ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
+        (p.creator?.username ?? '').toLowerCase().includes(contentSearch.toLowerCase())
       )
     : memePrompts;
 
   const filteredMemeImages = contentSearch.trim()
     ? memeImages.filter(i => 
         (i.caption ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
-        (i.imageUrl ?? '').toLowerCase().includes(contentSearch.toLowerCase())
+        (i.imageUrl ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
+        (i.creator?.username ?? '').toLowerCase().includes(contentSearch.toLowerCase())
       )
     : memeImages;
 
@@ -778,8 +823,28 @@ export default function SuperAdmin() {
                       <span className="font-bold">{dashboard.totals.sessions}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm">Grids</span>
+                      <span className="text-sm">BlitzGrid Grids</span>
                       <span className="font-bold">{dashboard.totals.boards}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Sort Circuit Q</span>
+                      <span className="font-bold">{dashboard.totals.sortCircuitQuestions}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">PsyOp Q</span>
+                      <span className="font-bold">{dashboard.totals.psyopQuestions}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">TimeWarp Q</span>
+                      <span className="font-bold">{dashboard.totals.timeWarpQuestions}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Meme Prompts</span>
+                      <span className="font-bold">{dashboard.totals.memePrompts}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Meme Images</span>
+                      <span className="font-bold">{dashboard.totals.memeImages}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Starter Packs</span>
@@ -1394,21 +1459,36 @@ export default function SuperAdmin() {
                       {filteredTimewarpQuestions.map(q => (
                         <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{q.question}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium truncate">{q.answer}</p>
+                              <Badge variant="outline" className="text-xs">{q.era}</Badge>
+                              {q.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
+                            </div>
                             <p className="text-xs text-muted-foreground">
-                              {q.category && `${q.category} • `}{formatRelativeDate(q.createdAt)}
+                              by {q.creator?.username || 'Unknown'}{q.category ? ` • ${q.category}` : ''}
                             </p>
                           </div>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="text-destructive"
-                            onClick={() => setDeleteContentItem({ type: 'timewarp', id: q.id })}
-                            aria-label="Delete question"
-                            data-testid={`button-delete-timewarp-${q.id}`}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Button
+                              size="sm"
+                              variant={q.isStarterPack ? 'secondary' : 'outline'}
+                              onClick={() => toggleTimewarpStarterPackMutation.mutate({ questionId: q.id, isStarterPack: !q.isStarterPack })}
+                              data-testid={`button-starter-timewarp-${q.id}`}
+                              aria-label={q.isStarterPack ? 'Remove from starter pack' : 'Add to starter pack'}
+                            >
+                              <Star className={`w-4 h-4 ${q.isStarterPack ? 'fill-current' : ''}`} />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-destructive"
+                              onClick={() => setDeleteContentItem({ type: 'timewarp', id: q.id })}
+                              aria-label="Delete question"
+                              data-testid={`button-delete-timewarp-${q.id}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1433,19 +1513,35 @@ export default function SuperAdmin() {
                             {filteredMemePrompts.map(p => (
                               <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-medium truncate">{p.prompt}</p>
-                                  <p className="text-xs text-muted-foreground">{formatRelativeDate(p.createdAt)}</p>
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-medium truncate">{p.prompt}</p>
+                                    {p.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">
+                                    by {p.creator?.username || 'Unknown'} • {formatRelativeDate(p.createdAt)}
+                                  </p>
                                 </div>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="text-destructive"
-                                  onClick={() => setDeleteContentItem({ type: 'meme-prompt', id: p.id })}
-                                  aria-label="Delete prompt"
-                                  data-testid={`button-delete-meme-prompt-${p.id}`}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <Button
+                                    size="sm"
+                                    variant={p.isStarterPack ? 'secondary' : 'outline'}
+                                    onClick={() => toggleMemePromptStarterPackMutation.mutate({ id: p.id, isStarterPack: !p.isStarterPack })}
+                                    data-testid={`button-starter-meme-prompt-${p.id}`}
+                                    aria-label={p.isStarterPack ? 'Remove from starter pack' : 'Add to starter pack'}
+                                  >
+                                    <Star className={`w-4 h-4 ${p.isStarterPack ? 'fill-current' : ''}`} />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="text-destructive"
+                                    onClick={() => setDeleteContentItem({ type: 'meme-prompt', id: p.id })}
+                                    aria-label="Delete prompt"
+                                    data-testid={`button-delete-meme-prompt-${p.id}`}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1460,19 +1556,35 @@ export default function SuperAdmin() {
                             {filteredMemeImages.map(img => (
                               <div key={img.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-medium truncate">{img.caption || img.imageUrl}</p>
-                                  <p className="text-xs text-muted-foreground">{formatRelativeDate(img.createdAt)}</p>
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-medium truncate">{img.caption || img.imageUrl}</p>
+                                    {img.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">
+                                    by {img.creator?.username || 'Unknown'} • {formatRelativeDate(img.createdAt)}
+                                  </p>
                                 </div>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="text-destructive"
-                                  onClick={() => setDeleteContentItem({ type: 'meme-image', id: img.id })}
-                                  aria-label="Delete image"
-                                  data-testid={`button-delete-meme-image-${img.id}`}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <Button
+                                    size="sm"
+                                    variant={img.isStarterPack ? 'secondary' : 'outline'}
+                                    onClick={() => toggleMemeImageStarterPackMutation.mutate({ id: img.id, isStarterPack: !img.isStarterPack })}
+                                    data-testid={`button-starter-meme-image-${img.id}`}
+                                    aria-label={img.isStarterPack ? 'Remove from starter pack' : 'Add to starter pack'}
+                                  >
+                                    <Star className={`w-4 h-4 ${img.isStarterPack ? 'fill-current' : ''}`} />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="text-destructive"
+                                    onClick={() => setDeleteContentItem({ type: 'meme-image', id: img.id })}
+                                    aria-label="Delete image"
+                                    data-testid={`button-delete-meme-image-${img.id}`}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
                               </div>
                             ))}
                           </div>

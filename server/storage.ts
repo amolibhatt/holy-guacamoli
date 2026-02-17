@@ -217,6 +217,8 @@ export interface IStorage {
   createTimeWarpQuestion(data: InsertTimeWarpQuestion): Promise<TimeWarpQuestion>;
   updateTimeWarpQuestion(id: number, data: Partial<InsertTimeWarpQuestion>, userId: string, role?: string): Promise<TimeWarpQuestion | null>;
   deleteTimeWarpQuestion(id: number, userId: string, role?: string): Promise<boolean>;
+  getAllTimeWarpQuestionsWithCreators(): Promise<any[]>;
+  toggleTimeWarpQuestionStarterPack(questionId: number, isStarterPack: boolean): Promise<TimeWarpQuestion | undefined>;
 
   // Meme No Harm
   getMemePrompts(userId: string, role?: string): Promise<MemePrompt[]>;
@@ -224,11 +226,15 @@ export interface IStorage {
   createMemePrompt(data: InsertMemePrompt): Promise<MemePrompt>;
   updateMemePrompt(id: number, data: Partial<InsertMemePrompt>, userId: string, role?: string): Promise<MemePrompt | null>;
   deleteMemePrompt(id: number, userId: string, role?: string): Promise<boolean>;
+  getAllMemePromptsWithCreators(): Promise<any[]>;
+  toggleMemePromptStarterPack(id: number, isStarterPack: boolean): Promise<MemePrompt | undefined>;
   getMemeImages(userId: string, role?: string): Promise<MemeImage[]>;
   getAllMemeImageUrls(): Promise<{ id: number; imageUrl: string }[]>;
   createMemeImage(data: InsertMemeImage): Promise<MemeImage>;
   updateMemeImage(id: number, data: Partial<InsertMemeImage>, userId: string, role?: string): Promise<MemeImage | null>;
   deleteMemeImage(id: number, userId: string, role?: string): Promise<boolean>;
+  getAllMemeImagesWithCreators(): Promise<any[]>;
+  toggleMemeImageStarterPack(id: number, isStarterPack: boolean): Promise<MemeImage | undefined>;
   
   // Player Profile & Stats
   getPlayerProfile(userId: string): Promise<PlayerProfile | null>;
@@ -2840,6 +2846,9 @@ export class DatabaseStorage implements IStorage {
     const [totalQuestions] = await db.select({ count: count() }).from(questions);
     const [totalSequenceQuestions] = await db.select({ count: count() }).from(sequenceQuestions);
     const [totalPsyopQuestions] = await db.select({ count: count() }).from(psyopQuestions);
+    const [totalTimeWarpQuestions] = await db.select({ count: count() }).from(timeWarpQuestions);
+    const [totalMemePrompts] = await db.select({ count: count() }).from(memePrompts);
+    const [totalMemeImages] = await db.select({ count: count() }).from(memeImages);
 
     // Content stats
     const [starterPackBoards] = await db.select({ count: count() })
@@ -2925,6 +2934,9 @@ export class DatabaseStorage implements IStorage {
         blitzgridQuestions: totalQuestions?.count ?? 0,
         sortCircuitQuestions: totalSequenceQuestions?.count ?? 0,
         psyopQuestions: totalPsyopQuestions?.count ?? 0,
+        timeWarpQuestions: totalTimeWarpQuestions?.count ?? 0,
+        memePrompts: totalMemePrompts?.count ?? 0,
+        memeImages: totalMemeImages?.count ?? 0,
         starterPacks: starterPackBoards?.count ?? 0,
         flaggedContent: flaggedBoards?.count ?? 0,
       },
@@ -3418,6 +3430,116 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db.update(psyopQuestions)
       .set({ isStarterPack })
       .where(eq(psyopQuestions.id, questionId))
+      .returning();
+    return updated;
+  }
+
+  async getAllTimeWarpQuestionsWithCreators() {
+    const rows = await db.select({
+      id: timeWarpQuestions.id,
+      userId: timeWarpQuestions.userId,
+      imageUrl: timeWarpQuestions.imageUrl,
+      era: timeWarpQuestions.era,
+      answer: timeWarpQuestions.answer,
+      hint: timeWarpQuestions.hint,
+      category: timeWarpQuestions.category,
+      isActive: timeWarpQuestions.isActive,
+      isStarterPack: timeWarpQuestions.isStarterPack,
+      createdAt: timeWarpQuestions.createdAt,
+      creatorId: users.id,
+      creatorFirstName: users.firstName,
+      creatorLastName: users.lastName,
+      creatorEmail: users.email,
+    }).from(timeWarpQuestions)
+      .leftJoin(users, eq(timeWarpQuestions.userId, users.id))
+      .orderBy(desc(timeWarpQuestions.createdAt));
+
+    return rows.map(row => {
+      const { creatorId, creatorFirstName, creatorLastName, creatorEmail, ...q } = row;
+      const creator = creatorId ? {
+        id: creatorId,
+        username: [creatorFirstName, creatorLastName].filter(Boolean).join(' ') || creatorEmail || 'Unknown',
+        email: creatorEmail,
+      } : null;
+      return { ...q, creator };
+    });
+  }
+
+  async toggleTimeWarpQuestionStarterPack(questionId: number, isStarterPack: boolean) {
+    const [updated] = await db.update(timeWarpQuestions)
+      .set({ isStarterPack })
+      .where(eq(timeWarpQuestions.id, questionId))
+      .returning();
+    return updated;
+  }
+
+  async getAllMemePromptsWithCreators() {
+    const rows = await db.select({
+      id: memePrompts.id,
+      userId: memePrompts.userId,
+      prompt: memePrompts.prompt,
+      isActive: memePrompts.isActive,
+      isStarterPack: memePrompts.isStarterPack,
+      createdAt: memePrompts.createdAt,
+      creatorId: users.id,
+      creatorFirstName: users.firstName,
+      creatorLastName: users.lastName,
+      creatorEmail: users.email,
+    }).from(memePrompts)
+      .leftJoin(users, eq(memePrompts.userId, users.id))
+      .orderBy(desc(memePrompts.createdAt));
+
+    return rows.map(row => {
+      const { creatorId, creatorFirstName, creatorLastName, creatorEmail, ...q } = row;
+      const creator = creatorId ? {
+        id: creatorId,
+        username: [creatorFirstName, creatorLastName].filter(Boolean).join(' ') || creatorEmail || 'Unknown',
+        email: creatorEmail,
+      } : null;
+      return { ...q, creator };
+    });
+  }
+
+  async toggleMemePromptStarterPack(id: number, isStarterPack: boolean) {
+    const [updated] = await db.update(memePrompts)
+      .set({ isStarterPack })
+      .where(eq(memePrompts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getAllMemeImagesWithCreators() {
+    const rows = await db.select({
+      id: memeImages.id,
+      userId: memeImages.userId,
+      imageUrl: memeImages.imageUrl,
+      caption: memeImages.caption,
+      isActive: memeImages.isActive,
+      isStarterPack: memeImages.isStarterPack,
+      createdAt: memeImages.createdAt,
+      creatorId: users.id,
+      creatorFirstName: users.firstName,
+      creatorLastName: users.lastName,
+      creatorEmail: users.email,
+    }).from(memeImages)
+      .leftJoin(users, eq(memeImages.userId, users.id))
+      .orderBy(desc(memeImages.createdAt));
+
+    return rows.map(row => {
+      const { creatorId, creatorFirstName, creatorLastName, creatorEmail, ...q } = row;
+      const creator = creatorId ? {
+        id: creatorId,
+        username: [creatorFirstName, creatorLastName].filter(Boolean).join(' ') || creatorEmail || 'Unknown',
+        email: creatorEmail,
+      } : null;
+      return { ...q, creator };
+    });
+  }
+
+  async toggleMemeImageStarterPack(id: number, isStarterPack: boolean) {
+    const [updated] = await db.update(memeImages)
+      .set({ isStarterPack })
+      .where(eq(memeImages.id, id))
       .returning();
     return updated;
   }
