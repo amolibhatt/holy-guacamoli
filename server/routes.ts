@@ -1953,10 +1953,16 @@ export async function registerRoutes(
       if (playerEnabled !== undefined && typeof playerEnabled !== 'boolean') {
         return res.status(400).json({ message: "playerEnabled must be a boolean" });
       }
+      if (description !== undefined && typeof description !== 'string') {
+        return res.status(400).json({ message: "description must be a string" });
+      }
+      if (sortOrder !== undefined && (typeof sortOrder !== 'number' || !Number.isFinite(sortOrder) || !Number.isInteger(sortOrder))) {
+        return res.status(400).json({ message: "sortOrder must be an integer" });
+      }
       const updated = await storage.updateGameType(id, { 
         hostEnabled, 
         playerEnabled, 
-        description,
+        description: typeof description === 'string' ? description.trim().slice(0, 500) : description,
         sortOrder,
         status
       });
@@ -2298,10 +2304,16 @@ export async function registerRoutes(
       if (moderationStatus !== undefined && !['pending', 'approved', 'rejected', 'flagged'].includes(moderationStatus)) {
         return res.status(400).json({ message: "Invalid moderation status" });
       }
+      if (isFeatured !== undefined && typeof isFeatured !== 'boolean') {
+        return res.status(400).json({ message: "isFeatured must be a boolean" });
+      }
+      if (flagReason !== undefined && typeof flagReason !== 'string') {
+        return res.status(400).json({ message: "flagReason must be a string" });
+      }
       const updated = await storage.updateBoardModeration(boardId, {
         moderationStatus,
         isFeatured,
-        flagReason,
+        flagReason: typeof flagReason === 'string' ? flagReason.trim().slice(0, 500) : flagReason,
         moderatedBy: req.session.userId,
       });
       if (!updated) {
@@ -2347,12 +2359,20 @@ export async function registerRoutes(
       }
       const validTypes = ['info', 'warning', 'error', 'success'];
       const announcementType = (type && validTypes.includes(type)) ? type : 'info';
+      let parsedExpiry: Date | null = null;
+      if (expiresAt) {
+        const d = new Date(expiresAt);
+        if (isNaN(d.getTime())) {
+          return res.status(400).json({ message: "Invalid expiration date" });
+        }
+        parsedExpiry = d;
+      }
       const announcement = await storage.createAnnouncement({
-        title: title.trim(),
-        message: message.trim(),
+        title: title.trim().slice(0, 200),
+        message: message.trim().slice(0, 2000),
         type: announcementType,
         createdBy: req.session.userId!,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        expiresAt: parsedExpiry,
       });
       res.status(201).json(announcement);
     } catch (err) {
@@ -2517,6 +2537,113 @@ export async function registerRoutes(
     } catch (err) {
       console.error("Error deleting blitzgrid question:", err);
       res.status(500).json({ message: "Failed to delete question" });
+    }
+  });
+
+  // Delete PsyOp question (super admin only)
+  app.delete("/api/super-admin/questions/psyop/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const questionId = parseId(req.params.id);
+      if (questionId === null) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+      const userId = req.session.userId!;
+      const deleted = await storage.deletePsyopQuestion(questionId, userId, 'super_admin');
+      if (!deleted) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting psyop question:", err);
+      res.status(500).json({ message: "Failed to delete question" });
+    }
+  });
+
+  // === TIMEWARP CONTENT MANAGEMENT (Super Admin) ===
+
+  app.get("/api/super-admin/questions/timewarp", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const questions = await storage.getTimeWarpQuestions(req.session.userId!, 'super_admin');
+      res.json(questions);
+    } catch (err) {
+      console.error("Error getting timewarp questions:", err);
+      res.status(500).json({ message: "Failed to get timewarp questions" });
+    }
+  });
+
+  app.delete("/api/super-admin/questions/timewarp/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const questionId = parseId(req.params.id);
+      if (questionId === null) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+      const userId = req.session.userId!;
+      const deleted = await storage.deleteTimeWarpQuestion(questionId, userId, 'super_admin');
+      if (!deleted) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting timewarp question:", err);
+      res.status(500).json({ message: "Failed to delete question" });
+    }
+  });
+
+  // === MEME NO HARM CONTENT MANAGEMENT (Super Admin) ===
+
+  app.get("/api/super-admin/meme/prompts", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const prompts = await storage.getMemePrompts(req.session.userId!, 'super_admin');
+      res.json(prompts);
+    } catch (err) {
+      console.error("Error getting meme prompts:", err);
+      res.status(500).json({ message: "Failed to get meme prompts" });
+    }
+  });
+
+  app.delete("/api/super-admin/meme/prompts/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid prompt ID" });
+      }
+      const userId = req.session.userId!;
+      const deleted = await storage.deleteMemePrompt(id, userId, 'super_admin');
+      if (!deleted) {
+        return res.status(404).json({ message: "Prompt not found" });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting meme prompt:", err);
+      res.status(500).json({ message: "Failed to delete prompt" });
+    }
+  });
+
+  app.get("/api/super-admin/meme/images", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const images = await storage.getMemeImages(req.session.userId!, 'super_admin');
+      res.json(images);
+    } catch (err) {
+      console.error("Error getting meme images:", err);
+      res.status(500).json({ message: "Failed to get meme images" });
+    }
+  });
+
+  app.delete("/api/super-admin/meme/images/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid image ID" });
+      }
+      const userId = req.session.userId!;
+      const deleted = await storage.deleteMemeImage(id, userId, 'super_admin');
+      if (!deleted) {
+        return res.status(404).json({ message: "Image not found" });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting meme image:", err);
+      res.status(500).json({ message: "Failed to delete image" });
     }
   });
 

@@ -139,6 +139,33 @@ interface PsyopQuestionWithCreator {
   creator: QuestionCreator | null;
 }
 
+interface TimeWarpQuestionItem {
+  id: number;
+  userId: string | null;
+  question: string;
+  correctOrder: string[];
+  category: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface MemePromptItem {
+  id: number;
+  userId: string | null;
+  prompt: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface MemeImageItem {
+  id: number;
+  userId: string | null;
+  imageUrl: string;
+  caption: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
 export default function SuperAdmin() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { toast } = useToast();
@@ -149,13 +176,14 @@ export default function SuperAdmin() {
   const [sessionSearch, setSessionSearch] = useState("");
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [deleteBoardId, setDeleteBoardId] = useState<number | null>(null);
-  const [contentTab, setContentTab] = useState<'games' | 'blitzgrid' | 'sequence' | 'psyop'>('games');
+  const [contentTab, setContentTab] = useState<'games' | 'blitzgrid' | 'sequence' | 'psyop' | 'timewarp' | 'meme'>('games');
   
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
   const [announcementType, setAnnouncementType] = useState<"info" | "warning" | "success">("info");
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [deleteContentItem, setDeleteContentItem] = useState<{ type: string; id: number } | null>(null);
 
   // Queries
   const { data: dashboard, isLoading: isLoadingDashboard, isError: isErrorDashboard, refetch: refetchDashboard } = useQuery<ComprehensiveDashboard>({
@@ -202,6 +230,21 @@ export default function SuperAdmin() {
   const { data: psyopQuestions = [], isLoading: isLoadingPsyop, isError: isErrorPsyop, refetch: refetchPsyop } = useQuery<PsyopQuestionWithCreator[]>({
     queryKey: ['/api/super-admin/questions/psyop'],
     enabled: activeTab === 'content' && contentTab === 'psyop',
+  });
+
+  const { data: timewarpQuestions = [], isLoading: isLoadingTimewarp, isError: isErrorTimewarp, refetch: refetchTimewarp } = useQuery<TimeWarpQuestionItem[]>({
+    queryKey: ['/api/super-admin/questions/timewarp'],
+    enabled: activeTab === 'content' && contentTab === 'timewarp',
+  });
+
+  const { data: memePrompts = [], isLoading: isLoadingMemePrompts, isError: isErrorMemePrompts, refetch: refetchMemePrompts } = useQuery<MemePromptItem[]>({
+    queryKey: ['/api/super-admin/meme/prompts'],
+    enabled: activeTab === 'content' && contentTab === 'meme',
+  });
+
+  const { data: memeImages = [], isLoading: isLoadingMemeImages, isError: isErrorMemeImages, refetch: refetchMemeImages } = useQuery<MemeImageItem[]>({
+    queryKey: ['/api/super-admin/meme/images'],
+    enabled: activeTab === 'content' && contentTab === 'meme',
   });
 
   // Mutations
@@ -276,6 +319,66 @@ export default function SuperAdmin() {
       toast({ title: "Starter pack updated" });
     },
     onError: () => toast({ title: "Couldn't update starter pack", variant: "destructive" }),
+  });
+
+  const deleteSequenceQuestionMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest('DELETE', `/api/super-admin/questions/sequence/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/sequence'] });
+      toast({ title: "Question deleted" });
+      setDeleteContentItem(null);
+    },
+    onError: () => toast({ title: "Couldn't delete question", variant: "destructive" }),
+  });
+
+  const deletePsyopQuestionMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest('DELETE', `/api/super-admin/questions/psyop/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/psyop'] });
+      toast({ title: "Question deleted" });
+      setDeleteContentItem(null);
+    },
+    onError: () => toast({ title: "Couldn't delete question", variant: "destructive" }),
+  });
+
+  const deleteTimewarpQuestionMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest('DELETE', `/api/super-admin/questions/timewarp/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/timewarp'] });
+      toast({ title: "Question deleted" });
+      setDeleteContentItem(null);
+    },
+    onError: () => toast({ title: "Couldn't delete question", variant: "destructive" }),
+  });
+
+  const deleteMemePromptMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest('DELETE', `/api/super-admin/meme/prompts/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/meme/prompts'] });
+      toast({ title: "Prompt deleted" });
+      setDeleteContentItem(null);
+    },
+    onError: () => toast({ title: "Couldn't delete prompt", variant: "destructive" }),
+  });
+
+  const deleteMemeImageMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest('DELETE', `/api/super-admin/meme/images/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/meme/images'] });
+      toast({ title: "Image deleted" });
+      setDeleteContentItem(null);
+    },
+    onError: () => toast({ title: "Couldn't delete image", variant: "destructive" }),
   });
 
   const createAnnouncementMutation = useMutation({
@@ -429,6 +532,26 @@ export default function SuperAdmin() {
         (q.category ?? '').toLowerCase().includes(contentSearch.toLowerCase())
       )
     : psyopQuestions;
+
+  const filteredTimewarpQuestions = contentSearch.trim()
+    ? timewarpQuestions.filter(q => 
+        (q.question ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
+        (q.category ?? '').toLowerCase().includes(contentSearch.toLowerCase())
+      )
+    : timewarpQuestions;
+
+  const filteredMemePrompts = contentSearch.trim()
+    ? memePrompts.filter(p => 
+        (p.prompt ?? '').toLowerCase().includes(contentSearch.toLowerCase())
+      )
+    : memePrompts;
+
+  const filteredMemeImages = contentSearch.trim()
+    ? memeImages.filter(i => 
+        (i.caption ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
+        (i.imageUrl ?? '').toLowerCase().includes(contentSearch.toLowerCase())
+      )
+    : memeImages;
 
   if (isAuthLoading) {
     return (
@@ -1039,6 +1162,22 @@ export default function SuperAdmin() {
                   >
                     <Brain className="w-4 h-4 mr-1" /> PsyOp
                   </Button>
+                  <Button
+                    size="sm"
+                    variant={contentTab === 'timewarp' ? 'default' : 'outline'}
+                    onClick={() => setContentTab('timewarp')}
+                    data-testid="button-content-timewarp"
+                  >
+                    <Clock className="w-4 h-4 mr-1" /> TimeWarp
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={contentTab === 'meme' ? 'default' : 'outline'}
+                    onClick={() => setContentTab('meme')}
+                    data-testid="button-content-meme"
+                  >
+                    <Image className="w-4 h-4 mr-1" /> Meme
+                  </Button>
                 </div>
 
                 {/* Games Control */}
@@ -1164,15 +1303,27 @@ export default function SuperAdmin() {
                               by {q.creator?.username || 'Unknown'}
                             </p>
                           </div>
-                          <Button
-                            size="sm"
-                            variant={q.isStarterPack ? 'secondary' : 'outline'}
-                            onClick={() => toggleSequenceStarterPackMutation.mutate({ questionId: q.id, isStarterPack: !q.isStarterPack })}
-                            data-testid={`button-starter-seq-${q.id}`}
-                            aria-label={q.isStarterPack ? 'Remove from starter pack' : 'Add to starter pack'}
-                          >
-                            <Star className={`w-4 h-4 ${q.isStarterPack ? 'fill-current' : ''}`} />
-                          </Button>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Button
+                              size="sm"
+                              variant={q.isStarterPack ? 'secondary' : 'outline'}
+                              onClick={() => toggleSequenceStarterPackMutation.mutate({ questionId: q.id, isStarterPack: !q.isStarterPack })}
+                              data-testid={`button-starter-seq-${q.id}`}
+                              aria-label={q.isStarterPack ? 'Remove from starter pack' : 'Add to starter pack'}
+                            >
+                              <Star className={`w-4 h-4 ${q.isStarterPack ? 'fill-current' : ''}`} />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-destructive"
+                              onClick={() => setDeleteContentItem({ type: 'sequence', id: q.id })}
+                              aria-label="Delete question"
+                              data-testid={`button-delete-seq-${q.id}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1202,17 +1353,131 @@ export default function SuperAdmin() {
                               by {q.creator?.username || 'Unknown'} {q.category && `• ${q.category}`}
                             </p>
                           </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Button
+                              size="sm"
+                              variant={q.isStarterPack ? 'secondary' : 'outline'}
+                              onClick={() => togglePsyopStarterPackMutation.mutate({ questionId: q.id, isStarterPack: !q.isStarterPack })}
+                              data-testid={`button-starter-psyop-${q.id}`}
+                              aria-label={q.isStarterPack ? 'Remove from starter pack' : 'Add to starter pack'}
+                            >
+                              <Star className={`w-4 h-4 ${q.isStarterPack ? 'fill-current' : ''}`} />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-destructive"
+                              onClick={() => setDeleteContentItem({ type: 'psyop', id: q.id })}
+                              aria-label="Delete question"
+                              data-testid={`button-delete-psyop-${q.id}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                )}
+
+                {contentTab === 'timewarp' && (
+                  isLoadingTimewarp ? (
+                    <div className="space-y-2">
+                      {[1,2,3].map(i => <Skeleton key={i} className="h-14" />)}
+                    </div>
+                  ) : isErrorTimewarp ? (
+                    <ErrorState message="Couldn't load questions" onRetry={() => refetchTimewarp()} testId="button-retry-timewarp" />
+                  ) : filteredTimewarpQuestions.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8" data-testid="text-empty-timewarp">{contentSearch.trim() ? 'No matching questions' : 'No questions found'}</p>
+                  ) : (
+                    <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                      {filteredTimewarpQuestions.map(q => (
+                        <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{q.question}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {q.category && `${q.category} • `}{formatRelativeDate(q.createdAt)}
+                            </p>
+                          </div>
                           <Button
-                            size="sm"
-                            variant={q.isStarterPack ? 'secondary' : 'outline'}
-                            onClick={() => togglePsyopStarterPackMutation.mutate({ questionId: q.id, isStarterPack: !q.isStarterPack })}
-                            data-testid={`button-starter-psyop-${q.id}`}
-                            aria-label={q.isStarterPack ? 'Remove from starter pack' : 'Add to starter pack'}
+                            size="icon"
+                            variant="ghost"
+                            className="text-destructive"
+                            onClick={() => setDeleteContentItem({ type: 'timewarp', id: q.id })}
+                            aria-label="Delete question"
+                            data-testid={`button-delete-timewarp-${q.id}`}
                           >
-                            <Star className={`w-4 h-4 ${q.isStarterPack ? 'fill-current' : ''}`} />
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       ))}
+                    </div>
+                  )
+                )}
+
+                {contentTab === 'meme' && (
+                  (isLoadingMemePrompts || isLoadingMemeImages) ? (
+                    <div className="space-y-2">
+                      {[1,2,3].map(i => <Skeleton key={i} className="h-14" />)}
+                    </div>
+                  ) : (isErrorMemePrompts || isErrorMemeImages) ? (
+                    <ErrorState message="Couldn't load meme content" onRetry={() => { refetchMemePrompts(); refetchMemeImages(); }} testId="button-retry-meme" />
+                  ) : (
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-sm font-medium mb-2">Prompts ({filteredMemePrompts.length})</h3>
+                        {filteredMemePrompts.length === 0 ? (
+                          <p className="text-center text-muted-foreground py-4 text-sm" data-testid="text-empty-meme-prompts">No prompts found</p>
+                        ) : (
+                          <div className="space-y-2 max-h-[250px] overflow-y-auto">
+                            {filteredMemePrompts.map(p => (
+                              <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">{p.prompt}</p>
+                                  <p className="text-xs text-muted-foreground">{formatRelativeDate(p.createdAt)}</p>
+                                </div>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="text-destructive"
+                                  onClick={() => setDeleteContentItem({ type: 'meme-prompt', id: p.id })}
+                                  aria-label="Delete prompt"
+                                  data-testid={`button-delete-meme-prompt-${p.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium mb-2">Images ({filteredMemeImages.length})</h3>
+                        {filteredMemeImages.length === 0 ? (
+                          <p className="text-center text-muted-foreground py-4 text-sm" data-testid="text-empty-meme-images">No images found</p>
+                        ) : (
+                          <div className="space-y-2 max-h-[250px] overflow-y-auto">
+                            {filteredMemeImages.map(img => (
+                              <div key={img.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">{img.caption || img.imageUrl}</p>
+                                  <p className="text-xs text-muted-foreground">{formatRelativeDate(img.createdAt)}</p>
+                                </div>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="text-destructive"
+                                  onClick={() => setDeleteContentItem({ type: 'meme-image', id: img.id })}
+                                  aria-label="Delete image"
+                                  data-testid={`button-delete-meme-image-${img.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )
                 )}
@@ -1327,6 +1592,48 @@ export default function SuperAdmin() {
                 data-testid="button-confirm-delete-content"
               >
                 {deleteBoardMutation.isPending ? 'Deleting...' : 'Delete'}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete Content Item Dialog */}
+        <AlertDialog open={!!deleteContentItem} onOpenChange={() => setDeleteContentItem(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Content?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete this item.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel data-testid="button-cancel-delete-item">Cancel</AlertDialogCancel>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (!deleteContentItem) return;
+                  switch (deleteContentItem.type) {
+                    case 'sequence': deleteSequenceQuestionMutation.mutate(deleteContentItem.id); break;
+                    case 'psyop': deletePsyopQuestionMutation.mutate(deleteContentItem.id); break;
+                    case 'timewarp': deleteTimewarpQuestionMutation.mutate(deleteContentItem.id); break;
+                    case 'meme-prompt': deleteMemePromptMutation.mutate(deleteContentItem.id); break;
+                    case 'meme-image': deleteMemeImageMutation.mutate(deleteContentItem.id); break;
+                  }
+                }}
+                disabled={
+                  deleteSequenceQuestionMutation.isPending ||
+                  deletePsyopQuestionMutation.isPending ||
+                  deleteTimewarpQuestionMutation.isPending ||
+                  deleteMemePromptMutation.isPending ||
+                  deleteMemeImageMutation.isPending
+                }
+                data-testid="button-confirm-delete-item"
+              >
+                {(deleteSequenceQuestionMutation.isPending ||
+                  deletePsyopQuestionMutation.isPending ||
+                  deleteTimewarpQuestionMutation.isPending ||
+                  deleteMemePromptMutation.isPending ||
+                  deleteMemeImageMutation.isPending) ? 'Deleting...' : 'Delete'}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
