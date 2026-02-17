@@ -7796,8 +7796,11 @@ Generate exactly ${promptCount} prompts.`
       }
 
       if (mapping.isHost) {
+        if (room.hostWs !== ws) {
+          wsToRoom.delete(ws);
+          return;
+        }
         room.hostWs = null;
-        // Notify players that host temporarily disconnected (will reconnect)
         room.players.forEach((player) => {
           if (player.ws && player.isConnected) {
             sendToPlayer(player, { type: 'host:disconnected' });
@@ -7807,6 +7810,10 @@ Generate exactly ${promptCount} prompts.`
       } else if (mapping.playerId) {
         const player = room.players.get(mapping.playerId);
         if (player) {
+          if (player.ws !== ws) {
+            wsToRoom.delete(ws);
+            return;
+          }
           player.isConnected = false;
           // Remove from buzz queue if they were in it
           room.buzzQueue = room.buzzQueue.filter(b => b.playerId !== mapping.playerId);
