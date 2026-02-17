@@ -3784,7 +3784,34 @@ Generate exactly ${promptCount} prompts.`
 
   // ==================== GIPHY SEARCH PROXY ====================
   
+  const giphyRateLimits = new Map<string, { count: number; resetAt: number }>();
+  const GIPHY_RATE_LIMIT = 30;
+  const GIPHY_RATE_WINDOW = 60_000;
+
+  function checkGiphyRateLimit(ip: string): boolean {
+    const now = Date.now();
+    const entry = giphyRateLimits.get(ip);
+    if (!entry || now >= entry.resetAt) {
+      giphyRateLimits.set(ip, { count: 1, resetAt: now + GIPHY_RATE_WINDOW });
+      return true;
+    }
+    if (entry.count >= GIPHY_RATE_LIMIT) return false;
+    entry.count++;
+    return true;
+  }
+
+  setInterval(() => {
+    const now = Date.now();
+    for (const [ip, entry] of giphyRateLimits) {
+      if (now >= entry.resetAt) giphyRateLimits.delete(ip);
+    }
+  }, 5 * 60_000);
+
   app.get("/api/giphy/search", async (req, res) => {
+    const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
+    if (!checkGiphyRateLimit(clientIp)) {
+      return res.status(429).json({ message: "Too many requests. Please try again later." });
+    }
     try {
       const rawQ = req.query.q;
       const q = typeof rawQ === 'string' ? rawQ : Array.isArray(rawQ) ? String(rawQ[0]) : '';
@@ -3838,6 +3865,10 @@ Generate exactly ${promptCount} prompts.`
   });
 
   app.get("/api/giphy/trending", async (req, res) => {
+    const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
+    if (!checkGiphyRateLimit(clientIp)) {
+      return res.status(429).json({ message: "Too many requests. Please try again later." });
+    }
     try {
       const offset = Math.max(0, parseInt(req.query.offset as string) || 0);
       const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
@@ -7077,6 +7108,12 @@ Generate exactly ${promptCount} prompts.`
               break;
             }
 
+            const rejoinHostId = data.hostId?.toString() || 'anonymous';
+            if (room.hostId !== 'anonymous' && rejoinHostId !== room.hostId) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Room not found for rejoin' }));
+              break;
+            }
+
             room.hostWs = ws;
             wsToRoom.set(ws, { roomCode: room.code, isHost: true });
 
@@ -7176,6 +7213,12 @@ Generate exactly ${promptCount} prompts.`
             }
 
             const playerId = data.playerId || crypto.randomUUID();
+
+            if (!room.players.has(playerId) && room.players.size >= 50) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Room is full' }));
+              break;
+            }
+
             const existingPlayer = room.players.get(playerId);
 
             if (existingPlayer) {
