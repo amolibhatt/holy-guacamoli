@@ -68,6 +68,7 @@ export const authStorage = {
         firstName: userData.firstName,
         lastName: userData.lastName,
         role,
+        lastLoginAt: new Date(),
       })
       .returning();
 

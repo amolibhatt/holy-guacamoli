@@ -15,8 +15,16 @@ import type { LoginCredentials, InsertUser } from "@shared/models/auth";
 import { Link } from "wouter";
 
 export default function LandingPage() {
-  const { loginAsync, registerAsync, isLoggingIn, isRegistering, loginError, registerError } = useAuth();
+  const { loginAsync, registerAsync, isLoggingIn, isRegistering, loginError, registerError, resetLoginError, resetRegisterError } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("login");
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    loginForm.clearErrors();
+    registerForm.clearErrors();
+    resetLoginError();
+    resetRegisterError();
+  };
 
   const loginForm = useForm<LoginCredentials>({
     resolver: zodResolver(loginSchema),
@@ -78,7 +86,7 @@ export default function LandingPage() {
 
         <Card className="border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl shadow-lime-500/5 rounded-2xl">
             <CardContent className="p-6">
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <Tabs value={activeTab} onValueChange={handleTabChange}>
                 <TabsList className="grid w-full grid-cols-2 mb-5 bg-white/5 h-11 rounded-xl">
                   <TabsTrigger value="login" className="rounded-lg data-[state=active]:bg-lime-500/20 data-[state=active]:text-lime-400" data-testid="tab-login">Sign In</TabsTrigger>
                   <TabsTrigger value="register" className="rounded-lg data-[state=active]:bg-lime-500/20 data-[state=active]:text-lime-400" data-testid="tab-register">Register</TabsTrigger>

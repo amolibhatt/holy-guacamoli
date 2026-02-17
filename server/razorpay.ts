@@ -5,14 +5,6 @@ import { db } from "./db";
 import { users, payments } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
-// Extend session types
-declare module "express-session" {
-  interface SessionData {
-    userId?: string;
-    userRole?: string;
-  }
-}
-
 // Lazy initialization of Razorpay - only create instance when needed
 let razorpayInstance: Razorpay | null = null;
 

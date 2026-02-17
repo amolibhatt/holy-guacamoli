@@ -53,6 +53,8 @@ declare module "express-session" {
     userId?: string;
     userRole?: string;
     guestId?: string;
+    codeVerifier?: string;
+    state?: string;
   }
 }
 
@@ -267,18 +269,16 @@ export function registerAuthRoutes(app: Express): void {
       recordLoginAttempt(ip, true);
       
       // Auto-upgrade owner to super_admin if not already
-      let currentRole = user.role;
-      const updateFields: Record<string, any> = { lastLoginAt: new Date() };
+      const updateFields: Record<string, any> = { lastLoginAt: new Date(), updatedAt: new Date() };
       if (email === 'amoli.bhatt@gmail.com' && user.role !== 'super_admin') {
         updateFields.role = 'super_admin';
-        currentRole = 'super_admin';
       }
-      await db.update(users).set(updateFields).where(eq(users.id, user.id));
+      const [updatedUser] = await db.update(users).set(updateFields).where(eq(users.id, user.id)).returning();
       
-      req.session.userId = user.id;
-      req.session.userRole = currentRole;
+      req.session.userId = updatedUser.id;
+      req.session.userRole = updatedUser.role;
 
-      res.json(sanitizeUser({ ...user, role: currentRole }));
+      res.json(sanitizeUser(updatedUser));
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });

@@ -97,10 +97,12 @@ export function useAuth() {
     loginAsync: loginMutation.mutateAsync,
     isLoggingIn: loginMutation.isPending,
     loginError: loginMutation.error,
+    resetLoginError: loginMutation.reset,
     register: registerMutation.mutate,
     registerAsync: registerMutation.mutateAsync,
     isRegistering: registerMutation.isPending,
     registerError: registerMutation.error,
+    resetRegisterError: registerMutation.reset,
     logout: logoutMutation.mutate,
     isLoggingOut: logoutMutation.isPending,
   };

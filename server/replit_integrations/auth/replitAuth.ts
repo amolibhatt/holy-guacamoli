@@ -49,8 +49,8 @@ export function registerReplitAuthRoutes(app: Express): void {
       const codeChallenge = await client.calculatePKCECodeChallenge(codeVerifier);
       const state = client.randomState();
 
-      (req.session as any).codeVerifier = codeVerifier;
-      (req.session as any).state = state;
+      req.session.codeVerifier = codeVerifier;
+      req.session.state = state;
 
       // Explicitly save session to ensure PKCE state persists across redirect
       await new Promise<void>((resolve, reject) => {
@@ -81,8 +81,8 @@ export function registerReplitAuthRoutes(app: Express): void {
       const externalUrl = getExternalUrl(req);
       const callbackUrl = `${externalUrl}/api/callback`;
 
-      const codeVerifier = (req.session as any).codeVerifier;
-      const expectedState = (req.session as any).state;
+      const codeVerifier = req.session.codeVerifier;
+      const expectedState = req.session.state;
 
       if (!codeVerifier || !expectedState) {
         console.error("[REPLIT AUTH] Missing session state");
@@ -104,8 +104,8 @@ export function registerReplitAuthRoutes(app: Express): void {
         return res.redirect("/?error=no_claims");
       }
 
-      delete (req.session as any).codeVerifier;
-      delete (req.session as any).state;
+      delete req.session.codeVerifier;
+      delete req.session.state;
 
       const user = await authStorage.upsertUser({
         id: claims.sub,
