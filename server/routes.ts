@@ -4844,7 +4844,7 @@ Generate exactly ${promptCount} prompts.`
           validationErrors.push(`Row ${i + 1}: Invalid points value "${points}" (must be a number)`);
           continue;
         }
-        if (!REQUIRED_POINTS.includes(numPoints)) {
+        if (!REQUIRED_POINTS.includes(numPoints as typeof REQUIRED_POINTS[number])) {
           validationErrors.push(`Row ${i + 1}: Invalid points value ${numPoints} (must be 10, 20, 30, 40, or 50)`);
           continue;
         }
@@ -5224,6 +5224,7 @@ Generate exactly ${promptCount} prompts.`
                     hostWs: ws,
                     players: new Map(players.map(p => [p.playerId, {
                       id: p.playerId,
+                      reconnectToken: crypto.randomUUID(),
                       name: p.name,
                       avatar: p.avatar,
                       score: p.score,
@@ -5242,7 +5243,7 @@ Generate exactly ${promptCount} prompts.`
                     completedQuestions: new Set(session.playedCategoryIds || []),
                     sessionId: session.id,
                   };
-                  rooms.set(code, room);
+                  rooms.set(code, room!);
                   console.log(`[WebSocket] Recovered room ${code} from storage`);
                 }
               } catch (err) {
@@ -7303,8 +7304,9 @@ Generate exactly ${promptCount} prompts.`
             room.memeRound = (room.memeRound || 0) + 1;
             room.memePhase = 'selecting';
             if (!room.memeUsedPrompts) room.memeUsedPrompts = [];
-            if (!room.memeUsedPrompts.includes(room.memePrompt)) {
-              room.memeUsedPrompts.push(room.memePrompt);
+            const currentPrompt = room.memePrompt!;
+            if (!room.memeUsedPrompts.includes(currentPrompt)) {
+              room.memeUsedPrompts.push(currentPrompt);
             }
 
             const roundDeadline = Date.now() + 60000;
