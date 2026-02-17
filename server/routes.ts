@@ -5288,7 +5288,7 @@ Generate exactly ${promptCount} prompts.`
                     hostWs: ws,
                     players: new Map(players.map(p => [p.playerId, {
                       id: p.playerId,
-                      reconnectToken: crypto.randomUUID(),
+                      reconnectToken: p.reconnectToken || crypto.randomUUID(),
                       name: p.name,
                       avatar: p.avatar,
                       score: p.score,
@@ -5351,6 +5351,11 @@ Generate exactly ${promptCount} prompts.`
             }
 
             const playerId = data.playerId || crypto.randomUUID();
+
+            if (!room.players.has(playerId) && room.players.size >= 50) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Room is full' }));
+              break;
+            }
             const existingPlayer = room.players.get(playerId);
             
             if (existingPlayer) {
@@ -5425,6 +5430,7 @@ Generate exactly ${promptCount} prompts.`
                     playerId,
                     name: player.name,
                     avatar: player.avatar,
+                    reconnectToken,
                   });
                 } catch (err) {
                   console.error('[WebSocket] Failed to add player to session:', err);
@@ -5621,7 +5627,10 @@ Generate exactly ${promptCount} prompts.`
             const player = room.players.get(data.playerId);
             if (!player) break;
 
-            player.score += data.points;
+            const points = Number(data.points);
+            if (!Number.isFinite(points) || Math.abs(points) > 10000) break;
+
+            player.score += points;
 
             if (room.sessionId) {
               try {

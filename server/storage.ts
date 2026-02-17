@@ -1251,12 +1251,16 @@ export class DatabaseStorage implements IStorage {
   async addPlayerToSession(data: InsertSessionPlayer): Promise<SessionPlayer> {
     const existing = await this.getSessionPlayer(data.sessionId, data.playerId);
     if (existing) {
+      const updateSet: any = { 
+        isConnected: true, 
+        lastSeenAt: new Date(),
+        avatar: data.avatar || existing.avatar,
+      };
+      if (data.reconnectToken) {
+        updateSet.reconnectToken = data.reconnectToken;
+      }
       const [updated] = await db.update(sessionPlayers)
-        .set({ 
-          isConnected: true, 
-          lastSeenAt: new Date(),
-          avatar: data.avatar || existing.avatar,
-        })
+        .set(updateSet)
         .where(and(eq(sessionPlayers.sessionId, data.sessionId), eq(sessionPlayers.playerId, data.playerId)))
         .returning();
       return updated;
@@ -1264,13 +1268,17 @@ export class DatabaseStorage implements IStorage {
     
     const existingByName = await this.getSessionPlayerByName(data.sessionId, data.name);
     if (existingByName) {
+      const updateSet: any = { 
+        playerId: data.playerId,
+        isConnected: true, 
+        lastSeenAt: new Date(),
+        avatar: data.avatar || existingByName.avatar,
+      };
+      if (data.reconnectToken) {
+        updateSet.reconnectToken = data.reconnectToken;
+      }
       const [updated] = await db.update(sessionPlayers)
-        .set({ 
-          playerId: data.playerId,
-          isConnected: true, 
-          lastSeenAt: new Date(),
-          avatar: data.avatar || existingByName.avatar,
-        })
+        .set(updateSet)
         .where(and(eq(sessionPlayers.sessionId, data.sessionId), eq(sessionPlayers.name, data.name)))
         .returning();
       return updated;

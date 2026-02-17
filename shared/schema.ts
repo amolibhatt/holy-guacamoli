@@ -520,6 +520,7 @@ export const sessionPlayers = pgTable("session_players", {
   avatar: text("avatar").notNull().default("cat"),
   score: integer("score").notNull().default(0),
   isConnected: boolean("is_connected").notNull().default(true),
+  reconnectToken: text("reconnect_token"),
   joinedAt: timestamp("joined_at").notNull().defaultNow(),
   lastSeenAt: timestamp("last_seen_at").notNull().defaultNow(),
 }, (table) => [
