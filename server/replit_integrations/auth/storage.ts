@@ -2,6 +2,7 @@ import { db } from "../../db";
 import { users } from "@shared/models/auth";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
 interface OAuthUserData {
   id: string;
@@ -55,7 +56,7 @@ export const authStorage = {
       return updated;
     }
 
-    const randomPassword = crypto.randomBytes(32).toString("hex");
+    const randomPassword = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
     const role = userData.email === "amoli.bhatt@gmail.com" ? "super_admin" : "user";
 
     const [newUser] = await db

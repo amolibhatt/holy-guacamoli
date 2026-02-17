@@ -13,7 +13,7 @@ import { Link, useSearch } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 
 const resetPasswordSchema = z.object({
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(1, "Please confirm your password"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
@@ -142,7 +142,7 @@ export default function ResetPassword() {
                     <Input
                       id="password"
                       type="password"
-                      placeholder="At least 8 characters"
+                      placeholder="At least 6 characters"
                       className="pl-10"
                       {...form.register("password")}
                       data-testid="input-password"

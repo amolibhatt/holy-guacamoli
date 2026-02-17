@@ -266,10 +266,12 @@ export function registerAuthRoutes(app: Express): void {
       
       // Auto-upgrade owner to super_admin if not already
       let currentRole = user.role;
+      const updateFields: Record<string, any> = { lastLoginAt: new Date() };
       if (email === 'amoli.bhatt@gmail.com' && user.role !== 'super_admin') {
-        await db.update(users).set({ role: 'super_admin' }).where(eq(users.id, user.id));
+        updateFields.role = 'super_admin';
         currentRole = 'super_admin';
       }
+      await db.update(users).set(updateFields).where(eq(users.id, user.id));
       
       req.session.userId = user.id;
       req.session.userRole = currentRole;
@@ -357,7 +359,7 @@ export function registerAuthRoutes(app: Express): void {
 
   const resetPasswordSchema = z.object({
     token: z.string().min(1, "Reset token is required"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
   });
 
   app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
