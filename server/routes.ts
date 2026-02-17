@@ -366,12 +366,23 @@ export async function registerRoutes(
       const colorIndex = allBoards.length % BOARD_COLORS.length;
       const autoColor = BOARD_COLORS[colorIndex];
       
+      let validatedPointValues = [10, 20, 30, 40, 50];
+      if (pointValues !== undefined && pointValues !== null) {
+        if (!Array.isArray(pointValues) || pointValues.length === 0 || pointValues.length > 10
+            || !pointValues.every((v: any) => typeof v === 'number' && Number.isInteger(v) && v > 0 && v <= 1000)) {
+          return res.status(400).json({ message: "pointValues must be an array of positive integers (max 10 values, each <= 1000)" });
+        }
+        if (new Set(pointValues).size !== pointValues.length) {
+          return res.status(400).json({ message: "pointValues must not contain duplicates" });
+        }
+        validatedPointValues = pointValues;
+      }
       const board = await storage.createBoard({
         name: name.trim(),
         description: (typeof description === "string" && description.trim()) ? description.trim() : null,
-        pointValues: pointValues || [10, 20, 30, 40, 50],
+        pointValues: validatedPointValues,
         colorCode: autoColor,
-        theme: theme || "blitzgrid",
+        theme: typeof theme === 'string' && theme.trim() ? theme.trim() : "blitzgrid",
         userId,
       });
       res.status(201).json(board);
@@ -398,10 +409,34 @@ export async function registerRoutes(
         updateData.name = name.trim();
       }
       if (description !== undefined) updateData.description = typeof description === "string" ? (description.trim() || null) : description;
-      if (pointValues !== undefined) updateData.pointValues = pointValues;
-      if (theme !== undefined) updateData.theme = theme;
-      if (isGlobal !== undefined) updateData.isGlobal = isGlobal;
-      if (sortOrder !== undefined) updateData.sortOrder = sortOrder;
+      if (pointValues !== undefined) {
+        if (!Array.isArray(pointValues) || pointValues.length === 0 || pointValues.length > 10
+            || !pointValues.every((v: any) => typeof v === 'number' && Number.isInteger(v) && v > 0 && v <= 1000)) {
+          return res.status(400).json({ message: "pointValues must be an array of positive integers (max 10 values, each <= 1000)" });
+        }
+        if (new Set(pointValues).size !== pointValues.length) {
+          return res.status(400).json({ message: "pointValues must not contain duplicates" });
+        }
+        updateData.pointValues = pointValues;
+      }
+      if (theme !== undefined) {
+        if (typeof theme !== 'string' || !theme.trim()) {
+          return res.status(400).json({ message: "Theme must be a non-empty string" });
+        }
+        updateData.theme = theme.trim();
+      }
+      if (isGlobal !== undefined) {
+        if (role !== 'super_admin') {
+          return res.status(403).json({ message: "Only super admins can change global visibility" });
+        }
+        updateData.isGlobal = !!isGlobal;
+      }
+      if (sortOrder !== undefined) {
+        if (typeof sortOrder !== 'number' || !Number.isInteger(sortOrder) || sortOrder < 0) {
+          return res.status(400).json({ message: "sortOrder must be a non-negative integer" });
+        }
+        updateData.sortOrder = sortOrder;
+      }
       const board = await storage.updateBoard(boardId, updateData, userId, role);
       if (!board) {
         return res.status(404).json({ message: "Board not found" });
@@ -3236,13 +3271,13 @@ Be creative! Make facts surprising and fun to guess.`;
 
   // Zod schema for TimeWarp question creation
   const createTimeWarpSchema = z.object({
-    imageUrl: z.string().min(1, "Image URL is required"),
+    imageUrl: z.string().min(1, "Image URL is required").max(2048, "Image URL too long (max 2048 chars)"),
     era: z.enum(["past", "present", "future"], { 
       errorMap: () => ({ message: "Era must be 'past', 'present', or 'future'" })
     }),
-    answer: z.string().min(1, "Answer is required"),
-    hint: z.string().optional(),
-    category: z.string().optional(),
+    answer: z.string().min(1, "Answer is required").max(200, "Answer too long (max 200 chars)"),
+    hint: z.string().max(300, "Hint too long (max 300 chars)").optional(),
+    category: z.string().max(100, "Category too long (max 100 chars)").optional(),
   });
 
   app.post("/api/pastforward/questions", isAuthenticated, isAdmin, async (req, res) => {
@@ -3275,13 +3310,13 @@ Be creative! Make facts surprising and fun to guess.`;
 
   // Zod schema for TimeWarp question updates (all fields optional)
   const updateTimeWarpSchema = z.object({
-    imageUrl: z.string().min(1).optional(),
+    imageUrl: z.string().min(1).max(2048, "Image URL too long (max 2048 chars)").optional(),
     era: z.enum(["past", "present", "future"], { 
       errorMap: () => ({ message: "Era must be 'past', 'present', or 'future'" })
     }).optional(),
-    answer: z.string().min(1).optional(),
-    hint: z.string().optional(),
-    category: z.string().optional(),
+    answer: z.string().min(1).max(200, "Answer too long (max 200 chars)").optional(),
+    hint: z.string().max(300, "Hint too long (max 300 chars)").optional(),
+    category: z.string().max(100, "Category too long (max 100 chars)").optional(),
     isActive: z.boolean().optional(),
   });
 
@@ -4168,6 +4203,18 @@ Generate exactly ${promptCount} prompts.`
             
             // Check if question already exists for this category
             const existingQuestions = await storage.getQuestionsByCategory(categoryInfo.id);
+            
+            if (existingQuestions.length >= 5) {
+              results.flagged.push({ row: rowNum, issue: `Category "${categoryName}" already has 5 questions (maximum)`, data: rowData });
+              continue;
+            }
+            
+            const existingPointValues = new Set(existingQuestions.map((q: Question) => q.points));
+            if (existingPointValues.has(points)) {
+              results.flagged.push({ row: rowNum, issue: `A ${points}-point question already exists in category "${categoryName}"`, data: rowData });
+              continue;
+            }
+            
             const duplicate = existingQuestions.find((q: Question) => 
               q.question.toLowerCase() === question.toLowerCase()
             );
