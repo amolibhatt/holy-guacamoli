@@ -275,13 +275,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateBoard(id: number, data: Partial<InsertBoard>, userId: string, role?: string): Promise<Board | undefined> {
+    const allowedFields = new Set(['name', 'description', 'pointValues', 'colorCode', 'theme', 'sortOrder']);
+    if (role === 'super_admin') {
+      allowedFields.add('isGlobal');
+      allowedFields.add('isStarterPack');
+      allowedFields.add('visibility');
+    }
     const updateData: Record<string, any> = {};
     for (const [key, value] of Object.entries(data)) {
-      if (value !== undefined) {
-        if (key === 'userId') continue;
-        if ((key === 'isGlobal' || key === 'isStarterPack' || key === 'visibility') && role !== 'super_admin') {
-          continue;
-        }
+      if (allowedFields.has(key) && value !== undefined) {
         updateData[key] = value;
       }
     }
@@ -354,7 +356,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCategory(id: number, data: Partial<InsertCategory>): Promise<Category | undefined> {
-    const [updated] = await db.update(categories).set(data).where(eq(categories.id, id)).returning();
+    const allowedFields = new Set(['name', 'description', 'rule', 'imageUrl', 'isActive', 'sourceGroup']);
+    const safeData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (allowedFields.has(key) && value !== undefined) {
+        safeData[key] = value;
+      }
+    }
+    if (Object.keys(safeData).length === 0) return undefined;
+    const [updated] = await db.update(categories).set(safeData).where(eq(categories.id, id)).returning();
     return updated;
   }
 
@@ -463,7 +473,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateQuestion(id: number, data: Partial<InsertQuestion>): Promise<Question | undefined> {
-    const [updated] = await db.update(questions).set(data as any).where(eq(questions.id, id)).returning();
+    const allowedFields = new Set(['question', 'options', 'correctAnswer', 'points', 'imageUrl', 'audioUrl', 'videoUrl']);
+    const safeData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (allowedFields.has(key) && value !== undefined) {
+        safeData[key] = value;
+      }
+    }
+    if (Object.keys(safeData).length === 0) return undefined;
+    const [updated] = await db.update(questions).set(safeData).where(eq(questions.id, id)).returning();
     return updated;
   }
 
@@ -717,7 +735,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateHeadsUpCard(id: number, data: Partial<InsertHeadsUpCard>): Promise<HeadsUpCard | undefined> {
-    const [updated] = await db.update(headsUpCards).set(data as any).where(eq(headsUpCards.id, id)).returning();
+    const allowedFields = new Set(['prompt', 'hints']);
+    const safeData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (allowedFields.has(key) && value !== undefined) {
+        safeData[key] = value;
+      }
+    }
+    if (Object.keys(safeData).length === 0) return undefined;
+    const [updated] = await db.update(headsUpCards).set(safeData).where(eq(headsUpCards.id, id)).returning();
     return updated;
   }
 
@@ -1863,7 +1889,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateGameType(id: number, data: Partial<InsertGameType>): Promise<GameType | undefined> {
-    const [updated] = await db.update(gameTypes).set(data as any).where(eq(gameTypes.id, id)).returning();
+    const allowedFields = new Set(['displayName', 'description', 'icon', 'status', 'hostEnabled', 'playerEnabled', 'sortOrder']);
+    const safeData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (allowedFields.has(key) && value !== undefined) {
+        safeData[key] = value;
+      }
+    }
+    if (Object.keys(safeData).length === 0) return undefined;
+    const [updated] = await db.update(gameTypes).set(safeData).where(eq(gameTypes.id, id)).returning();
     return updated;
   }
 
@@ -1897,7 +1931,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateDoubleDipPair(id: number, data: Partial<InsertDoubleDipPair>): Promise<DoubleDipPair | undefined> {
-    const [updated] = await db.update(doubleDipPairs).set(data as any).where(eq(doubleDipPairs.id, id)).returning();
+    const allowedFields = new Set(['status', 'userBId', 'streak', 'longestStreak', 'lastPlayedDate']);
+    const safeData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (allowedFields.has(key) && value !== undefined) {
+        safeData[key] = value;
+      }
+    }
+    if (Object.keys(safeData).length === 0) return undefined;
+    const [updated] = await db.update(doubleDipPairs).set(safeData).where(eq(doubleDipPairs.id, id)).returning();
     return updated;
   }
 
@@ -1928,7 +1970,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateDoubleDipDailySet(id: number, data: Partial<InsertDoubleDipDailySet>): Promise<DoubleDipDailySet | undefined> {
-    const [updated] = await db.update(doubleDipDailySets).set(data as any).where(eq(doubleDipDailySets.id, id)).returning();
+    const allowedFields = new Set(['revealed', 'matchScore', 'firstCompleterId', 'weeklyStakeScored']);
+    const safeData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (allowedFields.has(key) && value !== undefined) {
+        safeData[key] = value;
+      }
+    }
+    if (Object.keys(safeData).length === 0) return undefined;
+    const [updated] = await db.update(doubleDipDailySets).set(safeData).where(eq(doubleDipDailySets.id, id)).returning();
     return updated;
   }
   
@@ -2035,7 +2085,15 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateDoubleDipWeeklyStake(id: number, data: Partial<InsertDoubleDipWeeklyStake>): Promise<DoubleDipWeeklyStake | undefined> {
-    const [updated] = await db.update(doubleDipWeeklyStakes).set(data).where(eq(doubleDipWeeklyStakes.id, id)).returning();
+    const allowedFields = new Set(['stakeDescription', 'winnerId', 'userAScore', 'userBScore', 'status']);
+    const safeData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (allowedFields.has(key) && value !== undefined) {
+        safeData[key] = value;
+      }
+    }
+    if (Object.keys(safeData).length === 0) return undefined;
+    const [updated] = await db.update(doubleDipWeeklyStakes).set(safeData).where(eq(doubleDipWeeklyStakes.id, id)).returning();
     return updated;
   }
   
@@ -2931,13 +2989,20 @@ export class DatabaseStorage implements IStorage {
     flagReason?: string;
     moderatedBy?: string;
   }) {
-    const updateData: any = { ...data };
-    if (data.moderationStatus || data.isFeatured !== undefined) {
-      updateData.moderatedAt = new Date();
+    const allowedFields = new Set(['moderationStatus', 'isFeatured', 'flagReason', 'moderatedBy']);
+    const safeData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (allowedFields.has(key) && value !== undefined) {
+        safeData[key] = value;
+      }
     }
+    if (data.moderationStatus || data.isFeatured !== undefined) {
+      safeData.moderatedAt = new Date();
+    }
+    if (Object.keys(safeData).length === 0) return undefined;
     
     const [updated] = await db.update(boards)
-      .set(updateData)
+      .set(safeData)
       .where(eq(boards.id, boardId))
       .returning();
     return updated;
