@@ -359,18 +359,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCategory(id: number): Promise<boolean> {
-    // Clean up sessionCompletedQuestions referencing this category's questions
-    const categoryQuestions = await db.select({ id: questions.id }).from(questions).where(eq(questions.categoryId, id));
-    if (categoryQuestions.length > 0) {
-      const questionIds = categoryQuestions.map(q => q.id);
-      await db.delete(sessionCompletedQuestions).where(inArray(sessionCompletedQuestions.questionId, questionIds));
-    }
-    // Delete questions that belong to this category
-    await db.delete(questions).where(eq(questions.categoryId, id));
-    // Remove board-category links
-    await db.delete(boardCategories).where(eq(boardCategories.categoryId, id));
-    const result = await db.delete(categories).where(eq(categories.id, id)).returning();
-    return result.length > 0;
+    return await db.transaction(async (tx) => {
+      const categoryQuestions = await tx.select({ id: questions.id }).from(questions).where(eq(questions.categoryId, id));
+      if (categoryQuestions.length > 0) {
+        const questionIds = categoryQuestions.map(q => q.id);
+        await tx.delete(sessionCompletedQuestions).where(inArray(sessionCompletedQuestions.questionId, questionIds));
+      }
+      await tx.delete(questions).where(eq(questions.categoryId, id));
+      await tx.delete(boardCategories).where(eq(boardCategories.categoryId, id));
+      const result = await tx.delete(categories).where(eq(categories.id, id)).returning();
+      return result.length > 0;
+    });
   }
 
   async getBoardCategories(boardId: number): Promise<BoardCategoryWithCount[]> {
@@ -469,9 +468,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteQuestion(id: number): Promise<boolean> {
-    await db.delete(sessionCompletedQuestions).where(eq(sessionCompletedQuestions.questionId, id));
-    const result = await db.delete(questions).where(eq(questions.id, id)).returning();
-    return result.length > 0;
+    return await db.transaction(async (tx) => {
+      await tx.delete(sessionCompletedQuestions).where(eq(sessionCompletedQuestions.questionId, id));
+      const result = await tx.delete(questions).where(eq(questions.id, id)).returning();
+      return result.length > 0;
+    });
   }
 
   async getBoardWithCategoriesAndQuestions(boardId: number, userId: string, role?: string): Promise<BoardCategoryWithQuestions[]> {
@@ -800,9 +801,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateSession(id: number, data: Partial<InsertGameSession>): Promise<GameSession | undefined> {
+    const allowedFields = ['state', 'currentBoardId', 'playedCategoryIds'];
     const updateData: Record<string, any> = { updatedAt: new Date() };
     for (const [key, value] of Object.entries(data)) {
-      if (value !== undefined) {
+      if (value !== undefined && allowedFields.includes(key)) {
         updateData[key] = value;
       }
     }
@@ -811,10 +813,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteSession(id: number): Promise<boolean> {
-    await db.delete(sessionCompletedQuestions).where(eq(sessionCompletedQuestions.sessionId, id));
-    await db.delete(sessionPlayers).where(eq(sessionPlayers.sessionId, id));
-    const result = await db.delete(gameSessions).where(eq(gameSessions.id, id)).returning();
-    return result.length > 0;
+    return await db.transaction(async (tx) => {
+      await tx.delete(sessionCompletedQuestions).where(eq(sessionCompletedQuestions.sessionId, id));
+      await tx.delete(sessionPlayers).where(eq(sessionPlayers.sessionId, id));
+      const result = await tx.delete(gameSessions).where(eq(gameSessions.id, id)).returning();
+      return result.length > 0;
+    });
   }
 
   async getHostSessions(hostId: string): Promise<GameSessionWithPlayers[]> {
@@ -1809,17 +1813,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteBoardFully(boardId: number) {
-    // Clear board references from active sessions (set to null rather than deleting session)
-    await db.update(gameSessions)
-      .set({ currentBoardId: null })
-      .where(eq(gameSessions.currentBoardId, boardId));
-    
-    // Note: We don't delete questions here since they belong to categories, not boards
-    // Questions are deleted when their category is deleted
-    
-    await db.delete(boardCategories).where(eq(boardCategories.boardId, boardId));
-    await db.delete(gameBoards).where(eq(gameBoards.boardId, boardId));
-    await db.delete(boards).where(eq(boards.id, boardId));
+    await db.transaction(async (tx) => {
+      await tx.update(gameSessions)
+        .set({ currentBoardId: null })
+        .where(eq(gameSessions.currentBoardId, boardId));
+      await tx.delete(boardCategories).where(eq(boardCategories.boardId, boardId));
+      await tx.delete(gameBoards).where(eq(gameBoards.boardId, boardId));
+      await tx.delete(boards).where(eq(boards.id, boardId));
+    });
   }
 
   // Game Types
