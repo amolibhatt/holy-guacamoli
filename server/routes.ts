@@ -2,6 +2,7 @@ import type { Express } from "express";
 import type { Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
+import { pool } from "./db";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import multer from "multer";
@@ -2214,9 +2215,20 @@ export async function registerRoutes(
       if (!role || !['user', 'admin', 'super_admin'].includes(role)) {
         return res.status(400).json({ message: "Invalid role" });
       }
+      if (id === req.session.userId) {
+        return res.status(400).json({ message: "Cannot change your own role" });
+      }
       const updated = await storage.updateUserRole(id, role);
       if (!updated) {
         return res.status(404).json({ message: "User not found" });
+      }
+      try {
+        await pool.query(
+          `DELETE FROM sessions WHERE sess->>'userId' = $1`,
+          [id]
+        );
+      } catch (sessionErr) {
+        console.error("[RBAC] Failed to invalidate sessions after role change:", sessionErr);
       }
       res.json(updated);
     } catch (err) {
