@@ -158,15 +158,11 @@ export async function registerRoutes(
   // Health check endpoint to verify database connectivity
   app.get("/api/health", async (_req, res) => {
     try {
-      // Test database connection by fetching a simple count
-      const testResult = await storage.getBoards('system', 'super_admin');
-      // Also test category table access
-      const categoryTest = await storage.getCategories();
+      // Test database connection with a lightweight query
+      await storage.getCategories();
       res.json({ 
         status: "ok", 
         database: "connected",
-        boardCount: testResult.length,
-        categoryCount: categoryTest.length,
         timestamp: new Date().toISOString()
       });
     } catch (err) {
@@ -364,8 +360,8 @@ export async function registerRoutes(
       if (!name || typeof name !== "string" || !name.trim()) {
         return res.status(400).json({ message: "Name is required" });
       }
-      // Auto-assign a color based on total board count (use super_admin view to get all boards)
-      const allBoards = await storage.getBoards(userId, 'super_admin');
+      // Auto-assign a color based on user's own board count
+      const allBoards = await storage.getBoards(userId, role);
       const colorIndex = allBoards.length % BOARD_COLORS.length;
       const autoColor = BOARD_COLORS[colorIndex];
       
@@ -3106,10 +3102,27 @@ Be creative and fun! Make questions engaging and varied.`;
         return res.status(400).json({ message: "Messages required" });
       }
       
-      const apiKey = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY;
-      if (!apiKey) {
-        return res.status(500).json({ message: "AI service not configured. Please set GROQ_API_KEY." });
+      const validRoles = new Set(['user', 'assistant']);
+      const sanitizedMessages = messages
+        .filter((m: any) => m && typeof m.role === 'string' && validRoles.has(m.role) && typeof m.content === 'string' && m.content.trim().length > 0)
+        .map((m: any) => ({ role: m.role, content: m.content.slice(0, 2000) }));
+      
+      if (sanitizedMessages.length === 0) {
+        return res.status(400).json({ message: "At least one valid message is required" });
       }
+      
+      const groqKey = process.env.GROQ_API_KEY;
+      const openaiKey = process.env.OPENAI_API_KEY;
+      if (!groqKey && !openaiKey) {
+        return res.status(500).json({ message: "AI service not configured. Please set GROQ_API_KEY or OPENAI_API_KEY." });
+      }
+
+      const useGroq = !!groqKey;
+      const apiKey = groqKey || openaiKey!;
+      const apiUrl = useGroq
+        ? 'https://api.groq.com/openai/v1/chat/completions'
+        : 'https://api.openai.com/v1/chat/completions';
+      const model = useGroq ? 'llama-3.3-70b-versatile' : 'gpt-4o-mini';
 
       const systemPrompt = `You are a friendly assistant helping create "PsyOp" game questions. PsyOp is a deception game where:
 1. Players see a fact with a [REDACTED] blank
@@ -3143,17 +3156,17 @@ If the user just wants to chat or asks for changes, respond conversationally. On
 
 Be creative! Make facts surprising and fun to guess.`;
 
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model,
           messages: [
             { role: 'system', content: systemPrompt },
-            ...messages.slice(-10)
+            ...sanitizedMessages.slice(-10)
           ],
           temperature: 0.8,
           max_tokens: 2000
