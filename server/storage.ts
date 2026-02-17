@@ -205,12 +205,14 @@ export interface IStorage {
   deleteSequenceQuestion(id: number, userId: string, role?: string): Promise<boolean>;
   getAllSequenceQuestionsWithCreators(): Promise<any[]>;
   toggleSequenceQuestionStarterPack(questionId: number, isStarterPack: boolean): Promise<SequenceQuestion | undefined>;
+  toggleSequenceQuestionActive(questionId: number, isActive: boolean): Promise<SequenceQuestion | undefined>;
   
   // PsyOp
   getPsyopQuestions(userId: string, role?: string): Promise<PsyopQuestion[]>;
   createPsyopQuestion(data: InsertPsyopQuestion): Promise<PsyopQuestion>;
   updatePsyopQuestion(id: number, data: Partial<InsertPsyopQuestion>, userId: string, role?: string): Promise<PsyopQuestion | null>;
   deletePsyopQuestion(id: number, userId: string, role?: string): Promise<boolean>;
+  togglePsyopQuestionActive(questionId: number, isActive: boolean): Promise<PsyopQuestion | undefined>;
 
   // TimeWarp
   getTimeWarpQuestions(userId: string, role?: string): Promise<TimeWarpQuestion[]>;
@@ -219,6 +221,7 @@ export interface IStorage {
   deleteTimeWarpQuestion(id: number, userId: string, role?: string): Promise<boolean>;
   getAllTimeWarpQuestionsWithCreators(): Promise<any[]>;
   toggleTimeWarpQuestionStarterPack(questionId: number, isStarterPack: boolean): Promise<TimeWarpQuestion | undefined>;
+  toggleTimeWarpQuestionActive(questionId: number, isActive: boolean): Promise<TimeWarpQuestion | undefined>;
 
   // Meme No Harm
   getMemePrompts(userId: string, role?: string): Promise<MemePrompt[]>;
@@ -228,6 +231,7 @@ export interface IStorage {
   deleteMemePrompt(id: number, userId: string, role?: string): Promise<boolean>;
   getAllMemePromptsWithCreators(): Promise<any[]>;
   toggleMemePromptStarterPack(id: number, isStarterPack: boolean): Promise<MemePrompt | undefined>;
+  toggleMemePromptActive(id: number, isActive: boolean): Promise<MemePrompt | undefined>;
   getMemeImages(userId: string, role?: string): Promise<MemeImage[]>;
   getAllMemeImageUrls(): Promise<{ id: number; imageUrl: string }[]>;
   createMemeImage(data: InsertMemeImage): Promise<MemeImage>;
@@ -235,6 +239,7 @@ export interface IStorage {
   deleteMemeImage(id: number, userId: string, role?: string): Promise<boolean>;
   getAllMemeImagesWithCreators(): Promise<any[]>;
   toggleMemeImageStarterPack(id: number, isStarterPack: boolean): Promise<MemeImage | undefined>;
+  toggleMemeImageActive(id: number, isActive: boolean): Promise<MemeImage | undefined>;
   
   // Player Profile & Stats
   getPlayerProfile(userId: string): Promise<PlayerProfile | null>;
@@ -3426,9 +3431,25 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async toggleSequenceQuestionActive(questionId: number, isActive: boolean) {
+    const [updated] = await db.update(sequenceQuestions)
+      .set({ isActive })
+      .where(eq(sequenceQuestions.id, questionId))
+      .returning();
+    return updated;
+  }
+
   async togglePsyopQuestionStarterPack(questionId: number, isStarterPack: boolean) {
     const [updated] = await db.update(psyopQuestions)
       .set({ isStarterPack })
+      .where(eq(psyopQuestions.id, questionId))
+      .returning();
+    return updated;
+  }
+
+  async togglePsyopQuestionActive(questionId: number, isActive: boolean) {
+    const [updated] = await db.update(psyopQuestions)
+      .set({ isActive })
       .where(eq(psyopQuestions.id, questionId))
       .returning();
     return updated;
@@ -3473,6 +3494,14 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async toggleTimeWarpQuestionActive(questionId: number, isActive: boolean) {
+    const [updated] = await db.update(timeWarpQuestions)
+      .set({ isActive })
+      .where(eq(timeWarpQuestions.id, questionId))
+      .returning();
+    return updated;
+  }
+
   async getAllMemePromptsWithCreators() {
     const rows = await db.select({
       id: memePrompts.id,
@@ -3503,6 +3532,14 @@ export class DatabaseStorage implements IStorage {
   async toggleMemePromptStarterPack(id: number, isStarterPack: boolean) {
     const [updated] = await db.update(memePrompts)
       .set({ isStarterPack })
+      .where(eq(memePrompts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async toggleMemePromptActive(id: number, isActive: boolean) {
+    const [updated] = await db.update(memePrompts)
+      .set({ isActive })
       .where(eq(memePrompts.id, id))
       .returning();
     return updated;
@@ -3539,6 +3576,14 @@ export class DatabaseStorage implements IStorage {
   async toggleMemeImageStarterPack(id: number, isStarterPack: boolean) {
     const [updated] = await db.update(memeImages)
       .set({ isStarterPack })
+      .where(eq(memeImages.id, id))
+      .returning();
+    return updated;
+  }
+
+  async toggleMemeImageActive(id: number, isActive: boolean) {
+    const [updated] = await db.update(memeImages)
+      .set({ isActive })
       .where(eq(memeImages.id, id))
       .returning();
     return updated;

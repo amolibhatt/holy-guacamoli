@@ -121,6 +121,7 @@ interface SequenceQuestionWithCreator {
   id: number;
   userId: string | null;
   question: string;
+  correctOrder: string[];
   isActive: boolean;
   isStarterPack: boolean;
   createdAt: string;
@@ -222,7 +223,7 @@ export default function SuperAdmin() {
 
   const { data: allBoards = [], isLoading: isLoadingBoards, isError: isErrorBoards, refetch: refetchBoards } = useQuery<BoardWithOwner[]>({
     queryKey: ['/api/super-admin/boards'],
-    enabled: activeTab === 'content',
+    enabled: activeTab === 'content' && (contentTab === 'blitzgrid' || contentTab === 'games'),
   });
 
   const { data: announcements = [], isLoading: isLoadingAnnouncements, isError: isErrorAnnouncements, refetch: refetchAnnouncements } = useQuery<Announcement[]>({
@@ -313,6 +314,7 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/sequence'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
       toast({ title: "Starter pack updated" });
     },
     onError: () => toast({ title: "Couldn't update starter pack", variant: "destructive" }),
@@ -324,6 +326,7 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/psyop'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
       toast({ title: "Starter pack updated" });
     },
     onError: () => toast({ title: "Couldn't update starter pack", variant: "destructive" }),
@@ -335,6 +338,7 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/sequence'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
       toast({ title: "Question deleted" });
       setDeleteContentItem(null);
     },
@@ -347,6 +351,7 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/psyop'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
       toast({ title: "Question deleted" });
       setDeleteContentItem(null);
     },
@@ -359,6 +364,7 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/timewarp'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
       toast({ title: "Question deleted" });
       setDeleteContentItem(null);
     },
@@ -371,6 +377,7 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/meme/prompts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
       toast({ title: "Prompt deleted" });
       setDeleteContentItem(null);
     },
@@ -383,6 +390,7 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/meme/images'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
       toast({ title: "Image deleted" });
       setDeleteContentItem(null);
     },
@@ -395,6 +403,7 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/timewarp'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
       toast({ title: "Starter pack updated" });
     },
     onError: () => toast({ title: "Couldn't update starter pack", variant: "destructive" }),
@@ -406,6 +415,7 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/meme/prompts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
       toast({ title: "Starter pack updated" });
     },
     onError: () => toast({ title: "Couldn't update starter pack", variant: "destructive" }),
@@ -417,9 +427,65 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/meme/images'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
       toast({ title: "Starter pack updated" });
     },
     onError: () => toast({ title: "Couldn't update starter pack", variant: "destructive" }),
+  });
+
+  const toggleSequenceActiveMutation = useMutation({
+    mutationFn: async ({ questionId, isActive }: { questionId: number; isActive: boolean }) => {
+      await apiRequest('PATCH', `/api/super-admin/questions/sequence/${questionId}/active`, { isActive });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/sequence'] });
+      toast({ title: "Visibility updated" });
+    },
+    onError: () => toast({ title: "Couldn't update visibility", variant: "destructive" }),
+  });
+
+  const togglePsyopActiveMutation = useMutation({
+    mutationFn: async ({ questionId, isActive }: { questionId: number; isActive: boolean }) => {
+      await apiRequest('PATCH', `/api/super-admin/questions/psyop/${questionId}/active`, { isActive });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/psyop'] });
+      toast({ title: "Visibility updated" });
+    },
+    onError: () => toast({ title: "Couldn't update visibility", variant: "destructive" }),
+  });
+
+  const toggleTimewarpActiveMutation = useMutation({
+    mutationFn: async ({ questionId, isActive }: { questionId: number; isActive: boolean }) => {
+      await apiRequest('PATCH', `/api/super-admin/questions/timewarp/${questionId}/active`, { isActive });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/timewarp'] });
+      toast({ title: "Visibility updated" });
+    },
+    onError: () => toast({ title: "Couldn't update visibility", variant: "destructive" }),
+  });
+
+  const toggleMemePromptActiveMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
+      await apiRequest('PATCH', `/api/super-admin/meme/prompts/${id}/active`, { isActive });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/meme/prompts'] });
+      toast({ title: "Visibility updated" });
+    },
+    onError: () => toast({ title: "Couldn't update visibility", variant: "destructive" }),
+  });
+
+  const toggleMemeImageActiveMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
+      await apiRequest('PATCH', `/api/super-admin/meme/images/${id}/active`, { isActive });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/meme/images'] });
+      toast({ title: "Visibility updated" });
+    },
+    onError: () => toast({ title: "Couldn't update visibility", variant: "destructive" }),
   });
 
   const createAnnouncementMutation = useMutation({
@@ -1362,13 +1428,23 @@ export default function SuperAdmin() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="font-medium truncate">{q.question}</p>
+                              {!q.isActive && <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>}
                               {q.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              by {q.creator?.username || 'Unknown'}
+                              by {q.creator?.username || 'Unknown'} {q.correctOrder && `• ${q.correctOrder.length} items`}
                             </p>
                           </div>
                           <div className="flex items-center gap-1 flex-shrink-0">
+                            <Button
+                              size="sm"
+                              variant={q.isActive ? 'outline' : 'secondary'}
+                              onClick={() => toggleSequenceActiveMutation.mutate({ questionId: q.id, isActive: !q.isActive })}
+                              data-testid={`button-active-seq-${q.id}`}
+                              aria-label={q.isActive ? 'Hide question' : 'Show question'}
+                            >
+                              {q.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                            </Button>
                             <Button
                               size="sm"
                               variant={q.isStarterPack ? 'secondary' : 'outline'}
@@ -1412,6 +1488,8 @@ export default function SuperAdmin() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="font-medium truncate">{q.factText}</p>
+                              <Badge variant="outline" className="text-xs">{q.correctAnswer === 'true' || q.correctAnswer === 'truth' ? 'Truth' : 'Lie'}</Badge>
+                              {!q.isActive && <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>}
                               {q.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
                             </div>
                             <p className="text-xs text-muted-foreground">
@@ -1419,6 +1497,15 @@ export default function SuperAdmin() {
                             </p>
                           </div>
                           <div className="flex items-center gap-1 flex-shrink-0">
+                            <Button
+                              size="sm"
+                              variant={q.isActive ? 'outline' : 'secondary'}
+                              onClick={() => togglePsyopActiveMutation.mutate({ questionId: q.id, isActive: !q.isActive })}
+                              data-testid={`button-active-psyop-${q.id}`}
+                              aria-label={q.isActive ? 'Hide question' : 'Show question'}
+                            >
+                              {q.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                            </Button>
                             <Button
                               size="sm"
                               variant={q.isStarterPack ? 'secondary' : 'outline'}
@@ -1458,17 +1545,30 @@ export default function SuperAdmin() {
                     <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {filteredTimewarpQuestions.map(q => (
                         <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium truncate">{q.answer}</p>
-                              <Badge variant="outline" className="text-xs">{q.era}</Badge>
-                              {q.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            {q.imageUrl && <img src={q.imageUrl} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium truncate">{q.answer}</p>
+                                <Badge variant="outline" className="text-xs">{q.era}</Badge>
+                                {!q.isActive && <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>}
+                                {q.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                by {q.creator?.username || 'Unknown'}{q.category ? ` • ${q.category}` : ''}
+                              </p>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                              by {q.creator?.username || 'Unknown'}{q.category ? ` • ${q.category}` : ''}
-                            </p>
                           </div>
                           <div className="flex items-center gap-1 flex-shrink-0">
+                            <Button
+                              size="sm"
+                              variant={q.isActive ? 'outline' : 'secondary'}
+                              onClick={() => toggleTimewarpActiveMutation.mutate({ questionId: q.id, isActive: !q.isActive })}
+                              data-testid={`button-active-timewarp-${q.id}`}
+                              aria-label={q.isActive ? 'Hide question' : 'Show question'}
+                            >
+                              {q.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                            </Button>
                             <Button
                               size="sm"
                               variant={q.isStarterPack ? 'secondary' : 'outline'}
@@ -1515,6 +1615,7 @@ export default function SuperAdmin() {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
                                     <p className="font-medium truncate">{p.prompt}</p>
+                                    {!p.isActive && <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>}
                                     {p.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
                                   </div>
                                   <p className="text-xs text-muted-foreground">
@@ -1522,6 +1623,15 @@ export default function SuperAdmin() {
                                   </p>
                                 </div>
                                 <div className="flex items-center gap-1 flex-shrink-0">
+                                  <Button
+                                    size="sm"
+                                    variant={p.isActive ? 'outline' : 'secondary'}
+                                    onClick={() => toggleMemePromptActiveMutation.mutate({ id: p.id, isActive: !p.isActive })}
+                                    data-testid={`button-active-meme-prompt-${p.id}`}
+                                    aria-label={p.isActive ? 'Hide prompt' : 'Show prompt'}
+                                  >
+                                    {p.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                  </Button>
                                   <Button
                                     size="sm"
                                     variant={p.isStarterPack ? 'secondary' : 'outline'}
@@ -1555,16 +1665,29 @@ export default function SuperAdmin() {
                           <div className="space-y-2 max-h-[250px] overflow-y-auto">
                             {filteredMemeImages.map(img => (
                               <div key={img.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <p className="font-medium truncate">{img.caption || img.imageUrl}</p>
-                                    {img.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  {img.imageUrl && <img src={img.imageUrl} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <p className="font-medium truncate">{img.caption || 'No caption'}</p>
+                                      {!img.isActive && <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>}
+                                      {img.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                      by {img.creator?.username || 'Unknown'} • {formatRelativeDate(img.createdAt)}
+                                    </p>
                                   </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    by {img.creator?.username || 'Unknown'} • {formatRelativeDate(img.createdAt)}
-                                  </p>
                                 </div>
                                 <div className="flex items-center gap-1 flex-shrink-0">
+                                  <Button
+                                    size="sm"
+                                    variant={img.isActive ? 'outline' : 'secondary'}
+                                    onClick={() => toggleMemeImageActiveMutation.mutate({ id: img.id, isActive: !img.isActive })}
+                                    data-testid={`button-active-meme-image-${img.id}`}
+                                    aria-label={img.isActive ? 'Hide image' : 'Show image'}
+                                  >
+                                    {img.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                  </Button>
                                   <Button
                                     size="sm"
                                     variant={img.isStarterPack ? 'secondary' : 'outline'}

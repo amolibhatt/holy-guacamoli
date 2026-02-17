@@ -2482,6 +2482,27 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/super-admin/questions/sequence/:id/active", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const questionId = parseId(req.params.id);
+      if (questionId === null) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+      const { isActive } = req.body;
+      if (typeof isActive !== 'boolean') {
+        return res.status(400).json({ message: "isActive must be a boolean" });
+      }
+      const updated = await storage.toggleSequenceQuestionActive(questionId, isActive);
+      if (!updated) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      console.error("Error toggling sequence active:", err);
+      res.status(500).json({ message: "Failed to toggle active" });
+    }
+  });
+
   app.delete("/api/super-admin/questions/sequence/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
       const questionId = parseId(req.params.id);
@@ -2518,6 +2539,27 @@ export async function registerRoutes(
     } catch (err) {
       console.error("Error toggling psyop starter pack:", err);
       res.status(500).json({ message: "Failed to toggle starter pack" });
+    }
+  });
+
+  app.patch("/api/super-admin/questions/psyop/:id/active", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const questionId = parseId(req.params.id);
+      if (questionId === null) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+      const { isActive } = req.body;
+      if (typeof isActive !== 'boolean') {
+        return res.status(400).json({ message: "isActive must be a boolean" });
+      }
+      const updated = await storage.togglePsyopQuestionActive(questionId, isActive);
+      if (!updated) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      console.error("Error toggling psyop active:", err);
+      res.status(500).json({ message: "Failed to toggle active" });
     }
   });
 
@@ -2592,6 +2634,27 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/super-admin/questions/timewarp/:id/active", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const questionId = parseId(req.params.id);
+      if (questionId === null) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+      const { isActive } = req.body;
+      if (typeof isActive !== 'boolean') {
+        return res.status(400).json({ message: "isActive must be a boolean" });
+      }
+      const updated = await storage.toggleTimeWarpQuestionActive(questionId, isActive);
+      if (!updated) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      console.error("Error toggling timewarp active:", err);
+      res.status(500).json({ message: "Failed to toggle active" });
+    }
+  });
+
   app.delete("/api/super-admin/questions/timewarp/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
       const questionId = parseId(req.params.id);
@@ -2643,6 +2706,27 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/super-admin/meme/prompts/:id/active", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid prompt ID" });
+      }
+      const { isActive } = req.body;
+      if (typeof isActive !== 'boolean') {
+        return res.status(400).json({ message: "isActive must be a boolean" });
+      }
+      const updated = await storage.toggleMemePromptActive(id, isActive);
+      if (!updated) {
+        return res.status(404).json({ message: "Prompt not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      console.error("Error toggling meme prompt active:", err);
+      res.status(500).json({ message: "Failed to toggle active" });
+    }
+  });
+
   app.delete("/api/super-admin/meme/prompts/:id", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
       const id = parseId(req.params.id);
@@ -2689,6 +2773,27 @@ export async function registerRoutes(
     } catch (err) {
       console.error("Error toggling meme image starter pack:", err);
       res.status(500).json({ message: "Failed to toggle starter pack" });
+    }
+  });
+
+  app.patch("/api/super-admin/meme/images/:id/active", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const id = parseId(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ message: "Invalid image ID" });
+      }
+      const { isActive } = req.body;
+      if (typeof isActive !== 'boolean') {
+        return res.status(400).json({ message: "isActive must be a boolean" });
+      }
+      const updated = await storage.toggleMemeImageActive(id, isActive);
+      if (!updated) {
+        return res.status(404).json({ message: "Image not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      console.error("Error toggling meme image active:", err);
+      res.status(500).json({ message: "Failed to toggle active" });
     }
   });
 
