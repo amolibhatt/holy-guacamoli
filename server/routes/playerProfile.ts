@@ -13,12 +13,11 @@ router.post("/api/player/guest", async (req: Request, res: Response) => {
     }
     
     // Check if session already has a guestId (returning guest)
-    let guestId = (req.session as any).guestId;
+    let guestId = req.session.guestId;
     
     if (!guestId) {
-      // Generate server-side guestId - client cannot control this
       guestId = `guest_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-      (req.session as any).guestId = guestId;
+      req.session.guestId = guestId;
     }
     
     const profile = await playerProfileService.getOrCreateGuestProfile(guestId, displayName);
@@ -77,7 +76,7 @@ router.post("/api/player/stats", async (req: Request, res: Response) => {
   try {
     const { profileId, gameSlug, updates } = req.body;
     const userId = req.session?.userId;
-    const sessionGuestId = (req.session as any)?.guestId; // Use session-stored guestId, not client-provided
+    const sessionGuestId = req.session.guestId;
     
     if (!profileId || !gameSlug) {
       return res.status(400).json({ error: "profileId and gameSlug are required" });
@@ -131,7 +130,7 @@ router.get("/api/player/badges/:profileId", async (req: Request, res: Response) 
 router.post("/api/player/merge", async (req: Request, res: Response) => {
   try {
     const userId = req.session?.userId;
-    const sessionGuestId = (req.session as any)?.guestId; // Use session guestId, not client-provided
+    const sessionGuestId = req.session.guestId;
     
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -173,7 +172,7 @@ router.post("/api/player/merge", async (req: Request, res: Response) => {
     }
     
     // Clear guest session after successful merge
-    delete (req.session as any).guestId;
+    delete req.session.guestId;
     
     const fullProfile = await playerProfileService.getFullProfile(mergedProfile.id);
     res.json(fullProfile);
@@ -188,7 +187,7 @@ router.post("/api/player/personality/:profileId", async (req: Request, res: Resp
   try {
     const { profileId } = req.params;
     const userId = req.session?.userId;
-    const sessionGuestId = (req.session as any)?.guestId;
+    const sessionGuestId = req.session.guestId;
     
     const profile = await playerProfileService.getProfileById(profileId);
     if (!profile) {

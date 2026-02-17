@@ -52,6 +52,7 @@ declare module "express-session" {
   interface SessionData {
     userId?: string;
     userRole?: string;
+    guestId?: string;
   }
 }
 
@@ -212,6 +213,7 @@ export function registerAuthRoutes(app: Express): void {
         firstName: firstName || null,
         lastName: lastName || null,
         role,
+        lastLoginAt: new Date(),
       }).returning();
 
       req.session.userId = newUser.id;
@@ -304,6 +306,10 @@ export function registerAuthRoutes(app: Express): void {
       if (!user) {
         req.session.destroy(() => {});
         return res.status(401).json({ message: "User not found" });
+      }
+
+      if (req.session.userRole !== user.role) {
+        req.session.userRole = user.role;
       }
 
       res.json(sanitizeUser(user));

@@ -25,7 +25,7 @@ export const users = pgTable("users", {
   password: varchar("password").notNull(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
-  role: varchar("role").notNull().default("host"),
+  role: varchar("role").notNull().default("user"),
   // Subscription fields
   subscriptionPlan: varchar("subscription_plan").notNull().$type<SubscriptionPlan>().default("free"),
   subscriptionStatus: varchar("subscription_status").notNull().default("active"), // active, cancelled, expired
@@ -59,6 +59,13 @@ export const payments = pgTable("payments", {
 // Insert schema for registration
 export const insertUserSchema = createInsertSchema(users).omit({ 
   id: true, 
+  role: true,
+  subscriptionPlan: true,
+  subscriptionStatus: true,
+  razorpayCustomerId: true,
+  razorpaySubscriptionId: true,
+  subscriptionExpiresAt: true,
+  lastLoginAt: true,
   createdAt: true, 
   updatedAt: true 
 }).extend({
