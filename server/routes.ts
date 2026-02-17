@@ -2981,7 +2981,7 @@ Be creative and fun! Make questions engaging and varied.`;
       }
       const userId = req.session.userId!;
       const role = req.session.userRole;
-      const { factText, correctAnswer, category } = req.body;
+      const { factText, correctAnswer, category, isActive } = req.body;
       
       if (!factText || typeof factText !== 'string' || factText.trim().length === 0) {
         return res.status(400).json({ message: "Fact text is required" });
@@ -2999,11 +2999,16 @@ Be creative and fun! Make questions engaging and varied.`;
         return res.status(400).json({ message: "Answer too long (max 100 chars)" });
       }
 
-      const updated = await storage.updatePsyopQuestion(id, {
+      const updateData: Record<string, any> = {
         factText: factText.trim(),
         correctAnswer: correctAnswer.trim(),
         category: category?.trim() || null,
-      }, userId, role);
+      };
+      if (typeof isActive === 'boolean') {
+        updateData.isActive = isActive;
+      }
+
+      const updated = await storage.updatePsyopQuestion(id, updateData, userId, role);
       
       if (!updated) {
         return res.status(404).json({ message: "Question not found" });
@@ -5490,7 +5495,6 @@ Generate exactly ${promptCount} prompts.`
             if (isNewQuestion) {
               room.passedPlayers.clear();
             }
-            broadcastToRoom(room, { type: 'buzzer:unlocked', newQuestion: isNewQuestion }, ws);
             room.players.forEach((player) => {
               sendToPlayer(player, { type: 'buzzer:unlocked', newQuestion: isNewQuestion });
             });

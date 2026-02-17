@@ -1489,7 +1489,7 @@ export class DatabaseStorage implements IStorage {
         FROM board_categories bc
         JOIN boards b ON bc.board_id = b.id
         JOIN categories c ON bc.category_id = c.id
-        JOIN questions q ON q.board_category_id = bc.id
+        JOIN questions q ON q.category_id = bc.category_id
         WHERE b.is_global = true
           AND c.is_active = true
           AND b.name NOT LIKE 'Shuffle Play%'
@@ -1509,7 +1509,7 @@ export class DatabaseStorage implements IStorage {
             FROM board_categories bc
             JOIN boards b ON bc.board_id = b.id
             JOIN categories c ON bc.category_id = c.id
-            JOIN questions q ON q.board_category_id = bc.id
+            JOIN questions q ON q.category_id = bc.category_id
             WHERE b.is_global = false
               AND b.user_id IS NOT NULL
               AND c.is_active = true
@@ -1526,7 +1526,7 @@ export class DatabaseStorage implements IStorage {
             FROM board_categories bc
             JOIN boards b ON bc.board_id = b.id
             JOIN categories c ON bc.category_id = c.id
-            JOIN questions q ON q.board_category_id = bc.id
+            JOIN questions q ON q.category_id = bc.category_id
             WHERE b.is_global = false
               AND b.user_id = ${userId}
               AND c.is_active = true
