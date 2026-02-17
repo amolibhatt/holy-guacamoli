@@ -85,7 +85,7 @@ export function useAuth() {
     mutationFn: logout,
     onSuccess: () => {
       trackEvent('logout');
-      queryClient.setQueryData(["/api/auth/user"], null);
+      queryClient.clear();
     },
   });
 

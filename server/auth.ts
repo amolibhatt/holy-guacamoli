@@ -107,7 +107,7 @@ const BOARD_COLORS = [
   "#06b6d4", "#0ea5e9", "#3b82f6"
 ];
 
-async function copyStarterPacksToUser(userId: string): Promise<void> {
+export async function copyStarterPacksToUser(userId: string): Promise<void> {
   try {
     // Get all starter pack boards
     const starterPacks = await db.select().from(boards).where(eq(boards.isStarterPack, true));
@@ -269,11 +269,12 @@ export function registerAuthRoutes(app: Express): void {
       recordLoginAttempt(ip, true);
       
       // Auto-upgrade owner to super_admin if not already
-      const updateFields: Record<string, any> = { lastLoginAt: new Date(), updatedAt: new Date() };
-      if (email === 'amoli.bhatt@gmail.com' && user.role !== 'super_admin') {
-        updateFields.role = 'super_admin';
-      }
-      const [updatedUser] = await db.update(users).set(updateFields).where(eq(users.id, user.id)).returning();
+      const shouldUpgradeRole = email === 'amoli.bhatt@gmail.com' && user.role !== 'super_admin';
+      const [updatedUser] = await db.update(users).set({
+        lastLoginAt: new Date(),
+        updatedAt: new Date(),
+        ...(shouldUpgradeRole ? { role: 'super_admin' as const } : {}),
+      }).where(eq(users.id, user.id)).returning();
       
       req.session.userId = updatedUser.id;
       req.session.userRole = updatedUser.role;
@@ -401,12 +402,22 @@ export function registerAuthRoutes(app: Express): void {
       const hashedPassword = await bcrypt.hash(password, 10);
 
       await db.update(users)
-        .set({ password: hashedPassword })
+        .set({ password: hashedPassword, updatedAt: new Date() })
         .where(eq(users.id, resetToken.userId));
 
       await db.update(passwordResetTokens)
         .set({ usedAt: new Date() })
         .where(eq(passwordResetTokens.id, resetToken.id));
+
+      // Invalidate all existing sessions for this user (security: revoke stolen sessions)
+      try {
+        await pool.query(
+          `DELETE FROM sessions WHERE sess->>'userId' = $1`,
+          [resetToken.userId]
+        );
+      } catch (sessionErr) {
+        console.error("[AUTH] Failed to invalidate sessions after password reset:", sessionErr);
+      }
 
       res.json({ message: "Password has been reset successfully. You can now sign in." });
     } catch (error) {

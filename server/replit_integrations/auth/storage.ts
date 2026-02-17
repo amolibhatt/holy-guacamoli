@@ -3,6 +3,7 @@ import { users } from "@shared/models/auth";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import { copyStarterPacksToUser } from "../../auth";
 
 interface OAuthUserData {
   id: string;
@@ -73,6 +74,11 @@ export const authStorage = {
       .returning();
 
     console.log(`[REPLIT AUTH] Created new user: ${newUser.email} (${newUser.id})`);
+
+    copyStarterPacksToUser(newUser.id).catch(err => {
+      console.error("[REPLIT AUTH] Failed to copy starter packs:", err);
+    });
+
     return newUser;
   },
 };

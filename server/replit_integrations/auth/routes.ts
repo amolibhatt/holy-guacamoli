@@ -21,6 +21,10 @@ export function registerReplitAuthApiRoutes(app: Express): void {
         return res.status(401).json({ message: "User not found" });
       }
 
+      if (req.session.userRole !== user.role) {
+        req.session.userRole = user.role;
+      }
+
       const { password, ...safeUser } = user;
       res.json(safeUser);
     } catch (error) {
