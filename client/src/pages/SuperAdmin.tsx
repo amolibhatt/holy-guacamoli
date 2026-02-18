@@ -113,7 +113,9 @@ interface ComprehensiveDashboard {
   recentActivity: { id: number; code: string; state: string; createdAt: string }[];
   topHostsWeek: { name: string; games: number }[];
   popularGridsWeek: { name: string; plays: number }[];
-  performance: { avgScore: number; highScore: number; completionRate: number };
+  popularSortCircuitWeek: { name: string; plays: number }[];
+  sortCircuitSessions: number;
+  performance: { avgScore: number; highScore: number; completionRate: number; sortCircuitAccuracy: number; sortCircuitAvgTimeMs: number; sortCircuitCompletionRate: number };
 }
 
 interface QuestionCreator {
@@ -659,13 +661,26 @@ export default function SuperAdmin() {
       })
     : allUsers;
 
+  const getGameModeLabel = (mode: string | null) => {
+    switch (mode) {
+      case 'buzzer': return 'BlitzGrid';
+      case 'sequence': return 'Sort Circuit';
+      case 'psyop': return 'PsyOp';
+      case 'meme': return 'Meme No Harm';
+      default: return mode || 'Unknown';
+    }
+  };
+
   const filteredSessions = sessionSearch.trim()
     ? allSessions.filter(s => {
         const search = sessionSearch.toLowerCase();
         const hostName = `${s.host?.firstName || ''} ${s.host?.lastName || ''}`.toLowerCase();
+        const modeLabel = getGameModeLabel(s.currentMode).toLowerCase();
         return (s.code ?? '').toLowerCase().includes(search) ||
           hostName.includes(search) ||
           (s.host?.email ?? '').toLowerCase().includes(search) ||
+          modeLabel.includes(search) ||
+          (s.currentMode ?? '').toLowerCase().includes(search) ||
           s.players.some(p => (p.name ?? '').toLowerCase().includes(search));
       })
     : allSessions;
@@ -972,6 +987,10 @@ export default function SuperAdmin() {
                       <span className="font-bold">{dashboard.totals.sortCircuitQuestions}</span>
                     </div>
                     <div className="flex justify-between">
+                      <span className="text-sm">Sort Circuit Sessions</span>
+                      <span className="font-bold">{dashboard.sortCircuitSessions}</span>
+                    </div>
+                    <div className="flex justify-between">
                       <span className="text-sm">PsyOp Q</span>
                       <span className="font-bold">{dashboard.totals.psyopQuestions}</span>
                     </div>
@@ -996,9 +1015,10 @@ export default function SuperAdmin() {
 
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-muted-foreground">Performance</CardTitle>
+                    <CardTitle className="text-sm text-muted-foreground">Performance (All Time)</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">BlitzGrid</p>
                     <div className="flex justify-between">
                       <span className="text-sm">Avg Score</span>
                       <span className="font-bold">{dashboard.performance.avgScore}</span>
@@ -1011,15 +1031,30 @@ export default function SuperAdmin() {
                       <span className="text-sm">Completion</span>
                       <span className="font-bold">{dashboard.performance.completionRate}%</span>
                     </div>
+                    <div className="border-t pt-2 mt-2">
+                      <p className="text-xs font-medium text-muted-foreground">Sort Circuit</p>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Accuracy</span>
+                      <span className="font-bold">{dashboard.performance.sortCircuitAccuracy}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Avg Time</span>
+                      <span className="font-bold">{dashboard.performance.sortCircuitAvgTimeMs > 0 ? `${(dashboard.performance.sortCircuitAvgTimeMs / 1000).toFixed(1)}s` : '–'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Completion</span>
+                      <span className="font-bold">{dashboard.performance.sortCircuitCompletionRate}%</span>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
             )}
 
-            {/* Top Hosts & Popular Grids */}
+            {/* Top Hosts & Popular Content */}
             {isLoadingDashboard && !dashboard ? (
-              <div className="grid md:grid-cols-2 gap-4">
-                {[1,2].map(i => (
+              <div className="grid md:grid-cols-3 gap-4">
+                {[1,2,3].map(i => (
                   <Card key={i}>
                     <CardHeader className="pb-3"><Skeleton className="h-5 w-24" /></CardHeader>
                     <CardContent className="space-y-2">
@@ -1029,7 +1064,7 @@ export default function SuperAdmin() {
                 ))}
               </div>
             ) : isErrorDashboard && !dashboard ? (
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg text-muted-foreground">Top Hosts</CardTitle>
@@ -1046,9 +1081,17 @@ export default function SuperAdmin() {
                     <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-unavailable-popular-grids">Data unavailable</p>
                   </CardContent>
                 </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg text-muted-foreground">Popular Sort Circuit</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-unavailable-popular-sortcircuit">Data unavailable</p>
+                  </CardContent>
+                </Card>
               </div>
             ) : dashboard && (
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
@@ -1077,7 +1120,7 @@ export default function SuperAdmin() {
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <Star className="w-5 h-5 text-amber-400" /> Popular Grids
+                      <Grid3X3 className="w-5 h-5 text-amber-400" /> Popular Grids
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -1092,6 +1135,31 @@ export default function SuperAdmin() {
                               <span className="text-sm truncate">{g.name}</span>
                             </div>
                             <Badge variant="secondary">{g.plays} plays</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <ListOrdered className="w-5 h-5 text-emerald-400" /> Popular Sort Circuit
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {dashboard.popularSortCircuitWeek.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-empty-popular-sortcircuit">No data yet</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {dashboard.popularSortCircuitWeek.slice(0, 5).map((q, i) => (
+                          <div key={`sc-${q.name}-${i}`} className="flex items-center justify-between p-2 rounded bg-muted/30">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-muted-foreground w-5">#{i + 1}</span>
+                              <span className="text-sm truncate">{q.name}</span>
+                            </div>
+                            <Badge variant="secondary">{q.plays} plays</Badge>
                           </div>
                         ))}
                       </div>
@@ -1947,9 +2015,16 @@ export default function SuperAdmin() {
                             </Badge>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">
-                              {getHostDisplay(s.host)}
-                            </p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium truncate">
+                                {getHostDisplay(s.host)}
+                              </p>
+                              {s.currentMode && (
+                                <Badge variant="outline" className="text-xs">
+                                  {getGameModeLabel(s.currentMode)}
+                                </Badge>
+                              )}
+                            </div>
                             <p className="text-xs text-muted-foreground">
                               {s.playerCount} players • {formatRelativeDate(s.createdAt)}
                             </p>

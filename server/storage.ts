@@ -2905,6 +2905,19 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(count()))
       .limit(5);
 
+    const popularSortCircuitWeek = await db.select({
+      questionId: sequenceSessions.questionId,
+      question: sequenceQuestions.question,
+      count: count(),
+    }).from(sequenceSessions)
+      .innerJoin(sequenceQuestions, eq(sequenceSessions.questionId, sequenceQuestions.id))
+      .where(gte(sequenceSessions.createdAt, weekAgo))
+      .groupBy(sequenceSessions.questionId, sequenceQuestions.question)
+      .orderBy(desc(count()))
+      .limit(5);
+
+    const [totalSequenceSessions] = await db.select({ count: count() }).from(sequenceSessions);
+
     // Average scores and game duration
     const avgScores = await db.select({
       avgScore: sql<number>`COALESCE(AVG(${sessionPlayers.score}), 0)`,
@@ -2914,6 +2927,14 @@ export class DatabaseStorage implements IStorage {
     // Session completion rate (ended vs total)
     const [completedSessions] = await db.select({ count: count() })
       .from(gameSessions).where(eq(gameSessions.state, 'ended'));
+
+    // Sort Circuit accuracy
+    const [scTotalSubs] = await db.select({ count: count() }).from(sequenceSubmissions);
+    const [scCorrectSubs] = await db.select({ count: count() }).from(sequenceSubmissions).where(eq(sequenceSubmissions.isCorrect, true));
+    const [scAvgTime] = await db.select({
+      avgTime: sql<number>`COALESCE(AVG(${sequenceSubmissions.timeMs}), 0)`,
+    }).from(sequenceSubmissions);
+    const [scFinished] = await db.select({ count: count() }).from(sequenceSessions).where(eq(sequenceSessions.status, 'finished'));
 
     return {
       realtime: {
@@ -2961,10 +2982,18 @@ export class DatabaseStorage implements IStorage {
         name: g.name,
         plays: g.count,
       })),
+      popularSortCircuitWeek: popularSortCircuitWeek.map(q => ({
+        name: q.question || 'Untitled',
+        plays: q.count,
+      })),
+      sortCircuitSessions: totalSequenceSessions?.count ?? 0,
       performance: {
         avgScore: Math.round(Number(avgScores[0]?.avgScore) || 0),
         highScore: Number(avgScores[0]?.maxScore) || 0,
         completionRate: totalSessions?.count ? Math.round(((completedSessions?.count ?? 0) / totalSessions.count) * 100) : 0,
+        sortCircuitAccuracy: scTotalSubs?.count ? Math.round(((scCorrectSubs?.count ?? 0) / scTotalSubs.count) * 100) : 0,
+        sortCircuitAvgTimeMs: Math.round(Number(scAvgTime?.avgTime) || 0),
+        sortCircuitCompletionRate: totalSequenceSessions?.count ? Math.round(((scFinished?.count ?? 0) / totalSequenceSessions.count) * 100) : 0,
       },
     };
   }
@@ -3114,6 +3143,22 @@ export class DatabaseStorage implements IStorage {
     const allBoards = await db.select().from(boards);
     const allCategories = await db.select().from(categories);
     const allQuestions = await db.select().from(questions);
+    const allSequenceQuestions = await db.select().from(sequenceQuestions);
+    const allSequenceSessions = await db.select().from(sequenceSessions);
+    const allSequenceSubmissions = await db.select().from(sequenceSubmissions);
+    const allPsyopQs = await db.select().from(psyopQuestions);
+    const allPsyopSessionsData = await db.select().from(psyopSessions);
+    const allPsyopRounds = await db.select().from(psyopRounds);
+    const allPsyopSubmissions = await db.select().from(psyopSubmissions);
+    const allPsyopVotesData = await db.select().from(psyopVotes);
+    const allTimeWarpQs = await db.select().from(timeWarpQuestions);
+    const allMemePromptsData = await db.select().from(memePrompts);
+    const allMemeImagesData = await db.select().from(memeImages);
+    const allMemeSessionsData = await db.select().from(memeSessions);
+    const allMemePlayersData = await db.select().from(memePlayers);
+    const allMemeRoundsData = await db.select().from(memeRounds);
+    const allMemeSubmissionsData = await db.select().from(memeSubmissions);
+    const allMemeVotesData = await db.select().from(memeVotes);
 
     return {
       exportedAt: new Date().toISOString(),
@@ -3121,6 +3166,22 @@ export class DatabaseStorage implements IStorage {
       boards: allBoards,
       categories: allCategories,
       questions: allQuestions,
+      sequenceQuestions: allSequenceQuestions,
+      sequenceSessions: allSequenceSessions,
+      sequenceSubmissions: allSequenceSubmissions,
+      psyopQuestions: allPsyopQs,
+      psyopSessions: allPsyopSessionsData,
+      psyopRounds: allPsyopRounds,
+      psyopSubmissions: allPsyopSubmissions,
+      psyopVotes: allPsyopVotesData,
+      timeWarpQuestions: allTimeWarpQs,
+      memePrompts: allMemePromptsData,
+      memeImages: allMemeImagesData,
+      memeSessions: allMemeSessionsData,
+      memePlayers: allMemePlayersData,
+      memeRounds: allMemeRoundsData,
+      memeSubmissions: allMemeSubmissionsData,
+      memeVotes: allMemeVotesData,
     };
   }
 
