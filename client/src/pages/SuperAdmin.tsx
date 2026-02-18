@@ -114,8 +114,10 @@ interface ComprehensiveDashboard {
   topHostsWeek: { name: string; games: number }[];
   popularGridsWeek: { name: string; plays: number }[];
   popularSortCircuitWeek: { name: string; plays: number }[];
+  popularPsyopWeek: { name: string; plays: number }[];
   sortCircuitSessions: number;
-  performance: { avgScore: number; highScore: number; completionRate: number; sortCircuitAccuracy: number; sortCircuitAvgTimeMs: number; sortCircuitCompletionRate: number };
+  psyopSessions: number;
+  performance: { avgScore: number; highScore: number; completionRate: number; sortCircuitAccuracy: number; sortCircuitAvgTimeMs: number; sortCircuitCompletionRate: number; psyopTotalRounds: number; psyopDeceptionRate: number; psyopSessions: number };
 }
 
 interface QuestionCreator {
@@ -150,6 +152,7 @@ interface PsyopQuestionWithCreator {
   isActive: boolean;
   isStarterPack: boolean;
   createdAt: string;
+  playCount: number;
   creator: QuestionCreator | null;
 }
 
@@ -710,11 +713,13 @@ export default function SuperAdmin() {
     : sequenceQuestions;
 
   const filteredPsyopQuestions = contentSearch.trim()
-    ? psyopQuestions.filter(q => 
-        (q.factText ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
-        (q.creator?.username ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
-        (q.category ?? '').toLowerCase().includes(contentSearch.toLowerCase())
-      )
+    ? psyopQuestions.filter(q => {
+        const search = contentSearch.toLowerCase();
+        return (q.factText ?? '').toLowerCase().includes(search) ||
+          (q.correctAnswer ?? '').toLowerCase().includes(search) ||
+          (q.creator?.username ?? '').toLowerCase().includes(search) ||
+          (q.category ?? '').toLowerCase().includes(search);
+      })
     : psyopQuestions;
 
   const filteredTimewarpQuestions = contentSearch.trim()
@@ -997,6 +1002,10 @@ export default function SuperAdmin() {
                       <span className="font-bold">{dashboard.totals.psyopQuestions}</span>
                     </div>
                     <div className="flex justify-between">
+                      <span className="text-sm">PsyOp Sessions</span>
+                      <span className="font-bold">{dashboard.psyopSessions}</span>
+                    </div>
+                    <div className="flex justify-between">
                       <span className="text-sm">TimeWarp Q</span>
                       <span className="font-bold">{dashboard.totals.timeWarpQuestions}</span>
                     </div>
@@ -1048,6 +1057,21 @@ export default function SuperAdmin() {
                       <span className="text-sm">Completion</span>
                       <span className="font-bold">{dashboard.performance.sortCircuitCompletionRate}%</span>
                     </div>
+                    <div className="border-t pt-2 mt-2">
+                      <p className="text-xs font-medium text-muted-foreground">PsyOp</p>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Sessions</span>
+                      <span className="font-bold">{dashboard.performance.psyopSessions}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Rounds Played</span>
+                      <span className="font-bold">{dashboard.performance.psyopTotalRounds}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Deception Rate</span>
+                      <span className="font-bold">{dashboard.performance.psyopDeceptionRate}%</span>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -1055,8 +1079,8 @@ export default function SuperAdmin() {
 
             {/* Top Hosts & Popular Content */}
             {isLoadingDashboard && !dashboard ? (
-              <div className="grid md:grid-cols-3 gap-4">
-                {[1,2,3].map(i => (
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[1,2,3,4].map(i => (
                   <Card key={i}>
                     <CardHeader className="pb-3"><Skeleton className="h-5 w-24" /></CardHeader>
                     <CardContent className="space-y-2">
@@ -1066,7 +1090,7 @@ export default function SuperAdmin() {
                 ))}
               </div>
             ) : isErrorDashboard && !dashboard ? (
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg text-muted-foreground">Top Hosts</CardTitle>
@@ -1091,9 +1115,17 @@ export default function SuperAdmin() {
                     <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-unavailable-popular-sortcircuit">Data unavailable</p>
                   </CardContent>
                 </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg text-muted-foreground">Popular PsyOp</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-unavailable-popular-psyop">Data unavailable</p>
+                  </CardContent>
+                </Card>
               </div>
             ) : dashboard && (
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
@@ -1162,6 +1194,31 @@ export default function SuperAdmin() {
                               <span className="text-sm truncate">{q.name}</span>
                             </div>
                             <Badge variant="secondary">{q.plays} plays</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Brain className="w-5 h-5 text-violet-400" /> Popular PsyOp
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {dashboard.popularPsyopWeek.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-empty-popular-psyop">No data yet</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {dashboard.popularPsyopWeek.slice(0, 5).map((q, i) => (
+                          <div key={`psyop-${q.name}-${i}`} className="flex items-center justify-between p-2 rounded bg-muted/30 gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-sm font-bold text-muted-foreground w-5 flex-shrink-0">#{i + 1}</span>
+                              <span className="text-sm truncate">{q.name}</span>
+                            </div>
+                            <Badge variant="secondary" className="flex-shrink-0">{q.plays} plays</Badge>
                           </div>
                         ))}
                       </div>
@@ -1404,7 +1461,7 @@ export default function SuperAdmin() {
                     )}
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="icon"
                       onClick={() => {
                         if (contentTab === 'games') refetchGameTypes();
                         else if (contentTab === 'blitzgrid') refetchBoards();
@@ -1734,6 +1791,11 @@ export default function SuperAdmin() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between px-1 pb-1">
                         <p className="text-xs text-muted-foreground">{filteredPsyopQuestions.length} question{filteredPsyopQuestions.length !== 1 ? 's' : ''}{contentSearch.trim() ? ' matching' : ''}</p>
+                        <Link href="/admin/psyop">
+                          <Button size="sm" variant="outline" data-testid="button-goto-psyop-admin">
+                            <Brain className="w-4 h-4 mr-1" /> PsyOp Admin
+                          </Button>
+                        </Link>
                       </div>
                       <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {filteredPsyopQuestions.map(q => (
@@ -1744,6 +1806,7 @@ export default function SuperAdmin() {
                               <Badge variant="outline" className="text-xs">Answer: {q.correctAnswer}</Badge>
                               {!q.isActive && <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>}
                               {q.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
+                              {q.playCount > 0 && <Badge variant="outline" className="text-xs">{q.playCount} play{q.playCount !== 1 ? 's' : ''}</Badge>}
                             </div>
                             <p className="text-xs text-muted-foreground">
                               by {q.creator?.username || 'Unknown'} • {formatRelativeDate(q.createdAt)}{q.category ? ` • ${q.category}` : ''}

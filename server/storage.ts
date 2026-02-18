@@ -2918,6 +2918,23 @@ export class DatabaseStorage implements IStorage {
 
     const [totalSequenceSessions] = await db.select({ count: count() }).from(sequenceSessions);
 
+    const popularPsyopWeek = await db.select({
+      questionId: psyopRounds.questionId,
+      factText: psyopQuestions.factText,
+      count: count(),
+    }).from(psyopRounds)
+      .innerJoin(psyopQuestions, eq(psyopRounds.questionId, psyopQuestions.id))
+      .innerJoin(psyopSessions, eq(psyopRounds.sessionId, psyopSessions.id))
+      .where(gte(psyopSessions.createdAt, weekAgo))
+      .groupBy(psyopRounds.questionId, psyopQuestions.factText)
+      .orderBy(desc(count()))
+      .limit(5);
+
+    const [totalPsyopSessions] = await db.select({ count: count() }).from(psyopSessions);
+    const [totalPsyopRounds] = await db.select({ count: count() }).from(psyopRounds);
+    const [psyopLieVotes] = await db.select({ count: count() }).from(psyopVotes).where(eq(psyopVotes.votedForTruth, false));
+    const [psyopTotalVotes] = await db.select({ count: count() }).from(psyopVotes);
+
     // Average scores and game duration
     const avgScores = await db.select({
       avgScore: sql<number>`COALESCE(AVG(${sessionPlayers.score}), 0)`,
@@ -2986,7 +3003,12 @@ export class DatabaseStorage implements IStorage {
         name: q.question || 'Untitled',
         plays: q.count,
       })),
+      popularPsyopWeek: popularPsyopWeek.map(q => ({
+        name: q.factText ? (q.factText.length > 50 ? q.factText.slice(0, 50) + '...' : q.factText) : 'Untitled',
+        plays: q.count,
+      })),
       sortCircuitSessions: totalSequenceSessions?.count ?? 0,
+      psyopSessions: totalPsyopSessions?.count ?? 0,
       performance: {
         avgScore: Math.round(Number(avgScores[0]?.avgScore) || 0),
         highScore: Number(avgScores[0]?.maxScore) || 0,
@@ -2994,6 +3016,9 @@ export class DatabaseStorage implements IStorage {
         sortCircuitAccuracy: scTotalSubs?.count ? Math.round(((scCorrectSubs?.count ?? 0) / scTotalSubs.count) * 100) : 0,
         sortCircuitAvgTimeMs: Math.round(Number(scAvgTime?.avgTime) || 0),
         sortCircuitCompletionRate: totalSequenceSessions?.count ? Math.round(((scFinished?.count ?? 0) / totalSequenceSessions.count) * 100) : 0,
+        psyopTotalRounds: totalPsyopRounds?.count ?? 0,
+        psyopDeceptionRate: psyopTotalVotes?.count ? Math.round(((psyopLieVotes?.count ?? 0) / psyopTotalVotes.count) * 100) : 0,
+        psyopSessions: totalPsyopSessions?.count ?? 0,
       },
     };
   }
@@ -3387,6 +3412,7 @@ export class DatabaseStorage implements IStorage {
       creatorFirstName: users.firstName,
       creatorLastName: users.lastName,
       creatorEmail: users.email,
+      playCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM psyop_rounds WHERE psyop_rounds.question_id = ${psyopQuestions.id}), 0)`,
     }).from(psyopQuestions)
       .leftJoin(users, eq(psyopQuestions.userId, users.id))
       .orderBy(desc(psyopQuestions.createdAt));
