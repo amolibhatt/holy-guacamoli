@@ -2805,19 +2805,31 @@ export class DatabaseStorage implements IStorage {
     const monthAgo = new Date(today);
     monthAgo.setMonth(monthAgo.getMonth() - 1);
 
-    // Real-time stats
+    // Real-time stats (include PsyOp + Meme active sessions)
     const [activeSessions] = await db.select({ count: count() })
       .from(gameSessions).where(eq(gameSessions.state, 'active'));
+    const [activePsyopSessions] = await db.select({ count: count() })
+      .from(psyopSessions).where(inArray(psyopSessions.status, ['waiting', 'submitting', 'voting', 'revealing']));
+    const [activeMemeSessions] = await db.select({ count: count() })
+      .from(memeSessions).where(inArray(memeSessions.status, ['lobby', 'selecting', 'voting', 'reveal']));
     const [activePlayers] = await db.select({ count: count() })
       .from(sessionPlayers)
       .innerJoin(gameSessions, eq(sessionPlayers.sessionId, gameSessions.id))
       .where(and(eq(gameSessions.state, 'active'), eq(sessionPlayers.isConnected, true)));
 
-    // Today vs Yesterday comparison
+    // Today vs Yesterday comparison (include PsyOp + Meme sessions)
     const [todaySessions] = await db.select({ count: count() })
       .from(gameSessions).where(gte(gameSessions.createdAt, today));
+    const [todayPsyopSessions] = await db.select({ count: count() })
+      .from(psyopSessions).where(gte(psyopSessions.createdAt, today));
+    const [todayMemeSessions] = await db.select({ count: count() })
+      .from(memeSessions).where(gte(memeSessions.createdAt, today));
     const [yesterdaySessions] = await db.select({ count: count() })
       .from(gameSessions).where(and(gte(gameSessions.createdAt, yesterday), sql`${gameSessions.createdAt} < ${today}`));
+    const [yesterdayPsyopSessions] = await db.select({ count: count() })
+      .from(psyopSessions).where(and(gte(psyopSessions.createdAt, yesterday), sql`${psyopSessions.createdAt} < ${today}`));
+    const [yesterdayMemeSessions] = await db.select({ count: count() })
+      .from(memeSessions).where(and(gte(memeSessions.createdAt, yesterday), sql`${memeSessions.createdAt} < ${today}`));
     const [todayPlayers] = await db.select({ count: count() })
       .from(sessionPlayers).where(gte(sessionPlayers.joinedAt, today));
     const [yesterdayPlayers] = await db.select({ count: count() })
@@ -2827,17 +2839,22 @@ export class DatabaseStorage implements IStorage {
     const [yesterdayNewUsers] = await db.select({ count: count() })
       .from(users).where(and(gte(users.createdAt, yesterday), sql`${users.createdAt} < ${today}`));
 
-    // Weekly stats
+    // Weekly stats (include PsyOp + Meme)
     const [weekSessions] = await db.select({ count: count() })
       .from(gameSessions).where(gte(gameSessions.createdAt, weekAgo));
+    const [weekPsyopSessions] = await db.select({ count: count() })
+      .from(psyopSessions).where(gte(psyopSessions.createdAt, weekAgo));
+    const [weekMemeSessions] = await db.select({ count: count() })
+      .from(memeSessions).where(gte(memeSessions.createdAt, weekAgo));
     const [weekPlayers] = await db.select({ count: count() })
       .from(sessionPlayers).where(gte(sessionPlayers.joinedAt, weekAgo));
     const [weekNewUsers] = await db.select({ count: count() })
       .from(users).where(gte(users.createdAt, weekAgo));
 
-    // Total counts
+    // Total counts (include PsyOp + Meme sessions in total)
     const [totalUsers] = await db.select({ count: count() }).from(users);
-    const [totalSessions] = await db.select({ count: count() }).from(gameSessions);
+    const [totalGameSessions] = await db.select({ count: count() }).from(gameSessions);
+    const [totalMemeSessionsCount] = await db.select({ count: count() }).from(memeSessions);
     const [totalBoards] = await db.select({ count: count() }).from(boards);
     const [totalQuestions] = await db.select({ count: count() }).from(questions);
     const [totalSequenceQuestions] = await db.select({ count: count() }).from(sequenceQuestions);
@@ -2868,8 +2885,8 @@ export class DatabaseStorage implements IStorage {
       count: count(),
     }).from(users).groupBy(users.role);
 
-    // Recent activity (last 10 sessions with basic info)
-    const recentSessions = await db.select({
+    // Recent activity (last 10 sessions across all game types)
+    const recentGameSessions = await db.select({
       id: gameSessions.id,
       code: gameSessions.code,
       state: gameSessions.state,
@@ -2879,19 +2896,72 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(gameSessions.createdAt))
       .limit(10);
 
-    // Top hosts this week
-    const topHostsWeek = await db.select({
+    const recentPsyopSessions = await db.select({
+      id: psyopSessions.id,
+      roomCode: psyopSessions.roomCode,
+      status: psyopSessions.status,
+      createdAt: psyopSessions.createdAt,
+      hostId: psyopSessions.hostId,
+    }).from(psyopSessions)
+      .orderBy(desc(psyopSessions.createdAt))
+      .limit(10);
+
+    const recentMemeSessions = await db.select({
+      id: memeSessions.id,
+      roomCode: memeSessions.roomCode,
+      status: memeSessions.status,
+      createdAt: memeSessions.createdAt,
+      hostId: memeSessions.hostId,
+    }).from(memeSessions)
+      .orderBy(desc(memeSessions.createdAt))
+      .limit(10);
+
+    const allRecentSessions = [
+      ...recentGameSessions.map(s => ({ id: s.id, code: s.code, state: s.state, createdAt: s.createdAt, mode: null as string | null })),
+      ...recentPsyopSessions.map(s => ({ id: s.id + 1000000, code: s.roomCode, state: s.status, createdAt: s.createdAt, mode: 'psyop' as string | null })),
+      ...recentMemeSessions.map(s => ({ id: s.id + 2000000, code: s.roomCode, state: s.status, createdAt: s.createdAt, mode: 'meme' as string | null })),
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 10);
+
+    // Top hosts this week (across all game types)
+    const topHostsGameWeek = await db.select({
       hostId: gameSessions.hostId,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      email: users.email,
       count: count(),
     }).from(gameSessions)
-      .innerJoin(users, eq(gameSessions.hostId, users.id))
       .where(gte(gameSessions.createdAt, weekAgo))
-      .groupBy(gameSessions.hostId, users.firstName, users.lastName, users.email)
-      .orderBy(desc(count()))
-      .limit(5);
+      .groupBy(gameSessions.hostId);
+
+    const topHostsPsyopWeek = await db.select({
+      hostId: psyopSessions.hostId,
+      count: count(),
+    }).from(psyopSessions)
+      .where(gte(psyopSessions.createdAt, weekAgo))
+      .groupBy(psyopSessions.hostId);
+
+    const topHostsMemeWeek = await db.select({
+      hostId: memeSessions.hostId,
+      count: count(),
+    }).from(memeSessions)
+      .where(gte(memeSessions.createdAt, weekAgo))
+      .groupBy(memeSessions.hostId);
+
+    const hostCountMap = new Map<string, number>();
+    [...topHostsGameWeek, ...topHostsPsyopWeek, ...topHostsMemeWeek].forEach(h => {
+      hostCountMap.set(h.hostId, (hostCountMap.get(h.hostId) || 0) + h.count);
+    });
+    const topHostIds = Array.from(hostCountMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+    const topHostUsers = topHostIds.length > 0
+      ? await db.select({ id: users.id, firstName: users.firstName, lastName: users.lastName, email: users.email })
+          .from(users).where(inArray(users.id, topHostIds.map(h => h[0])))
+      : [];
+    const topHostsWeek = topHostIds.map(([hostId, games]) => {
+      const u = topHostUsers.find(u => u.id === hostId);
+      return {
+        name: [u?.firstName, u?.lastName].filter(Boolean).join(' ') || u?.email || 'Unknown',
+        games,
+      };
+    });
 
     // Popular grids this week
     const popularGridsWeek = await db.select({
@@ -2953,27 +3023,32 @@ export class DatabaseStorage implements IStorage {
     }).from(sequenceSubmissions);
     const [scFinished] = await db.select({ count: count() }).from(sequenceSessions).where(eq(sequenceSessions.status, 'finished'));
 
+    const totalAllGamesToday = (todaySessions?.count ?? 0) + (todayPsyopSessions?.count ?? 0) + (todayMemeSessions?.count ?? 0);
+    const totalAllGamesYesterday = (yesterdaySessions?.count ?? 0) + (yesterdayPsyopSessions?.count ?? 0) + (yesterdayMemeSessions?.count ?? 0);
+    const totalAllGamesWeek = (weekSessions?.count ?? 0) + (weekPsyopSessions?.count ?? 0) + (weekMemeSessions?.count ?? 0);
+    const totalAllSessions = (totalGameSessions?.count ?? 0) + (totalPsyopSessions?.count ?? 0) + (totalMemeSessionsCount?.count ?? 0);
+
     return {
       realtime: {
-        activeGames: activeSessions?.count ?? 0,
+        activeGames: (activeSessions?.count ?? 0) + (activePsyopSessions?.count ?? 0) + (activeMemeSessions?.count ?? 0),
         activePlayers: activePlayers?.count ?? 0,
       },
       today: {
-        games: todaySessions?.count ?? 0,
+        games: totalAllGamesToday,
         players: todayPlayers?.count ?? 0,
         newUsers: todayNewUsers?.count ?? 0,
-        gamesChange: (todaySessions?.count ?? 0) - (yesterdaySessions?.count ?? 0),
+        gamesChange: totalAllGamesToday - totalAllGamesYesterday,
         playersChange: (todayPlayers?.count ?? 0) - (yesterdayPlayers?.count ?? 0),
         usersChange: (todayNewUsers?.count ?? 0) - (yesterdayNewUsers?.count ?? 0),
       },
       week: {
-        games: weekSessions?.count ?? 0,
+        games: totalAllGamesWeek,
         players: weekPlayers?.count ?? 0,
         newUsers: weekNewUsers?.count ?? 0,
       },
       totals: {
         users: totalUsers?.count ?? 0,
-        sessions: totalSessions?.count ?? 0,
+        sessions: totalAllSessions,
         boards: totalBoards?.count ?? 0,
         blitzgridQuestions: totalQuestions?.count ?? 0,
         sortCircuitQuestions: totalSequenceQuestions?.count ?? 0,
@@ -2985,16 +3060,14 @@ export class DatabaseStorage implements IStorage {
         flaggedContent: flaggedBoards?.count ?? 0,
       },
       usersByRole: usersByRole.reduce((acc, r) => ({ ...acc, [r.role || 'user']: r.count }), {} as Record<string, number>),
-      recentActivity: recentSessions.map(s => ({
+      recentActivity: allRecentSessions.map(s => ({
         id: s.id,
         code: s.code,
         state: s.state,
         createdAt: s.createdAt,
+        mode: s.mode,
       })),
-      topHostsWeek: topHostsWeek.map(h => ({
-        name: [h.firstName, h.lastName].filter(Boolean).join(' ') || h.email || 'Unknown',
-        games: h.count,
-      })),
+      topHostsWeek,
       popularGridsWeek: popularGridsWeek.map(g => ({
         name: g.name,
         plays: g.count,
@@ -3012,7 +3085,7 @@ export class DatabaseStorage implements IStorage {
       performance: {
         avgScore: Math.round(Number(avgScores[0]?.avgScore) || 0),
         highScore: Number(avgScores[0]?.maxScore) || 0,
-        completionRate: totalSessions?.count ? Math.round(((completedSessions?.count ?? 0) / totalSessions.count) * 100) : 0,
+        completionRate: totalGameSessions?.count ? Math.round(((completedSessions?.count ?? 0) / totalGameSessions.count) * 100) : 0,
         sortCircuitAccuracy: scTotalSubs?.count ? Math.round(((scCorrectSubs?.count ?? 0) / scTotalSubs.count) * 100) : 0,
         sortCircuitAvgTimeMs: Math.round(Number(scAvgTime?.avgTime) || 0),
         sortCircuitCompletionRate: totalSequenceSessions?.count ? Math.round(((scFinished?.count ?? 0) / totalSequenceSessions.count) * 100) : 0,

@@ -111,7 +111,7 @@ interface ComprehensiveDashboard {
   week: { games: number; players: number; newUsers: number };
   totals: { users: number; sessions: number; boards: number; blitzgridQuestions: number; sortCircuitQuestions: number; psyopQuestions: number; timeWarpQuestions: number; memePrompts: number; memeImages: number; starterPacks: number; flaggedContent: number };
   usersByRole: Record<string, number>;
-  recentActivity: { id: number; code: string; state: string; createdAt: string }[];
+  recentActivity: { id: number; code: string; state: string; createdAt: string; mode?: string | null }[];
   topHostsWeek: { name: string; games: number }[];
   popularGridsWeek: { name: string; plays: number }[];
   popularSortCircuitWeek: { name: string; plays: number }[];
@@ -2104,7 +2104,7 @@ export default function SuperAdmin() {
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <div className="text-center flex-shrink-0">
                             <p className="font-mono font-bold text-lg">{s.code}</p>
-                            <Badge variant={s.state === 'active' ? 'default' : 'outline'} className="text-xs">
+                            <Badge variant={['active', 'waiting', 'submitting', 'voting', 'revealing', 'lobby', 'selecting', 'reveal'].includes(s.state) ? 'default' : 'outline'} className="text-xs">
                               {s.state}
                             </Badge>
                           </div>
