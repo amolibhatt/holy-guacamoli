@@ -1819,42 +1819,68 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllBoardsWithOwners() {
-    const allBoards = await db.select().from(boards).orderBy(desc(boards.id));
-    
-    const boardsWithOwners = await Promise.all(allBoards.map(async (board) => {
-      const [owner] = board.userId 
-        ? await db.select({ email: users.email, firstName: users.firstName, lastName: users.lastName })
-            .from(users)
-            .where(eq(users.id, board.userId))
-        : [{ email: 'Unknown', firstName: null, lastName: null }];
-      
-      const [catCount] = await db.select({ count: count() })
-        .from(boardCategories)
-        .where(eq(boardCategories.boardId, board.id));
-      
-      const boardCats = await db.select({ categoryId: boardCategories.categoryId })
-        .from(boardCategories)
-        .where(eq(boardCategories.boardId, board.id));
-      const categoryIds = Array.from(new Set(boardCats.map(bc => bc.categoryId)));
-      
-      let questionCount = 0;
-      if (categoryIds.length > 0) {
-        const [qCount] = await db.select({ count: count() })
-          .from(questions)
-          .where(inArray(questions.categoryId, categoryIds));
-        questionCount = qCount?.count ?? 0;
-      }
+    const rows = await db.select({
+      board: boards,
+      ownerEmail: users.email,
+      ownerFirstName: users.firstName,
+      ownerLastName: users.lastName,
+    }).from(boards)
+      .leftJoin(users, eq(boards.userId, users.id))
+      .orderBy(desc(boards.id));
 
+    const boardIds = rows.map(r => r.board.id);
+    if (boardIds.length === 0) return [];
+
+    const catCounts = await db.select({
+      boardId: boardCategories.boardId,
+      count: count(),
+    }).from(boardCategories)
+      .where(inArray(boardCategories.boardId, boardIds))
+      .groupBy(boardCategories.boardId);
+
+    const catCountMap = new Map(catCounts.map(c => [c.boardId, c.count]));
+
+    const allBoardCats = await db.select({
+      boardId: boardCategories.boardId,
+      categoryId: boardCategories.categoryId,
+    }).from(boardCategories)
+      .where(inArray(boardCategories.boardId, boardIds));
+
+    const boardCatIds = new Map<number, number[]>();
+    const allCatIds = new Set<number>();
+    for (const bc of allBoardCats) {
+      if (!boardCatIds.has(bc.boardId)) boardCatIds.set(bc.boardId, []);
+      boardCatIds.get(bc.boardId)!.push(bc.categoryId);
+      allCatIds.add(bc.categoryId);
+    }
+
+    let qCountMap = new Map<number, number>();
+    if (allCatIds.size > 0) {
+      const qCounts = await db.select({
+        categoryId: questions.categoryId,
+        count: count(),
+      }).from(questions)
+        .where(inArray(questions.categoryId, Array.from(allCatIds)))
+        .groupBy(questions.categoryId);
+
+      for (const qc of qCounts) {
+        if (qc.categoryId !== null) {
+          qCountMap.set(qc.categoryId, qc.count);
+        }
+      }
+    }
+
+    return rows.map(row => {
+      const catIds = boardCatIds.get(row.board.id) || [];
+      const questionCount = catIds.reduce((sum, cid) => sum + (qCountMap.get(cid) || 0), 0);
       return {
-        ...board,
-        ownerEmail: owner?.email ?? 'Unknown',
-        ownerName: [owner?.firstName, owner?.lastName].filter(Boolean).join(' ') || null,
-        categoryCount: catCount?.count ?? 0,
+        ...row.board,
+        ownerEmail: row.ownerEmail ?? 'Unknown',
+        ownerName: [row.ownerFirstName, row.ownerLastName].filter(Boolean).join(' ') || null,
+        categoryCount: catCountMap.get(row.board.id) ?? 0,
         questionCount,
       };
-    }));
-
-    return boardsWithOwners;
+    });
   }
 
   async deleteBoardFully(boardId: number) {

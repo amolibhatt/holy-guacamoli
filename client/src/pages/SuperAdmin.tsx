@@ -189,7 +189,6 @@ export default function SuperAdmin() {
   const [contentSearch, setContentSearch] = useState("");
   const [sessionSearch, setSessionSearch] = useState("");
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
-  const [deleteBoardId, setDeleteBoardId] = useState<number | null>(null);
   const [contentTab, setContentTab] = useState<'games' | 'blitzgrid' | 'sequence' | 'psyop' | 'timewarp' | 'meme'>('games');
   
   const [announcementTitle, setAnnouncementTitle] = useState("");
@@ -295,10 +294,10 @@ export default function SuperAdmin() {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards/flagged'] });
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
-      toast({ title: "Content deleted" });
-      setDeleteBoardId(null);
+      toast({ title: "Board deleted" });
+      setDeleteContentItem(null);
     },
-    onError: () => toast({ title: "Couldn't delete content", variant: "destructive" }),
+    onError: () => toast({ title: "Couldn't delete board", variant: "destructive" }),
   });
 
   const toggleStarterPackMutation = useMutation({
@@ -545,6 +544,7 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards/flagged'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
       toast({ title: "Content reviewed" });
     },
@@ -629,10 +629,12 @@ export default function SuperAdmin() {
     : allSessions;
 
   const filteredBoards = contentSearch.trim() 
-    ? allBoards.filter(b => 
-        (b.name ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
-        (b.ownerEmail ?? '').toLowerCase().includes(contentSearch.toLowerCase())
-      )
+    ? allBoards.filter(b => {
+        const search = contentSearch.toLowerCase();
+        return (b.name ?? '').toLowerCase().includes(search) ||
+          (b.ownerEmail ?? '').toLowerCase().includes(search) ||
+          (b.ownerName ?? '').toLowerCase().includes(search);
+      })
     : allBoards;
 
   const filteredSequenceQuestions = contentSearch.trim()
@@ -831,6 +833,7 @@ export default function SuperAdmin() {
                             size="sm"
                             variant="outline"
                             onClick={() => updateModerationMutation.mutate({ boardId: board.id, data: { moderationStatus: 'approved' } })}
+                            disabled={updateModerationMutation.isPending}
                             data-testid={`button-approve-${board.id}`}
                           >
                             <Check className="w-4 h-4 mr-1" /> Approve
@@ -838,11 +841,12 @@ export default function SuperAdmin() {
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => setDeleteBoardId(board.id)}
+                            onClick={() => updateModerationMutation.mutate({ boardId: board.id, data: { moderationStatus: 'rejected' } })}
+                            disabled={updateModerationMutation.isPending}
                             data-testid={`button-reject-${board.id}`}
                             aria-label="Reject content"
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-4 h-4 mr-1" /> Reject
                           </Button>
                         </div>
                       </div>
@@ -1385,23 +1389,25 @@ export default function SuperAdmin() {
                   ) : isErrorBoards ? (
                     <ErrorState message="Couldn't load grids" onRetry={() => refetchBoards()} testId="button-retry-grids" />
                   ) : filteredBoards.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8" data-testid="text-empty-grids">No grids found</p>
+                    <p className="text-center text-muted-foreground py-8" data-testid="text-empty-grids">{contentSearch.trim() ? 'No matching grids' : 'No grids found'}</p>
                   ) : (
                     <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {filteredBoards.map(b => (
                         <div key={b.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-medium truncate">{b.name}</p>
                               {b.moderationStatus === 'flagged' && <Badge variant="destructive" className="text-xs">Flagged</Badge>}
                               {b.moderationStatus === 'rejected' && <Badge variant="outline" className="text-xs text-destructive">Rejected</Badge>}
+                              {b.moderationStatus === 'approved' && <Badge variant="outline" className="text-xs text-green-500">Approved</Badge>}
+                              {b.visibility === 'private' && <Badge variant="outline" className="text-xs text-muted-foreground">Private</Badge>}
                               {b.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
                             </div>
                             <p className="text-xs text-muted-foreground">
                               by {b.ownerName || b.ownerEmail} • {b.categoryCount} cat • {b.questionCount} Q
                             </p>
                           </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-1 flex-shrink-0">
                             <Button
                               size="sm"
                               variant={b.isStarterPack ? 'secondary' : 'outline'}
@@ -1416,8 +1422,8 @@ export default function SuperAdmin() {
                               size="icon"
                               variant="ghost"
                               className="text-destructive"
-                              onClick={() => setDeleteBoardId(b.id)}
-                              aria-label="Delete content"
+                              onClick={() => setDeleteContentItem({ type: 'board', id: b.id, label: b.name })}
+                              aria-label="Delete grid"
                               data-testid={`button-delete-board-${b.id}`}
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1840,34 +1846,11 @@ export default function SuperAdmin() {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Delete Board Dialog */}
-        <AlertDialog open={!!deleteBoardId} onOpenChange={() => setDeleteBoardId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Content?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently delete this content.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel data-testid="button-cancel-delete-content">Cancel</AlertDialogCancel>
-              <Button
-                variant="destructive"
-                onClick={() => deleteBoardId && deleteBoardMutation.mutate(deleteBoardId)}
-                disabled={deleteBoardMutation.isPending}
-                data-testid="button-confirm-delete-content"
-              >
-                {deleteBoardMutation.isPending ? 'Deleting...' : 'Delete'}
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
         {/* Delete Content Item Dialog */}
         <AlertDialog open={!!deleteContentItem} onOpenChange={() => setDeleteContentItem(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete {deleteContentItem?.type === 'sequence' ? 'Sort Circuit Question' : deleteContentItem?.type === 'psyop' ? 'PsyOp Question' : deleteContentItem?.type === 'timewarp' ? 'TimeWarp Question' : deleteContentItem?.type === 'meme-prompt' ? 'Meme Prompt' : deleteContentItem?.type === 'meme-image' ? 'Meme Image' : 'Content'}?</AlertDialogTitle>
+              <AlertDialogTitle>Delete {deleteContentItem?.type === 'board' ? 'BlitzGrid Board' : deleteContentItem?.type === 'sequence' ? 'Sort Circuit Question' : deleteContentItem?.type === 'psyop' ? 'PsyOp Question' : deleteContentItem?.type === 'timewarp' ? 'TimeWarp Question' : deleteContentItem?.type === 'meme-prompt' ? 'Meme Prompt' : deleteContentItem?.type === 'meme-image' ? 'Meme Image' : 'Content'}?</AlertDialogTitle>
               <AlertDialogDescription>
                 {deleteContentItem?.label ? (
                   <>This will permanently delete: <span className="font-medium">"{deleteContentItem.label.length > 80 ? deleteContentItem.label.slice(0, 80) + '...' : deleteContentItem.label}"</span></>
@@ -1883,6 +1866,7 @@ export default function SuperAdmin() {
                 onClick={() => {
                   if (!deleteContentItem) return;
                   switch (deleteContentItem.type) {
+                    case 'board': deleteBoardMutation.mutate(deleteContentItem.id); break;
                     case 'sequence': deleteSequenceQuestionMutation.mutate(deleteContentItem.id); break;
                     case 'psyop': deletePsyopQuestionMutation.mutate(deleteContentItem.id); break;
                     case 'timewarp': deleteTimewarpQuestionMutation.mutate(deleteContentItem.id); break;
@@ -1891,6 +1875,7 @@ export default function SuperAdmin() {
                   }
                 }}
                 disabled={
+                  deleteBoardMutation.isPending ||
                   deleteSequenceQuestionMutation.isPending ||
                   deletePsyopQuestionMutation.isPending ||
                   deleteTimewarpQuestionMutation.isPending ||
@@ -1899,7 +1884,8 @@ export default function SuperAdmin() {
                 }
                 data-testid="button-confirm-delete-item"
               >
-                {(deleteSequenceQuestionMutation.isPending ||
+                {(deleteBoardMutation.isPending ||
+                  deleteSequenceQuestionMutation.isPending ||
                   deletePsyopQuestionMutation.isPending ||
                   deleteTimewarpQuestionMutation.isPending ||
                   deleteMemePromptMutation.isPending ||
