@@ -3010,6 +3010,27 @@ export class DatabaseStorage implements IStorage {
     const [timewarpTotalPlays] = await db.select({ count: count() })
       .from(playerGameHistory).where(eq(playerGameHistory.gameSlug, 'timewarp'));
 
+    // Popular meme prompts this week (by usage in rounds)
+    const popularMemeWeek = await db.select({
+      promptId: memeRounds.promptId,
+      prompt: memePrompts.prompt,
+      count: count(),
+    }).from(memeRounds)
+      .innerJoin(memePrompts, eq(memeRounds.promptId, memePrompts.id))
+      .innerJoin(memeSessions, eq(memeRounds.sessionId, memeSessions.id))
+      .where(gte(memeSessions.createdAt, weekAgo))
+      .groupBy(memeRounds.promptId, memePrompts.prompt)
+      .orderBy(desc(count()))
+      .limit(5);
+
+    // Meme players for today/week counts
+    const [todayMemePlayers] = await db.select({ count: count() })
+      .from(memePlayers).where(gte(memePlayers.createdAt, today));
+    const [yesterdayMemePlayers] = await db.select({ count: count() })
+      .from(memePlayers).where(and(gte(memePlayers.createdAt, yesterday), sql`${memePlayers.createdAt} < ${today}`));
+    const [weekMemePlayers] = await db.select({ count: count() })
+      .from(memePlayers).where(gte(memePlayers.createdAt, weekAgo));
+
     const [totalPsyopSessions] = await db.select({ count: count() }).from(psyopSessions);
     const [totalPsyopRounds] = await db.select({ count: count() }).from(psyopRounds);
     const [totalMemeRounds] = await db.select({ count: count() }).from(memeRounds);
@@ -3047,15 +3068,15 @@ export class DatabaseStorage implements IStorage {
       },
       today: {
         games: totalAllGamesToday,
-        players: todayPlayers?.count ?? 0,
+        players: (todayPlayers?.count ?? 0) + (todayMemePlayers?.count ?? 0),
         newUsers: todayNewUsers?.count ?? 0,
         gamesChange: totalAllGamesToday - totalAllGamesYesterday,
-        playersChange: (todayPlayers?.count ?? 0) - (yesterdayPlayers?.count ?? 0),
+        playersChange: ((todayPlayers?.count ?? 0) + (todayMemePlayers?.count ?? 0)) - ((yesterdayPlayers?.count ?? 0) + (yesterdayMemePlayers?.count ?? 0)),
         usersChange: (todayNewUsers?.count ?? 0) - (yesterdayNewUsers?.count ?? 0),
       },
       week: {
         games: totalAllGamesWeek,
-        players: weekPlayers?.count ?? 0,
+        players: (weekPlayers?.count ?? 0) + (weekMemePlayers?.count ?? 0),
         newUsers: weekNewUsers?.count ?? 0,
       },
       totals: {
@@ -3095,6 +3116,10 @@ export class DatabaseStorage implements IStorage {
       popularTimewarpWeek: timewarpEraBreakdown.map(e => ({
         name: e.era,
         plays: e.count,
+      })),
+      popularMemeWeek: popularMemeWeek.map(m => ({
+        name: m.prompt ? (m.prompt.length > 50 ? m.prompt.slice(0, 50) + '...' : m.prompt) : 'Untitled',
+        plays: m.count,
       })),
       sortCircuitSessions: totalSequenceSessions?.count ?? 0,
       psyopSessions: totalPsyopSessions?.count ?? 0,
@@ -3341,8 +3366,10 @@ export class DatabaseStorage implements IStorage {
         .from(psyopQuestions).where(eq(psyopQuestions.userId, user.id));
       const [userMemePromptCount] = await db.select({ count: count() })
         .from(memePrompts).where(eq(memePrompts.userId, user.id));
+      const [userMemeImageCount] = await db.select({ count: count() })
+        .from(memeImages).where(eq(memeImages.userId, user.id));
 
-      // Get sessions hosted by this user
+      // Get sessions hosted by this user (BlitzGrid)
       const hostedSessions = await db.select({
         id: gameSessions.id,
         code: gameSessions.code,
@@ -3353,6 +3380,12 @@ export class DatabaseStorage implements IStorage {
       }).from(gameSessions)
         .where(eq(gameSessions.hostId, user.id))
         .orderBy(desc(gameSessions.createdAt));
+
+      // Get meme sessions hosted by this user
+      const [userMemeSessionCount] = await db.select({ count: count() })
+        .from(memeSessions).where(eq(memeSessions.hostId, user.id));
+      const [userPsyopSessionCount] = await db.select({ count: count() })
+        .from(psyopSessions).where(eq(psyopSessions.hostId, user.id));
 
       // Get player counts and winners for each hosted session
       const sessionsWithPlayers = await Promise.all(hostedSessions.map(async (session) => {
@@ -3372,23 +3405,26 @@ export class DatabaseStorage implements IStorage {
         return {
           ...session,
           playerCount: players.length,
-          players: players.slice(0, 5), // Top 5 players
+          players: players.slice(0, 5),
           winner: winner && winner.score > 0 ? winner : null,
         };
       }));
+
+      const totalGamesHosted = hostedSessions.length + (userMemeSessionCount?.count ?? 0) + (userPsyopSessionCount?.count ?? 0);
 
       const { password, ...safeUser } = user;
       return {
         ...safeUser,
         boardCount: userBoards.length,
         boards: userBoards.slice(0, 5),
-        gamesHosted: hostedSessions.length,
+        gamesHosted: totalGamesHosted,
         recentSessions: sessionsWithPlayers.slice(0, 10),
         contentCounts: {
           timeWarpQuestions: userTimewarpCount?.count ?? 0,
           sequenceQuestions: userSequenceCount?.count ?? 0,
           psyopQuestions: userPsyopCount?.count ?? 0,
           memePrompts: userMemePromptCount?.count ?? 0,
+          memeImages: userMemeImageCount?.count ?? 0,
         },
       };
     }));
@@ -3650,10 +3686,47 @@ export class DatabaseStorage implements IStorage {
       createdAt: memeImages.createdAt,
     }).from(memeImages).where(eq(memeImages.userId, userId));
 
+    // Get meme sessions hosted
+    const hostedMemeSessions = await db.select({
+      id: memeSessions.id,
+      roomCode: memeSessions.roomCode,
+      status: memeSessions.status,
+      currentRound: memeSessions.currentRound,
+      totalRounds: memeSessions.totalRounds,
+      createdAt: memeSessions.createdAt,
+    }).from(memeSessions)
+      .where(eq(memeSessions.hostId, userId))
+      .orderBy(desc(memeSessions.createdAt));
+
+    const memeSessionsWithDetails = await Promise.all(hostedMemeSessions.map(async (session) => {
+      const players = await db.select({
+        id: memePlayers.id,
+        name: memePlayers.name,
+        score: memePlayers.score,
+      }).from(memePlayers).where(eq(memePlayers.sessionId, session.id));
+      return {
+        ...session,
+        playerCount: players.length,
+        players,
+      };
+    }));
+
+    // Get psyop sessions hosted
+    const hostedPsyopSessions = await db.select({
+      id: psyopSessions.id,
+      roomCode: psyopSessions.roomCode,
+      status: psyopSessions.status,
+      createdAt: psyopSessions.createdAt,
+    }).from(psyopSessions)
+      .where(eq(psyopSessions.hostId, userId))
+      .orderBy(desc(psyopSessions.createdAt));
+
     const { password, ...safeUser } = user;
     return {
       user: safeUser,
       sessions: sessionsWithDetails,
+      memeSessions: memeSessionsWithDetails,
+      psyopSessions: hostedPsyopSessions,
       boards: userBoards,
       content: {
         timeWarpQuestions: userTimeWarpQs,
@@ -3663,7 +3736,7 @@ export class DatabaseStorage implements IStorage {
         memeImages: userMemeImagesData,
       },
       stats: {
-        totalGamesHosted: hostedSessions.length,
+        totalGamesHosted: hostedSessions.length + hostedMemeSessions.length + hostedPsyopSessions.length,
         totalBoards: userBoards.length,
         totalPlayersHosted: sessionsWithDetails.reduce((sum, s) => sum + s.players.length, 0),
         totalTimeWarpQuestions: userTimeWarpQs.length,
@@ -3671,6 +3744,8 @@ export class DatabaseStorage implements IStorage {
         totalPsyopQuestions: userPsyopQs.length,
         totalMemePrompts: userMemePromptsData.length,
         totalMemeImages: userMemeImagesData.length,
+        totalMemeSessions: hostedMemeSessions.length,
+        totalPsyopSessions: hostedPsyopSessions.length,
       }
     };
   }

@@ -71,6 +71,7 @@ interface UserWithStats extends SafeUser {
     sequenceQuestions: number;
     psyopQuestions: number;
     memePrompts: number;
+    memeImages: number;
   };
 }
 
@@ -123,6 +124,7 @@ interface ComprehensiveDashboard {
   popularSortCircuitWeek: { name: string; plays: number }[];
   popularPsyopWeek: { name: string; plays: number }[];
   popularTimewarpWeek: { name: string; plays: number }[];
+  popularMemeWeek: { name: string; plays: number }[];
   sortCircuitSessions: number;
   psyopSessions: number;
   performance: { avgScore: number; highScore: number; completionRate: number; sortCircuitAccuracy: number; sortCircuitAvgTimeMs: number; sortCircuitCompletionRate: number; psyopTotalRounds: number; psyopDeceptionRate: number; psyopSessions: number; timewarpTotalPlays: number; timewarpQuestionCount: number; memeSessions: number; memeRounds: number; memePlayers: number };
@@ -1313,6 +1315,35 @@ export default function SuperAdmin() {
               </div>
             )}
 
+            {/* Popular Meme No Harm Card */}
+            {dashboard && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Image className="w-5 h-5 text-pink-400" /> Popular Meme Prompts
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dashboard.popularMemeWeek.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-empty-popular-meme">No meme rounds this week</p>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground">Most played prompts this week</p>
+                      {dashboard.popularMemeWeek.slice(0, 5).map((m, i) => (
+                        <div key={`meme-${m.name}-${i}`} className="flex items-center justify-between p-2 rounded bg-muted/30 gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-sm font-bold text-muted-foreground w-5 flex-shrink-0">#{i + 1}</span>
+                            <span className="text-sm truncate">{m.name}</span>
+                          </div>
+                          <Badge variant="secondary" className="flex-shrink-0">{m.plays} plays</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Quick Actions */}
             <div className="grid md:grid-cols-2 gap-4">
               <Card>
@@ -1489,13 +1520,13 @@ export default function SuperAdmin() {
                               {u.firstName || u.lastName ? `${u.firstName || ''} ${u.lastName || ''}`.trim() : u.email}
                             </p>
                             <p className="text-xs text-muted-foreground truncate">{u.email}</p>
-                            {u.contentCounts && (u.contentCounts.timeWarpQuestions > 0 || u.contentCounts.sequenceQuestions > 0 || u.contentCounts.psyopQuestions > 0 || u.contentCounts.memePrompts > 0 || u.boardCount > 0) && (
+                            {u.contentCounts && (u.contentCounts.timeWarpQuestions > 0 || u.contentCounts.sequenceQuestions > 0 || u.contentCounts.psyopQuestions > 0 || u.contentCounts.memePrompts > 0 || u.contentCounts.memeImages > 0 || u.boardCount > 0) && (
                               <div className="flex items-center gap-1 flex-wrap mt-0.5">
                                 {u.boardCount > 0 && <Badge variant="outline" className="text-xs">{u.boardCount} grids</Badge>}
                                 {u.contentCounts.sequenceQuestions > 0 && <Badge variant="outline" className="text-xs">{u.contentCounts.sequenceQuestions} SC</Badge>}
                                 {u.contentCounts.psyopQuestions > 0 && <Badge variant="outline" className="text-xs">{u.contentCounts.psyopQuestions} PsyOp</Badge>}
                                 {u.contentCounts.timeWarpQuestions > 0 && <Badge variant="outline" className="text-xs">{u.contentCounts.timeWarpQuestions} PF</Badge>}
-                                {u.contentCounts.memePrompts > 0 && <Badge variant="outline" className="text-xs">{u.contentCounts.memePrompts} meme</Badge>}
+                                {(u.contentCounts.memePrompts > 0 || u.contentCounts.memeImages > 0) && <Badge variant="outline" className="text-xs">{(u.contentCounts.memePrompts || 0) + (u.contentCounts.memeImages || 0)} meme</Badge>}
                               </div>
                             )}
                           </div>
