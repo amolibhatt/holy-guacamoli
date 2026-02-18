@@ -102,6 +102,7 @@ interface GameSessionDetailed {
   players: { id: number; name: string; avatar: string; score: number; isConnected: boolean; joinedAt: string }[];
   playerCount: number;
   winner: { id: number; name: string; score: number } | null;
+  roundCount?: number;
 }
 
 interface ComprehensiveDashboard {
@@ -2119,7 +2120,9 @@ export default function SuperAdmin() {
                               )}
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              {s.playerCount} players • {formatRelativeDate(s.createdAt)}
+                              {s.playerCount} player{s.playerCount !== 1 ? 's' : ''}
+                              {(s.roundCount ?? 0) > 0 ? ` • ${s.roundCount} round${s.roundCount !== 1 ? 's' : ''}` : ''}
+                              {' • '}{formatRelativeDate(s.createdAt)}
                             </p>
                           </div>
                         </div>

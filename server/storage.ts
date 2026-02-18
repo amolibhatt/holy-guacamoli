@@ -3285,7 +3285,6 @@ export class DatabaseStorage implements IStorage {
       .limit(100);
 
     const sessionsDetailed = await Promise.all(sessions.map(async (session) => {
-      // Get host info
       const [host] = await db.select({
         id: users.id,
         firstName: users.firstName,
@@ -3293,7 +3292,6 @@ export class DatabaseStorage implements IStorage {
         email: users.email,
       }).from(users).where(eq(users.id, session.hostId));
 
-      // Get all players
       const players = await db.select({
         id: sessionPlayers.id,
         name: sessionPlayers.name,
@@ -3305,7 +3303,6 @@ export class DatabaseStorage implements IStorage {
         .where(eq(sessionPlayers.sessionId, session.id))
         .orderBy(desc(sessionPlayers.score));
 
-      // Determine winner (highest score, if ended)
       const winner = players.length > 0 && players[0].score > 0 ? players[0] : null;
 
       return {
@@ -3314,10 +3311,151 @@ export class DatabaseStorage implements IStorage {
         players,
         playerCount: players.length,
         winner,
+        roundCount: 0,
       };
     }));
 
-    return sessionsDetailed;
+    // Also fetch PsyOp sessions (separate table)
+    const psyopSessionsData = await db.select({
+      id: psyopSessions.id,
+      roomCode: psyopSessions.roomCode,
+      hostId: psyopSessions.hostId,
+      status: psyopSessions.status,
+      createdAt: psyopSessions.createdAt,
+    }).from(psyopSessions)
+      .orderBy(desc(psyopSessions.createdAt))
+      .limit(100);
+
+    const psyopDetailed = await Promise.all(psyopSessionsData.map(async (session) => {
+      const [host] = await db.select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+      }).from(users).where(eq(users.id, session.hostId));
+
+      const rounds = await db.select({ id: psyopRounds.id })
+        .from(psyopRounds)
+        .where(eq(psyopRounds.sessionId, session.id));
+
+      const roundIds = rounds.map(r => r.id);
+      let uniquePlayers: { id: number; name: string; avatar: string; score: number; isConnected: boolean; joinedAt: Date | null }[] = [];
+      if (roundIds.length > 0) {
+        const subs = await db.select({
+          playerName: psyopSubmissions.playerName,
+          playerAvatar: psyopSubmissions.playerAvatar,
+        }).from(psyopSubmissions)
+          .where(inArray(psyopSubmissions.roundId, roundIds));
+
+        const votes = await db.select({
+          voterName: psyopVotes.voterName,
+        }).from(psyopVotes)
+          .where(inArray(psyopVotes.roundId, roundIds));
+
+        const playerMap = new Map<string, string | null>();
+        subs.forEach(s => {
+          if (!playerMap.has(s.playerName)) {
+            playerMap.set(s.playerName, s.playerAvatar);
+          }
+        });
+        votes.forEach(v => {
+          if (!playerMap.has(v.voterName)) {
+            playerMap.set(v.voterName, null);
+          }
+        });
+
+        let idx = 0;
+        playerMap.forEach((avatar, name) => {
+          uniquePlayers.push({
+            id: idx++,
+            name,
+            avatar: avatar || '',
+            score: 0,
+            isConnected: false,
+            joinedAt: session.createdAt,
+          });
+        });
+      }
+
+      return {
+        id: session.id + 1000000,
+        code: session.roomCode,
+        hostId: session.hostId,
+        currentMode: 'psyop' as string | null,
+        state: session.status || 'unknown',
+        createdAt: session.createdAt,
+        updatedAt: session.createdAt,
+        host: host || { id: session.hostId, firstName: null, lastName: null, email: null },
+        players: uniquePlayers,
+        playerCount: uniquePlayers.length,
+        winner: null,
+        roundCount: rounds.length,
+      };
+    }));
+
+    // Also fetch Meme No Harm sessions (separate table)
+    const memeSessionsData = await db.select({
+      id: memeSessions.id,
+      roomCode: memeSessions.roomCode,
+      hostId: memeSessions.hostId,
+      status: memeSessions.status,
+      currentRound: memeSessions.currentRound,
+      totalRounds: memeSessions.totalRounds,
+      createdAt: memeSessions.createdAt,
+    }).from(memeSessions)
+      .orderBy(desc(memeSessions.createdAt))
+      .limit(100);
+
+    const memeDetailed = await Promise.all(memeSessionsData.map(async (session) => {
+      const [host] = await db.select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+      }).from(users).where(eq(users.id, session.hostId));
+
+      const players = await db.select({
+        id: memePlayers.id,
+        name: memePlayers.name,
+        score: memePlayers.score,
+        createdAt: memePlayers.createdAt,
+      }).from(memePlayers)
+        .where(eq(memePlayers.sessionId, session.id))
+        .orderBy(desc(memePlayers.score));
+
+      const mappedPlayers = players.map(p => ({
+        id: p.id,
+        name: p.name,
+        avatar: '',
+        score: p.score,
+        isConnected: false,
+        joinedAt: p.createdAt,
+      }));
+
+      const winner = mappedPlayers.length > 0 && mappedPlayers[0].score > 0 ? mappedPlayers[0] : null;
+
+      return {
+        id: session.id + 2000000,
+        code: session.roomCode,
+        hostId: session.hostId,
+        currentMode: 'meme' as string | null,
+        state: session.status || 'unknown',
+        createdAt: session.createdAt,
+        updatedAt: session.createdAt,
+        host: host || { id: session.hostId, firstName: null, lastName: null, email: null },
+        players: mappedPlayers,
+        playerCount: mappedPlayers.length,
+        winner,
+        roundCount: session.currentRound || 0,
+      };
+    }));
+
+    // Merge all sessions and sort by createdAt desc
+    const allSessions = [...sessionsDetailed, ...psyopDetailed, ...memeDetailed]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 200);
+
+    return allSessions;
   }
 
   async getUserDetailedActivity(userId: string) {
