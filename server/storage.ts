@@ -2855,9 +2855,19 @@ export class DatabaseStorage implements IStorage {
     const [totalMemePrompts] = await db.select({ count: count() }).from(memePrompts);
     const [totalMemeImages] = await db.select({ count: count() }).from(memeImages);
 
-    // Content stats
+    // Content stats - starter packs across all content types
     const [starterPackBoards] = await db.select({ count: count() })
       .from(boards).where(eq(boards.isStarterPack, true));
+    const [starterPackSequence] = await db.select({ count: count() })
+      .from(sequenceQuestions).where(eq(sequenceQuestions.isStarterPack, true));
+    const [starterPackPsyop] = await db.select({ count: count() })
+      .from(psyopQuestions).where(eq(psyopQuestions.isStarterPack, true));
+    const [starterPackTimewarp] = await db.select({ count: count() })
+      .from(timeWarpQuestions).where(eq(timeWarpQuestions.isStarterPack, true));
+    const [starterPackMemePrompts] = await db.select({ count: count() })
+      .from(memePrompts).where(eq(memePrompts.isStarterPack, true));
+    const [starterPackMemeImages] = await db.select({ count: count() })
+      .from(memeImages).where(eq(memeImages.isStarterPack, true));
     const [flaggedBoards] = await db.select({ count: count() })
       .from(boards).where(eq(boards.moderationStatus, 'flagged'));
 
@@ -2942,7 +2952,7 @@ export class DatabaseStorage implements IStorage {
         timeWarpQuestions: totalTimeWarpQuestions?.count ?? 0,
         memePrompts: totalMemePrompts?.count ?? 0,
         memeImages: totalMemeImages?.count ?? 0,
-        starterPacks: starterPackBoards?.count ?? 0,
+        starterPacks: (starterPackBoards?.count ?? 0) + (starterPackSequence?.count ?? 0) + (starterPackPsyop?.count ?? 0) + (starterPackTimewarp?.count ?? 0) + (starterPackMemePrompts?.count ?? 0) + (starterPackMemeImages?.count ?? 0),
         flaggedContent: flaggedBoards?.count ?? 0,
       },
       usersByRole: usersByRole.reduce((acc, r) => ({ ...acc, [r.role || 'user']: r.count }), {} as Record<string, number>),

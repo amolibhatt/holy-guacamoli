@@ -121,7 +121,12 @@ interface SequenceQuestionWithCreator {
   id: number;
   userId: string | null;
   question: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
   correctOrder: string[];
+  hint: string | null;
   isActive: boolean;
   isStarterPack: boolean;
   createdAt: string;
@@ -197,7 +202,7 @@ export default function SuperAdmin() {
   // Queries
   const { data: dashboard, isLoading: isLoadingDashboard, isError: isErrorDashboard, refetch: refetchDashboard } = useQuery<ComprehensiveDashboard>({
     queryKey: ['/api/super-admin/dashboard'],
-    enabled: activeTab === 'overview',
+    enabled: activeTab === 'overview' || activeTab === 'content',
     refetchInterval: activeTab === 'overview' ? 30000 : false,
   });
 
@@ -439,6 +444,7 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/sequence'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
       toast({ title: "Visibility updated" });
     },
     onError: () => toast({ title: "Couldn't update visibility", variant: "destructive" }),
@@ -450,6 +456,7 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/psyop'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
       toast({ title: "Visibility updated" });
     },
     onError: () => toast({ title: "Couldn't update visibility", variant: "destructive" }),
@@ -461,6 +468,7 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/timewarp'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
       toast({ title: "Visibility updated" });
     },
     onError: () => toast({ title: "Couldn't update visibility", variant: "destructive" }),
@@ -472,6 +480,7 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/meme/prompts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
       toast({ title: "Visibility updated" });
     },
     onError: () => toast({ title: "Couldn't update visibility", variant: "destructive" }),
@@ -483,6 +492,7 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/super-admin/meme/images'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
       toast({ title: "Visibility updated" });
     },
     onError: () => toast({ title: "Couldn't update visibility", variant: "destructive" }),
@@ -1276,6 +1286,7 @@ export default function SuperAdmin() {
                     data-testid="button-content-blitzgrid"
                   >
                     <Grid3X3 className="w-4 h-4 mr-1" /> BlitzGrid
+                    {dashboard?.totals.boards ? <Badge variant="secondary" className="ml-1 text-xs">{dashboard.totals.boards}</Badge> : null}
                   </Button>
                   <Button
                     size="sm"
@@ -1284,6 +1295,7 @@ export default function SuperAdmin() {
                     data-testid="button-content-sequence"
                   >
                     <ListOrdered className="w-4 h-4 mr-1" /> Sort Circuit
+                    {dashboard?.totals.sortCircuitQuestions ? <Badge variant="secondary" className="ml-1 text-xs">{dashboard.totals.sortCircuitQuestions}</Badge> : null}
                   </Button>
                   <Button
                     size="sm"
@@ -1292,6 +1304,7 @@ export default function SuperAdmin() {
                     data-testid="button-content-psyop"
                   >
                     <Brain className="w-4 h-4 mr-1" /> PsyOp
+                    {dashboard?.totals.psyopQuestions ? <Badge variant="secondary" className="ml-1 text-xs">{dashboard.totals.psyopQuestions}</Badge> : null}
                   </Button>
                   <Button
                     size="sm"
@@ -1300,6 +1313,7 @@ export default function SuperAdmin() {
                     data-testid="button-content-timewarp"
                   >
                     <Clock className="w-4 h-4 mr-1" /> TimeWarp
+                    {dashboard?.totals.timeWarpQuestions ? <Badge variant="secondary" className="ml-1 text-xs">{dashboard.totals.timeWarpQuestions}</Badge> : null}
                   </Button>
                   <Button
                     size="sm"
@@ -1308,6 +1322,7 @@ export default function SuperAdmin() {
                     data-testid="button-content-meme"
                   >
                     <Image className="w-4 h-4 mr-1" /> Meme
+                    {(dashboard?.totals.memePrompts || dashboard?.totals.memeImages) ? <Badge variant="secondary" className="ml-1 text-xs">{(dashboard?.totals.memePrompts || 0) + (dashboard?.totals.memeImages || 0)}</Badge> : null}
                   </Button>
                 </div>
 
@@ -1431,8 +1446,11 @@ export default function SuperAdmin() {
                               {!q.isActive && <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>}
                               {q.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                              by {q.creator?.username || 'Unknown'} {q.correctOrder && `• ${q.correctOrder.length} items`}
+                            <p className="text-xs text-muted-foreground truncate">
+                              by {q.creator?.username || 'Unknown'} • Order: {q.correctOrder?.map(letter => {
+                                const optionMap: Record<string, string> = { A: q.optionA, B: q.optionB, C: q.optionC, D: q.optionD };
+                                return optionMap[letter] || letter;
+                              }).join(' → ')}
                             </p>
                           </div>
                           <div className="flex items-center gap-1 flex-shrink-0">
@@ -1488,7 +1506,7 @@ export default function SuperAdmin() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="font-medium truncate">{q.factText}</p>
-                              <Badge variant="outline" className="text-xs">{q.correctAnswer === 'true' || q.correctAnswer === 'truth' ? 'Truth' : 'Lie'}</Badge>
+                              <Badge variant="outline" className="text-xs">Answer: {q.correctAnswer}</Badge>
                               {!q.isActive && <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>}
                               {q.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
                             </div>
