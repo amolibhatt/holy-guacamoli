@@ -614,6 +614,7 @@ export default function SequencePlayer() {
         <div className="flex items-center gap-2">
           {status === "connected" && <Wifi className="w-4 h-4 text-teal-400 shrink-0" data-testid="status-connected" />}
           {status === "connecting" && <RefreshCw className="w-4 h-4 animate-spin text-teal-400 shrink-0" data-testid="status-connecting" />}
+          {status === "reconnecting" && <RefreshCw className="w-4 h-4 animate-spin text-amber-400 shrink-0" data-testid="status-reconnecting" />}
           {status === "disconnected" && <WifiOff className="w-4 h-4 text-red-400 shrink-0" data-testid="status-disconnected" />}
           {status === "error" && <WifiOff className="w-4 h-4 text-red-400 shrink-0" data-testid="status-error" />}
 

@@ -97,6 +97,10 @@ export default function SequenceSqueeze() {
   const hasAutoStartedRef = useRef(false);
   const elapsedTimerRef = useRef<number | null>(null);
   const isPausedRef = useRef(false);
+  const roomCodeRef = useRef<string | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const maxReconnectAttempts = 5;
 
   const { data: questions = [], isLoading: isLoadingQuestions } = useQuery<SequenceQuestion[]>({
     queryKey: ["/api/sequence-squeeze/questions"],
@@ -152,6 +156,9 @@ export default function SequenceSqueeze() {
           break;
         case "sequence:mode:switched":
           setRoomCode(data.code);
+          roomCodeRef.current = data.code;
+          reconnectAttemptsRef.current = 0;
+          localStorage.setItem("buzzer-room-code", data.code);
           setGameState("waiting");
           if (data.players && data.players.length > 0) {
             setPlayers(data.players.map((p: any) => ({
@@ -179,6 +186,9 @@ export default function SequenceSqueeze() {
           break;
         case "sequence:room:created":
           setRoomCode(data.code);
+          roomCodeRef.current = data.code;
+          reconnectAttemptsRef.current = 0;
+          localStorage.setItem("buzzer-room-code", data.code);
           setGameState("waiting");
           setPlayers([]);
           setLeaderboard([]);
@@ -332,9 +342,23 @@ export default function SequenceSqueeze() {
     };
 
     socket.onclose = () => {
+      setWs(null);
+      const savedCode = roomCodeRef.current || localStorage.getItem("buzzer-room-code");
+      if (savedCode && reconnectAttemptsRef.current < maxReconnectAttempts) {
+        reconnectAttemptsRef.current += 1;
+        localStorage.setItem("buzzer-room-code", savedCode);
+        toast({ title: "Connection lost", description: `Reconnecting... (${reconnectAttemptsRef.current}/${maxReconnectAttempts})`, variant: "destructive" });
+        if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = setTimeout(() => {
+          reconnectTimerRef.current = null;
+          connectWebSocket(true);
+        }, 2000);
+        return;
+      }
+      reconnectAttemptsRef.current = 0;
+      roomCodeRef.current = null;
       setRoomCode(null);
       setGameState("setup");
-      setWs(null);
       hasAutoStartedRef.current = false;
     };
 
@@ -433,7 +457,7 @@ export default function SequenceSqueeze() {
 
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ 
-        type: "sequence:host:startQuestion", 
+        type: "sequence:host:startAnimatedReveal", 
         question: {
           id: question.id,
           question: question.question,
@@ -508,6 +532,7 @@ export default function SequenceSqueeze() {
       if (ws) ws.close();
       animationTimeoutsRef.current.forEach(clearTimeout);
       if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
     };
   }, [ws]);
 
@@ -888,7 +913,7 @@ export default function SequenceSqueeze() {
                 </motion.h2>
                 <div className="grid grid-cols-2 gap-4 max-w-2xl w-full">
                   {["A", "B", "C", "D"].map((letter, i) => {
-                    const option = currentQuestion[`option${letter}` as keyof SequenceQuestion] as string;
+                    const option = shuffledQuestion ? shuffledQuestion[`option${letter}` as keyof typeof shuffledQuestion] : currentQuestion[`option${letter}` as keyof SequenceQuestion] as string;
                     return (
                       <motion.div
                         key={letter}
@@ -931,13 +956,19 @@ export default function SequenceSqueeze() {
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden">
-                  <motion.div 
-                    className="h-full bg-gradient-to-r from-teal-500 to-cyan-500"
-                    style={{ width: `${(currentQuestionIndex / totalQuestions) * 100}%` }}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(currentQuestionIndex / totalQuestions) * 100}%` }}
-                    transition={{ duration: 0.5 }}
-                  />
+                  {(() => {
+                    const completed = Math.max(0, currentQuestionIndex - 1);
+                    const pct = totalQuestions > 0 ? Math.min(100, Math.round((completed / totalQuestions) * 100)) : 0;
+                    return (
+                      <motion.div 
+                        className="h-full bg-gradient-to-r from-teal-500 to-cyan-500"
+                        style={{ width: `${pct}%` }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.5 }}
+                      />
+                    );
+                  })()}
                 </div>
                 <span className="text-sm text-white/60 font-mono">{currentQuestionIndex}/{totalQuestions}</span>
               </div>
