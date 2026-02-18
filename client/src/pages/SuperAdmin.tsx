@@ -6,7 +6,7 @@ import {
   Gamepad2, Clock, Activity, ListOrdered, Grid3X3,
   Search, RefreshCw, Star, Megaphone, Download, 
   Send, User, Play, Image, Brain, Zap, Crown, Target, 
-  Eye, EyeOff, Check, X, AlertTriangle
+  Eye, EyeOff, Check, X, AlertTriangle, Globe, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,6 +73,11 @@ interface BoardWithOwner extends Board {
   ownerName: string;
   questionCount: number;
   categoryCount: number;
+}
+
+interface FlaggedBoardWithOwner extends Board {
+  ownerEmail: string;
+  ownerName: string | null;
 }
 
 interface Announcement {
@@ -220,7 +225,7 @@ export default function SuperAdmin() {
     enabled: activeTab === 'content',
   });
 
-  const { data: flaggedBoards = [], isLoading: isLoadingFlagged, isError: isErrorFlagged, refetch: refetchFlagged } = useQuery<Board[]>({
+  const { data: flaggedBoards = [], isLoading: isLoadingFlagged, isError: isErrorFlagged, refetch: refetchFlagged } = useQuery<FlaggedBoardWithOwner[]>({
     queryKey: ['/api/super-admin/boards/flagged'],
     enabled: activeTab === 'overview',
   });
@@ -310,6 +315,43 @@ export default function SuperAdmin() {
       toast({ title: "Starter pack updated" });
     },
     onError: () => toast({ title: "Couldn't update starter pack", variant: "destructive" }),
+  });
+
+  const toggleBoardVisibilityMutation = useMutation({
+    mutationFn: async ({ boardId, visibility }: { boardId: number; visibility: string }) => {
+      await apiRequest('PATCH', `/api/super-admin/boards/${boardId}/visibility`, { visibility });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
+      toast({ title: "Visibility updated" });
+    },
+    onError: () => toast({ title: "Couldn't update visibility", variant: "destructive" }),
+  });
+
+  const toggleBoardGlobalMutation = useMutation({
+    mutationFn: async ({ boardId, isGlobal }: { boardId: number; isGlobal: boolean }) => {
+      await apiRequest('PATCH', `/api/super-admin/boards/${boardId}/global`, { isGlobal });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
+      toast({ title: "Global status updated" });
+    },
+    onError: () => toast({ title: "Couldn't update global status", variant: "destructive" }),
+  });
+
+  const toggleBoardFeaturedMutation = useMutation({
+    mutationFn: async ({ boardId, isFeatured }: { boardId: number; isFeatured: boolean }) => {
+      await apiRequest('PATCH', `/api/super-admin/boards/${boardId}/featured`, { isFeatured });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards/featured'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
+      toast({ title: "Featured status updated" });
+    },
+    onError: () => toast({ title: "Couldn't update featured status", variant: "destructive" }),
   });
 
   const toggleSequenceStarterPackMutation = useMutation({
@@ -823,12 +865,15 @@ export default function SuperAdmin() {
                   ) : (
                   <div className="space-y-2">
                     {flaggedBoards.map(board => (
-                      <div key={board.id} className="flex items-center justify-between p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                        <div>
-                          <p className="font-medium">{board.name}</p>
-                          <p className="text-xs text-muted-foreground">Flagged for review</p>
+                      <div key={board.id} className="flex items-center justify-between p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{board.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            by {board.ownerName || board.ownerEmail || 'Unknown'}
+                            {board.flagReason && <> &middot; Reason: {board.flagReason}</>}
+                          </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           <Button
                             size="sm"
                             variant="outline"
@@ -1278,7 +1323,7 @@ export default function SuperAdmin() {
                   <Button
                     size="sm"
                     variant={contentTab === 'games' ? 'default' : 'outline'}
-                    onClick={() => setContentTab('games')}
+                    onClick={() => { setContentTab('games'); setContentSearch(''); }}
                     data-testid="button-content-games"
                   >
                     <Gamepad2 className="w-4 h-4 mr-1" /> Games
@@ -1286,7 +1331,7 @@ export default function SuperAdmin() {
                   <Button
                     size="sm"
                     variant={contentTab === 'blitzgrid' ? 'default' : 'outline'}
-                    onClick={() => setContentTab('blitzgrid')}
+                    onClick={() => { setContentTab('blitzgrid'); setContentSearch(''); }}
                     data-testid="button-content-blitzgrid"
                   >
                     <Grid3X3 className="w-4 h-4 mr-1" /> BlitzGrid
@@ -1295,7 +1340,7 @@ export default function SuperAdmin() {
                   <Button
                     size="sm"
                     variant={contentTab === 'sequence' ? 'default' : 'outline'}
-                    onClick={() => setContentTab('sequence')}
+                    onClick={() => { setContentTab('sequence'); setContentSearch(''); }}
                     data-testid="button-content-sequence"
                   >
                     <ListOrdered className="w-4 h-4 mr-1" /> Sort Circuit
@@ -1304,7 +1349,7 @@ export default function SuperAdmin() {
                   <Button
                     size="sm"
                     variant={contentTab === 'psyop' ? 'default' : 'outline'}
-                    onClick={() => setContentTab('psyop')}
+                    onClick={() => { setContentTab('psyop'); setContentSearch(''); }}
                     data-testid="button-content-psyop"
                   >
                     <Brain className="w-4 h-4 mr-1" /> PsyOp
@@ -1313,7 +1358,7 @@ export default function SuperAdmin() {
                   <Button
                     size="sm"
                     variant={contentTab === 'timewarp' ? 'default' : 'outline'}
-                    onClick={() => setContentTab('timewarp')}
+                    onClick={() => { setContentTab('timewarp'); setContentSearch(''); }}
                     data-testid="button-content-timewarp"
                   >
                     <Clock className="w-4 h-4 mr-1" /> TimeWarp
@@ -1322,7 +1367,7 @@ export default function SuperAdmin() {
                   <Button
                     size="sm"
                     variant={contentTab === 'meme' ? 'default' : 'outline'}
-                    onClick={() => setContentTab('meme')}
+                    onClick={() => { setContentTab('meme'); setContentSearch(''); }}
                     data-testid="button-content-meme"
                   >
                     <Image className="w-4 h-4 mr-1" /> Meme
@@ -1401,6 +1446,8 @@ export default function SuperAdmin() {
                               {b.moderationStatus === 'rejected' && <Badge variant="outline" className="text-xs text-destructive">Rejected</Badge>}
                               {b.moderationStatus === 'approved' && <Badge variant="outline" className="text-xs text-green-500">Approved</Badge>}
                               {b.visibility === 'private' && <Badge variant="outline" className="text-xs text-muted-foreground">Private</Badge>}
+                              {b.isGlobal && <Badge variant="outline" className="text-xs text-blue-500">Global</Badge>}
+                              {b.isFeatured && <Badge variant="outline" className="text-xs text-amber-500">Featured</Badge>}
                               {b.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
                             </div>
                             <p className="text-xs text-muted-foreground">
@@ -1409,7 +1456,37 @@ export default function SuperAdmin() {
                           </div>
                           <div className="flex items-center gap-1 flex-shrink-0">
                             <Button
-                              size="sm"
+                              size="icon"
+                              variant={b.visibility === 'public' ? 'outline' : 'secondary'}
+                              onClick={() => toggleBoardVisibilityMutation.mutate({ boardId: b.id, visibility: b.visibility === 'public' ? 'private' : 'public' })}
+                              disabled={toggleBoardVisibilityMutation.isPending}
+                              data-testid={`button-visibility-${b.id}`}
+                              aria-label={b.visibility === 'public' ? 'Make private' : 'Make public'}
+                            >
+                              {b.visibility === 'public' ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant={b.isGlobal ? 'secondary' : 'outline'}
+                              onClick={() => toggleBoardGlobalMutation.mutate({ boardId: b.id, isGlobal: !b.isGlobal })}
+                              disabled={toggleBoardGlobalMutation.isPending}
+                              data-testid={`button-global-${b.id}`}
+                              aria-label={b.isGlobal ? 'Remove global access' : 'Make globally available'}
+                            >
+                              <Globe className={`w-4 h-4 ${b.isGlobal ? 'fill-current' : ''}`} />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant={b.isFeatured ? 'secondary' : 'outline'}
+                              onClick={() => toggleBoardFeaturedMutation.mutate({ boardId: b.id, isFeatured: !b.isFeatured })}
+                              disabled={toggleBoardFeaturedMutation.isPending}
+                              data-testid={`button-featured-${b.id}`}
+                              aria-label={b.isFeatured ? 'Remove from featured' : 'Feature this board'}
+                            >
+                              <Sparkles className={`w-4 h-4 ${b.isFeatured ? 'fill-current' : ''}`} />
+                            </Button>
+                            <Button
+                              size="icon"
                               variant={b.isStarterPack ? 'secondary' : 'outline'}
                               onClick={() => toggleStarterPackMutation.mutate({ boardId: b.id, isStarterPack: !b.isStarterPack })}
                               disabled={toggleStarterPackMutation.isPending}

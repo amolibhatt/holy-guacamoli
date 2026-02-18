@@ -2554,49 +2554,14 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async getAllBlitzgridsWithOwners() {
-    // Match both "blitzgrid" and "blitzgrid:*" themes
-    const allGrids = await db.select().from(boards)
-      .where(or(
-        eq(boards.theme, 'blitzgrid'),
-        like(boards.theme, 'blitzgrid:%')
-      ))
-      .orderBy(desc(boards.id));
-    
-    const gridsWithOwners = await Promise.all(allGrids.map(async (board) => {
-      const [owner] = board.userId 
-        ? await db.select({ email: users.email, firstName: users.firstName, lastName: users.lastName })
-            .from(users)
-            .where(eq(users.id, board.userId))
-        : [{ email: 'Unknown', firstName: null, lastName: null }];
-      
-      const [catCount] = await db.select({ count: count() })
-        .from(boardCategories)
-        .where(eq(boardCategories.boardId, board.id));
-      
-      const boardCats = await db.select({ categoryId: boardCategories.categoryId })
-        .from(boardCategories)
-        .where(eq(boardCategories.boardId, board.id));
-      const categoryIds = Array.from(new Set(boardCats.map(bc => bc.categoryId)));
-      
-      let questionCount = 0;
-      if (categoryIds.length > 0) {
-        const [qCount] = await db.select({ count: count() })
-          .from(questions)
-          .where(inArray(questions.categoryId, categoryIds));
-        questionCount = qCount?.count ?? 0;
-      }
+  async setBoardVisibility(boardId: number, visibility: string): Promise<Board | undefined> {
+    const [updated] = await db.update(boards).set({ visibility: visibility as any }).where(eq(boards.id, boardId)).returning();
+    return updated;
+  }
 
-      return {
-        ...board,
-        ownerEmail: owner?.email ?? 'Unknown',
-        ownerName: [owner?.firstName, owner?.lastName].filter(Boolean).join(' ') || null,
-        categoryCount: catCount?.count ?? 0,
-        questionCount,
-      };
-    }));
-
-    return gridsWithOwners;
+  async setBoardFeatured(boardId: number, isFeatured: boolean): Promise<Board | undefined> {
+    const [updated] = await db.update(boards).set({ isFeatured, moderatedAt: new Date() }).where(eq(boards.id, boardId)).returning();
+    return updated;
   }
 
   // === ENHANCED SUPER ADMIN ANALYTICS ===
@@ -3076,9 +3041,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFlaggedBoards() {
-    return await db.select().from(boards)
+    const rows = await db.select({
+      board: boards,
+      ownerEmail: users.email,
+      ownerFirstName: users.firstName,
+      ownerLastName: users.lastName,
+    }).from(boards)
+      .leftJoin(users, eq(boards.userId, users.id))
       .where(eq(boards.moderationStatus, 'flagged'))
       .orderBy(desc(boards.id));
+
+    return rows.map(row => ({
+      ...row.board,
+      ownerEmail: row.ownerEmail ?? 'Unknown',
+      ownerName: [row.ownerFirstName, row.ownerLastName].filter(Boolean).join(' ') || null,
+    }));
   }
 
   // === ANNOUNCEMENTS ===

@@ -1915,14 +1915,45 @@ export async function registerRoutes(
     }
   });
 
-  // Get all blitzgrid grids for super admin
-  app.get("/api/super-admin/grids", isAuthenticated, isSuperAdmin, async (req, res) => {
+  app.patch("/api/super-admin/boards/:id/visibility", isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
-      const grids = await storage.getAllBlitzgridsWithOwners();
-      res.json(grids);
+      const boardId = parseId(req.params.id);
+      if (boardId === null) {
+        return res.status(400).json({ message: "Invalid board ID" });
+      }
+      const { visibility } = req.body;
+      if (!visibility || !['public', 'private', 'tenant'].includes(visibility)) {
+        return res.status(400).json({ message: "visibility must be 'public', 'private', or 'tenant'" });
+      }
+      const updated = await storage.setBoardVisibility(boardId, visibility);
+      if (!updated) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      res.json(updated);
     } catch (err) {
-      console.error("Error getting grids:", err);
-      res.status(500).json({ message: "Failed to get grids" });
+      console.error("Error updating board visibility:", err);
+      res.status(500).json({ message: "Failed to update board visibility" });
+    }
+  });
+
+  app.patch("/api/super-admin/boards/:id/featured", isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const boardId = parseId(req.params.id);
+      if (boardId === null) {
+        return res.status(400).json({ message: "Invalid board ID" });
+      }
+      const { isFeatured } = req.body;
+      if (typeof isFeatured !== 'boolean') {
+        return res.status(400).json({ message: "isFeatured must be a boolean" });
+      }
+      const updated = await storage.setBoardFeatured(boardId, isFeatured);
+      if (!updated) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      console.error("Error updating board featured status:", err);
+      res.status(500).json({ message: "Failed to update board" });
     }
   });
 
