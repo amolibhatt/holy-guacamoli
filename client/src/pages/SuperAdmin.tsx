@@ -127,7 +127,7 @@ interface ComprehensiveDashboard {
   popularMemeWeek: { name: string; plays: number }[];
   sortCircuitSessions: number;
   psyopSessions: number;
-  performance: { avgScore: number; highScore: number; completionRate: number; sortCircuitAccuracy: number; sortCircuitAvgTimeMs: number; sortCircuitCompletionRate: number; psyopTotalRounds: number; psyopDeceptionRate: number; psyopSessions: number; timewarpTotalPlays: number; timewarpQuestionCount: number; memeSessions: number; memeRounds: number; memePlayers: number };
+  performance: { avgScore: number; highScore: number; completionRate: number; sortCircuitAccuracy: number; sortCircuitAvgTimeMs: number; sortCircuitCompletionRate: number; psyopTotalRounds: number; psyopDeceptionRate: number; psyopSessions: number; timewarpTotalPlays: number; timewarpQuestionCount: number; memeSessions: number; memeRounds: number; memePlayers: number; memeSubmissions: number; memeVotes: number };
 }
 
 interface QuestionCreator {
@@ -1119,6 +1119,14 @@ export default function SuperAdmin() {
                       <span className="text-sm">Total Players</span>
                       <span className="font-bold">{dashboard.performance.memePlayers}</span>
                     </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Submissions</span>
+                      <span className="font-bold">{dashboard.performance.memeSubmissions}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Votes Cast</span>
+                      <span className="font-bold">{dashboard.performance.memeVotes}</span>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -1126,8 +1134,8 @@ export default function SuperAdmin() {
 
             {/* Top Hosts & Popular Content */}
             {isLoadingDashboard && !dashboard ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
-                {[1,2,3,4,5].map(i => (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1,2,3,4,5,6].map(i => (
                   <Card key={i}>
                     <CardHeader className="pb-3"><Skeleton className="h-5 w-24" /></CardHeader>
                     <CardContent className="space-y-2">
@@ -1137,7 +1145,7 @@ export default function SuperAdmin() {
                 ))}
               </div>
             ) : isErrorDashboard && !dashboard ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg text-muted-foreground">Top Hosts</CardTitle>
@@ -1178,9 +1186,17 @@ export default function SuperAdmin() {
                     <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-unavailable-popular-timewarp">Data unavailable</p>
                   </CardContent>
                 </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg text-muted-foreground">Popular Meme</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-unavailable-popular-meme">Data unavailable</p>
+                  </CardContent>
+                </Card>
               </div>
             ) : dashboard && (
-              <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
@@ -1312,36 +1328,33 @@ export default function SuperAdmin() {
                     )}
                   </CardContent>
                 </Card>
-              </div>
-            )}
 
-            {/* Popular Meme No Harm Card */}
-            {dashboard && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Image className="w-5 h-5 text-pink-400" /> Popular Meme Prompts
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {dashboard.popularMemeWeek.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-empty-popular-meme">No meme rounds this week</p>
-                  ) : (
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground">Most played prompts this week</p>
-                      {dashboard.popularMemeWeek.slice(0, 5).map((m, i) => (
-                        <div key={`meme-${m.name}-${i}`} className="flex items-center justify-between p-2 rounded bg-muted/30 gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-sm font-bold text-muted-foreground w-5 flex-shrink-0">#{i + 1}</span>
-                            <span className="text-sm truncate">{m.name}</span>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Image className="w-5 h-5 text-pink-400" /> Popular Meme
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {dashboard.popularMemeWeek.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-empty-popular-meme">No meme rounds this week</p>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">Most played prompts this week</p>
+                        {dashboard.popularMemeWeek.slice(0, 5).map((m, i) => (
+                          <div key={`meme-${m.name}-${i}`} className="flex items-center justify-between p-2 rounded bg-muted/30 gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-sm font-bold text-muted-foreground w-5 flex-shrink-0">#{i + 1}</span>
+                              <span className="text-sm truncate">{m.name}</span>
+                            </div>
+                            <Badge variant="secondary" className="flex-shrink-0">{m.plays} plays</Badge>
                           </div>
-                          <Badge variant="secondary" className="flex-shrink-0">{m.plays} plays</Badge>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             )}
 
             {/* Quick Actions */}
@@ -2255,7 +2268,7 @@ export default function SuperAdmin() {
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <div className="text-center flex-shrink-0">
                             <p className="font-mono font-bold text-lg">{s.code}</p>
-                            <Badge variant={['active', 'waiting', 'submitting', 'voting', 'revealing', 'lobby', 'selecting', 'reveal'].includes(s.state) ? 'default' : 'outline'} className="text-xs">
+                            <Badge variant={['active', 'waiting', 'submitting', 'voting', 'revealing', 'lobby', 'selecting', 'reveal', 'gameComplete'].includes(s.state) ? 'default' : 'outline'} className="text-xs">
                               {s.state}
                             </Badge>
                           </div>

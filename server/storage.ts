@@ -2811,11 +2811,15 @@ export class DatabaseStorage implements IStorage {
     const [activePsyopSessions] = await db.select({ count: count() })
       .from(psyopSessions).where(inArray(psyopSessions.status, ['waiting', 'submitting', 'voting', 'revealing']));
     const [activeMemeSessions] = await db.select({ count: count() })
-      .from(memeSessions).where(inArray(memeSessions.status, ['lobby', 'selecting', 'voting', 'reveal']));
+      .from(memeSessions).where(inArray(memeSessions.status, ['lobby', 'selecting', 'voting', 'reveal'] as const));
     const [activePlayers] = await db.select({ count: count() })
       .from(sessionPlayers)
       .innerJoin(gameSessions, eq(sessionPlayers.sessionId, gameSessions.id))
       .where(and(eq(gameSessions.state, 'active'), eq(sessionPlayers.isConnected, true)));
+    const [activeMemePlayers] = await db.select({ count: count() })
+      .from(memePlayers)
+      .innerJoin(memeSessions, eq(memePlayers.sessionId, memeSessions.id))
+      .where(inArray(memeSessions.status, ['lobby', 'selecting', 'voting', 'reveal'] as const));
 
     // Today vs Yesterday comparison (include PsyOp + Meme sessions)
     const [todaySessions] = await db.select({ count: count() })
@@ -2890,6 +2894,7 @@ export class DatabaseStorage implements IStorage {
       id: gameSessions.id,
       code: gameSessions.code,
       state: gameSessions.state,
+      currentMode: gameSessions.currentMode,
       createdAt: gameSessions.createdAt,
       hostId: gameSessions.hostId,
     }).from(gameSessions)
@@ -2917,7 +2922,7 @@ export class DatabaseStorage implements IStorage {
       .limit(10);
 
     const allRecentSessions = [
-      ...recentGameSessions.map(s => ({ id: s.id, code: s.code, state: s.state, createdAt: s.createdAt, mode: null as string | null })),
+      ...recentGameSessions.map(s => ({ id: s.id, code: s.code, state: s.state, createdAt: s.createdAt, mode: (s.currentMode || 'buzzer') as string | null })),
       ...recentPsyopSessions.map(s => ({ id: s.id + 1000000, code: s.roomCode, state: s.status, createdAt: s.createdAt, mode: 'psyop' as string | null })),
       ...recentMemeSessions.map(s => ({ id: s.id + 2000000, code: s.roomCode, state: s.status, createdAt: s.createdAt, mode: 'meme' as string | null })),
     ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 10);
@@ -3037,6 +3042,8 @@ export class DatabaseStorage implements IStorage {
     const [totalMemePlayers] = await db.select({ count: count() }).from(memePlayers);
     const [psyopLieVotes] = await db.select({ count: count() }).from(psyopVotes).where(eq(psyopVotes.votedForTruth, false));
     const [psyopTotalVotes] = await db.select({ count: count() }).from(psyopVotes);
+    const [totalMemeSubmissions] = await db.select({ count: count() }).from(memeSubmissions);
+    const [totalMemeVotes] = await db.select({ count: count() }).from(memeVotes);
 
     // Average scores and game duration
     const avgScores = await db.select({
@@ -3064,7 +3071,7 @@ export class DatabaseStorage implements IStorage {
     return {
       realtime: {
         activeGames: (activeSessions?.count ?? 0) + (activePsyopSessions?.count ?? 0) + (activeMemeSessions?.count ?? 0),
-        activePlayers: activePlayers?.count ?? 0,
+        activePlayers: (activePlayers?.count ?? 0) + (activeMemePlayers?.count ?? 0),
       },
       today: {
         games: totalAllGamesToday,
@@ -3138,6 +3145,8 @@ export class DatabaseStorage implements IStorage {
         memeSessions: totalMemeSessionsCount?.count ?? 0,
         memeRounds: totalMemeRounds?.count ?? 0,
         memePlayers: totalMemePlayers?.count ?? 0,
+        memeSubmissions: totalMemeSubmissions?.count ?? 0,
+        memeVotes: totalMemeVotes?.count ?? 0,
       },
     };
   }
