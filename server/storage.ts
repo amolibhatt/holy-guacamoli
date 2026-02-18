@@ -3000,6 +3000,16 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(count()))
       .limit(5);
 
+    const timewarpEraBreakdown = await db.select({
+      era: timeWarpQuestions.era,
+      count: count(),
+    }).from(timeWarpQuestions)
+      .groupBy(timeWarpQuestions.era)
+      .orderBy(desc(count()));
+
+    const [timewarpTotalPlays] = await db.select({ count: count() })
+      .from(playerGameHistory).where(eq(playerGameHistory.gameSlug, 'timewarp'));
+
     const [totalPsyopSessions] = await db.select({ count: count() }).from(psyopSessions);
     const [totalPsyopRounds] = await db.select({ count: count() }).from(psyopRounds);
     const [psyopLieVotes] = await db.select({ count: count() }).from(psyopVotes).where(eq(psyopVotes.votedForTruth, false));
@@ -3080,6 +3090,10 @@ export class DatabaseStorage implements IStorage {
         name: q.factText ? (q.factText.length > 50 ? q.factText.slice(0, 50) + '...' : q.factText) : 'Untitled',
         plays: q.count,
       })),
+      popularTimewarpWeek: timewarpEraBreakdown.map(e => ({
+        name: `${e.era} era`,
+        plays: e.count,
+      })),
       sortCircuitSessions: totalSequenceSessions?.count ?? 0,
       psyopSessions: totalPsyopSessions?.count ?? 0,
       performance: {
@@ -3092,6 +3106,8 @@ export class DatabaseStorage implements IStorage {
         psyopTotalRounds: totalPsyopRounds?.count ?? 0,
         psyopDeceptionRate: psyopTotalVotes?.count ? Math.round(((psyopLieVotes?.count ?? 0) / psyopTotalVotes.count) * 100) : 0,
         psyopSessions: totalPsyopSessions?.count ?? 0,
+        timewarpTotalPlays: timewarpTotalPlays?.count ?? 0,
+        timewarpQuestionCount: totalTimeWarpQuestions?.count ?? 0,
       },
     };
   }
@@ -3772,6 +3788,7 @@ export class DatabaseStorage implements IStorage {
       isActive: timeWarpQuestions.isActive,
       isStarterPack: timeWarpQuestions.isStarterPack,
       createdAt: timeWarpQuestions.createdAt,
+    
       creatorId: users.id,
       creatorFirstName: users.firstName,
       creatorLastName: users.lastName,

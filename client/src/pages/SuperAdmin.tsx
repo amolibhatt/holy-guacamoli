@@ -116,9 +116,10 @@ interface ComprehensiveDashboard {
   popularGridsWeek: { name: string; plays: number }[];
   popularSortCircuitWeek: { name: string; plays: number }[];
   popularPsyopWeek: { name: string; plays: number }[];
+  popularTimewarpWeek: { name: string; plays: number }[];
   sortCircuitSessions: number;
   psyopSessions: number;
-  performance: { avgScore: number; highScore: number; completionRate: number; sortCircuitAccuracy: number; sortCircuitAvgTimeMs: number; sortCircuitCompletionRate: number; psyopTotalRounds: number; psyopDeceptionRate: number; psyopSessions: number };
+  performance: { avgScore: number; highScore: number; completionRate: number; sortCircuitAccuracy: number; sortCircuitAvgTimeMs: number; sortCircuitCompletionRate: number; psyopTotalRounds: number; psyopDeceptionRate: number; psyopSessions: number; timewarpTotalPlays: number; timewarpQuestionCount: number };
 }
 
 interface QuestionCreator {
@@ -724,12 +725,14 @@ export default function SuperAdmin() {
     : psyopQuestions;
 
   const filteredTimewarpQuestions = contentSearch.trim()
-    ? timewarpQuestions.filter(q => 
-        (q.answer ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
-        (q.era ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
-        (q.category ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
-        (q.creator?.username ?? '').toLowerCase().includes(contentSearch.toLowerCase())
-      )
+    ? timewarpQuestions.filter(q => {
+        const search = contentSearch.toLowerCase();
+        return (q.answer ?? '').toLowerCase().includes(search) ||
+        (q.era ?? '').toLowerCase().includes(search) ||
+        (q.hint ?? '').toLowerCase().includes(search) ||
+        (q.category ?? '').toLowerCase().includes(search) ||
+        (q.creator?.username ?? '').toLowerCase().includes(search);
+      })
     : timewarpQuestions;
 
   const filteredMemePrompts = contentSearch.trim()
@@ -1073,6 +1076,17 @@ export default function SuperAdmin() {
                       <span className="text-sm">Deception Rate</span>
                       <span className="font-bold">{dashboard.performance.psyopDeceptionRate}%</span>
                     </div>
+                    <div className="border-t pt-2 mt-2">
+                      <p className="text-xs font-medium text-muted-foreground">Past Forward</p>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Total Plays</span>
+                      <span className="font-bold">{dashboard.performance.timewarpTotalPlays}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Questions</span>
+                      <span className="font-bold">{dashboard.performance.timewarpQuestionCount}</span>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -1080,8 +1094,8 @@ export default function SuperAdmin() {
 
             {/* Top Hosts & Popular Content */}
             {isLoadingDashboard && !dashboard ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[1,2,3,4].map(i => (
+              <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {[1,2,3,4,5].map(i => (
                   <Card key={i}>
                     <CardHeader className="pb-3"><Skeleton className="h-5 w-24" /></CardHeader>
                     <CardContent className="space-y-2">
@@ -1091,7 +1105,7 @@ export default function SuperAdmin() {
                 ))}
               </div>
             ) : isErrorDashboard && !dashboard ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg text-muted-foreground">Top Hosts</CardTitle>
@@ -1124,9 +1138,17 @@ export default function SuperAdmin() {
                     <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-unavailable-popular-psyop">Data unavailable</p>
                   </CardContent>
                 </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg text-muted-foreground">Past Forward</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-unavailable-popular-timewarp">Data unavailable</p>
+                  </CardContent>
+                </Card>
               </div>
             ) : dashboard && (
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
@@ -1222,6 +1244,38 @@ export default function SuperAdmin() {
                             <Badge variant="secondary" className="flex-shrink-0">{q.plays} plays</Badge>
                           </div>
                         ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-amber-500" /> Past Forward
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {dashboard.popularTimewarpWeek.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-empty-popular-timewarp">No data yet</p>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">Questions by Era</p>
+                        {dashboard.popularTimewarpWeek.slice(0, 5).map((q, i) => (
+                          <div key={`tw-${q.name}-${i}`} className="flex items-center justify-between p-2 rounded bg-muted/30 gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-sm font-bold text-muted-foreground w-5 flex-shrink-0">#{i + 1}</span>
+                              <span className="text-sm truncate capitalize">{q.name}</span>
+                            </div>
+                            <Badge variant="secondary" className="flex-shrink-0">{q.plays} Q</Badge>
+                          </div>
+                        ))}
+                        <div className="border-t pt-2 mt-1">
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>Total plays</span>
+                            <span className="font-medium">{dashboard.performance.timewarpTotalPlays}</span>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </CardContent>
@@ -1865,6 +1919,11 @@ export default function SuperAdmin() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between px-1 pb-1">
                         <p className="text-xs text-muted-foreground">{filteredTimewarpQuestions.length} question{filteredTimewarpQuestions.length !== 1 ? 's' : ''}{contentSearch.trim() ? ' matching' : ''}</p>
+                        <Link href="/admin/pastforward">
+                          <Button size="sm" variant="outline" data-testid="button-goto-timewarp-admin">
+                            <Clock className="w-4 h-4 mr-1" /> Past Forward Admin
+                          </Button>
+                        </Link>
                       </div>
                       <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {filteredTimewarpQuestions.map(q => (
