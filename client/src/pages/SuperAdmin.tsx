@@ -680,10 +680,16 @@ export default function SuperAdmin() {
     : allBoards;
 
   const filteredSequenceQuestions = contentSearch.trim()
-    ? sequenceQuestions.filter(q => 
-        (q.question ?? '').toLowerCase().includes(contentSearch.toLowerCase()) ||
-        (q.creator?.username ?? '').toLowerCase().includes(contentSearch.toLowerCase())
-      )
+    ? sequenceQuestions.filter(q => {
+        const search = contentSearch.toLowerCase();
+        return (q.question ?? '').toLowerCase().includes(search) ||
+          (q.creator?.username ?? '').toLowerCase().includes(search) ||
+          (q.optionA ?? '').toLowerCase().includes(search) ||
+          (q.optionB ?? '').toLowerCase().includes(search) ||
+          (q.optionC ?? '').toLowerCase().includes(search) ||
+          (q.optionD ?? '').toLowerCase().includes(search) ||
+          (q.hint ?? '').toLowerCase().includes(search);
+      })
     : sequenceQuestions;
 
   const filteredPsyopQuestions = contentSearch.trim()
@@ -1573,25 +1579,37 @@ export default function SuperAdmin() {
                   ) : filteredSequenceQuestions.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8" data-testid="text-empty-sequence">{contentSearch.trim() ? 'No matching questions' : 'No questions found'}</p>
                   ) : (
-                    <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between px-1 pb-1">
+                        <p className="text-xs text-muted-foreground">{filteredSequenceQuestions.length} question{filteredSequenceQuestions.length !== 1 ? 's' : ''}{contentSearch.trim() ? ' matching' : ''}</p>
+                        <Link href="/admin/sort-circuit">
+                          <Button size="sm" variant="outline" data-testid="button-goto-sortcircuit-admin">
+                            <ListOrdered className="w-4 h-4 mr-1" /> Sort Circuit Admin
+                          </Button>
+                        </Link>
+                      </div>
+                      <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {filteredSequenceQuestions.map(q => (
                         <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-medium truncate">{q.question}</p>
                               {!q.isActive && <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>}
                               {q.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
+                              {q.hint && <Badge variant="outline" className="text-xs">Hint</Badge>}
                             </div>
                             <p className="text-xs text-muted-foreground truncate">
-                              by {q.creator?.username || 'Unknown'} • Order: {q.correctOrder?.map(letter => {
-                                const optionMap: Record<string, string> = { A: q.optionA, B: q.optionB, C: q.optionC, D: q.optionD };
-                                return optionMap[letter] || letter;
-                              }).join(' → ')}
+                              by {q.creator?.username || 'Unknown'} • {formatRelativeDate(q.createdAt)} • Order: {Array.isArray(q.correctOrder) && q.correctOrder.length > 0
+                                ? q.correctOrder.map(letter => {
+                                    const optionMap: Record<string, string> = { A: q.optionA, B: q.optionB, C: q.optionC, D: q.optionD };
+                                    return optionMap[letter] || letter;
+                                  }).join(' \u2192 ')
+                                : 'Not set'}
                             </p>
                           </div>
                           <div className="flex items-center gap-1 flex-shrink-0">
                             <Button
-                              size="sm"
+                              size="icon"
                               variant={q.isActive ? 'outline' : 'secondary'}
                               onClick={() => toggleSequenceActiveMutation.mutate({ questionId: q.id, isActive: !q.isActive })}
                               disabled={toggleSequenceActiveMutation.isPending}
@@ -1601,7 +1619,7 @@ export default function SuperAdmin() {
                               {q.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                             </Button>
                             <Button
-                              size="sm"
+                              size="icon"
                               variant={q.isStarterPack ? 'secondary' : 'outline'}
                               onClick={() => toggleSequenceStarterPackMutation.mutate({ questionId: q.id, isStarterPack: !q.isStarterPack })}
                               disabled={toggleSequenceStarterPackMutation.isPending}
@@ -1623,6 +1641,7 @@ export default function SuperAdmin() {
                           </div>
                         </div>
                       ))}
+                      </div>
                     </div>
                   )
                 )}
