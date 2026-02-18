@@ -3309,7 +3309,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllPsyopQuestionsWithCreators() {
-    const allQuestions = await db.select({
+    const rows = await db.select({
       id: psyopQuestions.id,
       userId: psyopQuestions.userId,
       factText: psyopQuestions.factText,
@@ -3318,30 +3318,23 @@ export class DatabaseStorage implements IStorage {
       isActive: psyopQuestions.isActive,
       isStarterPack: psyopQuestions.isStarterPack,
       createdAt: psyopQuestions.createdAt,
+      creatorId: users.id,
+      creatorFirstName: users.firstName,
+      creatorLastName: users.lastName,
+      creatorEmail: users.email,
     }).from(psyopQuestions)
+      .leftJoin(users, eq(psyopQuestions.userId, users.id))
       .orderBy(desc(psyopQuestions.createdAt));
 
-    const questionsWithCreators = await Promise.all(allQuestions.map(async (q) => {
-      let creator = null;
-      if (q.userId) {
-        const [user] = await db.select({
-          id: users.id,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          email: users.email,
-        }).from(users).where(eq(users.id, q.userId));
-        if (user) {
-          creator = {
-            id: user.id,
-            username: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || 'Unknown',
-            email: user.email,
-          };
-        }
-      }
+    return rows.map(row => {
+      const { creatorId, creatorFirstName, creatorLastName, creatorEmail, ...q } = row;
+      const creator = creatorId ? {
+        id: creatorId,
+        username: [creatorFirstName, creatorLastName].filter(Boolean).join(' ') || creatorEmail || 'Unknown',
+        email: creatorEmail,
+      } : null;
       return { ...q, creator };
-    }));
-
-    return questionsWithCreators;
+    });
   }
 
   async getAllBlitzgridQuestionsWithCreators() {

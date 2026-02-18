@@ -197,7 +197,7 @@ export default function SuperAdmin() {
   const [announcementType, setAnnouncementType] = useState<"info" | "warning" | "success">("info");
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [deleteContentItem, setDeleteContentItem] = useState<{ type: string; id: number } | null>(null);
+  const [deleteContentItem, setDeleteContentItem] = useState<{ type: string; id: number; label?: string } | null>(null);
 
   // Queries
   const { data: dashboard, isLoading: isLoadingDashboard, isError: isErrorDashboard, refetch: refetchDashboard } = useQuery<ComprehensiveDashboard>({
@@ -228,7 +228,7 @@ export default function SuperAdmin() {
 
   const { data: allBoards = [], isLoading: isLoadingBoards, isError: isErrorBoards, refetch: refetchBoards } = useQuery<BoardWithOwner[]>({
     queryKey: ['/api/super-admin/boards'],
-    enabled: activeTab === 'content' && (contentTab === 'blitzgrid' || contentTab === 'games'),
+    enabled: activeTab === 'content' && contentTab === 'blitzgrid',
   });
 
   const { data: announcements = [], isLoading: isLoadingAnnouncements, isError: isErrorAnnouncements, refetch: refetchAnnouncements } = useQuery<Announcement[]>({
@@ -1393,6 +1393,8 @@ export default function SuperAdmin() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="font-medium truncate">{b.name}</p>
+                              {b.moderationStatus === 'flagged' && <Badge variant="destructive" className="text-xs">Flagged</Badge>}
+                              {b.moderationStatus === 'rejected' && <Badge variant="outline" className="text-xs text-destructive">Rejected</Badge>}
                               {b.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
                             </div>
                             <p className="text-xs text-muted-foreground">
@@ -1404,6 +1406,7 @@ export default function SuperAdmin() {
                               size="sm"
                               variant={b.isStarterPack ? 'secondary' : 'outline'}
                               onClick={() => toggleStarterPackMutation.mutate({ boardId: b.id, isStarterPack: !b.isStarterPack })}
+                              disabled={toggleStarterPackMutation.isPending}
                               data-testid={`button-starter-${b.id}`}
                               aria-label={b.isStarterPack ? 'Remove from starter pack' : 'Add to starter pack'}
                             >
@@ -1458,6 +1461,7 @@ export default function SuperAdmin() {
                               size="sm"
                               variant={q.isActive ? 'outline' : 'secondary'}
                               onClick={() => toggleSequenceActiveMutation.mutate({ questionId: q.id, isActive: !q.isActive })}
+                              disabled={toggleSequenceActiveMutation.isPending}
                               data-testid={`button-active-seq-${q.id}`}
                               aria-label={q.isActive ? 'Hide question' : 'Show question'}
                             >
@@ -1467,6 +1471,7 @@ export default function SuperAdmin() {
                               size="sm"
                               variant={q.isStarterPack ? 'secondary' : 'outline'}
                               onClick={() => toggleSequenceStarterPackMutation.mutate({ questionId: q.id, isStarterPack: !q.isStarterPack })}
+                              disabled={toggleSequenceStarterPackMutation.isPending}
                               data-testid={`button-starter-seq-${q.id}`}
                               aria-label={q.isStarterPack ? 'Remove from starter pack' : 'Add to starter pack'}
                             >
@@ -1476,7 +1481,7 @@ export default function SuperAdmin() {
                               size="icon"
                               variant="ghost"
                               className="text-destructive"
-                              onClick={() => setDeleteContentItem({ type: 'sequence', id: q.id })}
+                              onClick={() => setDeleteContentItem({ type: 'sequence', id: q.id, label: q.question })}
                               aria-label="Delete question"
                               data-testid={`button-delete-seq-${q.id}`}
                             >
@@ -1519,6 +1524,7 @@ export default function SuperAdmin() {
                               size="sm"
                               variant={q.isActive ? 'outline' : 'secondary'}
                               onClick={() => togglePsyopActiveMutation.mutate({ questionId: q.id, isActive: !q.isActive })}
+                              disabled={togglePsyopActiveMutation.isPending}
                               data-testid={`button-active-psyop-${q.id}`}
                               aria-label={q.isActive ? 'Hide question' : 'Show question'}
                             >
@@ -1528,6 +1534,7 @@ export default function SuperAdmin() {
                               size="sm"
                               variant={q.isStarterPack ? 'secondary' : 'outline'}
                               onClick={() => togglePsyopStarterPackMutation.mutate({ questionId: q.id, isStarterPack: !q.isStarterPack })}
+                              disabled={togglePsyopStarterPackMutation.isPending}
                               data-testid={`button-starter-psyop-${q.id}`}
                               aria-label={q.isStarterPack ? 'Remove from starter pack' : 'Add to starter pack'}
                             >
@@ -1537,7 +1544,7 @@ export default function SuperAdmin() {
                               size="icon"
                               variant="ghost"
                               className="text-destructive"
-                              onClick={() => setDeleteContentItem({ type: 'psyop', id: q.id })}
+                              onClick={() => setDeleteContentItem({ type: 'psyop', id: q.id, label: q.factText })}
                               aria-label="Delete question"
                               data-testid={`button-delete-psyop-${q.id}`}
                             >
@@ -1582,6 +1589,7 @@ export default function SuperAdmin() {
                               size="sm"
                               variant={q.isActive ? 'outline' : 'secondary'}
                               onClick={() => toggleTimewarpActiveMutation.mutate({ questionId: q.id, isActive: !q.isActive })}
+                              disabled={toggleTimewarpActiveMutation.isPending}
                               data-testid={`button-active-timewarp-${q.id}`}
                               aria-label={q.isActive ? 'Hide question' : 'Show question'}
                             >
@@ -1591,6 +1599,7 @@ export default function SuperAdmin() {
                               size="sm"
                               variant={q.isStarterPack ? 'secondary' : 'outline'}
                               onClick={() => toggleTimewarpStarterPackMutation.mutate({ questionId: q.id, isStarterPack: !q.isStarterPack })}
+                              disabled={toggleTimewarpStarterPackMutation.isPending}
                               data-testid={`button-starter-timewarp-${q.id}`}
                               aria-label={q.isStarterPack ? 'Remove from starter pack' : 'Add to starter pack'}
                             >
@@ -1600,7 +1609,7 @@ export default function SuperAdmin() {
                               size="icon"
                               variant="ghost"
                               className="text-destructive"
-                              onClick={() => setDeleteContentItem({ type: 'timewarp', id: q.id })}
+                              onClick={() => setDeleteContentItem({ type: 'timewarp', id: q.id, label: q.answer })}
                               aria-label="Delete question"
                               data-testid={`button-delete-timewarp-${q.id}`}
                             >
@@ -1645,6 +1654,7 @@ export default function SuperAdmin() {
                                     size="sm"
                                     variant={p.isActive ? 'outline' : 'secondary'}
                                     onClick={() => toggleMemePromptActiveMutation.mutate({ id: p.id, isActive: !p.isActive })}
+                                    disabled={toggleMemePromptActiveMutation.isPending}
                                     data-testid={`button-active-meme-prompt-${p.id}`}
                                     aria-label={p.isActive ? 'Hide prompt' : 'Show prompt'}
                                   >
@@ -1654,6 +1664,7 @@ export default function SuperAdmin() {
                                     size="sm"
                                     variant={p.isStarterPack ? 'secondary' : 'outline'}
                                     onClick={() => toggleMemePromptStarterPackMutation.mutate({ id: p.id, isStarterPack: !p.isStarterPack })}
+                                    disabled={toggleMemePromptStarterPackMutation.isPending}
                                     data-testid={`button-starter-meme-prompt-${p.id}`}
                                     aria-label={p.isStarterPack ? 'Remove from starter pack' : 'Add to starter pack'}
                                   >
@@ -1663,7 +1674,7 @@ export default function SuperAdmin() {
                                     size="icon"
                                     variant="ghost"
                                     className="text-destructive"
-                                    onClick={() => setDeleteContentItem({ type: 'meme-prompt', id: p.id })}
+                                    onClick={() => setDeleteContentItem({ type: 'meme-prompt', id: p.id, label: p.prompt })}
                                     aria-label="Delete prompt"
                                     data-testid={`button-delete-meme-prompt-${p.id}`}
                                   >
@@ -1701,6 +1712,7 @@ export default function SuperAdmin() {
                                     size="sm"
                                     variant={img.isActive ? 'outline' : 'secondary'}
                                     onClick={() => toggleMemeImageActiveMutation.mutate({ id: img.id, isActive: !img.isActive })}
+                                    disabled={toggleMemeImageActiveMutation.isPending}
                                     data-testid={`button-active-meme-image-${img.id}`}
                                     aria-label={img.isActive ? 'Hide image' : 'Show image'}
                                   >
@@ -1710,6 +1722,7 @@ export default function SuperAdmin() {
                                     size="sm"
                                     variant={img.isStarterPack ? 'secondary' : 'outline'}
                                     onClick={() => toggleMemeImageStarterPackMutation.mutate({ id: img.id, isStarterPack: !img.isStarterPack })}
+                                    disabled={toggleMemeImageStarterPackMutation.isPending}
                                     data-testid={`button-starter-meme-image-${img.id}`}
                                     aria-label={img.isStarterPack ? 'Remove from starter pack' : 'Add to starter pack'}
                                   >
@@ -1719,7 +1732,7 @@ export default function SuperAdmin() {
                                     size="icon"
                                     variant="ghost"
                                     className="text-destructive"
-                                    onClick={() => setDeleteContentItem({ type: 'meme-image', id: img.id })}
+                                    onClick={() => setDeleteContentItem({ type: 'meme-image', id: img.id, label: img.caption || 'Meme image' })}
                                     aria-label="Delete image"
                                     data-testid={`button-delete-meme-image-${img.id}`}
                                   >
@@ -1854,9 +1867,13 @@ export default function SuperAdmin() {
         <AlertDialog open={!!deleteContentItem} onOpenChange={() => setDeleteContentItem(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Content?</AlertDialogTitle>
+              <AlertDialogTitle>Delete {deleteContentItem?.type === 'sequence' ? 'Sort Circuit Question' : deleteContentItem?.type === 'psyop' ? 'PsyOp Question' : deleteContentItem?.type === 'timewarp' ? 'TimeWarp Question' : deleteContentItem?.type === 'meme-prompt' ? 'Meme Prompt' : deleteContentItem?.type === 'meme-image' ? 'Meme Image' : 'Content'}?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete this item.
+                {deleteContentItem?.label ? (
+                  <>This will permanently delete: <span className="font-medium">"{deleteContentItem.label.length > 80 ? deleteContentItem.label.slice(0, 80) + '...' : deleteContentItem.label}"</span></>
+                ) : (
+                  'This will permanently delete this item.'
+                )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
