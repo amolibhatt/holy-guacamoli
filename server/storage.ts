@@ -3604,6 +3604,10 @@ export class DatabaseStorage implements IStorage {
 
       const winner = mappedPlayers.length > 0 && mappedPlayers[0].score > 0 ? mappedPlayers[0] : null;
 
+      const rounds = await db.select({ id: memeRounds.id })
+        .from(memeRounds)
+        .where(eq(memeRounds.sessionId, session.id));
+
       return {
         id: session.id + 2000000,
         code: session.roomCode,
@@ -3616,7 +3620,7 @@ export class DatabaseStorage implements IStorage {
         players: mappedPlayers,
         playerCount: mappedPlayers.length,
         winner,
-        roundCount: session.currentRound || 0,
+        roundCount: rounds.length,
       };
     }));
 

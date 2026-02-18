@@ -1357,6 +1357,39 @@ export default function SuperAdmin() {
               </div>
             )}
 
+            {/* Recent Activity */}
+            {dashboard && dashboard.recentActivity.length > 0 && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Activity className="w-5 h-5" /> Recent Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {dashboard.recentActivity.map(a => (
+                      <div key={a.id} className="flex items-center justify-between p-2 rounded bg-muted/30 gap-2">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <p className="font-mono font-bold text-sm flex-shrink-0">{a.code}</p>
+                          <div className="flex items-center gap-2 flex-wrap min-w-0">
+                            {a.mode && (
+                              <Badge variant="outline" className="text-xs">
+                                {getGameModeLabel(a.mode)}
+                              </Badge>
+                            )}
+                            <Badge variant={['active', 'waiting', 'submitting', 'voting', 'revealing', 'lobby', 'selecting', 'reveal', 'gameComplete'].includes(a.state) ? 'default' : 'outline'} className="text-xs">
+                              {a.state}
+                            </Badge>
+                          </div>
+                        </div>
+                        <span className="text-xs text-muted-foreground flex-shrink-0">{formatRelativeDate(a.createdAt)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Quick Actions */}
             <div className="grid md:grid-cols-2 gap-4">
               <Card>
@@ -2153,12 +2186,11 @@ export default function SuperAdmin() {
                               <div key={img.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
                                   {img.imageUrl ? (
-                                    <img src={img.imageUrl} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
-                                  ) : (
-                                    <div className="w-10 h-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                                      <Image className="w-5 h-5 text-muted-foreground" />
-                                    </div>
-                                  )}
+                                    <img src={img.imageUrl} alt={img.caption || ''} className="w-10 h-10 rounded object-cover flex-shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }} />
+                                  ) : null}
+                                  <div className={`w-10 h-10 rounded bg-muted flex items-center justify-center flex-shrink-0 ${img.imageUrl ? 'hidden' : ''}`}>
+                                    <Image className="w-5 h-5 text-muted-foreground" />
+                                  </div>
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                       <p className="font-medium truncate">{img.caption || 'No caption'}</p>
@@ -2231,7 +2263,7 @@ export default function SuperAdmin() {
                         <SelectItem value="sequence" data-testid="select-item-sequence">Sort Circuit</SelectItem>
                         <SelectItem value="psyop" data-testid="select-item-psyop-mode">PsyOp</SelectItem>
                         <SelectItem value="timewarp" data-testid="select-item-timewarp-mode">Past Forward</SelectItem>
-                        <SelectItem value="meme" data-testid="select-item-meme-mode">Meme</SelectItem>
+                        <SelectItem value="meme" data-testid="select-item-meme-mode">Meme No Harm</SelectItem>
                       </SelectContent>
                     </Select>
                     <div className="relative">
