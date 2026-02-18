@@ -679,6 +679,7 @@ export default function SuperAdmin() {
       case 'buzzer': return 'BlitzGrid';
       case 'sequence': return 'Sort Circuit';
       case 'psyop': return 'PsyOp';
+      case 'timewarp': return 'Past Forward';
       case 'meme': return 'Meme No Harm';
       default: return mode || 'Unknown';
     }
@@ -1289,12 +1290,12 @@ export default function SuperAdmin() {
                       <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-empty-popular-timewarp">No data yet</p>
                     ) : (
                       <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground">Questions by Era</p>
+                        <p className="text-xs text-muted-foreground">Era Inventory</p>
                         {dashboard.popularTimewarpWeek.slice(0, 5).map((q, i) => (
                           <div key={`tw-${q.name}-${i}`} className="flex items-center justify-between p-2 rounded bg-muted/30 gap-2">
                             <div className="flex items-center gap-2 min-w-0">
                               <span className="text-sm font-bold text-muted-foreground w-5 flex-shrink-0">#{i + 1}</span>
-                              <span className="text-sm truncate capitalize">{q.name}</span>
+                              <span className="text-sm truncate capitalize">{q.name.replace(/ era$/i, '')}</span>
                             </div>
                             <Badge variant="secondary" className="flex-shrink-0">{q.plays} Q</Badge>
                           </div>
@@ -2035,6 +2036,14 @@ export default function SuperAdmin() {
                     <ErrorState message="Couldn't load meme content" onRetry={() => { refetchMemePrompts(); refetchMemeImages(); }} testId="button-retry-meme" />
                   ) : (
                     <div className="space-y-4">
+                      <div className="flex items-center justify-between px-1 pb-1">
+                        <p className="text-xs text-muted-foreground">{filteredMemePrompts.length} prompt{filteredMemePrompts.length !== 1 ? 's' : ''}, {filteredMemeImages.length} image{filteredMemeImages.length !== 1 ? 's' : ''}{contentSearch.trim() ? ' matching' : ''}</p>
+                        <Link href="/admin/meme">
+                          <Button size="sm" variant="outline" data-testid="button-goto-meme-admin">
+                            <Image className="w-4 h-4 mr-1" /> Meme Admin
+                          </Button>
+                        </Link>
+                      </div>
                       <div>
                         <h3 className="text-sm font-medium mb-2">Prompts ({filteredMemePrompts.length})</h3>
                         {filteredMemePrompts.length === 0 ? (
@@ -2055,7 +2064,7 @@ export default function SuperAdmin() {
                                 </div>
                                 <div className="flex items-center gap-1 flex-shrink-0">
                                   <Button
-                                    size="sm"
+                                    size="icon"
                                     variant={p.isActive ? 'outline' : 'secondary'}
                                     onClick={() => toggleMemePromptActiveMutation.mutate({ id: p.id, isActive: !p.isActive })}
                                     disabled={toggleMemePromptActiveMutation.isPending}
@@ -2065,7 +2074,7 @@ export default function SuperAdmin() {
                                     {p.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                                   </Button>
                                   <Button
-                                    size="sm"
+                                    size="icon"
                                     variant={p.isStarterPack ? 'secondary' : 'outline'}
                                     onClick={() => toggleMemePromptStarterPackMutation.mutate({ id: p.id, isStarterPack: !p.isStarterPack })}
                                     disabled={toggleMemePromptStarterPackMutation.isPending}
@@ -2099,7 +2108,13 @@ export default function SuperAdmin() {
                             {filteredMemeImages.map(img => (
                               <div key={img.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                                  {img.imageUrl && <img src={img.imageUrl} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />}
+                                  {img.imageUrl ? (
+                                    <img src={img.imageUrl} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                                  ) : (
+                                    <div className="w-10 h-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                                      <Image className="w-5 h-5 text-muted-foreground" />
+                                    </div>
+                                  )}
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                       <p className="font-medium truncate">{img.caption || 'No caption'}</p>
@@ -2113,7 +2128,7 @@ export default function SuperAdmin() {
                                 </div>
                                 <div className="flex items-center gap-1 flex-shrink-0">
                                   <Button
-                                    size="sm"
+                                    size="icon"
                                     variant={img.isActive ? 'outline' : 'secondary'}
                                     onClick={() => toggleMemeImageActiveMutation.mutate({ id: img.id, isActive: !img.isActive })}
                                     disabled={toggleMemeImageActiveMutation.isPending}
@@ -2123,7 +2138,7 @@ export default function SuperAdmin() {
                                     {img.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                                   </Button>
                                   <Button
-                                    size="sm"
+                                    size="icon"
                                     variant={img.isStarterPack ? 'secondary' : 'outline'}
                                     onClick={() => toggleMemeImageStarterPackMutation.mutate({ id: img.id, isStarterPack: !img.isStarterPack })}
                                     disabled={toggleMemeImageStarterPackMutation.isPending}
@@ -2171,6 +2186,7 @@ export default function SuperAdmin() {
                         <SelectItem value="buzzer" data-testid="select-item-buzzer">BlitzGrid</SelectItem>
                         <SelectItem value="sequence" data-testid="select-item-sequence">Sort Circuit</SelectItem>
                         <SelectItem value="psyop" data-testid="select-item-psyop-mode">PsyOp</SelectItem>
+                        <SelectItem value="timewarp" data-testid="select-item-timewarp-mode">Past Forward</SelectItem>
                         <SelectItem value="meme" data-testid="select-item-meme-mode">Meme</SelectItem>
                       </SelectContent>
                     </Select>
@@ -2272,7 +2288,7 @@ export default function SuperAdmin() {
         <AlertDialog open={!!deleteContentItem} onOpenChange={() => setDeleteContentItem(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete {deleteContentItem?.type === 'board' ? 'BlitzGrid Board' : deleteContentItem?.type === 'sequence' ? 'Sort Circuit Question' : deleteContentItem?.type === 'psyop' ? 'PsyOp Question' : deleteContentItem?.type === 'timewarp' ? 'TimeWarp Question' : deleteContentItem?.type === 'meme-prompt' ? 'Meme Prompt' : deleteContentItem?.type === 'meme-image' ? 'Meme Image' : 'Content'}?</AlertDialogTitle>
+              <AlertDialogTitle>Delete {deleteContentItem?.type === 'board' ? 'BlitzGrid Board' : deleteContentItem?.type === 'sequence' ? 'Sort Circuit Question' : deleteContentItem?.type === 'psyop' ? 'PsyOp Question' : deleteContentItem?.type === 'timewarp' ? 'Past Forward Question' : deleteContentItem?.type === 'meme-prompt' ? 'Meme Prompt' : deleteContentItem?.type === 'meme-image' ? 'Meme Image' : 'Content'}?</AlertDialogTitle>
               <AlertDialogDescription>
                 {deleteContentItem?.label ? (
                   <>This will permanently delete: <span className="font-medium">"{deleteContentItem.label.length > 80 ? deleteContentItem.label.slice(0, 80) + '...' : deleteContentItem.label}"</span></>

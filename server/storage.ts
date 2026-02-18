@@ -3093,7 +3093,7 @@ export class DatabaseStorage implements IStorage {
         plays: q.count,
       })),
       popularTimewarpWeek: timewarpEraBreakdown.map(e => ({
-        name: `${e.era} era`,
+        name: e.era,
         plays: e.count,
       })),
       sortCircuitSessions: totalSequenceSessions?.count ?? 0,
@@ -3278,13 +3278,25 @@ export class DatabaseStorage implements IStorage {
     const allMemeRoundsData = await db.select().from(memeRounds);
     const allMemeSubmissionsData = await db.select().from(memeSubmissions);
     const allMemeVotesData = await db.select().from(memeVotes);
+    const allGameSessions = await db.select().from(gameSessions);
+    const allSessionPlayers = await db.select().from(sessionPlayers);
+    const allSessionCompletedQuestions = await db.select().from(sessionCompletedQuestions);
+    const allBoardCategories = await db.select().from(boardCategories);
+    const allPlayerGameStatsData = await db.select().from(playerGameStats);
+    const allPlayerGameHistoryData = await db.select().from(playerGameHistory);
+    const allBadgesData = await db.select().from(badges);
+    const allUserBadgesData = await db.select().from(userBadges);
 
     return {
       exportedAt: new Date().toISOString(),
       users: allUsers,
       boards: allBoards,
       categories: allCategories,
+      boardCategories: allBoardCategories,
       questions: allQuestions,
+      gameSessions: allGameSessions,
+      sessionPlayers: allSessionPlayers,
+      sessionCompletedQuestions: allSessionCompletedQuestions,
       sequenceQuestions: allSequenceQuestions,
       sequenceSessions: allSequenceSessions,
       sequenceSubmissions: allSequenceSubmissions,
@@ -3301,6 +3313,10 @@ export class DatabaseStorage implements IStorage {
       memeRounds: allMemeRoundsData,
       memeSubmissions: allMemeSubmissionsData,
       memeVotes: allMemeVotesData,
+      playerGameStats: allPlayerGameStatsData,
+      playerGameHistory: allPlayerGameHistoryData,
+      badges: allBadgesData,
+      userBadges: allUserBadgesData,
     };
   }
 
