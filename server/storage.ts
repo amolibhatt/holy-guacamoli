@@ -3012,6 +3012,8 @@ export class DatabaseStorage implements IStorage {
 
     const [totalPsyopSessions] = await db.select({ count: count() }).from(psyopSessions);
     const [totalPsyopRounds] = await db.select({ count: count() }).from(psyopRounds);
+    const [totalMemeRounds] = await db.select({ count: count() }).from(memeRounds);
+    const [totalMemePlayers] = await db.select({ count: count() }).from(memePlayers);
     const [psyopLieVotes] = await db.select({ count: count() }).from(psyopVotes).where(eq(psyopVotes.votedForTruth, false));
     const [psyopTotalVotes] = await db.select({ count: count() }).from(psyopVotes);
 
@@ -3108,6 +3110,9 @@ export class DatabaseStorage implements IStorage {
         psyopSessions: totalPsyopSessions?.count ?? 0,
         timewarpTotalPlays: timewarpTotalPlays?.count ?? 0,
         timewarpQuestionCount: totalTimeWarpQuestions?.count ?? 0,
+        memeSessions: totalMemeSessionsCount?.count ?? 0,
+        memeRounds: totalMemeRounds?.count ?? 0,
+        memePlayers: totalMemePlayers?.count ?? 0,
       },
     };
   }
@@ -3312,6 +3317,15 @@ export class DatabaseStorage implements IStorage {
         theme: boards.theme,
       }).from(boards).where(eq(boards.userId, user.id));
 
+      const [userTimewarpCount] = await db.select({ count: count() })
+        .from(timeWarpQuestions).where(eq(timeWarpQuestions.userId, user.id));
+      const [userSequenceCount] = await db.select({ count: count() })
+        .from(sequenceQuestions).where(eq(sequenceQuestions.userId, user.id));
+      const [userPsyopCount] = await db.select({ count: count() })
+        .from(psyopQuestions).where(eq(psyopQuestions.userId, user.id));
+      const [userMemePromptCount] = await db.select({ count: count() })
+        .from(memePrompts).where(eq(memePrompts.userId, user.id));
+
       // Get sessions hosted by this user
       const hostedSessions = await db.select({
         id: gameSessions.id,
@@ -3351,9 +3365,15 @@ export class DatabaseStorage implements IStorage {
       return {
         ...safeUser,
         boardCount: userBoards.length,
-        boards: userBoards.slice(0, 5), // Recent 5 boards
+        boards: userBoards.slice(0, 5),
         gamesHosted: hostedSessions.length,
-        recentSessions: sessionsWithPlayers.slice(0, 10), // Recent 10 sessions
+        recentSessions: sessionsWithPlayers.slice(0, 10),
+        contentCounts: {
+          timeWarpQuestions: userTimewarpCount?.count ?? 0,
+          sequenceQuestions: userSequenceCount?.count ?? 0,
+          psyopQuestions: userPsyopCount?.count ?? 0,
+          memePrompts: userMemePromptCount?.count ?? 0,
+        },
       };
     }));
 
@@ -3578,15 +3598,63 @@ export class DatabaseStorage implements IStorage {
     const userBoards = await db.select().from(boards)
       .where(eq(boards.userId, userId));
 
+    const userTimeWarpQs = await db.select({
+      id: timeWarpQuestions.id,
+      era: timeWarpQuestions.era,
+      answer: timeWarpQuestions.answer,
+      isActive: timeWarpQuestions.isActive,
+      createdAt: timeWarpQuestions.createdAt,
+    }).from(timeWarpQuestions).where(eq(timeWarpQuestions.userId, userId));
+
+    const userSequenceQs = await db.select({
+      id: sequenceQuestions.id,
+      question: sequenceQuestions.question,
+      isActive: sequenceQuestions.isActive,
+      createdAt: sequenceQuestions.createdAt,
+    }).from(sequenceQuestions).where(eq(sequenceQuestions.userId, userId));
+
+    const userPsyopQs = await db.select({
+      id: psyopQuestions.id,
+      factText: psyopQuestions.factText,
+      isActive: psyopQuestions.isActive,
+      createdAt: psyopQuestions.createdAt,
+    }).from(psyopQuestions).where(eq(psyopQuestions.userId, userId));
+
+    const userMemePromptsData = await db.select({
+      id: memePrompts.id,
+      prompt: memePrompts.prompt,
+      isActive: memePrompts.isActive,
+      createdAt: memePrompts.createdAt,
+    }).from(memePrompts).where(eq(memePrompts.userId, userId));
+
+    const userMemeImagesData = await db.select({
+      id: memeImages.id,
+      caption: memeImages.caption,
+      isActive: memeImages.isActive,
+      createdAt: memeImages.createdAt,
+    }).from(memeImages).where(eq(memeImages.userId, userId));
+
     const { password, ...safeUser } = user;
     return {
       user: safeUser,
       sessions: sessionsWithDetails,
       boards: userBoards,
+      content: {
+        timeWarpQuestions: userTimeWarpQs,
+        sequenceQuestions: userSequenceQs,
+        psyopQuestions: userPsyopQs,
+        memePrompts: userMemePromptsData,
+        memeImages: userMemeImagesData,
+      },
       stats: {
         totalGamesHosted: hostedSessions.length,
         totalBoards: userBoards.length,
         totalPlayersHosted: sessionsWithDetails.reduce((sum, s) => sum + s.players.length, 0),
+        totalTimeWarpQuestions: userTimeWarpQs.length,
+        totalSequenceQuestions: userSequenceQs.length,
+        totalPsyopQuestions: userPsyopQs.length,
+        totalMemePrompts: userMemePromptsData.length,
+        totalMemeImages: userMemeImagesData.length,
       }
     };
   }

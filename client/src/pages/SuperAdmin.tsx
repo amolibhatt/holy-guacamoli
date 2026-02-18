@@ -66,6 +66,12 @@ interface UserWithStats extends SafeUser {
   boards: UserBoard[];
   gamesHosted: number;
   recentSessions: UserSession[];
+  contentCounts?: {
+    timeWarpQuestions: number;
+    sequenceQuestions: number;
+    psyopQuestions: number;
+    memePrompts: number;
+  };
 }
 
 interface BoardWithOwner extends Board {
@@ -119,7 +125,7 @@ interface ComprehensiveDashboard {
   popularTimewarpWeek: { name: string; plays: number }[];
   sortCircuitSessions: number;
   psyopSessions: number;
-  performance: { avgScore: number; highScore: number; completionRate: number; sortCircuitAccuracy: number; sortCircuitAvgTimeMs: number; sortCircuitCompletionRate: number; psyopTotalRounds: number; psyopDeceptionRate: number; psyopSessions: number; timewarpTotalPlays: number; timewarpQuestionCount: number };
+  performance: { avgScore: number; highScore: number; completionRate: number; sortCircuitAccuracy: number; sortCircuitAvgTimeMs: number; sortCircuitCompletionRate: number; psyopTotalRounds: number; psyopDeceptionRate: number; psyopSessions: number; timewarpTotalPlays: number; timewarpQuestionCount: number; memeSessions: number; memeRounds: number; memePlayers: number };
 }
 
 interface QuestionCreator {
@@ -1010,8 +1016,16 @@ export default function SuperAdmin() {
                       <span className="font-bold">{dashboard.psyopSessions}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm">TimeWarp Q</span>
+                      <span className="text-sm">Past Forward Q</span>
                       <span className="font-bold">{dashboard.totals.timeWarpQuestions}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Past Forward Plays</span>
+                      <span className="font-bold">{dashboard.performance.timewarpTotalPlays}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Meme Sessions</span>
+                      <span className="font-bold">{dashboard.performance.memeSessions}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Meme Prompts</span>
@@ -1086,6 +1100,21 @@ export default function SuperAdmin() {
                     <div className="flex justify-between">
                       <span className="text-sm">Questions</span>
                       <span className="font-bold">{dashboard.performance.timewarpQuestionCount}</span>
+                    </div>
+                    <div className="border-t pt-2 mt-2">
+                      <p className="text-xs font-medium text-muted-foreground">Meme No Harm</p>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Sessions</span>
+                      <span className="font-bold">{dashboard.performance.memeSessions}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Rounds Played</span>
+                      <span className="font-bold">{dashboard.performance.memeRounds}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Total Players</span>
+                      <span className="font-bold">{dashboard.performance.memePlayers}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -1459,6 +1488,15 @@ export default function SuperAdmin() {
                               {u.firstName || u.lastName ? `${u.firstName || ''} ${u.lastName || ''}`.trim() : u.email}
                             </p>
                             <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                            {u.contentCounts && (u.contentCounts.timeWarpQuestions > 0 || u.contentCounts.sequenceQuestions > 0 || u.contentCounts.psyopQuestions > 0 || u.contentCounts.memePrompts > 0 || u.boardCount > 0) && (
+                              <div className="flex items-center gap-1 flex-wrap mt-0.5">
+                                {u.boardCount > 0 && <Badge variant="outline" className="text-xs">{u.boardCount} grids</Badge>}
+                                {u.contentCounts.sequenceQuestions > 0 && <Badge variant="outline" className="text-xs">{u.contentCounts.sequenceQuestions} SC</Badge>}
+                                {u.contentCounts.psyopQuestions > 0 && <Badge variant="outline" className="text-xs">{u.contentCounts.psyopQuestions} PsyOp</Badge>}
+                                {u.contentCounts.timeWarpQuestions > 0 && <Badge variant="outline" className="text-xs">{u.contentCounts.timeWarpQuestions} PF</Badge>}
+                                {u.contentCounts.memePrompts > 0 && <Badge variant="outline" className="text-xs">{u.contentCounts.memePrompts} meme</Badge>}
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
@@ -1577,7 +1615,7 @@ export default function SuperAdmin() {
                     onClick={() => { setContentTab('timewarp'); setContentSearch(''); }}
                     data-testid="button-content-timewarp"
                   >
-                    <Clock className="w-4 h-4 mr-1" /> TimeWarp
+                    <Clock className="w-4 h-4 mr-1" /> Past Forward
                     {dashboard?.totals.timeWarpQuestions ? <Badge variant="secondary" className="ml-1 text-xs">{dashboard.totals.timeWarpQuestions}</Badge> : null}
                   </Button>
                   <Button
@@ -1929,13 +1967,20 @@ export default function SuperAdmin() {
                       {filteredTimewarpQuestions.map(q => (
                         <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
                           <div className="flex items-center gap-3 flex-1 min-w-0">
-                            {q.imageUrl && <img src={q.imageUrl} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />}
+                            {q.imageUrl ? (
+                              <img src={q.imageUrl} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                            ) : (
+                              <div className="w-10 h-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                                <Clock className="w-5 h-5 text-muted-foreground" />
+                              </div>
+                            )}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <p className="font-medium truncate">{q.answer}</p>
                                 <Badge variant="outline" className="text-xs">{q.era}</Badge>
                                 {!q.isActive && <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>}
                                 {q.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
+                                {q.hint && <Badge variant="outline" className="text-xs">Hint</Badge>}
                               </div>
                               <p className="text-xs text-muted-foreground">
                                 by {q.creator?.username || 'Unknown'} • {formatRelativeDate(q.createdAt)}{q.category ? ` • ${q.category}` : ''}
