@@ -874,7 +874,7 @@ export default function SuperAdmin() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <Link href={`/admin/boards/${board.id}`}>
+                          <Link href={`/admin/games`}>
                             <Button
                               size="sm"
                               variant="outline"
@@ -1473,6 +1473,7 @@ export default function SuperAdmin() {
                               {b.moderationStatus === 'flagged' && <Badge variant="destructive" className="text-xs">Flagged</Badge>}
                               {b.moderationStatus === 'rejected' && <Badge variant="outline" className="text-xs text-destructive">Rejected</Badge>}
                               {b.moderationStatus === 'approved' && <Badge variant="outline" className="text-xs text-green-500">Approved</Badge>}
+                              {b.moderationStatus === 'hidden' && <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>}
                               {b.visibility === 'private' && <Badge variant="outline" className="text-xs text-muted-foreground">Private</Badge>}
                               {b.visibility === 'tenant' && <Badge variant="outline" className="text-xs text-purple-500">Tenant</Badge>}
                               {b.isGlobal && <Badge variant="outline" className="text-xs text-blue-500">Global</Badge>}
@@ -1497,6 +1498,7 @@ export default function SuperAdmin() {
                                 <SelectItem value="pending"><span className="flex items-center gap-1"><Clock className="w-3 h-3 text-amber-500" /> Pending</span></SelectItem>
                                 <SelectItem value="flagged"><span className="flex items-center gap-1"><AlertTriangle className="w-3 h-3 text-red-500" /> Flagged</span></SelectItem>
                                 <SelectItem value="rejected"><span className="flex items-center gap-1"><X className="w-3 h-3 text-red-500" /> Rejected</span></SelectItem>
+                                <SelectItem value="hidden"><span className="flex items-center gap-1"><EyeOff className="w-3 h-3 text-muted-foreground" /> Hidden</span></SelectItem>
                               </SelectContent>
                             </Select>
                             <Select
