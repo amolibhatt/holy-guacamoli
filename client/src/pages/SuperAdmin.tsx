@@ -137,6 +137,7 @@ interface SequenceQuestionWithCreator {
   isActive: boolean;
   isStarterPack: boolean;
   createdAt: string;
+  playCount: number;
   creator: QuestionCreator | null;
 }
 
@@ -204,6 +205,7 @@ export default function SuperAdmin() {
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [deleteContentItem, setDeleteContentItem] = useState<{ type: string; id: number; label?: string } | null>(null);
+  const [sessionModeFilter, setSessionModeFilter] = useState<string>("all");
 
   // Queries
   const { data: dashboard, isLoading: isLoadingDashboard, isError: isErrorDashboard, refetch: refetchDashboard } = useQuery<ComprehensiveDashboard>({
@@ -671,19 +673,19 @@ export default function SuperAdmin() {
     }
   };
 
-  const filteredSessions = sessionSearch.trim()
-    ? allSessions.filter(s => {
-        const search = sessionSearch.toLowerCase();
-        const hostName = `${s.host?.firstName || ''} ${s.host?.lastName || ''}`.toLowerCase();
-        const modeLabel = getGameModeLabel(s.currentMode).toLowerCase();
-        return (s.code ?? '').toLowerCase().includes(search) ||
-          hostName.includes(search) ||
-          (s.host?.email ?? '').toLowerCase().includes(search) ||
-          modeLabel.includes(search) ||
-          (s.currentMode ?? '').toLowerCase().includes(search) ||
-          s.players.some(p => (p.name ?? '').toLowerCase().includes(search));
-      })
-    : allSessions;
+  const filteredSessions = allSessions.filter(s => {
+    if (sessionModeFilter !== 'all' && s.currentMode !== sessionModeFilter) return false;
+    if (!sessionSearch.trim()) return true;
+    const search = sessionSearch.toLowerCase();
+    const hostName = `${s.host?.firstName || ''} ${s.host?.lastName || ''}`.toLowerCase();
+    const modeLabel = getGameModeLabel(s.currentMode).toLowerCase();
+    return (s.code ?? '').toLowerCase().includes(search) ||
+      hostName.includes(search) ||
+      (s.host?.email ?? '').toLowerCase().includes(search) ||
+      modeLabel.includes(search) ||
+      (s.currentMode ?? '').toLowerCase().includes(search) ||
+      s.players.some(p => (p.name ?? '').toLowerCase().includes(search));
+  });
 
   const filteredBoards = contentSearch.trim() 
     ? allBoards.filter(b => {
@@ -1665,9 +1667,13 @@ export default function SuperAdmin() {
                               {!q.isActive && <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>}
                               {q.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
                               {q.hint && <Badge variant="outline" className="text-xs">Hint</Badge>}
+                              {q.playCount > 0 && <Badge variant="outline" className="text-xs">{q.playCount} play{q.playCount !== 1 ? 's' : ''}</Badge>}
                             </div>
                             <p className="text-xs text-muted-foreground truncate">
-                              by {q.creator?.username || 'Unknown'} • {formatRelativeDate(q.createdAt)} • Order: {Array.isArray(q.correctOrder) && q.correctOrder.length > 0
+                              by {q.creator?.username || 'Unknown'} • {formatRelativeDate(q.createdAt)} • Options: {q.optionA}, {q.optionB}, {q.optionC}, {q.optionD}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              Order: {Array.isArray(q.correctOrder) && q.correctOrder.length > 0
                                 ? q.correctOrder.map(letter => {
                                     const optionMap: Record<string, string> = { A: q.optionA, B: q.optionB, C: q.optionC, D: q.optionD };
                                     return optionMap[letter] || letter;
@@ -1725,23 +1731,27 @@ export default function SuperAdmin() {
                   ) : filteredPsyopQuestions.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8" data-testid="text-empty-psyop">{contentSearch.trim() ? 'No matching questions' : 'No questions found'}</p>
                   ) : (
-                    <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between px-1 pb-1">
+                        <p className="text-xs text-muted-foreground">{filteredPsyopQuestions.length} question{filteredPsyopQuestions.length !== 1 ? 's' : ''}{contentSearch.trim() ? ' matching' : ''}</p>
+                      </div>
+                      <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {filteredPsyopQuestions.map(q => (
                         <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-medium truncate">{q.factText}</p>
                               <Badge variant="outline" className="text-xs">Answer: {q.correctAnswer}</Badge>
                               {!q.isActive && <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>}
                               {q.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              by {q.creator?.username || 'Unknown'} {q.category && `• ${q.category}`}
+                              by {q.creator?.username || 'Unknown'} • {formatRelativeDate(q.createdAt)}{q.category ? ` • ${q.category}` : ''}
                             </p>
                           </div>
                           <div className="flex items-center gap-1 flex-shrink-0">
                             <Button
-                              size="sm"
+                              size="icon"
                               variant={q.isActive ? 'outline' : 'secondary'}
                               onClick={() => togglePsyopActiveMutation.mutate({ questionId: q.id, isActive: !q.isActive })}
                               disabled={togglePsyopActiveMutation.isPending}
@@ -1751,7 +1761,7 @@ export default function SuperAdmin() {
                               {q.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                             </Button>
                             <Button
-                              size="sm"
+                              size="icon"
                               variant={q.isStarterPack ? 'secondary' : 'outline'}
                               onClick={() => togglePsyopStarterPackMutation.mutate({ questionId: q.id, isStarterPack: !q.isStarterPack })}
                               disabled={togglePsyopStarterPackMutation.isPending}
@@ -1773,6 +1783,7 @@ export default function SuperAdmin() {
                           </div>
                         </div>
                       ))}
+                      </div>
                     </div>
                   )
                 )}
@@ -1787,26 +1798,30 @@ export default function SuperAdmin() {
                   ) : filteredTimewarpQuestions.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8" data-testid="text-empty-timewarp">{contentSearch.trim() ? 'No matching questions' : 'No questions found'}</p>
                   ) : (
-                    <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between px-1 pb-1">
+                        <p className="text-xs text-muted-foreground">{filteredTimewarpQuestions.length} question{filteredTimewarpQuestions.length !== 1 ? 's' : ''}{contentSearch.trim() ? ' matching' : ''}</p>
+                      </div>
+                      <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {filteredTimewarpQuestions.map(q => (
                         <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             {q.imageUrl && <img src={q.imageUrl} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <p className="font-medium truncate">{q.answer}</p>
                                 <Badge variant="outline" className="text-xs">{q.era}</Badge>
                                 {!q.isActive && <Badge variant="outline" className="text-xs text-muted-foreground">Hidden</Badge>}
                                 {q.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
                               </div>
                               <p className="text-xs text-muted-foreground">
-                                by {q.creator?.username || 'Unknown'}{q.category ? ` • ${q.category}` : ''}
+                                by {q.creator?.username || 'Unknown'} • {formatRelativeDate(q.createdAt)}{q.category ? ` • ${q.category}` : ''}
                               </p>
                             </div>
                           </div>
                           <div className="flex items-center gap-1 flex-shrink-0">
                             <Button
-                              size="sm"
+                              size="icon"
                               variant={q.isActive ? 'outline' : 'secondary'}
                               onClick={() => toggleTimewarpActiveMutation.mutate({ questionId: q.id, isActive: !q.isActive })}
                               disabled={toggleTimewarpActiveMutation.isPending}
@@ -1816,7 +1831,7 @@ export default function SuperAdmin() {
                               {q.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                             </Button>
                             <Button
-                              size="sm"
+                              size="icon"
                               variant={q.isStarterPack ? 'secondary' : 'outline'}
                               onClick={() => toggleTimewarpStarterPackMutation.mutate({ questionId: q.id, isStarterPack: !q.isStarterPack })}
                               disabled={toggleTimewarpStarterPackMutation.isPending}
@@ -1838,6 +1853,7 @@ export default function SuperAdmin() {
                           </div>
                         </div>
                       ))}
+                      </div>
                     </div>
                   )
                 )}
@@ -1978,6 +1994,18 @@ export default function SuperAdmin() {
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <CardTitle className="text-lg">Game Sessions</CardTitle>
                   <div className="flex items-center gap-2">
+                    <Select value={sessionModeFilter} onValueChange={setSessionModeFilter}>
+                      <SelectTrigger className="w-32" data-testid="select-session-mode-filter">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all" data-testid="select-item-all-modes">All Modes</SelectItem>
+                        <SelectItem value="buzzer" data-testid="select-item-buzzer">BlitzGrid</SelectItem>
+                        <SelectItem value="sequence" data-testid="select-item-sequence">Sort Circuit</SelectItem>
+                        <SelectItem value="psyop" data-testid="select-item-psyop-mode">PsyOp</SelectItem>
+                        <SelectItem value="meme" data-testid="select-item-meme-mode">Meme</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
@@ -1988,7 +2016,7 @@ export default function SuperAdmin() {
                         data-testid="input-search-sessions"
                       />
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => refetchSessions()} data-testid="button-refresh-sessions" aria-label="Refresh sessions">
+                    <Button variant="ghost" size="icon" onClick={() => refetchSessions()} data-testid="button-refresh-sessions" aria-label="Refresh sessions">
                       <RefreshCw className="w-4 h-4" />
                     </Button>
                   </div>
@@ -2002,8 +2030,10 @@ export default function SuperAdmin() {
                 ) : isErrorSessions ? (
                   <ErrorState message="Couldn't load sessions" onRetry={() => refetchSessions()} testId="button-retry-sessions" />
                 ) : filteredSessions.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8" data-testid="text-empty-sessions">No sessions found</p>
+                  <p className="text-center text-muted-foreground py-8" data-testid="text-empty-sessions">{sessionSearch.trim() || sessionModeFilter !== 'all' ? 'No matching sessions' : 'No sessions found'}</p>
                 ) : (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground px-1">{filteredSessions.length} session{filteredSessions.length !== 1 ? 's' : ''}{sessionModeFilter !== 'all' || sessionSearch.trim() ? ' matching' : ''}</p>
                   <div className="space-y-2 max-h-[600px] overflow-y-auto">
                     {filteredSessions.map(s => (
                       <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
@@ -2037,6 +2067,7 @@ export default function SuperAdmin() {
                         )}
                       </div>
                     ))}
+                  </div>
                   </div>
                 )}
               </CardContent>

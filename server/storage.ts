@@ -3357,6 +3357,7 @@ export class DatabaseStorage implements IStorage {
       creatorFirstName: users.firstName,
       creatorLastName: users.lastName,
       creatorEmail: users.email,
+      playCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM sequence_sessions WHERE sequence_sessions.question_id = ${sequenceQuestions.id}), 0)`,
     }).from(sequenceQuestions)
       .leftJoin(users, eq(sequenceQuestions.userId, users.id))
       .orderBy(desc(sequenceQuestions.createdAt));
