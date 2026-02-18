@@ -376,7 +376,7 @@ export type BoardVisibility = typeof BOARD_VISIBILITIES[number];
 export const SOURCE_GROUPS = ["A", "B", "C", "D", "E"] as const;
 export type SourceGroup = typeof SOURCE_GROUPS[number];
 
-export const MODERATION_STATUSES = ["approved", "pending", "flagged", "hidden"] as const;
+export const MODERATION_STATUSES = ["approved", "pending", "flagged", "rejected", "hidden"] as const;
 export type ModerationStatus = typeof MODERATION_STATUSES[number];
 
 export const boards = pgTable("boards", {

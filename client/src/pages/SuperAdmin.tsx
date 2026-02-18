@@ -874,6 +874,16 @@ export default function SuperAdmin() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
+                          <Link href={`/admin/boards/${board.id}`}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              data-testid={`button-inspect-${board.id}`}
+                              aria-label="Inspect board"
+                            >
+                              <Eye className="w-4 h-4 mr-1" /> Inspect
+                            </Button>
+                          </Link>
                           <Button
                             size="sm"
                             variant="outline"
@@ -1303,18 +1313,36 @@ export default function SuperAdmin() {
               <CardHeader>
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <CardTitle className="text-lg">Content & Games</CardTitle>
-                  {contentTab !== 'games' && (
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search..."
-                        value={contentSearch}
-                        onChange={(e) => setContentSearch(e.target.value)}
-                        className="pl-9 w-40"
-                        data-testid="input-search-content"
-                      />
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {contentTab !== 'games' && (
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search..."
+                          value={contentSearch}
+                          onChange={(e) => setContentSearch(e.target.value)}
+                          className="pl-9 w-40"
+                          data-testid="input-search-content"
+                        />
+                      </div>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (contentTab === 'games') refetchGameTypes();
+                        else if (contentTab === 'blitzgrid') refetchBoards();
+                        else if (contentTab === 'sequence') refetchSequence();
+                        else if (contentTab === 'psyop') refetchPsyop();
+                        else if (contentTab === 'timewarp') refetchTimewarp();
+                        else if (contentTab === 'meme') { refetchMemePrompts(); refetchMemeImages(); }
+                      }}
+                      data-testid="button-refresh-content"
+                      aria-label="Refresh content"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1446,6 +1474,7 @@ export default function SuperAdmin() {
                               {b.moderationStatus === 'rejected' && <Badge variant="outline" className="text-xs text-destructive">Rejected</Badge>}
                               {b.moderationStatus === 'approved' && <Badge variant="outline" className="text-xs text-green-500">Approved</Badge>}
                               {b.visibility === 'private' && <Badge variant="outline" className="text-xs text-muted-foreground">Private</Badge>}
+                              {b.visibility === 'tenant' && <Badge variant="outline" className="text-xs text-purple-500">Tenant</Badge>}
                               {b.isGlobal && <Badge variant="outline" className="text-xs text-blue-500">Global</Badge>}
                               {b.isFeatured && <Badge variant="outline" className="text-xs text-amber-500">Featured</Badge>}
                               {b.isStarterPack && <Badge variant="secondary"><Star className="w-3 h-3 mr-1" /> Starter</Badge>}
@@ -1455,16 +1484,35 @@ export default function SuperAdmin() {
                             </p>
                           </div>
                           <div className="flex items-center gap-1 flex-shrink-0">
-                            <Button
-                              size="icon"
-                              variant={b.visibility === 'public' ? 'outline' : 'secondary'}
-                              onClick={() => toggleBoardVisibilityMutation.mutate({ boardId: b.id, visibility: b.visibility === 'public' ? 'private' : 'public' })}
-                              disabled={toggleBoardVisibilityMutation.isPending}
-                              data-testid={`button-visibility-${b.id}`}
-                              aria-label={b.visibility === 'public' ? 'Make private' : 'Make public'}
+                            <Select
+                              value={b.moderationStatus || 'approved'}
+                              onValueChange={(v) => updateModerationMutation.mutate({ boardId: b.id, data: { moderationStatus: v } })}
+                              disabled={updateModerationMutation.isPending}
                             >
-                              {b.visibility === 'public' ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                            </Button>
+                              <SelectTrigger className="w-28 h-9" data-testid={`select-moderation-${b.id}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="approved"><span className="flex items-center gap-1"><Check className="w-3 h-3 text-green-500" /> Approved</span></SelectItem>
+                                <SelectItem value="pending"><span className="flex items-center gap-1"><Clock className="w-3 h-3 text-amber-500" /> Pending</span></SelectItem>
+                                <SelectItem value="flagged"><span className="flex items-center gap-1"><AlertTriangle className="w-3 h-3 text-red-500" /> Flagged</span></SelectItem>
+                                <SelectItem value="rejected"><span className="flex items-center gap-1"><X className="w-3 h-3 text-red-500" /> Rejected</span></SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Select
+                              value={b.visibility}
+                              onValueChange={(v) => toggleBoardVisibilityMutation.mutate({ boardId: b.id, visibility: v })}
+                              disabled={toggleBoardVisibilityMutation.isPending}
+                            >
+                              <SelectTrigger className="w-24 h-9" data-testid={`select-visibility-${b.id}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="public"><span className="flex items-center gap-1"><Eye className="w-3 h-3" /> Public</span></SelectItem>
+                                <SelectItem value="tenant"><span className="flex items-center gap-1"><Globe className="w-3 h-3" /> Tenant</span></SelectItem>
+                                <SelectItem value="private"><span className="flex items-center gap-1"><EyeOff className="w-3 h-3" /> Private</span></SelectItem>
+                              </SelectContent>
+                            </Select>
                             <Button
                               size="icon"
                               variant={b.isGlobal ? 'secondary' : 'outline'}

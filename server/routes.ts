@@ -2331,19 +2331,15 @@ export async function registerRoutes(
       if (boardId === null) {
         return res.status(400).json({ message: "Invalid board ID" });
       }
-      const { moderationStatus, isFeatured, flagReason } = req.body;
-      if (moderationStatus !== undefined && !['pending', 'approved', 'rejected', 'flagged'].includes(moderationStatus)) {
+      const { moderationStatus, flagReason } = req.body;
+      if (moderationStatus !== undefined && !['pending', 'approved', 'rejected', 'flagged', 'hidden'].includes(moderationStatus)) {
         return res.status(400).json({ message: "Invalid moderation status" });
-      }
-      if (isFeatured !== undefined && typeof isFeatured !== 'boolean') {
-        return res.status(400).json({ message: "isFeatured must be a boolean" });
       }
       if (flagReason !== undefined && typeof flagReason !== 'string') {
         return res.status(400).json({ message: "flagReason must be a string" });
       }
       const updated = await storage.updateBoardModeration(boardId, {
         moderationStatus,
-        isFeatured,
         flagReason: typeof flagReason === 'string' ? flagReason.trim().slice(0, 500) : flagReason,
         moderatedBy: req.session.userId,
       });
