@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
-import { ListOrdered, Wifi, WifiOff, Trophy, Check, X, RotateCcw, Undo2, Sparkles, RefreshCw, Crown, Star, Medal, Lock, Volume2, VolumeX, LogOut, ChevronDown, ChevronUp, Hash, Pause } from "lucide-react";
+import { ListOrdered, Check, X, RotateCcw, Undo2, Trophy, Lock, Pause } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
@@ -13,16 +12,23 @@ import { PLAYER_AVATARS, type AvatarId } from "@shared/schema";
 import { Logo } from "@/components/Logo";
 import { soundManager } from "@/lib/sounds";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import {
+  FullScreenFlash,
+  GameJoinForm,
+  GamePlayerHeader,
+  GamePlayerInfoBar,
+  GameConnectionBanner,
+  GameCompleteScreen,
+  GameLeaderboardView,
+  GameWaitingScreen,
+  getGameSession,
+  saveGameSession,
+  clearGameSession,
+  type ConnectionStatus,
+  type LeaderboardEntry,
+} from "@/components/game";
 
-type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error" | "reconnecting";
 type GamePhase = "waiting" | "animatedReveal" | "playing" | "submitted" | "revealing" | "results" | "leaderboard" | "gameComplete";
-
-interface LeaderboardEntry {
-  playerId: string;
-  playerName: string;
-  playerAvatar: string;
-  score: number;
-}
 
 interface Question {
   id: number;
@@ -34,37 +40,12 @@ interface Question {
   hint?: string;
 }
 
-function FullScreenFlash({ show, color }: { show: boolean; color: string }) {
-  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!show || prefersReducedMotion) return null;
-  return (
-    <motion.div
-      initial={{ opacity: 0.8 }}
-      animate={{ opacity: 0 }}
-      transition={{ duration: 0.4 }}
-      className={`fixed inset-0 z-50 pointer-events-none ${color}`}
-    />
-  );
-}
+const SESSION_KEY = "sequence-session";
 
 function getSession() {
-  try {
-    const sequenceData = localStorage.getItem("sequence-session");
-    if (sequenceData) return JSON.parse(sequenceData);
-    const buzzerData = localStorage.getItem("buzzer-session");
-    if (buzzerData) return JSON.parse(buzzerData);
-    return null;
-  } catch { return null; }
-}
-
-function saveSession(roomCode: string, playerName: string, playerId: string, avatar: string, reconnectToken?: string) {
-  try {
-    localStorage.setItem("sequence-session", JSON.stringify({ roomCode, playerName, playerId, avatar, reconnectToken }));
-  } catch {}
-}
-
-function clearSession() {
-  try { localStorage.removeItem("sequence-session"); } catch {}
+  const session = getGameSession(SESSION_KEY);
+  if (session) return session;
+  return getGameSession("buzzer-session");
 }
 
 export default function SequencePlayer() {
@@ -185,7 +166,7 @@ export default function SequencePlayer() {
           setPlayerId(data.playerId);
           playerIdRef.current = data.playerId;
           if (data.reconnectToken) reconnectTokenRef.current = data.reconnectToken;
-          saveSession(roomCode.toUpperCase(), playerName, data.playerId, selectedAvatar, data.reconnectToken || reconnectTokenRef.current || undefined);
+          saveGameSession(SESSION_KEY, roomCode.toUpperCase(), playerName, data.playerId, selectedAvatar, data.reconnectToken || reconnectTokenRef.current || undefined);
           if (data.score !== undefined) {
             prevScoreRef.current = data.score;
             setMyScore(data.score);
@@ -374,7 +355,7 @@ export default function SequencePlayer() {
           break;
           
         case "kicked":
-          clearSession();
+          clearGameSession(SESSION_KEY);
           clearAllTimers();
           setJoined(false);
           joinedRef.current = false;
@@ -389,7 +370,7 @@ export default function SequencePlayer() {
           break;
 
         case "room:closed":
-          clearSession();
+          clearGameSession(SESSION_KEY);
           clearAllTimers();
           setJoined(false);
           joinedRef.current = false;
@@ -406,7 +387,7 @@ export default function SequencePlayer() {
         case "error":
           if (data.message === "Room not found") {
             shouldReconnectRef.current = false;
-            clearSession();
+            clearGameSession(SESSION_KEY);
             clearAllTimers();
             setJoined(false);
             joinedRef.current = false;
@@ -423,7 +404,7 @@ export default function SequencePlayer() {
             });
           } else if (data.message === "Invalid reconnect token") {
             shouldReconnectRef.current = false;
-            clearSession();
+            clearGameSession(SESSION_KEY);
             clearAllTimers();
             reconnectTokenRef.current = null;
             playerIdRef.current = null;
@@ -558,7 +539,7 @@ export default function SequencePlayer() {
       wsRef.current.close();
       wsRef.current = null;
     }
-    clearSession();
+    clearGameSession(SESSION_KEY);
     setJoined(false);
     setPlayerId(null);
     playerIdRef.current = null;
@@ -606,266 +587,66 @@ export default function SequencePlayer() {
     }
   }, [hasCodeFromUrl]);
 
-  const myAvatar = PLAYER_AVATARS.find(a => a.id === selectedAvatar)?.emoji || "?";
-
-  const renderGameHeader = () => (
-    <>
-      <header className="px-4 py-3 flex items-center justify-between gap-2 bg-teal-950/80 backdrop-blur-xl border-b border-teal-500/20 shadow-lg" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
-        <div className="flex items-center gap-2">
-          {status === "connected" && <Wifi className="w-4 h-4 text-teal-400 shrink-0" data-testid="status-connected" />}
-          {status === "connecting" && <RefreshCw className="w-4 h-4 animate-spin text-teal-400 shrink-0" data-testid="status-connecting" />}
-          {status === "reconnecting" && <RefreshCw className="w-4 h-4 animate-spin text-amber-400 shrink-0" data-testid="status-reconnecting" />}
-          {status === "disconnected" && <WifiOff className="w-4 h-4 text-red-400 shrink-0" data-testid="status-disconnected" />}
-          {status === "error" && <WifiOff className="w-4 h-4 text-red-400 shrink-0" data-testid="status-error" />}
-
-          <div className="flex items-center gap-1 px-2 py-0.5 bg-teal-500/20 rounded-md border border-teal-500/30">
-            <Hash className="w-3 h-3 text-teal-400 shrink-0" />
-            <span className="text-xs font-mono font-bold text-teal-300" data-testid="text-room-code">{roomCode.toUpperCase()}</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <motion.div
-            key={myScore}
-            initial={{ scale: 1.3 }}
-            animate={{ scale: 1 }}
-            className="px-2 py-0.5 bg-teal-500/20 rounded-md border border-teal-500/30"
-          >
-            <span className="text-sm font-bold text-teal-300" data-testid="text-score">{myScore} pts</span>
-          </motion.div>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={toggleSound}
-            className="text-teal-300"
-            data-testid="button-toggle-sound"
-            aria-label={soundEnabled ? "Mute sounds" : "Unmute sounds"}
-          >
-            {soundEnabled ? <Volume2 className="w-4 h-4 shrink-0" /> : <VolumeX className="w-4 h-4 shrink-0" />}
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={handleLeaveGame}
-            className="text-red-400"
-            data-testid="button-leave-game"
-            aria-label="Leave game"
-          >
-            <LogOut className="w-4 h-4 shrink-0" />
-          </Button>
-        </div>
-      </header>
-      <div className="px-4 py-1.5 flex items-center justify-between bg-teal-950/40 border-b border-teal-500/10">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-teal-500/30 flex items-center justify-center text-sm shrink-0">
-            {myAvatar}
-          </div>
-          <span className="text-sm text-white/60 truncate" data-testid="text-player-name">{playerName}</span>
-        </div>
-        <button
-          onClick={() => setShowLeaderboard(!showLeaderboard)}
-          className="flex items-center gap-1 text-xs text-teal-300/70"
-          data-testid="button-toggle-leaderboard"
-        >
-          <Trophy className="w-3 h-3 shrink-0" />
-          Scores
-          {showLeaderboard ? <ChevronUp className="w-3 h-3 shrink-0" /> : <ChevronDown className="w-3 h-3 shrink-0" />}
-        </button>
-      </div>
-      <AnimatePresence>
-        {showLeaderboard && leaderboard.length > 0 && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden bg-teal-950/60 border-b border-teal-500/10"
-          >
-            <div className="p-3 space-y-1.5 max-h-48 overflow-y-auto">
-              {leaderboard.map((entry, idx) => {
-                const isMe = entry.playerId === playerId;
-                const avatar = PLAYER_AVATARS.find(a => a.id === entry.playerAvatar)?.emoji || "?";
-                return (
-                  <motion.div
-                    key={entry.playerId}
-                    initial={{ x: -10, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className={`flex items-center justify-between px-2 py-1.5 rounded-md ${
-                      isMe ? 'bg-teal-500/25 border border-teal-400/40' :
-                      idx === 0 ? 'bg-amber-500/15' :
-                      'bg-white/5'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-xs font-bold text-white/50 w-4 text-right shrink-0">{idx + 1}</span>
-                      <span className="text-sm shrink-0">{avatar}</span>
-                      <span className="text-sm text-white truncate">{entry.playerName}</span>
-                      {isMe && <Badge className="bg-teal-500 text-[10px] px-1 py-0 shrink-0">You</Badge>}
-                    </div>
-                    <span className="text-sm font-bold text-teal-300 shrink-0">{entry.score}</span>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      {reconnectCountdown !== null && (
-        <div className="px-4 py-2 bg-amber-900/60 border-b border-amber-500/30 flex items-center justify-between">
-          <span className="text-sm text-amber-200">Reconnecting in {reconnectCountdown}s... (Attempt {reconnectAttemptsRef.current}/5)</span>
-          <Button size="sm" variant="outline" className="text-amber-200 border-amber-500/30" onClick={handleManualReconnect} data-testid="button-reconnect">
-            <RefreshCw className="w-3 h-3 mr-1 shrink-0" />Reconnect Now
-          </Button>
-        </div>
-      )}
-      {status === "disconnected" && reconnectCountdown === null && joined && reconnectAttemptsRef.current >= 5 && (
-        <div className="px-4 py-2 bg-red-900/60 border-b border-red-500/30 flex items-center justify-between">
-          <span className="text-sm text-red-200">Connection lost</span>
-          <Button size="sm" variant="outline" className="text-red-200 border-red-500/30" onClick={handleManualReconnect} data-testid="button-reconnect-retry">
-            <RefreshCw className="w-3 h-3 mr-1 shrink-0" />Try Again
-          </Button>
-        </div>
-      )}
-    </>
-  );
-
   if (!joined) {
     return (
-      <div className="min-h-screen bg-teal-900 flex flex-col items-center justify-center p-6">
-        <div className="w-full flex justify-center pb-4">
-          <Logo size="compact" />
-        </div>
-        <div className="w-full max-w-sm">
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-teal-500 flex items-center justify-center shadow-xl">
-              <ListOrdered className="w-10 h-10 text-white shrink-0" aria-hidden="true" />
-            </div>
-            {hasCodeFromUrl ? (
-              <>
-                <h1 className="text-3xl font-bold text-white mb-2" data-testid="text-game-title">You're Invited!</h1>
-                <p className="text-teal-200" data-testid="text-game-tagline">Just enter your name to join</p>
-              </>
-            ) : (
-              <>
-                <h1 className="text-3xl font-bold text-white mb-2" data-testid="text-game-title">Sort Circuit</h1>
-                <p className="text-teal-200" data-testid="text-game-tagline">Arrange fast. Win first.</p>
-              </>
-            )}
-          </div>
-
-          <form onSubmit={handleJoin} className="space-y-4" data-testid="form-join">
-            {hasCodeFromUrl ? (
-              <div className="text-center py-3 px-4 bg-teal-500/20 rounded-lg border border-teal-500/30" data-testid="display-room-code">
-                <p className="text-xs text-teal-300 uppercase tracking-wide mb-1">Room Code</p>
-                <p className="text-3xl font-mono font-bold text-teal-400 tracking-widest">{roomCode}</p>
-              </div>
-            ) : (
-              <div>
-                <label className="text-sm font-medium text-teal-200 mb-1.5 block">Room Code</label>
-                <Input
-                  value={roomCode}
-                  onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                  placeholder="Enter code"
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 text-center text-2xl font-mono tracking-widest"
-                  maxLength={4}
-                  required
-                  data-testid="input-room-code"
-                />
-              </div>
-            )}
-            
-            <div>
-              <label className="text-sm font-medium text-teal-200 mb-1.5 block">Your Name</label>
-              <Input
-                ref={nameInputRef}
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                placeholder="Enter your name"
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                maxLength={20}
-                required
-                data-testid="input-player-name"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-teal-200 mb-1.5 block">Pick Your Avatar</label>
-              <div className="grid grid-cols-6 gap-2">
-                {PLAYER_AVATARS.map((avatar) => (
-                  <button
-                    key={avatar.id}
-                    type="button"
-                    onClick={() => setSelectedAvatar(avatar.id)}
-                    className={`p-2 rounded-lg transition-all ${
-                      selectedAvatar === avatar.id
-                        ? 'bg-teal-500 ring-2 ring-white scale-110'
-                        : 'bg-white/10 hover:bg-white/20'
-                    }`}
-                    data-testid={`button-avatar-${avatar.id}`}
-                  >
-                    <span className="text-2xl">{avatar.emoji}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <Button 
-              type="submit" 
-              className="w-full h-14 text-lg bg-teal-500 text-white"
-              disabled={status === "connecting"}
-              data-testid="button-join-game"
-            >
-              {status === "connecting" ? "Connecting..." : "Join Game"}
-            </Button>
-          </form>
-
-          <div className="flex justify-center mt-4">
-            {status === "connected" ? (
-              <Badge className="bg-teal-500 gap-1" data-testid="badge-connected"><Wifi className="w-3 h-3 shrink-0" aria-hidden="true" />Connected</Badge>
-            ) : status === "error" ? (
-              <Badge variant="destructive" className="gap-1" data-testid="badge-error"><WifiOff className="w-3 h-3 shrink-0" aria-hidden="true" />Error</Badge>
-            ) : null}
-          </div>
-        </div>
-      </div>
+      <GameJoinForm
+        icon={<ListOrdered className="w-10 h-10 text-white shrink-0" aria-hidden="true" />}
+        title="Sort Circuit"
+        subtitle="Arrange fast. Win first."
+        hasCodeFromUrl={hasCodeFromUrl}
+        roomCode={roomCode}
+        onRoomCodeChange={setRoomCode}
+        playerName={playerName}
+        onPlayerNameChange={setPlayerName}
+        selectedAvatar={selectedAvatar}
+        onAvatarSelect={setSelectedAvatar}
+        onSubmit={handleJoin}
+        status={status}
+        nameInputRef={nameInputRef}
+      />
     );
   }
 
   return (
-    <div className="min-h-screen bg-teal-900 flex flex-col" data-testid="page-sequence-player">
-      <FullScreenFlash show={showCorrectFlash} color="bg-cyan-400/50" />
-      <FullScreenFlash show={showWrongFlash} color="bg-red-500/40" />
-      <FullScreenFlash show={showSubmitFlash} color="bg-teal-400/30" />
+    <div className="min-h-screen gradient-game flex flex-col" data-testid="page-sequence-player" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <FullScreenFlash show={showCorrectFlash} color="bg-emerald-400/60" />
+      <FullScreenFlash show={showWrongFlash} color="bg-rose-400/60" />
+      <FullScreenFlash show={showSubmitFlash} color="bg-primary/30" />
 
       <div className="w-full flex justify-center pt-3 pb-1">
         <Logo size="compact" />
       </div>
       <InstallPrompt />
-      {renderGameHeader()}
+      <GamePlayerHeader
+        status={status}
+        roomCode={roomCode}
+        score={myScore}
+        onLeave={handleLeaveGame}
+        soundEnabled={soundEnabled}
+        onToggleSound={toggleSound}
+      />
+      <GamePlayerInfoBar
+        playerName={playerName}
+        avatar={selectedAvatar}
+        leaderboard={leaderboard}
+        playerId={playerId}
+        showLeaderboard={showLeaderboard}
+        onToggleLeaderboard={() => setShowLeaderboard(!showLeaderboard)}
+      />
+      <GameConnectionBanner
+        status={status}
+        joined={joined}
+        reconnectCountdown={reconnectCountdown}
+        reconnectAttempts={reconnectAttemptsRef.current}
+        onReconnect={handleManualReconnect}
+      />
 
       <main className="flex-1 flex flex-col items-center justify-center p-4">
         {phase === "waiting" && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center"
-          >
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-teal-500/20 flex items-center justify-center">
-              <motion.div animate={{ rotate: 360 }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }}>
-                <Sparkles className="w-12 h-12 text-teal-400 shrink-0" aria-hidden="true" />
-              </motion.div>
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-2" data-testid="text-waiting">Waiting for host...</h2>
-            <p className="text-teal-200">Get ready to arrange the sequence!</p>
-            <motion.div
-              className="flex justify-center gap-2 mt-4"
-              animate={{ opacity: [0.3, 1, 0.3] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            >
-              <div className="w-2 h-2 rounded-full bg-teal-400" />
-              <div className="w-2 h-2 rounded-full bg-teal-400" />
-              <div className="w-2 h-2 rounded-full bg-teal-400" />
-            </motion.div>
-          </motion.div>
+          <GameWaitingScreen
+            title="Waiting for host..."
+            subtitle="Get ready to arrange the sequence!"
+          />
         )}
 
         {phase === "animatedReveal" && currentQuestion && (
@@ -877,7 +658,7 @@ export default function SequencePlayer() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="absolute inset-0 flex flex-col items-center justify-center bg-teal-700 pb-safe"
+              className="absolute inset-0 flex flex-col items-center justify-center gradient-game pb-safe"
             >
               <motion.div
                 animate={{ scale: [1, 1.2, 1] }}
@@ -925,27 +706,27 @@ export default function SequencePlayer() {
                 className="absolute inset-0 z-30 bg-black/70 rounded-xl flex items-center justify-center backdrop-blur-sm"
               >
                 <div className="text-center text-white">
-                  <Pause className="w-10 h-10 mx-auto mb-2 text-cyan-400 shrink-0" />
+                  <Pause className="w-10 h-10 mx-auto mb-2 text-primary shrink-0" />
                   <p className="text-lg font-bold">Game Paused</p>
                   <p className="text-sm text-white/60">Waiting for host to resume...</p>
                 </div>
               </motion.div>
             )}
             <div className="flex items-center justify-between gap-2">
-              <Badge variant="secondary" className="bg-white/10 text-white gap-1" data-testid="badge-question-progress">
+              <Badge variant="secondary" data-testid="badge-question-progress">
                 Q{currentQuestionIndex}/{totalQuestions}
               </Badge>
-              <Badge variant="secondary" className={`${phase === "submitted" ? "bg-cyan-500/30 text-cyan-300 border-cyan-400/50" : "bg-white/10 text-white"}`} data-testid="badge-status">
+              <Badge variant="secondary" className={`${phase === "submitted" ? "bg-primary/30 text-primary border-primary/50" : ""}`} data-testid="badge-status">
                 {phase === "submitted" ? "LOCKED IN" : gamePaused ? "PAUSED" : "Tap 1-2-3-4"}
               </Badge>
             </div>
 
-            <Card className="p-4 bg-white/10 border-white/20">
-              <h3 className="text-lg font-semibold text-white text-center mb-4">
+            <Card className="p-4">
+              <h3 className="text-lg font-semibold text-foreground text-center mb-4">
                 {currentQuestion.question}
               </h3>
               {currentQuestion.hint && (
-                <p className="text-sm text-teal-200 text-center italic">{currentQuestion.hint}</p>
+                <p className="text-sm text-muted-foreground text-center italic">{currentQuestion.hint}</p>
               )}
             </Card>
 
@@ -964,13 +745,13 @@ export default function SequencePlayer() {
                     whileTap={{ scale: 0.95 }}
                     className={`relative p-4 rounded-xl transition-all min-h-[100px] ${
                       isSelected
-                        ? 'bg-cyan-500 text-white ring-2 ring-cyan-300'
-                        : 'bg-white/10 text-white hover:bg-white/20'
+                        ? 'bg-primary text-primary-foreground ring-2 ring-primary/60'
+                        : 'bg-card/80 text-foreground hover-elevate'
                     } ${phase === "submitted" ? 'opacity-60' : ''}`}
                     data-testid={`button-option-${letter}`}
                   >
                     {isSelected && (
-                      <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-white text-cyan-600 flex items-center justify-center text-xl font-bold shadow-lg">
+                      <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-background text-primary flex items-center justify-center text-xl font-bold shadow-lg">
                         {circledNumbers[position]}
                       </div>
                     )}
@@ -985,7 +766,7 @@ export default function SequencePlayer() {
               <div className="flex gap-2">
                 <Button 
                   variant="outline" 
-                  className="flex-1 border-white/20 text-white"
+                  className="flex-1"
                   onClick={undoLastTap}
                   data-testid="button-undo-last"
                 >
@@ -994,7 +775,7 @@ export default function SequencePlayer() {
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="flex-1 border-white/20 text-white"
+                  className="flex-1"
                   onClick={resetSelection}
                   data-testid="button-reset-selection"
                 >
@@ -1006,20 +787,20 @@ export default function SequencePlayer() {
 
             {selectedSequence.length > 0 && (
               <div className="text-center">
-                <p className="text-sm text-teal-200 mb-2">Your sequence:</p>
+                <p className="text-sm text-muted-foreground mb-2">Your sequence:</p>
                 <div className="flex justify-center gap-2">
                   {selectedSequence.map((letter, idx) => (
                     <motion.div
                       key={idx}
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      className="w-10 h-10 rounded-lg bg-cyan-500 flex items-center justify-center text-white font-bold"
+                      className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold"
                     >
                       {letter}
                     </motion.div>
                   ))}
                   {[...Array(4 - selectedSequence.length)].map((_, idx) => (
-                    <div key={`empty-${idx}`} className="w-10 h-10 rounded-lg border-2 border-dashed border-white/30" />
+                    <div key={`empty-${idx}`} className="w-10 h-10 rounded-lg border-2 border-dashed border-muted-foreground/30" />
                   ))}
                 </div>
               </div>
@@ -1034,11 +815,11 @@ export default function SequencePlayer() {
                 <motion.div
                   animate={{ scale: [1, 1.1, 1] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
-                  className="w-12 h-12 mx-auto mb-2 bg-cyan-500/20 rounded-full flex items-center justify-center"
+                  className="w-12 h-12 mx-auto mb-2 bg-primary/20 rounded-full flex items-center justify-center"
                 >
-                  <Check className="w-6 h-6 text-cyan-400 shrink-0" />
+                  <Check className="w-6 h-6 text-primary shrink-0" />
                 </motion.div>
-                <p className="text-cyan-300 text-sm font-medium">Locked in! Waiting for others...</p>
+                <p className="text-primary text-sm font-medium">Locked in! Waiting for others...</p>
               </motion.div>
             )}
           </motion.div>
@@ -1055,7 +836,7 @@ export default function SequencePlayer() {
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200 }}
               className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${
-                isCorrect ? 'bg-cyan-500' : 'bg-red-600'
+                isCorrect ? 'bg-emerald-500' : 'bg-destructive'
               }`}
               data-testid={`icon-result-${isCorrect ? 'correct' : 'wrong'}`}
             >
@@ -1065,12 +846,12 @@ export default function SequencePlayer() {
                 <X className="w-12 h-12 text-white shrink-0" aria-hidden="true" />
               )}
             </motion.div>
-            <h2 className={`text-3xl font-bold mb-4 ${isCorrect ? 'text-cyan-400' : 'text-red-400'}`}>
+            <h2 className={`text-3xl font-bold mb-4 ${isCorrect ? 'text-emerald-400' : 'text-destructive'}`}>
               {isCorrect ? "SYSTEM STABLE" : "CIRCUIT BLOWN"}
             </h2>
             
             <div className="mb-4">
-              <p className="text-sm text-teal-200 mb-2">Correct order:</p>
+              <p className="text-sm text-muted-foreground mb-2">Correct order:</p>
               <div className="flex justify-center gap-2">
                 {correctOrder.map((letter, idx) => (
                   <motion.div
@@ -1078,7 +859,7 @@ export default function SequencePlayer() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.2 }}
-                    className="w-12 h-12 rounded-lg bg-teal-500 flex items-center justify-center text-white text-xl font-bold"
+                    className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center text-primary-foreground text-xl font-bold"
                   >
                     {letter}
                   </motion.div>
@@ -1104,7 +885,7 @@ export default function SequencePlayer() {
 
             {selectedSequence.length > 0 && (
               <div>
-                <p className="text-sm text-teal-200/70 mb-2">Your answer:</p>
+                <p className="text-sm text-muted-foreground mb-2">Your answer:</p>
                 <div className="flex justify-center gap-2">
                   {selectedSequence.map((letter, idx) => (
                     <motion.div
@@ -1123,7 +904,7 @@ export default function SequencePlayer() {
               </div>
             )}
 
-            <p className="text-sm text-teal-200/50 mt-6">Waiting for host to continue...</p>
+            <p className="text-sm text-muted-foreground mt-6">Waiting for host to continue...</p>
           </motion.div>
         )}
 
@@ -1142,129 +923,37 @@ export default function SequencePlayer() {
                 <Trophy className="w-16 h-16 text-amber-400 mx-auto shrink-0" aria-hidden="true" />
               </motion.div>
             )}
-            <h2 className="text-2xl font-bold text-white mb-2">
+            <h2 className="text-2xl font-bold text-foreground mb-2">
               {rank === 1 ? "You won!" : rank ? `You finished #${rank}` : "Round complete!"}
             </h2>
-            <p className="text-teal-200">Waiting for next question...</p>
+            <p className="text-muted-foreground">Waiting for next question...</p>
             <motion.div
               className="flex justify-center gap-2 mt-4"
               animate={{ opacity: [0.3, 1, 0.3] }}
               transition={{ duration: 1.5, repeat: Infinity }}
             >
-              <div className="w-2 h-2 rounded-full bg-teal-400" />
-              <div className="w-2 h-2 rounded-full bg-teal-400" />
-              <div className="w-2 h-2 rounded-full bg-teal-400" />
+              <div className="w-2 h-2 rounded-full bg-primary" />
+              <div className="w-2 h-2 rounded-full bg-primary" />
+              <div className="w-2 h-2 rounded-full bg-primary" />
             </motion.div>
           </motion.div>
         )}
         
         {phase === "leaderboard" && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center w-full max-w-sm"
-          >
-            <Trophy className="w-16 h-16 mx-auto text-amber-400 mb-4 shrink-0" aria-hidden="true" />
-            <h2 className="text-2xl font-bold text-white mb-6" data-testid="text-leaderboard-title">Leaderboard</h2>
-            <div className="space-y-2 mb-6">
-              {leaderboard.map((entry, idx) => {
-                const isMe = entry.playerId === playerId;
-                const avatar = PLAYER_AVATARS.find(a => a.id === entry.playerAvatar)?.emoji || "?";
-                return (
-                  <motion.div
-                    key={entry.playerId}
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: idx * 0.1 }}
-                    className={`flex items-center justify-between p-3 rounded-lg ${
-                      isMe ? 'bg-teal-500/30 border-2 border-teal-400' :
-                      idx === 0 ? 'bg-amber-500/20' :
-                      idx === 1 ? 'bg-slate-400/20' :
-                      idx === 2 ? 'bg-orange-600/20' :
-                      'bg-white/10'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="text-xl font-black text-white/80 shrink-0">{idx + 1}</span>
-                      {idx === 0 && <Crown className="w-5 h-5 text-amber-400 shrink-0" aria-hidden="true" />}
-                      {idx === 1 && <Medal className="w-5 h-5 text-slate-300 shrink-0" aria-hidden="true" />}
-                      {idx === 2 && <Medal className="w-5 h-5 text-orange-400 shrink-0" aria-hidden="true" />}
-                      <span className="text-lg shrink-0">{avatar}</span>
-                      <span className="font-semibold text-white truncate" title={entry.playerName}>{entry.playerName}</span>
-                      {isMe && <Badge className="bg-teal-500 text-xs shrink-0" data-testid="badge-you">You</Badge>}
-                    </div>
-                    <span className="font-bold text-white">{entry.score} pts</span>
-                  </motion.div>
-                );
-              })}
-            </div>
-            <p className="text-teal-200/60 text-sm">Waiting for next round...</p>
-          </motion.div>
+          <GameLeaderboardView
+            leaderboard={leaderboard}
+            playerId={playerId}
+            subtitle="Waiting for next round..."
+          />
         )}
         
         {phase === "gameComplete" && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center w-full max-w-sm"
-          >
-            <motion.div
-              animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
-              transition={{ duration: 1, repeat: Infinity }}
-            >
-              <Trophy className="w-24 h-24 mx-auto text-amber-400 mb-4 shrink-0" aria-hidden="true" />
-            </motion.div>
-            <h1 className="text-4xl font-black text-white mb-2" data-testid="text-game-over">GAME OVER!</h1>
-            
-            {leaderboard[0] && (
-              <div className="mb-6">
-                <h2 className="text-xl text-amber-400 font-bold">WINNER</h2>
-                <div className="flex items-center justify-center gap-2 mt-1">
-                  <span className="text-3xl">{PLAYER_AVATARS.find(a => a.id === leaderboard[0].playerAvatar)?.emoji || "?"}</span>
-                  <p className="text-3xl font-black text-white">{leaderboard[0].playerName}</p>
-                </div>
-                <p className="text-teal-200">{leaderboard[0].score} points</p>
-              </div>
-            )}
-
-            {leaderboard[0]?.playerId === playerId && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="mb-6 inline-block px-6 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 rounded-full"
-              >
-                <span className="text-xl font-black text-white">YOU WON!</span>
-              </motion.div>
-            )}
-
-            <div className="space-y-2 mb-6">
-              <h3 className="text-sm font-semibold text-teal-200">Final Standings</h3>
-              {leaderboard.slice(0, 5).map((entry, idx) => {
-                const isMe = entry.playerId === playerId;
-                const avatar = PLAYER_AVATARS.find(a => a.id === entry.playerAvatar)?.emoji || "?";
-                return (
-                  <motion.div
-                    key={entry.playerId}
-                    initial={{ x: -15, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: idx * 0.1 }}
-                    className={`flex items-center justify-between p-2 rounded-lg ${
-                      isMe ? 'bg-teal-500/30 border border-teal-400' : 'bg-white/10'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-white/70">{idx + 1}.</span>
-                      <span className="text-lg">{avatar}</span>
-                      <span className="text-white">{entry.playerName}</span>
-                    </div>
-                    <span className="font-bold text-white">{entry.score}</span>
-                  </motion.div>
-                );
-              })}
-            </div>
-            
-            <p className="text-teal-200/50 text-sm">Thanks for playing!</p>
-          </motion.div>
+          <GameCompleteScreen
+            leaderboard={leaderboard}
+            playerId={playerId}
+            myScore={myScore}
+            subtitle="show"
+          />
         )}
       </main>
     </div>

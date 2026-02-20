@@ -4,45 +4,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, XCircle, Wifi, WifiOff, Trophy, Clock, RefreshCw, Star, Sparkles, Users, ChevronUp, ChevronDown, Lock, Grid3X3, Hand, Flame, Laugh, CircleDot, ThumbsUp, Eye, Check } from "lucide-react";
+import { Zap, XCircle, Trophy, Clock, Star, Sparkles, Lock, Grid3X3, Hand, Flame, Laugh, CircleDot, ThumbsUp, Eye, Check } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { PLAYER_AVATARS, type AvatarId } from "@shared/schema";
 import { Logo } from "@/components/Logo";
-
-type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error" | "reconnecting";
-
-function FullScreenFlash({ show, color }: { show: boolean; color: string }) {
-  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!show || prefersReducedMotion) return null;
-  return (
-    <motion.div
-      initial={{ opacity: 0.8 }}
-      animate={{ opacity: 0 }}
-      transition={{ duration: 0.4 }}
-      className={`fixed inset-0 z-50 pointer-events-none ${color}`}
-    />
-  );
-}
-
-function getSession() {
-  try {
-    const data = localStorage.getItem("buzzer-session");
-    return data ? JSON.parse(data) : null;
-  } catch { return null; }
-}
-
-function saveSession(roomCode: string, playerName: string, playerId: string, avatar: string, reconnectToken?: string) {
-  try {
-    localStorage.setItem("buzzer-session", JSON.stringify({ roomCode, playerName, playerId, avatar, reconnectToken }));
-  } catch {}
-}
-
-function clearSession() {
-  try { localStorage.removeItem("buzzer-session"); } catch {}
-}
+import {
+  FullScreenFlash,
+  GameJoinForm,
+  GamePlayerHeader,
+  GamePlayerInfoBar,
+  GameConnectionBanner,
+  getGameSession,
+  saveGameSession,
+  clearGameSession,
+  type ConnectionStatus,
+  type LeaderboardEntry,
+} from "@/components/game";
 
 function getCodeFromUrl(): string {
   const params = new URLSearchParams(window.location.search);
@@ -54,7 +34,7 @@ export default function PlayerPage() {
   const [, setLocation] = useLocation();
   const codeFromUrl = params.code || getCodeFromUrl();
   const { toast } = useToast();
-  const savedSession = getSession();
+  const savedSession = getGameSession("buzzer");
   const [roomCode, setRoomCode] = useState(codeFromUrl || savedSession?.roomCode || "");
   const [playerName, setPlayerName] = useState(savedSession?.playerName || "");
   
@@ -142,7 +122,7 @@ export default function PlayerPage() {
           setBuzzerLocked(data.buzzerLocked);
           setBuzzerBlocked(data.buzzerBlocked || false);
           if (data.score !== undefined) setScore(data.score);
-          saveSession(roomCode.toUpperCase(), playerName, data.playerId, selectedAvatar, data.reconnectToken || reconnectTokenRef.current || undefined);
+          saveGameSession("buzzer", roomCode.toUpperCase(), playerName, data.playerId, selectedAvatar, data.reconnectToken || reconnectTokenRef.current || undefined);
           break;
         case "score:updated":
           if (data.score !== undefined) {
@@ -170,7 +150,7 @@ export default function PlayerPage() {
         case "error":
           if (data.message === "Room not found") {
             shouldReconnectRef.current = false;
-            clearSession();
+            clearGameSession("buzzer");
             setJoined(false);
             joinedRef.current = false;
             setStatus("disconnected");
@@ -185,7 +165,7 @@ export default function PlayerPage() {
             });
           } else if (data.message === "Invalid reconnect token") {
             shouldReconnectRef.current = false;
-            clearSession();
+            clearGameSession("buzzer");
             reconnectTokenRef.current = null;
             playerIdRef.current = null;
             setPlayerId(null);
@@ -211,7 +191,7 @@ export default function PlayerPage() {
           }
           break;
         case "kicked":
-          clearSession();
+          clearGameSession("buzzer");
           if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
           if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
           if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
@@ -227,7 +207,7 @@ export default function PlayerPage() {
           });
           break;
         case "room:closed":
-          clearSession();
+          clearGameSession("buzzer");
           if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
           if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
           if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
@@ -493,7 +473,7 @@ export default function PlayerPage() {
       wsRef.current.close();
       wsRef.current = null;
     }
-    clearSession();
+    clearGameSession("buzzer");
     setJoined(false);
     setPlayerId(null);
     playerIdRef.current = null;
@@ -572,100 +552,21 @@ export default function PlayerPage() {
 
   if (!joined) {
     return (
-      <div className="min-h-screen gradient-game flex flex-col items-center justify-center p-4">
-        <div className="w-full flex justify-center pb-4">
-          <Logo size="compact" />
-        </div>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <Card className="w-full max-w-sm p-6 bg-card/90 backdrop-blur border-primary/30">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center mx-auto">
-                <Zap className="w-10 h-10 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold text-foreground mt-4">
-                {hasCodeFromUrl ? "You're Invited!" : "Join Game"}
-              </h1>
-              <p className="text-muted-foreground text-sm mt-1">
-                {hasCodeFromUrl ? "Just enter your name to join" : "Enter the room code to play"}
-              </p>
-            </div>
-
-            <form onSubmit={handleJoin} className="space-y-4" data-testid="form-join">
-              {hasCodeFromUrl ? (
-                <div className="text-center py-3 px-4 bg-primary/10 rounded-lg border border-primary/20">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Room Code</p>
-                  <p className="text-3xl font-mono font-bold text-primary tracking-widest">{roomCode}</p>
-                </div>
-              ) : (
-                <div>
-                  <label className="text-sm font-medium text-foreground">Room Code</label>
-                  <Input
-                    value={roomCode}
-                    onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                    placeholder="ABCD"
-                    className="text-center text-2xl font-mono tracking-widest uppercase"
-                    maxLength={4}
-                    required
-                    data-testid="input-room-code"
-                  />
-                </div>
-              )}
-              <div>
-                <label className="text-sm font-medium text-foreground">Your Name</label>
-                <Input
-                  ref={nameInputRef}
-                  value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
-                  placeholder="Enter your name"
-                  maxLength={20}
-                  required
-                  data-testid="input-player-name"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">Choose Your Avatar</label>
-                <div className="grid grid-cols-6 gap-2">
-                  {PLAYER_AVATARS.map((avatar) => (
-                    <button
-                      key={avatar.id}
-                      type="button"
-                      onClick={() => setSelectedAvatar(avatar.id)}
-                      className={`w-10 h-10 rounded-lg text-xl flex items-center justify-center transition-all ${
-                        selectedAvatar === avatar.id
-                          ? 'bg-primary/20 ring-2 ring-primary scale-110'
-                          : 'bg-muted/50 hover:bg-muted'
-                      }`}
-                      title={avatar.label}
-                      data-testid={`avatar-${avatar.id}`}
-                    >
-                      {avatar.emoji}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <Button
-                type="submit"
-                disabled={!roomCode.trim() || !playerName.trim() || status === "connecting"}
-                className="w-full gradient-header text-white font-bold"
-                size="lg"
-                data-testid="button-join-game"
-              >
-                {status === "connecting" ? "Connecting..." : "Join Game"}
-              </Button>
-            </form>
-
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              {status === "connected" && <><Wifi className="w-4 h-4 text-primary" /> Connected</>}
-              {status === "disconnected" && <><WifiOff className="w-4 h-4" /> Not connected</>}
-              {status === "reconnecting" && <><RefreshCw className="w-4 h-4 animate-spin text-yellow-500" /> Reconnecting...</>}
-              {status === "error" && <><WifiOff className="w-4 h-4 text-destructive" /> Connection error</>}
-            </div>
-          </Card>
-        </motion.div>
-      </div>
+      <GameJoinForm
+        icon={<Zap className="w-10 h-10 text-white" />}
+        title="Join Game"
+        subtitle="Enter the room code to play"
+        hasCodeFromUrl={hasCodeFromUrl}
+        roomCode={roomCode}
+        onRoomCodeChange={setRoomCode}
+        playerName={playerName}
+        onPlayerNameChange={setPlayerName}
+        selectedAvatar={selectedAvatar}
+        onAvatarSelect={setSelectedAvatar}
+        onSubmit={handleJoin}
+        status={status}
+        nameInputRef={nameInputRef}
+      />
     );
   }
 
@@ -676,117 +577,32 @@ export default function PlayerPage() {
       </div>
       <InstallPrompt />
       <FullScreenFlash show={showBuzzFlash} color="bg-amber-400/60" />
-      <FullScreenFlash show={showCorrectFlash} color="bg-emerald-400/60" />
-      <FullScreenFlash show={showWrongFlash} color="bg-rose-400/60" />
+      <FullScreenFlash show={showCorrectFlash} color="bg-primary/60" />
+      <FullScreenFlash show={showWrongFlash} color="bg-destructive/60" />
       
-      <header className="px-4 py-3 flex items-center justify-between gap-2 bg-card/80 backdrop-blur-xl border-b border-primary/20 shadow-lg" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            {status === "connected" && <Wifi className="w-4 h-4 text-emerald-500 shrink-0" data-testid="status-connected" />}
-            {status === "connecting" && <RefreshCw className="w-4 h-4 animate-spin text-primary shrink-0" data-testid="status-connecting" />}
-            {status === "reconnecting" && <RefreshCw className="w-4 h-4 animate-spin text-amber-500 shrink-0" data-testid="status-reconnecting" />}
-            {(status === "disconnected" || status === "error") && <WifiOff className="w-4 h-4 text-rose-500 shrink-0" data-testid="status-disconnected" />}
-            <span className="font-mono font-bold text-lg text-foreground" data-testid="display-room-code">{roomCode}</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <motion.div 
-            key={score}
-            initial={{ scale: 1.2 }}
-            animate={{ scale: 1 }}
-            className="px-4 py-1.5 bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30 rounded-full"
-          >
-            <span className="text-2xl font-black text-primary" data-testid="text-player-score">{score}</span>
-            <span className="text-xs text-muted-foreground ml-1">pts</span>
-          </motion.div>
-          <Button size="sm" variant="ghost" onClick={handleLeaveGame} className="text-xs text-muted-foreground" data-testid="button-leave-game">
-            Leave
-          </Button>
-        </div>
-      </header>
-      
-      <div className="px-4 py-2 bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-primary/10 flex items-center justify-between gap-2">
-        <span className="text-lg font-bold text-foreground truncate min-w-0 flex-1" title={playerName}>{playerName}</span>
-        {leaderboard.length > 0 && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setShowLeaderboard(!showLeaderboard)}
-            className="gap-1 text-xs flex-shrink-0"
-            data-testid="button-toggle-leaderboard"
-          >
-            <Users className="w-4 h-4" />
-            Scores
-            {showLeaderboard ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          </Button>
-        )}
-      </div>
+      <GamePlayerHeader
+        status={status}
+        roomCode={roomCode}
+        score={score}
+        onLeave={handleLeaveGame}
+      />
 
-      <AnimatePresence>
-        {showLeaderboard && leaderboard.length > 0 && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 py-3 bg-card/50 border-b border-primary/10 space-y-2">
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Leaderboard</p>
-              {[...leaderboard].sort((a, b) => b.score - a.score).map((player, idx) => (
-                <div
-                  key={player.id}
-                  className={`flex items-center justify-between px-3 py-2 rounded-lg ${
-                    player.id === playerId ? 'bg-primary/20 border border-primary/30' : 'bg-muted/30'
-                  }`}
-                  data-testid={`leaderboard-player-${player.id}`}
-                >
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className={`w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold ${
-                      idx === 0 ? 'bg-yellow-500 text-black' : idx === 1 ? 'bg-slate-400 text-black' : idx === 2 ? 'bg-orange-500 text-white' : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {idx + 1}
-                    </span>
-                    <span className="text-lg flex-shrink-0">
-                      {PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji}
-                    </span>
-                    <span className={`font-medium truncate min-w-0 flex-1 ${player.id === playerId ? 'text-primary' : 'text-foreground'}`} title={player.name}>
-                      {player.name}
-                      {player.id === playerId && <span className="text-xs ml-1">(you)</span>}
-                    </span>
-                  </div>
-                  <span className="font-bold text-foreground flex-shrink-0">{player.score}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <GamePlayerInfoBar
+        playerName={playerName}
+        avatar={selectedAvatar}
+        leaderboard={leaderboard.map(p => ({ playerId: p.id, playerName: p.name, playerAvatar: p.avatar || "", score: p.score }))}
+        playerId={playerId}
+        showLeaderboard={showLeaderboard}
+        onToggleLeaderboard={() => setShowLeaderboard(!showLeaderboard)}
+      />
 
-      {status === "reconnecting" && (
-        <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-4 py-2 text-center text-sm text-foreground">
-          <RefreshCw className="w-4 h-4 inline-block mr-2 animate-spin" />
-          Reconnecting in {reconnectCountdown ?? '...'}s... (Attempt {reconnectAttempts}/5)
-        </div>
-      )}
-
-      {status === "disconnected" && (
-        <div className="bg-destructive/20 border-b border-destructive/30 px-4 py-3 text-center">
-          <p className="text-sm text-foreground mb-2">
-            {reconnectAttempts >= 5 
-              ? "Couldn't reconnect - tap below to try again" 
-              : "Disconnected from game"}
-          </p>
-          <Button 
-            size="sm" 
-            onClick={handleManualReconnect}
-            className="gap-2"
-            data-testid="button-reconnect"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Reconnect
-          </Button>
-        </div>
-      )}
+      <GameConnectionBanner
+        status={status}
+        joined={joined}
+        reconnectCountdown={reconnectCountdown}
+        reconnectAttempts={reconnectAttempts}
+        onReconnect={handleManualReconnect}
+      />
 
       <main className="flex-1 flex items-center justify-center p-4">
         <AnimatePresence mode="wait">
@@ -798,7 +614,7 @@ export default function PlayerPage() {
               exit={{ opacity: 0, y: -20 }}
               className="w-full max-w-md space-y-6"
             >
-              <Card className="border-purple-500/30">
+              <Card className="border-secondary/30">
                 <div className="p-6 space-y-4">
                   <div className="text-center">
                     <h2 className="text-lg font-bold mb-2">Write a believable lie:</h2>
@@ -806,7 +622,7 @@ export default function PlayerPage() {
                       {psyopQuestion.factText.includes('[REDACTED]') ? (
                         <>
                           {psyopQuestion.factText.split('[REDACTED]')[0]}
-                          <span className="px-2 py-1 mx-1 rounded bg-purple-500/20 text-purple-600 dark:text-purple-400 font-bold">[REDACTED]</span>
+                          <span className="px-2 py-1 mx-1 rounded bg-secondary/20 text-secondary font-bold">[REDACTED]</span>
                           {psyopQuestion.factText.split('[REDACTED]')[1]}
                         </>
                       ) : psyopQuestion.factText}
@@ -819,7 +635,7 @@ export default function PlayerPage() {
                         animate={{ scale: [1, 1.1, 1] }}
                         transition={{ duration: 1, repeat: Infinity }}
                       >
-                        <Sparkles className="w-16 h-16 mx-auto text-purple-500 dark:text-purple-400 mb-4" />
+                        <Sparkles className="w-16 h-16 mx-auto text-secondary mb-4" />
                       </motion.div>
                       <p className="text-lg font-medium">Lie submitted!</p>
                       <p className="text-muted-foreground text-sm">Waiting for others...</p>
@@ -876,7 +692,7 @@ export default function PlayerPage() {
                     animate={{ rotate: 360 }}
                     transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                   >
-                    <Clock className="w-16 h-16 mx-auto text-purple-500 dark:text-purple-400 mb-4" />
+                    <Clock className="w-16 h-16 mx-auto text-secondary mb-4" />
                   </motion.div>
                   <p className="text-lg font-medium">Vote cast!</p>
                   <p className="text-muted-foreground text-sm">Waiting for reveal...</p>
@@ -901,7 +717,7 @@ export default function PlayerPage() {
                       className="w-full p-4 border rounded-lg text-left hover-elevate bg-card"
                       data-testid={`button-vote-${option.id}`}
                     >
-                      <span className="font-bold mr-2 text-purple-600 dark:text-purple-400">
+                      <span className="font-bold mr-2 text-secondary">
                         {String.fromCharCode(65 + i)}.
                       </span>
                       {option.text}
@@ -957,10 +773,10 @@ export default function PlayerPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
-                  className="p-2 bg-purple-500/10 border border-purple-500/20 rounded-md inline-block"
+                  className="p-2 bg-secondary/10 border border-secondary/20 rounded-md inline-block"
                   data-testid="text-lie-success"
                 >
-                  <span className="text-sm text-purple-400">
+                  <span className="text-sm text-secondary">
                     <Eye className="w-3.5 h-3.5 inline mr-1" />
                     Your lie fooled {psyopRevealData.yourLiesBelieved} player{psyopRevealData.yourLiesBelieved !== 1 ? 's' : ''}!
                   </span>
@@ -1005,7 +821,7 @@ export default function PlayerPage() {
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                className="w-32 h-32 rounded-2xl bg-gradient-to-br from-rose-300 via-pink-300 to-fuchsia-300 flex items-center justify-center mx-auto shadow-2xl mb-6"
+                className="w-32 h-32 rounded-2xl bg-gradient-to-br from-primary/80 via-primary to-secondary flex items-center justify-center mx-auto shadow-2xl mb-6"
               >
                 <Grid3X3 className="w-16 h-16 text-white" />
               </motion.div>
@@ -1019,9 +835,9 @@ export default function PlayerPage() {
                 animate={{ opacity: [0.3, 1, 0.3] }}
                 transition={{ duration: 1.5, repeat: Infinity }}
               >
-                <div className="w-2 h-2 rounded-full bg-pink-400" />
-                <div className="w-2 h-2 rounded-full bg-pink-400" />
-                <div className="w-2 h-2 rounded-full bg-pink-400" />
+                <div className="w-2 h-2 rounded-full bg-primary" />
+                <div className="w-2 h-2 rounded-full bg-primary" />
+                <div className="w-2 h-2 rounded-full bg-primary" />
               </motion.div>
             </motion.div>
           ) : feedback ? (
@@ -1098,10 +914,10 @@ export default function PlayerPage() {
                   <motion.div
                     animate={{ scale: [1, 1.05, 1] }}
                     transition={{ duration: 2, repeat: Infinity }}
-                    className="w-40 h-40 rounded-full bg-white/20 border-4 border-white/30 flex items-center justify-center mx-auto"
+                    className="w-40 h-40 rounded-full bg-muted/40 border-4 border-muted-foreground/30 flex items-center justify-center mx-auto"
                     data-testid="buzzed-waiting-indicator"
                   >
-                    <span className="text-6xl font-black text-white" data-testid="buzz-position-value">#{buzzPosition}</span>
+                    <span className="text-6xl font-black text-foreground" data-testid="buzz-position-value">#{buzzPosition}</span>
                   </motion.div>
                   <h2 className="text-2xl font-bold text-foreground mt-4" data-testid="buzzed-waiting-title">
                     You're #{buzzPosition} in line
@@ -1217,14 +1033,14 @@ export default function PlayerPage() {
           { type: 'clap', Icon: Hand, label: 'Clap', color: 'text-amber-400' },
           { type: 'fire', Icon: Flame, label: 'Fire', color: 'text-orange-500' },
           { type: 'laugh', Icon: Laugh, label: 'Laugh', color: 'text-yellow-400' },
-          { type: 'wow', Icon: CircleDot, label: 'Wow', color: 'text-purple-400' },
-          { type: 'thumbsup', Icon: ThumbsUp, label: 'Thumbs Up', color: 'text-emerald-400' },
+          { type: 'wow', Icon: CircleDot, label: 'Wow', color: 'text-secondary' },
+          { type: 'thumbsup', Icon: ThumbsUp, label: 'Thumbs Up', color: 'text-primary' },
         ].map(r => (
           <motion.button
             key={r.type}
             whileTap={{ scale: 0.8 }}
             onClick={() => handleReaction(r.type)}
-            className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            className="w-12 h-12 rounded-full bg-muted/30 hover:bg-muted/50 flex items-center justify-center transition-colors"
             aria-label={r.label}
             data-testid={`button-reaction-${r.type}`}
           >
@@ -1235,8 +1051,8 @@ export default function PlayerPage() {
 
       <footer className="p-4 text-center border-t border-border/30 bg-card/40 backdrop-blur" role="status" aria-live="polite" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
         <div className="flex items-center justify-center gap-3">
-          <div className={`w-3 h-3 rounded-full shrink-0 ${hostPickingGrid ? "bg-purple-500 animate-pulse" : buzzerLocked ? "bg-muted-foreground/50" : "bg-emerald-500 animate-pulse"}`} data-testid="footer-status-dot" />
-          <span className={`text-sm font-medium ${hostPickingGrid ? "text-purple-500 font-bold" : buzzerLocked ? "text-muted-foreground" : "text-primary font-bold"}`} data-testid="footer-status-text">
+          <div className={`w-3 h-3 rounded-full shrink-0 ${hostPickingGrid ? "bg-secondary animate-pulse" : buzzerLocked ? "bg-muted-foreground/50" : "bg-primary animate-pulse"}`} data-testid="footer-status-dot" />
+          <span className={`text-sm font-medium ${hostPickingGrid ? "text-secondary font-bold" : buzzerLocked ? "text-muted-foreground" : "text-primary font-bold"}`} data-testid="footer-status-text">
             {hostPickingGrid ? "Host choosing next grid..." : buzzerLocked ? "Waiting for next question..." : "TAP THE BUZZER!"}
           </span>
         </div>

@@ -3,8 +3,9 @@ import { useParams } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
-import { Smile, Wifi, WifiOff, Trophy, Crown, Search, Loader2, Star, TrendingUp, Volume2, VolumeX, Users, ChevronUp, ChevronDown, RefreshCw } from "lucide-react";
+import { Smile, Search, Loader2, Star, TrendingUp } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
@@ -12,21 +13,21 @@ import { soundManager } from "@/lib/sounds";
 import { PLAYER_AVATARS, type AvatarId } from "@shared/schema";
 import { Logo } from "@/components/Logo";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import {
+  FullScreenFlash,
+  GameJoinForm,
+  GamePlayerHeader,
+  GamePlayerInfoBar,
+  GameConnectionBanner,
+  GameCompleteScreen,
+  GameWaitingScreen,
+  getGameSession,
+  saveGameSession,
+  clearGameSession,
+  type ConnectionStatus,
+  type LeaderboardEntry,
+} from "@/components/game";
 
-function FullScreenFlash({ show, color }: { show: boolean; color: string }) {
-  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!show || prefersReducedMotion) return null;
-  return (
-    <motion.div
-      initial={{ opacity: 0.8 }}
-      animate={{ opacity: 0 }}
-      transition={{ duration: 0.4 }}
-      className={`fixed inset-0 z-50 pointer-events-none ${color}`}
-    />
-  );
-}
-
-type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error" | "reconnecting";
 type GamePhase = "waiting" | "searching" | "submitted" | "voting" | "voted" | "reveal" | "gameComplete";
 
 interface GiphyGif {
@@ -42,35 +43,10 @@ interface VotingSubmission {
   gifTitle: string;
 }
 
-interface LeaderboardEntry {
-  playerId: string;
-  playerName: string;
-  playerAvatar: string;
-  score: number;
-}
-
-function getSession() {
-  try {
-    const data = localStorage.getItem("meme-session");
-    if (data) return JSON.parse(data);
-    return null;
-  } catch { return null; }
-}
-
-function saveSession(roomCode: string, playerName: string, playerId: string, avatar: string, reconnectToken?: string) {
-  try {
-    localStorage.setItem("meme-session", JSON.stringify({ roomCode, playerName, playerId, avatar, reconnectToken }));
-  } catch {}
-}
-
-function clearSession() {
-  try { localStorage.removeItem("meme-session"); } catch {}
-}
-
 export default function MemeNoHarmPlayer() {
   const params = useParams<{ code?: string }>();
   const { toast } = useToast();
-  const savedSession = getSession();
+  const savedSession = getGameSession("meme");
 
   const hasCodeFromUrl = !!params.code;
   const [roomCode, setRoomCode] = useState(params.code || savedSession?.roomCode || "");
@@ -196,7 +172,7 @@ export default function MemeNoHarmPlayer() {
           setPlayerId(data.playerId);
           playerIdRef.current = data.playerId;
           if (data.reconnectToken) reconnectTokenRef.current = data.reconnectToken;
-          saveSession(roomCode.toUpperCase(), playerName, data.playerId, selectedAvatar, data.reconnectToken || reconnectTokenRef.current || undefined);
+          saveGameSession("meme", roomCode.toUpperCase(), playerName, data.playerId, selectedAvatar, data.reconnectToken || reconnectTokenRef.current || undefined);
           if (data.score !== undefined) {
             setMyScore(data.score);
             prevScoreRef.current = data.score;
@@ -345,7 +321,7 @@ export default function MemeNoHarmPlayer() {
           break;
 
         case "kicked":
-          clearSession();
+          clearGameSession("meme");
           if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
           if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
           if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
@@ -364,7 +340,7 @@ export default function MemeNoHarmPlayer() {
           break;
 
         case "room:closed":
-          clearSession();
+          clearGameSession("meme");
           if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
           if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
           if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
@@ -385,7 +361,7 @@ export default function MemeNoHarmPlayer() {
         case "error":
           if (data.message === "Room not found") {
             shouldReconnectRef.current = false;
-            clearSession();
+            clearGameSession("meme");
             if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
             if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
             if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
@@ -406,7 +382,7 @@ export default function MemeNoHarmPlayer() {
             });
           } else if (data.message === "Invalid reconnect token") {
             shouldReconnectRef.current = false;
-            clearSession();
+            clearGameSession("meme");
             if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
             if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
             if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
@@ -554,7 +530,7 @@ export default function MemeNoHarmPlayer() {
       wsRef.current.close();
       wsRef.current = null;
     }
-    clearSession();
+    clearGameSession("meme");
     setJoined(false);
     setPlayerId(null);
     playerIdRef.current = null;
@@ -599,301 +575,71 @@ export default function MemeNoHarmPlayer() {
   const renderGameHeader = () => (
     <>
       <InstallPrompt />
-      <FullScreenFlash show={showWinFlash} color="bg-emerald-400/60" />
-      <FullScreenFlash show={showSubmitFlash} color="bg-green-400/40" />
+      <FullScreenFlash show={showWinFlash} color="bg-primary/60" />
+      <FullScreenFlash show={showSubmitFlash} color="bg-primary/40" />
 
-      <header className="px-4 py-3 flex items-center justify-between gap-2 bg-green-950/80 backdrop-blur-xl border-b border-green-500/20 shadow-lg" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
-        <div className="flex items-center gap-2">
-          {status === "connected" && <Wifi className="w-4 h-4 text-emerald-400 shrink-0" data-testid="status-connected" />}
-          {status === "connecting" && <RefreshCw className="w-4 h-4 animate-spin text-green-400 shrink-0" data-testid="status-connecting" />}
-          {status === "reconnecting" && <RefreshCw className="w-4 h-4 animate-spin text-amber-400 shrink-0" data-testid="status-reconnecting" />}
-          {(status === "disconnected" || status === "error") && <WifiOff className="w-4 h-4 text-rose-400 shrink-0" data-testid="status-disconnected" />}
-          <span className="font-mono font-bold text-lg text-white" data-testid="display-room-code">{roomCode}</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <motion.div
-            key={myScore}
-            initial={{ scale: 1.2 }}
-            animate={{ scale: 1 }}
-            className="px-4 py-1.5 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-full"
-          >
-            <span className="text-2xl font-black text-green-400" data-testid="text-player-score">{myScore}</span>
-            <span className="text-xs text-green-200/50 ml-1">pts</span>
-          </motion.div>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={handleToggleSound}
-            className="text-white/60"
-            data-testid="button-toggle-sound"
-            aria-label={soundEnabled ? "Mute sounds" : "Unmute sounds"}
-          >
-            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-          </Button>
-          <Button size="sm" variant="ghost" onClick={handleLeaveGame} className="text-xs text-white/40" data-testid="button-leave-game">
-            Leave
-          </Button>
-        </div>
-      </header>
+      <GamePlayerHeader
+        status={status}
+        roomCode={roomCode}
+        score={myScore}
+        soundEnabled={soundEnabled}
+        onToggleSound={handleToggleSound}
+        onLeave={handleLeaveGame}
+      />
 
-      <div className="px-4 py-2 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b border-green-500/10 flex items-center justify-between gap-2">
-        <span className="text-lg font-bold text-white truncate min-w-0 flex-1" title={playerName}>{playerName}</span>
-        {leaderboard.length > 0 && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setShowLeaderboard(!showLeaderboard)}
-            className="gap-1 text-xs text-green-200/60 flex-shrink-0"
-            data-testid="button-toggle-leaderboard"
-          >
-            <Users className="w-4 h-4" />
-            Scores
-            {showLeaderboard ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          </Button>
-        )}
-      </div>
+      <GamePlayerInfoBar
+        playerName={playerName}
+        leaderboard={leaderboard}
+        playerId={playerId}
+        showLeaderboard={showLeaderboard}
+        onToggleLeaderboard={() => setShowLeaderboard(!showLeaderboard)}
+      />
 
-      <AnimatePresence>
-        {showLeaderboard && leaderboard.length > 0 && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 py-3 bg-green-950/50 border-b border-green-500/10 space-y-2">
-              <p className="text-xs text-green-200/40 font-medium uppercase tracking-wide">Leaderboard</p>
-              {[...leaderboard].sort((a, b) => b.score - a.score).map((entry, idx) => (
-                <div
-                  key={entry.playerId}
-                  className={`flex items-center justify-between px-3 py-2 rounded-lg ${
-                    entry.playerId === playerId ? 'bg-green-500/20 border border-green-500/30' : 'bg-white/5'
-                  }`}
-                  data-testid={`leaderboard-player-${entry.playerId}`}
-                >
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className={`w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold ${
-                      idx === 0 ? 'bg-yellow-500 text-black' : idx === 1 ? 'bg-slate-400 text-black' : idx === 2 ? 'bg-orange-500 text-white' : 'bg-white/10 text-white/50'
-                    }`}>
-                      {idx + 1}
-                    </span>
-                    <span className="text-lg flex-shrink-0">
-                      {PLAYER_AVATARS.find(a => a.id === entry.playerAvatar)?.emoji || PLAYER_AVATARS[0].emoji}
-                    </span>
-                    <span className={`font-medium truncate min-w-0 flex-1 ${entry.playerId === playerId ? 'text-green-300' : 'text-white/70'}`} title={entry.playerName}>
-                      {entry.playerName}
-                      {entry.playerId === playerId && <span className="text-xs ml-1">(you)</span>}
-                    </span>
-                  </div>
-                  <span className="font-bold text-white flex-shrink-0">{entry.score}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {status === "reconnecting" && (
-        <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-4 py-2 text-center text-sm text-white">
-          <RefreshCw className="w-4 h-4 inline-block mr-2 animate-spin" />
-          Reconnecting in {reconnectCountdown ?? '...'}s... (Attempt {reconnectAttempts}/5)
-        </div>
-      )}
-
-      {status === "disconnected" && joined && (
-        <div className="bg-rose-500/20 border-b border-rose-500/30 px-4 py-3 text-center">
-          <p className="text-sm text-white mb-2">
-            {reconnectAttempts >= 5
-              ? "Couldn't reconnect - tap below to try again"
-              : "Disconnected from game"}
-          </p>
-          <Button
-            size="sm"
-            onClick={handleManualReconnect}
-            className="gap-2"
-            data-testid="button-reconnect"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Reconnect
-          </Button>
-        </div>
-      )}
+      <GameConnectionBanner
+        status={status}
+        joined={joined}
+        reconnectCountdown={reconnectCountdown}
+        reconnectAttempts={reconnectAttempts}
+        onReconnect={handleManualReconnect}
+      />
     </>
   );
 
   if (!joined) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-join">
-        <div className="w-full flex justify-center pt-3 pb-1">
-          <Logo size="compact" />
-        </div>
-        <div className="flex-1 flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-sm"
-          >
-            <div className="text-center mb-6">
-              <Smile className="w-12 h-12 text-green-400 mx-auto mb-2" />
-              <h1 className="text-2xl font-bold text-white">
-                {hasCodeFromUrl ? "You're Invited!" : "Meme No Harm"}
-              </h1>
-              <p className="text-green-200/60 text-sm">
-                {hasCodeFromUrl ? "Just enter your name to join" : "Search GIFs. Submit. Vote. Win."}
-              </p>
-            </div>
-
-            <Card className="bg-white/10 border-white/20">
-              <CardContent className="pt-6">
-                <form onSubmit={handleJoin} className="space-y-4">
-                  {hasCodeFromUrl ? (
-                    <div className="text-center py-3 px-4 bg-green-500/10 rounded-lg border border-green-500/20">
-                      <p className="text-xs text-green-200/60 uppercase tracking-wide mb-1">Room Code</p>
-                      <p className="text-3xl font-mono font-bold text-green-400 tracking-widest" data-testid="display-room-code">{roomCode}</p>
-                    </div>
-                  ) : (
-                    <div>
-                      <label className="text-sm font-medium text-green-200 mb-1.5 block">Room Code</label>
-                      <Input
-                        value={roomCode}
-                        onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                        placeholder="Enter room code"
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50 text-center text-2xl tracking-widest font-mono"
-                        maxLength={4}
-                        required
-                        data-testid="input-room-code"
-                      />
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="text-sm font-medium text-green-200 mb-1.5 block">Your Name</label>
-                    <Input
-                      ref={nameInputRef}
-                      value={playerName}
-                      onChange={(e) => setPlayerName(e.target.value)}
-                      placeholder="Enter your name"
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                      maxLength={20}
-                      required
-                      data-testid="input-player-name"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-green-200 mb-1.5 block">Pick Your Avatar</label>
-                    <div className="grid grid-cols-6 gap-2">
-                      {PLAYER_AVATARS.map((avatar) => (
-                        <button
-                          key={avatar.id}
-                          type="button"
-                          onClick={() => setSelectedAvatar(avatar.id)}
-                          className={`p-2 rounded-lg text-2xl transition-all ${
-                            selectedAvatar === avatar.id
-                              ? "bg-green-500/30 ring-2 ring-green-400"
-                              : "bg-white/5"
-                          }`}
-                          data-testid={`button-avatar-${avatar.id}`}
-                          aria-label={`Select ${avatar.label} avatar`}
-                        >
-                          {avatar.emoji}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    size="lg"
-                    disabled={status === "connecting"}
-                    data-testid="button-join-game"
-                  >
-                    {status === "connecting" ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Connecting...
-                      </>
-                    ) : (
-                      "Join Game"
-                    )}
-                  </Button>
-                </form>
-                <div className="flex justify-center mt-4">
-                  {status === "connected" ? (
-                    <div className="flex items-center gap-1.5 text-sm text-green-300">
-                      <Wifi className="w-3.5 h-3.5" />
-                      <span>Connected</span>
-                    </div>
-                  ) : status === "error" ? (
-                    <div className="flex items-center gap-1.5 text-sm text-red-400">
-                      <WifiOff className="w-3.5 h-3.5" />
-                      <span>Connection error</span>
-                    </div>
-                  ) : null}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-      </div>
+      <GameJoinForm
+        gameName="Meme No Harm"
+        gameSubtitle="Search GIFs. Submit. Vote. Win."
+        icon={<Smile className="w-12 h-12 text-primary mx-auto mb-2" />}
+        roomCode={roomCode}
+        playerName={playerName}
+        selectedAvatar={selectedAvatar}
+        status={status}
+        hasCodeFromUrl={hasCodeFromUrl}
+        onRoomCodeChange={setRoomCode}
+        onPlayerNameChange={setPlayerName}
+        onAvatarChange={setSelectedAvatar}
+        onJoin={handleJoin}
+        nameInputRef={nameInputRef}
+        testIdPrefix="memenoharm"
+      />
     );
   }
 
   if (phase === "gameComplete") {
-    const myRank = leaderboard.findIndex(e => e.playerId === playerId) + 1;
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-complete">
+      <div className="min-h-screen gradient-game flex flex-col" data-testid="page-memenoharm-complete">
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
         </div>
         {renderGameHeader()}
         <div className="flex-1 flex flex-col items-center justify-center max-w-sm mx-auto w-full p-4">
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-center mb-6">
-            <motion.div
-              animate={{ rotate: [0, -10, 10, 0] }}
-              transition={{ duration: 0.5, repeat: 3 }}
-            >
-              <Trophy className="w-20 h-20 text-yellow-400 mx-auto mb-3" />
-            </motion.div>
-            <h2 className="text-3xl font-bold text-white mb-1">Game Over!</h2>
-            <p className="text-green-200/60">You finished #{myRank} with {myScore} points</p>
-          </motion.div>
-
-          <Card className="bg-white/10 border-white/20 w-full">
-            <CardContent className="pt-4">
-              <div className="space-y-2">
-                {leaderboard.map((entry, i) => (
-                  <motion.div
-                    key={entry.playerId}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className={`flex items-center justify-between px-3 py-2 rounded-lg ${
-                      entry.playerId === playerId ? 'bg-green-500/20 text-green-300' :
-                      i === 0 ? 'bg-yellow-500/20 text-yellow-300' :
-                      'bg-white/5 text-white/70'
-                    }`}
-                    data-testid={`player-result-${entry.playerId}`}
-                  >
-                    <span className="flex items-center gap-2">
-                      {i === 0 && <Crown className="w-4 h-4 text-yellow-400" />}
-                      <span className={`w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold ${
-                        i === 0 ? 'bg-yellow-500 text-black' : i === 1 ? 'bg-slate-400 text-black' : i === 2 ? 'bg-orange-500 text-white' : 'bg-white/10 text-white/50'
-                      }`}>
-                        {i + 1}
-                      </span>
-                      <span className="text-lg flex-shrink-0">
-                        {PLAYER_AVATARS.find(a => a.id === entry.playerAvatar)?.emoji || PLAYER_AVATARS[0].emoji}
-                      </span>
-                      <span className="truncate min-w-0 flex-1">{entry.playerName}</span>
-                    </span>
-                    <span className="font-bold">{entry.score}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <GameCompleteScreen
+            leaderboard={leaderboard}
+            playerId={playerId}
+            myScore={myScore}
+            subtitle="show"
+          />
         </div>
       </div>
     );
@@ -902,7 +648,7 @@ export default function MemeNoHarmPlayer() {
   if (phase === "reveal") {
     const myRank = leaderboard.findIndex(e => e.playerId === playerId) + 1;
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-player-reveal">
+      <div className="min-h-screen gradient-game flex flex-col" data-testid="page-memenoharm-player-reveal">
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
         </div>
@@ -920,34 +666,34 @@ export default function MemeNoHarmPlayer() {
                 <h2 className="text-2xl font-bold text-yellow-300">You won this round!</h2>
               </>
             ) : (
-              <h2 className="text-xl font-bold text-white">Round Results</h2>
+              <h2 className="text-xl font-bold text-foreground">Round Results</h2>
             )}
           </motion.div>
 
-          <Card className="bg-white/10 border-white/20 w-full mb-4">
+          <Card className="w-full mb-4">
             <CardContent className="pt-4 text-center">
               <motion.p
                 key={myScore}
                 initial={{ scale: 1.3 }}
                 animate={{ scale: 1 }}
-                className="text-green-400 text-3xl font-black"
+                className="text-primary text-3xl font-black"
               >
                 {myScore} pts
               </motion.p>
-              <p className="text-white/40 text-sm">Rank #{myRank}</p>
+              <p className="text-muted-foreground text-sm">Rank #{myRank}</p>
             </CardContent>
           </Card>
 
           <motion.div
-            className="flex items-center gap-2 text-white/40"
+            className="flex items-center gap-2 text-muted-foreground"
             animate={{ opacity: [0.3, 1, 0.3] }}
             transition={{ duration: 1.5, repeat: Infinity }}
           >
-            <div className="w-2 h-2 rounded-full bg-green-400" />
-            <div className="w-2 h-2 rounded-full bg-green-400" />
-            <div className="w-2 h-2 rounded-full bg-green-400" />
+            <div className="w-2 h-2 rounded-full bg-primary" />
+            <div className="w-2 h-2 rounded-full bg-primary" />
+            <div className="w-2 h-2 rounded-full bg-primary" />
           </motion.div>
-          <p className="text-white/40 text-sm text-center mt-2">Waiting for host to start next round...</p>
+          <p className="text-muted-foreground text-sm text-center mt-2">Waiting for host to start next round...</p>
         </div>
       </div>
     );
@@ -955,7 +701,7 @@ export default function MemeNoHarmPlayer() {
 
   if (phase === "voted") {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-voted">
+      <div className="min-h-screen gradient-game flex flex-col" data-testid="page-memenoharm-voted">
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
         </div>
@@ -965,12 +711,12 @@ export default function MemeNoHarmPlayer() {
             <motion.div
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 1.5, repeat: Infinity }}
-              className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4"
+              className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4"
             >
-              <Star className="w-10 h-10 text-green-400" />
+              <Star className="w-10 h-10 text-primary" />
             </motion.div>
-            <h2 className="text-xl font-bold text-white mb-2">Vote Cast!</h2>
-            <p className="text-white/50">Waiting for everyone to vote...</p>
+            <h2 className="text-xl font-bold text-foreground mb-2">Vote Cast!</h2>
+            <p className="text-muted-foreground">Waiting for everyone to vote...</p>
           </motion.div>
         </div>
       </div>
@@ -979,23 +725,23 @@ export default function MemeNoHarmPlayer() {
 
   if (phase === "voting") {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-player-voting">
+      <div className="min-h-screen gradient-game flex flex-col" data-testid="page-memenoharm-player-voting">
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
         </div>
         {renderGameHeader()}
         <div className="p-4 text-center">
-          <h2 className="text-lg font-bold text-white mb-1">Vote for the Best GIF!</h2>
-          <p className="text-green-200/60 text-sm">"{prompt}"</p>
+          <h2 className="text-lg font-bold text-foreground mb-1">Vote for the Best GIF!</h2>
+          <p className="text-muted-foreground text-sm">"{prompt}"</p>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 pb-4">
           {votingSubmissions.length === 0 ? (
             <div className="flex-1 flex items-center justify-center py-12">
               <div className="text-center">
-                <Star className="w-10 h-10 text-green-400/40 mx-auto mb-3" />
-                <p className="text-white/50 text-sm">No other GIFs to vote on this round.</p>
-                <p className="text-white/30 text-xs mt-1">Waiting for results...</p>
+                <Star className="w-10 h-10 text-primary/40 mx-auto mb-3" />
+                <p className="text-muted-foreground text-sm">No other GIFs to vote on this round.</p>
+                <p className="text-muted-foreground/60 text-xs mt-1">Waiting for results...</p>
               </div>
             </div>
           ) : (
@@ -1005,7 +751,7 @@ export default function MemeNoHarmPlayer() {
                   key={sub.id}
                   onClick={() => submitVote(sub.id)}
                   whileTap={{ scale: 0.97 }}
-                  className="w-full rounded-xl overflow-hidden bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="w-full rounded-xl overflow-hidden bg-card/80 border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                   data-testid={`button-vote-${sub.id}`}
                 >
                   <div className="aspect-video">
@@ -1022,7 +768,7 @@ export default function MemeNoHarmPlayer() {
 
   if (phase === "submitted") {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-submitted">
+      <div className="min-h-screen gradient-game flex flex-col" data-testid="page-memenoharm-submitted">
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
         </div>
@@ -1032,17 +778,17 @@ export default function MemeNoHarmPlayer() {
             <motion.div
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 1.5, repeat: Infinity }}
-              className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4"
+              className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4"
             >
-              <Smile className="w-10 h-10 text-green-400" />
+              <Smile className="w-10 h-10 text-primary" />
             </motion.div>
-            <h2 className="text-xl font-bold text-white mb-2">GIF Submitted!</h2>
-            <p className="text-white/50 mb-4">Waiting for other players...</p>
+            <h2 className="text-xl font-bold text-foreground mb-2">GIF Submitted!</h2>
+            <p className="text-muted-foreground mb-4">Waiting for other players...</p>
             {selectedGif && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="w-48 h-48 mx-auto rounded-xl overflow-hidden border-2 border-green-500/30 shadow-lg"
+                className="w-48 h-48 mx-auto rounded-xl overflow-hidden border-2 border-primary/30 shadow-lg"
               >
                 <img src={selectedGif.previewUrl} alt={selectedGif.title} className="w-full h-full object-cover" />
               </motion.div>
@@ -1055,29 +801,29 @@ export default function MemeNoHarmPlayer() {
 
   if (phase === "searching") {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-searching">
+      <div className="min-h-screen gradient-game flex flex-col" data-testid="page-memenoharm-searching">
         <div className="w-full flex justify-center pt-3 pb-1">
           <Logo size="compact" />
         </div>
         {renderGameHeader()}
-        <div className="p-4 text-center sticky top-0 z-10 bg-green-900/90 backdrop-blur-sm">
-          <p className="text-green-400 text-xs font-medium">Round {round} of {totalRounds}</p>
-          <h2 className="text-lg font-bold text-white mb-2">"{prompt}"</h2>
+        <div className="p-4 text-center sticky top-0 z-10 bg-background/90 backdrop-blur-sm">
+          <Badge variant="secondary" className="mb-1">Round {round} of {totalRounds}</Badge>
+          <h2 className="text-lg font-bold text-foreground mb-2">"{prompt}"</h2>
 
           <div className="relative max-w-sm mx-auto">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search GIPHY..."
-              className="pl-9 bg-white/10 border-white/20 text-white placeholder:text-white/40"
+              className="pl-9"
               autoFocus
               data-testid="input-gif-search"
             />
           </div>
 
           {!searchQuery.trim() && trendingGifs.length > 0 && (
-            <div className="flex items-center justify-center gap-1 mt-2 text-white/30 text-xs">
+            <div className="flex items-center justify-center gap-1 mt-2 text-muted-foreground text-xs">
               <TrendingUp className="w-3 h-3" />
               <span>Trending</span>
             </div>
@@ -1087,12 +833,12 @@ export default function MemeNoHarmPlayer() {
         <div className="flex-1 overflow-y-auto px-4 pb-20">
           {isSearching && (
             <div className="text-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-green-400 mx-auto" />
+              <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" />
             </div>
           )}
 
           {!isSearching && gifsToShow.length === 0 && searchQuery.trim() && (
-            <div className="text-center py-8 text-white/40">
+            <div className="text-center py-8 text-muted-foreground">
               No GIFs found. Try a different search!
             </div>
           )}
@@ -1105,7 +851,7 @@ export default function MemeNoHarmPlayer() {
                 whileTap={{ scale: 0.95 }}
                 className={`rounded-lg overflow-hidden border-2 transition-all ${
                   selectedGif?.id === gif.id
-                    ? 'border-green-400 ring-2 ring-green-400/50'
+                    ? 'border-primary ring-2 ring-primary/50'
                     : 'border-transparent'
                 }`}
                 data-testid={`button-gif-${gif.id}`}
@@ -1129,7 +875,7 @@ export default function MemeNoHarmPlayer() {
               initial={{ y: 100 }}
               animate={{ y: 0 }}
               exit={{ y: 100 }}
-              className="fixed bottom-0 left-0 right-0 p-4 bg-green-900/95 backdrop-blur-sm border-t border-white/10"
+              className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border"
             >
               <div className="flex items-center gap-3 max-w-sm mx-auto">
                 <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
@@ -1153,36 +899,18 @@ export default function MemeNoHarmPlayer() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-waiting">
+    <div className="min-h-screen gradient-game flex flex-col" data-testid="page-memenoharm-waiting">
       <div className="w-full flex justify-center pt-3 pb-1">
         <Logo size="compact" />
       </div>
       {renderGameHeader()}
 
       <div className="flex-1 flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center"
-        >
-          <motion.div
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            <Smile className="w-16 h-16 text-green-400/50 mx-auto mb-4" />
-          </motion.div>
-          <h2 className="text-xl font-bold text-white mb-2">You're In!</h2>
-          <p className="text-white/50">Waiting for the host to start the round...</p>
-          <motion.div
-            className="flex justify-center gap-2 mt-4"
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            <div className="w-2 h-2 rounded-full bg-green-400" />
-            <div className="w-2 h-2 rounded-full bg-green-400" />
-            <div className="w-2 h-2 rounded-full bg-green-400" />
-          </motion.div>
-        </motion.div>
+        <GameWaitingScreen
+          icon={<Smile className="w-16 h-16 text-primary/50 mx-auto mb-4" />}
+          title="You're In!"
+          subtitle="Waiting for the host to start the round..."
+        />
       </div>
     </div>
   );
