@@ -6,5 +6,8 @@ export { GameConnectionBanner } from "./GameConnectionBanner";
 export { GameCompleteScreen } from "./GameCompleteScreen";
 export { GameLeaderboardView } from "./GameLeaderboardView";
 export { GameWaitingScreen } from "./GameWaitingScreen";
+export { HostGameOverScreen } from "./HostGameOverScreen";
+export { HostLeaderboardView } from "./HostLeaderboardView";
 export { getGameSession, saveGameSession, clearGameSession } from "./gameSession";
 export type { ConnectionStatus, LeaderboardEntry } from "./types";
+export type { HostLeaderboardBase } from "./HostGameOverScreen";

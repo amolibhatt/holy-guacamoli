@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { HostGameOverScreen } from "@/components/game";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { 
   Loader2, Plus, Trash2, X, Clock, Users, GripVertical,
@@ -402,61 +403,30 @@ export default function TimeWarpHost() {
   // FINISHED STATE
   if (gameState === "finished") {
     const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
-    const winner = sortedPlayers[0];
+    const leaderboard = sortedPlayers.map(p => ({
+      playerId: p.id,
+      playerName: p.name,
+      score: p.score,
+    }));
 
     return (
       <div className="min-h-screen bg-background flex flex-col" data-testid="page-timewarp-finished">
         <AppHeader minimal backHref="/" title="Past Forward - Game Over" />
         
         <main className="max-w-2xl mx-auto px-4 py-12 flex-1 w-full">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="text-center mb-8"
-          >
-            <Trophy className="w-20 h-20 mx-auto text-orange-500 mb-4" />
-            <h1 className="text-3xl font-bold mb-2">Game Over!</h1>
-            <p className="text-xl text-muted-foreground">
-              {winner.name} wins with {winner.score} points!
-            </p>
-          </motion.div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Final Scores</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {sortedPlayers.map((player, idx) => (
-                <motion.div
-                  key={player.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  className={`flex items-center justify-between p-3 rounded-lg ${
-                    idx === 0 ? 'bg-orange-500/20' : 'bg-muted'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl font-bold text-muted-foreground">#{idx + 1}</span>
-                    <span className="font-semibold">{player.name}</span>
-                  </div>
-                  <Badge variant={idx === 0 ? "default" : "secondary"} className="text-lg px-3">
-                    {player.score} pts
-                  </Badge>
-                </motion.div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <div className="flex gap-4 mt-8 justify-center">
-            <Button variant="outline" onClick={resetGame} data-testid="button-play-again">
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Play Again
-            </Button>
-            <Link href="/">
-              <Button data-testid="button-back-home">Back to Home</Button>
-            </Link>
-          </div>
+          <HostGameOverScreen
+            leaderboard={leaderboard}
+            title="Game Over!"
+            actions={<>
+              <Button variant="outline" onClick={resetGame} data-testid="button-play-again">
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Play Again
+              </Button>
+              <Link href="/">
+                <Button data-testid="button-back-home">Back to Home</Button>
+              </Link>
+            </>}
+          />
         </main>
         
         <AppFooter />

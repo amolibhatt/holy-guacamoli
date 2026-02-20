@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { useToast } from "@/hooks/use-toast";
+import { HostGameOverScreen } from "@/components/game";
 import { Smile, Users, Play, MessageSquare, Trophy, Crown, Ban, Loader2, ChevronRight, SkipForward, Image as ImageIcon, Link2, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MemePrompt } from "@shared/schema";
@@ -433,58 +434,18 @@ export default function MemeNoHarmHost() {
       <div className="min-h-screen gradient-game flex flex-col" data-testid="page-memenoharm-finished">
         <AppHeader minimal backHref="/" title="Meme No Harm - Game Over" />
         <main className="max-w-2xl mx-auto px-4 py-8 flex-1 w-full">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center mb-8"
-          >
-            <Trophy className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
-            <h2 className="text-3xl font-bold text-white mb-2">Game Over!</h2>
-            {leaderboard[0] && (
-              <div className="text-xl text-yellow-300">
-                <Crown className="w-6 h-6 inline mr-2" />
-                {leaderboard[0].playerName} wins with {leaderboard[0].score} points!
-              </div>
-            )}
-          </motion.div>
-
-          <Card className="bg-white/10 border-white/20 mb-6">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Trophy className="w-5 h-5" />
-                Final Standings
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {leaderboard.map((entry, i) => (
-                  <div
-                    key={entry.playerId}
-                    className={`flex items-center justify-between px-4 py-3 rounded-lg ${
-                      i === 0 ? 'bg-yellow-500/20 text-yellow-300' :
-                      i === 1 ? 'bg-gray-400/20 text-gray-300' :
-                      i === 2 ? 'bg-orange-500/20 text-orange-300' :
-                      'bg-white/5 text-white/70'
-                    }`}
-                    data-testid={`leaderboard-entry-${entry.playerId}`}
-                  >
-                    <span className="font-bold text-lg mr-3">#{i + 1}</span>
-                    <span className="flex-1 font-medium">{entry.playerName}</span>
-                    <span className="font-bold">{entry.score} pts</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex gap-4 justify-center">
-            <Button variant="outline" onClick={resetGame} className="text-white border-white/30" data-testid="button-play-again">
-              Play Again
-            </Button>
-            <Button onClick={() => setLocation("/")} data-testid="button-go-home-finished">
-              Back to Home
-            </Button>
-          </div>
+          <HostGameOverScreen
+            leaderboard={leaderboard}
+            title="Game Over!"
+            actions={<>
+              <Button variant="outline" onClick={resetGame} data-testid="button-play-again">
+                Play Again
+              </Button>
+              <Button onClick={() => setLocation("/")} data-testid="button-go-home-finished">
+                Back to Home
+              </Button>
+            </>}
+          />
         </main>
         <AppFooter />
       </div>

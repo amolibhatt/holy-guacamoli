@@ -21,6 +21,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { GameRulesSheet } from "@/components/GameRules";
+import { HostGameOverScreen } from "@/components/game";
 import { neonColorConfig, BOARD_COLORS } from "@/lib/boardColors";
 import type { PsyopQuestion } from "@shared/schema";
 
@@ -1352,125 +1353,77 @@ export default function PsyOpHost() {
           const lieOfTheGame = allLies.length > 0 ? [...allLies].sort((a, b) => b.fooledCount - a.fooledCount)[0] : null;
 
           const awards = [
-            masterLiar && masterLiar.liesBelieved > 0 ? { key: "master-liar", icon: Eye, color: "purple", title: "Master Liar", name: masterLiar.playerName, detail: `${masterLiar.liesBelieved} lie${masterLiar.liesBelieved !== 1 ? 's' : ''} believed` } : null,
-            truthSeeker && truthSeeker.truthsSpotted > 0 ? { key: "truth-seeker", icon: Target, color: "green", title: "Truth Seeker", name: truthSeeker.playerName, detail: `${truthSeeker.truthsSpotted} truth${truthSeeker.truthsSpotted !== 1 ? 's' : ''} found` } : null,
-            mostGullible && mostGullible.timesFooled > 0 ? { key: "most-gullible", icon: Sparkles, color: "orange", title: "Most Gullible", name: mostGullible.playerName, detail: `Fooled ${mostGullible.timesFooled} time${mostGullible.timesFooled !== 1 ? 's' : ''}` } : null,
+            masterLiar && masterLiar.liesBelieved > 0 ? { key: "master-liar", icon: Eye, color: "text-secondary", title: "Master Liar", name: masterLiar.playerName, detail: `${masterLiar.liesBelieved} lie${masterLiar.liesBelieved !== 1 ? 's' : ''} believed` } : null,
+            truthSeeker && truthSeeker.truthsSpotted > 0 ? { key: "truth-seeker", icon: Target, color: "text-primary", title: "Truth Seeker", name: truthSeeker.playerName, detail: `${truthSeeker.truthsSpotted} truth${truthSeeker.truthsSpotted !== 1 ? 's' : ''} found` } : null,
+            mostGullible && mostGullible.timesFooled > 0 ? { key: "most-gullible", icon: Sparkles, color: "text-orange-400", title: "Most Gullible", name: mostGullible.playerName, detail: `Fooled ${mostGullible.timesFooled} time${mostGullible.timesFooled !== 1 ? 's' : ''}` } : null,
           ].filter(Boolean) as { key: string; icon: typeof Eye; color: string; title: string; name: string; detail: string }[];
 
-          const colorMap: Record<string, string> = {
-            purple: "text-secondary",
-            green: "text-primary",
-            orange: "text-orange-400",
-          };
-
           return (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-              <div className="text-center">
-                <motion.div animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }}>
-                  <Trophy className="w-20 h-20 mx-auto text-yellow-500 mb-4" />
-                </motion.div>
-                <h1 className="text-4xl font-black mb-1">GAME OVER!</h1>
-                {leaderboard[0] && (
-                  <>
-                    <h2 className="text-xl font-bold text-yellow-500">WINNER</h2>
-                    <p className="text-2xl font-black">{leaderboard[0].playerName}</p>
-                    <p className="text-muted-foreground">{leaderboard[0].score} points</p>
-                  </>
+            <HostGameOverScreen
+              leaderboard={leaderboard}
+              extraSections={<>
+                {awards.length > 0 && (
+                  <div className={`grid gap-3 ${awards.length === 1 ? 'grid-cols-1' : awards.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                    {awards.map((award, idx) => (
+                      <motion.div
+                        key={award.key}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 + idx * 0.15 }}
+                      >
+                        <Card data-testid={`award-${award.key}`}>
+                          <CardContent className="pt-4 text-center">
+                            <award.icon className={`w-7 h-7 mx-auto ${award.color} mb-2`} />
+                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{award.title}</div>
+                            <div className="font-bold text-sm">{award.name}</div>
+                            <div className="text-xs text-muted-foreground">{award.detail}</div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </div>
                 )}
-              </div>
 
-              {awards.length > 0 && (
-                <div className={`grid gap-3 ${awards.length === 1 ? 'grid-cols-1' : awards.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                  {awards.map((award, idx) => (
-                    <motion.div
-                      key={award.key}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 + idx * 0.15 }}
-                    >
-                      <Card data-testid={`award-${award.key}`}>
-                        <CardContent className="pt-4 text-center">
-                          <award.icon className={`w-7 h-7 mx-auto ${colorMap[award.color] || 'text-muted-foreground'} mb-2`} />
-                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{award.title}</div>
-                          <div className="font-bold text-sm">{award.name}</div>
-                          <div className="text-xs text-muted-foreground">{award.detail}</div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
+                {lieOfTheGame && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.8 }}
+                  >
+                    <Card data-testid="award-lie-of-the-game">
+                      <CardContent className="pt-5">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-full bg-secondary/15 flex items-center justify-center shrink-0 mt-0.5">
+                            <Award className="w-5 h-5 text-secondary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Lie of the Game</div>
+                            <p className="text-lg font-bold leading-snug mb-1">"{lieOfTheGame.lieText}"</p>
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                              <span>by <span className="font-medium text-foreground">{lieOfTheGame.liarName}</span></span>
+                              <span className="text-secondary font-medium">Fooled {lieOfTheGame.fooledCount} player{lieOfTheGame.fooledCount !== 1 ? 's' : ''}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
+              </>}
+              renderRowExtras={(entry) => (
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {entry.truthsSpotted > 0 && (
+                    <span className="px-2 py-0.5 bg-primary/20 rounded">{entry.truthsSpotted} truth{entry.truthsSpotted !== 1 ? 's' : ''} found</span>
+                  )}
+                  {entry.liesBelieved > 0 && (
+                    <span className="px-2 py-0.5 bg-secondary/20 rounded">{entry.liesBelieved} lie{entry.liesBelieved !== 1 ? 's' : ''} believed</span>
+                  )}
+                  {entry.timesFooled > 0 && (
+                    <span className="px-2 py-0.5 bg-orange-500/20 rounded">Fooled {entry.timesFooled} time{entry.timesFooled !== 1 ? 's' : ''}</span>
+                  )}
                 </div>
               )}
-
-              {lieOfTheGame && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 }}
-                >
-                  <Card data-testid="award-lie-of-the-game">
-                    <CardContent className="pt-5">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-secondary/15 flex items-center justify-center shrink-0 mt-0.5">
-                          <Award className="w-5 h-5 text-secondary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Lie of the Game</div>
-                          <p className="text-lg font-bold leading-snug mb-1">"{lieOfTheGame.lieText}"</p>
-                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                            <span>by <span className="font-medium text-foreground">{lieOfTheGame.liarName}</span></span>
-                            <span className="text-secondary font-medium">Fooled {lieOfTheGame.fooledCount} player{lieOfTheGame.fooledCount !== 1 ? 's' : ''}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              )}
-
-              <Card>
-                <CardContent className="pt-6">
-                  <h3 className="font-semibold mb-4">Final Standings</h3>
-                  <div className="space-y-3">
-                    {leaderboard.map((entry, i) => {
-                      const avatarData = PLAYER_AVATARS.find(a => a.id === entry.playerAvatar);
-                      return (
-                        <div
-                          key={entry.playerId}
-                          className={`p-3 rounded-lg ${i === 0 ? 'bg-yellow-500/10 border border-yellow-500/50' : 'bg-muted/30'}`}
-                          data-testid={`final-standings-${entry.playerId}`}
-                        >
-                          <div className="flex items-center justify-between gap-2 mb-2">
-                            <div className="flex items-center gap-3">
-                              <span className="font-bold text-lg w-6">{i === 0 ? <Crown className="w-5 h-5 text-yellow-500" /> : `${i + 1}.`}</span>
-                              <div className="w-7 h-7 rounded-full bg-secondary/15 flex items-center justify-center shrink-0">
-                                {avatarData
-                                  ? <span className="text-sm" aria-label={avatarData.label}>{avatarData.emoji}</span>
-                                  : <User className="w-3.5 h-3.5 text-secondary" />
-                                }
-                              </div>
-                              <span className="font-semibold">{entry.playerName}</span>
-                            </div>
-                            <span className="font-bold text-lg">{entry.score} pts</span>
-                          </div>
-                          <div className="flex flex-wrap gap-2 text-xs ml-9">
-                            {entry.truthsSpotted > 0 && (
-                              <span className="px-2 py-0.5 bg-primary/20 rounded">{entry.truthsSpotted} truth{entry.truthsSpotted !== 1 ? 's' : ''} found</span>
-                            )}
-                            {entry.liesBelieved > 0 && (
-                              <span className="px-2 py-0.5 bg-secondary/20 rounded">{entry.liesBelieved} lie{entry.liesBelieved !== 1 ? 's' : ''} believed</span>
-                            )}
-                            {entry.timesFooled > 0 && (
-                              <span className="px-2 py-0.5 bg-orange-500/20 rounded">Fooled {entry.timesFooled} time{entry.timesFooled !== 1 ? 's' : ''}</span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="flex flex-wrap gap-2 justify-center">
+              actions={<>
                 <Button onClick={() => setLocation("/")} variant="outline" className="gap-2" data-testid="button-back-home">
                   <ArrowLeft className="w-4 h-4" />
                   Back to Home
@@ -1479,8 +1432,8 @@ export default function PsyOpHost() {
                   <RefreshCw className="w-4 h-4" />
                   Rematch
                 </Button>
-              </div>
-            </motion.div>
+              </>}
+            />
           );
         })()}
       </main>

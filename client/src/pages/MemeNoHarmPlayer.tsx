@@ -589,6 +589,7 @@ export default function MemeNoHarmPlayer() {
 
       <GamePlayerInfoBar
         playerName={playerName}
+        avatar={selectedAvatar}
         leaderboard={leaderboard}
         playerId={playerId}
         showLeaderboard={showLeaderboard}
@@ -608,8 +609,8 @@ export default function MemeNoHarmPlayer() {
   if (!joined) {
     return (
       <GameJoinForm
-        gameName="Meme No Harm"
-        gameSubtitle="Search GIFs. Submit. Vote. Win."
+        title="Meme No Harm"
+        subtitle="Search GIFs. Submit. Vote. Win."
         icon={<Smile className="w-12 h-12 text-primary mx-auto mb-2" />}
         roomCode={roomCode}
         playerName={playerName}
@@ -618,10 +619,9 @@ export default function MemeNoHarmPlayer() {
         hasCodeFromUrl={hasCodeFromUrl}
         onRoomCodeChange={setRoomCode}
         onPlayerNameChange={setPlayerName}
-        onAvatarChange={setSelectedAvatar}
-        onJoin={handleJoin}
+        onAvatarSelect={setSelectedAvatar}
+        onSubmit={handleJoin}
         nameInputRef={nameInputRef}
-        testIdPrefix="memenoharm"
       />
     );
   }
@@ -907,7 +907,6 @@ export default function MemeNoHarmPlayer() {
 
       <div className="flex-1 flex items-center justify-center p-4">
         <GameWaitingScreen
-          icon={<Smile className="w-16 h-16 text-primary/50 mx-auto mb-4" />}
           title="You're In!"
           subtitle="Waiting for the host to start the round..."
         />

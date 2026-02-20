@@ -25,6 +25,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { GameRulesSheet } from "@/components/GameRules";
+import { HostGameOverScreen, HostLeaderboardView } from "@/components/game";
 import type { SequenceQuestion, SequenceSession, SequenceSubmission } from "@shared/schema";
 import { PLAYER_AVATARS } from "@shared/schema";
 
@@ -1366,67 +1367,34 @@ export default function SequenceSqueeze() {
         )}
         
         {gameState === "leaderboard" && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-8"
-          >
-            <Trophy className="w-16 h-16 mx-auto text-amber-500 mb-4 shrink-0" aria-hidden="true" />
-            <h2 className="text-3xl font-bold mb-6">Scoreboard</h2>
-            <Card className="max-w-2xl mx-auto p-6">
-              {leaderboard.length === 0 ? (
-                <p className="text-muted-foreground">No scores yet</p>
-              ) : (
-                <div className="space-y-4">
-                  {leaderboard.map((entry, idx) => (
-                    <motion.div
-                      key={entry.playerId}
-                      initial={{ x: -20, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: idx * 0.1 }}
-                      className={`p-4 rounded-lg ${
-                        idx === 0 ? 'bg-amber-500/20 border-2 border-amber-500' :
-                        idx === 1 ? 'bg-slate-400/20 border border-slate-400' :
-                        idx === 2 ? 'bg-orange-600/20 border border-orange-600' :
-                        'bg-muted/50'
-                      }`}
-                      data-testid={`scoreboard-entry-${entry.playerId}`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl font-black">{idx + 1}</span>
-                          <span className="text-xl font-semibold">{entry.playerName}</span>
-                        </div>
-                        <span className="text-2xl font-bold">{entry.score} pts</span>
-                      </div>
-                      <div className="flex flex-wrap gap-3 text-sm">
-                        <div className="flex items-center gap-1 px-2 py-1 bg-primary/20 rounded">
-                          <Check className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
-                          <span>{entry.correctAnswers || 0} correct</span>
-                        </div>
-                        <div className="flex items-center gap-1 px-2 py-1 bg-destructive/20 rounded">
-                          <X className="w-3 h-3 text-destructive shrink-0" aria-hidden="true" />
-                          <span>{entry.wrongAnswers || 0} wrong</span>
-                        </div>
-                        {entry.avgTimeMs > 0 && (
-                          <div className="flex items-center gap-1 px-2 py-1 bg-blue-500/20 rounded">
-                            <Clock className="w-3 h-3 text-blue-500 shrink-0" aria-hidden="true" />
-                            <span>{(entry.avgTimeMs / 1000).toFixed(1)}s avg</span>
-                          </div>
-                        )}
-                        {entry.bestStreak > 0 && (
-                          <div className="flex items-center gap-1 px-2 py-1 bg-amber-500/20 rounded">
-                            <Zap className="w-3 h-3 text-amber-500 shrink-0" aria-hidden="true" />
-                            <span>{entry.bestStreak} best streak</span>
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
+          <HostLeaderboardView
+            leaderboard={leaderboard}
+            title="Scoreboard"
+            renderRowExtras={(entry) => (
+              <div className="flex flex-wrap gap-3 text-sm">
+                <div className="flex items-center gap-1 px-2 py-1 bg-primary/20 rounded">
+                  <Check className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
+                  <span>{entry.correctAnswers || 0} correct</span>
                 </div>
-              )}
-            </Card>
-            <div className="mt-6 flex justify-center gap-3">
+                <div className="flex items-center gap-1 px-2 py-1 bg-destructive/20 rounded">
+                  <X className="w-3 h-3 text-destructive shrink-0" aria-hidden="true" />
+                  <span>{entry.wrongAnswers || 0} wrong</span>
+                </div>
+                {entry.avgTimeMs > 0 && (
+                  <div className="flex items-center gap-1 px-2 py-1 bg-blue-500/20 rounded">
+                    <Clock className="w-3 h-3 text-blue-500 shrink-0" aria-hidden="true" />
+                    <span>{(entry.avgTimeMs / 1000).toFixed(1)}s avg</span>
+                  </div>
+                )}
+                {entry.bestStreak > 0 && (
+                  <div className="flex items-center gap-1 px-2 py-1 bg-amber-500/20 rounded">
+                    <Zap className="w-3 h-3 text-amber-500 shrink-0" aria-hidden="true" />
+                    <span>{entry.bestStreak} best streak</span>
+                  </div>
+                )}
+              </div>
+            )}
+            actions={<>
               <Button onClick={advanceToNextQuestion} data-testid="button-continue">
                 {currentQuestionIndex < totalQuestions ? "Next Question" : "Back to Lobby"}
               </Button>
@@ -1437,63 +1405,26 @@ export default function SequenceSqueeze() {
               >
                 End Game
               </Button>
-            </div>
-          </motion.div>
+            </>}
+          />
         )}
         
         {gameState === "gameComplete" && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-12"
-          >
-            <motion.div
-              animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
-              transition={{ duration: 1, repeat: Infinity }}
-            >
-              <Trophy className="w-24 h-24 mx-auto text-amber-500 mb-4 shrink-0" aria-hidden="true" />
-            </motion.div>
-            <h1 className="text-4xl font-black mb-2">GAME OVER!</h1>
-            {leaderboard[0] && (
-              <>
-                <h2 className="text-2xl font-bold text-amber-500 mb-1">WINNER</h2>
-                <p className="text-3xl font-black">{leaderboard[0].playerName}</p>
-                <p className="text-xl text-muted-foreground">{leaderboard[0].score} points</p>
-              </>
-            )}
-            <Card className="max-w-2xl mx-auto mt-8 p-6">
-              <h3 className="font-semibold mb-4 text-left">Final Standings</h3>
-              <div className="space-y-3">
-                {leaderboard.map((entry, idx) => (
-                  <div
-                    key={entry.playerId}
-                    className={`p-3 rounded-lg text-left ${
-                      idx === 0 ? 'bg-amber-500/20 border border-amber-500' : 'bg-muted/30'
-                    }`}
-                    data-testid={`final-standings-${entry.playerId}`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-lg">{idx + 1}.</span>
-                        <span className="font-semibold">{entry.playerName}</span>
-                      </div>
-                      <span className="font-bold text-lg">{entry.score} pts</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2 text-xs">
-                      <span className="px-2 py-0.5 bg-primary/20 rounded">{entry.correctAnswers || 0} correct</span>
-                      <span className="px-2 py-0.5 bg-destructive/20 rounded">{entry.wrongAnswers || 0} wrong</span>
-                      {entry.avgTimeMs > 0 && (
-                        <span className="px-2 py-0.5 bg-blue-500/20 rounded">{(entry.avgTimeMs / 1000).toFixed(1)}s avg</span>
-                      )}
-                      {entry.bestStreak > 0 && (
-                        <span className="px-2 py-0.5 bg-amber-500/20 rounded">{entry.bestStreak} streak</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
+          <HostGameOverScreen
+            leaderboard={leaderboard}
+            renderRowExtras={(entry) => (
+              <div className="flex flex-wrap gap-2 text-xs">
+                <span className="px-2 py-0.5 bg-primary/20 rounded">{entry.correctAnswers || 0} correct</span>
+                <span className="px-2 py-0.5 bg-destructive/20 rounded">{entry.wrongAnswers || 0} wrong</span>
+                {entry.avgTimeMs > 0 && (
+                  <span className="px-2 py-0.5 bg-blue-500/20 rounded">{(entry.avgTimeMs / 1000).toFixed(1)}s avg</span>
+                )}
+                {entry.bestStreak > 0 && (
+                  <span className="px-2 py-0.5 bg-amber-500/20 rounded">{entry.bestStreak} streak</span>
+                )}
               </div>
-            </Card>
-            <div className="mt-8">
+            )}
+            actions={
               <Button 
                 size="lg"
                 onClick={() => {
@@ -1505,8 +1436,8 @@ export default function SequenceSqueeze() {
                 <RefreshCw className="w-5 h-5 mr-2 shrink-0" aria-hidden="true" />
                 Start New Game
               </Button>
-            </div>
-          </motion.div>
+            }
+          />
         )}
       </main>
 
