@@ -741,8 +741,8 @@ export default function PlayerPage() {
                 transition={{ type: "spring", bounce: 0.5 }}
               >
                 {psyopRevealData?.foundTruth ? (
-                  <div className="w-20 h-20 rounded-full bg-green-500/15 flex items-center justify-center mx-auto mb-3">
-                    <Check className="w-10 h-10 text-green-500" />
+                  <div className="w-20 h-20 rounded-full bg-primary/15 flex items-center justify-center mx-auto mb-3">
+                    <Check className="w-10 h-10 text-primary" />
                   </div>
                 ) : (
                   <div className="w-20 h-20 rounded-full bg-red-500/15 flex items-center justify-center mx-auto mb-3">
@@ -754,7 +754,7 @@ export default function PlayerPage() {
               <div>
                 <p className="text-sm font-medium mb-1" data-testid="text-vote-result">
                   {psyopRevealData?.foundTruth ? (
-                    <span className="text-green-500">You found the truth!</span>
+                    <span className="text-primary">You found the truth!</span>
                   ) : (
                     <span className="text-red-400">You got tricked!</span>
                   )}
@@ -763,7 +763,7 @@ export default function PlayerPage() {
 
               <div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">The truth was</p>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400" data-testid="text-correct-answer">
+                <p className="text-2xl font-bold text-primary" data-testid="text-correct-answer">
                   {psyopCorrectAnswer}
                 </p>
               </div>
@@ -789,10 +789,10 @@ export default function PlayerPage() {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.3, type: "spring" }}
-                    className="text-center px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-md"
+                    className="text-center px-4 py-2 bg-primary/10 border border-primary/20 rounded-md"
                     data-testid="text-round-points"
                   >
-                    <div className="text-lg font-bold text-green-500">+{psyopRevealData.yourScore}</div>
+                    <div className="text-lg font-bold text-primary">+{psyopRevealData.yourScore}</div>
                     <div className="text-[10px] uppercase tracking-wider text-muted-foreground">This Round</div>
                   </motion.div>
                 )}

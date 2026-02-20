@@ -599,23 +599,23 @@ export default function SequenceSqueeze() {
     >
       {/* Subtle neon corner gradients */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-0 w-64 h-64 bg-teal-500/5 blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-64 h-64 bg-cyan-500/5 blur-3xl" />
-        <div className="absolute -top-20 -left-20 w-40 h-40 rounded-full bg-gradient-to-br from-teal-500/15 to-transparent blur-2xl" />
-        <div className="absolute -bottom-16 -right-16 w-32 h-32 rounded-full bg-gradient-to-br from-cyan-500/15 to-transparent blur-2xl" />
+        <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 bg-secondary/5 blur-3xl" />
+        <div className="absolute -top-20 -left-20 w-40 h-40 rounded-full bg-gradient-to-br from-primary/15 to-transparent blur-2xl" />
+        <div className="absolute -bottom-16 -right-16 w-32 h-32 rounded-full bg-gradient-to-br from-secondary/15 to-transparent blur-2xl" />
         {/* Floating particles */}
         <motion.div 
-          className="absolute top-1/4 right-[15%] w-2 h-2 rounded-full bg-teal-400/30"
+          className="absolute top-1/4 right-[15%] w-2 h-2 rounded-full bg-primary/30"
           animate={{ y: [0, -20, 0], opacity: [0.3, 0.6, 0.3] }}
           transition={{ duration: 4, repeat: Infinity }}
         />
         <motion.div 
-          className="absolute top-1/3 left-[10%] w-1.5 h-1.5 rounded-full bg-cyan-400/30"
+          className="absolute top-1/3 left-[10%] w-1.5 h-1.5 rounded-full bg-secondary/30"
           animate={{ y: [0, -15, 0], opacity: [0.2, 0.5, 0.2] }}
           transition={{ duration: 3, repeat: Infinity, delay: 1 }}
         />
         <motion.div 
-          className="absolute bottom-1/4 right-[20%] w-1 h-1 rounded-full bg-teal-400/40"
+          className="absolute bottom-1/4 right-[20%] w-1 h-1 rounded-full bg-primary/40"
           animate={{ y: [0, -10, 0], opacity: [0.3, 0.7, 0.3] }}
           transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
         />
@@ -630,7 +630,7 @@ export default function SequenceSqueeze() {
             animate={{ opacity: 1 }}
             className="flex items-center justify-center py-20"
           >
-            <Loader2 className="w-8 h-8 animate-spin text-teal-500 shrink-0" aria-hidden="true" />
+            <Loader2 className="w-8 h-8 animate-spin text-primary shrink-0" aria-hidden="true" />
             <span className="ml-3 text-muted-foreground">Creating room...</span>
           </motion.div>
         )}
@@ -667,7 +667,7 @@ export default function SequenceSqueeze() {
                 <Button 
                   className={`h-10 text-sm w-full mt-3 ${
                     players.length > 0 
-                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-0" 
+                      ? "bg-gradient-to-r from-primary to-secondary text-white border-0" 
                       : "bg-white/5 text-white/30 border border-white/10"
                   }`}
                   onClick={() => {
@@ -748,13 +748,13 @@ export default function SequenceSqueeze() {
               <div className="flex-1 flex flex-col min-h-0 p-4 bg-white/5 rounded-xl border border-white/10">
                 <div className="flex items-center justify-between gap-2 mb-3 shrink-0">
                   <h2 className="text-sm font-bold text-white flex items-center gap-2" data-testid="text-players-header">
-                    <Users className="w-4 h-4 text-teal-400 shrink-0" aria-hidden="true" />
+                    <Users className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
                     Players
                   </h2>
                   <Badge 
                     className={`text-xs ${
                       players.filter(p => p.isConnected).length > 0 
-                        ? "bg-teal-500/20 text-teal-300 border-teal-500/30" 
+                        ? "bg-primary/20 text-primary border-primary/30" 
                         : "bg-white/10 text-white/50 border-white/20"
                     }`} 
                     data-testid="badge-player-count"
@@ -791,7 +791,7 @@ export default function SequenceSqueeze() {
                               data-testid={`player-card-${p.id}`}
                             >
                               <div className="text-2xl">
-                                {avatarData?.emoji || <User className="w-6 h-6 text-teal-400 shrink-0" aria-hidden="true" />}
+                                {avatarData?.emoji || <User className="w-6 h-6 text-primary shrink-0" aria-hidden="true" />}
                               </div>
                               <span className="font-medium text-[10px] text-center text-white truncate w-full" data-testid={`text-player-name-${p.id}`} title={p.name}>
                                 {p.name}
@@ -799,7 +799,7 @@ export default function SequenceSqueeze() {
                               {(playerScore > 0 || streak >= 2) && (
                                 <div className="flex items-center gap-1">
                                   {playerScore > 0 && (
-                                    <span className="text-[10px] text-teal-300" data-testid={`text-player-score-${p.id}`}>
+                                    <span className="text-[10px] text-primary" data-testid={`text-player-score-${p.id}`}>
                                       {playerScore}
                                     </span>
                                   )}
@@ -835,8 +835,8 @@ export default function SequenceSqueeze() {
               >
                 {/* Neon gradient overlay */}
                 <div className="absolute inset-0 pointer-events-none">
-                  <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-teal-500/10 blur-3xl" />
-                  <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-cyan-500/10 blur-3xl" />
+                  <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-primary/10 blur-3xl" />
+                  <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-secondary/10 blur-3xl" />
                 </div>
                 <div className="text-center text-white relative z-10">
                   <motion.div
@@ -844,12 +844,12 @@ export default function SequenceSqueeze() {
                     transition={{ duration: 0.5, repeat: Infinity }}
                     className="mb-6"
                   >
-                    <Sparkles className="w-16 h-16 mx-auto text-cyan-400 shrink-0" aria-hidden="true" />
+                    <Sparkles className="w-16 h-16 mx-auto text-secondary shrink-0" aria-hidden="true" />
                   </motion.div>
                   <h1 
                     className="text-5xl md:text-7xl font-black mb-4"
                     style={{
-                      background: 'linear-gradient(135deg, #14b8a6, #06b6d4)',
+                      background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent'
                     }}
@@ -922,7 +922,7 @@ export default function SequenceSqueeze() {
                         transition={{ delay: i * 0.15, type: "spring", stiffness: 300 }}
                         className="p-6 bg-white/5 backdrop-blur-sm rounded-xl text-white text-center border border-white/10"
                       >
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 text-white flex items-center justify-center mx-auto mb-3 text-2xl font-bold">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center mx-auto mb-3 text-2xl font-bold">
                           {letter}
                         </div>
                         <p className="text-lg font-semibold text-white">{option}</p>
@@ -961,7 +961,7 @@ export default function SequenceSqueeze() {
                     const pct = totalQuestions > 0 ? Math.min(100, Math.round((completed / totalQuestions) * 100)) : 0;
                     return (
                       <motion.div 
-                        className="h-full bg-gradient-to-r from-teal-500 to-cyan-500"
+                        className="h-full bg-gradient-to-r from-primary to-secondary"
                         style={{ width: `${pct}%` }}
                         initial={{ width: 0 }}
                         animate={{ width: `${pct}%` }}
@@ -979,7 +979,7 @@ export default function SequenceSqueeze() {
                   <Clock className="w-4 h-4 shrink-0" aria-hidden="true" />
                   {(elapsedTime / 1000).toFixed(1)}s
                 </Badge>
-                <Badge className="gap-1 bg-teal-500/20 text-teal-300 border border-teal-400/30">
+                <Badge className="gap-1 bg-primary/20 text-primary border border-primary/30">
                   <Users className="w-4 h-4 shrink-0" aria-hidden="true" />
                   {submissions.length}/{players.filter(p => p.isConnected).length} locked in
                 </Badge>
@@ -1028,7 +1028,7 @@ export default function SequenceSqueeze() {
             {submissions.length > 0 && (
               <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 mb-4 border border-white/10">
                 <h3 className="text-sm font-semibold mb-2 flex items-center gap-2 text-white/80">
-                  <Zap className="w-4 h-4 text-cyan-400 shrink-0" aria-hidden="true" />
+                  <Zap className="w-4 h-4 text-secondary shrink-0" aria-hidden="true" />
                   Live Ticker
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -1044,7 +1044,7 @@ export default function SequenceSqueeze() {
                       >
                         <span className="font-medium text-sm text-white">{sub.playerName}</span>
                         <span className="text-xs text-white/50">LOCKED IN!</span>
-                        <span className="text-xs font-mono text-cyan-400">({(sub.timeMs / 1000).toFixed(2)}s)</span>
+                        <span className="text-xs font-mono text-secondary">({(sub.timeMs / 1000).toFixed(2)}s)</span>
                         {streak >= 2 && (
                           <span className="inline-flex items-center gap-0.5 text-xs text-amber-500">
                             <Flame className="w-3 h-3 shrink-0" aria-hidden="true" />
@@ -1069,7 +1069,7 @@ export default function SequenceSqueeze() {
                       whileHover={{ scale: 1.02 }}
                       className="p-6 bg-white/5 rounded-xl border border-white/10"
                     >
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 text-white flex items-center justify-center mx-auto mb-3 text-xl font-bold">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center mx-auto mb-3 text-xl font-bold">
                         {letter}
                       </div>
                       <p className="text-lg font-medium text-white">{option}</p>
@@ -1131,7 +1131,7 @@ export default function SequenceSqueeze() {
                       transition={{ delay: idx * 0.2 }}
                       className="flex items-center gap-3 bg-white/5 backdrop-blur-sm rounded-xl p-3 border border-white/10"
                     >
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 text-white flex items-center justify-center text-lg font-bold shadow-lg shrink-0">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-lg font-bold shadow-lg shrink-0">
                         {letter}
                       </div>
                       <p className="text-white font-medium text-left flex-1">{option}</p>
@@ -1175,7 +1175,7 @@ export default function SequenceSqueeze() {
 
               <Card className="p-4">
                 <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm">
-                  <Trophy className="w-4 h-4 text-teal-500 shrink-0" aria-hidden="true" />
+                  <Trophy className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
                   Round Results
                 </h3>
                 {submissions.length === 0 ? (
@@ -1192,14 +1192,14 @@ export default function SequenceSqueeze() {
                         <div
                           key={sub.playerId}
                           className={`flex items-center justify-between p-2 rounded text-sm ${
-                            sub.isCorrect ? 'bg-emerald-500/10' : 'bg-muted/30'
+                            sub.isCorrect ? 'bg-primary/10' : 'bg-muted/30'
                           }`}
                         >
                           <div className="flex items-center gap-2">
                             {idx === 0 && sub.isCorrect && <Crown className="w-3 h-3 text-amber-500 shrink-0" aria-hidden="true" />}
                             <span className="font-medium">{sub.playerName}</span>
                             {sub.isCorrect ? (
-                              <Check className="w-3 h-3 text-emerald-500 shrink-0" aria-hidden="true" />
+                              <Check className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
                             ) : (
                               <X className="w-3 h-3 text-destructive shrink-0" aria-hidden="true" />
                             )}
@@ -1216,7 +1216,7 @@ export default function SequenceSqueeze() {
                               }))}
                               data-testid={`button-award-${sub.playerId}`}
                             >
-                              <Plus className="w-3 h-3 text-emerald-500 shrink-0" aria-hidden="true" />
+                              <Plus className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
                             </Button>
                             <Button 
                               size="icon" 
@@ -1241,7 +1241,7 @@ export default function SequenceSqueeze() {
             {/* Everyone's Answers - Full Width */}
             <Card className="p-4 bg-white/5 border-white/10" data-testid="section-everyones-answers">
               <h3 className="font-semibold mb-4 flex items-center gap-2 text-white">
-                <Users className="w-4 h-4 text-cyan-400 shrink-0" aria-hidden="true" />
+                <Users className="w-4 h-4 text-secondary shrink-0" aria-hidden="true" />
                 Everyone's Answers
               </h3>
               {submissions.length === 0 ? (
@@ -1265,7 +1265,7 @@ export default function SequenceSqueeze() {
                           transition={{ delay: idx * 0.1 }}
                           className={`p-3 rounded-xl border ${
                             sub.isCorrect 
-                              ? 'bg-emerald-500/10 border-emerald-500/30' 
+                              ? 'bg-primary/10 border-primary/30' 
                               : matchCount >= 3 
                                 ? 'bg-amber-500/10 border-amber-500/30'
                                 : 'bg-white/5 border-white/10'
@@ -1290,7 +1290,7 @@ export default function SequenceSqueeze() {
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-white/50 font-mono">{(sub.timeMs / 1000).toFixed(2)}s</span>
                               {sub.isCorrect ? (
-                                <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-xs">
+                                <Badge className="bg-primary/20 text-primary border-primary/30 text-xs">
                                   <Check className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />
                                   Correct
                                 </Badge>
@@ -1315,13 +1315,13 @@ export default function SequenceSqueeze() {
                                   key={i}
                                   className={`flex-1 p-2 rounded-lg text-center transition-all ${
                                     isPositionCorrect 
-                                      ? 'bg-emerald-500/30 border border-emerald-500/50' 
+                                      ? 'bg-primary/30 border border-primary/50' 
                                       : 'bg-red-500/20 border border-red-500/30'
                                   }`}
                                   data-testid={`sequence-cell-${sub.playerId}-${i}`}
                                   title={option}
                                 >
-                                  <div className={`text-lg font-bold ${isPositionCorrect ? 'text-emerald-300' : 'text-red-300'}`}>
+                                  <div className={`text-lg font-bold ${isPositionCorrect ? 'text-primary' : 'text-red-300'}`}>
                                     {letter}
                                   </div>
                                   <div className="text-[10px] text-white/50 truncate max-w-[60px]" title={option}>
@@ -1400,8 +1400,8 @@ export default function SequenceSqueeze() {
                         <span className="text-2xl font-bold">{entry.score} pts</span>
                       </div>
                       <div className="flex flex-wrap gap-3 text-sm">
-                        <div className="flex items-center gap-1 px-2 py-1 bg-emerald-500/20 rounded">
-                          <Check className="w-3 h-3 text-emerald-500 shrink-0" aria-hidden="true" />
+                        <div className="flex items-center gap-1 px-2 py-1 bg-primary/20 rounded">
+                          <Check className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
                           <span>{entry.correctAnswers || 0} correct</span>
                         </div>
                         <div className="flex items-center gap-1 px-2 py-1 bg-destructive/20 rounded">
@@ -1480,7 +1480,7 @@ export default function SequenceSqueeze() {
                       <span className="font-bold text-lg">{entry.score} pts</span>
                     </div>
                     <div className="flex flex-wrap gap-2 text-xs">
-                      <span className="px-2 py-0.5 bg-emerald-500/20 rounded">{entry.correctAnswers || 0} correct</span>
+                      <span className="px-2 py-0.5 bg-primary/20 rounded">{entry.correctAnswers || 0} correct</span>
                       <span className="px-2 py-0.5 bg-destructive/20 rounded">{entry.wrongAnswers || 0} wrong</span>
                       {entry.avgTimeMs > 0 && (
                         <span className="px-2 py-0.5 bg-blue-500/20 rounded">{(entry.avgTimeMs / 1000).toFixed(1)}s avg</span>
@@ -1569,7 +1569,7 @@ export default function SequenceSqueeze() {
               <Button
                 variant="outline"
                 size="sm"
-                className="flex-1 gap-2 text-green-500"
+                className="flex-1 gap-2 text-primary"
                 disabled={!roomCode}
                 onClick={() => {
                   if (!roomCode) return;

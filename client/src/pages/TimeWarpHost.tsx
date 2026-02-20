@@ -49,19 +49,19 @@ const ERA_CONFIG = {
     title: "Part 2: What's Happening?",
     subtitle: "Guess the person, place, or thing from the PRESENT",
     icon: Radio,
-    color: "emerald",
-    bgClass: "bg-emerald-500/20",
-    textClass: "text-emerald-500",
-    borderClass: "border-emerald-500/30",
+    color: "primary",
+    bgClass: "bg-primary/20",
+    textClass: "text-primary",
+    borderClass: "border-primary/30",
   },
   future: {
     title: "Part 3: What's Going to Happen?",
     subtitle: "Guess the person, place, or thing from the FUTURE",
     icon: FastForward,
-    color: "violet",
-    bgClass: "bg-violet-500/20",
-    textClass: "text-violet-500",
-    borderClass: "border-violet-500/30",
+    color: "secondary",
+    bgClass: "bg-secondary/20",
+    textClass: "text-secondary",
+    borderClass: "border-secondary/30",
   },
 };
 
@@ -385,8 +385,8 @@ export default function TimeWarpHost() {
               onClick={startPlaying}
               className={`text-xl px-8 py-6 ${
                 currentEra === "past" ? "bg-amber-600 hover:bg-amber-700" :
-                currentEra === "present" ? "bg-emerald-600 hover:bg-emerald-700" :
-                "bg-violet-600 hover:bg-violet-700"
+                currentEra === "present" ? "bg-primary hover:bg-primary/90" :
+                "bg-secondary hover:bg-secondary/90"
               }`}
               data-testid="button-start-part"
             >
@@ -700,8 +700,8 @@ export default function TimeWarpHost() {
                     onClick={() => setShowImage(true)}
                     className={`text-xl px-12 py-8 ${
                       currentEra === "past" ? "bg-amber-600 hover:bg-amber-700" :
-                      currentEra === "present" ? "bg-emerald-600 hover:bg-emerald-700" :
-                      "bg-violet-600 hover:bg-violet-700"
+                      currentEra === "present" ? "bg-primary hover:bg-primary/90" :
+                      "bg-secondary hover:bg-secondary/90"
                     }`}
                     data-testid="button-show-image"
                   >
@@ -762,7 +762,7 @@ export default function TimeWarpHost() {
               )}
               <Button
                 onClick={handleCorrect}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+                className="bg-primary hover:bg-primary/90 text-white gap-2"
                 data-testid="button-correct"
               >
                 <Check className="w-5 h-5" />
@@ -781,7 +781,7 @@ export default function TimeWarpHost() {
           )}
         </div>
 
-        <div className="w-64 bg-white/5 border-l border-white/10 p-4 hidden md:block">
+        <div className="w-64 bg-muted/10 border-l border-muted/20 p-4 hidden md:block">
           <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
             <Trophy className="w-5 h-5 text-orange-500" />
             Scoreboard
@@ -794,7 +794,7 @@ export default function TimeWarpHost() {
                 className={`p-3 rounded-lg ${
                   player.id === currentPlayer?.id 
                     ? `${eraConfig.bgClass} ring-1 ring-current ${eraConfig.textClass}` 
-                    : 'bg-white/5'
+                    : 'bg-muted/10'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -812,7 +812,7 @@ export default function TimeWarpHost() {
             ))}
           </div>
 
-          <div className="mt-6 pt-4 border-t border-white/10">
+          <div className="mt-6 pt-4 border-t border-muted/20">
             <p className="text-xs text-white/40 mb-2">Turn Order{hasReversed ? " (Reversed!)" : ""}:</p>
             <div className="space-y-1">
               {players.map((player, idx) => (
@@ -826,12 +826,12 @@ export default function TimeWarpHost() {
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-white/10">
+          <div className="mt-6 pt-4 border-t border-muted/20">
             <p className="text-xs text-white/40 mb-2">Progress:</p>
             <div className="flex gap-1">
-              <div className={`flex-1 h-2 rounded ${currentEra === "past" ? "bg-amber-500" : pastQuestions.length > 0 ? "bg-amber-500/30" : "bg-white/10"}`} />
-              <div className={`flex-1 h-2 rounded ${currentEra === "present" ? "bg-emerald-500" : currentQuestionIdx >= questionsPerEra ? "bg-emerald-500/30" : "bg-white/10"}`} />
-              <div className={`flex-1 h-2 rounded ${currentEra === "future" ? "bg-violet-500" : currentQuestionIdx >= questionsPerEra * 2 ? "bg-violet-500/30" : "bg-white/10"}`} />
+              <div className={`flex-1 h-2 rounded ${currentEra === "past" ? "bg-amber-500" : pastQuestions.length > 0 ? "bg-amber-500/30" : "bg-muted/20"}`} />
+              <div className={`flex-1 h-2 rounded ${currentEra === "present" ? "bg-primary" : currentQuestionIdx >= questionsPerEra ? "bg-primary/30" : "bg-muted/20"}`} />
+              <div className={`flex-1 h-2 rounded ${currentEra === "future" ? "bg-secondary" : currentQuestionIdx >= questionsPerEra * 2 ? "bg-secondary/30" : "bg-muted/20"}`} />
             </div>
             <div className="flex justify-between text-xs text-white/30 mt-1">
               <span>Past</span>

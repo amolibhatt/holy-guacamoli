@@ -609,8 +609,8 @@ export default function SequencePlayer() {
 
   return (
     <div className="min-h-screen gradient-game flex flex-col" data-testid="page-sequence-player" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-      <FullScreenFlash show={showCorrectFlash} color="bg-emerald-400/60" />
-      <FullScreenFlash show={showWrongFlash} color="bg-rose-400/60" />
+      <FullScreenFlash show={showCorrectFlash} color="bg-primary/60" />
+      <FullScreenFlash show={showWrongFlash} color="bg-destructive/60" />
       <FullScreenFlash show={showSubmitFlash} color="bg-primary/30" />
 
       <div className="w-full flex justify-center pt-3 pb-1">
@@ -836,7 +836,7 @@ export default function SequencePlayer() {
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200 }}
               className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${
-                isCorrect ? 'bg-emerald-500' : 'bg-destructive'
+                isCorrect ? 'bg-primary' : 'bg-destructive'
               }`}
               data-testid={`icon-result-${isCorrect ? 'correct' : 'wrong'}`}
             >
@@ -846,7 +846,7 @@ export default function SequencePlayer() {
                 <X className="w-12 h-12 text-white shrink-0" aria-hidden="true" />
               )}
             </motion.div>
-            <h2 className={`text-3xl font-bold mb-4 ${isCorrect ? 'text-emerald-400' : 'text-destructive'}`}>
+            <h2 className={`text-3xl font-bold mb-4 ${isCorrect ? 'text-primary' : 'text-destructive'}`}>
               {isCorrect ? "SYSTEM STABLE" : "CIRCUIT BLOWN"}
             </h2>
             
@@ -894,7 +894,7 @@ export default function SequencePlayer() {
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: idx * 0.1 }}
                       className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${
-                        letter === correctOrder[idx] ? 'bg-emerald-500/50 text-emerald-300' : 'bg-red-500/50 text-red-300'
+                        letter === correctOrder[idx] ? 'bg-primary/50 text-primary' : 'bg-destructive/50 text-destructive'
                       }`}
                     >
                       {letter}

@@ -404,7 +404,7 @@ export default function MemeNoHarmHost() {
   if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-green-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -430,7 +430,7 @@ export default function MemeNoHarmHost() {
 
   if (phase === "finished") {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-finished">
+      <div className="min-h-screen gradient-game flex flex-col" data-testid="page-memenoharm-finished">
         <AppHeader minimal backHref="/" title="Meme No Harm - Game Over" />
         <main className="max-w-2xl mx-auto px-4 py-8 flex-1 w-full">
           <motion.div
@@ -494,12 +494,12 @@ export default function MemeNoHarmHost() {
   if (phase === "reveal") {
     const sortedResults = [...results].sort((a, b) => b.votes - a.votes);
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-reveal">
+      <div className="min-h-screen gradient-game flex flex-col" data-testid="page-memenoharm-reveal">
         <AppHeader minimal backHref="/" title={`Meme No Harm - Round ${currentRound} Results`} />
         <main className="max-w-3xl mx-auto px-4 py-8 flex-1 w-full">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-white mb-2">Round {currentRound} Results</h2>
-            <p className="text-white/60 text-lg">"{currentPromptText}"</p>
+            <p className="text-muted-foreground text-lg">"{currentPromptText}"</p>
           </div>
 
           <div className="space-y-4 mb-8">
@@ -523,7 +523,7 @@ export default function MemeNoHarmHost() {
                             <span className="text-white font-bold">{result.playerName}</span>
                           </div>
                           <p className="text-white/40 text-sm mb-2">{result.gifTitle}</p>
-                          <div className="text-green-400 font-bold text-lg">
+                          <div className="text-primary font-bold text-lg">
                             {result.votes} vote{result.votes !== 1 ? 's' : ''} = +{result.points} pts
                           </div>
                         </div>
@@ -574,12 +574,12 @@ export default function MemeNoHarmHost() {
 
   if (phase === "voting") {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-voting">
+      <div className="min-h-screen gradient-game flex flex-col" data-testid="page-memenoharm-voting">
         <AppHeader minimal backHref="/" title={`Meme No Harm - Round ${currentRound}`} />
         <main className="max-w-3xl mx-auto px-4 py-8 flex-1 w-full">
           <div className="text-center mb-6">
             <h2 className="text-xl font-bold text-white mb-1">Voting Time!</h2>
-            <p className="text-white/60 text-lg mb-2">"{currentPromptText}"</p>
+            <p className="text-muted-foreground text-lg mb-2">"{currentPromptText}"</p>
             <p className="text-white/40 text-sm">Players are voting for their favorite GIF</p>
           </div>
 
@@ -600,7 +600,7 @@ export default function MemeNoHarmHost() {
 
           <Card className="bg-white/5 border-white/10 mb-6">
             <CardContent className="pt-6">
-              <div className={`text-center mb-4 ${allVoted ? 'text-green-400 font-bold' : 'text-white/60'}`}>
+              <div className={`text-center mb-4 ${allVoted ? 'text-primary font-bold' : 'text-muted-foreground'}`}>
                 {allVoted ? 'All votes in!' : `Votes: ${votedCount}/${eligibleVoters.length}`}
               </div>
               <div className="space-y-2">
@@ -616,7 +616,7 @@ export default function MemeNoHarmHost() {
                           : didNotSubmit
                             ? 'bg-white/5 text-white/30'
                             : player.voted
-                              ? 'bg-green-500/20 text-green-400'
+                              ? 'bg-primary/20 text-primary'
                               : 'bg-white/10 text-white/50'
                     }`}>
                       <span className="font-medium">
@@ -631,7 +631,7 @@ export default function MemeNoHarmHost() {
                           variant="ghost"
                           size="sm"
                           onClick={() => unsitOutPlayer(player.id)}
-                          className="text-green-400/70"
+                          className="text-primary/70"
                           data-testid={`button-bring-back-voting-${player.id}`}
                           aria-label={`Bring back ${player.name}`}
                         >
@@ -671,19 +671,19 @@ export default function MemeNoHarmHost() {
 
   if (phase === "selecting") {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-emerald-900 flex flex-col" data-testid="page-memenoharm-selecting">
+      <div className="min-h-screen gradient-game flex flex-col" data-testid="page-memenoharm-selecting">
         <AppHeader minimal backHref="/" title={`Meme No Harm - Round ${currentRound}/${totalRounds}`} />
         <main className="max-w-2xl mx-auto px-4 py-8 flex-1 w-full">
           <div className="text-center mb-6">
-            <p className="text-green-400 text-sm font-medium mb-1">Round {currentRound} of {totalRounds}</p>
+            <p className="text-primary text-sm font-medium mb-1">Round {currentRound} of {totalRounds}</p>
             <h2 className="text-2xl font-bold text-white mb-2">Find the Perfect GIF!</h2>
-            <p className="text-white/60 text-xl font-bold mt-4 mb-2">"{currentPromptText}"</p>
+            <p className="text-muted-foreground text-xl font-bold mt-4 mb-2">"{currentPromptText}"</p>
             <p className="text-white/40 text-sm">Players are searching GIPHY on their phones</p>
           </div>
 
           <Card className="bg-white/5 border-white/10 mb-6">
             <CardContent className="pt-6">
-              <div className={`text-center mb-4 ${allSubmitted ? 'text-green-400 font-bold' : 'text-white/60'}`}>
+              <div className={`text-center mb-4 ${allSubmitted ? 'text-primary font-bold' : 'text-muted-foreground'}`}>
                 {allSubmitted ? 'All submissions in!' : `Waiting for submissions (${activeSubmittedCount}/${activePlayers.length} ready)`}
               </div>
               {activePlayers.length < 2 && (
@@ -701,7 +701,7 @@ export default function MemeNoHarmHost() {
                         : !player.connected
                           ? 'bg-red-500/10 text-red-400/70'
                           : player.submitted
-                            ? 'bg-green-500/20 text-green-400'
+                            ? 'bg-primary/20 text-primary'
                             : 'bg-white/10 text-white/50'
                     }`}
                   >
@@ -716,7 +716,7 @@ export default function MemeNoHarmHost() {
                         variant="ghost"
                         size="sm"
                         onClick={() => unsitOutPlayer(player.id)}
-                        className="text-green-400/70"
+                        className="text-primary/70"
                         data-testid={`button-bring-back-${player.id}`}
                         aria-label={`Bring back ${player.name}`}
                       >
@@ -777,8 +777,8 @@ export default function MemeNoHarmHost() {
         <main className="max-w-2xl mx-auto px-4 py-8 flex-1 w-full">
           <div className="text-center mb-8">
             <p className="text-sm text-muted-foreground mb-1">Step 1</p>
-            <h2 className="text-2xl font-bold text-green-500 mb-4">Enlisting</h2>
-            <div className="text-4xl font-mono font-bold tracking-widest text-green-500 mb-2">
+            <h2 className="text-2xl font-bold text-primary mb-4">Enlisting</h2>
+            <div className="text-4xl font-mono font-bold tracking-widest text-primary mb-2">
               {roomCode}
             </div>
             <p className="text-muted-foreground">Join with this code - search for the perfect GIF each round!</p>
@@ -822,7 +822,7 @@ export default function MemeNoHarmHost() {
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 gap-2 text-green-500"
+              className="flex-1 gap-2 text-primary"
               disabled={!roomCode}
               onClick={() => {
                 if (!roomCode) return;
@@ -857,7 +857,7 @@ export default function MemeNoHarmHost() {
                         key={player.id}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium ${
                           player.connected
-                            ? 'bg-green-500/10 text-green-600'
+                            ? 'bg-primary/10 text-primary'
                             : 'bg-red-500/10 text-red-400'
                         }`}
                         data-testid={`player-card-${player.id}`}
@@ -900,13 +900,13 @@ export default function MemeNoHarmHost() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Smile className="w-5 h-5 text-green-500" />
+                <Smile className="w-5 h-5 text-primary" />
                 Start a Meme No Harm Game
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="p-4 bg-muted rounded-lg text-center">
-                <MessageSquare className="w-8 h-8 mx-auto mb-2 text-green-500" />
+                <MessageSquare className="w-8 h-8 mx-auto mb-2 text-primary" />
                 <div className="text-2xl font-bold" data-testid="text-prompt-count">{prompts.length}</div>
                 <div className="text-sm text-muted-foreground">Prompts Available</div>
               </div>
@@ -942,7 +942,7 @@ export default function MemeNoHarmHost() {
                   </div>
 
                   <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
-                    <ImageIcon className="w-4 h-4 inline mr-2 text-green-500" />
+                    <ImageIcon className="w-4 h-4 inline mr-2 text-primary" />
                     Players will search GIPHY for GIFs on their phones each round
                   </div>
 

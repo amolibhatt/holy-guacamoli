@@ -628,7 +628,7 @@ export default function PsyOpHost() {
     return (
       <span>
         {parts[0]}
-        <span className={`px-3 py-1 mx-1 rounded-lg font-bold ${showAnswer ? 'bg-green-500/30 text-green-600 dark:text-green-400' : 'bg-purple-500/20 text-purple-600 dark:text-purple-400'}`}>
+        <span className={`px-3 py-1 mx-1 rounded-lg font-bold ${showAnswer ? 'bg-primary/30 text-primary' : 'bg-secondary/20 text-secondary'}`}>
           {showAnswer && answer ? answer : '[REDACTED]'}
         </span>
         {parts[1]}
@@ -729,7 +729,7 @@ export default function PsyOpHost() {
                 </p>
                 <Button
                   onClick={() => setLocation("/admin/psyop")}
-                  className="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-bold uppercase tracking-wide shadow-lg shadow-violet-500/25"
+                  className="bg-gradient-to-r from-primary to-secondary text-white font-bold uppercase tracking-wide shadow-lg shadow-primary/25"
                   data-testid="button-create-questions"
                 >
                   <Sparkles className="w-4 h-4 mr-2 shrink-0" />
@@ -763,7 +763,7 @@ export default function PsyOpHost() {
                       transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                     />
                     <motion.div 
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-violet-400/20 to-transparent"
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/20 to-transparent"
                       animate={{ x: ['-100%', '200%'] }}
                       transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 1 }}
                     />
@@ -786,7 +786,7 @@ export default function PsyOpHost() {
                       </motion.div>
                       <div>
                         <h3 
-                          className="font-black uppercase tracking-wide text-lg text-violet-300 transition-colors"
+                          className="font-black uppercase tracking-wide text-lg text-primary transition-colors"
                           style={{ 
                             fontFamily: "'Archivo Black', 'Impact', sans-serif",
                             textShadow: '0 0 15px rgba(167, 139, 250, 0.5)',
@@ -814,7 +814,7 @@ export default function PsyOpHost() {
                   >
                     <div className="flex items-center gap-4 mb-5">
                       <h2 className="text-sm font-bold text-white/70 uppercase tracking-widest whitespace-nowrap">Categories</h2>
-                      <div className="flex-1 h-[1px] bg-gradient-to-r from-violet-500/50 via-violet-500/20 to-transparent" />
+                      <div className="flex-1 h-[1px] bg-gradient-to-r from-primary/50 via-primary/20 to-transparent" />
                     </div>
                     <div className="space-y-3">
                       {categories.map((category, idx) => {
@@ -852,7 +852,7 @@ export default function PsyOpHost() {
             <div className="text-center">
               <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Step 1</p>
               <h2 
-                className="text-2xl font-black uppercase tracking-wide text-violet-300"
+                className="text-2xl font-black uppercase tracking-wide text-primary"
                 style={{ 
                   fontFamily: "'Archivo Black', 'Impact', sans-serif",
                   textShadow: '0 0 20px rgba(167, 139, 250, 0.6)',
@@ -889,7 +889,7 @@ export default function PsyOpHost() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1 gap-2 text-purple-400"
+                    className="flex-1 gap-2 text-secondary"
                     disabled={!roomCode}
                     onClick={() => {
                       if (!roomCode) return;
@@ -906,7 +906,7 @@ export default function PsyOpHost() {
                 <Button
                   onClick={startGame}
                   disabled={players.length < 2}
-                  className="w-full gap-2 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-bold shadow-lg shadow-violet-500/25"
+                  className="w-full gap-2 bg-gradient-to-r from-primary to-secondary text-white font-bold shadow-lg shadow-primary/25"
                   data-testid="button-start-game"
                 >
                   <Play className="w-5 h-5" />
@@ -926,12 +926,12 @@ export default function PsyOpHost() {
               <div className="flex-1 min-h-[280px] arcade-surface rounded-xl p-5" style={{ border: '1px solid var(--arcade-border)' }}>
                 <div className="flex items-center justify-between gap-2 mb-4">
                   <span className="flex items-center gap-2 text-sm font-bold text-white/70 uppercase tracking-wider">
-                    <Users className="w-4 h-4 text-violet-400" />
+                    <Users className="w-4 h-4 text-primary" />
                     Players
                   </span>
                   <Badge
                     variant="secondary"
-                    className={players.length > 0 ? "bg-violet-500/25 text-violet-300" : ""}
+                    className={players.length > 0 ? "bg-primary/25 text-primary" : ""}
                     data-testid="badge-player-count"
                   >
                     {players.length}
@@ -957,10 +957,10 @@ export default function PsyOpHost() {
                             style={{ border: '1px solid var(--arcade-border)' }}
                             data-testid={`player-card-${p.id}`}
                           >
-                            <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center mb-1">
+                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center mb-1">
                               {avatarData
                                 ? <span className="text-lg" aria-label={avatarData.label}>{avatarData.emoji}</span>
-                                : <User className="w-4 h-4 text-violet-300" />
+                                : <User className="w-4 h-4 text-primary" />
                               }
                             </div>
                             <span className="font-medium text-xs text-center truncate w-full text-white" data-testid={`text-player-name-${p.id}`} title={p.name}>
@@ -988,8 +988,8 @@ export default function PsyOpHost() {
                 className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0f]"
               >
                 <div className="absolute inset-0 pointer-events-none">
-                  <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-purple-500/10 blur-3xl" />
-                  <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-violet-500/10 blur-3xl" />
+                  <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-secondary/10 blur-3xl" />
+                  <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-primary/10 blur-3xl" />
                 </div>
                 <div className="text-center text-white relative z-10">
                   <motion.div
@@ -997,7 +997,7 @@ export default function PsyOpHost() {
                     transition={{ duration: 0.5, repeat: Infinity }}
                     className="mb-6"
                   >
-                    <Eye className="w-16 h-16 mx-auto text-purple-400" />
+                    <Eye className="w-16 h-16 mx-auto text-secondary" />
                   </motion.div>
                   <h1
                     className="text-5xl md:text-7xl font-black mb-4"
@@ -1024,7 +1024,7 @@ export default function PsyOpHost() {
                 className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0a0a0f] px-8"
               >
                 <div className="absolute inset-0 pointer-events-none">
-                  <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 bg-violet-500/5 blur-3xl" />
+                  <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 bg-primary/5 blur-3xl" />
                 </div>
                 <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} className="text-center max-w-3xl relative z-10">
                   <div className="text-3xl md:text-5xl font-bold text-white leading-relaxed" data-testid="text-question-drop">
@@ -1047,7 +1047,7 @@ export default function PsyOpHost() {
               <div className="flex items-center gap-2 mb-2">
                 <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
                   <motion.div
-                    className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"
+                    className="h-full bg-gradient-to-r from-primary to-secondary rounded-full"
                     initial={{ width: 0 }}
                     animate={{ width: `${((currentQuestionIndex + 1) / selectedQuestions.length) * 100}%` }}
                     transition={{ duration: 0.5 }}
@@ -1112,7 +1112,7 @@ export default function PsyOpHost() {
                     <div className="text-sm font-medium mb-2">Which one is the truth?</div>
                     {voteOptions.map((option, i) => (
                       <div key={option.id} className="p-3 border rounded-lg bg-card/50">
-                        <span className="font-bold mr-2 text-purple-600 dark:text-purple-400">{String.fromCharCode(65 + i)}.</span>
+                        <span className="font-bold mr-2 text-secondary">{String.fromCharCode(65 + i)}.</span>
                         {option.text}
                       </div>
                     ))}
@@ -1159,11 +1159,11 @@ export default function PsyOpHost() {
                           key={option.id}
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
-                          className={`p-4 border rounded-lg relative overflow-hidden ${option.isTruth ? 'border-green-500 bg-green-500/10' : 'bg-card/50'}`}
+                          className={`p-4 border rounded-lg relative overflow-hidden ${option.isTruth ? 'border-primary bg-primary/10' : 'bg-card/50'}`}
                           data-testid={`reveal-option-${option.id}`}
                         >
                           <motion.div
-                            className={`absolute inset-y-0 left-0 ${option.isTruth ? 'bg-green-500/15' : 'bg-purple-500/10'}`}
+                            className={`absolute inset-y-0 left-0 ${option.isTruth ? 'bg-primary/15' : 'bg-secondary/10'}`}
                             initial={{ width: 0 }}
                             animate={{ width: `${barWidth}%` }}
                             transition={{ duration: 0.8, delay: 0.3 }}
@@ -1171,8 +1171,8 @@ export default function PsyOpHost() {
                           <div className="relative z-10">
                             <div className="flex flex-wrap items-center justify-between gap-2">
                               <div className="flex items-center gap-2">
-                                {option.isTruth && <Check className="w-4 h-4 text-green-500" />}
-                                <span className={option.isTruth ? 'font-bold text-green-600 dark:text-green-400' : ''}>
+                                {option.isTruth && <Check className="w-4 h-4 text-primary" />}
+                                <span className={option.isTruth ? 'font-bold text-primary' : ''}>
                                   {option.text}
                                 </span>
                               </div>
@@ -1191,7 +1191,7 @@ export default function PsyOpHost() {
                               <div className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
                                 <Eye className="w-3 h-3" />
                                 Lie by {option.submitterName}
-                                {votesForThis.length > 0 && <span className="text-purple-500 font-medium ml-1">+{votesForThis.length * 5} pts</span>}
+                                {votesForThis.length > 0 && <span className="text-secondary font-medium ml-1">+{votesForThis.length * 5} pts</span>}
                               </div>
                             )}
                           </div>
@@ -1205,12 +1205,12 @@ export default function PsyOpHost() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 1 }}
-                      className="flex items-center justify-center gap-2 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg"
+                      className="flex items-center justify-center gap-2 p-3 bg-secondary/10 border border-secondary/20 rounded-lg"
                       data-testid="callout-master-liar"
                     >
-                      <Award className="w-5 h-5 text-purple-400" />
+                      <Award className="w-5 h-5 text-secondary" />
                       <span className="text-sm font-medium">
-                        <span className="text-purple-400">{topLiar.submitterName}</span> fooled {topLiar.fooled} player{topLiar.fooled !== 1 ? 's' : ''}!
+                        <span className="text-secondary">{topLiar.submitterName}</span> fooled {topLiar.fooled} player{topLiar.fooled !== 1 ? 's' : ''}!
                       </span>
                     </motion.div>
                   )}
@@ -1263,7 +1263,7 @@ export default function PsyOpHost() {
                 </div>
                 <div className="text-left">
                   <div className="text-xs uppercase tracking-wider text-yellow-500 font-medium">Round MVP</div>
-                  <div className="font-bold">{roundMvp.playerName} <span className="text-green-500">+{roundMvp.roundDelta}</span></div>
+                  <div className="font-bold">{roundMvp.playerName} <span className="text-primary">+{roundMvp.roundDelta}</span></div>
                 </div>
               </motion.div>
             )}
@@ -1276,12 +1276,12 @@ export default function PsyOpHost() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4 + idx * 0.1 }}
-                    className={`flex items-center justify-center gap-2 p-3 rounded-lg border ${streak.type === 'lies' ? 'bg-purple-500/5 border-purple-500/20' : 'bg-green-500/5 border-green-500/20'}`}
+                    className={`flex items-center justify-center gap-2 p-3 rounded-lg border ${streak.type === 'lies' ? 'bg-secondary/5 border-secondary/20' : 'bg-primary/5 border-primary/20'}`}
                     data-testid={`streak-${streak.name}`}
                   >
-                    <Flame className={`w-4 h-4 ${streak.type === 'lies' ? 'text-purple-400' : 'text-green-400'}`} />
+                    <Flame className={`w-4 h-4 ${streak.type === 'lies' ? 'text-secondary' : 'text-primary'}`} />
                     <span className="text-sm font-medium">
-                      <span className={streak.type === 'lies' ? 'text-purple-400' : 'text-green-400'}>{streak.name}</span>
+                      <span className={streak.type === 'lies' ? 'text-secondary' : 'text-primary'}>{streak.name}</span>
                       {streak.type === 'lies'
                         ? ` fooled someone ${streak.count} rounds in a row!`
                         : ` found the truth ${streak.count} rounds in a row!`}
@@ -1301,16 +1301,16 @@ export default function PsyOpHost() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.1 }}
-                      className={`p-4 border rounded-lg flex items-center gap-4 ${i === 0 ? 'border-purple-500/50 bg-purple-500/10' : 'bg-card/50'}`}
+                      className={`p-4 border rounded-lg flex items-center gap-4 ${i === 0 ? 'border-secondary/50 bg-secondary/10' : 'bg-card/50'}`}
                       data-testid={`round-lb-${entry.playerId}`}
                     >
                       <div className="text-lg font-bold w-6 text-center text-muted-foreground">
                         {i === 0 ? <Crown className="w-5 h-5 text-yellow-500 mx-auto" /> : `${i + 1}`}
                       </div>
-                      <div className="w-8 h-8 rounded-full bg-purple-500/15 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-secondary/15 flex items-center justify-center shrink-0">
                         {avatarData
                           ? <span className="text-base" aria-label={avatarData.label}>{avatarData.emoji}</span>
-                          : <User className="w-4 h-4 text-purple-400" />
+                          : <User className="w-4 h-4 text-secondary" />
                         }
                       </div>
                       <div className="flex-1 min-w-0">
@@ -1322,7 +1322,7 @@ export default function PsyOpHost() {
                           <motion.div
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="text-xs text-green-500 font-medium"
+                            className="text-xs text-primary font-medium"
                           >
                             +{entry.roundDelta}
                           </motion.div>
@@ -1358,8 +1358,8 @@ export default function PsyOpHost() {
           ].filter(Boolean) as { key: string; icon: typeof Eye; color: string; title: string; name: string; detail: string }[];
 
           const colorMap: Record<string, string> = {
-            purple: "text-purple-400",
-            green: "text-green-400",
+            purple: "text-secondary",
+            green: "text-primary",
             orange: "text-orange-400",
           };
 
@@ -1410,15 +1410,15 @@ export default function PsyOpHost() {
                   <Card data-testid="award-lie-of-the-game">
                     <CardContent className="pt-5">
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-purple-500/15 flex items-center justify-center shrink-0 mt-0.5">
-                          <Award className="w-5 h-5 text-purple-400" />
+                        <div className="w-10 h-10 rounded-full bg-secondary/15 flex items-center justify-center shrink-0 mt-0.5">
+                          <Award className="w-5 h-5 text-secondary" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Lie of the Game</div>
                           <p className="text-lg font-bold leading-snug mb-1">"{lieOfTheGame.lieText}"</p>
                           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                             <span>by <span className="font-medium text-foreground">{lieOfTheGame.liarName}</span></span>
-                            <span className="text-purple-400 font-medium">Fooled {lieOfTheGame.fooledCount} player{lieOfTheGame.fooledCount !== 1 ? 's' : ''}</span>
+                            <span className="text-secondary font-medium">Fooled {lieOfTheGame.fooledCount} player{lieOfTheGame.fooledCount !== 1 ? 's' : ''}</span>
                           </div>
                         </div>
                       </div>
@@ -1442,10 +1442,10 @@ export default function PsyOpHost() {
                           <div className="flex items-center justify-between gap-2 mb-2">
                             <div className="flex items-center gap-3">
                               <span className="font-bold text-lg w-6">{i === 0 ? <Crown className="w-5 h-5 text-yellow-500" /> : `${i + 1}.`}</span>
-                              <div className="w-7 h-7 rounded-full bg-purple-500/15 flex items-center justify-center shrink-0">
+                              <div className="w-7 h-7 rounded-full bg-secondary/15 flex items-center justify-center shrink-0">
                                 {avatarData
                                   ? <span className="text-sm" aria-label={avatarData.label}>{avatarData.emoji}</span>
-                                  : <User className="w-3.5 h-3.5 text-purple-400" />
+                                  : <User className="w-3.5 h-3.5 text-secondary" />
                                 }
                               </div>
                               <span className="font-semibold">{entry.playerName}</span>
@@ -1454,10 +1454,10 @@ export default function PsyOpHost() {
                           </div>
                           <div className="flex flex-wrap gap-2 text-xs ml-9">
                             {entry.truthsSpotted > 0 && (
-                              <span className="px-2 py-0.5 bg-green-500/20 rounded">{entry.truthsSpotted} truth{entry.truthsSpotted !== 1 ? 's' : ''} found</span>
+                              <span className="px-2 py-0.5 bg-primary/20 rounded">{entry.truthsSpotted} truth{entry.truthsSpotted !== 1 ? 's' : ''} found</span>
                             )}
                             {entry.liesBelieved > 0 && (
-                              <span className="px-2 py-0.5 bg-purple-500/20 rounded">{entry.liesBelieved} lie{entry.liesBelieved !== 1 ? 's' : ''} believed</span>
+                              <span className="px-2 py-0.5 bg-secondary/20 rounded">{entry.liesBelieved} lie{entry.liesBelieved !== 1 ? 's' : ''} believed</span>
                             )}
                             {entry.timesFooled > 0 && (
                               <span className="px-2 py-0.5 bg-orange-500/20 rounded">Fooled {entry.timesFooled} time{entry.timesFooled !== 1 ? 's' : ''}</span>
