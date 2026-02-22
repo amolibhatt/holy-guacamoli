@@ -837,6 +837,16 @@ export default function Blitzgrid() {
     }
   }, [lastScoreChange, updatePlayerScore, toast]);
 
+  const kickPlayer = useCallback((playerId: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'host:kickPlayer',
+        playerId,
+      }));
+    }
+    setSelectedPlayerId(null);
+  }, []);
+
   const sendFeedback = useCallback((playerId: string, correct: boolean, points: number) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
@@ -2313,6 +2323,16 @@ export default function Blitzgrid() {
                               >
                                 <Plus className="w-3 h-3 shrink-0" aria-hidden="true" />
                               </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-destructive/50 text-destructive hover:bg-destructive/20"
+                                onClick={(e) => { e.stopPropagation(); kickPlayer(player.id); }}
+                                data-testid={`button-kick-${player.id}`}
+                                title="Remove player"
+                              >
+                                <X className="w-3 h-3 shrink-0" aria-hidden="true" />
+                              </Button>
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -2406,8 +2426,16 @@ export default function Blitzgrid() {
                   </p>
                   <div className="flex flex-wrap justify-center gap-2">
                     {players.map(p => (
-                      <Badge key={p.id} variant="secondary" className="bg-white/10 text-white border border-white/20 max-w-[120px]">
+                      <Badge key={p.id} variant="secondary" className="bg-white/10 text-white border border-white/20 max-w-[140px] flex items-center gap-1 pr-1">
                         <span className="truncate" title={p.name}>{p.name}</span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); kickPlayer(p.id); }}
+                          className="shrink-0 rounded-full p-0.5 hover:bg-destructive/30 transition-colors"
+                          title={`Remove ${p.name}`}
+                          data-testid={`button-kick-lobby-${p.id}`}
+                        >
+                          <X className="w-3 h-3 text-white/60 hover:text-destructive" />
+                        </button>
                       </Badge>
                     ))}
                   </div>
