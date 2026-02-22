@@ -2221,124 +2221,130 @@ export default function Blitzgrid() {
             <div className="absolute inset-0 bg-gradient-to-r from-secondary/5 via-transparent to-primary/5 pointer-events-none" />
             {players.length > 0 ? (
               <LayoutGroup>
-                <div className="flex items-center justify-center gap-3 md:gap-5 flex-wrap">
-                  {[...players].sort((a, b) => b.score - a.score).map((player, idx) => {
-                    const avatarEmoji = PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji;
-                    const isSelected = selectedPlayerId === player.id;
-                    const scoreAnim = scoreAnimations.get(player.id);
-                    return (
-                      <motion.div
-                        key={player.id}
-                        layoutId={`player-score-${player.id}`}
-                        layout
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ 
-                          layout: { type: "spring", stiffness: 400, damping: 30 },
-                          opacity: { delay: 0.4 + idx * 0.05 }
-                        }}
-                        onClick={() => setSelectedPlayerId(isSelected ? null : player.id)}
-                        className={`relative flex items-center gap-2 rounded-full py-1 pl-1 pr-3 cursor-pointer transition-all ${
-                          isSelected ? 'bg-white/10 ring-2 ring-primary/40' : 'hover-elevate'
-                        } ${!player.connected ? 'opacity-50' : ''}`}
-                        data-testid={`player-card-${player.id}`}
-                      >
-                        {/* Score change indicator */}
-                        <AnimatePresence>
-                          {scoreAnim && (
-                            <motion.div
-                              initial={{ opacity: 1, y: 0, scale: 1 }}
-                              animate={{ opacity: 0, y: -30, scale: 1.3 }}
-                              exit={{ opacity: 0 }}
-                              transition={{ duration: 1, ease: "easeOut" }}
-                              className={`absolute -top-6 left-1/2 -translate-x-1/2 font-bold text-sm whitespace-nowrap ${
-                                scoreAnim.delta > 0 ? 'text-primary' : 'text-destructive'
+                <div className="flex flex-col items-center gap-1.5">
+                  {!selectedPlayerId && (
+                    <p className="text-[10px] text-white/30 tracking-wide uppercase">Tap a player to adjust score</p>
+                  )}
+                  <div className="flex items-center justify-center gap-3 md:gap-5 flex-wrap">
+                    {[...players].sort((a, b) => b.score - a.score).map((player, idx) => {
+                      const avatarEmoji = PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji;
+                      const isSelected = selectedPlayerId === player.id;
+                      const scoreAnim = scoreAnimations.get(player.id);
+                      return (
+                        <motion.div
+                          key={player.id}
+                          layoutId={`player-score-${player.id}`}
+                          layout
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ 
+                            layout: { type: "spring", stiffness: 400, damping: 30 },
+                            opacity: { delay: 0.4 + idx * 0.05 }
+                          }}
+                          onClick={() => setSelectedPlayerId(isSelected ? null : player.id)}
+                          className={`relative flex items-center gap-2 rounded-full py-1 pl-1 pr-3 cursor-pointer transition-all ${
+                            isSelected ? 'bg-white/10 ring-2 ring-primary/40' : 'hover-elevate'
+                          } ${!player.connected ? 'opacity-50' : ''}`}
+                          data-testid={`player-card-${player.id}`}
+                        >
+                          {/* Score change indicator */}
+                          <AnimatePresence>
+                            {scoreAnim && (
+                              <motion.div
+                                initial={{ opacity: 1, y: 0, scale: 1 }}
+                                animate={{ opacity: 0, y: -30, scale: 1.3 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 1, ease: "easeOut" }}
+                                className={`absolute -top-6 left-1/2 -translate-x-1/2 font-bold text-sm whitespace-nowrap ${
+                                  scoreAnim.delta > 0 ? 'text-primary' : 'text-destructive'
+                                }`}
+                              >
+                                {scoreAnim.delta > 0 ? '+' : ''}{scoreAnim.delta}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                          
+                          <div className="relative">
+                            <motion.div 
+                              animate={scoreAnim ? { scale: [1, 1.2, 1] } : {}}
+                              transition={{ duration: 0.3 }}
+                              className={`w-9 h-9 rounded-full flex items-center justify-center text-lg shadow-md border-2 ${
+                                idx === 0 ? 'bg-gradient-to-br from-yellow-200 to-yellow-400 border-yellow-300' : 
+                                idx === 1 ? 'bg-gradient-to-br from-slate-100 to-slate-300 border-slate-200' : 
+                                idx === 2 ? 'bg-gradient-to-br from-orange-300 to-orange-500 border-orange-400' : 
+                                'bg-gradient-to-br from-slate-100 via-slate-150 to-slate-200 border-slate-200'
                               }`}
                             >
-                              {scoreAnim.delta > 0 ? '+' : ''}{scoreAnim.delta}
+                              {avatarEmoji}
                             </motion.div>
-                          )}
-                        </AnimatePresence>
-                        
-                        <div className="relative">
-                          <motion.div 
-                            animate={scoreAnim ? { scale: [1, 1.2, 1] } : {}}
-                            transition={{ duration: 0.3 }}
-                            className={`w-9 h-9 rounded-full flex items-center justify-center text-lg shadow-md border-2 ${
-                              idx === 0 ? 'bg-gradient-to-br from-yellow-200 to-yellow-400 border-yellow-300' : 
-                              idx === 1 ? 'bg-gradient-to-br from-slate-100 to-slate-300 border-slate-200' : 
-                              idx === 2 ? 'bg-gradient-to-br from-orange-300 to-orange-500 border-orange-400' : 
-                              'bg-gradient-to-br from-slate-100 via-slate-150 to-slate-200 border-slate-200'
-                            }`}
-                          >
-                            {avatarEmoji}
-                          </motion.div>
-                          {/* Rank badge */}
-                          {idx < 3 && (
-                            <div className={`absolute -top-1 -left-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm ${
-                              idx === 0 ? 'bg-yellow-400 text-yellow-900' : 
-                              idx === 1 ? 'bg-slate-300 text-slate-700' : 
-                              'bg-orange-400 text-orange-900'
-                            }`}>
-                              {idx + 1}
-                            </div>
-                          )}
-                          <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 ${player.connected ? 'bg-primary' : 'bg-destructive'}`} style={{ borderColor: 'var(--arcade-bg)' }} />
-                        </div>
-                        <div className="flex flex-col leading-tight min-w-0">
-                          <span className="text-white/80 font-medium text-xs truncate max-w-[60px]" title={player.name}>{player.name}</span>
-                          <motion.span 
-                            key={player.score}
-                            initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? 'hsl(var(--primary))' : scoreAnim?.delta && scoreAnim.delta < 0 ? 'hsl(var(--destructive))' : 'hsl(var(--destructive))' }}
-                            animate={{ scale: 1, color: 'hsl(var(--destructive))' }}
-                            transition={{ duration: 0.3 }}
-                            className="font-bold text-sm"
-                          >
-                            {player.score}
-                          </motion.span>
-                        </div>
-                        
-                        <AnimatePresence>
-                          {isSelected && (
-                            <motion.div 
-                              initial={{ width: 0, opacity: 0 }}
-                              animate={{ width: 'auto', opacity: 1 }}
-                              exit={{ width: 0, opacity: 0 }}
-                              className="flex gap-1 overflow-hidden ml-1"
+                            {/* Rank badge */}
+                            {idx < 3 && (
+                              <div className={`absolute -top-1 -left-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm ${
+                                idx === 0 ? 'bg-yellow-400 text-yellow-900' : 
+                                idx === 1 ? 'bg-slate-300 text-slate-700' : 
+                                'bg-orange-400 text-orange-900'
+                              }`}>
+                                {idx + 1}
+                              </div>
+                            )}
+                            <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 ${player.connected ? 'bg-primary' : 'bg-destructive'}`} style={{ borderColor: 'var(--arcade-bg)' }} />
+                          </div>
+                          <div className="flex flex-col leading-tight min-w-0">
+                            <span className="text-white/80 font-medium text-xs truncate max-w-[60px]" title={player.name}>{player.name}</span>
+                            <motion.span 
+                              key={player.score}
+                              initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? 'hsl(var(--primary))' : scoreAnim?.delta && scoreAnim.delta < 0 ? 'hsl(var(--destructive))' : 'hsl(var(--destructive))' }}
+                              animate={{ scale: 1, color: 'hsl(var(--destructive))' }}
+                              transition={{ duration: 0.3 }}
+                              className="font-bold text-sm"
                             >
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={(e) => { e.stopPropagation(); updatePlayerScore(player.id, -10); }}
-                                data-testid={`button-sub-score-${player.id}`}
+                              {player.score}
+                            </motion.span>
+                          </div>
+                          
+                          <AnimatePresence>
+                            {isSelected && (
+                              <motion.div 
+                                initial={{ width: 0, opacity: 0 }}
+                                animate={{ width: 'auto', opacity: 1 }}
+                                exit={{ width: 0, opacity: 0 }}
+                                className="flex gap-1 overflow-hidden ml-1"
                               >
-                                <Minus className="w-3 h-3 shrink-0" aria-hidden="true" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="default"
-                                className="bg-primary"
-                                onClick={(e) => { e.stopPropagation(); updatePlayerScore(player.id, 10); }}
-                                data-testid={`button-add-score-${player.id}`}
-                              >
-                                <Plus className="w-3 h-3 shrink-0" aria-hidden="true" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="border-destructive/50 text-destructive hover:bg-destructive/20"
-                                onClick={(e) => { e.stopPropagation(); kickPlayer(player.id); }}
-                                data-testid={`button-kick-${player.id}`}
-                                title="Remove player"
-                              >
-                                <X className="w-3 h-3 shrink-0" aria-hidden="true" />
-                              </Button>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </motion.div>
-                    );
-                  })}
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  className="text-xs px-2 gap-0.5"
+                                  onClick={(e) => { e.stopPropagation(); updatePlayerScore(player.id, -10); }}
+                                  data-testid={`button-sub-score-${player.id}`}
+                                >
+                                  <Minus className="w-3 h-3 shrink-0" aria-hidden="true" />10
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  className="bg-primary text-xs px-2 gap-0.5"
+                                  onClick={(e) => { e.stopPropagation(); updatePlayerScore(player.id, 10); }}
+                                  data-testid={`button-add-score-${player.id}`}
+                                >
+                                  <Plus className="w-3 h-3 shrink-0" aria-hidden="true" />10
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-destructive/50 text-destructive hover:bg-destructive/20 text-xs px-2"
+                                  onClick={(e) => { e.stopPropagation(); kickPlayer(player.id); }}
+                                  data-testid={`button-kick-${player.id}`}
+                                  title="Remove player"
+                                >
+                                  <X className="w-3 h-3 shrink-0" aria-hidden="true" />
+                                </Button>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
                 </div>
               </LayoutGroup>
             ) : (
@@ -2839,6 +2845,9 @@ export default function Blitzgrid() {
                   <div className="flex items-center gap-2 mb-2">
                     <Zap className="w-4 h-4 text-orange-400 shrink-0" aria-hidden="true" />
                     <span className="text-sm text-orange-300 font-semibold" data-testid="buzz-queue-title">Buzzed</span>
+                    <Badge variant="secondary" className="bg-orange-500/20 text-orange-300 border-orange-400/40 text-xs ml-auto">
+                      {activeQuestion?.points || 0} pts at stake
+                    </Badge>
                   </div>
                   <div className="space-y-1.5">
                     {buzzQueue.map((buzz, index) => {
@@ -2864,6 +2873,7 @@ export default function Blitzgrid() {
                                 <Button
                                   size="sm"
                                   variant="destructive"
+                                  className="text-xs gap-1"
                                   disabled={isJudging}
                                   onClick={() => {
                                     setIsJudging(true);
@@ -2877,7 +2887,6 @@ export default function Blitzgrid() {
                                     if (remainingQueue.length > 0) {
                                       setBuzzQueue(remainingQueue.map((b, i) => ({ ...b, position: i + 1 })));
                                     } else {
-                                      // No one else in queue - unlock buzzer so others can try
                                       setBuzzQueue([]);
                                       unlockBuzzer();
                                     }
@@ -2886,10 +2895,11 @@ export default function Blitzgrid() {
                                   data-testid={`button-wrong-${buzz.playerId}`}
                                 >
                                   <X className="w-3 h-3 shrink-0" aria-hidden="true" />
+                                  Wrong
                                 </Button>
                                 <Button
                                   size="sm"
-                                  className="bg-primary text-white"
+                                  className="bg-primary text-white text-xs gap-1"
                                   disabled={isJudging}
                                   onClick={() => {
                                     setIsJudging(true);
@@ -2897,13 +2907,13 @@ export default function Blitzgrid() {
                                     const pts = activeQuestion?.points || 0;
                                     updatePlayerScore(buzz.playerId, pts, true, activeQuestion?.categoryId);
                                     sendFeedback(buzz.playerId, true, pts);
-                                    // Clear the buzz queue but don't auto-reveal answer
                                     setBuzzQueue([]);
                                     setTimeout(() => setIsJudging(false), 300);
                                   }}
                                   data-testid={`button-correct-${buzz.playerId}`}
                                 >
                                   <Check className="w-3 h-3 shrink-0" aria-hidden="true" />
+                                  Correct
                                 </Button>
                               </>
                             ) : (
@@ -2998,19 +3008,26 @@ export default function Blitzgrid() {
               {/* Manual Scoring - inline player chips (after answer revealed) */}
               {showAnswer && players.length > 0 && (
                 <div className="mx-5 mb-4" data-testid="manual-scoring-section">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Star className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden="true" />
+                    <span className="text-xs text-white/50 font-medium uppercase tracking-wide">Award Points</span>
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/30 text-xs">
+                      {activeQuestion?.points || 0} pts
+                    </Badge>
+                  </div>
                   <div className="flex flex-wrap items-center gap-2">
                     {players.map(player => (
                       <div 
                         key={player.id}
-                        className="flex items-center gap-1 bg-white/5 rounded-full pl-3 pr-1 py-1 border border-white/10 max-w-[200px]"
+                        className="flex items-center gap-1 bg-white/5 rounded-full pl-3 pr-1 py-1 border border-white/10 max-w-[240px]"
                         data-testid={`player-scoring-chip-${player.id}`}
                       >
                         <span className="text-sm text-white/80 truncate min-w-0 flex-1" title={player.name}>{player.name}</span>
                         <span className="text-xs text-white/40 shrink-0">{player.score}</span>
                         <Button
-                          size="icon"
+                          size="sm"
                           variant="ghost"
-                          className="text-destructive shrink-0"
+                          className="text-destructive shrink-0 text-xs h-7 px-2 gap-0.5"
                           onClick={() => {
                             const points = activeQuestion?.points || 0;
                             updatePlayerScore(player.id, -points, true, activeQuestion?.categoryId);
@@ -3022,12 +3039,13 @@ export default function Blitzgrid() {
                           }}
                           data-testid={`button-deduct-${player.id}`}
                         >
-                          <Minus className="w-4 h-4 shrink-0" aria-hidden="true" />
+                          <Minus className="w-3 h-3 shrink-0" aria-hidden="true" />
+                          {activeQuestion?.points || 0}
                         </Button>
                         <Button
-                          size="icon"
+                          size="sm"
                           variant="ghost"
-                          className="text-primary shrink-0"
+                          className="text-primary shrink-0 text-xs h-7 px-2 gap-0.5"
                           onClick={() => {
                             const points = activeQuestion?.points || 0;
                             updatePlayerScore(player.id, points, true, activeQuestion?.categoryId);
@@ -3039,7 +3057,8 @@ export default function Blitzgrid() {
                           }}
                           data-testid={`button-award-${player.id}`}
                         >
-                          <Plus className="w-4 h-4 shrink-0" aria-hidden="true" />
+                          <Plus className="w-3 h-3 shrink-0" aria-hidden="true" />
+                          {activeQuestion?.points || 0}
                         </Button>
                       </div>
                     ))}
