@@ -72,6 +72,7 @@ export default function PlayerPage() {
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const feedbackTimerRef = useRef<NodeJS.Timeout | null>(null);
   const joinedRef = useRef(false);
   const shouldReconnectRef = useRef(true);
   const reconnectAttemptsRef = useRef(0);
@@ -195,6 +196,7 @@ export default function PlayerPage() {
           if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
           if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
           if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
+          if (feedbackTimerRef.current) { clearTimeout(feedbackTimerRef.current); feedbackTimerRef.current = null; }
           setJoined(false);
           joinedRef.current = false;
           shouldReconnectRef.current = false;
@@ -211,6 +213,7 @@ export default function PlayerPage() {
           if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
           if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
           if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
+          if (feedbackTimerRef.current) { clearTimeout(feedbackTimerRef.current); feedbackTimerRef.current = null; }
           setJoined(false);
           joinedRef.current = false;
           shouldReconnectRef.current = false;
@@ -254,6 +257,7 @@ export default function PlayerPage() {
           setBuzzerLocked(false);
           setHasBuzzed(false);
           setBuzzPosition(null);
+          if (feedbackTimerRef.current) { clearTimeout(feedbackTimerRef.current); feedbackTimerRef.current = null; }
           setFeedback(null);
           // Only clear block state on new question
           if (data.newQuestion) {
@@ -269,21 +273,29 @@ export default function PlayerPage() {
         case "buzzer:reset":
           setHasBuzzed(false);
           setBuzzPosition(null);
+          if (feedbackTimerRef.current) { clearTimeout(feedbackTimerRef.current); feedbackTimerRef.current = null; }
           setFeedback(null);
           break;
         case "buzzer:blocked":
           // Player answered wrong - blocked from buzzing again on this question
           setHasBuzzed(false);
           setBuzzPosition(null);
-          setFeedback(null);
+          // Don't clear feedback here - let the wrong feedback screen persist
+          // until buzzer:unlocked naturally clears it, so the player actually
+          // sees the "Wrong, -X points" screen before transitioning to "Already Tried"
           setBuzzerBlocked(true);
           break;
         case "buzz:confirmed":
           setBuzzPosition(data.position);
           setHasBuzzed(true);
           break;
+        case "buzz:position_update":
+          setBuzzPosition(data.position);
+          break;
         case "feedback":
+          if (feedbackTimerRef.current) { clearTimeout(feedbackTimerRef.current); feedbackTimerRef.current = null; }
           setFeedback({ correct: data.correct, points: data.points });
+          feedbackTimerRef.current = setTimeout(() => { setFeedback(null); feedbackTimerRef.current = null; }, 3000);
           if (data.correct) {
             setShowCorrectFlash(true);
             setTimeout(() => setShowCorrectFlash(false), 500);

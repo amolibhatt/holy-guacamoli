@@ -5966,6 +5966,13 @@ Generate exactly ${promptCount} prompts.`
               if (player) {
                 sendToPlayer(player, { type: 'buzzer:blocked' });
               }
+              // Notify remaining queue members of their updated positions
+              room.buzzQueue.forEach((buzz, idx) => {
+                const queuedPlayer = room.players.get(buzz.playerId);
+                if (queuedPlayer) {
+                  sendToPlayer(queuedPlayer, { type: 'buzz:position_update', position: idx + 1 });
+                }
+              });
             }
             break;
           }

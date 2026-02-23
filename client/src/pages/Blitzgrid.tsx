@@ -1342,7 +1342,10 @@ export default function Blitzgrid() {
         setTimerActive(false);
         setTimeLeft(10);
         setTimerExpired(false);
-        lockBuzzer();
+        // Only send lock message if buzzer isn't already locked
+        if (!buzzerLocked) {
+          lockBuzzer();
+        }
         setIsJudging(false);
         setLastScoreChange(null);
         
@@ -1853,12 +1856,16 @@ export default function Blitzgrid() {
                 variant="ghost" 
                 size="icon"
                 onClick={() => { 
-                  setActiveQuestion(null);
-                  setShowAnswer(false);
-                  setRevealedCells(new Set());
-                  setRevealedCategoryCount(0);
-                  setCategoryRevealMode(true);
-                  endSession();
+                  if (players.length > 0) {
+                    setShowEndSessionDialog(true);
+                  } else {
+                    setActiveQuestion(null);
+                    setShowAnswer(false);
+                    setRevealedCells(new Set());
+                    setRevealedCategoryCount(0);
+                    setCategoryRevealMode(true);
+                    endSession();
+                  }
                 }}
                 className="text-muted-foreground"
                 data-testid="button-exit-play"
