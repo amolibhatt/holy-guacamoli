@@ -130,6 +130,7 @@ export default function Blitzgrid() {
   const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set());
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [scoredPlayers, setScoredPlayers] = useState<Record<string, 'correct' | 'wrong'>>({});
   const [showQRCode, setShowQRCode] = useState(false);
   const [showEndSessionDialog, setShowEndSessionDialog] = useState(false);
   const [showShuffleGridPicker, setShowShuffleGridPicker] = useState(false);
@@ -1309,7 +1310,7 @@ export default function Blitzgrid() {
         if (!revealedCells.has(cellKey)) {
           setActiveQuestion(question);
           setShowAnswer(false);
-          // Auto-unlock buzzers when opening a new question (clears passedPlayers)
+          setScoredPlayers({});
           unlockBuzzer(true);
         }
       };
@@ -1334,6 +1335,7 @@ export default function Blitzgrid() {
       const handleCloseQuestion = () => {
         setActiveQuestion(null);
         setShowAnswer(false);
+        setScoredPlayers({});
         setTimerActive(false);
         setTimeLeft(10);
         setTimerExpired(false);
@@ -1423,7 +1425,6 @@ export default function Blitzgrid() {
           data-testid="page-blitzgrid-play"
           tabIndex={0}
           onKeyDown={handleKeyDown}
-          onClick={() => categoryRevealMode && !activeQuestion && revealNextCategory()}
         >
           {/* Scanline pattern for retro feel */}
           <div className="fixed inset-0 pointer-events-none opacity-[0.02]" style={{
@@ -2032,7 +2033,10 @@ export default function Blitzgrid() {
           </div>
           
           {/* Game Grid */}
-          <div className="flex-1 p-3 md:p-5 overflow-hidden relative">
+          <div 
+            className="flex-1 p-3 md:p-5 overflow-hidden relative"
+            onClick={() => categoryRevealMode && !activeQuestion && revealNextCategory()}
+          >
             {/* Grid only shows after first reveal */}
             <AnimatePresence>
               {revealedCategoryCount > 0 && (
@@ -3152,42 +3156,53 @@ export default function Blitzgrid() {
                     {players.map(player => {
                       const pts = activeQuestion?.points || 0;
                       const avatarEmoji = PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji;
+                      const alreadyScored = scoredPlayers[player.id];
                       return (
                         <div 
                           key={player.id}
-                          className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-white/5 transition-colors"
+                          className={`flex items-center gap-2 py-1.5 px-2 rounded-lg transition-colors ${alreadyScored ? 'bg-white/[0.02]' : 'hover:bg-white/5'}`}
                           data-testid={`player-scoring-row-${player.id}`}
                         >
                           <span className="text-lg shrink-0">{avatarEmoji}</span>
                           <div className="flex-1 min-w-0">
                             <span className="text-sm text-white/80 font-medium truncate block" title={player.name}>{player.name}</span>
                           </div>
-                          <span className="text-xs text-white/40 shrink-0 w-10 text-right">{player.score}</span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 px-2.5 text-xs gap-1 border-destructive/40 text-destructive hover:bg-destructive/10"
-                            onClick={() => {
-                              updatePlayerScore(player.id, -pts, true, activeQuestion?.categoryId);
-                              toast({ title: `−${pts} pts`, description: player.name, duration: 1500 });
-                            }}
-                            data-testid={`button-deduct-${player.id}`}
-                          >
-                            <X className="w-3 h-3 shrink-0" aria-hidden="true" />
-                            Wrong
-                          </Button>
-                          <Button
-                            size="sm"
-                            className="h-7 px-2.5 text-xs gap-1 bg-primary hover:bg-primary/90"
-                            onClick={() => {
-                              updatePlayerScore(player.id, pts, true, activeQuestion?.categoryId);
-                              toast({ title: `+${pts} pts`, description: player.name, duration: 1500 });
-                            }}
-                            data-testid={`button-award-${player.id}`}
-                          >
-                            <Check className="w-3 h-3 shrink-0" aria-hidden="true" />
-                            Correct
-                          </Button>
+                          {alreadyScored ? (
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${alreadyScored === 'correct' ? 'text-emerald-400 bg-emerald-500/15' : 'text-red-400 bg-red-500/15'}`}>
+                              {alreadyScored === 'correct' ? `✅ +${pts}` : `❌ −${pts}`}
+                            </span>
+                          ) : (
+                            <>
+                              <span className="text-xs text-white/40 shrink-0 w-10 text-right">{player.score}</span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 px-2.5 text-xs gap-1 border-destructive/40 text-destructive hover:bg-destructive/10"
+                                onClick={() => {
+                                  updatePlayerScore(player.id, -pts, true, activeQuestion?.categoryId);
+                                  setScoredPlayers(prev => ({ ...prev, [player.id]: 'wrong' }));
+                                  toast({ title: `−${pts} pts`, description: player.name, duration: 1500 });
+                                }}
+                                data-testid={`button-deduct-${player.id}`}
+                              >
+                                <X className="w-3 h-3 shrink-0" aria-hidden="true" />
+                                Wrong
+                              </Button>
+                              <Button
+                                size="sm"
+                                className="h-7 px-2.5 text-xs gap-1 bg-primary hover:bg-primary/90"
+                                onClick={() => {
+                                  updatePlayerScore(player.id, pts, true, activeQuestion?.categoryId);
+                                  setScoredPlayers(prev => ({ ...prev, [player.id]: 'correct' }));
+                                  toast({ title: `+${pts} pts`, description: player.name, duration: 1500 });
+                                }}
+                                data-testid={`button-award-${player.id}`}
+                              >
+                                <Check className="w-3 h-3 shrink-0" aria-hidden="true" />
+                                Correct
+                              </Button>
+                            </>
+                          )}
                         </div>
                       );
                     })}
