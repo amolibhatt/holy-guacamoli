@@ -1,0 +1,286 @@
+Strategic Positioning: Word as the Single Workspace
+
+Core Decision
+
+Mitigate Risk is a Word-centric experience.
+
+Regardless of where the feature is launched from, Mitigate Risk is reviewed and acted on only within Microsoft Word.
+
+Mitigate Risk runs as a skill within Lito Word (the AI experience embedded in Word).
+
+Rationale
+
+Microsoft Word is the system of record for legal negotiation.
+
+Track Changes is the shared, legally accepted language between counterparties.
+
+Lito Web and Lito Outlook do not support document modification, making them unsuitable as clause-level workspaces.
+
+Only Word guarantees fidelity of:
+
+numbering,
+
+cross-references,
+
+tables,
+
+headings and formatting.
+
+Lawyers expect to reason about risk while viewing the exact clause in full document context.
+
+Anchoring Mitigate Risk in Word:
+
+eliminates ambiguity about document versions,
+
+reduces context switching,
+
+establishes a single, consistent mental model.
+
+Document Eligibility Model
+
+Eligible Document
+
+Mitigate Risk is available only when the currently open Microsoft Word document:
+
+is editable, and
+
+contains unresolved tracked changes.
+
+Tracked changes may originate from any source, including:
+
+Litera Compare,
+
+third-party comparison tools,
+
+manual edits created directly in Word.
+
+Important
+
+Mitigate Risk does not depend on the provenance of redlines.
+
+Eligibility is based solely on presence and unresolved state of tracked changes.
+
+Ineligible Document
+
+Mitigate Risk must not be available for:
+
+clean documents (no tracked changes),
+
+documents where all tracked changes are already resolved,
+
+read-only documents,
+
+password-protected documents.
+
+These restrictions prevent users from attempting Mitigate Risk in states where it cannot operate safely or meaningfully.
+
+Workflows
+
+Primary Workflow: Active Word Document
+
+This is the core and intended experience.
+All other workflows exist only to bring the user into this state.
+
+State
+
+A redlined document is open in Microsoft Word.
+
+The Lito Word add-in is loaded.
+
+Availability Gate
+
+When a document is opened, Lito for Word evaluates:
+
+whether unresolved tracked changes exist, and
+
+whether the document is editable.
+
+If both conditions are true:
+
+the Mitigate Risk entry point is shown in Lito Word.
+
+If either condition is false:
+
+Mitigate Risk is hidden.
+
+User Feedback (When Ineligible)
+
+If the user attempts to invoke Mitigate Risk via prompt or navigation while the document is ineligible, Lito displays:
+
+“This document must contain tracked changes for Mitigate Risk to run.”
+
+Reasoning
+
+Hiding the feature by default avoids confusion and misuse.
+
+Explicit feedback on attempted access educates the user without exposing unsafe states.
+
+Launch from Lito Web or Lito Outlook
+
+State
+
+The user is in Lito Web or Lito Outlook.
+
+The user wants to use Mitigate Risk on a document.
+
+Behavior
+
+Mitigate Risk is not executed in Lito Web or Lito Outlook.
+
+In Lito Web:
+
+results may be viewed in a read-only manner.
+
+In Lito Outlook:
+
+the Mitigate Risk skill card is displayed,
+
+execution does not occur in Outlook.
+
+In both cases, the user is prompted to open the redlined document in Microsoft Word.
+
+Upon Confirmation
+
+the redlined document opens in Microsoft Word,
+
+the Lito Word add-in launches automatically,
+
+the user is taken directly into the Mitigate Risk experience within Lito Word,
+
+document eligibility rules are evaluated before the skill becomes active.
+
+Reasoning
+
+Lito Web and Outlook act as launch points, not workspaces.
+
+Clause-level risk review requires:
+
+tracked changes,
+
+structural context,
+
+authoritative document state,
+which only Word provides.
+
+Clean Document Opened in Word
+
+Behavior
+
+Mitigate Risk is not shown.
+
+If the user attempts to access it:
+
+Lito explains that a redline is required,
+
+the user is guided to generate a comparison.
+
+Uploaded Redline While a Clean Word Document Is Open
+
+Behavior
+
+Mitigate Risk is not run against the clean document.
+
+The user is guided to open the redlined document in Word.
+
+Once the redlined document is open and eligible:
+
+the Primary Workflow applies,
+
+Mitigate Risk becomes available.
+
+This ensures Mitigate Risk always operates on the correct document and version.
+
+Mitigate Risk Review Experience
+
+Change Presentation
+
+Changes are listed in document order (start → end).
+
+Only unresolved tracked changes are shown.
+
+Each change includes:
+
+type of change (add / delete / modify),
+
+affected section or clause reference,
+
+risk level (High / Medium / Low),
+
+explanation of why the change is risky.
+
+Document Synchronization
+
+Selecting a risk scrolls the Word document to the relevant clause.
+
+The document remains the primary visual anchor at all times.
+
+This removes ambiguity about what text is under discussion.
+
+Mitigation & Revision Model
+
+Revise (Copy–Paste Model)
+
+Suggested revised language is displayed in the panel.
+
+The user copies and pastes the text into the document.
+
+The user may edit or adapt the language freely.
+
+Rationale
+
+Lawyers frequently tweak language.
+
+Automatic insertion risks:
+
+incorrect placement,
+
+overwriting content,
+
+structural breakage.
+
+Copy–paste ensures:
+
+intent,
+
+precision,
+
+user control.
+
+Edge Case Handling
+
+Partially resolved redlines → show unresolved changes only
+
+Track Changes disabled mid-session → pause interaction
+
+Formatting-only changes → allowed
+
+Tables, headers, footers → supported only where APIs allow
+
+Password-protected documents → Mitigate Risk unavailable
+
+Large documents → progressive rendering
+
+Structural Integrity Requirements
+
+Mitigate Risk must never cause:
+
+broken numbering,
+
+lost defined terms,
+
+invalid cross-references,
+
+corrupted tables or headings.
+
+If safety cannot be guaranteed, the feature must not proceed.
+
+Out of Scope
+
+Automatic insertion of text
+
+Accept / Reject automation
+
+Bulk operations
+
+Execution outside Microsoft Wor
+

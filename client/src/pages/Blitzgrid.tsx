@@ -21,7 +21,7 @@ import { Logo } from "@/components/Logo";
 import { useScore } from "@/components/ScoreContext";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import confetti from "canvas-confetti";
-import { playWhoosh, playRevealFlip, playPointsAwarded, playCelebration, playWrongBuzz, playDrumroll, playFanfare, playApplause, playReaction, playSwoosh, soundManager } from "@/lib/sounds";
+import { playWhoosh, playRevealFlip, playPointsAwarded, playCelebration, playWrongBuzz, playDrumroll, playFanfare, playApplause, playReaction, playSwoosh, playTimesUp, soundManager } from "@/lib/sounds";
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Play, Loader2,
@@ -145,6 +145,7 @@ export default function Blitzgrid() {
   // Timer state
   const [timerActive, setTimerActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(10);
+  const [timerExpired, setTimerExpired] = useState(false);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Play timer sound using Web Audio API
@@ -188,12 +189,17 @@ export default function Blitzgrid() {
   // Timer countdown effect
   useEffect(() => {
     if (timerActive && timeLeft > 0) {
+      if (timeLeft <= 3) {
+        playTimerSound();
+      }
       timerIntervalRef.current = setTimeout(() => {
         setTimeLeft(prev => prev - 1);
       }, 1000);
     } else if (timerActive && timeLeft === 0) {
-      playTimerSound();
+      playTimesUp();
       setTimerActive(false);
+      setTimerExpired(true);
+      setTimeout(() => setTimerExpired(false), 3000);
     }
     
     return () => {
@@ -1329,9 +1335,9 @@ export default function Blitzgrid() {
       const handleCloseQuestion = () => {
         setActiveQuestion(null);
         setShowAnswer(false);
-        // Stop timer when closing question
         setTimerActive(false);
         setTimeLeft(10);
+        setTimerExpired(false);
         lockBuzzer();
         setIsJudging(false);
         setLastScoreChange(null);
@@ -2708,8 +2714,73 @@ export default function Blitzgrid() {
           {/* Question Modal - Clean hierarchy design */}
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
             <DialogContent 
-              className="max-w-2xl max-h-[90vh] overflow-y-auto arcade-surface backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl"
+              className="max-w-2xl max-h-[90vh] overflow-y-auto arcade-surface backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl relative overflow-hidden"
             >
+              <AnimatePresence>
+                {timerExpired && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none"
+                  >
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ 
+                        opacity: [0, 0.6, 0.3, 0.5, 0.2, 0],
+                      }}
+                      transition={{ duration: 3, times: [0, 0.05, 0.15, 0.3, 0.6, 1] }}
+                      className="absolute inset-0 bg-red-600/40"
+                    />
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{
+                        opacity: [0, 1, 0.8, 1, 0],
+                        boxShadow: [
+                          'none',
+                          '0 0 80px 30px rgba(239, 68, 68, 0.8), 0 0 120px 60px rgba(239, 68, 68, 0.4)',
+                          '0 0 40px 15px rgba(239, 68, 68, 0.5)',
+                          '0 0 80px 30px rgba(239, 68, 68, 0.8)',
+                          'none',
+                        ],
+                      }}
+                      transition={{ duration: 3, times: [0, 0.1, 0.4, 0.6, 1] }}
+                      className="absolute inset-0 rounded-2xl"
+                    />
+                    <motion.div
+                      initial={{ scale: 0, rotate: -15 }}
+                      animate={{ 
+                        scale: [0, 1.4, 1.1, 1.2, 0.9, 0],
+                        rotate: [-15, 5, -3, 2, 0, 0],
+                      }}
+                      transition={{ duration: 3, times: [0, 0.1, 0.2, 0.35, 0.7, 1], ease: "easeOut" }}
+                      className="relative z-10 flex flex-col items-center"
+                    >
+                      <motion.div
+                        animate={{ scale: [1, 1.3, 1], rotate: [0, -10, 10, 0] }}
+                        transition={{ duration: 0.4, repeat: 3, repeatDelay: 0.1 }}
+                      >
+                        <Timer className="w-16 h-16 md:w-20 md:h-20 text-red-400 drop-shadow-[0_0_20px_rgba(239,68,68,0.8)] mb-2" />
+                      </motion.div>
+                      <h2 
+                        className="text-4xl md:text-6xl font-black text-white uppercase tracking-widest"
+                        style={{ 
+                          textShadow: '0 0 30px rgba(239, 68, 68, 0.9), 0 0 60px rgba(239, 68, 68, 0.5), 0 4px 8px rgba(0,0,0,0.5)',
+                        }}
+                      >
+                        TIME'S UP!
+                      </h2>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: '80%' }}
+                        transition={{ duration: 0.3, delay: 0.2 }}
+                        className="h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent rounded-full mt-3"
+                      />
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               {(() => {
                 // Use the grid's single color for consistency
                 const category = playCategories.find(c => c.id === activeQuestion?.categoryId);
@@ -2751,15 +2822,18 @@ export default function Blitzgrid() {
                                 setTimeLeft(10);
                               } else {
                                 setTimeLeft(10);
+                                setTimerExpired(false);
                                 setTimerActive(true);
                               }
                             }}
-                            className={`gap-1.5 h-9 px-3 rounded-lg ${timerActive ? 'bg-white/15 text-white' : 'text-white/40 border border-white/20'}`}
+                            className={`gap-1.5 h-9 px-3 rounded-lg ${timerExpired ? 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse' : timerActive ? 'bg-white/15 text-white' : 'text-white/40 border border-white/20'}`}
                             data-testid="button-timer"
                           >
                             <Timer className="w-4 h-4 shrink-0" aria-hidden="true" />
                             {timerActive ? (
-                              <span className="font-mono font-bold text-base min-w-[2ch] shrink-0" data-testid="timer-value">{timeLeft}</span>
+                              <span className={`font-mono font-bold text-base min-w-[2ch] shrink-0 ${timeLeft <= 3 ? 'text-red-400' : ''}`} data-testid="timer-value">{timeLeft}</span>
+                            ) : timerExpired ? (
+                              <span className="font-mono font-bold text-base text-red-400 shrink-0" data-testid="timer-value">0</span>
                             ) : (
                               <span className="text-sm shrink-0">10s</span>
                             )}

@@ -143,3 +143,8 @@ export function playReaction() {
 export function playSwoosh() {
   soundManager.play('swoosh', 0.4);
 }
+
+export function playTimesUp() {
+  soundManager.play('wrong', 0.6);
+  setTimeout(() => soundManager.play('buzz', 0.5), 300);
+}
