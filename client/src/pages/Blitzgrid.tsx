@@ -2289,8 +2289,8 @@ export default function Blitzgrid() {
                               <span className="text-white/80 font-medium text-xs truncate max-w-[60px]" title={player.name}>{player.name}</span>
                               <motion.span 
                                 key={player.score}
-                                initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? 'hsl(var(--primary))' : scoreAnim?.delta && scoreAnim.delta < 0 ? 'hsl(var(--destructive))' : 'hsl(var(--destructive))' }}
-                                animate={{ scale: 1, color: 'hsl(var(--destructive))' }}
+                                initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? 'hsl(var(--primary))' : scoreAnim?.delta && scoreAnim.delta < 0 ? 'hsl(var(--destructive))' : 'rgba(255,255,255,0.9)' }}
+                                animate={{ scale: 1, color: 'rgba(255,255,255,0.9)' }}
                                 transition={{ duration: 0.3 }}
                                 className="font-bold text-sm"
                               >
