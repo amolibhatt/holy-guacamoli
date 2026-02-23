@@ -2186,6 +2186,9 @@ export default function Blitzgrid() {
                   <span className="text-sm md:text-base font-medium" style={{ color: neonColorConfig[colorName].text }}>
                     Click to reveal ({revealedCategoryCount}/{playCategories.length})
                   </span>
+                  <span className="hidden md:inline text-[10px] text-white/30 font-mono px-1.5 py-0.5 rounded border border-white/10 bg-white/5">
+                    Space / Enter
+                  </span>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -2322,43 +2325,67 @@ export default function Blitzgrid() {
                                 <p className="text-xs text-muted-foreground">{player.score} pts</p>
                               </div>
                             </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-muted-foreground">Adjust score</span>
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 w-7 p-0"
-                                  onClick={() => {
-                                    updatePlayerScore(player.id, -10);
-                                    toast({ title: `−10 pts`, description: player.name, duration: 1500 });
-                                  }}
-                                  data-testid={`popover-sub-10-${player.id}`}
-                                >
-                                  <Minus className="w-3 h-3" aria-hidden="true" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 w-7 p-0"
-                                  onClick={() => {
-                                    updatePlayerScore(player.id, 10);
-                                    toast({ title: `+10 pts`, description: player.name, duration: 1500 });
-                                  }}
-                                  data-testid={`popover-add-10-${player.id}`}
-                                >
-                                  <Plus className="w-3 h-3" aria-hidden="true" />
-                                </Button>
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-muted-foreground">Quick adjust</span>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 w-7 p-0"
+                                    onClick={() => {
+                                      updatePlayerScore(player.id, -10);
+                                      toast({ title: `−10 pts`, description: player.name, duration: 1500 });
+                                    }}
+                                    data-testid={`popover-sub-10-${player.id}`}
+                                  >
+                                    <Minus className="w-3 h-3" aria-hidden="true" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 w-7 p-0"
+                                    onClick={() => {
+                                      updatePlayerScore(player.id, 10);
+                                      toast({ title: `+10 pts`, description: player.name, duration: 1500 });
+                                    }}
+                                    data-testid={`popover-add-10-${player.id}`}
+                                  >
+                                    <Plus className="w-3 h-3" aria-hidden="true" />
+                                  </Button>
+                                </div>
                               </div>
+                              <form className="flex items-center gap-1" onSubmit={(e) => {
+                                e.preventDefault();
+                                const input = e.currentTarget.querySelector('input');
+                                const val = parseInt(input?.value || '0', 10);
+                                if (val !== 0 && !isNaN(val)) {
+                                  updatePlayerScore(player.id, val);
+                                  toast({ title: `${val > 0 ? '+' : ''}${val} pts`, description: player.name, duration: 1500 });
+                                  if (input) input.value = '';
+                                }
+                              }}>
+                                <input
+                                  type="number"
+                                  placeholder="±pts"
+                                  className="h-7 w-16 text-xs text-center rounded border border-border bg-background px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  data-testid={`popover-custom-score-${player.id}`}
+                                />
+                                <Button size="sm" variant="outline" type="submit" className="h-7 px-2 text-xs" data-testid={`popover-apply-score-${player.id}`}>
+                                  Set
+                                </Button>
+                              </form>
                             </div>
                             <Button
                               size="sm"
                               variant="ghost"
                               className="w-full justify-start text-destructive h-8 text-xs gap-2"
                               onClick={() => {
-                                kickPlayer(player.id);
-                                setManagingPlayerId(null);
-                                toast({ title: `Removed ${player.name}`, variant: "destructive", duration: 2000 });
+                                if (window.confirm(`Remove ${player.name} from the game? They won't be able to rejoin.`)) {
+                                  kickPlayer(player.id);
+                                  setManagingPlayerId(null);
+                                  toast({ title: `Removed ${player.name}`, variant: "destructive", duration: 2000 });
+                                }
                               }}
                               data-testid={`popover-kick-${player.id}`}
                             >
@@ -2860,9 +2887,19 @@ export default function Blitzgrid() {
                           <DialogDescription className="sr-only">
                             {activeQuestion?.points} point question from {category?.name || 'category'}
                           </DialogDescription>
-                          {category?.description && (
-                            <p className="text-white/40 text-sm mt-0.5 line-clamp-2" title={category.description} data-testid="question-category-description">{category.description}</p>
-                          )}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {playCategories.length > 0 && (
+                              <span className="text-white/40 text-xs font-medium" data-testid="question-counter">
+                                {revealedCells.size + (showAnswer ? 0 : 1)}/{playCategories.length * 5}
+                              </span>
+                            )}
+                            {category?.description && (
+                              <span className="text-white/20">·</span>
+                            )}
+                            {category?.description && (
+                              <span className="text-white/40 text-xs line-clamp-1 min-w-0 flex-1" title={category.description} data-testid="question-category-description">{category.description}</span>
+                            )}
+                          </div>
                         </div>
                         
                         {/* Timer + Points - right side */}
@@ -3153,14 +3190,14 @@ export default function Blitzgrid() {
                     </Badge>
                   </div>
                   <div className="space-y-1.5">
-                    {players.map(player => {
+                    {[...players].sort((a, b) => (b.connected ? 1 : 0) - (a.connected ? 1 : 0)).map(player => {
                       const pts = activeQuestion?.points || 0;
                       const avatarEmoji = PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji;
                       const alreadyScored = scoredPlayers[player.id];
                       return (
                         <div 
                           key={player.id}
-                          className={`flex items-center gap-2 py-1.5 px-2 rounded-lg transition-colors ${alreadyScored ? 'bg-white/[0.02]' : 'hover:bg-white/5'}`}
+                          className={`flex items-center gap-2 py-1.5 px-2 rounded-lg transition-colors ${!player.connected ? 'opacity-40' : ''} ${alreadyScored ? 'bg-white/[0.02]' : 'hover:bg-white/5'}`}
                           data-testid={`player-scoring-row-${player.id}`}
                         >
                           <span className="text-lg shrink-0">{avatarEmoji}</span>

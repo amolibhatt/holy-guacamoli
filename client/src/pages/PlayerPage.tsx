@@ -863,6 +863,9 @@ export default function PlayerPage() {
                 <>
                   <XCircle className="w-32 h-32 text-destructive mx-auto" />
                   <h2 className="text-4xl font-black text-destructive mt-4">Wrong</h2>
+                  {feedback.points !== 0 && (
+                    <p className="text-2xl text-destructive/70 mt-2">−{Math.abs(feedback.points)} points</p>
+                  )}
                 </>
               )}
             </motion.div>
