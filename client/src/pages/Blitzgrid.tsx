@@ -148,43 +148,42 @@ export default function Blitzgrid() {
   const [timerExpired, setTimerExpired] = useState(false);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Play timer sound using Web Audio API
+  // Play escalating timer tick - frequency and urgency increase as time runs out
   const playTimerSound = useCallback(() => {
     try {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const now = audioContext.currentTime;
       
-      // Create a sequence of beeps for a "time's up" sound
-      const playBeep = (startTime: number, frequency: number, duration: number) => {
+      const playBeep = (startTime: number, frequency: number, duration: number, volume: number = 0.3) => {
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
-        
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
-        
         oscillator.frequency.value = frequency;
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0.3, startTime);
+        oscillator.type = 'square';
+        gainNode.gain.setValueAtTime(volume, startTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-        
         oscillator.start(startTime);
         oscillator.stop(startTime + duration);
       };
+
+      const t = timeLeft;
+      if (t === 3) {
+        playBeep(now, 523, 0.12, 0.25);
+      } else if (t === 2) {
+        playBeep(now, 659, 0.1, 0.35);
+        playBeep(now + 0.15, 659, 0.1, 0.3);
+      } else if (t === 1) {
+        playBeep(now, 784, 0.08, 0.4);
+        playBeep(now + 0.12, 784, 0.08, 0.35);
+        playBeep(now + 0.24, 880, 0.08, 0.4);
+      }
       
-      const now = audioContext.currentTime;
-      // Three ascending beeps
-      playBeep(now, 440, 0.15);
-      playBeep(now + 0.2, 554, 0.15);
-      playBeep(now + 0.4, 659, 0.3);
-      
-      // Close AudioContext after sounds finish to prevent resource leak
-      setTimeout(() => {
-        audioContext.close().catch(() => {});
-      }, 1000);
+      setTimeout(() => { audioContext.close().catch(() => {}); }, 800);
     } catch (e) {
-      console.log('Could not play timer sound');
+      // Ignore audio errors
     }
-  }, []);
+  }, [timeLeft]);
   
   // Timer countdown effect
   useEffect(() => {
@@ -199,7 +198,7 @@ export default function Blitzgrid() {
       playTimesUp();
       setTimerActive(false);
       setTimerExpired(true);
-      setTimeout(() => setTimerExpired(false), 3000);
+      setTimeout(() => setTimerExpired(false), 4000);
     }
     
     return () => {
@@ -2728,55 +2727,107 @@ export default function Blitzgrid() {
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ 
-                        opacity: [0, 0.6, 0.3, 0.5, 0.2, 0],
+                        opacity: [0, 0.7, 0.4, 0.5, 0.3, 0],
                       }}
-                      transition={{ duration: 3, times: [0, 0.05, 0.15, 0.3, 0.6, 1] }}
+                      transition={{ duration: 4, times: [0, 0.04, 0.12, 0.3, 0.65, 1] }}
                       className="absolute inset-0 bg-red-600/40"
                     />
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{
-                        opacity: [0, 1, 0.8, 1, 0],
+                        opacity: [0, 1, 0.7, 1, 0.5, 0],
                         boxShadow: [
                           'none',
-                          '0 0 80px 30px rgba(239, 68, 68, 0.8), 0 0 120px 60px rgba(239, 68, 68, 0.4)',
-                          '0 0 40px 15px rgba(239, 68, 68, 0.5)',
-                          '0 0 80px 30px rgba(239, 68, 68, 0.8)',
+                          '0 0 100px 40px rgba(239, 68, 68, 0.9), 0 0 150px 70px rgba(239, 68, 68, 0.5)',
+                          '0 0 50px 20px rgba(239, 68, 68, 0.5)',
+                          '0 0 100px 40px rgba(239, 68, 68, 0.7)',
+                          '0 0 30px 10px rgba(239, 68, 68, 0.3)',
                           'none',
                         ],
                       }}
-                      transition={{ duration: 3, times: [0, 0.1, 0.4, 0.6, 1] }}
+                      transition={{ duration: 4, times: [0, 0.08, 0.3, 0.5, 0.75, 1] }}
                       className="absolute inset-0 rounded-2xl"
                     />
+
+                    {[...Array(12)].map((_, i) => {
+                      const angle = (i / 12) * 360;
+                      const rad = (angle * Math.PI) / 180;
+                      const dist = 120 + Math.random() * 80;
+                      return (
+                        <motion.div
+                          key={`ember-${i}`}
+                          initial={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+                          animate={{
+                            opacity: [1, 0.8, 0],
+                            scale: [0.5, 1.2, 0],
+                            x: Math.cos(rad) * dist,
+                            y: Math.sin(rad) * dist,
+                          }}
+                          transition={{ duration: 1.5 + Math.random() * 0.5, delay: 0.05 + i * 0.03, ease: "easeOut" }}
+                          className="absolute z-20"
+                          style={{
+                            width: 4 + Math.random() * 6,
+                            height: 4 + Math.random() * 6,
+                            borderRadius: '50%',
+                            background: i % 3 === 0 ? '#f97316' : i % 3 === 1 ? '#ef4444' : '#fbbf24',
+                            boxShadow: `0 0 ${6 + Math.random() * 8}px ${i % 3 === 0 ? '#f97316' : '#ef4444'}`,
+                          }}
+                        />
+                      );
+                    })}
+
                     <motion.div
                       initial={{ scale: 0, rotate: -15 }}
                       animate={{ 
-                        scale: [0, 1.4, 1.1, 1.2, 0.9, 0],
+                        scale: [0, 1.5, 1.1, 1.15, 1.0, 0],
                         rotate: [-15, 5, -3, 2, 0, 0],
                       }}
-                      transition={{ duration: 3, times: [0, 0.1, 0.2, 0.35, 0.7, 1], ease: "easeOut" }}
+                      transition={{ duration: 4, times: [0, 0.08, 0.16, 0.28, 0.7, 1], ease: "easeOut" }}
                       className="relative z-10 flex flex-col items-center"
                     >
                       <motion.div
-                        animate={{ scale: [1, 1.3, 1], rotate: [0, -10, 10, 0] }}
-                        transition={{ duration: 0.4, repeat: 3, repeatDelay: 0.1 }}
-                      >
-                        <Timer className="w-16 h-16 md:w-20 md:h-20 text-red-400 drop-shadow-[0_0_20px_rgba(239,68,68,0.8)] mb-2" />
-                      </motion.div>
-                      <h2 
-                        className="text-4xl md:text-6xl font-black text-white uppercase tracking-widest"
-                        style={{ 
-                          textShadow: '0 0 30px rgba(239, 68, 68, 0.9), 0 0 60px rgba(239, 68, 68, 0.5), 0 4px 8px rgba(0,0,0,0.5)',
+                        animate={{ 
+                          x: [0, -6, 5, -4, 3, -2, 0],
+                          y: [0, 3, -4, 2, -3, 1, 0],
                         }}
+                        transition={{ duration: 0.5, repeat: 3, repeatDelay: 0.3 }}
+                      >
+                        <motion.div
+                          animate={{ scale: [1, 1.4, 1], rotate: [0, -15, 15, -10, 10, 0] }}
+                          transition={{ duration: 0.5, repeat: 4, repeatDelay: 0.15 }}
+                        >
+                          <Timer className="w-20 h-20 md:w-24 md:h-24 text-red-400 drop-shadow-[0_0_30px_rgba(239,68,68,0.9)] mb-3" />
+                        </motion.div>
+                      </motion.div>
+                      <motion.h2 
+                        className="text-5xl md:text-7xl font-black text-white uppercase tracking-widest"
+                        style={{ 
+                          textShadow: '0 0 40px rgba(239, 68, 68, 1), 0 0 80px rgba(239, 68, 68, 0.6), 0 0 120px rgba(239, 68, 68, 0.3), 0 4px 8px rgba(0,0,0,0.6)',
+                        }}
+                        animate={{
+                          x: [0, -4, 3, -2, 0],
+                          y: [0, 2, -2, 1, 0],
+                        }}
+                        transition={{ duration: 0.3, repeat: 4, repeatDelay: 0.2 }}
                       >
                         TIME'S UP!
-                      </h2>
+                      </motion.h2>
                       <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: '80%' }}
-                        transition={{ duration: 0.3, delay: 0.2 }}
-                        className="h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent rounded-full mt-3"
+                        initial={{ width: 0, opacity: 0 }}
+                        animate={{ width: '90%', opacity: [0, 1, 0.7] }}
+                        transition={{ duration: 0.4, delay: 0.15 }}
+                        className="h-1.5 bg-gradient-to-r from-transparent via-red-500 to-transparent rounded-full mt-4"
+                        style={{ boxShadow: '0 0 15px rgba(239, 68, 68, 0.6)' }}
                       />
+                      <motion.p
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: [0, 0.8, 0.6], y: 0 }}
+                        transition={{ delay: 0.4, duration: 0.4 }}
+                        className="text-red-300/80 text-sm md:text-base font-semibold mt-3 uppercase tracking-wider"
+                        style={{ textShadow: '0 0 10px rgba(239, 68, 68, 0.5)' }}
+                      >
+                        ⏰ No more time!
+                      </motion.p>
                     </motion.div>
                   </motion.div>
                 )}
