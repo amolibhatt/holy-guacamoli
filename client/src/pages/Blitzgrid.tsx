@@ -593,8 +593,9 @@ export default function Blitzgrid() {
           case 'player:left':
             setPlayers(prev => prev.filter(p => p.id !== data.playerId));
             setBuzzQueue(prev => prev.filter(b => b.playerId !== data.playerId));
-            // Clear selection if left player was selected
+            // Clear selection/popover if left player was selected
             setSelectedPlayerId(prev => prev === data.playerId ? null : prev);
+            setManagingPlayerId(prev => prev === data.playerId ? null : prev);
             break;
           case 'player:reaction':
             if (data.reactionType && data.playerName) {
@@ -618,8 +619,9 @@ export default function Blitzgrid() {
               p.id === data.playerId ? { ...p, connected: false } : p
             ));
             setBuzzQueue(prev => prev.filter(b => b.playerId !== data.playerId));
-            // Clear selection if disconnected player was selected
+            // Clear selection/popover if disconnected player was selected
             setSelectedPlayerId(prev => prev === data.playerId ? null : prev);
+            setManagingPlayerId(prev => prev === data.playerId ? null : prev);
             break;
           case 'score:updated':
             setPlayers(prev => prev.map(p => 
@@ -1352,8 +1354,9 @@ export default function Blitzgrid() {
         setShowAnswer(true);
         // Lock buzzers when answer is revealed to prevent late buzzes
         lockBuzzer();
-        // Stop the timer when the answer is revealed
+        // Stop the timer and clear any TIME'S UP overlay
         setTimerActive(false);
+        setTimerExpired(false);
         if (activeQuestion) {
           const cat = playCategories.find(c => c.questions?.some(q => q.id === activeQuestion.id));
           if (cat) {
@@ -3295,6 +3298,7 @@ export default function Blitzgrid() {
                                 className="h-7 px-2.5 text-xs gap-1 border-destructive/40 text-destructive hover:bg-destructive/10"
                                 onClick={() => {
                                   updatePlayerScore(player.id, -pts, true, activeQuestion?.categoryId);
+                                  sendFeedback(player.id, false, -pts);
                                   setScoredPlayers(prev => ({ ...prev, [player.id]: 'wrong' }));
                                   toast({ title: `−${pts} pts`, description: player.name, duration: 1500 });
                                 }}
@@ -3308,6 +3312,7 @@ export default function Blitzgrid() {
                                 className="h-7 px-2.5 text-xs gap-1 bg-primary hover:bg-primary/90"
                                 onClick={() => {
                                   updatePlayerScore(player.id, pts, true, activeQuestion?.categoryId);
+                                  sendFeedback(player.id, true, pts);
                                   setScoredPlayers(prev => ({ ...prev, [player.id]: 'correct' }));
                                   toast({ title: `+${pts} pts`, description: player.name, duration: 1500 });
                                 }}

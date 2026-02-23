@@ -6092,6 +6092,7 @@ Generate exactly ${promptCount} prompts.`
             room.buzzerLocked = true;
             room.passedPlayers.clear();
             room.completedQuestions.clear();
+            room.gameEnded = false;
             
             if (room.sessionId && data.boardId) {
               try {
