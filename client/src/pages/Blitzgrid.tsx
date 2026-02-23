@@ -721,8 +721,8 @@ export default function Blitzgrid() {
         setLastScoreChange({ playerId, playerName: player?.name || 'Player', points });
       }
       
-      // Track game stats (only for actual gameplay, not undo operations)
-      if (trackForUndo) {
+      // Track game stats only for actual gameplay scoring (not manual popover adjustments or undo operations)
+      if (trackForUndo && categoryId !== undefined) {
         setGameStats(prev => {
           const newPlayerStats = new Map(prev.playerStats);
           const existing = newPlayerStats.get(playerId) || {

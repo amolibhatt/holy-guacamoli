@@ -40,6 +40,8 @@ export default function PlayerPage() {
   
   // Get player profile for stat tracking
   const { profile } = usePlayerProfile(playerName);
+  const profileIdRef = useRef<string | undefined>(undefined);
+  profileIdRef.current = profile?.profile?.id;
   const [playerId, setPlayerId] = useState<string | null>(savedSession?.playerId || null);
   const [selectedAvatar, setSelectedAvatar] = useState<AvatarId>(savedSession?.avatar || "cat");
   const [joined, setJoined] = useState(false);
@@ -102,7 +104,7 @@ export default function PlayerPage() {
         avatar: selectedAvatar,
         playerId: playerIdRef.current || playerId || undefined,
         reconnectToken: reconnectTokenRef.current || undefined,
-        profileId: profile?.profile?.id,
+        profileId: profileIdRef.current,
       }));
       
       if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
@@ -502,6 +504,7 @@ export default function PlayerPage() {
     if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
     if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
     if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
+    if (feedbackTimerRef.current) { clearTimeout(feedbackTimerRef.current); feedbackTimerRef.current = null; }
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
