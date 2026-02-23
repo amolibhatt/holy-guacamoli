@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
@@ -26,7 +26,7 @@ import {
   Plus, Trash2, Pencil, Check, X, Grid3X3, 
   ChevronRight, ArrowLeft, Play, Loader2,
   AlertCircle, CheckCircle2, Eye, RotateCcw, QrCode, Users, User, Minus, Lock, Trophy, ChevronLeft, UserPlus, Power, Crown, Medal,
-  Volume2, VolumeX, MoreVertical, Settings, Copy, Link2, Share2, Download, Image, Loader2 as LoaderIcon, Clock,
+  Volume2, VolumeX, MoreVertical, Copy, Link2, Share2, Download, Image, Loader2 as LoaderIcon, Clock,
   Hand, Flame, Laugh, CircleDot, ThumbsUp, Sparkles, Heart, Timer, Zap, Shuffle, Star, HelpCircle, MessageCircle
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -135,7 +135,7 @@ export default function Blitzgrid() {
   const [showShuffleGridPicker, setShowShuffleGridPicker] = useState(false);
   const [selectedShuffleGridIds, setSelectedShuffleGridIds] = useState<Set<number>>(new Set());
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
-  const [showManagePlayers, setShowManagePlayers] = useState(false);
+  const [managingPlayerId, setManagingPlayerId] = useState<string | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(soundManager.isEnabled());
   
   // Category reveal state - reveals categories one by one before gameplay
@@ -1964,96 +1964,6 @@ export default function Blitzgrid() {
               </AlertDialogContent>
             </AlertDialog>
 
-          {/* Manage Players Sheet */}
-          <Sheet open={showManagePlayers} onOpenChange={setShowManagePlayers}>
-            <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
-              <SheetHeader className="pb-4">
-                <SheetTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-primary" aria-hidden="true" />
-                  Manage Players
-                </SheetTitle>
-                <SheetDescription>
-                  Adjust scores or remove players from the game
-                </SheetDescription>
-              </SheetHeader>
-              <div className="space-y-2">
-                {[...players].sort((a, b) => b.score - a.score).map((player, idx) => {
-                  const avatarEmoji = PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji;
-                  return (
-                    <div 
-                      key={player.id}
-                      className={`flex items-center gap-3 p-3 rounded-xl border ${
-                        !player.connected ? 'opacity-50 border-white/5 bg-white/[0.02]' : 'border-white/10 bg-white/5'
-                      }`}
-                      data-testid={`manage-player-row-${player.id}`}
-                    >
-                      <div className="relative shrink-0">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-md border-2 ${
-                          idx === 0 ? 'bg-gradient-to-br from-yellow-200 to-yellow-400 border-yellow-300' : 
-                          idx === 1 ? 'bg-gradient-to-br from-slate-100 to-slate-300 border-slate-200' : 
-                          idx === 2 ? 'bg-gradient-to-br from-orange-300 to-orange-500 border-orange-400' : 
-                          'bg-gradient-to-br from-slate-100 via-slate-150 to-slate-200 border-slate-200'
-                        }`}>
-                          {avatarEmoji}
-                        </div>
-                        <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background ${player.connected ? 'bg-primary' : 'bg-destructive'}`} />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate" title={player.name}>{player.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {player.score} pts {!player.connected && '· disconnected'}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 px-2 text-xs gap-1"
-                          onClick={() => {
-                            updatePlayerScore(player.id, -10);
-                            toast({ title: `−10 pts`, description: player.name, duration: 1500 });
-                          }}
-                          data-testid={`manage-sub-10-${player.id}`}
-                        >
-                          <Minus className="w-3 h-3" aria-hidden="true" />10
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 px-2 text-xs gap-1"
-                          onClick={() => {
-                            updatePlayerScore(player.id, 10);
-                            toast({ title: `+10 pts`, description: player.name, duration: 1500 });
-                          }}
-                          data-testid={`manage-add-10-${player.id}`}
-                        >
-                          <Plus className="w-3 h-3" aria-hidden="true" />10
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-                          onClick={() => {
-                            kickPlayer(player.id);
-                            toast({ title: `Removed ${player.name}`, variant: "destructive", duration: 2000 });
-                          }}
-                          data-testid={`manage-kick-${player.id}`}
-                          title={`Remove ${player.name}`}
-                        >
-                          <X className="w-4 h-4" aria-hidden="true" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-                {players.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8 text-sm">No players in the game yet</p>
-                )}
-              </div>
-            </SheetContent>
-          </Sheet>
           
           {/* Join Notification */}
           <AnimatePresence>
@@ -2314,93 +2224,143 @@ export default function Blitzgrid() {
             <div className="absolute inset-0 bg-gradient-to-r from-secondary/5 via-transparent to-primary/5 pointer-events-none" />
             {players.length > 0 ? (
               <LayoutGroup>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center gap-3 md:gap-5 flex-wrap flex-1">
-                    {[...players].sort((a, b) => b.score - a.score).map((player, idx) => {
-                      const avatarEmoji = PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji;
-                      const scoreAnim = scoreAnimations.get(player.id);
-                      return (
-                        <motion.div
-                          key={player.id}
-                          layoutId={`player-score-${player.id}`}
-                          layout
-                          initial={{ y: 20, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          transition={{ 
-                            layout: { type: "spring", stiffness: 400, damping: 30 },
-                            opacity: { delay: 0.4 + idx * 0.05 }
-                          }}
-                          className={`relative flex items-center gap-2 rounded-full py-1 pl-1 pr-3 ${
-                            !player.connected ? 'opacity-50' : ''
-                          }`}
-                          data-testid={`player-card-${player.id}`}
-                        >
-                          <AnimatePresence>
-                            {scoreAnim && (
-                              <motion.div
-                                initial={{ opacity: 1, y: 0, scale: 1 }}
-                                animate={{ opacity: 0, y: -30, scale: 1.3 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 1, ease: "easeOut" }}
-                                className={`absolute -top-6 left-1/2 -translate-x-1/2 font-bold text-sm whitespace-nowrap ${
-                                  scoreAnim.delta > 0 ? 'text-primary' : 'text-destructive'
+                <div className="flex items-center justify-center gap-3 md:gap-5 flex-wrap">
+                  {[...players].sort((a, b) => b.score - a.score).map((player, idx) => {
+                    const avatarEmoji = PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji;
+                    const scoreAnim = scoreAnimations.get(player.id);
+                    return (
+                      <Popover key={player.id} open={managingPlayerId === player.id} onOpenChange={(open) => setManagingPlayerId(open ? player.id : null)}>
+                        <PopoverTrigger asChild>
+                          <motion.button
+                            layoutId={`player-score-${player.id}`}
+                            layout
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ 
+                              layout: { type: "spring", stiffness: 400, damping: 30 },
+                              opacity: { delay: 0.4 + idx * 0.05 }
+                            }}
+                            className={`relative flex items-center gap-2 rounded-full py-1 pl-1 pr-3 cursor-pointer transition-colors ${
+                              !player.connected ? 'opacity-50' : ''
+                            } ${managingPlayerId === player.id ? 'bg-white/10 ring-1 ring-primary/40' : 'hover:bg-white/5'}`}
+                            data-testid={`player-card-${player.id}`}
+                          >
+                            <AnimatePresence>
+                              {scoreAnim && (
+                                <motion.div
+                                  initial={{ opacity: 1, y: 0, scale: 1 }}
+                                  animate={{ opacity: 0, y: -30, scale: 1.3 }}
+                                  exit={{ opacity: 0 }}
+                                  transition={{ duration: 1, ease: "easeOut" }}
+                                  className={`absolute -top-6 left-1/2 -translate-x-1/2 font-bold text-sm whitespace-nowrap ${
+                                    scoreAnim.delta > 0 ? 'text-primary' : 'text-destructive'
+                                  }`}
+                                >
+                                  {scoreAnim.delta > 0 ? '+' : ''}{scoreAnim.delta}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                            
+                            <div className="relative">
+                              <motion.div 
+                                animate={scoreAnim ? { scale: [1, 1.2, 1] } : {}}
+                                transition={{ duration: 0.3 }}
+                                className={`w-9 h-9 rounded-full flex items-center justify-center text-lg shadow-md border-2 ${
+                                  idx === 0 ? 'bg-gradient-to-br from-yellow-200 to-yellow-400 border-yellow-300' : 
+                                  idx === 1 ? 'bg-gradient-to-br from-slate-100 to-slate-300 border-slate-200' : 
+                                  idx === 2 ? 'bg-gradient-to-br from-orange-300 to-orange-500 border-orange-400' : 
+                                  'bg-gradient-to-br from-slate-100 via-slate-150 to-slate-200 border-slate-200'
                                 }`}
                               >
-                                {scoreAnim.delta > 0 ? '+' : ''}{scoreAnim.delta}
+                                {avatarEmoji}
                               </motion.div>
-                            )}
-                          </AnimatePresence>
-                          
-                          <div className="relative">
-                            <motion.div 
-                              animate={scoreAnim ? { scale: [1, 1.2, 1] } : {}}
-                              transition={{ duration: 0.3 }}
-                              className={`w-9 h-9 rounded-full flex items-center justify-center text-lg shadow-md border-2 ${
-                                idx === 0 ? 'bg-gradient-to-br from-yellow-200 to-yellow-400 border-yellow-300' : 
-                                idx === 1 ? 'bg-gradient-to-br from-slate-100 to-slate-300 border-slate-200' : 
-                                idx === 2 ? 'bg-gradient-to-br from-orange-300 to-orange-500 border-orange-400' : 
-                                'bg-gradient-to-br from-slate-100 via-slate-150 to-slate-200 border-slate-200'
-                              }`}
-                            >
-                              {avatarEmoji}
-                            </motion.div>
-                            {idx < 3 && (
-                              <div className={`absolute -top-1 -left-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm ${
-                                idx === 0 ? 'bg-yellow-400 text-yellow-900' : 
-                                idx === 1 ? 'bg-slate-300 text-slate-700' : 
-                                'bg-orange-400 text-orange-900'
-                              }`}>
-                                {idx + 1}
+                              {idx < 3 && (
+                                <div className={`absolute -top-1 -left-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm ${
+                                  idx === 0 ? 'bg-yellow-400 text-yellow-900' : 
+                                  idx === 1 ? 'bg-slate-300 text-slate-700' : 
+                                  'bg-orange-400 text-orange-900'
+                                }`}>
+                                  {idx + 1}
+                                </div>
+                              )}
+                              <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 ${player.connected ? 'bg-primary' : 'bg-destructive'}`} style={{ borderColor: 'var(--arcade-bg)' }} />
+                            </div>
+                            <div className="flex flex-col leading-tight min-w-0">
+                              <span className="text-white/80 font-medium text-xs truncate max-w-[60px]" title={player.name}>{player.name}</span>
+                              <motion.span 
+                                key={player.score}
+                                initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? 'hsl(var(--primary))' : scoreAnim?.delta && scoreAnim.delta < 0 ? 'hsl(var(--destructive))' : 'hsl(var(--destructive))' }}
+                                animate={{ scale: 1, color: 'hsl(var(--destructive))' }}
+                                transition={{ duration: 0.3 }}
+                                className="font-bold text-sm"
+                              >
+                                {player.score}
+                              </motion.span>
+                            </div>
+                          </motion.button>
+                        </PopoverTrigger>
+                        <PopoverContent 
+                          side="top" 
+                          align="center" 
+                          className="w-48 p-3"
+                          data-testid={`popover-manage-${player.id}`}
+                        >
+                          <div className="space-y-2.5">
+                            <div className="flex items-center gap-2 pb-1 border-b border-border/50">
+                              <span className="text-base">{avatarEmoji}</span>
+                              <div className="min-w-0 flex-1">
+                                <p className="font-semibold text-sm truncate">{player.name}</p>
+                                <p className="text-xs text-muted-foreground">{player.score} pts</p>
                               </div>
-                            )}
-                            <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 ${player.connected ? 'bg-primary' : 'bg-destructive'}`} style={{ borderColor: 'var(--arcade-bg)' }} />
-                          </div>
-                          <div className="flex flex-col leading-tight min-w-0">
-                            <span className="text-white/80 font-medium text-xs truncate max-w-[60px]" title={player.name}>{player.name}</span>
-                            <motion.span 
-                              key={player.score}
-                              initial={{ scale: 1.3, color: scoreAnim?.delta && scoreAnim.delta > 0 ? 'hsl(var(--primary))' : scoreAnim?.delta && scoreAnim.delta < 0 ? 'hsl(var(--destructive))' : 'hsl(var(--destructive))' }}
-                              animate={{ scale: 1, color: 'hsl(var(--destructive))' }}
-                              transition={{ duration: 0.3 }}
-                              className="font-bold text-sm"
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">Adjust score</span>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => {
+                                    updatePlayerScore(player.id, -10);
+                                    toast({ title: `−10 pts`, description: player.name, duration: 1500 });
+                                  }}
+                                  data-testid={`popover-sub-10-${player.id}`}
+                                >
+                                  <Minus className="w-3 h-3" aria-hidden="true" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => {
+                                    updatePlayerScore(player.id, 10);
+                                    toast({ title: `+10 pts`, description: player.name, duration: 1500 });
+                                  }}
+                                  data-testid={`popover-add-10-${player.id}`}
+                                >
+                                  <Plus className="w-3 h-3" aria-hidden="true" />
+                                </Button>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="w-full justify-start text-destructive h-8 text-xs gap-2"
+                              onClick={() => {
+                                kickPlayer(player.id);
+                                setManagingPlayerId(null);
+                                toast({ title: `Removed ${player.name}`, variant: "destructive", duration: 2000 });
+                              }}
+                              data-testid={`popover-kick-${player.id}`}
                             >
-                              {player.score}
-                            </motion.span>
+                              <X className="w-3.5 h-3.5" aria-hidden="true" />
+                              Remove from game
+                            </Button>
                           </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-white/40 hover:text-white/80 shrink-0 h-8 w-8 p-0"
-                    onClick={() => setShowManagePlayers(true)}
-                    data-testid="button-manage-players"
-                    title="Manage players & scores"
-                  >
-                    <Settings className="w-4 h-4" aria-hidden="true" />
-                  </Button>
+                        </PopoverContent>
+                      </Popover>
+                    );
+                  })}
                 </div>
               </LayoutGroup>
             ) : (
