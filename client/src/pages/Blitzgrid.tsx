@@ -91,6 +91,26 @@ interface CategoryWithQuestions extends Category {
 
 const POINT_TIERS = [10, 20, 30, 40, 50];
 
+function AnimatedScore({ target, duration = 1.5, className, style, "data-testid": testId }: { 
+  target: number; duration?: number; className?: string; style?: React.CSSProperties; "data-testid"?: string 
+}) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    let start: number | null = null;
+    let raf: number;
+    const animate = (ts: number) => {
+      if (!start) start = ts;
+      const progress = Math.min((ts - start) / (duration * 1000), 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(eased * target));
+      if (progress < 1) raf = requestAnimationFrame(animate);
+    };
+    raf = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return <span className={className} style={style} data-testid={testId}>{display} pts</span>;
+}
+
 export default function Blitzgrid() {
   const { toast } = useToast();
   const { isLoading: isAuthLoading, isAuthenticated, user } = useAuth();
@@ -1144,9 +1164,21 @@ export default function Blitzgrid() {
                    sortedPlayers.length === 2 ? [500, 2000, 3500] :
                    [500, 2000];
     
+    // Phase indices: for 4+ players: [0=rest, 1=3rd, 2=2nd, 3=drumroll, 4=winner]
+    // for 3 players: [0=3rd, 1=2nd, 2=drumroll, 3=winner]
+    // for 2 players: [0=2nd, 1=drumroll, 2=winner]
+    const thirdPlacePhaseIdx = sortedPlayers.length >= 4 ? 1 : sortedPlayers.length === 3 ? 0 : -1;
+    const secondPlacePhaseIdx = sortedPlayers.length >= 4 ? 2 : sortedPlayers.length === 3 ? 1 : 0;
+
     phases.forEach((delay, i) => {
       const timer = setTimeout(() => {
         setGameOverPhase(i + 1);
+        if (i === thirdPlacePhaseIdx && sortedPlayers.length >= 3) {
+          confetti({ particleCount: 40, spread: 55, origin: { x: 0.72, y: 0.55 }, colors: ['#fb923c', '#f97316', '#ea580c', '#fdba74'], scalar: 0.8, ticks: 80 });
+        }
+        if (i === secondPlacePhaseIdx && sortedPlayers.length >= 2) {
+          confetti({ particleCount: 50, spread: 55, origin: { x: 0.28, y: 0.45 }, colors: ['#94a3b8', '#cbd5e1', '#e2e8f0', '#f1f5f9'], scalar: 0.8, ticks: 80 });
+        }
         if (i === phases.length - 2) {
           playDrumroll();
         }
@@ -1528,18 +1560,33 @@ export default function Blitzgrid() {
                           </motion.div>
                           {/* Podium with name plate - Silver/cyan theme */}
                           <div 
-                            className="w-24 md:w-32 h-28 md:h-36 arcade-surface rounded-t-lg flex flex-col items-center justify-between pt-2 pb-3 border-t-2"
+                            className="w-24 md:w-32 h-28 md:h-36 arcade-surface rounded-t-lg flex flex-col items-center justify-between pt-2 pb-3 border-t-2 relative overflow-hidden"
                             style={{ borderColor: 'rgba(148, 163, 184, 0.6)', boxShadow: '0 0 20px rgba(148, 163, 184, 0.2)' }}
                           >
+                            {/* Silver sparkle particles */}
+                            {[...Array(6)].map((_, i) => (
+                              <motion.div
+                                key={`silver-${i}`}
+                                className="absolute rounded-full bg-slate-300"
+                                style={{ width: 3 + Math.random() * 3, height: 3 + Math.random() * 3, left: `${15 + Math.random() * 70}%` }}
+                                initial={{ opacity: 0, y: 0 }}
+                                animate={{ opacity: [0, 0.9, 0], y: [-10, -30 - Math.random() * 40], scale: [0.5, 1.2, 0] }}
+                                transition={{ duration: 1.5 + Math.random(), delay: 0.5 + i * 0.25, repeat: Infinity, repeatDelay: 2 + Math.random() * 2 }}
+                              />
+                            ))}
                             {/* Name plate */}
-                            <div className="bg-white/10 px-2 py-0.5 rounded border border-white/20 min-w-0 max-w-full">
+                            <div className="bg-white/10 px-2 py-0.5 rounded border border-white/20 min-w-0 max-w-full relative z-10">
                               <div className="text-white font-bold text-xs md:text-sm truncate max-w-[80px] md:max-w-[110px]" data-testid="text-2nd-place-name" title={runnerUp.name}>
                                 {runnerUp.name}
                               </div>
                             </div>
-                            <div className="text-2xl md:text-3xl font-black text-slate-300" data-testid="text-2nd-place-score" style={{ textShadow: '0 0 10px rgba(148, 163, 184, 0.5)' }}>
-                              {runnerUp.score} pts
-                            </div>
+                            <AnimatedScore
+                              target={runnerUp.score}
+                              duration={1.2}
+                              className="text-2xl md:text-3xl font-black text-slate-300 block"
+                              style={{ textShadow: '0 0 10px rgba(148, 163, 184, 0.5)' }}
+                              data-testid="text-2nd-place-score"
+                            />
                             <div className="flex items-center">
                               <Medal className="w-6 h-6 text-slate-400 mr-1 shrink-0" aria-hidden="true" />
                               <span className="text-3xl md:text-4xl font-black text-slate-400" data-testid="text-2nd-place-rank">2</span>
@@ -1603,7 +1650,7 @@ export default function Blitzgrid() {
                               transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 1 }}
                               data-testid="text-winner-score"
                             >
-                              {winner.score} pts
+                              <AnimatedScore target={winner.score} duration={1.8} />
                             </motion.div>
                             <div className="flex flex-col items-center">
                               <Trophy className="w-8 h-8 md:w-10 md:h-10 text-yellow-400 mb-1 shrink-0" aria-hidden="true" />
@@ -1634,18 +1681,33 @@ export default function Blitzgrid() {
                           </motion.div>
                           {/* Podium with name plate - Bronze/orange neon theme */}
                           <div 
-                            className="w-20 md:w-28 h-20 md:h-24 arcade-surface rounded-t-lg flex flex-col items-center justify-between pt-1 pb-2 border-t-2"
+                            className="w-20 md:w-28 h-20 md:h-24 arcade-surface rounded-t-lg flex flex-col items-center justify-between pt-1 pb-2 border-t-2 relative overflow-hidden"
                             style={{ borderColor: 'rgba(251, 146, 60, 0.6)', boxShadow: '0 0 20px rgba(251, 146, 60, 0.2)' }}
                           >
+                            {/* Bronze sparkle particles */}
+                            {[...Array(5)].map((_, i) => (
+                              <motion.div
+                                key={`bronze-${i}`}
+                                className="absolute rounded-full bg-orange-400"
+                                style={{ width: 2.5 + Math.random() * 2.5, height: 2.5 + Math.random() * 2.5, left: `${15 + Math.random() * 70}%` }}
+                                initial={{ opacity: 0, y: 0 }}
+                                animate={{ opacity: [0, 0.8, 0], y: [-5, -20 - Math.random() * 30], scale: [0.5, 1.1, 0] }}
+                                transition={{ duration: 1.3 + Math.random(), delay: 0.5 + i * 0.2, repeat: Infinity, repeatDelay: 2.5 + Math.random() * 2 }}
+                              />
+                            ))}
                             {/* Name plate */}
-                            <div className="bg-white/10 px-2 py-0.5 rounded border border-white/20 min-w-0 max-w-full">
+                            <div className="bg-white/10 px-2 py-0.5 rounded border border-white/20 min-w-0 max-w-full relative z-10">
                               <div className="text-white font-bold text-xs truncate max-w-[70px] md:max-w-[100px]" data-testid="text-3rd-place-name" title={thirdPlace.name}>
                                 {thirdPlace.name}
                               </div>
                             </div>
-                            <div className="text-lg md:text-xl font-black text-orange-300" data-testid="text-3rd-place-score" style={{ textShadow: '0 0 10px rgba(251, 146, 60, 0.5)' }}>
-                              {thirdPlace.score} pts
-                            </div>
+                            <AnimatedScore
+                              target={thirdPlace.score}
+                              duration={1.0}
+                              className="text-lg md:text-xl font-black text-orange-300 block"
+                              style={{ textShadow: '0 0 10px rgba(251, 146, 60, 0.5)' }}
+                              data-testid="text-3rd-place-score"
+                            />
                             <span className="text-2xl md:text-3xl font-black text-orange-400" data-testid="text-3rd-place-rank">3</span>
                           </div>
                         </motion.div>

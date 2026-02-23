@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, XCircle, Trophy, Clock, Star, Sparkles, Lock, Grid3X3, Hand, Flame, Laugh, CircleDot, ThumbsUp, Eye, Check } from "lucide-react";
+import { Zap, XCircle, Trophy, Clock, Star, Sparkles, Lock, Grid3X3, Hand, Flame, Laugh, CircleDot, ThumbsUp, Eye, Check, Crown, Medal } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
@@ -68,6 +68,10 @@ export default function PlayerPage() {
   const [psyopLieText, setPsyopLieText] = useState("");
   const [psyopCorrectAnswer, setPsyopCorrectAnswer] = useState<string | null>(null);
   const [psyopRevealData, setPsyopRevealData] = useState<{ yourScore: number; foundTruth: boolean; yourLiesBelieved: number } | null>(null);
+  const [gameOverData, setGameOverData] = useState<{
+    leaderboard: Array<{ playerId: string; playerName: string; playerAvatar: string; score: number }>;
+    stats?: { correctAnswers: number; wrongAnswers: number; totalPoints: number; bestStreak: number; won: boolean };
+  } | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -208,6 +212,21 @@ export default function PlayerPage() {
             variant: "destructive",
           });
           break;
+        case "game:ended":
+          if (data.leaderboard) {
+            setGameOverData({
+              leaderboard: data.leaderboard,
+              stats: data.stats,
+            });
+            setBuzzerLocked(true);
+            setHasBuzzed(false);
+            setBuzzPosition(null);
+            setFeedback(null);
+            setBuzzerBlocked(false);
+            if (feedbackTimerRef.current) { clearTimeout(feedbackTimerRef.current); feedbackTimerRef.current = null; }
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+          }
+          break;
         case "room:closed":
           clearGameSession("buzzer");
           if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
@@ -219,6 +238,7 @@ export default function PlayerPage() {
           shouldReconnectRef.current = false;
           setStatus("disconnected");
           setHostPickingGrid(false);
+          setGameOverData(null);
           setReconnectCountdown(null);
           toast({
             title: "Game ended",
@@ -235,6 +255,7 @@ export default function PlayerPage() {
           break;
         case "host:startNextGrid":
           setHostPickingGrid(false);
+          setGameOverData(null);
           setCurrentGridName(data.gridName || null);
           setBuzzerLocked(true);
           setHasBuzzed(false);
@@ -821,6 +842,146 @@ export default function PlayerPage() {
               >
                 Waiting for next question...
               </motion.p>
+            </motion.div>
+          ) : gameOverData ? (
+            <motion.div
+              key="game-over"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="text-center w-full max-w-sm mx-auto"
+            >
+              {(() => {
+                const myRank = gameOverData.leaderboard.findIndex(p => p.playerId === playerId) + 1;
+                const myEntry = gameOverData.leaderboard.find(p => p.playerId === playerId);
+                const isWinner = myRank === 1;
+                const isTop3 = myRank >= 1 && myRank <= 3;
+                const RankIcon = isWinner ? Crown : myRank === 2 ? Medal : myRank === 3 ? Medal : Star;
+                const rankIconColor = isWinner ? 'text-yellow-400' : myRank === 2 ? 'text-slate-300' : myRank === 3 ? 'text-orange-400' : 'text-muted-foreground';
+                const stats = gameOverData.stats;
+                const accuracy = stats && (stats.correctAnswers + stats.wrongAnswers) > 0
+                  ? Math.round((stats.correctAnswers / (stats.correctAnswers + stats.wrongAnswers)) * 100)
+                  : null;
+
+                return (
+                  <>
+                    <motion.div
+                      initial={{ y: -20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.1 }}
+                    >
+                      {isWinner ? (
+                        <motion.div
+                          animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+                          transition={{ duration: 1, repeat: Infinity }}
+                          data-testid="rank-icon-winner"
+                        >
+                          <Trophy className="w-20 h-20 mx-auto text-yellow-400 mb-2" />
+                        </motion.div>
+                      ) : (
+                        <div className="mb-2" data-testid="rank-icon">
+                          <RankIcon className={`w-16 h-16 mx-auto ${rankIconColor}`} />
+                        </div>
+                      )}
+                    </motion.div>
+
+                    <motion.h2
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                      className={`text-3xl font-black mb-1 ${isWinner ? 'text-yellow-400' : isTop3 ? 'text-primary' : 'text-foreground'}`}
+                      data-testid="text-player-game-over-title"
+                    >
+                      {isWinner ? 'You Won!' : `#${myRank} Place`}
+                    </motion.h2>
+
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                      className="text-2xl font-bold text-foreground mb-4"
+                      data-testid="text-player-final-score"
+                    >
+                      {myEntry?.score || score} pts
+                    </motion.p>
+
+                    {stats && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className="flex items-center justify-center gap-3 mb-5"
+                        data-testid="player-game-stats"
+                      >
+                        <div className="text-center px-3 py-2 bg-primary/10 border border-primary/20 rounded-lg" data-testid="stat-correct">
+                          <div className="text-lg font-bold text-primary" data-testid="text-correct-count">{stats.correctAnswers}</div>
+                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Correct</div>
+                        </div>
+                        <div className="text-center px-3 py-2 bg-destructive/10 border border-destructive/20 rounded-lg" data-testid="stat-wrong">
+                          <div className="text-lg font-bold text-destructive" data-testid="text-wrong-count">{stats.wrongAnswers}</div>
+                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Wrong</div>
+                        </div>
+                        {accuracy !== null && (
+                          <div className="text-center px-3 py-2 bg-muted/40 rounded-lg" data-testid="stat-accuracy">
+                            <div className="text-lg font-bold" data-testid="text-accuracy">{accuracy}%</div>
+                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Accuracy</div>
+                          </div>
+                        )}
+                        {stats.bestStreak > 0 && (
+                          <div className="text-center px-3 py-2 bg-orange-500/10 border border-orange-500/20 rounded-lg" data-testid="stat-streak">
+                            <div className="text-lg font-bold text-orange-400 flex items-center justify-center gap-1" data-testid="text-best-streak"><Flame className="w-4 h-4" /> {stats.bestStreak}</div>
+                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Streak</div>
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5 }}
+                      className="bg-card/60 border border-border/50 rounded-xl p-3 text-left"
+                      data-testid="player-final-leaderboard"
+                    >
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-2 text-center" data-testid="text-final-standings-header">Final Standings</p>
+                      <div className="space-y-1.5">
+                        {gameOverData.leaderboard.map((entry, idx) => {
+                          const isMe = entry.playerId === playerId;
+                          const entryAvatar = PLAYER_AVATARS.find(a => a.id === entry.playerAvatar)?.emoji || '?';
+                          return (
+                            <motion.div
+                              key={entry.playerId}
+                              initial={{ x: -20, opacity: 0 }}
+                              animate={{ x: 0, opacity: 1 }}
+                              transition={{ delay: 0.6 + idx * 0.08 }}
+                              className={`flex items-center justify-between px-3 py-2 rounded-lg ${
+                                isMe ? 'bg-primary/15 border border-primary/30 ring-1 ring-primary/20' :
+                                idx === 0 ? 'bg-yellow-500/10' :
+                                'bg-muted/20'
+                              }`}
+                              data-testid={`player-leaderboard-row-${entry.playerId}`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <span className={`w-5 h-5 flex-shrink-0 flex items-center justify-center rounded-full text-[10px] font-bold ${
+                                  idx === 0 ? 'bg-yellow-500 text-black' : idx === 1 ? 'bg-slate-400 text-black' : idx === 2 ? 'bg-orange-500 text-white' : 'bg-muted text-muted-foreground'
+                                }`} data-testid={`player-leaderboard-rank-${entry.playerId}`}>
+                                  {idx + 1}
+                                </span>
+                                <span className="text-base flex-shrink-0" data-testid={`player-leaderboard-avatar-${entry.playerId}`}>{entryAvatar}</span>
+                                <span className={`text-sm font-medium truncate min-w-0 flex-1 ${isMe ? 'text-primary' : 'text-foreground'}`} title={entry.playerName} data-testid={`player-leaderboard-name-${entry.playerId}`}>
+                                  {entry.playerName}
+                                  {isMe && <span className="text-xs ml-1 text-primary/70">(you)</span>}
+                                </span>
+                              </div>
+                              <span className="font-bold text-sm flex-shrink-0" data-testid={`player-leaderboard-score-${entry.playerId}`}>{entry.score}</span>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  </>
+                );
+              })()}
             </motion.div>
           ) : hostPickingGrid ? (
             <motion.div

@@ -6223,13 +6223,24 @@ Generate exactly ${promptCount} prompts.`
               }
             }
 
-            // Notify players that game has ended with their stats
+            // Build full leaderboard sorted by score for player results screen
+            const gameOverLeaderboard = Array.from(room.players.values())
+              .map(p => ({
+                playerId: p.id,
+                playerName: p.name,
+                playerAvatar: p.avatar || 'cat',
+                score: p.score,
+              }))
+              .sort((a, b) => b.score - a.score);
+
+            // Notify players that game has ended with their stats + leaderboard
             room.players.forEach((player) => {
               const stat = playerStats?.find(s => s.playerId === player.id);
               sendToPlayer(player, { 
                 type: 'game:ended', 
                 stats: stat,
                 statsPersisted: !!player.profileId,
+                leaderboard: gameOverLeaderboard,
               });
             });
 
