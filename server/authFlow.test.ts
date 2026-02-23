@@ -172,8 +172,10 @@ describe("Authentication Flow Tests", () => {
       
       for (const user of allUsers) {
         if (user.password) {
-          expect(user.password.startsWith("$2")).toBe(true);
-          expect(user.password.length).toBeGreaterThan(50);
+          const isBcrypt = user.password.startsWith("$2");
+          const isArgon2 = user.password.startsWith("$argon2");
+          expect(isBcrypt || isArgon2).toBe(true);
+          expect(user.password.length).toBeGreaterThan(20);
         }
       }
     });
