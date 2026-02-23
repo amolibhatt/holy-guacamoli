@@ -65,6 +65,13 @@ Preferred communication style: Simple, everyday language.
 -   **lucide-react**: Icons.
 -   **Radix UI primitives**: Accessible UI components (via shadcn/ui).
 
+### Testing
+-   **Vitest**: Test runner (vitest.config.ts at root, tests in `server/**/*.test.ts`).
+-   **server/gameLogic.ts**: Extracted pure game logic functions (buzz queue, score validation, game stats, leaderboard, game end/reset) for testability.
+-   **server/gameLogic.test.ts**: 39 unit tests for pure state logic.
+-   **server/blitzgrid-ws.test.ts**: 23 WebSocket integration tests (real server, real WS clients).
+-   Run all tests: `npx vitest run`
+
 ### Development Tools
 -   **Vite**: Frontend build tool and development server.
 -   **esbuild**: Server bundling for production.
