@@ -2935,7 +2935,7 @@ export default function Blitzgrid() {
                         className="text-red-300/80 text-sm md:text-base font-semibold mt-3 uppercase tracking-wider"
                         style={{ textShadow: '0 0 10px rgba(239, 68, 68, 0.5)' }}
                       >
-                        ⏰ No more time!
+                        <span className="flex items-center gap-1.5 justify-center"><Timer className="w-4 h-4 shrink-0" aria-hidden="true" /> No more time!</span>
                       </motion.p>
                     </motion.div>
                   </motion.div>
@@ -3283,8 +3283,8 @@ export default function Blitzgrid() {
                             <span className="text-sm text-white/80 font-medium truncate block" title={player.name}>{player.name}</span>
                           </div>
                           {alreadyScored ? (
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${alreadyScored === 'correct' ? 'text-emerald-400 bg-emerald-500/15' : 'text-red-400 bg-red-500/15'}`}>
-                              {alreadyScored === 'correct' ? `✅ +${pts}` : `❌ −${pts}`}
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 ${alreadyScored === 'correct' ? 'text-emerald-400 bg-emerald-500/15' : 'text-red-400 bg-red-500/15'}`}>
+                              {alreadyScored === 'correct' ? <><Check className="w-3 h-3 shrink-0" aria-hidden="true" /> +{pts}</> : <><X className="w-3 h-3 shrink-0" aria-hidden="true" /> −{pts}</>}
                             </span>
                           ) : (
                             <>

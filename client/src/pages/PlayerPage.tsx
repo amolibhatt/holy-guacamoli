@@ -521,6 +521,7 @@ export default function PlayerPage() {
     setBuzzerBlocked(false);
     setHostPickingGrid(false);
     setCurrentGridName(null);
+    setGameOverData(null);
     setReconnectAttempts(0);
     reconnectAttemptsRef.current = 0;
     setReconnectCountdown(null);
@@ -852,10 +853,12 @@ export default function PlayerPage() {
               className="text-center w-full max-w-sm mx-auto"
             >
               {(() => {
-                const myRank = gameOverData.leaderboard.findIndex(p => p.playerId === playerId) + 1;
-                const myEntry = gameOverData.leaderboard.find(p => p.playerId === playerId);
-                const isWinner = myRank === 1;
-                const isTop3 = myRank >= 1 && myRank <= 3;
+                const myIdx = gameOverData.leaderboard.findIndex(p => p.playerId === playerId);
+                const isRanked = myIdx >= 0;
+                const myRank = isRanked ? myIdx + 1 : 0;
+                const myEntry = isRanked ? gameOverData.leaderboard[myIdx] : null;
+                const isWinner = isRanked && myRank === 1;
+                const isTop3 = isRanked && myRank >= 1 && myRank <= 3;
                 const RankIcon = isWinner ? Crown : myRank === 2 ? Medal : myRank === 3 ? Medal : Star;
                 const rankIconColor = isWinner ? 'text-yellow-400' : myRank === 2 ? 'text-slate-300' : myRank === 3 ? 'text-orange-400' : 'text-muted-foreground';
                 const stats = gameOverData.stats;
@@ -892,7 +895,7 @@ export default function PlayerPage() {
                       className={`text-3xl font-black mb-1 ${isWinner ? 'text-yellow-400' : isTop3 ? 'text-primary' : 'text-foreground'}`}
                       data-testid="text-player-game-over-title"
                     >
-                      {isWinner ? 'You Won!' : `#${myRank} Place`}
+                      {isWinner ? 'You Won!' : isRanked ? `#${myRank} Place` : 'Game Over'}
                     </motion.h2>
 
                     <motion.p
