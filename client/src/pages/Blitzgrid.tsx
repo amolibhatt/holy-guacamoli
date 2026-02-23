@@ -213,6 +213,7 @@ export default function Blitzgrid() {
   useEffect(() => {
     setTimerActive(false);
     setTimeLeft(10);
+    setTimerExpired(false);
   }, [activeQuestion?.id]);
   
   // Multiplayer state
@@ -1319,6 +1320,8 @@ export default function Blitzgrid() {
         setShowAnswer(true);
         // Lock buzzers when answer is revealed to prevent late buzzes
         lockBuzzer();
+        // Stop the timer when the answer is revealed
+        setTimerActive(false);
         if (activeQuestion) {
           const cat = playCategories.find(c => c.questions?.some(q => q.id === activeQuestion.id));
           if (cat) {
@@ -1342,6 +1345,12 @@ export default function Blitzgrid() {
         lockBuzzer();
         setIsJudging(false);
         setLastScoreChange(null);
+        
+        // Auto-detect game completion: all questions revealed
+        const totalCells = playCategories.length * 5;
+        if (totalCells > 0 && revealedCells.size >= totalCells && players.length > 0 && !showGameOver) {
+          setTimeout(() => startGameOverReveal(), 600);
+        }
       };
       
       const resetGame = () => {
@@ -3262,10 +3271,7 @@ export default function Blitzgrid() {
                 )}
                 {!showAnswer ? (
                   <Button 
-                    onClick={() => {
-                      lockBuzzer();
-                      handleRevealAnswer();
-                    }}
+                    onClick={handleRevealAnswer}
                     size="lg"
                     className="text-white font-semibold px-8"
                     style={{ 
