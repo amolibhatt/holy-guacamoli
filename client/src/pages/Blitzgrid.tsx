@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
@@ -134,6 +135,7 @@ export default function Blitzgrid() {
   const [showShuffleGridPicker, setShowShuffleGridPicker] = useState(false);
   const [selectedShuffleGridIds, setSelectedShuffleGridIds] = useState<Set<number>>(new Set());
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
+  const [showManagePlayers, setShowManagePlayers] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(soundManager.isEnabled());
   
   // Category reveal state - reveals categories one by one before gameplay
@@ -1961,6 +1963,97 @@ export default function Blitzgrid() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+
+          {/* Manage Players Sheet */}
+          <Sheet open={showManagePlayers} onOpenChange={setShowManagePlayers}>
+            <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
+              <SheetHeader className="pb-4">
+                <SheetTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" aria-hidden="true" />
+                  Manage Players
+                </SheetTitle>
+                <SheetDescription>
+                  Adjust scores or remove players from the game
+                </SheetDescription>
+              </SheetHeader>
+              <div className="space-y-2">
+                {[...players].sort((a, b) => b.score - a.score).map((player, idx) => {
+                  const avatarEmoji = PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji;
+                  return (
+                    <div 
+                      key={player.id}
+                      className={`flex items-center gap-3 p-3 rounded-xl border ${
+                        !player.connected ? 'opacity-50 border-white/5 bg-white/[0.02]' : 'border-white/10 bg-white/5'
+                      }`}
+                      data-testid={`manage-player-row-${player.id}`}
+                    >
+                      <div className="relative shrink-0">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-md border-2 ${
+                          idx === 0 ? 'bg-gradient-to-br from-yellow-200 to-yellow-400 border-yellow-300' : 
+                          idx === 1 ? 'bg-gradient-to-br from-slate-100 to-slate-300 border-slate-200' : 
+                          idx === 2 ? 'bg-gradient-to-br from-orange-300 to-orange-500 border-orange-400' : 
+                          'bg-gradient-to-br from-slate-100 via-slate-150 to-slate-200 border-slate-200'
+                        }`}>
+                          {avatarEmoji}
+                        </div>
+                        <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background ${player.connected ? 'bg-primary' : 'bg-destructive'}`} />
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate" title={player.name}>{player.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {player.score} pts {!player.connected && '· disconnected'}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-2 text-xs gap-1"
+                          onClick={() => {
+                            updatePlayerScore(player.id, -10);
+                            toast({ title: `−10 pts`, description: player.name, duration: 1500 });
+                          }}
+                          data-testid={`manage-sub-10-${player.id}`}
+                        >
+                          <Minus className="w-3 h-3" aria-hidden="true" />10
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-2 text-xs gap-1"
+                          onClick={() => {
+                            updatePlayerScore(player.id, 10);
+                            toast({ title: `+10 pts`, description: player.name, duration: 1500 });
+                          }}
+                          data-testid={`manage-add-10-${player.id}`}
+                        >
+                          <Plus className="w-3 h-3" aria-hidden="true" />10
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                          onClick={() => {
+                            kickPlayer(player.id);
+                            toast({ title: `Removed ${player.name}`, variant: "destructive", duration: 2000 });
+                          }}
+                          data-testid={`manage-kick-${player.id}`}
+                          title={`Remove ${player.name}`}
+                        >
+                          <X className="w-4 h-4" aria-hidden="true" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {players.length === 0 && (
+                  <p className="text-center text-muted-foreground py-8 text-sm">No players in the game yet</p>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
           
           {/* Join Notification */}
           <AnimatePresence>
@@ -2221,14 +2314,10 @@ export default function Blitzgrid() {
             <div className="absolute inset-0 bg-gradient-to-r from-secondary/5 via-transparent to-primary/5 pointer-events-none" />
             {players.length > 0 ? (
               <LayoutGroup>
-                <div className="flex flex-col items-center gap-1.5">
-                  {!selectedPlayerId && (
-                    <p className="text-[10px] text-white/30 tracking-wide uppercase">Tap a player to adjust score</p>
-                  )}
-                  <div className="flex items-center justify-center gap-3 md:gap-5 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center gap-3 md:gap-5 flex-wrap flex-1">
                     {[...players].sort((a, b) => b.score - a.score).map((player, idx) => {
                       const avatarEmoji = PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji;
-                      const isSelected = selectedPlayerId === player.id;
                       const scoreAnim = scoreAnimations.get(player.id);
                       return (
                         <motion.div
@@ -2241,13 +2330,11 @@ export default function Blitzgrid() {
                             layout: { type: "spring", stiffness: 400, damping: 30 },
                             opacity: { delay: 0.4 + idx * 0.05 }
                           }}
-                          onClick={() => setSelectedPlayerId(isSelected ? null : player.id)}
-                          className={`relative flex items-center gap-2 rounded-full py-1 pl-1 pr-3 cursor-pointer transition-all ${
-                            isSelected ? 'bg-white/10 ring-2 ring-primary/40' : 'hover-elevate'
-                          } ${!player.connected ? 'opacity-50' : ''}`}
+                          className={`relative flex items-center gap-2 rounded-full py-1 pl-1 pr-3 ${
+                            !player.connected ? 'opacity-50' : ''
+                          }`}
                           data-testid={`player-card-${player.id}`}
                         >
-                          {/* Score change indicator */}
                           <AnimatePresence>
                             {scoreAnim && (
                               <motion.div
@@ -2277,7 +2364,6 @@ export default function Blitzgrid() {
                             >
                               {avatarEmoji}
                             </motion.div>
-                            {/* Rank badge */}
                             {idx < 3 && (
                               <div className={`absolute -top-1 -left-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm ${
                                 idx === 0 ? 'bg-yellow-400 text-yellow-900' : 
@@ -2301,50 +2387,20 @@ export default function Blitzgrid() {
                               {player.score}
                             </motion.span>
                           </div>
-                          
-                          <AnimatePresence>
-                            {isSelected && (
-                              <motion.div 
-                                initial={{ width: 0, opacity: 0 }}
-                                animate={{ width: 'auto', opacity: 1 }}
-                                exit={{ width: 0, opacity: 0 }}
-                                className="flex gap-1 overflow-hidden ml-1"
-                              >
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  className="text-xs px-2 gap-0.5"
-                                  onClick={(e) => { e.stopPropagation(); updatePlayerScore(player.id, -10); }}
-                                  data-testid={`button-sub-score-${player.id}`}
-                                >
-                                  <Minus className="w-3 h-3 shrink-0" aria-hidden="true" />10
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="default"
-                                  className="bg-primary text-xs px-2 gap-0.5"
-                                  onClick={(e) => { e.stopPropagation(); updatePlayerScore(player.id, 10); }}
-                                  data-testid={`button-add-score-${player.id}`}
-                                >
-                                  <Plus className="w-3 h-3 shrink-0" aria-hidden="true" />10
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="border-destructive/50 text-destructive hover:bg-destructive/20 text-xs px-2"
-                                  onClick={(e) => { e.stopPropagation(); kickPlayer(player.id); }}
-                                  data-testid={`button-kick-${player.id}`}
-                                  title="Remove player"
-                                >
-                                  <X className="w-3 h-3 shrink-0" aria-hidden="true" />
-                                </Button>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
                         </motion.div>
                       );
                     })}
                   </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-white/40 hover:text-white/80 shrink-0 h-8 w-8 p-0"
+                    onClick={() => setShowManagePlayers(true)}
+                    data-testid="button-manage-players"
+                    title="Manage players & scores"
+                  >
+                    <Settings className="w-4 h-4" aria-hidden="true" />
+                  </Button>
                 </div>
               </LayoutGroup>
             ) : (
@@ -2432,16 +2488,8 @@ export default function Blitzgrid() {
                   </p>
                   <div className="flex flex-wrap justify-center gap-2">
                     {players.map(p => (
-                      <Badge key={p.id} variant="secondary" className="bg-white/10 text-white border border-white/20 max-w-[140px] flex items-center gap-1 pr-1">
+                      <Badge key={p.id} variant="secondary" className="bg-white/10 text-white border border-white/20 max-w-[120px]">
                         <span className="truncate" title={p.name}>{p.name}</span>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); kickPlayer(p.id); }}
-                          className="shrink-0 rounded-full p-0.5 hover:bg-destructive/30 transition-colors"
-                          title={`Remove ${p.name}`}
-                          data-testid={`button-kick-lobby-${p.id}`}
-                        >
-                          <X className="w-3 h-3 text-white/60 hover:text-destructive" />
-                        </button>
                       </Badge>
                     ))}
                   </div>
@@ -2873,7 +2921,7 @@ export default function Blitzgrid() {
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                  className="text-xs gap-1"
+                                  className="text-xs gap-1 px-2.5"
                                   disabled={isJudging}
                                   onClick={() => {
                                     setIsJudging(true);
@@ -2895,11 +2943,11 @@ export default function Blitzgrid() {
                                   data-testid={`button-wrong-${buzz.playerId}`}
                                 >
                                   <X className="w-3 h-3 shrink-0" aria-hidden="true" />
-                                  Wrong
+                                  Wrong (−{activeQuestion?.points || 0})
                                 </Button>
                                 <Button
                                   size="sm"
-                                  className="bg-primary text-white text-xs gap-1"
+                                  className="bg-primary text-white text-xs gap-1 px-2.5"
                                   disabled={isJudging}
                                   onClick={() => {
                                     setIsJudging(true);
@@ -2913,7 +2961,7 @@ export default function Blitzgrid() {
                                   data-testid={`button-correct-${buzz.playerId}`}
                                 >
                                   <Check className="w-3 h-3 shrink-0" aria-hidden="true" />
-                                  Correct
+                                  Correct (+{activeQuestion?.points || 0})
                                 </Button>
                               </>
                             ) : (
@@ -3005,63 +3053,59 @@ export default function Blitzgrid() {
                 )}
               </AnimatePresence>
               
-              {/* Manual Scoring - inline player chips (after answer revealed) */}
+              {/* Manual Scoring Panel (after answer revealed) */}
               {showAnswer && players.length > 0 && (
-                <div className="mx-5 mb-4" data-testid="manual-scoring-section">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Star className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden="true" />
-                    <span className="text-xs text-white/50 font-medium uppercase tracking-wide">Award Points</span>
-                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/30 text-xs">
+                <div className="mx-5 mb-4 bg-white/[0.03] border border-white/10 rounded-xl p-3" data-testid="manual-scoring-section">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Star className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
+                    <span className="text-sm text-white/70 font-semibold">Award Points</span>
+                    <Badge variant="secondary" className="bg-primary/15 text-primary border-primary/30 text-xs font-bold ml-auto">
                       {activeQuestion?.points || 0} pts
                     </Badge>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {players.map(player => (
-                      <div 
-                        key={player.id}
-                        className="flex items-center gap-1 bg-white/5 rounded-full pl-3 pr-1 py-1 border border-white/10 max-w-[240px]"
-                        data-testid={`player-scoring-chip-${player.id}`}
-                      >
-                        <span className="text-sm text-white/80 truncate min-w-0 flex-1" title={player.name}>{player.name}</span>
-                        <span className="text-xs text-white/40 shrink-0">{player.score}</span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-destructive shrink-0 text-xs h-7 px-2 gap-0.5"
-                          onClick={() => {
-                            const points = activeQuestion?.points || 0;
-                            updatePlayerScore(player.id, -points, true, activeQuestion?.categoryId);
-                            toast({
-                              title: `−${points} pts`,
-                              description: player.name,
-                              duration: 1500,
-                            });
-                          }}
-                          data-testid={`button-deduct-${player.id}`}
+                  <div className="space-y-1.5">
+                    {players.map(player => {
+                      const pts = activeQuestion?.points || 0;
+                      const avatarEmoji = PLAYER_AVATARS.find(a => a.id === player.avatar)?.emoji || PLAYER_AVATARS[0].emoji;
+                      return (
+                        <div 
+                          key={player.id}
+                          className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-white/5 transition-colors"
+                          data-testid={`player-scoring-row-${player.id}`}
                         >
-                          <Minus className="w-3 h-3 shrink-0" aria-hidden="true" />
-                          {activeQuestion?.points || 0}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-primary shrink-0 text-xs h-7 px-2 gap-0.5"
-                          onClick={() => {
-                            const points = activeQuestion?.points || 0;
-                            updatePlayerScore(player.id, points, true, activeQuestion?.categoryId);
-                            toast({
-                              title: `+${points} pts`,
-                              description: player.name,
-                              duration: 1500,
-                            });
-                          }}
-                          data-testid={`button-award-${player.id}`}
-                        >
-                          <Plus className="w-3 h-3 shrink-0" aria-hidden="true" />
-                          {activeQuestion?.points || 0}
-                        </Button>
-                      </div>
-                    ))}
+                          <span className="text-lg shrink-0">{avatarEmoji}</span>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm text-white/80 font-medium truncate block" title={player.name}>{player.name}</span>
+                          </div>
+                          <span className="text-xs text-white/40 shrink-0 w-10 text-right">{player.score}</span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2.5 text-xs gap-1 border-destructive/40 text-destructive hover:bg-destructive/10"
+                            onClick={() => {
+                              updatePlayerScore(player.id, -pts, true, activeQuestion?.categoryId);
+                              toast({ title: `−${pts} pts`, description: player.name, duration: 1500 });
+                            }}
+                            data-testid={`button-deduct-${player.id}`}
+                          >
+                            <X className="w-3 h-3 shrink-0" aria-hidden="true" />
+                            Wrong
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="h-7 px-2.5 text-xs gap-1 bg-primary hover:bg-primary/90"
+                            onClick={() => {
+                              updatePlayerScore(player.id, pts, true, activeQuestion?.categoryId);
+                              toast({ title: `+${pts} pts`, description: player.name, duration: 1500 });
+                            }}
+                            data-testid={`button-award-${player.id}`}
+                          >
+                            <Check className="w-3 h-3 shrink-0" aria-hidden="true" />
+                            Correct
+                          </Button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
