@@ -2825,7 +2825,7 @@ export default function Blitzgrid() {
           {/* Question Modal - Clean hierarchy design */}
           <Dialog open={!!activeQuestion} onOpenChange={(open) => !open && handleCloseQuestion()}>
             <DialogContent 
-              className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden arcade-surface backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl relative"
+              className="max-w-2xl max-h-[85vh] overflow-y-auto overflow-x-hidden arcade-surface backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl relative top-[5%] translate-y-0"
             >
               <AnimatePresence>
                 {timerExpired && (
