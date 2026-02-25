@@ -3135,6 +3135,7 @@ export default function Blitzgrid() {
                                     const pts = activeQuestion?.points || 0;
                                     updatePlayerScore(buzz.playerId, -pts, true, activeQuestion?.categoryId);
                                     sendFeedback(buzz.playerId, false, -pts);
+                                    setScoredPlayers(prev => ({ ...prev, [buzz.playerId]: 'wrong' }));
                                     if (wsRef.current?.readyState === WebSocket.OPEN) {
                                       wsRef.current.send(JSON.stringify({ type: 'host:passPlayer', playerId: buzz.playerId }));
                                     }
@@ -3162,6 +3163,7 @@ export default function Blitzgrid() {
                                     const pts = activeQuestion?.points || 0;
                                     updatePlayerScore(buzz.playerId, pts, true, activeQuestion?.categoryId);
                                     sendFeedback(buzz.playerId, true, pts);
+                                    setScoredPlayers(prev => ({ ...prev, [buzz.playerId]: 'correct' }));
                                     setBuzzQueue([]);
                                     setTimeout(() => setIsJudging(false), 300);
                                   }}
