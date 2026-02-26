@@ -3175,6 +3175,8 @@ export default function Blitzgrid() {
                                   onClick={() => {
                                     setIsJudging(true);
                                     lockBuzzer();
+                                    setTimerActive(false);
+                                    setTimerExpired(false);
                                     const pts = activeQuestion?.points || 0;
                                     updatePlayerScore(buzz.playerId, pts, true, activeQuestion?.categoryId);
                                     sendFeedback(buzz.playerId, true, pts);
