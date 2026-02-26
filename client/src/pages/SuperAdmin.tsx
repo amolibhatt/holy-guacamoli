@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { 
@@ -6,7 +6,8 @@ import {
   Gamepad2, Clock, Activity, ListOrdered, Grid3X3,
   Search, RefreshCw, Star, Megaphone, Download, 
   Send, User, Play, Image, Brain, Zap, Crown, Target, 
-  Eye, EyeOff, Check, X, AlertTriangle, Globe, Sparkles
+  Eye, EyeOff, Check, X, AlertTriangle, Globe, Sparkles,
+  CheckSquare, Square, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -207,10 +208,12 @@ export default function SuperAdmin() {
   
   const [activeTab, setActiveTab] = useState("overview");
   const [userSearch, setUserSearch] = useState("");
-  const [contentSearch, setContentSearch] = useState("");
+  const [contentSearch, setContentSearchBase] = useState("");
+  const setContentSearch = (val: string) => { setContentSearchBase(val); setSelectedIds(new Set()); };
   const [sessionSearch, setSessionSearch] = useState("");
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [contentTab, setContentTab] = useState<'games' | 'blitzgrid' | 'sequence' | 'psyop' | 'timewarp' | 'meme'>('games');
+  const switchContentTab = (tab: typeof contentTab) => { setContentTab(tab); setContentSearch(''); setSelectedIds(new Set()); };
   
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
@@ -219,6 +222,24 @@ export default function SuperAdmin() {
   const [isExporting, setIsExporting] = useState(false);
   const [deleteContentItem, setDeleteContentItem] = useState<{ type: string; id: number; label?: string } | null>(null);
   const [sessionModeFilter, setSessionModeFilter] = useState<string>("all");
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+
+  const toggleSelected = useCallback((id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback((ids: number[]) => {
+    setSelectedIds(new Set(ids));
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
 
   // Queries
   const { data: dashboard, isLoading: isLoadingDashboard, isError: isErrorDashboard, refetch: refetchDashboard } = useQuery<ComprehensiveDashboard>({
@@ -555,6 +576,39 @@ export default function SuperAdmin() {
     },
     onError: () => toast({ title: "Couldn't update visibility", variant: "destructive" }),
   });
+
+  const bulkUpdateStarterPack = useCallback(async (ids: number[], isStarterPack: boolean) => {
+    setIsBulkUpdating(true);
+    let successCount = 0;
+    let errorCount = 0;
+    for (const id of ids) {
+      try {
+        if (contentTab === 'blitzgrid') {
+          await apiRequest('PATCH', `/api/super-admin/boards/${id}/starter-pack`, { isStarterPack });
+        } else if (contentTab === 'sequence') {
+          await apiRequest('PATCH', `/api/super-admin/questions/sequence/${id}/starter-pack`, { isStarterPack });
+        } else if (contentTab === 'psyop') {
+          await apiRequest('PATCH', `/api/super-admin/questions/psyop/${id}/starter-pack`, { isStarterPack });
+        } else if (contentTab === 'timewarp') {
+          await apiRequest('PATCH', `/api/super-admin/questions/timewarp/${id}/starter-pack`, { isStarterPack });
+        } else if (contentTab === 'meme') {
+          await apiRequest('PATCH', `/api/super-admin/meme/prompts/${id}/starter-pack`, { isStarterPack });
+        }
+        successCount++;
+      } catch {
+        errorCount++;
+      }
+    }
+    if (contentTab === 'blitzgrid') queryClient.invalidateQueries({ queryKey: ['/api/super-admin/boards'] });
+    else if (contentTab === 'sequence') queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/sequence'] });
+    else if (contentTab === 'psyop') queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/psyop'] });
+    else if (contentTab === 'timewarp') queryClient.invalidateQueries({ queryKey: ['/api/super-admin/questions/timewarp'] });
+    else if (contentTab === 'meme') queryClient.invalidateQueries({ queryKey: ['/api/super-admin/meme/prompts'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/super-admin/dashboard'] });
+    setIsBulkUpdating(false);
+    setSelectedIds(new Set());
+    toast({ title: `${successCount} item${successCount !== 1 ? 's' : ''} updated${errorCount > 0 ? `, ${errorCount} failed` : ''}` });
+  }, [contentTab, toast]);
 
   const createAnnouncementMutation = useMutation({
     mutationFn: async (data: { title: string; message: string; type?: string }) => {
@@ -1655,7 +1709,7 @@ export default function SuperAdmin() {
                   <Button
                     size="sm"
                     variant={contentTab === 'games' ? 'default' : 'outline'}
-                    onClick={() => { setContentTab('games'); setContentSearch(''); }}
+                    onClick={() => switchContentTab('games')}
                     data-testid="button-content-games"
                   >
                     <Gamepad2 className="w-4 h-4 mr-1" /> Games
@@ -1663,7 +1717,7 @@ export default function SuperAdmin() {
                   <Button
                     size="sm"
                     variant={contentTab === 'blitzgrid' ? 'default' : 'outline'}
-                    onClick={() => { setContentTab('blitzgrid'); setContentSearch(''); }}
+                    onClick={() => switchContentTab('blitzgrid')}
                     data-testid="button-content-blitzgrid"
                   >
                     <Grid3X3 className="w-4 h-4 mr-1" /> BlitzGrid
@@ -1672,7 +1726,7 @@ export default function SuperAdmin() {
                   <Button
                     size="sm"
                     variant={contentTab === 'sequence' ? 'default' : 'outline'}
-                    onClick={() => { setContentTab('sequence'); setContentSearch(''); }}
+                    onClick={() => switchContentTab('sequence')}
                     data-testid="button-content-sequence"
                   >
                     <ListOrdered className="w-4 h-4 mr-1" /> Sort Circuit
@@ -1681,7 +1735,7 @@ export default function SuperAdmin() {
                   <Button
                     size="sm"
                     variant={contentTab === 'psyop' ? 'default' : 'outline'}
-                    onClick={() => { setContentTab('psyop'); setContentSearch(''); }}
+                    onClick={() => switchContentTab('psyop')}
                     data-testid="button-content-psyop"
                   >
                     <Brain className="w-4 h-4 mr-1" /> PsyOp
@@ -1690,7 +1744,7 @@ export default function SuperAdmin() {
                   <Button
                     size="sm"
                     variant={contentTab === 'meme' ? 'default' : 'outline'}
-                    onClick={() => { setContentTab('meme'); setContentSearch(''); }}
+                    onClick={() => switchContentTab('meme')}
                     data-testid="button-content-meme"
                   >
                     <Image className="w-4 h-4 mr-1" /> Meme
@@ -1699,7 +1753,7 @@ export default function SuperAdmin() {
                   <Button
                     size="sm"
                     variant={contentTab === 'timewarp' ? 'default' : 'outline'}
-                    onClick={() => { setContentTab('timewarp'); setContentSearch(''); }}
+                    onClick={() => switchContentTab('timewarp')}
                     data-testid="button-content-timewarp"
                   >
                     <Clock className="w-4 h-4 mr-1" /> Past Forward
@@ -1768,9 +1822,55 @@ export default function SuperAdmin() {
                   ) : filteredBoards.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8" data-testid="text-empty-grids">{contentSearch.trim() ? 'No matching grids' : 'No grids found'}</p>
                   ) : (
-                    <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between px-1 pb-1">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2"
+                            onClick={() => {
+                              const allIds = filteredBoards.map(b => b.id);
+                              if (selectedIds.size === allIds.length && allIds.every(id => selectedIds.has(id))) clearSelection();
+                              else selectAll(allIds);
+                            }}
+                            data-testid="button-select-all-blitzgrid"
+                          >
+                            {selectedIds.size > 0 && filteredBoards.every(b => selectedIds.has(b.id))
+                              ? <CheckSquare className="w-4 h-4 mr-1" />
+                              : <Square className="w-4 h-4 mr-1" />}
+                            {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select all'}
+                          </Button>
+                          {selectedIds.size > 0 && (
+                            <>
+                              <Button size="sm" variant="outline" className="h-7" disabled={isBulkUpdating} onClick={() => bulkUpdateStarterPack(Array.from(selectedIds), true)} data-testid="button-bulk-add-starter">
+                                {isBulkUpdating ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Star className="w-3 h-3 mr-1" />} Add to Starter
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-7" disabled={isBulkUpdating} onClick={() => bulkUpdateStarterPack(Array.from(selectedIds), false)} data-testid="button-bulk-remove-starter">
+                                {isBulkUpdating ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <X className="w-3 h-3 mr-1" />} Remove Starter
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-muted-foreground" onClick={clearSelection}>Clear</Button>
+                            </>
+                          )}
+                        </div>
+                        <Link href="/admin/blitzgrid">
+                          <Button size="sm" variant="outline" data-testid="button-goto-blitzgrid-admin">
+                            <Grid3X3 className="w-4 h-4 mr-1" /> BlitzGrid Admin
+                          </Button>
+                        </Link>
+                      </div>
+                      <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {filteredBoards.map(b => (
-                        <div key={b.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
+                        <div key={b.id} className={`flex items-center p-3 rounded-lg gap-2 ${selectedIds.has(b.id) ? 'bg-primary/10 ring-1 ring-primary/30' : 'bg-muted/30'}`}>
+                          <button
+                            type="button"
+                            className="shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors cursor-pointer hover:border-primary"
+                            style={selectedIds.has(b.id) ? { backgroundColor: 'hsl(var(--primary))', borderColor: 'hsl(var(--primary))' } : {}}
+                            onClick={() => toggleSelected(b.id)}
+                            data-testid={`checkbox-board-${b.id}`}
+                          >
+                            {selectedIds.has(b.id) && <Check className="w-3 h-3 text-primary-foreground" />}
+                          </button>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-medium truncate">{b.name}</p>
@@ -1862,6 +1962,7 @@ export default function SuperAdmin() {
                           </div>
                         </div>
                       ))}
+                      </div>
                     </div>
                   )
                 )}
@@ -1879,7 +1980,35 @@ export default function SuperAdmin() {
                   ) : (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between px-1 pb-1">
-                        <p className="text-xs text-muted-foreground">{filteredSequenceQuestions.length} question{filteredSequenceQuestions.length !== 1 ? 's' : ''}{contentSearch.trim() ? ' matching' : ''}</p>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2"
+                            onClick={() => {
+                              const allIds = filteredSequenceQuestions.map(q => q.id);
+                              if (selectedIds.size === allIds.length && allIds.every(id => selectedIds.has(id))) clearSelection();
+                              else selectAll(allIds);
+                            }}
+                            data-testid="button-select-all-sequence"
+                          >
+                            {selectedIds.size > 0 && filteredSequenceQuestions.every(q => selectedIds.has(q.id))
+                              ? <CheckSquare className="w-4 h-4 mr-1" />
+                              : <Square className="w-4 h-4 mr-1" />}
+                            {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select all'}
+                          </Button>
+                          {selectedIds.size > 0 && (
+                            <>
+                              <Button size="sm" variant="outline" className="h-7" disabled={isBulkUpdating} onClick={() => bulkUpdateStarterPack(Array.from(selectedIds), true)} data-testid="button-bulk-add-starter-seq">
+                                {isBulkUpdating ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Star className="w-3 h-3 mr-1" />} Add to Starter
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-7" disabled={isBulkUpdating} onClick={() => bulkUpdateStarterPack(Array.from(selectedIds), false)} data-testid="button-bulk-remove-starter-seq">
+                                {isBulkUpdating ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <X className="w-3 h-3 mr-1" />} Remove Starter
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-muted-foreground" onClick={clearSelection}>Clear</Button>
+                            </>
+                          )}
+                        </div>
                         <Link href="/admin/sort-circuit">
                           <Button size="sm" variant="outline" data-testid="button-goto-sortcircuit-admin">
                             <ListOrdered className="w-4 h-4 mr-1" /> Sort Circuit Admin
@@ -1888,7 +2017,16 @@ export default function SuperAdmin() {
                       </div>
                       <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {filteredSequenceQuestions.map(q => (
-                        <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
+                        <div key={q.id} className={`flex items-center p-3 rounded-lg gap-2 ${selectedIds.has(q.id) ? 'bg-primary/10 ring-1 ring-primary/30' : 'bg-muted/30'}`}>
+                          <button
+                            type="button"
+                            className="shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors cursor-pointer hover:border-primary"
+                            style={selectedIds.has(q.id) ? { backgroundColor: 'hsl(var(--primary))', borderColor: 'hsl(var(--primary))' } : {}}
+                            onClick={() => toggleSelected(q.id)}
+                            data-testid={`checkbox-seq-${q.id}`}
+                          >
+                            {selectedIds.has(q.id) && <Check className="w-3 h-3 text-primary-foreground" />}
+                          </button>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-medium truncate">{q.question}</p>
@@ -1961,7 +2099,35 @@ export default function SuperAdmin() {
                   ) : (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between px-1 pb-1">
-                        <p className="text-xs text-muted-foreground">{filteredPsyopQuestions.length} question{filteredPsyopQuestions.length !== 1 ? 's' : ''}{contentSearch.trim() ? ' matching' : ''}</p>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2"
+                            onClick={() => {
+                              const allIds = filteredPsyopQuestions.map(q => q.id);
+                              if (selectedIds.size === allIds.length && allIds.every(id => selectedIds.has(id))) clearSelection();
+                              else selectAll(allIds);
+                            }}
+                            data-testid="button-select-all-psyop"
+                          >
+                            {selectedIds.size > 0 && filteredPsyopQuestions.every(q => selectedIds.has(q.id))
+                              ? <CheckSquare className="w-4 h-4 mr-1" />
+                              : <Square className="w-4 h-4 mr-1" />}
+                            {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select all'}
+                          </Button>
+                          {selectedIds.size > 0 && (
+                            <>
+                              <Button size="sm" variant="outline" className="h-7" disabled={isBulkUpdating} onClick={() => bulkUpdateStarterPack(Array.from(selectedIds), true)} data-testid="button-bulk-add-starter-psyop">
+                                {isBulkUpdating ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Star className="w-3 h-3 mr-1" />} Add to Starter
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-7" disabled={isBulkUpdating} onClick={() => bulkUpdateStarterPack(Array.from(selectedIds), false)} data-testid="button-bulk-remove-starter-psyop">
+                                {isBulkUpdating ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <X className="w-3 h-3 mr-1" />} Remove Starter
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-muted-foreground" onClick={clearSelection}>Clear</Button>
+                            </>
+                          )}
+                        </div>
                         <Link href="/admin/psyop">
                           <Button size="sm" variant="outline" data-testid="button-goto-psyop-admin">
                             <Brain className="w-4 h-4 mr-1" /> PsyOp Admin
@@ -1970,7 +2136,16 @@ export default function SuperAdmin() {
                       </div>
                       <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {filteredPsyopQuestions.map(q => (
-                        <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
+                        <div key={q.id} className={`flex items-center p-3 rounded-lg gap-2 ${selectedIds.has(q.id) ? 'bg-primary/10 ring-1 ring-primary/30' : 'bg-muted/30'}`}>
+                          <button
+                            type="button"
+                            className="shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors cursor-pointer hover:border-primary"
+                            style={selectedIds.has(q.id) ? { backgroundColor: 'hsl(var(--primary))', borderColor: 'hsl(var(--primary))' } : {}}
+                            onClick={() => toggleSelected(q.id)}
+                            data-testid={`checkbox-psyop-${q.id}`}
+                          >
+                            {selectedIds.has(q.id) && <Check className="w-3 h-3 text-primary-foreground" />}
+                          </button>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-medium truncate">{q.factText}</p>
@@ -2034,7 +2209,35 @@ export default function SuperAdmin() {
                   ) : (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between px-1 pb-1">
-                        <p className="text-xs text-muted-foreground">{filteredTimewarpQuestions.length} question{filteredTimewarpQuestions.length !== 1 ? 's' : ''}{contentSearch.trim() ? ' matching' : ''}</p>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2"
+                            onClick={() => {
+                              const allIds = filteredTimewarpQuestions.map(q => q.id);
+                              if (selectedIds.size === allIds.length && allIds.every(id => selectedIds.has(id))) clearSelection();
+                              else selectAll(allIds);
+                            }}
+                            data-testid="button-select-all-timewarp"
+                          >
+                            {selectedIds.size > 0 && filteredTimewarpQuestions.every(q => selectedIds.has(q.id))
+                              ? <CheckSquare className="w-4 h-4 mr-1" />
+                              : <Square className="w-4 h-4 mr-1" />}
+                            {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select all'}
+                          </Button>
+                          {selectedIds.size > 0 && (
+                            <>
+                              <Button size="sm" variant="outline" className="h-7" disabled={isBulkUpdating} onClick={() => bulkUpdateStarterPack(Array.from(selectedIds), true)} data-testid="button-bulk-add-starter-timewarp">
+                                {isBulkUpdating ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Star className="w-3 h-3 mr-1" />} Add to Starter
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-7" disabled={isBulkUpdating} onClick={() => bulkUpdateStarterPack(Array.from(selectedIds), false)} data-testid="button-bulk-remove-starter-timewarp">
+                                {isBulkUpdating ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <X className="w-3 h-3 mr-1" />} Remove Starter
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-muted-foreground" onClick={clearSelection}>Clear</Button>
+                            </>
+                          )}
+                        </div>
                         <Link href="/admin/pastforward">
                           <Button size="sm" variant="outline" data-testid="button-goto-timewarp-admin">
                             <Clock className="w-4 h-4 mr-1" /> Past Forward Admin
@@ -2043,7 +2246,16 @@ export default function SuperAdmin() {
                       </div>
                       <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {filteredTimewarpQuestions.map(q => (
-                        <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
+                        <div key={q.id} className={`flex items-center p-3 rounded-lg gap-2 ${selectedIds.has(q.id) ? 'bg-primary/10 ring-1 ring-primary/30' : 'bg-muted/30'}`}>
+                          <button
+                            type="button"
+                            className="shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors cursor-pointer hover:border-primary"
+                            style={selectedIds.has(q.id) ? { backgroundColor: 'hsl(var(--primary))', borderColor: 'hsl(var(--primary))' } : {}}
+                            onClick={() => toggleSelected(q.id)}
+                            data-testid={`checkbox-timewarp-${q.id}`}
+                          >
+                            {selectedIds.has(q.id) && <Check className="w-3 h-3 text-primary-foreground" />}
+                          </button>
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             {q.imageUrl ? (
                               <img src={q.imageUrl} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
@@ -2114,7 +2326,35 @@ export default function SuperAdmin() {
                   ) : (
                     <div className="space-y-4">
                       <div className="flex items-center justify-between px-1 pb-1">
-                        <p className="text-xs text-muted-foreground">{filteredMemePrompts.length} prompt{filteredMemePrompts.length !== 1 ? 's' : ''}, {filteredMemeImages.length} image{filteredMemeImages.length !== 1 ? 's' : ''}{contentSearch.trim() ? ' matching' : ''}</p>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2"
+                            onClick={() => {
+                              const allIds = filteredMemePrompts.map(p => p.id);
+                              if (selectedIds.size === allIds.length && allIds.every(id => selectedIds.has(id))) clearSelection();
+                              else selectAll(allIds);
+                            }}
+                            data-testid="button-select-all-meme"
+                          >
+                            {selectedIds.size > 0 && filteredMemePrompts.every(p => selectedIds.has(p.id))
+                              ? <CheckSquare className="w-4 h-4 mr-1" />
+                              : <Square className="w-4 h-4 mr-1" />}
+                            {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select all'}
+                          </Button>
+                          {selectedIds.size > 0 && (
+                            <>
+                              <Button size="sm" variant="outline" className="h-7" disabled={isBulkUpdating} onClick={() => bulkUpdateStarterPack(Array.from(selectedIds), true)} data-testid="button-bulk-add-starter-meme">
+                                {isBulkUpdating ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Star className="w-3 h-3 mr-1" />} Add to Starter
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-7" disabled={isBulkUpdating} onClick={() => bulkUpdateStarterPack(Array.from(selectedIds), false)} data-testid="button-bulk-remove-starter-meme">
+                                {isBulkUpdating ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <X className="w-3 h-3 mr-1" />} Remove Starter
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-muted-foreground" onClick={clearSelection}>Clear</Button>
+                            </>
+                          )}
+                        </div>
                         <Link href="/admin/meme">
                           <Button size="sm" variant="outline" data-testid="button-goto-meme-admin">
                             <Image className="w-4 h-4 mr-1" /> Meme Admin
@@ -2128,7 +2368,16 @@ export default function SuperAdmin() {
                         ) : (
                           <div className="space-y-2 max-h-[250px] overflow-y-auto">
                             {filteredMemePrompts.map(p => (
-                              <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 gap-2">
+                              <div key={p.id} className={`flex items-center p-3 rounded-lg gap-2 ${selectedIds.has(p.id) ? 'bg-primary/10 ring-1 ring-primary/30' : 'bg-muted/30'}`}>
+                                <button
+                                  type="button"
+                                  className="shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors cursor-pointer hover:border-primary"
+                                  style={selectedIds.has(p.id) ? { backgroundColor: 'hsl(var(--primary))', borderColor: 'hsl(var(--primary))' } : {}}
+                                  onClick={() => toggleSelected(p.id)}
+                                  data-testid={`checkbox-meme-prompt-${p.id}`}
+                                >
+                                  {selectedIds.has(p.id) && <Check className="w-3 h-3 text-primary-foreground" />}
+                                </button>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
                                     <p className="font-medium truncate">{p.prompt}</p>
