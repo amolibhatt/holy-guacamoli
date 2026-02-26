@@ -2134,9 +2134,40 @@ export default function SuperAdmin() {
                           </Button>
                         </Link>
                       </div>
-                      <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                      {filteredPsyopQuestions.map(q => (
-                        <div key={q.id} className={`flex items-center p-3 rounded-lg gap-2 ${selectedIds.has(q.id) ? 'bg-primary/10 ring-1 ring-primary/30' : 'bg-muted/30'}`}>
+                      <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                      {(() => {
+                        const grouped = filteredPsyopQuestions.reduce<Record<string, typeof filteredPsyopQuestions>>((acc, q) => {
+                          const cat = q.category || 'Uncategorized';
+                          if (!acc[cat]) acc[cat] = [];
+                          acc[cat].push(q);
+                          return acc;
+                        }, {});
+                        return Object.entries(grouped).map(([category, questions]) => {
+                          const catIds = questions.map(q => q.id);
+                          const allCatSelected = catIds.every(id => selectedIds.has(id));
+                          return (
+                            <div key={category} className="space-y-1">
+                              <div className="flex items-center gap-2 px-1 pt-1">
+                                <button
+                                  type="button"
+                                  className="shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors cursor-pointer hover:border-primary"
+                                  style={allCatSelected ? { backgroundColor: 'hsl(var(--primary))', borderColor: 'hsl(var(--primary))' } : {}}
+                                  onClick={() => {
+                                    if (allCatSelected) {
+                                      setSelectedIds(prev => { const next = new Set(prev); catIds.forEach(id => next.delete(id)); return next; });
+                                    } else {
+                                      setSelectedIds(prev => { const next = new Set(prev); catIds.forEach(id => next.add(id)); return next; });
+                                    }
+                                  }}
+                                  data-testid={`checkbox-psyop-category-${category}`}
+                                >
+                                  {allCatSelected && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
+                                </button>
+                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{category}</span>
+                                <Badge variant="outline" className="text-[10px] h-4 px-1">{questions.length}</Badge>
+                              </div>
+                              {questions.map(q => (
+                          <div key={q.id} className={`flex items-center p-3 rounded-lg gap-2 ${selectedIds.has(q.id) ? 'bg-primary/10 ring-1 ring-primary/30' : 'bg-muted/30'}`}>
                           <button
                             type="button"
                             className="shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors cursor-pointer hover:border-primary"
@@ -2155,7 +2186,7 @@ export default function SuperAdmin() {
                               {q.playCount > 0 && <Badge variant="outline" className="text-xs">{q.playCount} play{q.playCount !== 1 ? 's' : ''}</Badge>}
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              by {q.creator?.username || 'Unknown'} • {formatRelativeDate(q.createdAt)}{q.category ? ` • ${q.category}` : ''}
+                              by {q.creator?.username || 'Unknown'} • {formatRelativeDate(q.createdAt)}
                             </p>
                           </div>
                           <div className="flex items-center gap-1 flex-shrink-0">
@@ -2191,7 +2222,11 @@ export default function SuperAdmin() {
                             </Button>
                           </div>
                         </div>
-                      ))}
+                              ))}
+                            </div>
+                          );
+                        });
+                      })()}
                       </div>
                     </div>
                   )
@@ -2244,8 +2279,39 @@ export default function SuperAdmin() {
                           </Button>
                         </Link>
                       </div>
-                      <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                      {filteredTimewarpQuestions.map(q => (
+                      <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                      {(() => {
+                        const grouped = filteredTimewarpQuestions.reduce<Record<string, typeof filteredTimewarpQuestions>>((acc, q) => {
+                          const cat = q.category || 'Uncategorized';
+                          if (!acc[cat]) acc[cat] = [];
+                          acc[cat].push(q);
+                          return acc;
+                        }, {});
+                        return Object.entries(grouped).map(([category, questions]) => {
+                          const catIds = questions.map(q => q.id);
+                          const allCatSelected = catIds.every(id => selectedIds.has(id));
+                          return (
+                            <div key={category} className="space-y-1">
+                              <div className="flex items-center gap-2 px-1 pt-1">
+                                <button
+                                  type="button"
+                                  className="shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors cursor-pointer hover:border-primary"
+                                  style={allCatSelected ? { backgroundColor: 'hsl(var(--primary))', borderColor: 'hsl(var(--primary))' } : {}}
+                                  onClick={() => {
+                                    if (allCatSelected) {
+                                      setSelectedIds(prev => { const next = new Set(prev); catIds.forEach(id => next.delete(id)); return next; });
+                                    } else {
+                                      setSelectedIds(prev => { const next = new Set(prev); catIds.forEach(id => next.add(id)); return next; });
+                                    }
+                                  }}
+                                  data-testid={`checkbox-timewarp-category-${category}`}
+                                >
+                                  {allCatSelected && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
+                                </button>
+                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{category}</span>
+                                <Badge variant="outline" className="text-[10px] h-4 px-1">{questions.length}</Badge>
+                              </div>
+                              {questions.map(q => (
                         <div key={q.id} className={`flex items-center p-3 rounded-lg gap-2 ${selectedIds.has(q.id) ? 'bg-primary/10 ring-1 ring-primary/30' : 'bg-muted/30'}`}>
                           <button
                             type="button"
@@ -2273,7 +2339,7 @@ export default function SuperAdmin() {
                                 {q.hint && <Badge variant="outline" className="text-xs">Hint</Badge>}
                               </div>
                               <p className="text-xs text-muted-foreground">
-                                by {q.creator?.username || 'Unknown'} • {formatRelativeDate(q.createdAt)}{q.category ? ` • ${q.category}` : ''}
+                                by {q.creator?.username || 'Unknown'} • {formatRelativeDate(q.createdAt)}
                               </p>
                             </div>
                           </div>
@@ -2310,7 +2376,11 @@ export default function SuperAdmin() {
                             </Button>
                           </div>
                         </div>
-                      ))}
+                              ))}
+                            </div>
+                          );
+                        });
+                      })()}
                       </div>
                     </div>
                   )
