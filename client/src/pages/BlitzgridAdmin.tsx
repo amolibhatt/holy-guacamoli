@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, Trash2, Pencil, Check, X, Grid3X3, ListOrdered, Brain, Clock,
   ChevronRight, Loader2,
-  AlertCircle, CheckCircle2, Image, Music, Video,
+  AlertCircle, CheckCircle2, Image, Music, Video, Link2,
   Download, Upload, FileSpreadsheet, Smile,
   BarChart3, Users, Play, Trophy, TrendingUp, ChevronDown,
 } from "lucide-react";
@@ -165,6 +165,9 @@ export default function BlitzGridAdmin() {
   const [selectedPointTier, setSelectedPointTier] = useState<number>(10);
   const [showMediaPanel, setShowMediaPanel] = useState(false);
   const [isSavingAll, setIsSavingAll] = useState(false);
+  const [activeUrlInput, setActiveUrlInput] = useState<{ formKey: string; field: string } | null>(null);
+  const [urlInputValue, setUrlInputValue] = useState("");
+  const clearUrlInput = () => { setActiveUrlInput(null); setUrlInputValue(""); };
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isBatchSaving = useRef(false);
 
@@ -442,6 +445,7 @@ export default function BlitzGridAdmin() {
     setDeletingCategoryId(null);
     setShowMediaPanel(false);
     setSelectedPointTier(10);
+    clearUrlInput();
   }, [selectedGridId]);
 
   const handleExport = async () => {
@@ -1332,107 +1336,126 @@ export default function BlitzGridAdmin() {
                                           </Button>
                                         </div>
                                       </div>
-                                      {isMediaOpen && (
+                                      {isMediaOpen && (() => {
+                                        const setMediaUrl = (field: string, url: string) => {
+                                          setQuestionForms(prev => ({
+                                            ...prev,
+                                            [formKey]: {
+                                              ...prev[formKey],
+                                              question: prev[formKey]?.question || '',
+                                              correctAnswer: prev[formKey]?.correctAnswer || '',
+                                              options: prev[formKey]?.options || [],
+                                              [field]: url,
+                                            }
+                                          }));
+                                        };
+                                        const handleFileUpload = async (file: File, type: 'image' | 'audio' | 'video', field: string) => {
+                                          try {
+                                            const url = await uploadFile(file, type);
+                                            setMediaUrl(field, url);
+                                            toast({ title: `${type.charAt(0).toUpperCase() + type.slice(1)} uploaded` });
+                                          } catch (err) {
+                                            toast({ title: err instanceof Error ? err.message : "Upload failed", variant: "destructive" });
+                                          }
+                                        };
+                                        const confirmUrlInput = (field: string) => {
+                                          const url = urlInputValue.trim();
+                                          if (url) {
+                                            setMediaUrl(field, url);
+                                            toast({ title: "URL added" });
+                                          }
+                                          setActiveUrlInput(null);
+                                          setUrlInputValue("");
+                                        };
+                                        const renderMediaSlot = (
+                                          currentUrl: string | undefined,
+                                          field: string,
+                                          label: string,
+                                          accept: string,
+                                          type: 'image' | 'audio' | 'video',
+                                          IconComponent: typeof Image,
+                                          prefix: string
+                                        ) => {
+                                          const isUrlMode = activeUrlInput?.formKey === formKey && activeUrlInput?.field === field;
+                                          if (currentUrl) {
+                                            return (
+                                              <div className="flex items-center gap-1 bg-primary/10 rounded px-2 py-1">
+                                                <IconComponent className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
+                                                <span className="text-xs truncate max-w-20">{label}</span>
+                                                <Button type="button" size="icon" variant="ghost" className="text-destructive" onClick={() => setMediaUrl(field, '')} data-testid={`remove-${prefix}-${field}-${formKey}`}>
+                                                  <X className="w-3 h-3" />
+                                                </Button>
+                                              </div>
+                                            );
+                                          }
+                                          if (isUrlMode) {
+                                            return (
+                                              <div className="flex items-center gap-1 w-full">
+                                                <Input
+                                                  placeholder={`Paste ${label.toLowerCase()} URL...`}
+                                                  value={urlInputValue}
+                                                  onChange={(e) => setUrlInputValue(e.target.value)}
+                                                  onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') { e.preventDefault(); confirmUrlInput(field); }
+                                                    if (e.key === 'Escape') { setActiveUrlInput(null); setUrlInputValue(""); }
+                                                  }}
+                                                  autoFocus
+                                                  className="h-7 text-xs flex-1"
+                                                  data-testid={`input-url-${prefix}-${field}-${formKey}`}
+                                                />
+                                                <Button type="button" size="icon" variant="ghost" className="h-7 w-7 shrink-0 text-primary" onClick={() => confirmUrlInput(field)} data-testid={`confirm-url-${prefix}-${field}-${formKey}`}>
+                                                  <Check className="w-3 h-3" />
+                                                </Button>
+                                                <Button type="button" size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => { setActiveUrlInput(null); setUrlInputValue(""); }} data-testid={`cancel-url-${prefix}-${field}-${formKey}`}>
+                                                  <X className="w-3 h-3" />
+                                                </Button>
+                                              </div>
+                                            );
+                                          }
+                                          return (
+                                            <div className="flex items-center gap-1">
+                                              <label className="cursor-pointer">
+                                                <input type="file" accept={accept} className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { await handleFileUpload(file, type, field); } e.target.value = ''; }} />
+                                                <Button type="button" size="sm" variant="outline" asChild><span><IconComponent className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />{label}</span></Button>
+                                              </label>
+                                              <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                                                onClick={() => { setActiveUrlInput({ formKey, field }); setUrlInputValue(""); }}
+                                                data-testid={`button-url-${prefix}-${field}-${formKey}`}
+                                                title={`Paste ${label.toLowerCase()} URL`}
+                                              >
+                                                <Link2 className="w-3 h-3" />
+                                              </Button>
+                                            </div>
+                                          );
+                                        };
+                                        return (
                                         <div className="mt-3 pt-3 border-t border-border/50 space-y-3 ml-[3.25rem]">
                                           <div className="text-xs text-muted-foreground/60 bg-muted/30 rounded px-2 py-1.5 mb-2">
-                                            <strong>Media limits:</strong> Images max 5MB (JPG, PNG, GIF) | Audio/Video max 10MB (MP3, MP4)
+                                            <strong>Media limits:</strong> Images max 5MB (JPG, PNG, GIF) | Audio/Video max 10MB (MP3, MP4) | Or paste a URL
                                           </div>
                                           <div className="space-y-1">
                                             <span className="text-xs text-muted-foreground font-medium">Question Media:</span>
                                             <div className="flex flex-wrap items-center gap-2">
-                                              {formData?.imageUrl ? (
-                                                <div className="flex items-center gap-1 bg-primary/10 rounded px-2 py-1">
-                                                  <Image className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
-                                                  <span className="text-xs truncate max-w-20">Image</span>
-                                                  <Button type="button" size="icon" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], imageUrl: '' } }))} data-testid={`remove-question-image-${formKey}`}>
-                                                    <X className="w-3 h-3" />
-                                                  </Button>
-                                                </div>
-                                              ) : (
-                                                <label className="cursor-pointer">
-                                                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file, 'image'); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: url, audioUrl: prev[formKey]?.audioUrl || '', videoUrl: prev[formKey]?.videoUrl || '', answerImageUrl: prev[formKey]?.answerImageUrl || '', answerAudioUrl: prev[formKey]?.answerAudioUrl || '', answerVideoUrl: prev[formKey]?.answerVideoUrl || '' } })); toast({ title: "Image uploaded" }); } catch (err) { toast({ title: err instanceof Error ? err.message : "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
-                                                  <Button type="button" size="sm" variant="outline" asChild><span><Image className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />Img</span></Button>
-                                                </label>
-                                              )}
-                                              {formData?.audioUrl ? (
-                                                <div className="flex items-center gap-1 bg-primary/10 rounded px-2 py-1">
-                                                  <Music className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
-                                                  <span className="text-xs truncate max-w-20">Audio</span>
-                                                  <Button type="button" size="icon" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], audioUrl: '' } }))} data-testid={`remove-question-audio-${formKey}`}>
-                                                    <X className="w-3 h-3" />
-                                                  </Button>
-                                                </div>
-                                              ) : (
-                                                <label className="cursor-pointer">
-                                                  <input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file, 'audio'); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: prev[formKey]?.imageUrl || '', audioUrl: url, videoUrl: prev[formKey]?.videoUrl || '', answerImageUrl: prev[formKey]?.answerImageUrl || '', answerAudioUrl: prev[formKey]?.answerAudioUrl || '', answerVideoUrl: prev[formKey]?.answerVideoUrl || '' } })); toast({ title: "Audio uploaded" }); } catch (err) { toast({ title: err instanceof Error ? err.message : "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
-                                                  <Button type="button" size="sm" variant="outline" asChild><span><Music className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />Audio</span></Button>
-                                                </label>
-                                              )}
-                                              {formData?.videoUrl ? (
-                                                <div className="flex items-center gap-1 bg-primary/10 rounded px-2 py-1">
-                                                  <Video className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
-                                                  <span className="text-xs truncate max-w-20">Video</span>
-                                                  <Button type="button" size="icon" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], videoUrl: '' } }))} data-testid={`remove-question-video-${formKey}`}>
-                                                    <X className="w-3 h-3" />
-                                                  </Button>
-                                                </div>
-                                              ) : (
-                                                <label className="cursor-pointer">
-                                                  <input type="file" accept="video/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file, 'video'); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: prev[formKey]?.imageUrl || '', audioUrl: prev[formKey]?.audioUrl || '', videoUrl: url, answerImageUrl: prev[formKey]?.answerImageUrl || '', answerAudioUrl: prev[formKey]?.answerAudioUrl || '', answerVideoUrl: prev[formKey]?.answerVideoUrl || '' } })); toast({ title: "Video uploaded" }); } catch (err) { toast({ title: err instanceof Error ? err.message : "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
-                                                  <Button type="button" size="sm" variant="outline" asChild><span><Video className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />Video</span></Button>
-                                                </label>
-                                              )}
+                                              {renderMediaSlot(formData?.imageUrl, 'imageUrl', 'Img', 'image/*', 'image', Image, 'question')}
+                                              {renderMediaSlot(formData?.audioUrl, 'audioUrl', 'Audio', 'audio/*', 'audio', Music, 'question')}
+                                              {renderMediaSlot(formData?.videoUrl, 'videoUrl', 'Video', 'video/*', 'video', Video, 'question')}
                                             </div>
                                           </div>
                                           <div className="space-y-1">
                                             <span className="text-xs text-muted-foreground font-medium">Answer Media:</span>
                                             <div className="flex flex-wrap items-center gap-2">
-                                              {formData?.answerImageUrl ? (
-                                                <div className="flex items-center gap-1 bg-primary/10 rounded px-2 py-1">
-                                                  <Image className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
-                                                  <span className="text-xs truncate max-w-20">Image</span>
-                                                  <Button type="button" size="icon" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], answerImageUrl: '' } }))} data-testid={`remove-answer-image-${formKey}`}>
-                                                    <X className="w-3 h-3" />
-                                                  </Button>
-                                                </div>
-                                              ) : (
-                                                <label className="cursor-pointer">
-                                                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file, 'image'); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: prev[formKey]?.imageUrl || '', audioUrl: prev[formKey]?.audioUrl || '', videoUrl: prev[formKey]?.videoUrl || '', answerImageUrl: url, answerAudioUrl: prev[formKey]?.answerAudioUrl || '', answerVideoUrl: prev[formKey]?.answerVideoUrl || '' } })); toast({ title: "Image uploaded" }); } catch (err) { toast({ title: err instanceof Error ? err.message : "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
-                                                  <Button type="button" size="sm" variant="outline" asChild><span><Image className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />Img</span></Button>
-                                                </label>
-                                              )}
-                                              {formData?.answerAudioUrl ? (
-                                                <div className="flex items-center gap-1 bg-primary/10 rounded px-2 py-1">
-                                                  <Music className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
-                                                  <span className="text-xs truncate max-w-20">Audio</span>
-                                                  <Button type="button" size="icon" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], answerAudioUrl: '' } }))} data-testid={`remove-answer-audio-${formKey}`}>
-                                                    <X className="w-3 h-3" />
-                                                  </Button>
-                                                </div>
-                                              ) : (
-                                                <label className="cursor-pointer">
-                                                  <input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file, 'audio'); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: prev[formKey]?.imageUrl || '', audioUrl: prev[formKey]?.audioUrl || '', videoUrl: prev[formKey]?.videoUrl || '', answerImageUrl: prev[formKey]?.answerImageUrl || '', answerAudioUrl: url, answerVideoUrl: prev[formKey]?.answerVideoUrl || '' } })); toast({ title: "Audio uploaded" }); } catch (err) { toast({ title: err instanceof Error ? err.message : "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
-                                                  <Button type="button" size="sm" variant="outline" asChild><span><Music className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />Audio</span></Button>
-                                                </label>
-                                              )}
-                                              {formData?.answerVideoUrl ? (
-                                                <div className="flex items-center gap-1 bg-primary/10 rounded px-2 py-1">
-                                                  <Video className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
-                                                  <span className="text-xs truncate max-w-20">Video</span>
-                                                  <Button type="button" size="icon" variant="ghost" className="text-destructive" onClick={() => setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], answerVideoUrl: '' } }))} data-testid={`remove-answer-video-${formKey}`}>
-                                                    <X className="w-3 h-3" />
-                                                  </Button>
-                                                </div>
-                                              ) : (
-                                                <label className="cursor-pointer">
-                                                  <input type="file" accept="video/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await uploadFile(file, 'video'); setQuestionForms(prev => ({ ...prev, [formKey]: { ...prev[formKey], question: prev[formKey]?.question || '', correctAnswer: prev[formKey]?.correctAnswer || '', options: prev[formKey]?.options || [], imageUrl: prev[formKey]?.imageUrl || '', audioUrl: prev[formKey]?.audioUrl || '', videoUrl: prev[formKey]?.videoUrl || '', answerImageUrl: prev[formKey]?.answerImageUrl || '', answerAudioUrl: prev[formKey]?.answerAudioUrl || '', answerVideoUrl: url } })); toast({ title: "Video uploaded" }); } catch (err) { toast({ title: err instanceof Error ? err.message : "Upload failed", variant: "destructive" }); } } e.target.value = ''; }} />
-                                                  <Button type="button" size="sm" variant="outline" asChild><span><Video className="w-3 h-3 mr-1 shrink-0" aria-hidden="true" />Video</span></Button>
-                                                </label>
-                                              )}
+                                              {renderMediaSlot(formData?.answerImageUrl, 'answerImageUrl', 'Img', 'image/*', 'image', Image, 'answer')}
+                                              {renderMediaSlot(formData?.answerAudioUrl, 'answerAudioUrl', 'Audio', 'audio/*', 'audio', Music, 'answer')}
+                                              {renderMediaSlot(formData?.answerVideoUrl, 'answerVideoUrl', 'Video', 'video/*', 'video', Video, 'answer')}
                                             </div>
                                           </div>
                                         </div>
-                                      )}
+                                        );
+                                      })()}
                                     </div>
                                   );
                                 })}
