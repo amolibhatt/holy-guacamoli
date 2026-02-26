@@ -59,7 +59,7 @@ const GAME_CONFIG: Record<string, {
     accentColor: "#22d3ee",
     tagline: "Speed Sorting",
     howItWorks: "Put things in order. Fastest wins!",
-    players: "2-20 players",
+    players: "2+ players",
   },
   psyop: {
     icon: Brain,
@@ -67,7 +67,7 @@ const GAME_CONFIG: Record<string, {
     accentColor: "#8b5cf6",
     tagline: "Lie & Spy",
     howItWorks: "Make up answers. Fool your friends!",
-    players: "3-10 players",
+    players: "3+ players",
   },
   timewarp: {
     icon: Clock,
@@ -83,7 +83,7 @@ const GAME_CONFIG: Record<string, {
     accentColor: "#22c55e",
     tagline: "Meme Matchup",
     howItWorks: "Pick the perfect meme. Vote for the funniest!",
-    players: "3-10 players",
+    players: "3+ players",
     badge: "New",
   },
 };

@@ -72,7 +72,7 @@ export const GAME_RULES: Record<string, GameRulesContent> = {
   psyop: {
     title: "PsyOp",
     tagline: "Make up answers. Fool your friends!",
-    players: "3-10 players",
+    players: "3+ players",
     duration: "20-40 min",
     accentColor: "#8b5cf6",
     overview: "A bluffing game where players create fake answers to trick others. One answer is real - can you spot it? Or will your fake answer fool everyone?",
