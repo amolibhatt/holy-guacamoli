@@ -1329,7 +1329,7 @@ export default function BlitzGridAdmin() {
                                           <Button
                                             size="icon"
                                             variant="ghost"
-                                            onClick={() => { setSelectedPointTier(pts); setShowMediaPanel(!isMediaOpen); }}
+                                            onClick={() => { setSelectedPointTier(pts); setShowMediaPanel(!isMediaOpen); clearUrlInput(); }}
                                             data-testid={`button-media-${formKey}`}
                                           >
                                             <Image className="w-4 h-4 shrink-0" aria-hidden="true" />
