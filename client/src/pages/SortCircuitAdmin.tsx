@@ -77,16 +77,6 @@ export default function SortCircuitAdmin() {
                 PsyOp
               </Button>
             </Link>
-            <Link href="/admin/pastforward">
-              <Button 
-                variant="ghost" 
-                className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
-                data-testid="tab-timewarp"
-              >
-                <Clock className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
-                Past Forward
-              </Button>
-            </Link>
             <Link href="/admin/memenoharm">
               <Button 
                 variant="ghost" 
@@ -95,6 +85,16 @@ export default function SortCircuitAdmin() {
               >
                 <Smile className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                 Meme No Harm
+              </Button>
+            </Link>
+            <Link href="/admin/pastforward">
+              <Button 
+                variant="ghost" 
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
+                data-testid="tab-timewarp"
+              >
+                <Clock className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
+                Past Forward
               </Button>
             </Link>
           </nav>

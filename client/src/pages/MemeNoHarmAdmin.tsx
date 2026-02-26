@@ -352,16 +352,6 @@ export default function MemeNoHarmAdmin() {
                 PsyOp
               </Button>
             </Link>
-            <Link href="/admin/pastforward">
-              <Button 
-                variant="ghost" 
-                className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
-                data-testid="tab-pastforward"
-              >
-                <Clock className="w-4 h-4 mr-2" />
-                Past Forward
-              </Button>
-            </Link>
             <Link href="/admin/memenoharm">
               <Button 
                 variant="ghost" 
@@ -370,6 +360,16 @@ export default function MemeNoHarmAdmin() {
               >
                 <Smile className="w-4 h-4 mr-2" />
                 Meme No Harm
+              </Button>
+            </Link>
+            <Link href="/admin/pastforward">
+              <Button 
+                variant="ghost" 
+                className="relative rounded-none border-b-2 border-transparent text-muted-foreground"
+                data-testid="tab-pastforward"
+              >
+                <Clock className="w-4 h-4 mr-2" />
+                Past Forward
               </Button>
             </Link>
           </nav>

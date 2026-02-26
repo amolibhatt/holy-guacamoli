@@ -230,16 +230,6 @@ export default function TimeWarpAdmin() {
                 PsyOp
               </Button>
             </Link>
-            <Link href="/admin/pastforward">
-              <Button 
-                variant="ghost" 
-                className="relative rounded-none border-b-2 border-primary text-foreground"
-                data-testid="tab-timewarp"
-              >
-                <Clock className="w-4 h-4 mr-2" />
-                Past Forward
-              </Button>
-            </Link>
             <Link href="/admin/memenoharm">
               <Button 
                 variant="ghost" 
@@ -248,6 +238,16 @@ export default function TimeWarpAdmin() {
               >
                 <Smile className="w-4 h-4 mr-2" />
                 Meme No Harm
+              </Button>
+            </Link>
+            <Link href="/admin/pastforward">
+              <Button 
+                variant="ghost" 
+                className="relative rounded-none border-b-2 border-primary text-foreground"
+                data-testid="tab-timewarp"
+              >
+                <Clock className="w-4 h-4 mr-2" />
+                Past Forward
               </Button>
             </Link>
           </nav>

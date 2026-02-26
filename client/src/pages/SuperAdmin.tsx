@@ -1019,14 +1019,6 @@ export default function SuperAdmin() {
                       <span className="font-bold">{dashboard.psyopSessions}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm">Past Forward Q</span>
-                      <span className="font-bold">{dashboard.totals.timeWarpQuestions}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Past Forward Plays</span>
-                      <span className="font-bold">{dashboard.performance.timewarpTotalPlays}</span>
-                    </div>
-                    <div className="flex justify-between">
                       <span className="text-sm">Meme Sessions</span>
                       <span className="font-bold">{dashboard.performance.memeSessions}</span>
                     </div>
@@ -1037,6 +1029,14 @@ export default function SuperAdmin() {
                     <div className="flex justify-between">
                       <span className="text-sm">Meme Images</span>
                       <span className="font-bold">{dashboard.totals.memeImages}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Past Forward Q</span>
+                      <span className="font-bold">{dashboard.totals.timeWarpQuestions}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Past Forward Plays</span>
+                      <span className="font-bold">{dashboard.performance.timewarpTotalPlays}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Starter Packs</span>
@@ -1094,17 +1094,6 @@ export default function SuperAdmin() {
                       <span className="font-bold">{dashboard.performance.psyopDeceptionRate}%</span>
                     </div>
                     <div className="border-t pt-2 mt-2">
-                      <p className="text-xs font-medium text-muted-foreground">Past Forward</p>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Total Plays</span>
-                      <span className="font-bold">{dashboard.performance.timewarpTotalPlays}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Questions</span>
-                      <span className="font-bold">{dashboard.performance.timewarpQuestionCount}</span>
-                    </div>
-                    <div className="border-t pt-2 mt-2">
                       <p className="text-xs font-medium text-muted-foreground">Meme No Harm</p>
                     </div>
                     <div className="flex justify-between">
@@ -1126,6 +1115,17 @@ export default function SuperAdmin() {
                     <div className="flex justify-between">
                       <span className="text-sm">Votes Cast</span>
                       <span className="font-bold">{dashboard.performance.memeVotes}</span>
+                    </div>
+                    <div className="border-t pt-2 mt-2">
+                      <p className="text-xs font-medium text-muted-foreground">Past Forward</p>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Total Plays</span>
+                      <span className="font-bold">{dashboard.performance.timewarpTotalPlays}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Questions</span>
+                      <span className="font-bold">{dashboard.performance.timewarpQuestionCount}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -1689,21 +1689,21 @@ export default function SuperAdmin() {
                   </Button>
                   <Button
                     size="sm"
-                    variant={contentTab === 'timewarp' ? 'default' : 'outline'}
-                    onClick={() => { setContentTab('timewarp'); setContentSearch(''); }}
-                    data-testid="button-content-timewarp"
-                  >
-                    <Clock className="w-4 h-4 mr-1" /> Past Forward
-                    {dashboard?.totals.timeWarpQuestions ? <Badge variant="secondary" className="ml-1 text-xs">{dashboard.totals.timeWarpQuestions}</Badge> : null}
-                  </Button>
-                  <Button
-                    size="sm"
                     variant={contentTab === 'meme' ? 'default' : 'outline'}
                     onClick={() => { setContentTab('meme'); setContentSearch(''); }}
                     data-testid="button-content-meme"
                   >
                     <Image className="w-4 h-4 mr-1" /> Meme
                     {(dashboard?.totals.memePrompts || dashboard?.totals.memeImages) ? <Badge variant="secondary" className="ml-1 text-xs">{(dashboard?.totals.memePrompts || 0) + (dashboard?.totals.memeImages || 0)}</Badge> : null}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={contentTab === 'timewarp' ? 'default' : 'outline'}
+                    onClick={() => { setContentTab('timewarp'); setContentSearch(''); }}
+                    data-testid="button-content-timewarp"
+                  >
+                    <Clock className="w-4 h-4 mr-1" /> Past Forward
+                    {dashboard?.totals.timeWarpQuestions ? <Badge variant="secondary" className="ml-1 text-xs">{dashboard.totals.timeWarpQuestions}</Badge> : null}
                   </Button>
                 </div>
 
