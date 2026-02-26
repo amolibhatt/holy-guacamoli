@@ -45,7 +45,7 @@ export const GAME_RULES: Record<string, GameRulesContent> = {
   sequence_squeeze: {
     title: "Sort Circuit",
     tagline: "Put things in order. Fastest correct answer wins!",
-    players: "2-20 players",
+    players: "2-10 players",
     duration: "10-20 min",
     accentColor: "#22d3ee",
     overview: "A fast-paced sorting game where players race to arrange 4 items in the correct order. It could be dates, sizes, rankings, or anything that has a logical sequence!",
