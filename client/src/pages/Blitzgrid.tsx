@@ -860,6 +860,11 @@ export default function Blitzgrid() {
   const undoLastScore = useCallback(() => {
     if (lastScoreChange) {
       updatePlayerScore(lastScoreChange.playerId, -lastScoreChange.points, false);
+      setScoredPlayers(prev => {
+        const next = { ...prev };
+        delete next[lastScoreChange.playerId];
+        return next;
+      });
       toast({
         title: "Undo successful",
         description: `Reversed ${lastScoreChange.points > 0 ? '+' : ''}${lastScoreChange.points} for ${lastScoreChange.playerName}`,
