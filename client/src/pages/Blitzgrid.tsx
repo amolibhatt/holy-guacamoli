@@ -1371,22 +1371,32 @@ export default function Blitzgrid() {
       };
       
       const handleCloseQuestion = () => {
+        let effectiveRevealedSize = revealedCells.size;
+        if (activeQuestion && Object.keys(scoredPlayers).length > 0 && activeQuestion.categoryId) {
+          const cellKey = `${activeQuestion.categoryId}-${activeQuestion.points}`;
+          if (!revealedCells.has(cellKey)) {
+            effectiveRevealedSize++;
+          }
+          setRevealedCells(prev => {
+            const newSet = new Set(Array.from(prev));
+            newSet.add(cellKey);
+            return newSet;
+          });
+        }
         setActiveQuestion(null);
         setShowAnswer(false);
         setScoredPlayers({});
         setTimerActive(false);
         setTimeLeft(10);
         setTimerExpired(false);
-        // Only send lock message if buzzer isn't already locked
         if (!buzzerLocked) {
           lockBuzzer();
         }
         setIsJudging(false);
         setLastScoreChange(null);
         
-        // Auto-detect game completion: all questions revealed
         const totalCells = playCategories.length * 5;
-        if (totalCells > 0 && revealedCells.size >= totalCells && players.length > 0 && !showGameOver) {
+        if (totalCells > 0 && effectiveRevealedSize >= totalCells && players.length > 0 && !showGameOver) {
           setTimeout(() => startGameOverReveal(), 600);
         }
       };
@@ -3078,7 +3088,7 @@ export default function Blitzgrid() {
               )}
               
               {/* Buzzer Status - inline, compact */}
-              {players.length > 0 && !showAnswer && buzzQueue.length === 0 && (
+              {players.length > 0 && !showAnswer && buzzQueue.length === 0 && !buzzerLocked && (
                 <div className="mx-5 mb-4 flex items-center justify-center gap-3 py-2 px-4 bg-white/5 border border-white/10 rounded-full" data-testid="buzzer-status-waiting">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full shrink-0 bg-secondary animate-pulse" data-testid="buzzer-waiting-dot" />
