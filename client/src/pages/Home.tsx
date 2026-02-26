@@ -75,7 +75,8 @@ const GAME_CONFIG: Record<string, {
     accentColor: "#f97316",
     tagline: "Era Exploration",
     howItWorks: "Guess era-filtered images. Halfway through, order reverses!",
-    players: "2-10 players",
+    players: "2+ players",
+    badge: "Coming Soon",
   },
   memenoharm: {
     icon: Smile,
