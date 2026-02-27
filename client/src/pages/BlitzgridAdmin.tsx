@@ -1323,7 +1323,7 @@ export default function BlitzGridAdmin() {
                                         </div>
                                         <div className="flex items-center gap-1 shrink-0 mt-2">
                                           {hasMedia && <Badge variant="secondary" className="text-xs">Media</Badge>}
-                                          {formData?.question?.trim() && formData?.correctAnswer?.trim() && (
+                                          {(formData?.question?.trim() || hasMedia) && formData?.correctAnswer?.trim() && (
                                             <CheckCircle2 className="w-5 h-5 text-green-500" aria-hidden="true" />
                                           )}
                                           <Button

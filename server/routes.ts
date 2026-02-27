@@ -1031,7 +1031,8 @@ export async function registerRoutes(
         const answerText = typeof q.correctAnswer === 'string' ? q.correctAnswer.trim() : '';
         const points = typeof q.points === 'number' ? q.points : 0;
         
-        if (!questionText || !answerText || !points) {
+        const hasMedia = q.imageUrl || q.audioUrl || q.videoUrl;
+        if ((!questionText && !hasMedia) || !answerText || !points) {
           results.errors.push(`Line ${i + 1}: Missing required fields`);
           continue;
         }

@@ -420,7 +420,7 @@ export const boardCategories = pgTable("board_categories", {
 export const questions = pgTable("questions", {
   id: serial("id").primaryKey(),
   categoryId: integer("category_id").notNull(),
-  question: text("question").notNull(),
+  question: text("question").notNull().default(''),
   options: jsonb("options").$type<string[]>().notNull(),
   correctAnswer: text("correct_answer").notNull(),
   points: integer("points").notNull(),
