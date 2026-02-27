@@ -388,7 +388,7 @@ export const boards = pgTable("boards", {
   theme: text("theme").notNull().default("birthday"),
   visibility: text("visibility").notNull().$type<BoardVisibility>().default("private"),
   isGlobal: boolean("is_global").notNull().default(false),
-  colorCode: text("color_code").default("#6366f1"),
+  colorCode: text("color_code").default("violet"),
   sortOrder: integer("sort_order").notNull().default(0),
   isStarterPack: boolean("is_starter_pack").notNull().default(false),
   isFeatured: boolean("is_featured").notNull().default(false),

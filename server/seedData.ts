@@ -18,14 +18,12 @@ export interface SeedBoard {
 }
 
 export const BOARD_COLORS = [
+  "rose",
   "violet",
-  "cyan", 
+  "lime",
+  "teal",
+  "sky",
   "orange",
-  "green",
-  "pink",
-  "blue",
-  "red",
-  "yellow",
 ];
 
 export const THEMED_BOARDS: SeedBoard[] = [

@@ -135,18 +135,19 @@ export async function registerRoutes(
   
   // Auto-assign colors to existing boards that don't have one
   const BOARD_COLORS = [
+    'rose',
     'violet',
-    'fuchsia', 
-    'amber',
+    'lime',
     'teal',
     'sky',
+    'orange',
   ];
   
   try {
     const allBoards = await storage.getBoards('system', 'super_admin');
+    const validColors = new Set(BOARD_COLORS);
     for (const board of allBoards) {
-      if (!board.colorCode) {
-        // Use board.id for deterministic color assignment
+      if (!board.colorCode || board.colorCode.startsWith('#') || !validColors.has(board.colorCode)) {
         const colorIndex = (board.id - 1) % BOARD_COLORS.length;
         await storage.updateBoard(board.id, { colorCode: BOARD_COLORS[colorIndex] }, 'system', 'super_admin');
       }
