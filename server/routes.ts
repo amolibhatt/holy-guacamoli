@@ -5024,8 +5024,9 @@ Generate exactly ${promptCount} prompts.`
         return res.status(400).json({ message: "Points must be 10, 20, 30, 40, or 50" });
       }
       
-      if (!question || typeof question !== "string" || !question.trim()) {
-        return res.status(400).json({ message: "Question is required" });
+      const hasQuestionMedia = imageUrl || audioUrl || videoUrl;
+      if (!hasQuestionMedia && (!question || typeof question !== "string" || !question.trim())) {
+        return res.status(400).json({ message: "Question text or media is required" });
       }
       
       if (!correctAnswer || typeof correctAnswer !== "string" || !correctAnswer.trim()) {
@@ -5040,10 +5041,12 @@ Generate exactly ${promptCount} prompts.`
       const existingQuestions = await storage.getQuestionsByCategory(categoryId);
       const existingQuestion = existingQuestions.find(q => q.points === points);
       
+      const questionText = (typeof question === 'string' ? question.trim() : '') || '';
+      
       if (existingQuestion) {
         // Update existing question
         const updated = await storage.updateQuestion(existingQuestion.id, {
-          question: question.trim(),
+          question: questionText,
           correctAnswer: correctAnswer.trim(),
           options: validatedOptions,
           imageUrl: imageUrl?.trim() || null,
@@ -5058,7 +5061,7 @@ Generate exactly ${promptCount} prompts.`
       
       const newQuestion = await storage.createQuestion({
         categoryId,
-        question: question.trim(),
+        question: questionText,
         correctAnswer: correctAnswer.trim(),
         options: validatedOptions,
         points,

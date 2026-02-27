@@ -3046,6 +3046,7 @@ export default function Blitzgrid() {
                     </DialogHeader>
                     
                     {/* Question - THE HERO */}
+                    {questionText.trim() && (
                     <div className="py-8 px-2">
                       <div className={`${textSizeClass} text-center font-semibold text-white leading-relaxed`} data-testid="question-text">
                         <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
@@ -3053,6 +3054,7 @@ export default function Blitzgrid() {
                         </ReactMarkdown>
                       </div>
                     </div>
+                    )}
                   </>
                 );
               })()}
