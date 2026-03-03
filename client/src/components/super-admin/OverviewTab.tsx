@@ -449,18 +449,30 @@ export default function OverviewTab({
                       <div className="w-px flex-1 bg-border mt-1 min-h-[16px]" />
                     )}
                   </div>
-                  <div className="flex-1 flex flex-wrap items-center gap-2">
-                    <span className="text-muted-foreground">{getModeIcon(session.mode)}</span>
-                    <span className="text-sm font-mono font-medium" data-testid={`activity-code-${session.id}`}>{session.code}</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {getGameModeLabel(session.mode ?? null)}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {session.state}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      {formatRelativeDate(session.createdAt)}
-                    </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-muted-foreground">{getModeIcon(session.mode)}</span>
+                      <span className="text-sm font-mono font-medium" data-testid={`activity-code-${session.id}`}>{session.code}</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {getGameModeLabel(session.mode ?? null)}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {session.state}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        {formatRelativeDate(session.createdAt)}
+                      </span>
+                    </div>
+                    {session.players && session.players.length > 0 && (
+                      <div className="flex items-center gap-1.5 mt-1 ml-6" data-testid={`activity-players-${session.id}`}>
+                        <Users className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                        <span className="text-xs text-muted-foreground truncate">
+                          {session.players.length <= 4
+                            ? session.players.join(", ")
+                            : `${session.players.slice(0, 3).join(", ")} +${session.players.length - 3} more`}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

@@ -2921,10 +2921,52 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(memeSessions.createdAt))
       .limit(10);
 
+    const gameSessionIds = recentGameSessions.map(s => s.id);
+    const psyopSessionIds = recentPsyopSessions.map(s => s.id);
+    const memeSessionIds = recentMemeSessions.map(s => s.id);
+
+    const [gamePlayerRows, psyopPlayerRows, memePlayerRows] = await Promise.all([
+      gameSessionIds.length > 0
+        ? db.select({ sessionId: sessionPlayers.sessionId, name: sessionPlayers.name })
+            .from(sessionPlayers)
+            .where(inArray(sessionPlayers.sessionId, gameSessionIds))
+        : Promise.resolve([]),
+      psyopSessionIds.length > 0
+        ? db.selectDistinct({ sessionId: psyopRounds.sessionId, name: psyopSubmissions.playerName })
+            .from(psyopSubmissions)
+            .innerJoin(psyopRounds, eq(psyopSubmissions.roundId, psyopRounds.id))
+            .where(inArray(psyopRounds.sessionId, psyopSessionIds))
+        : Promise.resolve([]),
+      memeSessionIds.length > 0
+        ? db.select({ sessionId: memePlayers.sessionId, name: memePlayers.name })
+            .from(memePlayers)
+            .where(inArray(memePlayers.sessionId, memeSessionIds))
+        : Promise.resolve([]),
+    ]);
+
+    const gamePlayersMap = new Map<number, string[]>();
+    for (const row of gamePlayerRows) {
+      const list = gamePlayersMap.get(row.sessionId) || [];
+      list.push(row.name);
+      gamePlayersMap.set(row.sessionId, list);
+    }
+    const psyopPlayersMap = new Map<number, string[]>();
+    for (const row of psyopPlayerRows) {
+      const list = psyopPlayersMap.get(row.sessionId) || [];
+      if (!list.includes(row.name)) list.push(row.name);
+      psyopPlayersMap.set(row.sessionId, list);
+    }
+    const memePlayersMap = new Map<number, string[]>();
+    for (const row of memePlayerRows) {
+      const list = memePlayersMap.get(row.sessionId) || [];
+      list.push(row.name);
+      memePlayersMap.set(row.sessionId, list);
+    }
+
     const allRecentSessions = [
-      ...recentGameSessions.map(s => ({ id: s.id, code: s.code, state: s.state, createdAt: s.createdAt, mode: (s.currentMode || 'buzzer') as string | null })),
-      ...recentPsyopSessions.map(s => ({ id: s.id + 1000000, code: s.roomCode, state: s.status, createdAt: s.createdAt, mode: 'psyop' as string | null })),
-      ...recentMemeSessions.map(s => ({ id: s.id + 2000000, code: s.roomCode, state: s.status, createdAt: s.createdAt, mode: 'meme' as string | null })),
+      ...recentGameSessions.map(s => ({ id: s.id, code: s.code, state: s.state, createdAt: s.createdAt, mode: (s.currentMode || 'buzzer') as string | null, players: gamePlayersMap.get(s.id) || [] })),
+      ...recentPsyopSessions.map(s => ({ id: s.id + 1000000, code: s.roomCode, state: s.status, createdAt: s.createdAt, mode: 'psyop' as string | null, players: psyopPlayersMap.get(s.id) || [] })),
+      ...recentMemeSessions.map(s => ({ id: s.id + 2000000, code: s.roomCode, state: s.status, createdAt: s.createdAt, mode: 'meme' as string | null, players: memePlayersMap.get(s.id) || [] })),
     ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 10);
 
     // Top hosts this week (across all game types)
@@ -3106,6 +3148,7 @@ export class DatabaseStorage implements IStorage {
         state: s.state,
         createdAt: s.createdAt,
         mode: s.mode,
+        players: s.players,
       })),
       topHostsWeek,
       popularGridsWeek: popularGridsWeek.map(g => ({

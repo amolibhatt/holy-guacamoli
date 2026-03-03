@@ -87,7 +87,7 @@ export interface ComprehensiveDashboard {
   week: { games: number; players: number; newUsers: number };
   totals: { users: number; sessions: number; boards: number; blitzgridQuestions: number; sortCircuitQuestions: number; psyopQuestions: number; timeWarpQuestions: number; memePrompts: number; memeImages: number; starterPacks: number; flaggedContent: number };
   usersByRole: Record<string, number>;
-  recentActivity: { id: number; code: string; state: string; createdAt: string; mode?: string | null }[];
+  recentActivity: { id: number; code: string; state: string; createdAt: string; mode?: string | null; players?: string[] }[];
   topHostsWeek: { name: string; games: number }[];
   popularGridsWeek: { name: string; plays: number }[];
   popularSortCircuitWeek: { name: string; plays: number }[];
