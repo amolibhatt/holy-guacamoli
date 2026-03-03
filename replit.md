@@ -38,7 +38,7 @@ Preferred communication style: Simple, everyday language.
 ### Key Design Decisions
 1.  **Shared Types**: Schema and route definitions in a `/shared` folder ensure type safety across frontend and backend.
 2.  **Host Mode**: Games are controlled by a host who manages questions, answers, and scoring.
-3.  **Real-time Multiplayer**: WebSocket-based real-time communication for games like Sort Circuit and Meme No Harm.
+3.  **Real-time Multiplayer**: WebSocket-based real-time communication for all games. Player reactions (clap, fire, laugh, wow, thumbsup) supported across BlitzGrid, Sort Circuit, and PsyOp.
 4.  **Portable Email/Password Auth**: Host authentication uses bcrypt for password hashing and express-session with PostgreSQL store, without external OAuth.
 5.  **Simplified Content Structure**: Categories are simplified to contain exactly 5 questions with specific point values. Boards are displayed in a flat list.
 6.  **Player Profile System**: Guest-first gameplay with optional profile conversion, personality traits, and a badge system based on gameplay behavior.
@@ -46,6 +46,8 @@ Preferred communication style: Simple, everyday language.
 8.  **Theming**: 9 interactive themes with animated elements for dynamic gameplay visuals.
 9.  **Admin and Super Admin Features**: Enhanced admin UX with hierarchical navigation, visual progress indicators, auto-save drafts, and a simplified Super Admin Dashboard for platform management, content moderation, user activity tracking, and announcements. All game admin pages include creator analytics showing sessions, completions, player counts, and popular categories/questions per game.
 10. **Game Mechanics**: BlitzGrid uses a Board-Category-Question structure. Sort Circuit involves real-time ordering. Meme No Harm integrates live GIPHY search, player submissions, and voting. PsyOp features streak tracking for consecutive successful lies/truths.
+11. **Sound System**: Unified Web Audio API synthesized sounds in `client/src/lib/sounds.ts` — all games (BlitzGrid, Sort Circuit, PsyOp, Meme No Harm) use the shared `soundManager` instead of external audio files.
+12. **Access Control UX**: Shared `AccessDenied` component (`client/src/components/AccessDenied.tsx`) provides friendly messaging for unauthenticated users and non-admin users trying to access host pages. Home page shows a "Want to host?" prompt for authenticated non-admins.
 
 ## External Dependencies
 

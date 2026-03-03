@@ -14,7 +14,8 @@ import {
   Eye, Play, Users, Trophy, Loader2, Check,
   Crown, RefreshCw, ArrowLeft, Shuffle, Folder, HelpCircle,
   SkipForward, WifiOff, CheckCheck, User, Link2, MessageCircle,
-  Sparkles, Target, Award, Zap, AlertTriangle, Flame
+  Sparkles, Target, Award, Zap, AlertTriangle, Flame,
+  Hand, Laugh, CircleDot, ThumbsUp, Heart
 } from "lucide-react";
 import { PLAYER_AVATARS } from "@shared/schema";
 import { QRCodeSVG } from "qrcode.react";
@@ -22,8 +23,10 @@ import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { GameRulesSheet } from "@/components/GameRules";
 import { HostGameOverScreen } from "@/components/game";
+import { soundManager, playReaction } from "@/lib/sounds";
 import { neonColorConfig, BOARD_COLORS } from "@/lib/boardColors";
 import type { PsyopQuestion } from "@shared/schema";
+import { AccessDenied } from "@/components/AccessDenied";
 
 type GameState = "setup" | "waiting" | "animatedReveal" | "submitting" | "voting" | "revealing" | "roundLeaderboard" | "finished";
 type AnimationStage = "teaser" | "questionDrop";
@@ -158,6 +161,8 @@ export default function PsyOpHost() {
   const animationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [allLies, setAllLies] = useState<LieRecord[]>([]);
   const [streaks, setStreaks] = useState<Record<string, { lies: number; truths: number }>>({});
+  const [reactions, setReactions] = useState<Array<{ id: string; type: string; playerId?: string; timestamp: number }>>([]);
+  const reactionTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptsRef = useRef(0);
@@ -265,6 +270,7 @@ export default function PsyOpHost() {
                 if (prev.some(p => p.id === data.player.id)) return prev;
                 return [...prev, { id: data.player.id, name: data.player.name, avatar: data.player.avatar }];
               });
+              soundManager.play('pop', 0.4);
               toast({ title: `${data.player.name} joined!` });
             }
             break;
@@ -272,6 +278,7 @@ export default function PsyOpHost() {
             setPlayers(prev => prev.filter(p => p.id !== data.playerId));
             break;
           case "psyop:submission":
+            soundManager.play('pop', 0.3);
             setSubmissions(prev => {
               if (prev.some(s => s.playerId === data.playerId)) return prev;
               return [...prev, {
@@ -283,6 +290,7 @@ export default function PsyOpHost() {
             });
             break;
           case "psyop:vote":
+            soundManager.play('click', 0.3);
             setVotes(prev => {
               if (prev.some(v => v.voterId === data.voterId)) return prev;
               return [...prev, {
@@ -291,6 +299,23 @@ export default function PsyOpHost() {
                 votedForId: data.votedForId,
               }];
             });
+            break;
+          case "player:reaction":
+            if (data.reactionType && data.playerName) {
+              const reactionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+              setReactions(prev => [...prev, { 
+                id: reactionId, 
+                type: data.reactionType, 
+                playerId: data.playerId,
+                timestamp: Date.now() 
+              }]);
+              playReaction();
+              const reactionTimeout = setTimeout(() => {
+                setReactions(prev => prev.filter(r => r.id !== reactionId));
+                reactionTimeouts.current.delete(reactionId);
+              }, 2500);
+              reactionTimeouts.current.set(reactionId, reactionTimeout);
+            }
             break;
         }
       } catch (err) {
@@ -333,6 +358,8 @@ export default function PsyOpHost() {
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       if (animationTimerRef.current) clearTimeout(animationTimerRef.current);
       wsRef.current?.close();
+      reactionTimeouts.current.forEach(clearTimeout);
+      reactionTimeouts.current.clear();
     };
   }, []);
 
@@ -379,10 +406,12 @@ export default function PsyOpHost() {
     setCurrentQuestionIndex(qIndex);
     setAnimationStage("teaser");
     setGameState("animatedReveal");
+    soundManager.play('whoosh', 0.4);
     
     if (animationTimerRef.current) clearTimeout(animationTimerRef.current);
     animationTimerRef.current = setTimeout(() => {
       setAnimationStage("questionDrop");
+      soundManager.play('swoosh', 0.4);
       animationTimerRef.current = setTimeout(() => {
         startSubmissionPhase(question, qIndex);
       }, 2500);
@@ -432,6 +461,7 @@ export default function PsyOpHost() {
     const shuffled = fisherYatesShuffle(options);
     setVoteOptions(shuffled);
     setGameState("voting");
+    soundManager.play('chime', 0.5);
     
     ws?.send(JSON.stringify({
       type: "psyop:start:voting",
@@ -449,6 +479,7 @@ export default function PsyOpHost() {
   const moveToRevealing = useCallback(() => {
     if (gameStateRef.current === "revealing") return;
     setGameState("revealing");
+    soundManager.play('reveal', 0.5);
     
     const scores: Record<string, number> = {};
     const roundLiesBelieved: Record<string, number> = {};
@@ -509,6 +540,7 @@ export default function PsyOpHost() {
     
     if (Object.values(scores).some(s => s >= 10)) {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      soundManager.play('fanfare', 0.5);
     }
 
     setStreaks(prev => {
@@ -562,6 +594,7 @@ export default function PsyOpHost() {
 
   const showRoundLeaderboard = useCallback(() => {
     setGameState("roundLeaderboard");
+    soundManager.play('applause', 0.4);
   }, []);
 
   const nextQuestion = useCallback(() => {
@@ -569,6 +602,8 @@ export default function PsyOpHost() {
     if (nextIndex >= selectedQuestions.length) {
       setGameState("finished");
       confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
+      soundManager.play('fanfare', 0.6);
+      setTimeout(() => soundManager.play('applause', 0.4), 600);
     } else {
       startAnimatedReveal(selectedQuestions[nextIndex], nextIndex);
     }
@@ -687,6 +722,42 @@ export default function PsyOpHost() {
       </div>
       
       <AppHeader minimal backHref="/" title="PsyOp" />
+
+      {/* Player Reactions Overlay */}
+      <div className="absolute bottom-24 right-4 z-40 pointer-events-none">
+        <AnimatePresence>
+          {reactions.map((reaction) => {
+            const ReactionIcon = {
+              clap: Hand,
+              fire: Flame,
+              laugh: Laugh,
+              wow: CircleDot,
+              thumbsup: ThumbsUp,
+            }[reaction.type] || Heart;
+            
+            const reactionColor = {
+              clap: 'text-amber-400',
+              fire: 'text-orange-500',
+              laugh: 'text-yellow-400',
+              wow: 'text-secondary',
+              thumbsup: 'text-primary',
+            }[reaction.type] || 'text-secondary';
+            
+            return (
+              <motion.div
+                key={reaction.id}
+                initial={{ opacity: 1, y: 0, scale: 0.5, x: Math.random() * 40 - 20 }}
+                animate={{ opacity: 0, y: -120, scale: 1.5 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 2, ease: "easeOut" }}
+                className="absolute bottom-0 right-0"
+              >
+                <ReactionIcon className={`w-10 h-10 shrink-0 ${reactionColor}`} aria-hidden="true" />
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
 
       {hostDisconnected && (
         <div className="fixed top-16 left-0 right-0 z-50 bg-destructive/90 text-destructive-foreground text-center py-2 px-4 text-sm flex items-center justify-center gap-2">

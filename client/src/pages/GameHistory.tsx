@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Calendar, Trophy, LayoutGrid, Gamepad2 } from "lucide-react";
+import { Users, Calendar, Trophy, Gamepad2, TrendingUp, Sparkles, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
@@ -77,7 +77,7 @@ function SessionCard({ session }: { session: GameSessionWithDetails }) {
             {sortedPlayers.slice(1).map((player, idx) => (
               <div 
                 key={player.id} 
-                className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
+                className="flex items-center justify-between gap-2 p-2 rounded-lg bg-muted/50"
               >
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground w-4">{idx + 2}.</span>
@@ -108,6 +108,92 @@ function SessionCard({ session }: { session: GameSessionWithDetails }) {
             </div>
           </div>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ScoreTrend({ sessions }: { sessions: GameSessionWithDetails[] }) {
+  const completedSessions = sessions
+    .filter(s => s.state === "ended" && s.players.length > 0)
+    .slice(0, 10)
+    .reverse();
+
+  if (completedSessions.length < 2) return null;
+
+  const topScores = completedSessions.map(s => {
+    const sorted = [...s.players].sort((a, b) => b.score - a.score);
+    return sorted[0]?.score || 0;
+  });
+  const maxScore = Math.max(...topScores, 1);
+
+  return (
+    <Card data-testid="card-score-trend">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <TrendingUp className="h-4 w-4" />
+          Score Trend
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-end gap-1 h-20">
+          {topScores.map((score, i) => {
+            const height = Math.max((score / maxScore) * 100, 8);
+            return (
+              <div
+                key={i}
+                className="flex-1 flex flex-col items-center"
+                data-testid={`score-trend-bar-${i}`}
+              >
+                <div className="text-xs text-muted-foreground mb-1">{score}</div>
+                <div
+                  className="w-full rounded-sm bg-primary/80"
+                  style={{ height: `${height}%` }}
+                />
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex justify-between mt-2">
+          <span className="text-xs text-muted-foreground">Oldest</span>
+          <span className="text-xs text-muted-foreground">Latest</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EmptyState() {
+  return (
+    <Card data-testid="card-empty-history">
+      <CardContent className="py-16 text-center">
+        <div className="flex justify-center mb-6">
+          <div className="relative">
+            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
+              <Gamepad2 className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-primary" />
+            </div>
+          </div>
+        </div>
+        <h3 className="text-xl font-semibold text-foreground mb-2" data-testid="text-empty-title">
+          No games played yet
+        </h3>
+        <p className="text-muted-foreground mb-2 max-w-sm mx-auto" data-testid="text-empty-description">
+          Host your first game and the results will appear here. Track scores, see winners, and review game highlights.
+        </p>
+        <div className="flex flex-col items-center gap-3 mt-6">
+          <Link href="/">
+            <Button data-testid="button-start-game">
+              Start a Game
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </Link>
+          <p className="text-xs text-muted-foreground">
+            Games with players will show up automatically
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
@@ -220,7 +306,7 @@ export default function GameHistory() {
                   <Trophy className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{completedGames.length}</p>
+                  <p className="text-2xl font-bold" data-testid="text-completed-count">{completedGames.length}</p>
                   <p className="text-sm text-muted-foreground">Games Completed</p>
                 </div>
               </div>
@@ -233,7 +319,7 @@ export default function GameHistory() {
                   <Users className="w-5 h-5 text-blue-500 dark:text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{analytics?.totalPlayers || 0}</p>
+                  <p className="text-2xl font-bold" data-testid="text-players-count">{analytics?.totalPlayers || 0}</p>
                   <p className="text-sm text-muted-foreground">Total Players</p>
                 </div>
               </div>
@@ -246,13 +332,17 @@ export default function GameHistory() {
                   <Gamepad2 className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{gamesWithPlayers.length}</p>
+                  <p className="text-2xl font-bold" data-testid="text-played-count">{gamesWithPlayers.length}</p>
                   <p className="text-sm text-muted-foreground">Games Played</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {!isLoading && gamesWithPlayers.length > 0 && (
+          <ScoreTrend sessions={gamesWithPlayers} />
+        )}
 
         {isLoading ? (
           <LoadingSkeleton />
@@ -263,18 +353,7 @@ export default function GameHistory() {
             ))}
           </div>
         ) : (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <LayoutGrid className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-              <h3 className="text-lg font-medium mb-2">No games played yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Start a game to see your history here
-              </p>
-              <Link href="/">
-                <Button data-testid="button-start-game">Start a Game</Button>
-              </Link>
-            </CardContent>
-          </Card>
+          <EmptyState />
         )}
       </main>
     </div>

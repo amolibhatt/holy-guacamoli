@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
-import { ListOrdered, Check, X, RotateCcw, Undo2, Trophy, Lock, Pause } from "lucide-react";
+import { ListOrdered, Check, X, RotateCcw, Undo2, Trophy, Lock, Pause, Hand, Flame, Laugh, CircleDot, ThumbsUp } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useToast } from "@/hooks/use-toast";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
@@ -574,6 +574,15 @@ export default function SequencePlayer() {
     soundManager.toggle();
   };
 
+  const handleReaction = (reactionType: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "player:reaction", reactionType }));
+      try {
+        navigator.vibrate?.([30]);
+      } catch {}
+    }
+  };
+
   useEffect(() => {
     return () => {
       clearAllTimers();
@@ -956,6 +965,28 @@ export default function SequencePlayer() {
           />
         )}
       </main>
+
+      {/* Reaction buttons */}
+      <div className="py-3 px-4 flex items-center justify-center gap-2">
+        {[
+          { type: 'clap', Icon: Hand, label: 'Clap', color: 'text-amber-400' },
+          { type: 'fire', Icon: Flame, label: 'Fire', color: 'text-orange-500' },
+          { type: 'laugh', Icon: Laugh, label: 'Laugh', color: 'text-yellow-400' },
+          { type: 'wow', Icon: CircleDot, label: 'Wow', color: 'text-secondary' },
+          { type: 'thumbsup', Icon: ThumbsUp, label: 'Thumbs Up', color: 'text-primary' },
+        ].map(r => (
+          <motion.button
+            key={r.type}
+            whileTap={{ scale: 0.8 }}
+            onClick={() => handleReaction(r.type)}
+            className="w-12 h-12 rounded-full bg-muted/30 hover:bg-muted/50 flex items-center justify-center transition-colors"
+            aria-label={r.label}
+            data-testid={`button-reaction-${r.type}`}
+          >
+            <r.Icon className={`w-6 h-6 ${r.color}`} />
+          </motion.button>
+        ))}
+      </div>
     </div>
   );
 }

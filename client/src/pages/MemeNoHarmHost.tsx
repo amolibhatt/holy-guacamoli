@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { MemePrompt } from "@shared/schema";
 import { PLAYER_AVATARS } from "@shared/schema";
 import { QRCodeSVG } from "qrcode.react";
+import { AccessDenied } from "@/components/AccessDenied";
 
 type GamePhase = "setup" | "lobby" | "selecting" | "voting" | "reveal" | "results" | "finished";
 
@@ -411,22 +412,7 @@ export default function MemeNoHarmHost() {
   }
 
   if (!isAuthenticated || !isAdmin) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col" data-testid="page-memenoharm-unauthorized">
-        <AppHeader minimal backHref="/" title="Meme No Harm" />
-        <main className="flex-1 flex items-center justify-center">
-          <Card className="max-w-md mx-auto">
-            <CardContent className="pt-6 text-center">
-              <p className="text-muted-foreground">You need admin access to host games.</p>
-              <Button onClick={() => setLocation("/")} className="mt-4" data-testid="button-go-home">
-                Go Home
-              </Button>
-            </CardContent>
-          </Card>
-        </main>
-        <AppFooter />
-      </div>
-    );
+    return <AccessDenied gameName="Meme No Harm" />;
   }
 
   if (phase === "finished") {

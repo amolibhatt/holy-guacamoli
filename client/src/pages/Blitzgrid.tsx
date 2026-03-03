@@ -77,6 +77,7 @@ import {
 import type { Board, Category, Question } from "@shared/schema";
 import { PLAYER_AVATARS } from "@shared/schema";
 import { getBoardColorConfig, getBoardColorName, BOARD_COLORS, neonColorConfig, type BoardColor } from "@/lib/boardColors";
+import { AccessDenied } from "@/components/AccessDenied";
 
 interface GridWithStats extends Board {
   categoryCount: number;
@@ -1307,19 +1308,8 @@ export default function Blitzgrid() {
     return null;
   }
 
-  // Access denied for non-admin users
   if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-md text-center">
-          <h2 className="text-xl font-bold text-destructive mb-2">Access Denied</h2>
-          <p className="text-muted-foreground mb-4">
-            You don't have permission to host games. Admin access is required.
-          </p>
-          <a href="/" className="text-primary hover:underline">Back to Home</a>
-        </div>
-      </div>
-    );
+    return <AccessDenied gameName="BlitzGrid" />;
   }
 
   // Grid detail view with inline categories and questions (or shuffle mode)

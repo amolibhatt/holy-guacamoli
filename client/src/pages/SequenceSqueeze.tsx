@@ -18,16 +18,18 @@ import {
   ListOrdered, Play, Pause, Users, QrCode, Timer, 
   Trophy, Trash2, Edit, Check, X, Loader2, Clock, Zap,
   ChevronDown, ChevronUp, Sparkles, Crown, RefreshCw, SkipForward,
-  Volume2, VolumeX, Medal, Star, User, Flame, Plus, Minus, Settings, HelpCircle,
-  Link2, MessageCircle
+  Medal, Star, User, Flame, Plus, Minus, Settings, HelpCircle,
+  Link2, MessageCircle, Hand, Laugh, CircleDot, ThumbsUp, Heart
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { GameRulesSheet } from "@/components/GameRules";
+import { soundManager, playReaction } from "@/lib/sounds";
 import { HostGameOverScreen, HostLeaderboardView } from "@/components/game";
 import type { SequenceQuestion, SequenceSession, SequenceSubmission } from "@shared/schema";
 import { PLAYER_AVATARS } from "@shared/schema";
+import { AccessDenied } from "@/components/AccessDenied";
 
 type GameState = "setup" | "waiting" | "animatedReveal" | "playing" | "revealing" | "leaderboard" | "gameComplete" | "results";
 type AnimationStage = "teaser" | "questionDrop" | "optionPulse" | null;
@@ -87,14 +89,12 @@ export default function SequenceSqueeze() {
   const [players, setPlayers] = useState<{ id: string; name: string; avatar?: string; isConnected: boolean }[]>([]);
   const [winner, setWinner] = useState<WinnerInfo | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [audioEnabled, setAudioEnabled] = useState(true);
   const [pointsPerRound, setPointsPerRound] = useState(10);
   const [lastAwardedPoints, setLastAwardedPoints] = useState(10);
   const [questionsToPlay, setQuestionsToPlay] = useState<number | null>(null);
   const [gameQuestions, setGameQuestions] = useState<SequenceQuestion[]>([]);
   const [elapsedTime, setElapsedTime] = useState(0);
   const submissionsRef = useRef<PlayerSubmission[]>([]);
-  const audioRef = useRef<{ [key: string]: HTMLAudioElement }>({});
   const hasAutoStartedRef = useRef(false);
   const elapsedTimerRef = useRef<number | null>(null);
   const isPausedRef = useRef(false);
@@ -102,6 +102,8 @@ export default function SequenceSqueeze() {
   const reconnectAttemptsRef = useRef(0);
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
   const maxReconnectAttempts = 5;
+  const [reactions, setReactions] = useState<Array<{ id: string; type: string; playerId?: string; timestamp: number }>>([]);
+  const reactionTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   const { data: questions = [], isLoading: isLoadingQuestions } = useQuery<SequenceQuestion[]>({
     queryKey: ["/api/sequence-squeeze/questions"],
@@ -205,7 +207,7 @@ export default function SequenceSqueeze() {
           setIsPaused(false);
           break;
         case "sequence:player:joined":
-          playAudio("join");
+          soundManager.play("pop");
           toast({ title: `${data.playerName} joined!` });
           setPlayers(prev => [...prev.filter(p => p.id !== data.playerId), { 
             id: data.playerId, 
@@ -233,13 +235,13 @@ export default function SequenceSqueeze() {
           if (data.question) {
             setCurrentQuestion(prev => prev || data.question);
           }
-          playAudio("countdown");
+          soundManager.play("countdown");
           animationTimeoutsRef.current.forEach(clearTimeout);
           animationTimeoutsRef.current = [];
           const t1 = setTimeout(() => setAnimationStage("questionDrop"), 1200);
           const t2 = setTimeout(() => {
             setAnimationStage("optionPulse");
-            playAudio("whoosh");
+            soundManager.play("whoosh");
           }, 2000);
           const t3 = setTimeout(() => {
             if (socket.readyState === WebSocket.OPEN) {
@@ -269,15 +271,16 @@ export default function SequenceSqueeze() {
           break;
         case "sequence:reveal:complete":
           setGameState("revealing");
-          playAudio("buzzer");
+          soundManager.play("buzz");
           if (data.submissions) {
             setSubmissions(data.submissions);
             submissionsRef.current = data.submissions;
           }
           if (data.winner) {
             setWinner(data.winner);
-            playAudio("correct");
-            playAudio("winner");
+            soundManager.play("correct");
+            soundManager.play("fanfare");
+            soundManager.play("applause");
             confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
           } else {
             setWinner(null);
@@ -338,6 +341,23 @@ export default function SequenceSqueeze() {
           setPlayers(prev => prev.filter(p => p.id !== data.playerId));
           setLeaderboard(prev => prev.filter(l => l.playerId !== data.playerId));
           break;
+        case "player:reaction":
+          if (data.reactionType && data.playerName) {
+            const reactionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            setReactions(prev => [...prev, { 
+              id: reactionId, 
+              type: data.reactionType, 
+              playerId: data.playerId,
+              timestamp: Date.now() 
+            }]);
+            playReaction();
+            const timeout = setTimeout(() => {
+              setReactions(prev => prev.filter(r => r.id !== reactionId));
+              reactionTimeouts.current.delete(reactionId);
+            }, 2500);
+            reactionTimeouts.current.set(reactionId, timeout);
+          }
+          break;
       }
       } catch { /* ignore parse errors */ }
     };
@@ -365,46 +385,6 @@ export default function SequenceSqueeze() {
 
     setWs(socket);
   }, [toast]);
-
-  const audioContextRef = useRef<AudioContext | null>(null);
-  
-  const getAudioContext = useCallback(() => {
-    if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContext();
-    }
-    if (audioContextRef.current.state === 'suspended') {
-      audioContextRef.current.resume();
-    }
-    return audioContextRef.current;
-  }, []);
-  
-  const playAudio = useCallback((type: "countdown" | "whoosh" | "buzzer" | "winner" | "join" | "correct") => {
-    if (!audioEnabled) return;
-    try {
-      const ctx = getAudioContext();
-      const frequencies: Record<string, { freqs: number[]; type: OscillatorType; duration: number }> = {
-        countdown: { freqs: [440, 520, 600], type: "sine", duration: 0.1 },
-        whoosh: { freqs: [800, 600, 400, 300], type: "sine", duration: 0.08 },
-        buzzer: { freqs: [300, 200, 150], type: "sawtooth", duration: 0.15 },
-        winner: { freqs: [523, 659, 784, 880, 1047], type: "sine", duration: 0.12 },
-        join: { freqs: [660, 880], type: "sine", duration: 0.08 },
-        correct: { freqs: [523, 659, 784], type: "sine", duration: 0.1 },
-      };
-      const config = frequencies[type] || frequencies.countdown;
-      config.freqs.forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = config.type;
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.15, ctx.currentTime + i * config.duration);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * config.duration + config.duration * 0.9);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + i * config.duration);
-        osc.stop(ctx.currentTime + i * config.duration + config.duration);
-      });
-    } catch {}
-  }, [audioEnabled, getAudioContext]);
 
   const shuffleArray = <T,>(array: T[]): T[] => {
     const shuffled = [...array];
@@ -534,6 +514,8 @@ export default function SequenceSqueeze() {
       animationTimeoutsRef.current.forEach(clearTimeout);
       if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      reactionTimeouts.current.forEach(clearTimeout);
+      reactionTimeouts.current.clear();
     };
   }, [ws]);
 
@@ -574,19 +556,8 @@ export default function SequenceSqueeze() {
     return null;
   }
 
-  // Access denied for non-admin users
   if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-md text-center">
-          <h2 className="text-xl font-bold text-destructive mb-2">Access Denied</h2>
-          <p className="text-muted-foreground mb-4">
-            You don't have permission to host games. Admin access is required.
-          </p>
-          <a href="/" className="text-primary hover:underline">Back to Home</a>
-        </div>
-      </div>
-    );
+    return <AccessDenied gameName="Sort Circuit" />;
   }
 
   const joinUrl = `${window.location.origin}/sortcircuit/${roomCode}`;
@@ -623,6 +594,42 @@ export default function SequenceSqueeze() {
       </div>
 
       <AppHeader minimal backHref="/" title="Sort Circuit" />
+
+      {/* Player Reactions Overlay */}
+      <div className="absolute bottom-24 right-4 z-40 pointer-events-none">
+        <AnimatePresence>
+          {reactions.map((reaction) => {
+            const ReactionIcon = {
+              clap: Hand,
+              fire: Flame,
+              laugh: Laugh,
+              wow: CircleDot,
+              thumbsup: ThumbsUp,
+            }[reaction.type] || Heart;
+            
+            const reactionColor = {
+              clap: 'text-amber-400',
+              fire: 'text-orange-500',
+              laugh: 'text-yellow-400',
+              wow: 'text-secondary',
+              thumbsup: 'text-primary',
+            }[reaction.type] || 'text-secondary';
+            
+            return (
+              <motion.div
+                key={reaction.id}
+                initial={{ opacity: 1, y: 0, scale: 0.5, x: Math.random() * 40 - 20 }}
+                animate={{ opacity: 0, y: -120, scale: 1.5 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 2, ease: "easeOut" }}
+                className="absolute bottom-0 right-0"
+              >
+                <ReactionIcon className={`w-10 h-10 shrink-0 ${reactionColor}`} aria-hidden="true" />
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
 
       <main className="flex-1 flex flex-col min-h-0 px-4 py-4 max-w-6xl mx-auto w-full">
         {gameState === "setup" && (

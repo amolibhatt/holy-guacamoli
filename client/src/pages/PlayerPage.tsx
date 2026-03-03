@@ -11,6 +11,7 @@ import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { PLAYER_AVATARS, type AvatarId } from "@shared/schema";
 import { Logo } from "@/components/Logo";
+import { soundManager } from "@/lib/sounds";
 import {
   FullScreenFlash,
   GameJoinForm,
@@ -371,12 +372,14 @@ export default function PlayerPage() {
           setPsyopSubmitted(false);
           setPsyopRevealData(null);
           setPsyopCorrectAnswer(null);
+          soundManager.play('whoosh', 0.4);
           break;
         case "psyop:voting:start":
           setGameMode("psyop");
           setPsyopPhase("voting");
           setPsyopOptions(data.options || []);
           setPsyopVoted(false);
+          soundManager.play('chime', 0.4);
           break;
         case "psyop:revealed": {
           setPsyopPhase("revealed");
@@ -386,11 +389,15 @@ export default function PlayerPage() {
             foundTruth: data.foundTruth || false,
             yourLiesBelieved: data.yourLiesBelieved || 0,
           });
+          soundManager.play('reveal', 0.5);
           if (data.yourScore && data.yourScore > 0) {
             setScore(prev => prev + data.yourScore);
             const descriptions: string[] = [];
             if (data.yourTruthsSpotted > 0) descriptions.push("You found the truth!");
-            if (data.yourLiesBelieved > 0) descriptions.push(`Your lie fooled ${data.yourLiesBelieved} player${data.yourLiesBelieved !== 1 ? 's' : ''}!`);
+            if (data.yourLiesBelieved > 0) {
+              descriptions.push(`Your lie fooled ${data.yourLiesBelieved} player${data.yourLiesBelieved !== 1 ? 's' : ''}!`);
+              soundManager.play('fanfare', 0.5);
+            }
             toast({
               title: `+${data.yourScore} points!`,
               description: descriptions.join(" ") || "Nice work!",

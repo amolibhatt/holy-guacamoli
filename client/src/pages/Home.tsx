@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, Brain, Users, Clock, Smile, Play } from "lucide-react";
+import { Loader2, Grid3X3, Brain, Users, Clock, Smile, Play, ShieldAlert } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AppHeader } from "@/components/AppHeader";
@@ -291,7 +291,7 @@ export default function Home() {
           </motion.div>
 
           {/* Host a Game Section - Only for admins */}
-          {canHost && (
+          {canHost ? (
             <>
               <motion.div 
                 className="mb-6"
@@ -434,7 +434,31 @@ export default function Home() {
             )}
               </div>
             </>
-          )}
+          ) : isAuthenticated ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="mt-2"
+            >
+              <div
+                className="rounded-xl p-4 flex items-start gap-3"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(139,92,246,0.03) 100%)',
+                  border: '1px solid rgba(139,92,246,0.2)',
+                }}
+                data-testid="section-want-to-host"
+              >
+                <ShieldAlert className="w-5 h-5 text-violet-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-white/80 text-sm font-medium mb-1">Want to host games?</p>
+                  <p className="text-white/40 text-xs leading-relaxed">
+                    Hosting lets you create and run game sessions for your group. Ask your game organizer or admin to grant you host access.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          ) : null}
 
         </div>
       </main>
